@@ -11,6 +11,7 @@ from toolchain.emit.common.emitter.code_emitter import (
 from toolchain.frontends.runtime_call_adapters import normalize_rendered_runtime_args
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
+from toolchain.frontends.runtime_symbol_index import lookup_runtime_module_extern_contract
 
 
 _SCALA_KEYWORDS = {
@@ -1086,6 +1087,23 @@ def _resolved_runtime_symbol(expr: dict[str, Any], runtime_call: str, runtime_so
     return "__pytra_" + normalized
 
 
+_EXTERN_NATIVE_OWNER_CACHE: dict[str, str] = {}
+
+
+def _extern_native_owner(owner_name: str) -> str:
+    """Return '<module>_native' if owner_name is a known @extern stdlib module."""
+    if owner_name in _EXTERN_NATIVE_OWNER_CACHE:
+        return _EXTERN_NATIVE_OWNER_CACHE[owner_name]
+    module_id = "pytra.std." + owner_name
+    contract = lookup_runtime_module_extern_contract(module_id)
+    if len(contract) > 0:
+        result = owner_name + "_native"
+    else:
+        result = ""
+    _EXTERN_NATIVE_OWNER_CACHE[owner_name] = result
+    return result
+
+
 def _render_attribute_expr(expr: dict[str, Any]) -> str:
     value_any = expr.get("value")
     field = _safe_ident(expr.get("attr"), "field")
@@ -1109,11 +1127,10 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
         owner_ident = _safe_ident(value_any.get("id"), "")
         if owner_ident in _PYTRA_MODULE_IMPORTS[0]:
             return field
-    # Rewrite Python math.fabs -> scala.math.abs
-    if isinstance(value_any, dict) and value_any.get("kind") == "Name":
-        owner_name = _safe_ident(value_any.get("id"), "")
-        if owner_name == "math" and field == "fabs":
-            return "scala.math.abs"
+        # @extern module delegation: math -> math_native, time -> time_native
+        native_name = _extern_native_owner(owner_ident)
+        if native_name != "":
+            return native_name + "." + field
     value = _render_expr(value_any)
     return value + "." + field
 
@@ -1418,6 +1435,15 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     rendered_args_m.append(_render_expr(args[i]))
                     i += 1
                 return method + "(" + ", ".join(rendered_args_m) + ")"
+            # @extern module delegation: math.sqrt(x) -> math_native.sqrt(x)
+            native_owner = _extern_native_owner(owner_ident)
+            if native_owner != "":
+                rendered_args_n: list[str] = []
+                i = 0
+                while i < len(args):
+                    rendered_args_n.append(_render_expr(args[i]))
+                    i += 1
+                return native_owner + "." + method + "(" + ", ".join(rendered_args_n) + ")"
         owner_expr = _render_expr(owner_any)
         rendered_args: list[str] = []
         i = 0
@@ -2916,7 +2942,7 @@ def transpile_to_scala_native(east_doc: dict[str, Any], *, emit_main: bool = Tru
         _CLASS_NAMES[0].add(class_name)
         base_any = class_node.get("base")
         base_name = _safe_ident(base_any, "") if isinstance(base_any, str) else ""
-        _CLASS_BASES[class_name] = base_name
+        _CLASS_BASES[0][class_name] = base_name
         methods: set[str] = set()
         class_body_any = class_node.get("body")
         class_body = class_body_any if isinstance(class_body_any, list) else []
@@ -2928,7 +2954,7 @@ def transpile_to_scala_native(east_doc: dict[str, Any], *, emit_main: bool = Tru
                 if method_name != "":
                     methods.add(method_name)
             j += 1
-        _CLASS_METHODS[class_name] = methods
+        _CLASS_METHODS[0][class_name] = methods
         i += 1
     i = 0
     while i < len(functions):
