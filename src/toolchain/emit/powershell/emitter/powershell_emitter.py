@@ -126,42 +126,44 @@ _IGNORED_IMPORT_MODULES: set[str] = {
 def _module_to_ps_path(module: str) -> str:
     """Python モジュール名をリンク済み PS1 の相対パスに変換する。
 
-    emit_all_modules が module_id.replace(".", "/") + ".ps1" で配置するため、
-    ここでは EAST のモジュール名から対応するパスを推測する。
-    linker が生成するモジュール ID は pytra.std.X → "X.east" のようになるため、
-    出力先は "X/east.ps1" となる。
+    root_rel_prefix を付加して、サブモジュール間の相対パスを正しく解決する。
     """
     if module == "" or module in _IGNORED_IMPORT_MODULES:
         return ""
-    # pytra.std / pytra 自体は個別モジュールではない（サブモジュールが個別に解決される）
     if module in ("pytra.std", "pytra", "pytra.utils"):
         return ""
-    # pytra.std.X → X/east.ps1 (linker strips prefix, adds .east suffix)
+    raw = ""
     for prefix in ("pytra.std.", "pytra.utils."):
         if module.startswith(prefix):
             tail = module[len(prefix):]
             if tail != "":
-                return tail.replace(".", "/") + "/east.ps1"
-    # pytra.enum → enum module (special)
-    if module == "pytra.enum":
-        return "enum/east.ps1"
-    # browser / external modules → skip
-    if module.startswith("browser"):
+                raw = tail.replace(".", "/") + "/east.ps1"
+            break
+    if raw == "" and module == "pytra.enum":
+        raw = "enum/east.ps1"
+    if raw == "" and module.startswith("browser"):
         return ""
-    # bare stdlib name (e.g. "pathlib", "json", "math") → X/east.ps1
-    # linker resolves these via std/ fallback
     _KNOWN_STD_MODULES = {
         "pathlib", "json", "math", "re", "os", "sys", "glob", "random",
         "argparse", "time", "timeit", "collections", "subprocess",
     }
-    if module in _KNOWN_STD_MODULES:
-        # Prevent self-reference: don't dot-source yourself
+    if raw == "" and module in _KNOWN_STD_MODULES:
         cur = _CURRENT_MODULE_ID[0]
         if cur != "" and (cur == module + ".east" or cur.endswith("." + module)):
             return ""
-        return module + "/east.ps1"
-    # user module: direct relative
-    return module.replace(".", "/") + ".ps1"
+        raw = module + "/east.ps1"
+    if raw == "":
+        # Self-reference check for any module
+        cur = _CURRENT_MODULE_ID[0]
+        mod_as_id = module.replace(".", "_")
+        if cur != "" and (cur == mod_as_id + ".east" or cur == mod_as_id):
+            return ""
+        raw = module.replace(".", "/") + ".ps1"
+    # Apply root_rel_prefix for sub-module relative path resolution
+    prefix = _ROOT_REL_PREFIX[0]
+    if prefix != "":
+        return prefix + raw
+    return raw
 
 
 # ---------------------------------------------------------------------------
@@ -1607,6 +1609,7 @@ def _simplify_main_guard_stmt(stmt: dict[str, Any]) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 _CURRENT_MODULE_ID: list[str] = [""]
+_ROOT_REL_PREFIX: list[str] = [""]
 
 
 def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
@@ -1618,9 +1621,11 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
     if not isinstance(body, list):
         raise RuntimeError("powershell native emitter: Module.body must be list")
 
-    # Track current module ID for self-reference prevention
+    # Track current module ID and root-relative prefix for path resolution
     meta = _get_dict(east_doc, "meta")
     _CURRENT_MODULE_ID[0] = _get_str(meta, "module_id")
+    emit_ctx = _get_dict(meta, "emit_context")
+    _ROOT_REL_PREFIX[0] = _get_str(emit_ctx, "root_rel_prefix")
 
     # Note: union type and typed vararg rejections are disabled for PowerShell
     # to allow transpilation of all linked modules (including assertions).
@@ -1723,10 +1728,11 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
     _IMPORT_ALIASES[0] = import_aliases
 
     ctx: dict[str, Any] = {}
+    rp = _ROOT_REL_PREFIX[0]
     lines: list[str] = [
         "#Requires -Version 5.1",
         "",
-        "$pytra_runtime = Join-Path $PSScriptRoot \"py_runtime.ps1\"",
+        "$pytra_runtime = Join-Path $PSScriptRoot \"" + rp + "py_runtime.ps1\"",
         "if (Test-Path $pytra_runtime) { . $pytra_runtime }",
         "",
         "Set-StrictMode -Version Latest",
@@ -1744,14 +1750,15 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
         "glob.east": "std/glob_native.ps1",
     }
     cur_mod = _CURRENT_MODULE_ID[0]
+    rp = _ROOT_REL_PREFIX[0]
     native_seam = _NATIVE_SEAM_MAP.get(cur_mod, "")
     if native_seam != "":
-        lines.append('. (Join-Path $PSScriptRoot "' + native_seam + '")')
+        lines.append('. (Join-Path $PSScriptRoot "' + rp + native_seam + '")')
         lines.append("")
 
     # Detect implicit format_value dependency (f-string format_spec)
     if _has_format_spec_in_doc(east_doc):
-        lines.append('. (Join-Path $PSScriptRoot "format_value/east.ps1")')
+        lines.append('. (Join-Path $PSScriptRoot "' + rp + 'format_value/east.ps1")')
         lines.append("")
 
     # Emit __pytra_bases table for isinstance inheritance chain lookup
