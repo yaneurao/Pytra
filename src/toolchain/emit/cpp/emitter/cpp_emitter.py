@@ -168,7 +168,7 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
         self.cpp_list_model = "pyobj"
         self.top_namespace = top_namespace
         self.emit_main = emit_main
-        self.use_object_t = False  # True: emit Object<T> instead of rc<T>
+        self.use_object_t = True  # emit Object<T> instead of rc<T>
         # NOTE:
         # self-host compile path currently treats EAST payload values as dynamic,
         # so dict[str, Any] -> dict iteration for renaming is disabled for now.
@@ -883,6 +883,18 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
             return f"Object<{inner}>"
         return f"rc<{inner}>"
 
+    def _list_deref(self, expr: str) -> str:
+        """Object<list<T>> / rc<list<T>> → list<T>& の参照取得式を返す。"""
+        if self.use_object_t:
+            return f"(*{expr})"
+        return f"rc_list_ref({expr})"
+
+    def _list_wrap(self, value_expr: str, list_type_text: str) -> str:
+        """list<T>{...} 値を Object<list<T>> / rc<list<T>> にラップする式を返す。"""
+        if self.use_object_t:
+            return f"make_object<{list_type_text}>(PYTRA_TID_LIST, {value_expr})"
+        return f"rc_list_from_value({value_expr})"
+
     def _render_pyobj_alias_list_value(self, rendered_expr: str, value_node: Any, east_type: str) -> str:
         """list 値を `rc<list<T>>` handle 初期化へ寄せる。"""
         rendered_trim = self._trim_ws(rendered_expr)
@@ -921,7 +933,7 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
                         "assign:pyobj_alias_list_literal",
                     )
                 rendered_items.append(item_txt)
-            return f"rc_list_from_value({value_cpp_t}{{{join_str_list(', ', rendered_items)}}})"
+            return f"{self._list_wrap_fn()}({value_cpp_t}{{{join_str_list(', ', rendered_items)}}})"
         if kind == "ListComp":
             rewritten = rendered_expr
             if rendered_trim.startswith("[&]() -> list<object> {"):

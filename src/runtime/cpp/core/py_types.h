@@ -108,34 +108,46 @@ struct py_is_rc_list_handle<rc<list<T>>> : ::std::true_type {
     using item_type = T;
 };
 
-template <class T>
-static inline rc<list<T>> rc_list_new() {
-    return rc<list<T>>::adopt(pytra::gc::rc_new<list<T>>());
-}
-
-template <class T>
-static inline rc<list<T>> rc_list_from_value(list<T> values) {
-    return rc<list<T>>::adopt(pytra::gc::rc_new<list<T>>(::std::move(values)));
-}
-
+// Legacy rc<list<T>> overloads (backward compat during migration).
 template <class T>
 static inline list<T>& rc_list_ref(rc<list<T>>& values) {
-    if (!values) {
-        throw ::std::runtime_error("rc_list_ref: null list handle");
-    }
+    if (!values) throw ::std::runtime_error("rc_list_ref: null list handle");
     return *values;
 }
 
 template <class T>
 static inline const list<T>& rc_list_ref(const rc<list<T>>& values) {
-    if (!values) {
-        throw ::std::runtime_error("rc_list_ref: null list handle");
-    }
+    if (!values) throw ::std::runtime_error("rc_list_ref: null list handle");
+    return *values;
+}
+
+// Object<T> support — include after list/dict/set are complete.
+#include "core/object.h"
+
+// Object<list<T>> based list helpers (requires Object<T> to be defined).
+
+template <class T>
+static inline Object<list<T>> rc_list_new() {
+    return make_object<list<T>>(PYTRA_TID_LIST);
+}
+
+template <class T>
+static inline Object<list<T>> rc_list_from_value(list<T> values) {
+    return make_object<list<T>>(PYTRA_TID_LIST, ::std::move(values));
+}
+
+template <class T>
+static inline list<T>& rc_list_ref(Object<list<T>>& values) {
     return *values;
 }
 
 template <class T>
-static inline list<T> rc_list_copy_value(const rc<list<T>>& values) {
+static inline const list<T>& rc_list_ref(const Object<list<T>>& values) {
+    return *values;
+}
+
+template <class T>
+static inline list<T> rc_list_copy_value(const Object<list<T>>& values) {
     if (!values) {
         return list<T>{};
     }
