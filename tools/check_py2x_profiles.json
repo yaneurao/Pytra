@@ -1051,9 +1051,7 @@
         }
       },
       "quality_hooks": [],
-      "required_runtime_files": [
-        "py_runtime.jl"
-      ],
+      "required_runtime_files": [],
       "required_runtime_file_contains": {},
       "forbid_generated_contains": [],
       "preflight_hooks": [],

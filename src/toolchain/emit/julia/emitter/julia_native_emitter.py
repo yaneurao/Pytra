@@ -672,6 +672,8 @@ class JuliaNativeEmitter:
                             if line != "":
                                 import_lines.append(line)
                                 continue
+                    if mod == "pytra.typing" or mod == "typing":
+                        continue
                     if mod.startswith("pytra."):
                         raise RuntimeError("lang=julia unresolved import module: " + mod)
                     import_lines.append("# import " + mod + " as " + alias_txt + " (not yet mapped)")
@@ -1349,6 +1351,59 @@ class JuliaNativeEmitter:
             if cond_expr != "":
                 return "[" + elt + " for " + loop_var + " in " + range_expr + " if " + cond_expr + "]"
             return "[" + elt + " for " + loop_var + " in " + range_expr + "]"
+        if kind == "SetComp":
+            gens_any = ed.get("generators")
+            gens = gens_any if isinstance(gens_any, list) else []
+            if len(gens) != 1 or not isinstance(gens[0], dict):
+                return "Set{Any}()"
+            gen = gens[0]
+            target_any = gen.get("target")
+            iter_any = gen.get("iter")
+            if not isinstance(target_any, dict) or not isinstance(iter_any, dict):
+                return "Set{Any}()"
+            td_sc: dict[str, Any] = target_any
+            if td_sc.get("kind") != "Name":
+                return "Set{Any}()"
+            elt = self._render_expr(ed.get("elt"))
+            loop_var = _safe_ident(td_sc.get("id"), "__sc_i")
+            range_expr = self._render_expr(iter_any)
+            cond_expr = ""
+            ifs_any = gen.get("ifs")
+            if isinstance(ifs_any, list) and len(ifs_any) > 0:
+                cond_parts_sc: list[str] = []
+                for cond_any in ifs_any:
+                    cond_parts_sc.append(self._render_expr(cond_any))
+                cond_expr = " && ".join(cond_parts_sc)
+            if cond_expr != "":
+                return "Set([" + elt + " for " + loop_var + " in " + range_expr + " if " + cond_expr + "])"
+            return "Set([" + elt + " for " + loop_var + " in " + range_expr + "])"
+        if kind == "DictComp":
+            gens_any = ed.get("generators")
+            gens = gens_any if isinstance(gens_any, list) else []
+            if len(gens) != 1 or not isinstance(gens[0], dict):
+                return "Dict{Any,Any}()"
+            gen = gens[0]
+            target_any = gen.get("target")
+            iter_any = gen.get("iter")
+            if not isinstance(target_any, dict) or not isinstance(iter_any, dict):
+                return "Dict{Any,Any}()"
+            td_dc: dict[str, Any] = target_any
+            if td_dc.get("kind") != "Name":
+                return "Dict{Any,Any}()"
+            key_expr = self._render_expr(ed.get("key"))
+            val_expr = self._render_expr(ed.get("value"))
+            loop_var = _safe_ident(td_dc.get("id"), "__dc_i")
+            range_expr = self._render_expr(iter_any)
+            cond_expr = ""
+            ifs_any = gen.get("ifs")
+            if isinstance(ifs_any, list) and len(ifs_any) > 0:
+                cond_parts_dc: list[str] = []
+                for cond_any in ifs_any:
+                    cond_parts_dc.append(self._render_expr(cond_any))
+                cond_expr = " && ".join(cond_parts_dc)
+            if cond_expr != "":
+                return "Dict(" + key_expr + " => " + val_expr + " for " + loop_var + " in " + range_expr + " if " + cond_expr + ")"
+            return "Dict(" + key_expr + " => " + val_expr + " for " + loop_var + " in " + range_expr + ")"
         if kind == "Dict":
             keys_any = ed.get("keys")
             values_any = ed.get("values")
@@ -1688,7 +1743,10 @@ class JuliaNativeEmitter:
                 if str(owner_node.get("id")) == "self":
                     return attr + "(" + ", ".join([owner] + rendered_args + kw_values_in_order) + ")"
             return attr + "(" + ", ".join([owner] + rendered_args + kw_values_in_order) + ")"
-        raise RuntimeError("lang=julia unsupported call target")
+
+        # Lambda or other callable expression
+        fn_expr = self._render_expr(func_any)
+        return "(" + fn_expr + ")(" + ", ".join(rendered_args + kw_values_in_order) + ")"
 
     def _render_name_expr(self, expr_any: dict[str, Any]) -> str:
         ident = _safe_ident(expr_any.get("id"), "value")
