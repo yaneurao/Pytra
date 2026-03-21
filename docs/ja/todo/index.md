@@ -141,8 +141,8 @@
 
 文脈: 現在 `toolchain/emit/{rs,cs,go,...}.py` は `toolchain/emit/all.py` に委譲しており、結果として全 backend を import している。`cpp.py` と同様に各言語が自分の emitter だけを直接呼ぶ形にし、`all.py` を廃止する。
 
-1. [ ] [ID: P1-EMIT-DIRECT-CALL-01] 各言語ラッパー（rs, cs, go, java, js, ts, kotlin, swift, ruby, lua, scala, php, nim, powershell）を `all.py` 委譲から個別 emitter 直接呼び出しに変更する。
-2. [ ] [ID: P1-EMIT-DIRECT-CALL-02] `toolchain/emit/all.py` を削除する。
+1. [x] [ID: P1-EMIT-DIRECT-CALL-01] 14 言語のラッパーを個別 emitter 直接呼び出しに変更。各ラッパーは自分の emitter のみ import。
+2. [x] [ID: P1-EMIT-DIRECT-CALL-02] `toolchain/emit/all.py` を削除。
 
 #### P1-3: C++ emitter @staticmethod 対応
 
