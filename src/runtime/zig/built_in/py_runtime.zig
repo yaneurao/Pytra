@@ -137,6 +137,46 @@ pub fn contains(haystack: anytype, needle: anytype) bool {
     return false;
 }
 
+/// Reference-counted object wrapper (Pytra Object<T> equivalent).
+pub fn Object(comptime T: type) type {
+    return struct {
+        const Self = @This();
+        ptr: *T,
+        rc: *usize,
+
+        pub fn init(value: T) Self {
+            const alloc = std.heap.page_allocator;
+            const p = alloc.create(T) catch @panic("alloc failed");
+            p.* = value;
+            const rc = alloc.create(usize) catch @panic("alloc failed");
+            rc.* = 1;
+            return Self{ .ptr = p, .rc = rc };
+        }
+
+        pub fn clone(self: Self) Self {
+            self.rc.* += 1;
+            return Self{ .ptr = self.ptr, .rc = self.rc };
+        }
+
+        pub fn release(self: Self) void {
+            self.rc.* -= 1;
+            if (self.rc.* == 0) {
+                const alloc = std.heap.page_allocator;
+                alloc.destroy(self.ptr);
+                alloc.destroy(self.rc);
+            }
+        }
+    };
+}
+
+/// Create a heap-allocated object and return a pointer.
+pub fn make_object(comptime T: type, value: T) *T {
+    const alloc = std.heap.page_allocator;
+    const p = alloc.create(T) catch @panic("alloc failed");
+    p.* = value;
+    return p;
+}
+
 /// Empty list (stub for comprehensions).
 pub fn empty_list() void {
     return;

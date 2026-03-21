@@ -288,13 +288,7 @@ class ZigNativeEmitter:
                 if isinstance(target, dict) and target.get("kind") == "Name":
                     mutated.add(_safe_ident(target.get("id"), ""))
             elif kind == "Assign":
-                target = stmt.get("target")
-                if isinstance(target, dict) and target.get("kind") == "Name":
-                    mutated.add(_safe_ident(target.get("id"), ""))
-                targets = stmt.get("targets")
-                if isinstance(targets, list) and len(targets) > 0 and isinstance(targets[0], dict):
-                    if targets[0].get("kind") == "Name":
-                        mutated.add(_safe_ident(targets[0].get("id"), ""))
+                pass  # Assign 単体では mutated 判定しない（重複カウントで下記判定）
             elif kind == "If":
                 mutated.update(self._scan_mutated_vars(stmt.get("body")))
                 mutated.update(self._scan_mutated_vars(stmt.get("orelse")))
@@ -338,8 +332,11 @@ class ZigNativeEmitter:
         return name in self._current_mutated_vars()
 
     def _needs_var_for_type(self, decl_type: str) -> bool:
-        """型が mutable メソッドを持つクラスなら var が必要。"""
+        """型が mutable メソッドを持つクラスなら var が必要（ポインタ型では不要）。"""
         t = self._normalize_type(decl_type)
+        # ポインタ型（*ClassName）なら const でもフィールド変更可能
+        if t in self.class_names:
+            return False
         return t in self._classes_with_mut_method
 
     def _body_uses_name(self, body_any: Any, name: str) -> bool:
@@ -1386,10 +1383,10 @@ class ZigNativeEmitter:
                         while j < len(fields) and j < len(arg_strs):
                             field_inits.append("." + fields[j] + " = " + arg_strs[j])
                             j += 1
-                        return fname + "{ " + ", ".join(field_inits) + " }"
+                        return "pytra.make_object(" + fname + ", " + fname + "{ " + ", ".join(field_inits) + " })"
                     if fname in self._classes_with_init:
-                        return fname + ".init(" + ", ".join(arg_strs) + ")"
-                    return fname + "{}"
+                        return "pytra.make_object(" + fname + ", " + fname + ".init(" + ", ".join(arg_strs) + "))"
+                    return "pytra.make_object(" + fname + ", " + fname + "{})"
                 return fname + "(" + ", ".join(arg_strs) + ")"
             if fkind == "Attribute":
                 obj = self._render_expr(func_any.get("value"))
@@ -1583,7 +1580,7 @@ class ZigNativeEmitter:
             return "struct { " + ", ".join("_" + str(i) + ": " + zt for i, zt in enumerate(inner_types)) + " }"
         # --- クラス名 ---
         if t in self.class_names:
-            return t
+            return "*" + t
         return "PyObject"
 
     def _get_expr_type(self, expr_any: Any) -> str:
