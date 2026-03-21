@@ -243,7 +243,7 @@ def _runtime_symbol_alias_expr(runtime_module_id: str, runtime_symbol: str) -> s
 
 
 class ZigNativeEmitter:
-    def __init__(self, east_doc: dict[str, Any]) -> None:
+    def __init__(self, east_doc: dict[str, Any], is_submodule: bool = False) -> None:
         if not isinstance(east_doc, dict):
             raise RuntimeError("lang=zig invalid east document: root must be dict")
         ed: dict[str, Any] = east_doc
@@ -253,6 +253,7 @@ class ZigNativeEmitter:
         if ed.get("east_stage") != 3:
             raise RuntimeError("lang=zig unsupported east_stage: " + str(ed.get("east_stage")))
         self.east_doc = east_doc
+        self.is_submodule = is_submodule
         self.lines: list[str] = []
         self.indent = 0
         self.tmp_seq = 0
@@ -492,7 +493,8 @@ class ZigNativeEmitter:
             self.lines.extend(module_comments)
             self.lines.append("")
         self.lines.append("const std = @import(\"std\");")
-        self.lines.append("const pytra = @import(\"py_runtime.zig\");")
+        rt_path = "../py_runtime.zig" if self.is_submodule else "py_runtime.zig"
+        self.lines.append("const pytra = @import(\"" + rt_path + "\");")
         body = self._dict_list(self.east_doc.get("body"))
         main_guard = self._dict_list(self.east_doc.get("main_guard_body"))
         self._scan_module_symbols(body)
@@ -1746,6 +1748,10 @@ class ZigNativeEmitter:
                     return "&[_]u8{}"
                 if fname == "perf_counter":
                     return "pytra.perf_counter()"
+                if fname == "open":
+                    if len(arg_strs) > 0:
+                        return "pytra.file_open(" + arg_strs[0] + ")"
+                    return "pytra.file_open(\"\")"
                 if fname == "range":
                     return "pytra.empty_list()"
                 if fname == "enumerate":
@@ -1811,6 +1817,11 @@ class ZigNativeEmitter:
                     if len(arg_strs) > 0:
                         return "pytra.str_join_sep(" + obj + ", " + arg_strs[0] + ")"
                     return "pytra.str_join_sep(" + obj + ", &.{})"
+                if attr == "write":
+                    if len(arg_strs) > 0:
+                        return "pytra.file_write(" + obj + ", " + arg_strs[0] + ")"
+                if attr == "close":
+                    return "pytra.file_close(" + obj + ")"
                 if attr == "sqrt":
                     if len(arg_strs) > 0:
                         return "std.math.sqrt(@as(f64, " + arg_strs[0] + "))"
@@ -2086,8 +2097,8 @@ def cls_name_init(cls_name: str, arg_strs: list[str]) -> str:
     return cls_name + ".init(" + ", ".join(arg_strs) + ")"
 
 
-def transpile_to_zig_native(east_doc: dict[str, Any]) -> str:
+def transpile_to_zig_native(east_doc: dict[str, Any], is_submodule: bool = False) -> str:
     """EAST3 ドキュメントを Zig native ソースへ変換する。"""
     reject_backend_typed_vararg_signatures(east_doc, backend_name="Zig backend")
     reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="Zig backend")
-    return ZigNativeEmitter(east_doc).transpile()
+    return ZigNativeEmitter(east_doc, is_submodule=is_submodule).transpile()
