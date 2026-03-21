@@ -2197,6 +2197,70 @@ class CodeEmitter:
             result = result + "_"
         return result
 
+    def _collect_reassigned_params(self, func_def: dict[str, Any]) -> set[str]:
+        """Return the set of parameter names that are reassigned in *func_def* body.
+
+        For languages where function parameters are immutable (Zig, Rust, Swift),
+        these parameters need to be copied to a mutable local variable.
+        """
+        arg_order = func_def.get("arg_order")
+        if not isinstance(arg_order, list) or len(arg_order) == 0:
+            return set()
+        param_names: set[str] = set()
+        for arg in arg_order:
+            if isinstance(arg, str) and arg != "":
+                param_names.add(arg)
+        if len(param_names) == 0:
+            return set()
+        reassigned: set[str] = set()
+        self._scan_reassigned_names(func_def.get("body"), param_names, reassigned)
+        return reassigned
+
+    def _scan_reassigned_names(self, node: Any, param_names: set[str], out: set[str]) -> None:
+        """Recursively scan for Assign/AnnAssign/AugAssign targeting a param name."""
+        if isinstance(node, list):
+            for item in node:
+                self._scan_reassigned_names(item, param_names, out)
+            return
+        if not isinstance(node, dict):
+            return
+        nd: dict[str, Any] = node
+        kind = nd.get("kind", "")
+        if kind in ("Assign", "AnnAssign", "AugAssign"):
+            target = nd.get("target")
+            if isinstance(target, dict):
+                if target.get("kind") == "Name":
+                    name = target.get("id", "")
+                    if name in param_names:
+                        out.add(name)
+                elif target.get("kind") == "Tuple":
+                    elements = target.get("elements")
+                    if isinstance(elements, list):
+                        for elem in elements:
+                            if isinstance(elem, dict) and elem.get("kind") == "Name":
+                                name = elem.get("id", "")
+                                if name in param_names:
+                                    out.add(name)
+        # Also check ForCore target_plan
+        if kind == "ForCore":
+            tp = nd.get("target_plan")
+            if isinstance(tp, dict) and tp.get("kind") == "NameTarget":
+                name = tp.get("id", "")
+                if name in param_names:
+                    out.add(name)
+        for value in nd.values():
+            if isinstance(value, (dict, list)):
+                self._scan_reassigned_names(value, param_names, out)
+
+    def _mutable_param_name(self, name: str) -> str:
+        """Return the renamed parameter name for immutable-param languages.
+
+        Convention: append ``_`` to the original name (e.g. ``data`` → ``data_``).
+        The emitter should use the original name as the mutable local variable
+        and the renamed name as the function parameter.
+        """
+        return name + "_"
+
     def _is_identifier_expr(self, text: str) -> bool:
         """式文字列が単純な識別子のみかを判定する。"""
         if len(text) == 0:

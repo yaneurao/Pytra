@@ -108,6 +108,14 @@
 1. [x] [ID: P2-EMIT-ROOT-REL-PATH-01] `emit_all_modules` で `root_rel_prefix` を計算し EAST3 doc の meta に設定する。
 2. [x] [ID: P2-EMIT-ROOT-REL-PATH-02] 既存テストのリグレッションがないことを検証する。
 
+### P2: immutable 引数言語向け引数リネーム共通化
+
+文脈: [docs/ja/plans/p2-mutable-param-rename.md](../plans/p2-mutable-param-rename.md)
+
+1. [x] [ID: P2-MUTABLE-PARAM-RENAME-01] `CodeEmitter` に共通メソッドを追加する（実装済み、Zig は暫定対応済み）。
+2. [ ] [ID: P2-MUTABLE-PARAM-RENAME-02] Swift emitter を共通関数呼び出しに修正する。
+3. [ ] [ID: P2-MUTABLE-PARAM-RENAME-03] スタンドアロン関数版を `code_emitter.py` に公開する。
+
 ### P2: built-in 依存を EAST1 → linker 経由で解決
 
 文脈: [docs/ja/plans/p2-builtin-dependency-via-linker.md](../plans/p2-builtin-dependency-via-linker.md)

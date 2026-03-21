@@ -1099,6 +1099,9 @@ class ZigNativeEmitter:
         for a in args:
             arg_names.append(_safe_ident(a, "arg"))
         arg_strs: list[str] = []
+        # Zig parameters are immutable; detect reassigned params and rename.
+        reassigned_params = self._collect_reassigned_params(stmt)
+        mutable_copies: list[tuple[str, str]] = []
         arg_types_any = stmt.get("arg_types")
         arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
         i = 0
@@ -1108,7 +1111,13 @@ class ZigNativeEmitter:
             param_name = arg_names[i]
             if not self._body_uses_name(stmt.get("body"), param_name):
                 param_name = "_"
-            arg_strs.append(param_name + ": " + zig_ty)
+            # Reassigned params: rename parameter, copy to mutable var in body
+            if raw_name in reassigned_params or param_name in reassigned_params:
+                param_alias = self._mutable_param_name(arg_names[i])
+                mutable_copies.append((arg_names[i], param_alias))
+                arg_strs.append(param_alias + ": " + zig_ty)
+            else:
+                arg_strs.append(param_name + ": " + zig_ty)
             i += 1
         ret_type_any = stmt.get("return_type")
         ret_py = ret_type_any.strip() if isinstance(ret_type_any, str) else ""
@@ -1116,16 +1125,9 @@ class ZigNativeEmitter:
         fn_kw = "pub fn" if self.is_submodule else "fn"
         self._emit_line(fn_kw + " " + name + "(" + ", ".join(arg_strs) + ") " + ret_type + " {")
         self.indent += 1
-        # ArrayList 型パラメータを var にコピー（.append で mutable が必要）
-        for j in range(len(arg_names)):
-            raw = args[j] if j < len(args) else arg_names[j]
-            raw_any = arg_types.get(raw) if isinstance(raw, str) else None
-            if not isinstance(raw_any, str):
-                raw_any = arg_types.get(arg_names[j])
-            py_type = raw_any.strip() if isinstance(raw_any, str) else ""
-            norm = self._normalize_type(py_type)
-            if norm.startswith("list[") or norm in {"bytearray", "bytes"}:
-                self._emit_line("var " + arg_names[j] + " = " + arg_names[j] + ";")
+        # Copy renamed params to mutable local vars
+        for orig_name, param_alias in mutable_copies:
+            self._emit_line("var " + orig_name + " = " + param_alias + ";")
         self._push_function_context(stmt, arg_names, args)
         self._emit_block(stmt.get("body"))
         self._pop_function_context()
