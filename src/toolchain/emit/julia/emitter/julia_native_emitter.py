@@ -1225,18 +1225,24 @@ class JuliaNativeEmitter:
             if not isinstance(iter_plan, dict):
                 raise RuntimeError("lang=julia unsupported forcore runtime shape")
             ipd2: dict[str, Any] = iter_plan
-            iter_expr_node = ipd2.get("iter_expr")
-            iter_expr = self._render_expr(iter_expr_node)
-            # Python bytes/bytearray iteration yields int; Julia UInt8 overflows on bit ops
-            iter_type = self._lookup_expr_type(iter_expr_node) if isinstance(iter_expr_node, dict) else ""
-            if iter_type in {"bytes", "bytearray"}:
-                iter_expr = "__pytra_iter_ints(" + iter_expr + ")"
+            iter_expr = self._render_expr(ipd2.get("iter_expr"))
             tuple_target = isinstance(target_plan, dict) and target_plan.get("kind") == "TupleTarget"
+            # Check if target needs integer promotion (e.g. bytes → int32)
+            target_type = ""
+            if isinstance(target_plan, dict):
+                tt_any = target_plan.get("target_type")
+                target_type = tt_any.strip() if isinstance(tt_any, str) else ""
+            needs_int_promotion = (target_type in {"int32", "int64"})
             iter_name = target_name
             if tuple_target:
                 iter_name = self._next_tmp_name("__it")
+            elif needs_int_promotion:
+                iter_name = self._next_tmp_name("__raw")
             self._emit_line("for " + iter_name + " in " + iter_expr)
             self.indent += 1
+            if needs_int_promotion and not tuple_target:
+                self._emit_line(target_name + " = Int(" + iter_name + ")")
+
             if tuple_target and isinstance(target_plan, dict):
                 direct_names_any = target_plan.get("direct_unpack_names")
                 direct_names = direct_names_any if isinstance(direct_names_any, list) else []
