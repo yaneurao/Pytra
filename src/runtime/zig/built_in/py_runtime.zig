@@ -325,7 +325,7 @@ pub fn file_open(path: []const u8) PyObject {
     const alloc = std.heap.page_allocator;
     const p = alloc.create(std.fs.File) catch @panic("alloc failed");
     p.* = std.fs.cwd().createFile(path, .{}) catch @panic("file open failed");
-    return @intFromPtr(p);
+    return @as(PyObject, @intCast(@intFromPtr(p)));
 }
 
 pub fn file_write(handle: PyObject, data: anytype) void {
@@ -333,9 +333,20 @@ pub fn file_write(handle: PyObject, data: anytype) void {
     const T = @TypeOf(data);
     const info = @typeInfo(T);
     if (info == .Struct) {
-        // ArrayList(u8) — write .items slice
         if (@hasField(T, "items")) {
-            p.writeAll(data.items) catch {};
+            const items = data.items;
+            const ItemT = @TypeOf(items[0]);
+            if (ItemT == u8) {
+                p.writeAll(items) catch {};
+            } else {
+                // ArrayList(i64) etc → convert each element to u8
+                const alloc = std.heap.page_allocator;
+                const buf = alloc.alloc(u8, items.len) catch return;
+                for (items, 0..) |v, i| {
+                    buf[i] = @intCast(v);
+                }
+                p.writeAll(buf) catch {};
+            }
         }
     } else if (info == .Pointer) {
         p.writeAll(data) catch {};

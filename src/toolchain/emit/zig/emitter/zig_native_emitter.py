@@ -351,15 +351,24 @@ class ZigNativeEmitter:
                             mutated.update(self._scan_mutated_vars(h.get("body")))
                 mutated.update(self._scan_mutated_vars(stmt.get("finalbody")))
         # AnnAssign で宣言された変数名を集め、Assign で再代入されるものを mutated に追加
+        # トップレベルで宣言された変数を集め、ネスト内での再代入を検出
         declared: set[str] = set()
         for stmt in body:
             kind = stmt.get("kind")
-            if kind == "AnnAssign":
+            if kind in {"AnnAssign", "Assign"}:
                 target = stmt.get("target")
                 if isinstance(target, dict) and target.get("kind") == "Name":
                     declared.add(_safe_ident(target.get("id"), ""))
-        # 宣言済み変数への再代入をネスト含めて検出
-        self._scan_reassign_to_declared(body, declared, mutated)
+        # ネスト（ForCore/While/If）内での再代入のみをスキャン
+        for stmt in body:
+            kind = stmt.get("kind")
+            if kind == "ForCore":
+                self._scan_reassign_to_declared(stmt.get("body"), declared, mutated)
+            elif kind == "While":
+                self._scan_reassign_to_declared(stmt.get("body"), declared, mutated)
+            elif kind == "If":
+                self._scan_reassign_to_declared(stmt.get("body"), declared, mutated)
+                self._scan_reassign_to_declared(stmt.get("orelse"), declared, mutated)
         return mutated
 
     def _scan_reassign_to_declared(self, body_any: Any, declared: set[str], mutated: set[str]) -> None:
@@ -1786,9 +1795,9 @@ class ZigNativeEmitter:
                     if len(args) > 0:
                         arg_t = self._get_expr_type(args[0])
                         if arg_t.startswith("list[") or arg_t in {"bytearray", "bytes"}:
-                            return arg_strs[0] + ".items.len"
+                            return "@as(i64, @intCast(" + arg_strs[0] + ".items.len))"
                     if len(arg_strs) > 0:
-                        return arg_strs[0] + ".len"
+                        return "@as(i64, @intCast(" + arg_strs[0] + ".len))"
                     return "0"
                 if fname == "int":
                     if len(arg_strs) > 0:
