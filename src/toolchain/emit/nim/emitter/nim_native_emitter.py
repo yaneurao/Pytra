@@ -1597,6 +1597,14 @@ class NimNativeEmitter:
                     return "PI"
                 if _runtime_symbol_name(expr) == "e":
                     return "E"
+            # Fallback: math.pi / math.e without semantic_tag
+            if isinstance(value_node, dict) and value_node.get("kind") == "Name":
+                owner_name = value_node.get("id")
+                if owner_name == "math":
+                    if attr == "pi":
+                        return "PI"
+                    if attr == "e":
+                        return "E"
             if resolved_source == "module_attr" and resolved_runtime != "" and "." not in resolved_runtime:
                 return _safe_ident(resolved_runtime)
             if semantic_tag.startswith("stdlib.") and runtime_source == "resolved_runtime_call":
@@ -1631,6 +1639,19 @@ class NimNativeEmitter:
             raise RuntimeError("nim native emitter: unresolved stdlib runtime call: " + semantic_tag)
         if runtime_source == "resolved_runtime_call" and _is_math_sqrt_call(expr) and len(args) == 1:
             return f"math.sqrt(float({args[0]}))"
+        # Fallback: math.sqrt / math.sin / math.cos etc. via Attribute call
+        if isinstance(func, dict) and func.get("kind") == "Attribute":
+            func_value = func.get("value")
+            func_attr = func.get("attr")
+            if isinstance(func_value, dict) and func_value.get("kind") == "Name" and func_value.get("id") == "math":
+                if isinstance(func_attr, str):
+                    if func_attr == "sqrt" and len(args) == 1:
+                        return f"math.sqrt(float({args[0]}))"
+                    if func_attr in {"sin", "cos", "tan", "exp", "log", "log10", "fabs", "floor", "ceil", "atan2"}:
+                        float_args = [f"float({a})" for a in args]
+                        return f"math.{func_attr}({', '.join(float_args)})"
+                    if func_attr == "pow" and len(args) == 2:
+                        return f"math.pow(float({args[0]}), float({args[1]}))"
         if isinstance(func, dict) and func.get("kind") == "Name":
             name = func.get("id")
             if name == "print":

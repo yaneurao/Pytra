@@ -86,6 +86,7 @@ _PHP_KEYWORDS = {
 _CLASS_NAMES: list[set[str]] = [set()]
 _RELATIVE_IMPORT_MODULE_ALIASES: list[dict[str, str]] = [{}]
 _RELATIVE_IMPORT_SYMBOL_ALIASES: list[dict[str, str]] = [{}]
+_IMPORTED_MODULE_NAMES: list[set[str]] = [set()]
 
 
 def _reject_unsupported_relative_import_forms(body_any: Any) -> None:
@@ -827,6 +828,14 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     rendered_args.append(_render_expr(args[i]))
                     i += 1
                 return module_alias + "_" + attr_name + "(" + ", ".join(rendered_args) + ")"
+            # Linked sub-module method call → direct function call
+            if owner_ident in _IMPORTED_MODULE_NAMES[0]:
+                rendered_args2: list[str] = []
+                i2 = 0
+                while i2 < len(args):
+                    rendered_args2.append(_render_expr(args[i2]))
+                    i2 += 1
+                return attr_name + "(" + ", ".join(rendered_args2) + ")"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Call" and _call_name(owner_any) == "super":
             rendered_super_args: list[str] = []
             i = 0
@@ -951,6 +960,10 @@ def _render_expr(expr: Any) -> str:
             if module_alias != "":
                 attr = _safe_ident(ed.get("attr"), "field")
                 return module_alias + "_" + attr
+            # Linked sub-module attribute → direct function call
+            if owner_ident in _IMPORTED_MODULE_NAMES[0]:
+                attr = _safe_ident(ed.get("attr"), "field")
+                return attr
         attr = _safe_ident(ed.get("attr"), "field")
         semantic_tag_any = ed.get("semantic_tag")
         semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
@@ -1616,13 +1629,62 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
     main_guard_any = ed.get("main_guard_body")
     main_guard = main_guard_any if isinstance(main_guard_any, list) else []
 
+    # Calculate relative path prefix for sub-modules
+    meta_any = ed.get("meta")
+    meta = meta_any if isinstance(meta_any, dict) else {}
+    module_id_any = meta.get("module_id")
+    module_id = module_id_any if isinstance(module_id_any, str) else ""
+    # Module depth: number of dots in module_id (e.g. "png.east" → depth 1)
+    module_depth = module_id.count(".") if module_id != "" else 0
+    parent_prefix = "../" * module_depth if module_depth > 0 else ""
+
     lines: list[str] = [
         "<?php",
         "declare(strict_types=1);",
         "",
-        "require_once __DIR__ . '/pytra/py_runtime.php';",
-        "",
+        "require_once __DIR__ . '/" + parent_prefix + "pytra/py_runtime.php';",
     ]
+
+    # Emit require_once for linked sub-modules
+    meta_any = ed.get("meta")
+    meta = meta_any if isinstance(meta_any, dict) else {}
+    import_bindings_any = meta.get("import_bindings")
+    import_bindings = import_bindings_any if isinstance(import_bindings_any, list) else []
+    required_modules: set[str] = set()
+    ib_i = 0
+    while ib_i < len(import_bindings):
+        binding = import_bindings[ib_i]
+        ib_i += 1
+        if not isinstance(binding, dict):
+            continue
+        module_id_any = binding.get("module_id")
+        if not isinstance(module_id_any, str):
+            continue
+        module_id: str = module_id_any
+        # Skip pytra.std.* and pytra.built_in.* (provided by runtime)
+        if module_id.startswith("pytra.std.") or module_id.startswith("pytra.built_in."):
+            continue
+        # pytra.utils → sub-module from binding export_name
+        binding_kind_any = binding.get("binding_kind")
+        binding_kind = binding_kind_any if isinstance(binding_kind_any, str) else ""
+        export_name_any = binding.get("export_name")
+        export_name = export_name_any if isinstance(export_name_any, str) else ""
+        if binding_kind == "symbol" and export_name != "" and module_id.endswith("utils"):
+            # e.g. module_id=pytra.utils, export_name=png → png/east.php
+            require_path = export_name + "/east.php"
+        else:
+            # General: module_id dots → path e.g. io_ops.east → io_ops/east.php
+            parts = module_id.split(".")
+            require_path = "/".join(parts) + ".php"
+            # Linker output uses module_id as path basis (e.g. "time.east" → "time/east.php")
+            # But simple module_ids like "time" get ".east" appended by linker
+            # Try the east pattern first
+            if len(parts) >= 1:
+                require_path = "/".join(parts[:-1] + [parts[-1]]) + ".php" if len(parts) == 1 else "/".join(parts) + ".php"
+        if require_path not in required_modules:
+            required_modules.add(require_path)
+            lines.append("require_once __DIR__ . '/" + require_path + "';")
+    lines.append("")
 
     module_comments = _module_leading_comment_lines(east_doc, "// ")
     if len(module_comments) > 0:
@@ -1632,6 +1694,18 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
     _CLASS_NAMES[0] = set()
     _RELATIVE_IMPORT_MODULE_ALIASES[0] = _collect_relative_import_module_aliases(east_doc)
     _RELATIVE_IMPORT_SYMBOL_ALIASES[0] = _collect_relative_import_symbol_aliases(east_doc)
+    # Collect imported module names from import_bindings for Attribute resolution
+    imported_mods: set[str] = set()
+    ib_list = import_bindings if isinstance(import_bindings, list) else []
+    for _ib_item in ib_list:
+        if isinstance(_ib_item, dict):
+            _ib_kind = _ib_item.get("binding_kind")
+            _ib_local = _ib_item.get("local_name")
+            _ib_mod = _ib_item.get("module_id")
+            if isinstance(_ib_kind, str) and isinstance(_ib_local, str) and isinstance(_ib_mod, str):
+                if _ib_kind == "symbol" and not _ib_mod.startswith("pytra.std.") and not _ib_mod.startswith("pytra.built_in."):
+                    imported_mods.add(_ib_local)
+    _IMPORTED_MODULE_NAMES[0] = imported_mods
     functions: list[dict[str, Any]] = []
     classes: list[dict[str, Any]] = []
     i = 0
@@ -1679,27 +1753,29 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
             class_names.add(_safe_ident(name_any, "PytraClass"))
         i += 1
 
-    if "__pytra_main" in fn_names and "main" not in fn_names:
-        lines.append("function main(): void {")
-        lines.append("    __pytra_main();")
+    # Only emit entry point wrapper when there is a main guard body
+    if len(main_guard) > 0:
+        if "__pytra_main" in fn_names and "main" not in fn_names:
+            lines.append("function main(): void {")
+            lines.append("    __pytra_main();")
+            lines.append("}")
+            lines.append("")
+            fn_names.add("main")
+
+        entry_name = "__pytra_main"
+        if entry_name in fn_names or entry_name in class_names:
+            entry_name = "__pytra_entry_main"
+        while entry_name in fn_names or entry_name in class_names:
+            entry_name = entry_name + "_"
+
+        lines.append("function " + entry_name + "(): void {")
+        ctx: dict[str, Any] = {}
+        i = 0
+        while i < len(main_guard):
+            lines.extend(_emit_stmt(main_guard[i], indent="    ", ctx=ctx))
+            i += 1
         lines.append("}")
         lines.append("")
-        fn_names.add("main")
-
-    entry_name = "__pytra_main"
-    if entry_name in fn_names or entry_name in class_names:
-        entry_name = "__pytra_entry_main"
-    while entry_name in fn_names or entry_name in class_names:
-        entry_name = entry_name + "_"
-
-    lines.append("function " + entry_name + "(): void {")
-    ctx: dict[str, Any] = {}
-    i = 0
-    while i < len(main_guard):
-        lines.extend(_emit_stmt(main_guard[i], indent="    ", ctx=ctx))
-        i += 1
-    lines.append("}")
-    lines.append("")
-    lines.append(entry_name + "();")
+        lines.append(entry_name + "();")
     lines.append("")
     return "\n".join(lines)

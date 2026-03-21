@@ -234,7 +234,7 @@ def cmd_build(argv: list[str]) -> int:
             "ts": ["npx", "-y", "tsx"],
             "ruby": ["ruby"],
             "lua": ["lua"],
-            "php": ["php"],
+            "php": ["php", "-d", "memory_limit=1G"],
             "scala": ["scala", "run"],
             # nim is handled above with explicit compile + run
             "julia": ["julia"],
