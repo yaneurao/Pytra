@@ -349,10 +349,18 @@ class ZigNativeEmitter:
                 target = stmt.get("target")
                 if isinstance(target, dict) and target.get("kind") == "Name":
                     declared.add(_safe_ident(target.get("id"), ""))
-        # ネスト（ForCore/While/If）内での再代入のみをスキャン
+        # 同一スコープ内の Assign 重複（2回目は再代入）+ ネスト内の再代入を検出
+        assign_seen: set[str] = set()
         for stmt in body:
             kind = stmt.get("kind")
-            if kind == "ForCore":
+            if kind in {"Assign", "AnnAssign"}:
+                target = stmt.get("target")
+                if isinstance(target, dict) and target.get("kind") == "Name":
+                    n = _safe_ident(target.get("id"), "")
+                    if n in assign_seen:
+                        mutated.add(n)
+                    assign_seen.add(n)
+            elif kind == "ForCore":
                 self._scan_reassign_to_declared(stmt.get("body"), declared, mutated)
             elif kind == "While":
                 self._scan_reassign_to_declared(stmt.get("body"), declared, mutated)
@@ -1923,6 +1931,9 @@ class ZigNativeEmitter:
                         return "pytra.list_append(" + obj + ", " + elem_type + ", @intCast(" + arg_strs[0] + "))"
                 if attr == "join":
                     if len(arg_strs) > 0:
+                        arg_type = self._lookup_expr_type(args[0]) if len(args) > 0 else ""
+                        if arg_type.startswith("list["):
+                            return "pytra.str_join_sep(" + obj + ", pytra.list_items(" + arg_strs[0] + ", []const u8))"
                         return "pytra.str_join_sep(" + obj + ", " + arg_strs[0] + ")"
                     return "pytra.str_join_sep(" + obj + ", &.{})"
                 if attr == "write":
