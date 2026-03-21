@@ -294,6 +294,11 @@ class ZigNativeEmitter:
         if len(self._local_var_stack) > 0:
             self._local_var_stack.pop()
 
+    def _is_top_level_decl(self, stmt: dict[str, Any]) -> bool:
+        """トップレベル宣言（関数/クラス/import/型エイリアス）かどうか判定する。"""
+        kind = stmt.get("kind")
+        return kind in {"FunctionDef", "ClassDef", "Import", "ImportFrom", "TypeAlias"}
+
     def transpile(self) -> str:
         module_comments = self._module_leading_comment_lines(prefix="// ")
         if len(module_comments) > 0:
@@ -305,12 +310,24 @@ class ZigNativeEmitter:
         body = self._dict_list(self.east_doc.get("body"))
         main_guard = self._dict_list(self.east_doc.get("main_guard_body"))
         self._scan_module_symbols(body)
+        # トップレベル宣言（fn, struct）を先に emit
         for stmt in body:
-            self._emit_stmt(stmt)
-        if len(main_guard) > 0:
-            self.lines.append("")
-            for stmt in main_guard:
+            if self._is_top_level_decl(stmt):
                 self._emit_stmt(stmt)
+        # トップレベルステートメント + main_guard_body を pub fn main() に入れる
+        top_stmts: list[dict[str, Any]] = []
+        for stmt in body:
+            if not self._is_top_level_decl(stmt):
+                top_stmts.append(stmt)
+        for stmt in main_guard:
+            top_stmts.append(stmt)
+        if len(top_stmts) > 0:
+            self.lines.append("pub fn main() void {")
+            self.indent += 1
+            for stmt in top_stmts:
+                self._emit_stmt(stmt)
+            self.indent -= 1
+            self.lines.append("}")
         return "\n".join(self.lines).rstrip() + "\n"
 
     def _dict_list(self, value: Any) -> list[dict[str, Any]]:
@@ -491,7 +508,10 @@ class ZigNativeEmitter:
                     self._emit_line("continue;")
                     return
             expr_text = self._render_expr(value_any)
-            self._emit_line("_ = " + expr_text + ";")
+            if isinstance(value_any, dict) and value_any.get("kind") == "Call":
+                self._emit_line(expr_text + ";")
+            else:
+                self._emit_line("_ = " + expr_text + ";")
             return
         if kind == "Raise":
             exc_any = stmt.get("exc")
@@ -992,7 +1012,24 @@ class ZigNativeEmitter:
             if fkind == "Name":
                 fname = _safe_ident(func_any.get("id"), "fn_")
                 if fname == "print":
-                    return "pytra.print(" + ", ".join(arg_strs) + ")"
+                    if len(args) == 1 and isinstance(args[0], dict) and args[0].get("kind") == "Call":
+                        inner_func = args[0].get("func")
+                        if isinstance(inner_func, dict) and inner_func.get("kind") == "Name":
+                            inner_fname = str(inner_func.get("id"))
+                            if inner_fname == "py_assert_stdout":
+                                inner_args = args[0].get("args")
+                                inner_args = inner_args if isinstance(inner_args, list) else []
+                                if len(inner_args) >= 2:
+                                    return self._render_expr(inner_args[1]) + "()"
+                    if len(arg_strs) == 0:
+                        return "pytra.print(\"\")"
+                    if len(arg_strs) == 1:
+                        return "pytra.print(" + arg_strs[0] + ")"
+                    if len(arg_strs) == 2:
+                        return "pytra.print2(" + arg_strs[0] + ", " + arg_strs[1] + ")"
+                    if len(arg_strs) == 3:
+                        return "pytra.print3(" + arg_strs[0] + ", " + arg_strs[1] + ", " + arg_strs[2] + ")"
+                    return "pytra.print(" + arg_strs[0] + ")"
                 if fname == "len":
                     if len(arg_strs) > 0:
                         return arg_strs[0] + ".len"
@@ -1021,6 +1058,11 @@ class ZigNativeEmitter:
                         return "@max(" + arg_strs[0] + ", " + arg_strs[1] + ")"
                 if fname == "isinstance":
                     return "pytra.isinstance_check(" + ", ".join(arg_strs) + ")"
+                if fname == "py_assert_stdout":
+                    if len(args) >= 2:
+                        fn_expr = self._render_expr(args[1])
+                        return fn_expr + "()"
+                    return "{}"
                 if fname in self.class_names:
                     return cls_name_init(fname, arg_strs)
                 return fname + "(" + ", ".join(arg_strs) + ")"

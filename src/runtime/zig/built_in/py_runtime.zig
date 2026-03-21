@@ -3,13 +3,30 @@
 
 const std = @import("std");
 
-/// Print values separated by spaces, Python-style.
-pub fn print(args: anytype) void {
+/// Print a single value followed by newline, Python-style.
+pub fn print(value: anytype) void {
     const writer = std.io.getStdOut().writer();
-    inline for (args, 0..) |arg, i| {
-        if (i > 0) writer.writeAll(" ") catch {};
-        printValue(writer, arg);
-    }
+    printValue(writer, value);
+    writer.writeAll("\n") catch {};
+}
+
+/// Print two values separated by a space.
+pub fn print2(a: anytype, b: anytype) void {
+    const writer = std.io.getStdOut().writer();
+    printValue(writer, a);
+    writer.writeAll(" ") catch {};
+    printValue(writer, b);
+    writer.writeAll("\n") catch {};
+}
+
+/// Print three values separated by spaces.
+pub fn print3(a: anytype, b: anytype, c: anytype) void {
+    const writer = std.io.getStdOut().writer();
+    printValue(writer, a);
+    writer.writeAll(" ") catch {};
+    printValue(writer, b);
+    writer.writeAll(" ") catch {};
+    printValue(writer, c);
     writer.writeAll("\n") catch {};
 }
 
@@ -20,7 +37,7 @@ fn printValue(writer: anytype, value: anytype) void {
             writer.print("{d}", .{value}) catch {};
         },
         .Float, .ComptimeFloat => {
-            writer.print("{d}", .{value}) catch {};
+            printFloat(writer, value);
         },
         .Bool => {
             writer.writeAll(if (value) "True" else "False") catch {};
@@ -42,9 +59,24 @@ fn printValue(writer: anytype, value: anytype) void {
         .Null => {
             writer.writeAll("None") catch {};
         },
+        .Void => {
+            writer.writeAll("None") catch {};
+        },
         else => {
             writer.print("{any}", .{value}) catch {};
         },
+    }
+}
+
+fn printFloat(writer: anytype, value: anytype) void {
+    // Python-style float printing: no trailing zeros, but at least one decimal
+    const v: f64 = @floatCast(value);
+    // Check if it's an integer value
+    const truncated = @trunc(v);
+    if (v == truncated and !std.math.isNan(v) and !std.math.isInf(v)) {
+        writer.print("{d}.0", .{@as(i64, @intFromFloat(truncated))}) catch {};
+    } else {
+        writer.print("{d}", .{v}) catch {};
     }
 }
 
@@ -67,20 +99,20 @@ pub fn truthy(value: anytype) bool {
     }
 }
 
-/// Convert a value to string representation.
+/// Convert a value to string representation (stub).
 pub fn to_str(value: anytype) []const u8 {
     _ = value;
     return "<value>";
 }
 
-/// Concatenate two strings.
+/// Concatenate two strings (stub).
 pub fn str_concat(a: []const u8, b: []const u8) []const u8 {
     _ = a;
     _ = b;
     return "<concat>";
 }
 
-/// Join multiple strings.
+/// Join multiple strings (stub).
 pub fn str_join(parts: anytype) []const u8 {
     _ = parts;
     return "<join>";
@@ -96,4 +128,23 @@ pub fn isinstance_check(obj: anytype, typ: anytype) bool {
     _ = obj;
     _ = typ;
     return false;
+}
+
+/// Contains check (stub for `in` operator).
+pub fn contains(haystack: anytype, needle: anytype) bool {
+    _ = haystack;
+    _ = needle;
+    return false;
+}
+
+/// Empty list (stub for comprehensions).
+pub fn empty_list() void {
+    return;
+}
+
+/// Slice (stub).
+pub fn slice(lower: anytype, upper: anytype) void {
+    _ = lower;
+    _ = upper;
+    return;
 }
