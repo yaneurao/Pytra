@@ -27,6 +27,9 @@ __pycache__/
 
 /AGENTS.md
 
+# Deprecated generated runtime directory (must not be used)
+src/runtime/cpp/generated/
+
 # Scala CLI transient workspace
 sample/scala/.bsp/
 sample/scala/.scala-build/
