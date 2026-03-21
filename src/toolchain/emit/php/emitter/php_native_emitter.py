@@ -1750,10 +1750,14 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
             continue
         # pytra.std → sub-module from export_name (e.g. math → math/east.php)
         # pytra.std.time → time/east.php
+        # Skip decorator-only imports (abi, extern, template)
+        _PYTRA_STD_DECORATORS = {"abi", "extern", "template"}
         if module_id == "pytra.std":
             binding_kind_any2 = binding.get("binding_kind")
             export_name_any2 = binding.get("export_name")
             if isinstance(binding_kind_any2, str) and binding_kind_any2 == "symbol" and isinstance(export_name_any2, str) and export_name_any2 != "":
+                if export_name_any2 in _PYTRA_STD_DECORATORS:
+                    continue
                 require_path = export_name_any2 + "/east.php"
                 if require_path not in required_modules:
                     required_modules.add(require_path)

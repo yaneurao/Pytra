@@ -426,12 +426,30 @@ class NimNativeEmitter:
             if not isinstance(module_id_any, str):
                 continue
             module_id: str = module_id_any
-            # Skip pytra standard library modules (provided by runtime)
-            if module_id.startswith("pytra.std") or module_id.startswith("pytra.built_in"):
+            # Skip pytra.built_in (provided by py_runtime.nim)
+            if module_id.startswith("pytra.built_in"):
                 continue
             binding_kind = binding.get("binding_kind", "")
             export_name = binding.get("export_name", "")
             local_name = binding.get("local_name", "")
+            # pytra.std → sub-module from export_name (skip decorators)
+            _PYTRA_STD_DECORATORS = {"abi", "extern", "template"}
+            if module_id == "pytra.std":
+                if binding_kind == "symbol" and isinstance(export_name, str) and export_name not in _PYTRA_STD_DECORATORS and export_name != "":
+                    import_path = export_name + "/east"
+                    if import_path not in imported_modules:
+                        imported_modules.add(import_path)
+                        self.lines.append(f'import {import_path}')
+                    if isinstance(local_name, str) and local_name != "":
+                        self.imported_modules.add(local_name)
+                continue
+            if module_id.startswith("pytra.std."):
+                mod_tail = module_id[len("pytra.std."):]
+                import_path = mod_tail + "/east"
+                if import_path not in imported_modules:
+                    imported_modules.add(import_path)
+                    self.lines.append(f'import {import_path}')
+                continue
             if module_id.startswith("pytra.utils"):
                 # e.g. module_id=pytra.utils.gif, export_name=save_gif → gif/east
                 # or module_id=pytra.utils, export_name=png → png/east
