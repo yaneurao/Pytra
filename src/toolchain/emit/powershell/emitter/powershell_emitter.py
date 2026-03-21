@@ -358,13 +358,13 @@ def _render_expr(expr_any: Any) -> str:
         return "$true"
 
     if kind == "ObjLen":
-        return "__pytra_len " + _render_expr(expr.get("value"))
+        return "(__pytra_len " + _render_expr(expr.get("value")) + ")"
 
     if kind == "ObjStr":
-        return "__pytra_str " + _render_expr(expr.get("value"))
+        return "(__pytra_str " + _render_expr(expr.get("value")) + ")"
 
     if kind == "ObjBool":
-        return "__pytra_bool " + _render_expr(expr.get("value"))
+        return "(__pytra_bool " + _render_expr(expr.get("value")) + ")"
 
     if kind == "Box":
         return _render_expr(expr.get("value"))
