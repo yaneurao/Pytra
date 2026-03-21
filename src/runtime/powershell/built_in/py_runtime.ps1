@@ -337,6 +337,35 @@ function __pytra_list_remove {
     return $list
 }
 
+function __pytra_isinstance {
+    param([object]$obj, [string]$type_name)
+    if ($obj -eq $null) { return $false }
+    # Primitive type checks
+    if ($type_name -eq "int" -or $type_name -eq "int64") { return ($obj -is [int] -or $obj -is [long]) }
+    if ($type_name -eq "float" -or $type_name -eq "float64") { return ($obj -is [double] -or $obj -is [float]) }
+    if ($type_name -eq "str") { return ($obj -is [string]) }
+    if ($type_name -eq "bool") { return ($obj -is [bool]) }
+    if ($type_name -eq "list") { return ($obj -is [array] -or $obj -is [System.Collections.IList]) }
+    if ($type_name -eq "dict") { return ($obj -is [hashtable] -or $obj -is [System.Collections.IDictionary]) }
+    # Hashtable-based class: walk __type__ and __bases__
+    if ($obj -is [hashtable] -and $obj.ContainsKey("__type__")) {
+        $current = $obj["__type__"]
+        # Check if constructor function exists and has the right name
+        while ($current -ne $null -and $current -ne "") {
+            if ($current -eq $type_name) { return $true }
+            # Look up base class via ClassName constructor's __bases__ convention
+            # The emitter stores base info in a global $__pytra_bases hashtable
+            $base = $null
+            if (Test-Path variable:__pytra_bases) {
+                $base = $__pytra_bases[$current]
+            }
+            if ($base -eq $null -or $base -eq "" -or $base -eq $current) { break }
+            $current = $base
+        }
+    }
+    return $false
+}
+
 function PytraNotImplemented {
     param([string]$Feature = "")
     if ($Feature -ne "") {

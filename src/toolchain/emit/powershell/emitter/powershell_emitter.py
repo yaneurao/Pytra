@@ -474,6 +474,13 @@ def _render_expr(expr_any: Any) -> str:
         return '"' + "".join(segments) + '"'
 
     if kind == "IsInstance":
+        value_node = expr.get("value")
+        expected_type_node = expr.get("expected_type_id")
+        if isinstance(expected_type_node, dict):
+            type_name = _get_str(expected_type_node, "id")
+            if type_name != "":
+                obj_expr = _render_expr(value_node)
+                return "(__pytra_isinstance " + obj_expr + ' "' + type_name + '")'
         return "$true"
 
     if kind == "ObjLen":
@@ -1490,6 +1497,12 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
     # Detect implicit format_value dependency (f-string format_spec)
     if _has_format_spec_in_doc(east_doc):
         lines.append('. (Join-Path $PSScriptRoot "format_value/east.ps1")')
+        lines.append("")
+
+    # Emit __pytra_bases table for isinstance inheritance chain lookup
+    if len(class_bases) > 0:
+        parts = ['"' + child + '" = "' + base + '"' for child, base in class_bases.items()]
+        lines.append("$__pytra_bases = @{" + "; ".join(parts) + "}")
         lines.append("")
 
     # Emit module-level leading comments
