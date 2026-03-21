@@ -55,7 +55,7 @@ class Ir2langCliTest(unittest.TestCase):
                 root,
                 {"kind": "Module", "east_stage": 3, "schema_version": 1, "body": [], "meta": {}},
             )
-            with patch.object(ir2lang_mod.sys, "argv", ["ir2lang.py", str(src_json)]):
+            with patch.object(ir2lang_mod.sys, "argv", ["toolchain/emit/all.py", str(src_json)]):
                 with self.assertRaises(SystemExit) as cm:
                     _ = ir2lang_mod.main()
         self.assertEqual(cm.exception.code, 2)
@@ -75,7 +75,7 @@ class Ir2langCliTest(unittest.TestCase):
                 with patch.object(
                     ir2lang_mod.sys,
                     "argv",
-                    ["ir2lang.py", str(src_json), "--target", "rs"],
+                    ["toolchain/emit/all.py", str(src_json), "--target", "rs"],
                 ):
                     with self.assertRaises(SystemExit) as cm:
                         _ = ir2lang_mod.main()
@@ -130,7 +130,7 @@ class Ir2langCliTest(unittest.TestCase):
                 with patch.object(
                     ir2lang_mod.sys,
                     "argv",
-                    ["ir2lang.py", str(src_json), "--target", "rs"],
+                    ["toolchain/emit/all.py", str(src_json), "--target", "rs"],
                 ):
                     with self.assertRaises(RuntimeError) as cm:
                         _ = ir2lang_mod.main()
@@ -171,7 +171,7 @@ class Ir2langCliTest(unittest.TestCase):
                 with patch.object(
                     ir2lang_mod.sys,
                     "argv",
-                    ["ir2lang.py", str(src_json), "--target", "rs"],
+                    ["toolchain/emit/all.py", str(src_json), "--target", "rs"],
                 ):
                     with self.assertRaises(RuntimeError) as cm:
                         _ = ir2lang_mod.main()
@@ -218,7 +218,7 @@ class Ir2langCliTest(unittest.TestCase):
                 with patch.object(
                     ir2lang_mod.sys,
                     "argv",
-                    ["ir2lang.py", str(src_json), "--target", "rs"],
+                    ["toolchain/emit/all.py", str(src_json), "--target", "rs"],
                 ):
                     with self.assertRaises(RuntimeError) as cm:
                         _ = ir2lang_mod.main()
@@ -306,7 +306,7 @@ class Ir2langCliTest(unittest.TestCase):
                 with patch.object(
                     ir2lang_mod.sys,
                     "argv",
-                    ["ir2lang.py", str(link_output), "--target", "rs"],
+                    ["toolchain/emit/all.py", str(link_output), "--target", "rs"],
                 ):
                     with self.assertRaises(RuntimeError) as cm:
                         _ = ir2lang_mod.main()
@@ -343,7 +343,7 @@ class Ir2langCliTest(unittest.TestCase):
                 lower_calls.append({"spec": spec, "east": east, "opts": opts})
                 return {"kind": "LoweredModule"}
 
-            with patch.object(ir2lang_mod.sys, "argv", ["ir2lang.py", str(src_json), "--target", "rs", "-o", str(out_rs)]):
+            with patch.object(ir2lang_mod.sys, "argv", ["toolchain/emit/all.py", str(src_json), "--target", "rs", "-o", str(out_rs)]):
                 with patch.object(ir2lang_mod, "get_backend_spec", return_value=fake_spec):
                     with patch.object(ir2lang_mod, "resolve_layer_options", side_effect=lambda *_args, **_kw: {}):
                         with patch.object(ir2lang_mod, "lower_ir", side_effect=_lower):
@@ -464,7 +464,7 @@ class Ir2langCliTest(unittest.TestCase):
                 runtime_calls.append(output_path)
 
             argv = [
-                "ir2lang.py",
+                "toolchain/emit/all.py",
                 str(src_json),
                 "--target",
                 "rs",
@@ -526,7 +526,7 @@ class Ir2langCliTest(unittest.TestCase):
                 ir2lang_mod.sys,
                 "argv",
                 [
-                    "ir2lang.py",
+                    "toolchain/emit/all.py",
                     str(src_json),
                     "--target",
                     "rs",
@@ -637,7 +637,7 @@ class Ir2langCliTest(unittest.TestCase):
             with patch.object(
                 ir2lang_mod.sys,
                 "argv",
-                ["ir2lang.py", str(link_output), "--target", "rs", "-o", str(out_rs)],
+                ["toolchain/emit/all.py", str(link_output), "--target", "rs", "-o", str(out_rs)],
             ):
                 with patch.object(ir2lang_mod, "get_backend_spec", return_value=fake_spec):
                     with patch.object(ir2lang_mod, "resolve_layer_options", side_effect=lambda *_args, **_kw: {}):
@@ -734,7 +734,7 @@ class Ir2langCliTest(unittest.TestCase):
             with patch.object(
                 ir2lang_mod.sys,
                 "argv",
-                ["ir2lang.py", str(link_output), "--target", "cpp", "--output-dir", str(out_dir)],
+                ["toolchain/emit/all.py", str(link_output), "--target", "cpp", "--output-dir", str(out_dir)],
             ):
                 with patch.object(ir2lang_mod, "get_backend_spec", return_value=fake_spec):
                     with patch.object(ir2lang_mod, "resolve_layer_options", side_effect=lambda *_args, **_kw: {}):
@@ -834,7 +834,7 @@ class Ir2langCliTest(unittest.TestCase):
             with patch.object(
                 ir2lang_mod.sys,
                 "argv",
-                ["ir2lang.py", str(link_output), "--target", "cpp", "--output-dir", str(out_dir)],
+                ["toolchain/emit/all.py", str(link_output), "--target", "cpp", "--output-dir", str(out_dir)],
             ):
                 with patch.object(ir2lang_mod, "get_backend_spec", return_value=fake_spec):
                     with patch.object(ir2lang_mod, "resolve_layer_options", side_effect=lambda *_args, **_kw: {}):
@@ -881,7 +881,7 @@ class Ir2langCliTest(unittest.TestCase):
                 output_root.write_text("// main\n", encoding="utf-8")
                 return {"primary_output": str(output_root)}
 
-            with patch.object(ir2lang_mod.sys, "argv", ["ir2lang.py", str(src_json), "--target", "rs", "-o", str(out_rs)]):
+            with patch.object(ir2lang_mod.sys, "argv", ["toolchain/emit/all.py", str(src_json), "--target", "rs", "-o", str(out_rs)]):
                 with patch.object(ir2lang_mod, "get_backend_spec", return_value=fake_spec):
                     with patch.object(ir2lang_mod, "resolve_layer_options", side_effect=lambda *_args, **_kw: {}):
                         with patch.object(ir2lang_mod, "lower_ir", return_value={"kind": "LoweredModule"}):
@@ -945,7 +945,7 @@ class Ir2langCliTest(unittest.TestCase):
                 "option_schema": {"lower": {}, "optimizer": {}, "emitter": {}},
             }
 
-            with patch.object(ir2lang_mod.sys, "argv", ["ir2lang.py", str(src_json), "--target", "rs", "-o", str(out_rs)]):
+            with patch.object(ir2lang_mod.sys, "argv", ["toolchain/emit/all.py", str(src_json), "--target", "rs", "-o", str(out_rs)]):
                 with patch.object(ir2lang_mod, "get_backend_spec", return_value=fake_spec):
                     with patch.object(ir2lang_mod, "resolve_layer_options", side_effect=lambda *_args, **_kw: {}):
                         with patch.object(ir2lang_mod, "lower_ir", return_value={"kind": "LoweredModule"}):

@@ -2,7 +2,6 @@
 
 `test/fixtures` 由来の EAST3(JSON) fixture です。
 
-- `tools/check_ir2lang_smoke.py` の回帰入力として利用します。
 - `.py -> EAST3` の frontend 回帰とは分離し、backend-only の確認に使います。
 - 更新例:
   - `python3 src/py2x.py test/fixtures/core/add.py --target cpp -o out/ir_seed_add.cpp --dump-east3-after-opt test/ir/core_add.east3.json`

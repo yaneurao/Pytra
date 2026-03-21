@@ -719,7 +719,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         py2x_src = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
         selfhost_entry_src = (ROOT / "src" / "py2x-selfhost.py").read_text(encoding="utf-8")
-        ir2lang_src = (ROOT / "src" / "ir2lang.py").read_text(encoding="utf-8")
+        ir2lang_src = (ROOT / "src" / "toolchain/emit/all.py").read_text(encoding="utf-8")
         sys_std_src = (ROOT / "src" / "pytra" / "std" / "sys.py").read_text(encoding="utf-8")
         prepare_src = (ROOT / "tools" / "prepare_selfhost_source.py").read_text(encoding="utf-8")
         native_transpile = (
@@ -847,7 +847,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
 
     def test_typed_backend_specs_preserve_legacy_metadata(self) -> None:
         py2x_src = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
-        ir2lang_src = (ROOT / "src" / "ir2lang.py").read_text(encoding="utf-8")
+        ir2lang_src = (ROOT / "src" / "toolchain/emit/all.py").read_text(encoding="utf-8")
         host_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry.py").read_text(encoding="utf-8")
         static_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_static.py").read_text(encoding="utf-8")
         shared_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_shared.py").read_text(encoding="utf-8")
