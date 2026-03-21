@@ -30,4 +30,5 @@ pytra-cli の compile → link → emit パイプライン統一後、Go backend
 ## 決定ログ
 
 - 2026-03-21: parity check 実施、4/18 PASS で起票。`_go_type` / `_infer_go_type` の UnboundLocalError 2件を修正済み。
-- 2026-03-21: VarDecl 対応、`_tuple_element_types` の UnboundLocalError 修正、`_resolved_runtime_symbol` の dotted call 修正、png/gif module rewrite 追加。8/18 PASS に改善。残り 10 件は emitter 固有バグ（run_failed / transpile_failed）。
+- 2026-03-21: VarDecl 対応、`_tuple_element_types` の UnboundLocalError 修正、`_resolved_runtime_symbol` の dotted call 修正、png/gif module rewrite 追加。8/18 PASS に改善。
+- 2026-03-22: `build_import_alias_map` による stdlib 解決を実装。`math.sqrt→math.Sqrt`、`math.pi→math.Pi` を import alias map 経由で変換。Go stdlib `import "math"` の自動追加。`.east` runtime の `func main()` 除去。value の `resolved_type` fallback 追加。Go unused var `_ = name` 抑制。**13/18 PASS**。残り: 型推論不足(10,14,15,16)、パーサーバグ(18)。

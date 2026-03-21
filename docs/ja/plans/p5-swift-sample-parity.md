@@ -30,4 +30,5 @@ runtime コピー（`py_runtime.swift`）を `swift.py` に追加し、`pytra-cl
 ## 決定ログ
 
 - 2026-03-21: parity check 実施、1/18 PASS で起票。`image_runtime.swift` の重複関数問題を回避済み（コピー除外）。
-- 2026-03-21: VarDecl 対応、`_resolved_runtime_symbol` の dotted call 修正、png/gif module rewrite 追加。4/18 PASS に改善。残り 14 件は emitter 固有バグ。
+- 2026-03-21: VarDecl 対応、`_resolved_runtime_symbol` の dotted call 修正、png/gif module rewrite 追加。4/18 PASS に改善。
+- 2026-03-22: `build_import_alias_map` による stdlib 解決を実装。`@main struct Main` 除去。`_native` suffix 命名規約統一。**4/18 PASS**。残り: emitter 固有バグ多数。
