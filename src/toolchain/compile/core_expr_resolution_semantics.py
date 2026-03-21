@@ -201,7 +201,11 @@ class _ShExprResolutionSemanticsMixin:
         return False
 
     def _is_forbidden_dynamic_helper_type(self, t: str) -> bool:
-        """decode-first helper に直接渡してはいけない動的型か判定する。"""
+        """decode-first helper に直接渡してはいけない動的型か判定する。
+
+        "unknown" を含む。keys/items/values/sum/zip 等の dynamic helper は
+        decode-first 契約のため unknown 型も拒否する。
+        """
         if _SH_ALLOW_OBJECT_RECEIVER[0]:
             return False
         s = t.strip()
