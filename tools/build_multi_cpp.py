@@ -58,12 +58,16 @@ def main(argv: list[str]) -> int:
         gen_path = Path(gen_dir)
         if not gen_path.exists():
             return []
-        # Only include assertions.cpp — other generated sources are heavyweight and may have errors.
-        # The full generated source set will be linkable after Object<T> migration completes.
-        assertions_cpp = gen_path / "utils" / "assertions.cpp"
-        if assertions_cpp.exists():
-            return [str(assertions_cpp)]
-        return []
+        # Include generated sources needed for test compilation.
+        # NOTE: string_ops.cpp は string_ops_fwd.h の forward declare と衝突するため除外。
+        # type_id.cpp は enum/class の type_id 登録に必要。
+        # assertions.cpp は py_assert_eq 等のテストヘルパーに必要。
+        # NOTE: type_id.cpp は py_tid_is_subtype の循環参照問題があるため除外。
+        # enum/class の type_id 登録は Object<T> の TypeInfo テーブルで解決する。
+        needed = [
+            gen_path / "utils" / "assertions.cpp",
+        ]
+        return [str(f) for f in needed if f.exists()]
 
     manifest = _load_manifest(manifest_path)
     module_sources = _collect_sources(manifest)

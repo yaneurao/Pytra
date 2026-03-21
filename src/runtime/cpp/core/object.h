@@ -163,6 +163,8 @@ struct Object<void> {
     Object(const char* v);
     Object(float64 v);
     Object(bool v);
+    Object(const str& v);
+    Object(::std::size_t v);  // avoid ambiguity with int64/bool
 
     ~Object() { release(); }
 

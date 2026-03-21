@@ -134,4 +134,12 @@ inline Object<void>::Object(bool v) : cb(nullptr) {
     retain();
 }
 
+inline Object<void>::Object(const str& v) : cb(nullptr) {
+    auto* boxed = new PyBoxedValue<str>(v);
+    cb = new ControlBlock{0, PYTRA_TID_STR, boxed};
+    retain();
+}
+
+inline Object<void>::Object(::std::size_t v) : Object(static_cast<int64>(v)) {}
+
 #endif  // PYTRA_BUILT_IN_PY_TYPES_H
