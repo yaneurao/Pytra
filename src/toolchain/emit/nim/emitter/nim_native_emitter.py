@@ -331,6 +331,55 @@ def _is_math_constant(expr: dict[str, Any]) -> bool:
 def _is_math_sqrt_call(expr: dict[str, Any]) -> bool:
     return _matches_math_symbol(expr, "sqrt", "stdlib.fn.sqrt")
 
+
+def _arg_is_mutated_in_body(arg_name: str, body: list[Any]) -> bool:
+    """Check if a function argument is mutated (appended to, assigned via subscript, etc.)."""
+    for stmt in body:
+        if not isinstance(stmt, dict):
+            continue
+        if _arg_is_mutated_in_node(arg_name, stmt):
+            return True
+    return False
+
+
+def _arg_is_mutated_in_node(arg_name: str, node: dict[str, Any]) -> bool:
+    """Recursively check if arg_name is mutated in a statement/expression tree."""
+    kind = node.get("kind", "")
+    # Check for method calls like arg.append(...)
+    if kind == "Expr":
+        value = node.get("value")
+        if isinstance(value, dict) and value.get("kind") == "Call":
+            func = value.get("func")
+            if isinstance(func, dict) and func.get("kind") == "Attribute":
+                owner = func.get("value")
+                attr = func.get("attr", "")
+                if isinstance(owner, dict) and owner.get("kind") == "Name" and owner.get("id") == arg_name:
+                    if attr in {"append", "extend", "insert", "pop", "remove", "clear", "sort", "reverse"}:
+                        return True
+    # Check for subscript assignment like arg[i] = ...
+    if kind in {"Assign", "AnnAssign", "AugAssign"}:
+        target = node.get("target")
+        targets = node.get("targets")
+        if isinstance(targets, list):
+            for t in targets:
+                if isinstance(t, dict) and t.get("kind") == "Subscript":
+                    val = t.get("value")
+                    if isinstance(val, dict) and val.get("kind") == "Name" and val.get("id") == arg_name:
+                        return True
+        if isinstance(target, dict) and target.get("kind") == "Subscript":
+            val = target.get("value")
+            if isinstance(val, dict) and val.get("kind") == "Name" and val.get("id") == arg_name:
+                return True
+    # Recurse into sub-statements
+    for key in ("body", "orelse", "finalbody", "handlers"):
+        sub = node.get(key)
+        if isinstance(sub, list):
+            for s in sub:
+                if isinstance(s, dict) and _arg_is_mutated_in_node(arg_name, s):
+                    return True
+    return False
+
+
 class NimNativeEmitter:
     def __init__(self, east_doc: dict[str, Any]) -> None:
         reject_backend_general_union_type_exprs(east_doc, backend_name="Nim backend")
@@ -767,7 +816,14 @@ class NimNativeEmitter:
                 self.var_types[safe_a] = self.current_class
             else:
                 t = self._map_type(arg_types.get(a))
-                args.append(f"{safe_a}: {t}")
+                # Check if this argument is mutated in the function body
+                needs_var = False
+                if t.startswith("seq[") or t.startswith("Table["):
+                    needs_var = _arg_is_mutated_in_body(a, body)
+                if needs_var:
+                    args.append(f"{safe_a}: var {t}")
+                else:
+                    args.append(f"{safe_a}: {t}")
                 if t != "auto":
                     self.var_types[safe_a] = t
 
@@ -1217,7 +1273,11 @@ class NimNativeEmitter:
         target = self._render_expr(stmt.get("target"))
         op = _binop_symbol(stmt.get("op", "Add"))
         value = self._render_expr(stmt.get("value"))
-        self._emit_line(f"{target} {op}= {value}")
+        # Nim doesn't support compound assignment for keyword operators
+        if op in {"or", "and", "xor", "shl", "shr", "div", "mod"}:
+            self._emit_line(f"{target} = {target} {op} {value}")
+        else:
+            self._emit_line(f"{target} {op}= {value}")
 
     def _emit_if(self, stmt: dict[str, Any]) -> None:
         test = self._render_truthy_expr(stmt.get("test"))
@@ -1717,6 +1777,13 @@ class NimNativeEmitter:
                     return f"echo py_str({args[0]})"
                 joined = " & \" \" & ".join([f"py_str({a})" for a in args])
                 return f"echo {joined}"
+            if name == "open":
+                # Convert Python file mode string to Nim FileMode
+                if len(args) >= 2:
+                    mode_map = {'"wb"': "fmWrite", '"w"': "fmWrite", '"rb"': "fmRead", '"r"': "fmRead", '"a"': "fmAppend", '"ab"': "fmAppend"}
+                    nim_mode = mode_map.get(args[1].strip(), "fmRead")
+                    return f"open({args[0]}, {nim_mode})"
+                return f"open({args[0]})"
             if name == "len":
                 return f"{args[0]}.len"
             if name == "int":
