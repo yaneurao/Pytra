@@ -1106,7 +1106,8 @@ class ZigNativeEmitter:
         ret_type_any = stmt.get("return_type")
         ret_py = ret_type_any.strip() if isinstance(ret_type_any, str) else ""
         ret_type = self._zig_type(ret_py)
-        self._emit_line("fn " + name + "(" + ", ".join(arg_strs) + ") " + ret_type + " {")
+        fn_kw = "pub fn" if self.is_submodule else "fn"
+        self._emit_line(fn_kw + " " + name + "(" + ", ".join(arg_strs) + ") " + ret_type + " {")
         self.indent += 1
         self._push_function_context(stmt, arg_names, args)
         self._emit_block(stmt.get("body"))
@@ -1561,6 +1562,8 @@ class ZigNativeEmitter:
             attr = _safe_ident(ed.get("attr"), "attr")
             if isinstance(val_node, dict) and val_node.get("kind") == "Name":
                 owner = _safe_ident(val_node.get("id"), "")
+                if owner == "math" and attr in {"pi", "e"}:
+                    return "std.math." + attr
                 if owner in self._static_fields:
                     for sf_name, _, _ in self._static_fields[owner]:
                         if sf_name == attr:
@@ -1810,6 +1813,21 @@ class ZigNativeEmitter:
                         if base != "":
                             return base + "." + attr + "(undefined)"
                 obj = self._render_expr(obj_node_for_attr)
+                # math.* → std.math.*
+                if isinstance(obj_node_for_attr, dict) and obj_node_for_attr.get("kind") == "Name" and str(obj_node_for_attr.get("id")) == "math":
+                    if attr in {"sin", "cos", "tan", "asin", "acos", "atan", "exp", "log", "log2", "log10", "sqrt", "fabs", "floor", "ceil", "round", "fmod", "hypot", "atan2", "pow", "log_"}:
+                        zig_attr = attr if attr != "log_" else "log"
+                        if zig_attr == "sqrt" and len(arg_strs) > 0:
+                            return "std.math.sqrt(@as(f64, " + arg_strs[0] + "))"
+                        if zig_attr == "pow" and len(arg_strs) >= 2:
+                            return "std.math.pow(f64, " + arg_strs[0] + ", " + arg_strs[1] + ")"
+                        if zig_attr == "fabs" and len(arg_strs) > 0:
+                            return "@abs(" + arg_strs[0] + ")"
+                        if zig_attr in {"floor", "ceil"} and len(arg_strs) > 0:
+                            return "@" + zig_attr + "(" + arg_strs[0] + ")"
+                        if zig_attr == "atan2" and len(arg_strs) >= 2:
+                            return "std.math.atan2(" + arg_strs[0] + ", " + arg_strs[1] + ")"
+                        return "std.math." + zig_attr + "(" + ", ".join(arg_strs) + ")"
                 if attr == "append":
                     if len(arg_strs) > 0:
                         return obj + ".append(" + arg_strs[0] + ")"
