@@ -24,6 +24,7 @@ _CLASS_METHOD_NAMES: list[dict[str, set[str]]] = [{}]
 _LAMBDA_VARS: list[set[str]] = [set()]
 _FUNCTION_NAMES: list[set[str]] = [set()]
 _IMPORT_ALIASES: list[dict[str, str]] = [{}]
+_CURRENT_CLASS_NAME: list[str] = [""]
 
 _PS_AUTOMATIC_VARS = {
     "true", "false", "null", "args", "input", "PSScriptRoot", "PSCommandPath",
@@ -707,22 +708,26 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 super_func = owner_node.get("func")
                 if isinstance(super_func, dict) and _get_str(super_func, "id") == "super":
                     raw_attr = _get_str(func_d, "attr")
-                    if raw_attr == "__init__":
-                        # Find parent class from _CURRENT_CLASS context
+                    # Find the direct parent of the current class
+                    cur_cls = _CURRENT_CLASS_NAME[0]
+                    parent_cls = _CLASS_BASES[0].get(cur_cls, "")
+                    if parent_cls == "":
+                        # Fallback: first base found
                         for cls_name, base_name in _CLASS_BASES[0].items():
                             if base_name != "":
-                                parent_fn = _safe_ident(base_name, "_Base")
-                                if len(rendered_args) == 0:
-                                    return "(" + parent_fn + " $self)"
-                                return "(" + parent_fn + " $self " + " ".join(rendered_args) + ")"
-                    else:
-                        # super().method() -> ParentClass_method $self args
-                        for cls_name, base_name in _CLASS_BASES[0].items():
-                            if base_name != "":
-                                method_fn = _safe_ident(base_name, "_Base") + "_" + _safe_ident(raw_attr, "_m")
-                                if len(rendered_args) == 0:
-                                    return "(" + method_fn + " $self)"
-                                return "(" + method_fn + " $self " + " ".join(rendered_args) + ")"
+                                parent_cls = base_name
+                                break
+                    if parent_cls != "":
+                        parent_fn = _safe_ident(parent_cls, "_Base")
+                        if raw_attr == "__init__":
+                            if len(rendered_args) == 0:
+                                return "(" + parent_fn + " $self)"
+                            return "(" + parent_fn + " $self " + " ".join(rendered_args) + ")"
+                        else:
+                            method_fn = parent_fn + "_" + _safe_ident(raw_attr, "_m")
+                            if len(rendered_args) == 0:
+                                return "(" + method_fn + " $self)"
+                            return "(" + method_fn + " $self " + " ".join(rendered_args) + ")"
             if owner_name == "math":
                 _MATH_PS: dict[str, str] = {
                     "sqrt": "Sqrt", "floor": "Floor", "ceil": "Ceiling",
@@ -1417,6 +1422,8 @@ def _emit_function_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]
 
 def _emit_class_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
     name = _safe_ident(_get_str(stmt, "name"), "_Cls")
+    prev_class = _CURRENT_CLASS_NAME[0]
+    _CURRENT_CLASS_NAME[0] = name
     body = _get_list(stmt, "body")
     lines = [indent + "# class " + name]
 
@@ -1526,6 +1533,7 @@ def _emit_class_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -
                 child_fn = name + "_" + _safe_ident(bm, "_m")
                 lines.append(indent + "function " + child_fn + " { param([Parameter(ValueFromRemainingArguments=$true)][object[]]$__args) " + base_fn + " @__args }")
 
+    _CURRENT_CLASS_NAME[0] = prev_class
     return lines
 
 
