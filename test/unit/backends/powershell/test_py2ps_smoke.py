@@ -135,5 +135,169 @@ class Py2PowerShellSmokeTest(unittest.TestCase):
             self.assertIn("#Requires -Version 5.1", text)
 
 
+RUNTIME_PS1 = ROOT / "src" / "runtime" / "powershell" / "built_in" / "py_runtime.ps1"
+
+
+def _find_pwsh() -> str | None:
+    """Return pwsh path if available, else None."""
+    for candidate in ("/tmp/pwsh/pwsh", "pwsh"):
+        try:
+            proc = subprocess.run(
+                [candidate, "--version"],
+                capture_output=True, text=True, timeout=5,
+            )
+            if proc.returncode == 0:
+                return candidate
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            continue
+    return None
+
+
+def _transpile_and_run(
+    fixture_path: Path,
+    *,
+    pwsh: str,
+    timeout: int = 10,
+) -> subprocess.CompletedProcess[str]:
+    """Transpile a fixture to PowerShell and run it with pwsh."""
+    env = dict(os.environ)
+    py_path = str(ROOT / "src")
+    old = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
+
+    with tempfile.TemporaryDirectory() as td:
+        out_dir = Path(td)
+        stem = fixture_path.stem
+        out_ps1 = out_dir / (stem + ".ps1")
+
+        # Stage 1: transpile
+        cmd = [
+            sys.executable, str(ROOT / "src" / "pytra-cli.py"),
+            "--target", "powershell",
+            str(fixture_path),
+            "--output-dir", str(out_dir),
+        ]
+        tp = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True, timeout=30)
+        if tp.returncode != 0:
+            return tp  # transpile failure
+
+        # Copy runtime
+        import shutil
+        shutil.copy2(str(RUNTIME_PS1), str(out_dir / "py_runtime.ps1"))
+        assertions_dir = out_dir / "assertions"
+        if assertions_dir.exists():
+            shutil.copy2(str(RUNTIME_PS1), str(assertions_dir / "py_runtime.ps1"))
+
+        # Stage 2: run with pwsh
+        return subprocess.run(
+            [pwsh, "-File", str(out_ps1)],
+            capture_output=True, text=True, timeout=timeout,
+        )
+
+
+_PWSH = _find_pwsh()
+
+
+@unittest.skipIf(_PWSH is None, "pwsh not found")
+class Py2PowerShellExecTest(unittest.TestCase):
+    """pwsh 実行テスト: 主要 fixture が実行成功することを検証する。"""
+
+    def _run_fixture(self, stem: str, *, timeout: int = 10) -> None:
+        fixture = find_fixture_case(stem)
+        result = _transpile_and_run(fixture, pwsh=_PWSH, timeout=timeout)
+        self.assertEqual(
+            result.returncode, 0,
+            msg=f"pwsh execution failed for {stem}:\nstdout={result.stdout}\nstderr={result.stderr}",
+        )
+
+    # --- 基本演算 ---
+    def test_exec_add(self) -> None:
+        self._run_fixture("add")
+
+    def test_exec_sub_mul(self) -> None:
+        self._run_fixture("sub_mul")
+
+    def test_exec_fib(self) -> None:
+        self._run_fixture("fib")
+
+    def test_exec_compare(self) -> None:
+        self._run_fixture("compare")
+
+    # --- 制御構文 ---
+    def test_exec_if_else(self) -> None:
+        self._run_fixture("if_else")
+
+    def test_exec_for_range(self) -> None:
+        self._run_fixture("for_range")
+
+    def test_exec_loop(self) -> None:
+        self._run_fixture("loop")
+
+    def test_exec_try_raise(self) -> None:
+        self._run_fixture("try_raise")
+
+    # --- 文字列 ---
+    def test_exec_fstring(self) -> None:
+        self._run_fixture("fstring")
+
+    def test_exec_str_methods(self) -> None:
+        self._run_fixture("str_methods")
+
+    def test_exec_string_ops(self) -> None:
+        self._run_fixture("string_ops")
+
+    # --- コレクション ---
+    def test_exec_comprehension(self) -> None:
+        self._run_fixture("comprehension")
+
+    def test_exec_dict_in(self) -> None:
+        self._run_fixture("dict_in")
+
+    def test_exec_negative_index(self) -> None:
+        self._run_fixture("negative_index")
+
+    def test_exec_slice_basic(self) -> None:
+        self._run_fixture("slice_basic")
+
+    # --- ラムダ ---
+    def test_exec_lambda_basic(self) -> None:
+        self._run_fixture("lambda_basic")
+
+    def test_exec_lambda_as_arg(self) -> None:
+        self._run_fixture("lambda_as_arg")
+
+    # --- OOP ---
+    def test_exec_class(self) -> None:
+        self._run_fixture("class")
+
+    def test_exec_class_instance(self) -> None:
+        self._run_fixture("class_instance")
+
+    def test_exec_inheritance(self) -> None:
+        self._run_fixture("inheritance")
+
+    def test_exec_super_init(self) -> None:
+        self._run_fixture("super_init")
+
+    # --- タプル/代入 ---
+    def test_exec_tuple_assign(self) -> None:
+        self._run_fixture("tuple_assign")
+
+    def test_exec_assign(self) -> None:
+        self._run_fixture("assign")
+
+    # --- enumerate/reversed ---
+    def test_exec_enumerate_basic(self) -> None:
+        self._run_fixture("enumerate_basic")
+
+    # --- math ---
+    def test_exec_from_pytra_std_import_math(self) -> None:
+        self._run_fixture("from_pytra_std_import_math")
+
+    # --- range downcount ---
+    def test_exec_range_downcount_len_minus1(self) -> None:
+        self._run_fixture("range_downcount_len_minus1")
+
+
 if __name__ == "__main__":
     unittest.main()

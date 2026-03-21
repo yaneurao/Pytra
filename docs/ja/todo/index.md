@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-21（P7-ZIG-NATIVE を起票）
+最終更新: 2026-03-21（P2-REMOVE-NONCPP-RUNTIME-CALL を起票）
 
 ## 文脈運用ルール
 
@@ -37,22 +37,22 @@
 
 文脈: [docs/ja/plans/p0-block-scope-variable-hoist.md](../plans/p0-block-scope-variable-hoist.md)
 
-1. [ ] [ID: P0-BLOCK-SCOPE-VAR-HOIST-01-S1] if/else ブロック内の変数宣言 hoist を EAST3 lowering に実装する。
-2. [ ] [ID: P0-BLOCK-SCOPE-VAR-HOIST-01-S2] for/while ブロック内の変数宣言 hoist を EAST3 lowering に実装する。
-3. [ ] [ID: P0-BLOCK-SCOPE-VAR-HOIST-01-S3] C++ emitter の既存 hoist ロジックを EAST3 lowering に移行し、emitter から除去する。
-4. [ ] [ID: P0-BLOCK-SCOPE-VAR-HOIST-01-S4] ユニットテストを追加する（if/else, for, while, nested blocks）。
-5. [ ] [ID: P0-BLOCK-SCOPE-VAR-HOIST-01-S5] Dart/Zig/Julia emitter が hoist 済み EAST3 で正しく動作することを検証する。
+1. [x] [ID: P0-BLOCK-SCOPE-VAR-HOIST-01-S1] if/else ブロック内の変数宣言 hoist を EAST3 lowering に実装する。
+2. [x] [ID: P0-BLOCK-SCOPE-VAR-HOIST-01-S2] for/while ブロック内の変数宣言 hoist を EAST3 lowering に実装する。
+3. [x] [ID: P0-BLOCK-SCOPE-VAR-HOIST-01-S3] C++ emitter の既存 hoist ロジックを EAST3 lowering に移行し、emitter から除去する。
+4. [x] [ID: P0-BLOCK-SCOPE-VAR-HOIST-01-S4] ユニットテストを追加する（if/else, for, while, nested blocks）。
+5. [x] [ID: P0-BLOCK-SCOPE-VAR-HOIST-01-S5] Dart/Zig/Julia emitter が hoist 済み EAST3 で正しく動作することを検証する。
 
 #### P0-11: PowerShell native emitter 実行 parity
 
 文脈: [docs/ja/plans/p0-powershell-native-emitter-execution-parity.md](../plans/p0-powershell-native-emitter-execution-parity.md)
 
-1. [ ] [ID: P0-PS-EXEC-PARITY-01-S1] FunctionDef の `self` パラメータを除外せず `$self` として残す。クラスメソッド呼び出し時に第1引数として渡す。
-2. [ ] [ID: P0-PS-EXEC-PARITY-01-S2] `bytearray`, `bytes`, `enumerate`, `sorted`, `reversed`, `zip` 等を `__pytra_*` ランタイム関数にマッピング。不足 runtime 関数を追加。
-3. [ ] [ID: P0-PS-EXEC-PARITY-01-S3] `math.sqrt` → `[Math]::Sqrt` 等の stdlib Attribute Call を直接 PowerShell 構文に変換。
-4. [ ] [ID: P0-PS-EXEC-PARITY-01-S4] Assign でタプルターゲットが左辺にある場合、一時変数展開を emit する。
-5. [ ] [ID: P0-PS-EXEC-PARITY-01-S5] Call の func がクラス名の場合、コンストラクタ関数呼び出しとして emit する。
-6. [ ] [ID: P0-PS-EXEC-PARITY-01-S6] `test/unit/toolchain/emit/powershell/test_py2ps_smoke.py` に pwsh 実行テストを追加し、主要 fixture の実行成功を検証する。
+1. [x] [ID: P0-PS-EXEC-PARITY-01-S1] FunctionDef の `self` パラメータを除外せず `$self` として残す。クラスメソッド呼び出し時に第1引数として渡す。
+2. [x] [ID: P0-PS-EXEC-PARITY-01-S2] `bytearray`, `bytes`, `enumerate`, `sorted`, `reversed`, `zip` 等を `__pytra_*` ランタイム関数にマッピング。不足 runtime 関数を追加。
+3. [x] [ID: P0-PS-EXEC-PARITY-01-S3] `math.sqrt` → `[Math]::Sqrt` 等の stdlib Attribute Call を直接 PowerShell 構文に変換。
+4. [x] [ID: P0-PS-EXEC-PARITY-01-S4] Assign でタプルターゲットが左辺にある場合、一時変数展開を emit する。
+5. [x] [ID: P0-PS-EXEC-PARITY-01-S5] Call の func がクラス名の場合、コンストラクタ関数呼び出しとして emit する。
+6. [x] [ID: P0-PS-EXEC-PARITY-01-S6] `test/unit/backends/powershell/test_py2ps_smoke.py` に pwsh 実行テスト（26件）を追加し、主要 fixture の実行成功を検証する。
 
 #### P0-12: pytra-cli.py が C++ 固有オプションを転送しない
 
@@ -139,6 +139,37 @@
 3. [x] [ID: P1-JULIA-NATIVE-01-S3] smoke テスト作成、`transpiler_versions.json`・`check_py2x_profiles.json`・`docs/ja/language/index.md` を更新する。
 4. [x] [ID: P1-JULIA-NATIVE-01-S4] smoke テストが通ることを確認する。
 
+### P2: EAST1 パーサーから noncpp_runtime_call を除去
+
+文脈: [docs/ja/plans/p2-remove-noncpp-runtime-call-from-east1.md](../plans/p2-remove-noncpp-runtime-call-from-east1.md)
+
+1. [x] [ID: P2-REMOVE-NONCPP-RUNTIME-CALL-01] `core_expr_resolution_semantics.py` から `noncpp_*` フィールド生成を除去する。
+2. [x] [ID: P2-REMOVE-NONCPP-RUNTIME-CALL-02] `core_expr_attr_subscript_annotation.py` から `noncpp_*` 伝播ロジックを除去する。
+3. [x] [ID: P2-REMOVE-NONCPP-RUNTIME-CALL-03] `core_runtime_call_semantics.py` / `core_expr_attr_call_annotation.py` から不要関数を除去する。
+4. [x] [ID: P2-REMOVE-NONCPP-RUNTIME-CALL-04] 既存テストのリグレッションがないことを検証する。
+
+### P2: backend に link-output manifest 入力を必須化
+
+文脈: [docs/ja/plans/p2-require-link-output-manifest.md](../plans/p2-require-link-output-manifest.md)
+
+1. [x] [ID: P2-REQUIRE-LINK-MANIFEST-01] `loader.py` の raw EAST3 フォールバックを除去する。
+
+### P2: linker サブモジュール import 解決
+
+文脈: [docs/ja/plans/p2-linker-submodule-import-resolution.md](../plans/p2-linker-submodule-import-resolution.md)
+
+1. [x] [ID: P2-LINKER-SUBMODULE-IMPORT-01] `program_loader.py` の `ImportFrom` 処理で import names のサブモジュール解決を追加する。
+2. [x] [ID: P2-LINKER-SUBMODULE-IMPORT-02] 既存テストのリグレッションがないことを検証する。
+
+### P3: pyobj list alias escape 解析を EAST3 パスへ移行
+
+文脈: [docs/ja/plans/p3-pyobj-list-escape-to-east3.md](../plans/p3-pyobj-list-escape-to-east3.md)
+
+1. [ ] [ID: P3-PYOBJ-LIST-ESCAPE-01] lifetime_analysis_pass に list alias escape 解析を追加し、FunctionDef.meta に結果を付与する。
+2. [ ] [ID: P3-PYOBJ-LIST-ESCAPE-02] C++ emitter を meta 参照に切り替え、`_collect_pyobj_runtime_list_alias_names` を除去する。
+3. [ ] [ID: P3-PYOBJ-LIST-ESCAPE-03] `analysis.py` の `_collect_assigned_name_types` を除去する（依存消滅確認後）。
+4. [ ] [ID: P3-PYOBJ-LIST-ESCAPE-04] ユニットテストを追加し、既存 pyobj list テストのリグレッションがないことを検証する。
+
 ### P4: Dart native backend
 
 文脈: [docs/ja/plans/p4-dart-native-backend.md](../plans/p4-dart-native-backend.md)
@@ -147,6 +178,16 @@
 2. [x] [ID: P4-DART-NATIVE-01-S2] `src/runtime/dart/built_in/py_runtime.dart` を作成する。
 3. [x] [ID: P4-DART-NATIVE-01-S3] smoke テスト作成、`transpiler_versions.json`・`check_py2x_profiles.json`・`docs/ja/language/index.md` を更新する。
 4. [x] [ID: P4-DART-NATIVE-01-S4] smoke テストが通ることを確認する。
+
+### P5: C# multi-module emit parity
+
+文脈: [docs/ja/plans/p5-cs-multimodule-emit-parity.md](../plans/p5-cs-multimodule-emit-parity.md)
+
+1. [x] [ID: P5-CS-MULTIMODULE-01] C# emitter に `emit_main` フラグを追加し、entry module 以外では `Main` を生成しない。クラス名をモジュール ID ベースでユニーク化する。
+2. [x] [ID: P5-CS-MULTIMODULE-02] sub-module 間の `using` / namespace 参照を C# の namespace 規約に合わせて修正する。
+3. [x] [ID: P5-CS-MULTIMODULE-03] `cs.py` の runtime 生成を S1/S2 の修正に合わせて整合させる。
+4. [x] [ID: P5-CS-MULTIMODULE-04] `pytra-cli.py` の C# build/run を `mcs` + `mono` 方式に修正する。
+5. [ ] [ID: P5-CS-MULTIMODULE-05] `runtime_parity_check.py --targets cs` で sample/py の全 18 ケースが PASS することを確認する。
 
 ### P7: Zig native backend
 

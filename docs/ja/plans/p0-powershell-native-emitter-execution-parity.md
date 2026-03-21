@@ -28,27 +28,27 @@
 
 ### S1: self パラメータ修正（最大インパクト）
 
-- [ ] [ID: P0-PS-EXEC-PARITY-01-S1] FunctionDef の `self` パラメータを除外せず `$self` として残す。クラスメソッド呼び出し時に第1引数として渡す。
+- [x] [ID: P0-PS-EXEC-PARITY-01-S1] FunctionDef の `self` パラメータを除外せず `$self` として残す。クラスメソッド呼び出し時に第1引数として渡す。
 
 ### S2: 組み込み関数マッピング追加
 
-- [ ] [ID: P0-PS-EXEC-PARITY-01-S2] `bytearray`, `bytes`, `enumerate`, `sorted`, `reversed`, `zip`, `map`, `filter` を `__pytra_*` ランタイム関数にマッピング。不足する runtime 関数を `py_runtime.ps1` に追加。
+- [x] [ID: P0-PS-EXEC-PARITY-01-S2] `bytearray`, `bytes`, `enumerate`, `sorted`, `reversed`, `zip`, `map`, `filter` を `__pytra_*` ランタイム関数にマッピング。不足する runtime 関数を `py_runtime.ps1` に追加。
 
 ### S3: math/stdlib モジュール直接変換
 
-- [ ] [ID: P0-PS-EXEC-PARITY-01-S3] `math.sqrt` → `[Math]::Sqrt`, `math.floor` → `[Math]::Floor` 等の Attribute Call を直接 PowerShell 構文に変換。`import math` コメントを除去。
+- [x] [ID: P0-PS-EXEC-PARITY-01-S3] `math.sqrt` → `[Math]::Sqrt`, `math.floor` → `[Math]::Floor` 等の Attribute Call を直接 PowerShell 構文に変換。`import math` コメントを除去。
 
 ### S4: タプル代入の一時変数展開
 
-- [ ] [ID: P0-PS-EXEC-PARITY-01-S4] Assign でタプルターゲット（`Tuple` kind）が左辺にある場合、一時変数を使った展開を emit する。
+- [x] [ID: P0-PS-EXEC-PARITY-01-S4] Assign でタプルターゲット（`Tuple` kind）が左辺にある場合、一時変数を使った展開を emit する。
 
 ### S5: クラスコンストラクタ呼び出し修正
 
-- [ ] [ID: P0-PS-EXEC-PARITY-01-S5] Call の func が ClassDef 名（body 内で定義されたクラス）の場合、`$ClassName` 変数参照ではなく `ClassName` 関数呼び出しとして emit する。`__init__` → コンストラクタ関数パターンを確立。
+- [x] [ID: P0-PS-EXEC-PARITY-01-S5] Call の func が ClassDef 名（body 内で定義されたクラス）の場合、`$ClassName` 変数参照ではなく `ClassName` 関数呼び出しとして emit する。`__init__` → コンストラクタ関数パターンを確立。
 
 ### S6: 実行テスト追加
 
-- [ ] [ID: P0-PS-EXEC-PARITY-01-S6] `test/unit/toolchain/emit/powershell/test_py2ps_smoke.py` に pwsh 実行テストを追加し、主要 fixture が実行成功することを検証する。
+- [x] [ID: P0-PS-EXEC-PARITY-01-S6] `test/unit/backends/powershell/test_py2ps_smoke.py` に pwsh 実行テスト（26件）を追加し、主要 fixture の実行成功を検証する。
 
 ## 受け入れ基準
 

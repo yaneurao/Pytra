@@ -188,8 +188,7 @@ class _ShExprResolutionSemanticsMixin:
         if _SH_ALLOW_OBJECT_RECEIVER[0]:
             return False
         s = t.strip()
-        # "unknown" は dict[str, Any].get() 等の未解決型に対する guard (d8926b03e)
-        if s == "object" or s == "Any" or s == "any" or s == "unknown":
+        if s == "object" or s == "Any" or s == "any" or s == "unknown":  # d8926b03e
             return True
         if "|" in s:
             parts = self._split_union_types(s)
