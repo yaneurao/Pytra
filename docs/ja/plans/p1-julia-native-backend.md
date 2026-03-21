@@ -26,20 +26,21 @@
 
 ### S1: emitter パッケージ作成
 
-- [ ] [ID: P1-JULIA-NATIVE-01-S1] `src/toolchain/emit/julia/` 配下に emitter パッケージを作成する。
+- [x] [ID: P1-JULIA-NATIVE-01-S1] `src/toolchain/emit/julia/` 配下に emitter パッケージを作成する。
 
 ### S2: Julia ランタイム作成
 
-- [ ] [ID: P1-JULIA-NATIVE-01-S2] `src/runtime/julia/built_in/py_runtime.jl` を作成する。
+- [x] [ID: P1-JULIA-NATIVE-01-S2] `src/runtime/julia/built_in/py_runtime.jl` を作成する。
 
 ### S3: テスト・登録
 
-- [ ] [ID: P1-JULIA-NATIVE-01-S3] smoke テスト作成、`transpiler_versions.json`・`check_py2x_profiles.json`・`docs/ja/language/index.md` を更新する。
+- [x] [ID: P1-JULIA-NATIVE-01-S3] smoke テスト作成、`transpiler_versions.json`・`check_py2x_profiles.json`・`docs/ja/language/index.md` を更新する。
 
 ### S4: 動作確認
 
-- [ ] [ID: P1-JULIA-NATIVE-01-S4] smoke テストが通ることを確認する。
+- [x] [ID: P1-JULIA-NATIVE-01-S4] smoke テストが通ることを確認する。
 
 ## 決定ログ
 
 - 2026-03-21: Lua emitter をベースに Julia native emitter を新規実装する方針を決定。プロファイル JSON / lower / optimizer は初期スコープ外とする。
+- 2026-03-21: [P1-JULIA-NATIVE-01-S1〜S4] 全子タスク完了。emitter 実装、runtime 作成、smoke テスト 11/11 通過。

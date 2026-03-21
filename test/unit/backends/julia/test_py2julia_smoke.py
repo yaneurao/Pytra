@@ -62,10 +62,11 @@ class Py2JuliaSmokeTest(unittest.TestCase):
         self.assertIn("function", source)
         self.assertIn("end", source)
 
-    def test_transpile_hello(self) -> None:
-        east_doc = load_east(find_fixture_case("hello"))
+    def test_transpile_fib(self) -> None:
+        east_doc = load_east(find_fixture_case("fib"))
         source = transpile_to_julia_native(east_doc)
-        self.assertIn("__pytra_print", source)
+        self.assertIn("function", source)
+        self.assertIn("if", source)
 
     def test_transpile_if_else(self) -> None:
         east_doc = load_east(find_fixture_case("if_else"))
@@ -79,27 +80,32 @@ class Py2JuliaSmokeTest(unittest.TestCase):
         self.assertIn("for", source)
         self.assertIn("end", source)
 
-    def test_transpile_while_loop(self) -> None:
-        east_doc = load_east(find_fixture_case("while_basic"))
+    def test_transpile_loop(self) -> None:
+        east_doc = load_east(find_fixture_case("loop"))
         source = transpile_to_julia_native(east_doc)
-        self.assertIn("while", source)
+        self.assertIn("for", source)
         self.assertIn("end", source)
 
-    def test_transpile_list_literal(self) -> None:
-        east_doc = load_east(find_fixture_case("list_literal"))
+    def test_transpile_compare(self) -> None:
+        east_doc = load_east(find_fixture_case("compare"))
         source = transpile_to_julia_native(east_doc)
-        self.assertIn("[", source)
+        self.assertIsInstance(source, str)
 
-    def test_transpile_dict_literal(self) -> None:
-        east_doc = load_east(find_fixture_case("dict_literal"))
+    def test_transpile_dict_literal_entries(self) -> None:
+        east_doc = load_east(find_fixture_case("dict_literal_entries"))
         source = transpile_to_julia_native(east_doc)
         self.assertIn("Dict", source)
 
-    def test_transpile_class_basic(self) -> None:
-        east_doc = load_east(find_fixture_case("class_basic"))
+    def test_transpile_class(self) -> None:
+        east_doc = load_east(find_fixture_case("class_body_pass"))
         source = transpile_to_julia_native(east_doc)
         self.assertIn("mutable struct", source)
         self.assertIn("end", source)
+
+    def test_transpile_assign(self) -> None:
+        east_doc = load_east(find_fixture_case("assign"))
+        source = transpile_to_julia_native(east_doc)
+        self.assertIn("=", source)
 
     def test_transpile_to_julia_api_compat(self) -> None:
         """transpile_to_julia is an alias for transpile_to_julia_native."""

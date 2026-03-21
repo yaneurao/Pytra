@@ -14,3 +14,6 @@
   - backend-owned test suite の実測 green 状態: [Backend Test Matrix](./backend-test-matrix.md)
 - C++:
   - サポート状況（テスト根拠つき）: [py2cpp サポートマトリクス](./cpp/spec-support.md)
+- Julia:
+  - native emitter（EAST3 直接生成）: `src/toolchain/emit/julia/`
+  - ランタイム: `src/runtime/julia/built_in/py_runtime.jl`

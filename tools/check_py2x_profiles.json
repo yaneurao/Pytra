@@ -1018,6 +1018,55 @@
         "source": "",
         "expected_fragment": ""
       }
+    },
+    "julia": {
+      "target": "julia",
+      "case_mode": "all",
+      "cases": [],
+      "expected_mode": "skip",
+      "expected_failures": {
+        "test/fixtures/signature/ng_kwargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_object_receiver.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_posonly.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_untyped_param.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/signature/ng_varargs.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/typing/any_class_alias.py": {
+          "category": "expected_failure",
+          "contains": ""
+        }
+      },
+      "quality_hooks": [],
+      "required_runtime_files": [
+        "py_runtime.jl"
+      ],
+      "required_runtime_file_contains": {},
+      "forbid_generated_contains": [],
+      "preflight_hooks": [],
+      "flags": {
+        "skip_east3_contract_tests": true,
+        "check_multi_file": false,
+        "check_yanesdk_smoke": false
+      },
+      "stage2_probe": {
+        "enabled": false,
+        "source": "",
+        "expected_fragment": ""
+      }
     }
   }
 }

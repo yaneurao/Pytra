@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-21（P0-GPP-COMPILE-HEADERS-01, P1-2/3/4/5, P7-1/2 をアーカイブへ移動）
+最終更新: 2026-03-21（P7-ZIG-NATIVE を起票）
 
 ## 文脈運用ルール
 
@@ -124,10 +124,10 @@
 
 文脈: [docs/ja/plans/p1-julia-native-backend.md](../plans/p1-julia-native-backend.md)
 
-1. [ ] [ID: P1-JULIA-NATIVE-01-S1] `src/toolchain/emit/julia/` 配下に emitter パッケージを作成する。
-2. [ ] [ID: P1-JULIA-NATIVE-01-S2] `src/runtime/julia/built_in/py_runtime.jl` を作成する。
-3. [ ] [ID: P1-JULIA-NATIVE-01-S3] smoke テスト作成、`transpiler_versions.json`・`check_py2x_profiles.json`・`docs/ja/language/index.md` を更新する。
-4. [ ] [ID: P1-JULIA-NATIVE-01-S4] smoke テストが通ることを確認する。
+1. [x] [ID: P1-JULIA-NATIVE-01-S1] `src/toolchain/emit/julia/` 配下に emitter パッケージを作成する。
+2. [x] [ID: P1-JULIA-NATIVE-01-S2] `src/runtime/julia/built_in/py_runtime.jl` を作成する。
+3. [x] [ID: P1-JULIA-NATIVE-01-S3] smoke テスト作成、`transpiler_versions.json`・`check_py2x_profiles.json`・`docs/ja/language/index.md` を更新する。
+4. [x] [ID: P1-JULIA-NATIVE-01-S4] smoke テストが通ることを確認する。
 
 ### P4: Dart native backend
 
@@ -137,3 +137,12 @@
 2. [ ] [ID: P4-DART-NATIVE-01-S2] `src/runtime/dart/built_in/py_runtime.dart` を作成する。
 3. [ ] [ID: P4-DART-NATIVE-01-S3] smoke テスト作成、`transpiler_versions.json`・`check_py2x_profiles.json`・`docs/ja/language/index.md` を更新する。
 4. [ ] [ID: P4-DART-NATIVE-01-S4] smoke テストが通ることを確認する。
+
+### P7: Zig native backend
+
+文脈: [docs/ja/plans/p7-zig-native-backend.md](../plans/p7-zig-native-backend.md)
+
+1. [ ] [ID: P7-ZIG-NATIVE-01-S1] `src/toolchain/emit/zig/` 配下に emitter パッケージを作成する。
+2. [ ] [ID: P7-ZIG-NATIVE-01-S2] `src/runtime/zig/built_in/py_runtime.zig` を作成する。
+3. [ ] [ID: P7-ZIG-NATIVE-01-S3] smoke テスト作成、`transpiler_versions.json`・`check_py2x_profiles.json`・`docs/ja/language/index.md` を更新する。
+4. [ ] [ID: P7-ZIG-NATIVE-01-S4] smoke テストが通ることを確認する。
