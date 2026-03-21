@@ -143,7 +143,7 @@ private:
 template<typename T, typename... Args>
 Object<T> make_object(uint32_t tid, Args&&... args) {
     T* obj = new T(::std::forward<Args>(args)...);
-    ControlBlock* cb = new ControlBlock{1, tid, obj};
+    ControlBlock* cb = new ControlBlock{0, tid, obj};  // retain() in Object ctor will set to 1
     return Object<T>(cb, obj);
 }
 
