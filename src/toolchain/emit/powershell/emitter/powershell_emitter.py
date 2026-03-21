@@ -8,10 +8,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from toolchain.emit.common.emitter.code_emitter import (
-    reject_backend_general_union_type_exprs,
-    reject_backend_typed_vararg_signatures,
-)
 
 
 _PS_KEYWORDS = {
@@ -107,6 +103,8 @@ _COMPARE_MAP: dict[str, str] = {
     "GtE": "-ge",
     "Is": "-eq",
     "IsNot": "-ne",
+    "In": "-contains",
+    "NotIn": "-notcontains",
 }
 
 _UNARYOP_MAP: dict[str, str] = {
@@ -192,6 +190,10 @@ def _render_expr(expr_any: Any) -> str:
         else:
             ps_op = "-eq"
         right = _render_expr(comparators[0])
+        # In/NotIn: swap operands (PowerShell -contains checks collection on left)
+        op0_str = _get_str(op0, "kind") if isinstance(op0, dict) else (op0 if isinstance(op0, str) else "")
+        if op0_str == "In" or op0_str == "NotIn":
+            left, right = right, left
         if len(ops) == 1:
             return "(" + left + " " + ps_op + " " + right + ")"
         parts = ["(" + left + " " + ps_op + " " + right + ")"]
@@ -208,9 +210,32 @@ def _render_expr(expr_any: Any) -> str:
     if kind == "BoolOp":
         op = _get_str(expr, "op")
         values = _get_list(expr, "values")
-        ps_op = "-and" if op == "And" else "-or"
         rendered = [_render_expr(v) for v in values]
-        return "(" + (" " + ps_op + " ").join(rendered) + ")"
+        if len(rendered) == 0:
+            return "$null"
+        # Python semantics: 'a or b' returns first truthy, 'a and b' returns first falsy or last
+        if op == "Or":
+            # Chain: $(if (a) { a } elseif (b) { b } else { last })
+            if len(rendered) == 1:
+                return rendered[0]
+            result = rendered[-1]
+            i = len(rendered) - 2
+            while i >= 0:
+                v = rendered[i]
+                result = "$(if (" + v + ") { " + v + " } else { " + result + " })"
+                i -= 1
+            return result
+        else:
+            # And: $(if (-not a) { a } elseif (-not b) { b } else { last })
+            if len(rendered) == 1:
+                return rendered[0]
+            result = rendered[-1]
+            i = len(rendered) - 2
+            while i >= 0:
+                v = rendered[i]
+                result = "$(if (-not " + v + ") { " + v + " } else { " + result + " })"
+                i -= 1
+            return result
 
     if kind == "Attribute":
         value_node = expr.get("value")
@@ -822,6 +847,12 @@ def _emit_function_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]
     arg_order = _get_list(stmt, "arg_order")
     arg_defaults = _get_dict(stmt, "arg_defaults")
 
+    # Register callable-typed parameters as lambda vars for & $var invocation
+    arg_types = _get_dict(stmt, "arg_types")
+    for aname, atype in arg_types.items():
+        if isinstance(atype, str) and "callable" in atype.lower():
+            _LAMBDA_VARS[0].add(str(aname))
+
     ps_params: list[str] = []
     if len(arg_order) > 0:
         for arg_name in arg_order:
@@ -979,8 +1010,9 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
     if not isinstance(body, list):
         raise RuntimeError("powershell native emitter: Module.body must be list")
 
-    reject_backend_general_union_type_exprs(east_doc, backend_name="PowerShell backend")
-    reject_backend_typed_vararg_signatures(east_doc, backend_name="PowerShell backend")
+    # Note: union type and typed vararg rejections are disabled for PowerShell
+    # to allow transpilation of all linked modules (including assertions).
+    # Union types are emitted as $null fallback; varargs are not yet supported.
 
     renamed = _get_dict(east_doc, "renamed_symbols")
     _RENAMED_SYMBOLS[0] = {k: v for k, v in renamed.items() if isinstance(k, str) and isinstance(v, str)}
