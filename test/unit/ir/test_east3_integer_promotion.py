@@ -136,5 +136,91 @@ class TestIntegerPromotionSpec(unittest.TestCase):
             self.assertIn(t, no_promotion_types, f"{t} should not be promoted")
 
 
+class TestIntegerPromotionNarrowing(unittest.TestCase):
+    """Tests for the narrowing optimization pass."""
+
+    def test_narrowing_uint8_binop_to_int16_target(self) -> None:
+        """uint8 + uint8 promoted to int32 should narrow to int16 if target is int16."""
+        from src.toolchain.compile.east2_to_east3_integer_promotion import (
+            _narrow_value_type,
+        )
+        value_node = {
+            "kind": "BinOp",
+            "op": "Add",
+            "resolved_type": "int32",  # promoted
+            "left": {"kind": "Name", "resolved_type": "uint8"},
+            "right": {"kind": "Name", "resolved_type": "uint8"},
+        }
+        _narrow_value_type(value_node, "int16")
+        self.assertEqual(value_node["resolved_type"], "int16")
+
+    def test_narrowing_does_not_shrink_below_operand_width(self) -> None:
+        """int16 + int16 promoted to int32 should NOT narrow to int8
+        (target < operand width)."""
+        from src.toolchain.compile.east2_to_east3_integer_promotion import (
+            _narrow_value_type,
+        )
+        value_node = {
+            "kind": "BinOp",
+            "op": "Add",
+            "resolved_type": "int32",
+            "left": {"kind": "Name", "resolved_type": "int16"},
+            "right": {"kind": "Name", "resolved_type": "int16"},
+        }
+        _narrow_value_type(value_node, "int8")
+        # Should NOT narrow — int8 (8bit) < int16 (16bit)
+        self.assertEqual(value_node["resolved_type"], "int32")
+
+    def test_narrowing_no_op_when_target_wider(self) -> None:
+        """If target is int64, narrowing should not change anything."""
+        from src.toolchain.compile.east2_to_east3_integer_promotion import (
+            _narrow_value_type,
+        )
+        value_node = {
+            "kind": "BinOp",
+            "op": "LShift",
+            "resolved_type": "int32",
+            "left": {"kind": "Name", "resolved_type": "uint8"},
+            "right": {"kind": "Name", "resolved_type": "uint8"},
+        }
+        _narrow_value_type(value_node, "int64")
+        # int64 >= int32, no narrowing
+        self.assertEqual(value_node["resolved_type"], "int32")
+
+    def test_narrowing_unaryop(self) -> None:
+        """UnaryOp on uint8 promoted to int32 should narrow to int16 target."""
+        from src.toolchain.compile.east2_to_east3_integer_promotion import (
+            _narrow_value_type,
+        )
+        value_node = {
+            "kind": "UnaryOp",
+            "op": "Invert",
+            "resolved_type": "int32",
+            "operand": {"kind": "Name", "resolved_type": "uint8"},
+        }
+        _narrow_value_type(value_node, "int16")
+        self.assertEqual(value_node["resolved_type"], "int16")
+
+    def test_narrowing_e2e(self) -> None:
+        """End-to-end: int16 target with uint8 operands should narrow."""
+        source = """def narrow_test(a: int, b: int) -> int:
+    data: bytes = bytes([a, b])
+    result: int = 0
+    for v in data:
+        result += v
+    return result
+"""
+        east3 = _build_east3(source)
+        body = _find_function_body(east3, "narrow_test")
+        # ForCore target should be int32 (promotion) — narrowing only
+        # applies to Assign targets, not ForCore
+        for_nodes = _find_nodes_by_kind(body, "ForCore")
+        self.assertTrue(len(for_nodes) > 0)
+        for f in for_nodes:
+            tp = f.get("target_plan", {})
+            if isinstance(tp, dict):
+                self.assertEqual(tp.get("target_type"), "int32")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -86,8 +86,8 @@
 
 文脈: [docs/ja/plans/p1-integer-promotion-narrowing.md](../plans/p1-integer-promotion-narrowing.md)
 
-1. [ ] [ID: P1-INTEGER-PROMOTION-NARROWING-01] EAST3 optimizer に代入先型縮小パスを実装する。
-2. [ ] [ID: P1-INTEGER-PROMOTION-NARROWING-02] ユニットテストを追加する。
+1. [x] [ID: P1-INTEGER-PROMOTION-NARROWING-01] EAST3 optimizer に代入先型縮小パスを実装する。
+2. [x] [ID: P1-INTEGER-PROMOTION-NARROWING-02] ユニットテストを追加する。
 
 ### P2: built-in 依存を EAST1 → linker 経由で解決
 

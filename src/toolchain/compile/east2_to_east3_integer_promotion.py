@@ -131,10 +131,103 @@ def _apply_integer_promotion(node: Any) -> None:
             _apply_integer_promotion(value)
 
 
+# ---------------------------------------------------------------------------
+# Narrowing pass: shrink promoted result type to assignment target type
+# ---------------------------------------------------------------------------
+
+_INT_TYPE_WIDTH: dict[str, int] = {
+    "int8": 8, "uint8": 8,
+    "int16": 16, "uint16": 16,
+    "int32": 32, "uint32": 32,
+    "int64": 64, "uint64": 64,
+}
+
+
+def _is_int_type(t: str) -> bool:
+    return t in _INT_TYPE_WIDTH
+
+
+def _type_width(t: str) -> int:
+    return _INT_TYPE_WIDTH.get(t, 0)
+
+
+def _narrow_value_type(value_node: Any, target_type: str) -> None:
+    """If *value_node* is a BinOp/UnaryOp whose result was promoted to int32
+    but the assignment target is a narrower int type that still covers the
+    original operand widths, shrink the result type to the target type.
+    """
+    if not isinstance(value_node, dict):
+        return
+    vd: dict[str, Any] = value_node
+    kind = vd.get("kind")
+    result_type = _normalize_type(vd.get("resolved_type"))
+    target_w = _type_width(target_type)
+
+    if target_w <= 0 or not _is_int_type(result_type):
+        return
+    result_w = _type_width(result_type)
+    if result_w <= 0 or target_w >= result_w:
+        return  # target is not narrower than result, nothing to do
+
+    if kind == "BinOp":
+        left = vd.get("left")
+        right = vd.get("right")
+        left_type = _normalize_type(left.get("resolved_type")) if isinstance(left, dict) else ""
+        right_type = _normalize_type(right.get("resolved_type")) if isinstance(right, dict) else ""
+        left_w = _type_width(left_type) if _is_int_type(left_type) else 0
+        right_w = _type_width(right_type) if _is_int_type(right_type) else 0
+        if left_w <= 0 or right_w <= 0:
+            return
+        # Target must cover both original operand widths
+        if target_w >= left_w and target_w >= right_w:
+            vd["resolved_type"] = target_type
+
+    elif kind == "UnaryOp":
+        operand = vd.get("operand")
+        operand_type = _normalize_type(operand.get("resolved_type")) if isinstance(operand, dict) else ""
+        operand_w = _type_width(operand_type) if _is_int_type(operand_type) else 0
+        if operand_w <= 0:
+            return
+        if target_w >= operand_w:
+            vd["resolved_type"] = target_type
+
+
+def _apply_narrowing(node: Any) -> None:
+    """Walk EAST3 and narrow promoted BinOp/UnaryOp result types to
+    assignment target types where safe."""
+    if isinstance(node, list):
+        for item in node:
+            _apply_narrowing(item)
+        return
+    if not isinstance(node, dict):
+        return
+    nd: dict[str, Any] = node
+    kind = nd.get("kind")
+
+    if kind in ("Assign", "AnnAssign"):
+        target = nd.get("target")
+        value = nd.get("value")
+        if isinstance(target, dict) and isinstance(value, dict):
+            # Get target type from decl_type, annotation, or target resolved_type
+            target_type = _normalize_type(nd.get("decl_type"))
+            if target_type == "" or target_type == "unknown":
+                target_type = _normalize_type(nd.get("annotation"))
+            if target_type == "" or target_type == "unknown":
+                target_type = _normalize_type(target.get("resolved_type"))
+            if _is_int_type(target_type):
+                _narrow_value_type(value, target_type)
+
+    # Recurse into all children
+    for value in nd.values():
+        if isinstance(value, (dict, list)):
+            _apply_narrowing(value)
+
+
 def apply_integer_promotion(module: dict[str, Any]) -> dict[str, Any]:
-    """Top-level entry: apply integer promotion to an EAST3 Module.
+    """Top-level entry: apply integer promotion and narrowing to an EAST3 Module.
 
     Mutates *module* in place and returns it.
     """
     _apply_integer_promotion(module)
+    _apply_narrowing(module)
     return module
