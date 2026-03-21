@@ -6,6 +6,12 @@ import java.nio.file.{Files, Paths}
 
 def __pytra_noop(args: Any*): Unit = { }
 
+// Implicit conversion: Any → Double for arithmetic in dynamically-typed contexts.
+// EAST type inference may produce `unknown` → `Any` for variables whose actual
+// runtime type is numeric.  This conversion lets Scala compile such expressions.
+import scala.language.implicitConversions
+given Conversion[Any, Double] = __pytra_float(_)
+
 
 def __pytra_path_new(path: Any): String = {
     Paths.get(__pytra_str(path)).toString
@@ -334,6 +340,8 @@ def __pytra_print(args: Any*): Unit = {
     println(args.map(__pytra_str).mkString(" "))
 }
 
+def __pytra_min(a: Long, b: Long): Long = if (a < b) a else b
+def __pytra_min(a: Double, b: Double): Double = if (a < b) a else b
 def __pytra_min(a: Any, b: Any): Any = {
     val af = __pytra_float(a)
     val bf = __pytra_float(b)
@@ -345,6 +353,8 @@ def __pytra_min(a: Any, b: Any): Any = {
     __pytra_int(b)
 }
 
+def __pytra_max(a: Long, b: Long): Long = if (a > b) a else b
+def __pytra_max(a: Double, b: Double): Double = if (a > b) a else b
 def __pytra_max(a: Any, b: Any): Any = {
     val af = __pytra_float(a)
     val bf = __pytra_float(b)
