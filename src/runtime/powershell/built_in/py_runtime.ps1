@@ -235,6 +235,36 @@ function perf_counter {
     return [double]([System.Diagnostics.Stopwatch]::GetTimestamp()) / [double]([System.Diagnostics.Stopwatch]::Frequency)
 }
 
+function __pytra_in {
+    param($item, $collection)
+    if ($collection -is [hashtable] -or $collection -is [System.Collections.IDictionary]) {
+        return $collection.ContainsKey($item)
+    }
+    if ($collection -is [string]) {
+        return $collection.Contains([string]$item)
+    }
+    if ($collection -is [array] -or $collection -is [System.Collections.IList]) {
+        return ($collection -contains $item)
+    }
+    return $false
+}
+
+function __pytra_not_in {
+    param($item, $collection)
+    return -not (__pytra_in $item $collection)
+}
+
+function __pytra_str_slice {
+    param($s, $start, $stop)
+    if ($s -eq $null) { return "" }
+    $len = $s.Length
+    if ($start -lt 0) { $start = [Math]::Max(0, $len + $start) }
+    if ($stop -lt 0) { $stop = [Math]::Max(0, $len + $stop) }
+    if ($stop -gt $len) { $stop = $len }
+    if ($start -ge $stop) { return "" }
+    return $s.Substring($start, $stop - $start)
+}
+
 function PytraNotImplemented {
     param([string]$Feature = "")
     if ($Feature -ne "") {

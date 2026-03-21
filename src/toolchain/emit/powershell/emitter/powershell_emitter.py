@@ -191,10 +191,12 @@ def _render_expr(expr_any: Any) -> str:
         else:
             ps_op = "-eq"
         right = _render_expr(comparators[0])
-        # In/NotIn: swap operands (PowerShell -contains checks collection on left)
+        # In/NotIn: use runtime function for polymorphic containment check
         op0_str = _get_str(op0, "kind") if isinstance(op0, dict) else (op0 if isinstance(op0, str) else "")
-        if op0_str == "In" or op0_str == "NotIn":
-            left, right = right, left
+        if op0_str == "In":
+            return "(__pytra_in " + left + " " + right + ")"
+        if op0_str == "NotIn":
+            return "(__pytra_not_in " + left + " " + right + ")"
         if len(ops) == 1:
             return "(" + left + " " + ps_op + " " + right + ")"
         parts = ["(" + left + " " + ps_op + " " + right + ")"]
@@ -295,7 +297,7 @@ def _render_expr(expr_any: Any) -> str:
             slice_d: dict[str, object] = slice_any
             lower = _render_expr(slice_d.get("lower")) if slice_d.get("lower") is not None else "0"
             upper = _render_expr(slice_d.get("upper")) if slice_d.get("upper") is not None else (value + ".Length")
-            return value + "[" + lower + "..(" + upper + " - 1)]"
+            return "(__pytra_str_slice " + value + " " + lower + " " + upper + ")"
         index = _render_expr(slice_any)
         return value + "[" + index + "]"
 
