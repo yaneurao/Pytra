@@ -110,6 +110,17 @@
 3. [ ] [ID: P2-BUILTIN-VIA-LINKER-03] 全 emitter（C++ 含む）から `py_runtime.*` / ヘッダーの決め打ちバンドルを除去する（`@extern` 関数の扱い確定後）。
 4. [x] [ID: P2-BUILTIN-VIA-LINKER-04] 既存テストのリグレッションがないことを検証する。
 
+### P2: 全 backend 共通テストスイートの整備
+
+文脈: [docs/ja/plans/p2-cross-backend-common-test-suite.md](../plans/p2-cross-backend-common-test-suite.md)
+
+1. [ ] [ID: P2-COMMON-TEST-S1] 共通テスト基盤の構築（`test/unit/backends/common/conftest.py`, `compile_and_run` ヘルパー, 言語別 skip 管理）
+2. [ ] [ID: P2-COMMON-TEST-S2] 既存 fixture から言語非依存テストを抽出（算術・文字列・リスト・制御フロー・関数・クラス）
+3. [ ] [ID: P2-COMMON-TEST-S3] 全 18 言語で共通テストを実行し、skip / bug を分類
+4. [ ] [ID: P2-COMMON-TEST-S4] `test_py2cpp_features.py` から共通化済みテストを除去し、C++ 固有テストのみに絞る
+
+前提: P0-18（Object\<T\> 移行）完了後に着手。
+
 ### P3: pyobj list alias escape 解析を EAST3 パスへ移行
 
 文脈: [docs/ja/plans/p3-pyobj-list-escape-to-east3.md](../plans/p3-pyobj-list-escape-to-east3.md)
