@@ -1907,13 +1907,13 @@
             "generated"
           ],
           "compile_sources": [
-            "src/runtime/cpp/utils/assertions.cpp"
+            "src/runtime/cpp/generated/utils/assertions.cpp"
           ],
           "compiler_headers": [
-            "src/runtime/cpp/utils/assertions.h"
+            "src/runtime/cpp/generated/utils/assertions.h"
           ],
           "public_headers": [
-            "src/runtime/cpp/utils/assertions.h"
+            "src/runtime/cpp/generated/utils/assertions.h"
           ]
         },
         "pytra.utils.gif": {
@@ -1921,13 +1921,13 @@
             "generated"
           ],
           "compile_sources": [
-            "src/runtime/cpp/utils/gif.cpp"
+            "src/runtime/cpp/generated/utils/gif.cpp"
           ],
           "compiler_headers": [
-            "src/runtime/cpp/utils/gif.h"
+            "src/runtime/cpp/generated/utils/gif.h"
           ],
           "public_headers": [
-            "src/runtime/cpp/utils/gif.h"
+            "src/runtime/cpp/generated/utils/gif.h"
           ]
         },
         "pytra.utils.png": {
@@ -1935,13 +1935,13 @@
             "generated"
           ],
           "compile_sources": [
-            "src/runtime/cpp/utils/png.cpp"
+            "src/runtime/cpp/generated/utils/png.cpp"
           ],
           "compiler_headers": [
-            "src/runtime/cpp/utils/png.h"
+            "src/runtime/cpp/generated/utils/png.h"
           ],
           "public_headers": [
-            "src/runtime/cpp/utils/png.h"
+            "src/runtime/cpp/generated/utils/png.h"
           ]
         }
       }
