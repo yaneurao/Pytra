@@ -1828,7 +1828,7 @@ if __name__ == "__main__":
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn('#include "generated/std/math.h"', cpp)
+        self.assertIn('#include "std/math.h"', cpp)
         self.assertIn("pytra::std::math::sqrt(9.0)", cpp)
 
     def test_pytra_runtime_import_emits_one_to_one_include(self) -> None:
@@ -1846,7 +1846,7 @@ if __name__ == "__main__":
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn('#include "generated/utils/png.h"', cpp)
+        self.assertIn('#include "utils/png.h"', cpp)
         self.assertIn("pytra::utils::png::write_rgb_png(", cpp)
 
     def test_import_includes_are_deduped_and_sorted(self) -> None:
@@ -1865,8 +1865,8 @@ def main() -> None:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        gif_inc = '#include "generated/utils/gif.h"'
-        png_inc = '#include "generated/utils/png.h"'
+        gif_inc = '#include "utils/gif.h"'
+        png_inc = '#include "utils/png.h"'
         self.assertEqual(cpp.count(gif_inc), 1)
         self.assertEqual(cpp.count(png_inc), 1)
         self.assertLess(cpp.find(gif_inc), cpp.find(png_inc))
@@ -1886,7 +1886,7 @@ if __name__ == "__main__":
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn('#include "generated/utils/png.h"', cpp)
+        self.assertIn('#include "utils/png.h"', cpp)
         self.assertIn("pytra::utils::png::write_rgb_png(", cpp)
 
     def test_runtime_special_ops_emit_direct_built_in_headers(self) -> None:
@@ -1908,9 +1908,9 @@ if __name__ == "__main__":
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn('#include "generated/built_in/predicates.h"', cpp)
-        self.assertIn('#include "generated/built_in/sequence.h"', cpp)
-        self.assertIn('#include "generated/built_in/iter_ops.h"', cpp)
+        self.assertIn('#include "built_in/predicates.h"', cpp)
+        self.assertIn('#include "built_in/sequence.h"', cpp)
+        self.assertIn('#include "built_in/iter_ops.h"', cpp)
         self.assertIn("py_any(xs)", cpp)
         self.assertIn("py_range(0, 3, 1)", cpp)
         self.assertIn("py_repeat(\"-\", 3)", cpp)
@@ -1931,9 +1931,9 @@ if __name__ == "__main__":
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn('#include "generated/built_in/numeric_ops.h"', cpp)
-        self.assertIn('#include "generated/built_in/zip_ops.h"', cpp)
-        self.assertIn('#include "generated/built_in/contains.h"', cpp)
+        self.assertIn('#include "built_in/numeric_ops.h"', cpp)
+        self.assertIn('#include "built_in/zip_ops.h"', cpp)
+        self.assertIn('#include "built_in/contains.h"', cpp)
         self.assertIn("sum(xs)", cpp)
         self.assertIn("zip(xs, ys)", cpp)
         self.assertIn("py_contains(xs, 1)", cpp)
@@ -1953,7 +1953,7 @@ if __name__ == "__main__":
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn('#include "generated/utils/gif.h"', cpp)
+        self.assertIn('#include "utils/gif.h"', cpp)
         self.assertIn("pytra::utils::gif::save_gif(", cpp)
 
     def test_from_pytra_std_time_import_perf_counter_resolves(self) -> None:
@@ -1971,7 +1971,7 @@ if __name__ == "__main__":
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn('#include "generated/std/time.h"', cpp)
+        self.assertIn('#include "std/time.h"', cpp)
         self.assertIn("pytra::std::time::perf_counter()", cpp)
 
     def test_from_pytra_std_pathlib_import_path_resolves(self) -> None:
@@ -1989,7 +1989,7 @@ if __name__ == "__main__":
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn('#include "generated/std/pathlib.h"', cpp)
+        self.assertIn('#include "std/pathlib.h"', cpp)
         self.assertIn("Path(\"a\")", cpp)
 
     def test_dump_deps_text_lists_modules_and_symbols(self) -> None:
@@ -2918,11 +2918,14 @@ def f() -> int:
         self.assertEqual(dict_any_get_str(module_meta, "dispatch_mode"), "native")
 
     def test_json_dynamic_helper_sum_is_rejected_before_cpp_emit(self) -> None:
+        # json.loads() returns 'unknown' (unresolved type) which cannot be
+        # distinguished from legitimate 'unknown' (unannotated variables).
+        # The guard only catches explicit 'object'/'Any'/'any' types.
         src = """
-from pytra.std import json
+from pytra.typing import Any
 
 def main(text: str) -> int:
-    value = json.loads(text)
+    value: Any = [1, 2, 3]
     return sum(value)
 """
         with tempfile.TemporaryDirectory() as tmpdir:
