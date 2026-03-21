@@ -284,6 +284,7 @@ class ZigNativeEmitter:
         self._ref_var_stack: list[set[str]] = []
         self._local_var_stack: list[set[str]] = []
         self._mutated_var_stack: list[set[str]] = []
+        self._hoisted_var_names: set[str] = set()
 
     def _current_type_map(self) -> dict[str, str]:
         if len(self._local_type_stack) == 0:
@@ -437,6 +438,7 @@ class ZigNativeEmitter:
         return False
 
     def _push_function_context(self, stmt: dict[str, Any], arg_names: list[str], arg_order: list[Any]) -> None:
+        self._hoisted_var_names = set()
         type_map: dict[str, str] = {}
         ref_vars: set[str] = set()
         local_vars: set[str] = set(arg_names)
@@ -851,8 +853,8 @@ class ZigNativeEmitter:
                 # pytra.std.* の @extern 関数は py_runtime から提供
                 if module_id.startswith("pytra.std."):
                     continue
-                # from pytra.std import extern → extern は math_native への委譲
-                if module_id == "pytra.std" and name == "extern":
+                # from pytra.std import extern/abi → 特殊シンボル（math_native 委譲 or スキップ）
+                if module_id == "pytra.std" and name in {"extern", "abi", "template"}:
                     # サブモジュール内から math_native.zig を参照
                     if "math_native" not in emitted:
                         self._emit_line("const math_native = @import(\"math_native.zig\");")
@@ -1113,6 +1115,7 @@ class ZigNativeEmitter:
             self._current_type_map()[name] = var_type
         if len(self._local_var_stack) > 0:
             self._current_local_vars().add(name)
+        self._hoisted_var_names.add(name)
         zig_ty = self._zig_type(var_type) if var_type != "" else "anytype"
         self._emit_line("var " + name + ": " + zig_ty + " = undefined;")
 
@@ -1255,7 +1258,7 @@ class ZigNativeEmitter:
                     iter_expr = "pytra.list_items(" + iter_expr + ", " + elem + ")"
                 capture_name = target_name
                 reassign_after_capture = False
-                if len(self._local_var_stack) > 0 and target_name in self._current_local_vars():
+                if target_name in self._hoisted_var_names:
                     capture_name = "_cap_" + target_name
                     reassign_after_capture = True
                 self._emit_line("for (" + iter_expr + ") |" + capture_name + "| {")
