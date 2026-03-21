@@ -5,9 +5,13 @@ from __future__ import annotations
 from typing import Any
 
 from toolchain.emit.common.emitter.code_emitter import (
+    CodeEmitter,
     reject_backend_homogeneous_tuple_ellipsis_type_exprs,
     reject_backend_typed_vararg_signatures,
 )
+
+# CodeEmitter のユーティリティを standalone で使うためのインスタンス
+_code_emitter_utils = CodeEmitter.__new__(CodeEmitter)
 
 from toolchain.frontends.runtime_symbol_index import (
     canonical_runtime_module_id,
@@ -319,6 +323,16 @@ class ZigNativeEmitter:
                 if isinstance(tp, dict) and tp.get("kind") == "NameTarget":
                     mutated.add(_safe_ident(tp.get("id"), ""))
                 mutated.update(self._scan_mutated_vars(stmt.get("body")))
+            elif kind == "Expr":
+                val = stmt.get("value")
+                if isinstance(val, dict) and val.get("kind") == "Call":
+                    func = val.get("func")
+                    if isinstance(func, dict) and func.get("kind") == "Attribute":
+                        attr_name = func.get("attr")
+                        if attr_name in {"append", "extend", "insert", "pop", "remove", "clear", "sort", "reverse", "put"}:
+                            owner = func.get("value")
+                            if isinstance(owner, dict) and owner.get("kind") == "Name":
+                                mutated.add(_safe_ident(owner.get("id"), ""))
             elif kind == "While":
                 mutated.update(self._scan_mutated_vars(stmt.get("body")))
             elif kind == "Swap":
@@ -1100,7 +1114,7 @@ class ZigNativeEmitter:
             arg_names.append(_safe_ident(a, "arg"))
         arg_strs: list[str] = []
         # Zig parameters are immutable; detect reassigned params and rename.
-        reassigned_params = self._collect_reassigned_params(stmt)
+        reassigned_params = _code_emitter_utils._collect_reassigned_params(stmt)
         mutable_copies: list[tuple[str, str]] = []
         arg_types_any = stmt.get("arg_types")
         arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
@@ -1111,9 +1125,20 @@ class ZigNativeEmitter:
             param_name = arg_names[i]
             if not self._body_uses_name(stmt.get("body"), param_name):
                 param_name = "_"
-            # Reassigned params: rename parameter, copy to mutable var in body
-            if raw_name in reassigned_params or param_name in reassigned_params:
-                param_alias = self._mutable_param_name(arg_names[i])
+            # Reassigned params or mutable container params: rename and copy to var
+            raw_type_any = arg_types.get(raw_name) if isinstance(raw_name, str) else None
+            if not isinstance(raw_type_any, str):
+                raw_type_any = arg_types.get(arg_names[i])
+            py_t = raw_type_any.strip() if isinstance(raw_type_any, str) else ""
+            norm_t = self._normalize_type(py_t)
+            needs_mut = False
+            if norm_t.startswith("list[") or norm_t in {"bytearray", "bytes"}:
+                # body 内で .append/.extend 等が呼ばれるか or subscript 代入があるか
+                mutated_in_body = self._scan_mutated_vars(stmt.get("body"))
+                if arg_names[i] in mutated_in_body:
+                    needs_mut = True
+            if raw_name in reassigned_params or param_name in reassigned_params or needs_mut:
+                param_alias = _code_emitter_utils._mutable_param_name(arg_names[i])
                 mutable_copies.append((arg_names[i], param_alias))
                 arg_strs.append(param_alias + ": " + zig_ty)
             else:
