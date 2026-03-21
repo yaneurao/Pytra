@@ -571,6 +571,13 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     func = expr.get("func")
     args = _get_list(expr, "args")
     rendered_args = [_render_expr(a) for a in args]
+    # Append keyword arguments as positional (PS uses param() names)
+    keywords = _get_list(expr, "keywords")
+    for kw in keywords:
+        if isinstance(kw, dict):
+            kw_val = kw.get("value")
+            if kw_val is not None:
+                rendered_args.append(_render_expr(kw_val))
 
     if isinstance(func, dict):
         func_d: dict[str, object] = func
@@ -935,7 +942,22 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
                     return [indent + "continue"]
                 if raw == "pass":
                     return [indent + "# pass"]
-        return [indent + _render_expr(value)]
+        rendered = _render_expr(value)
+        # Suppress stdout leak for known side-effect-only calls
+        if isinstance(value, dict) and _get_str(value, "kind") == "Call":
+            func_node = value.get("func")
+            if isinstance(func_node, dict):
+                fn = _get_str(func_node, "id")
+                if fn.startswith("py_assert_") or fn in ("makedirs", "mkdir"):
+                    return [indent + "[void](" + rendered + ")"]
+                # Attribute call: obj.method() side effects
+                if _get_str(func_node, "kind") == "Attribute":
+                    attr_name = _get_str(func_node, "attr")
+                    if attr_name in ("append", "extend", "insert", "remove", "discard",
+                                     "clear", "sort", "reverse", "update", "add",
+                                     "close", "flush", "write"):
+                        return [indent + "[void](" + rendered + ")"]
+        return [indent + rendered]
 
     if kind == "Return":
         value = stmt.get("value")
@@ -1054,6 +1076,9 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
         if isinstance(iter_plan, dict) and _get_str(iter_plan, "kind") == "RuntimeIterForPlan":
             iter_expr = iter_plan.get("iter_expr")
             iter_rendered = _render_expr(iter_expr)
+            # String iteration: foreach ($c in $s) doesn't split chars in PS
+            if isinstance(iter_expr, dict) and _get_str(iter_expr, "resolved_type") == "str":
+                iter_rendered = iter_rendered + ".ToCharArray()"
             # Check for enumerate: need index + value unpacking
             is_enumerate = False
             enumerate_start = "0"
