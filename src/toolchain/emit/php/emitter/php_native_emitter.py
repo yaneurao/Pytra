@@ -1510,9 +1510,57 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     raise RuntimeError("php native emitter: unsupported stmt kind: " + str(kind))
 
 
+def _php_arg_is_mutated_in_body(arg_name: str, body: list[Any]) -> bool:
+    """Check if a function argument is mutated (appended to, subscript-assigned) in body."""
+    for stmt in body:
+        if not isinstance(stmt, dict):
+            continue
+        if _php_arg_is_mutated_in_node(arg_name, stmt):
+            return True
+    return False
+
+
+def _php_arg_is_mutated_in_node(arg_name: str, node: dict[str, Any]) -> bool:
+    kind = node.get("kind", "")
+    if kind == "Expr":
+        value = node.get("value")
+        if isinstance(value, dict) and value.get("kind") == "Call":
+            func = value.get("func")
+            if isinstance(func, dict) and func.get("kind") == "Attribute":
+                owner = func.get("value")
+                attr = func.get("attr", "")
+                if isinstance(owner, dict) and owner.get("kind") == "Name" and owner.get("id") == arg_name:
+                    if attr in ("append", "extend", "insert", "pop", "remove", "clear", "sort", "reverse"):
+                        return True
+    if kind in ("Assign", "AnnAssign", "AugAssign"):
+        target = node.get("target")
+        targets = node.get("targets")
+        if isinstance(targets, list):
+            for t in targets:
+                if isinstance(t, dict) and t.get("kind") == "Subscript":
+                    val = t.get("value")
+                    if isinstance(val, dict) and val.get("kind") == "Name" and val.get("id") == arg_name:
+                        return True
+        if isinstance(target, dict) and target.get("kind") == "Subscript":
+            val = target.get("value")
+            if isinstance(val, dict) and val.get("kind") == "Name" and val.get("id") == arg_name:
+                return True
+    for key in ("body", "orelse", "finalbody", "handlers"):
+        sub = node.get(key)
+        if isinstance(sub, list):
+            for s in sub:
+                if isinstance(s, dict) and _php_arg_is_mutated_in_node(arg_name, s):
+                    return True
+    return False
+
+
 def _function_params(fn: dict[str, Any], *, drop_self: bool) -> str:
     arg_order_any = fn.get("arg_order")
     arg_order = arg_order_any if isinstance(arg_order_any, list) else []
+    body_any = fn.get("body")
+    body = body_any if isinstance(body_any, list) else []
+    arg_types_any = fn.get("arg_types")
+    arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
     out: list[str] = []
     i = 0
     while i < len(arg_order):
@@ -1521,7 +1569,13 @@ def _function_params(fn: dict[str, Any], *, drop_self: bool) -> str:
             if drop_self and i == 0 and arg == "self":
                 i += 1
                 continue
-            out.append(_safe_var(arg, "arg" + str(i)))
+            safe = _safe_var(arg, "arg" + str(i))
+            # Check if argument needs pass-by-reference (list/dict mutation)
+            arg_type = arg_types.get(arg, "")
+            if isinstance(arg_type, str) and ("list[" in arg_type or "dict[" in arg_type or arg_type in ("bytearray", "bytes")):
+                if _php_arg_is_mutated_in_body(arg, body):
+                    safe = "&" + safe
+            out.append(safe)
         i += 1
     return ", ".join(out)
 
