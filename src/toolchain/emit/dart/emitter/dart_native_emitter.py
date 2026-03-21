@@ -1469,6 +1469,9 @@ class DartNativeEmitter:
             val = self._render_expr(stmt.get("value"))
             self._emit_line("yield " + val + ";")
             return
+        if kind == "VarDecl":
+            self._emit_var_decl(stmt)
+            return
         raise RuntimeError("lang=dart unsupported stmt kind: " + str(kind))
 
     def _emit_function_def(self, stmt: dict[str, Any]) -> None:
@@ -1608,6 +1611,26 @@ class DartNativeEmitter:
         self.current_class_name = prev_class
         self.current_class_base_name = prev_base
 
+    def _for_needs_tmp_start(self, target_name: str, start_expr: str) -> bool:
+        """Check if start expression references the target variable (shadowing risk)."""
+        # Simple check: target_name appears as a word boundary in start_expr
+        # e.g. start="y" target="y" → True
+        if target_name == start_expr:
+            return True
+        # Check for target_name as substring with non-alnum boundaries
+        i = 0
+        while i < len(start_expr):
+            pos = start_expr.find(target_name, i)
+            if pos < 0:
+                break
+            end_pos = pos + len(target_name)
+            left_ok = pos == 0 or not (start_expr[pos - 1].isalnum() or start_expr[pos - 1] == "_")
+            right_ok = end_pos >= len(start_expr) or not (start_expr[end_pos].isalnum() or start_expr[end_pos] == "_")
+            if left_ok and right_ok:
+                return True
+            i = pos + 1
+        return False
+
     def _emit_for_core(self, stmt: dict[str, Any]) -> None:
         iter_mode = str(stmt.get("iter_mode"))
         target_plan = stmt.get("target_plan")
@@ -1637,7 +1660,11 @@ class DartNativeEmitter:
                 else:
                     range_mode = "dynamic"
             if range_mode == "ascending":
-                if step_const == 1:
+                if self._for_needs_tmp_start(target_name, start):
+                    tmp = self._next_tmp_name("__forStart")
+                    self._emit_line("var " + tmp + " = " + start + ";")
+                    self._emit_line("for (var " + target_name + " = " + tmp + "; " + target_name + " < " + stop + "; " + target_name + ("++" if step_const == 1 else " += " + step) + ") {")
+                elif step_const == 1:
                     self._emit_line("for (var " + target_name + " = " + start + "; " + target_name + " < " + stop + "; " + target_name + "++) {")
                 else:
                     self._emit_line("for (var " + target_name + " = " + start + "; " + target_name + " < " + stop + "; " + target_name + " += " + step + ") {")
@@ -1647,7 +1674,12 @@ class DartNativeEmitter:
                 self._emit_line("}")
                 return
             if range_mode == "descending":
-                self._emit_line("for (var " + target_name + " = " + start + "; " + target_name + " > " + stop + "; " + target_name + " += " + step + ") {")
+                if self._for_needs_tmp_start(target_name, start):
+                    tmp = self._next_tmp_name("__forStart")
+                    self._emit_line("var " + tmp + " = " + start + ";")
+                    self._emit_line("for (var " + target_name + " = " + tmp + "; " + target_name + " > " + stop + "; " + target_name + " += " + step + ") {")
+                else:
+                    self._emit_line("for (var " + target_name + " = " + start + "; " + target_name + " > " + stop + "; " + target_name + " += " + step + ") {")
                 self.indent += 1
                 self._emit_block(stmt.get("body"))
                 self.indent -= 1
@@ -1720,6 +1752,22 @@ class DartNativeEmitter:
             self._emit_line("}")
             return
         raise RuntimeError("lang=dart unsupported forcore iter_mode: " + iter_mode)
+
+    def _emit_var_decl(self, stmt: dict[str, Any]) -> None:
+        """Emit a hoisted variable declaration (VarDecl node)."""
+        name_raw = stmt.get("name")
+        name = _safe_ident(name_raw, "v") if isinstance(name_raw, str) else "v"
+        var_type_any = stmt.get("type")
+        var_type = var_type_any.strip() if isinstance(var_type_any, str) else ""
+        dart_t = self._dart_type(var_type) if var_type != "" else "var"
+        if var_type != "":
+            self._current_type_map()[name] = var_type
+        if len(self._local_var_stack) > 0:
+            self._current_local_vars().add(name)
+        if var_type in _NIL_FREE_DECL_TYPES:
+            self._emit_line(dart_t + " " + name + ";")
+        else:
+            self._emit_line("late " + dart_t + " " + name + ";")
 
     def _emit_while(self, stmt: dict[str, Any]) -> None:
         test = self._render_cond_expr(stmt.get("test"))
