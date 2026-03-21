@@ -210,3 +210,127 @@ TypeInfo* g_type_table[] = {&type_Y, &type_X};
 - **upcast** は ptr 変更のみ
 - **rc** は共有
 - **type_id** は不変
+
+
+## 14. vtable あり object
+
+backend 言語が C++ の仮想関数のような仕組みをサポートしていない場合、自前で vtable を持つ必要がある。
+このとき、以下のようになる。
+
+### 14.1 現状コードの役割（vtable なし）
+
+提示コードの `TypeInfo` は実質：
+
+- 型 ID（`TYPE_X` など）
+- 型の「範囲」情報（`[1,2)` など）
+- deleter（= 仮想デストラクタの代替）
+
+つまり「動的型に応じて何をするか」を外部テーブルで解決している。
+
+### 14.2 vtable 導入時の基本方針
+
+vtable ありの場合は `TypeInfo` の責務が vtable に吸収される。
+
+- `deleter` → vtable の 1 エントリ（`drop`）
+- 仮想関数 → vtable に並ぶ
+- 型 ID → 不要 or デバッグ用途
+
+### 14.3 最小構成（RC + vtable）
+
+vtable 定義：
+
+```cpp
+struct VTable {
+    void (*drop)(void*);      // deleter
+    void (*foo)(void*);       // 仮想メソッド
+};
+```
+
+各型の実装：
+
+```cpp
+void X_foo(void* p) {
+    static_cast<X*>(p)->foo();
+}
+
+void Y_foo(void* p) {
+    static_cast<Y*>(p)->foo();
+}
+```
+
+vtable インスタンス：
+
+```cpp
+VTable vtable_Y = {
+    &deleter_impl<Y>,
+    &Y_foo
+};
+
+VTable vtable_X = {
+    &deleter_impl<X>,
+    &X_foo
+};
+```
+
+### 14.4 RC 付きオブジェクト
+
+```cpp
+struct Obj {
+    void* data;
+    VTable* vtable;
+    int rc;
+};
+```
+
+### 14.5 呼び出し
+
+```cpp
+obj->vtable->foo(obj->data);
+```
+
+### 14.6 解放（RC）
+
+```cpp
+if (--obj->rc == 0) {
+    obj->vtable->drop(obj->data);
+    delete obj;
+}
+```
+
+`TypeInfo` は不要になる。
+
+### 14.7 重要な違い（本質）
+
+| 方式 | 経路 | 特徴 |
+|---|---|---|
+| vtable なし | 型 ID → `TypeInfo` → `deleter` | 間接参照が 2 段階。仮想関数は別管理 |
+| vtable あり | `obj` → `vtable` → `(foo, drop)` | 1 回の間接参照で完結。メソッドと deleter が統一 |
+
+### 14.8 Rust 的設計に寄せる場合（推奨）
+
+```cpp
+struct VTable {
+    void (*drop)(void*);
+    size_t size;
+    size_t align;
+    void (*foo)(void*);
+};
+```
+
+RC やアロケータ設計が楽になる。
+
+### 14.9 「継承あり」の場合
+
+```
+Y
+↑
+X
+```
+
+vtable は：
+
+- `Y`: `[drop_Y, foo_Y]`
+- `X`: `[drop_X, foo_X]`（override）
+
+同じレイアウトで slot を上書きする。
+
