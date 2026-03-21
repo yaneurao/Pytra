@@ -249,6 +249,7 @@ class ZigNativeEmitter:
         self._dataclass_names: set[str] = set()
         self._dataclass_fields: dict[str, list[str]] = {}
         self._classes_with_init: set[str] = set()
+        self._classes_with_mut_method: set[str] = set()
         self._local_type_stack: list[dict[str, str]] = []
         self._ref_var_stack: list[set[str]] = []
         self._local_var_stack: list[set[str]] = []
@@ -333,6 +334,11 @@ class ZigNativeEmitter:
 
     def _is_var_mutated(self, name: str) -> bool:
         return name in self._current_mutated_vars()
+
+    def _needs_var_for_type(self, decl_type: str) -> bool:
+        """型が mutable メソッドを持つクラスなら var が必要。"""
+        t = self._normalize_type(decl_type)
+        return t in self._classes_with_mut_method
 
     def _body_uses_name(self, body_any: Any, name: str) -> bool:
         """body 内で指定した名前が参照されているか簡易判定する。"""
@@ -552,9 +558,11 @@ class ZigNativeEmitter:
                                 fields.append(_safe_ident(target_any.get("id"), "field"))
                     self._dataclass_fields[name] = fields
                 for sub in cls_body:
-                    if sub.get("kind") == "FunctionDef" and sub.get("name") == "__init__":
-                        self._classes_with_init.add(name)
-                        break
+                    if sub.get("kind") == "FunctionDef":
+                        if sub.get("name") == "__init__":
+                            self._classes_with_init.add(name)
+                        elif self._body_mutates_self(sub.get("body")):
+                            self._classes_with_mut_method.add(name)
 
     def _emit_stmt(self, stmt: dict[str, Any]) -> None:
         self._emit_leading_trivia(stmt, prefix="// ")
@@ -587,7 +595,7 @@ class ZigNativeEmitter:
                 zig_ty = self._zig_type(decl_type)
                 if len(self._local_var_stack) > 0:
                     self._current_local_vars().add(target_name)
-                decl_kw = "var" if self._is_var_mutated(target_name) else "const"
+                decl_kw = "var" if (self._is_var_mutated(target_name) or self._needs_var_for_type(decl_type)) else "const"
                 if value_node is None and bool(stmt.get("declare")):
                     self._emit_line("var " + target + ": " + zig_ty + " = undefined;")
                 else:
@@ -614,7 +622,7 @@ class ZigNativeEmitter:
                     if len(self._local_var_stack) > 0 and target_name not in self._current_local_vars():
                         self._current_local_vars().add(target_name)
                         zig_ty = self._zig_type(decl_type)
-                        decl_kw = "var" if self._is_var_mutated(target_name) else "const"
+                        decl_kw = "var" if (self._is_var_mutated(target_name) or self._needs_var_for_type(decl_type)) else "const"
                         self._emit_line(decl_kw + " " + target + ": " + zig_ty + " = " + value + ";")
                         return
                 self._emit_line(target + " = " + value + ";")
@@ -636,7 +644,7 @@ class ZigNativeEmitter:
                     if len(self._local_var_stack) > 0 and target_name not in self._current_local_vars():
                         self._current_local_vars().add(target_name)
                         zig_ty = self._zig_type(decl_type)
-                        decl_kw = "var" if self._is_var_mutated(target_name) else "const"
+                        decl_kw = "var" if (self._is_var_mutated(target_name) or self._needs_var_for_type(decl_type)) else "const"
                         self._emit_line(decl_kw + " " + target + ": " + zig_ty + " = " + value + ";")
                         return
                 self._emit_line(target + " = " + value + ";")
@@ -722,7 +730,23 @@ class ZigNativeEmitter:
             return
         if kind == "Global" or kind == "Nonlocal":
             return
+        if kind == "VarDecl":
+            self._emit_var_decl(stmt)
+            return
         raise RuntimeError("lang=zig unsupported stmt kind: " + str(kind))
+
+    def _emit_var_decl(self, stmt: dict[str, Any]) -> None:
+        """Emit a hoisted variable declaration (VarDecl node)."""
+        name_raw = stmt.get("name")
+        name = _safe_ident(name_raw, "v") if isinstance(name_raw, str) else "v"
+        var_type_any = stmt.get("type")
+        var_type = var_type_any.strip() if isinstance(var_type_any, str) else ""
+        zig_ty = self._zig_type(var_type) if var_type != "" else "anytype"
+        if var_type != "":
+            self._current_type_map()[name] = var_type
+        if len(self._local_var_stack) > 0:
+            self._current_local_vars().add(name)
+        self._emit_line("var " + name + ": " + zig_ty + " = undefined;")
 
     def _resolve_arg_zig_type(self, arg_name: str, raw_name: Any, arg_types: dict[str, Any]) -> str:
         """引数の型を EAST3 の arg_types から解決して Zig 型を返す。"""
@@ -960,7 +984,14 @@ class ZigNativeEmitter:
                         if isinstance(anno_any, str):
                             decl_type = anno_any.strip()
                     zig_ty = self._zig_type(decl_type)
-                    self._emit_line(field_name + ": " + zig_ty + ",")
+                    if field_name not in emitted_fields:
+                        value_node = sub.get("value")
+                        if isinstance(value_node, dict):
+                            default_val = self._render_expr(value_node)
+                            self._emit_line(field_name + ": " + zig_ty + " = " + default_val + ",")
+                        else:
+                            self._emit_line(field_name + ": " + zig_ty + " = undefined,")
+                        emitted_fields.add(field_name)
         self.indent -= 1
         self._emit_line("};")
         self._emit_line("")
@@ -1335,20 +1366,31 @@ class ZigNativeEmitter:
         return fn_expr + "(" + ", ".join(arg_strs) + ")"
 
     def _render_dict(self, node: dict[str, Any]) -> str:
+        entries_any = node.get("entries")
+        if isinstance(entries_any, list) and len(entries_any) > 0:
+            parts: list[str] = []
+            for entry in entries_any:
+                if isinstance(entry, dict):
+                    k = self._render_expr(entry.get("key"))
+                    v = self._render_expr(entry.get("value"))
+                    parts.append(".{ " + k + ", " + v + " }")
+            if len(parts) == 0:
+                return "pytra.new_dict()"
+            return ".{ " + ", ".join(parts) + " }"
         keys_any = node.get("keys")
         values_any = node.get("values")
         keys = keys_any if isinstance(keys_any, list) else []
         values = values_any if isinstance(values_any, list) else []
         if len(keys) == 0:
             return "pytra.new_dict()"
-        parts: list[str] = []
+        parts2: list[str] = []
         i = 0
         while i < len(keys):
             k = self._render_expr(keys[i])
             v = self._render_expr(values[i]) if i < len(values) else "null"
-            parts.append(".{ " + k + ", " + v + " }")
+            parts2.append(".{ " + k + ", " + v + " }")
             i += 1
-        return ".{ " + ", ".join(parts) + " }"
+        return ".{ " + ", ".join(parts2) + " }"
 
     def _render_joined_str(self, node: dict[str, Any]) -> str:
         values_any = node.get("values")
