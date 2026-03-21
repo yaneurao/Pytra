@@ -337,6 +337,11 @@ def _render_expr(expr_any: Any) -> str:
                     return "[int64]::MaxValue"
                 if attr == "platform":
                     return '"powershell"'
+            # stdlib module attribute: time.X, os.X, os.path.X → direct call or variable
+            # These are Python stdlib references inside transpiled stdlib modules.
+            # In PS, the functions are defined at module scope, so use bare name.
+            if vname in ("time", "os", "random", "re", "collections", "glob", "subprocess"):
+                return "$" + _safe_ident(attr, "_f")
         # Hashtable-based object field access: prefer ["attr"] over .attr
         # .NET methods (ToUpper, Split etc.) use dot notation
         _DOTNET_PROPS = {
@@ -727,6 +732,18 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     if attr in ("pi", "e", "inf"):
                         return "([Math]::" + ps_name + ")"
                     return "([Math]::" + ps_name + "(" + ", ".join(rendered_args) + "))"
+            # stdlib module method call: time.perf_counter() → (perf_counter)
+            if owner_name in ("time", "os", "random", "re", "collections", "glob", "subprocess"):
+                safe_fn = _safe_ident(attr, "_f")
+                if len(rendered_args) == 0:
+                    return "(" + safe_fn + ")"
+                return "(" + safe_fn + " " + " ".join(rendered_args) + ")"
+            # os.path.X() → (X args)
+            if owner_name == "os_path" or (isinstance(owner_node, dict) and _get_str(owner_node, "kind") == "Attribute" and _get_str(owner_node, "attr") == "path"):
+                safe_fn = _safe_ident(attr, "_f")
+                if len(rendered_args) == 0:
+                    return "(" + safe_fn + ")"
+                return "(" + safe_fn + " " + " ".join(rendered_args) + ")"
             if attr == "append":
                 if len(rendered_args) > 0:
                     return owner + " += @(" + rendered_args[0] + ")"
@@ -1264,8 +1281,51 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
     return [indent + "# unsupported: " + kind]
 
 
+def _is_stdlib_passthrough_function(stmt: dict[str, Any]) -> bool:
+    """Return True if this function is a stdlib passthrough (extern wrapper).
+
+    Pattern: function body is a single return statement that calls
+    $stdlib_module.same_name(args), e.g. return time.perf_counter().
+    These should be skipped since py_runtime.ps1 already provides the implementation.
+    """
+    body = _get_list(stmt, "body")
+    if len(body) != 1:
+        return False
+    s = body[0]
+    if not isinstance(s, dict) or _get_str(s, "kind") != "Return":
+        return False
+    val = s.get("value")
+    if not isinstance(val, dict) or _get_str(val, "kind") != "Call":
+        return False
+    func = val.get("func")
+    if not isinstance(func, dict) or _get_str(func, "kind") != "Attribute":
+        return False
+    owner = func.get("value")
+    if not isinstance(owner, dict) or _get_str(owner, "kind") != "Name":
+        return False
+    owner_name = _get_str(owner, "id")
+    func_attr = _get_str(func, "attr")
+    fn_name = _get_str(stmt, "name")
+    # time.perf_counter, math.sqrt, os.getcwd etc.
+    if owner_name in ("time", "math", "os", "random", "re", "glob", "subprocess", "sys"):
+        if func_attr == fn_name:
+            return True
+    # os.path.join etc. — 2-level Attribute chain
+    if _get_str(owner, "kind") == "Attribute":
+        inner_owner = owner.get("value")
+        if isinstance(inner_owner, dict) and _get_str(inner_owner, "kind") == "Name":
+            inner_name = _get_str(inner_owner, "id")
+            if inner_name in ("os", "sys"):
+                if func_attr == fn_name:
+                    return True
+    return False
+
+
 def _emit_function_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
     name = _safe_ident(_get_str(stmt, "name"), "_fn")
+    # Skip stdlib passthrough functions (runtime already provides them)
+    if _is_stdlib_passthrough_function(stmt):
+        return [indent + "# extern: " + name + " (provided by py_runtime.ps1)"]
     body = _get_list(stmt, "body")
 
     # EAST3 uses arg_order (list[str]) + arg_defaults (dict[str, Any])

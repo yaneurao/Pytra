@@ -249,6 +249,57 @@ function perf_counter {
     return [double]([System.Diagnostics.Stopwatch]::GetTimestamp()) / [double]([System.Diagnostics.Stopwatch]::Frequency)
 }
 
+# --- os / os.path functions ---
+function join {
+    param($a, $b)
+    return [System.IO.Path]::Combine($a, $b)
+}
+
+function dirname {
+    param($p)
+    $d = [System.IO.Path]::GetDirectoryName($p)
+    if ($d -eq $null) { return "" }
+    return $d
+}
+
+function basename {
+    param($p)
+    return [System.IO.Path]::GetFileName($p)
+}
+
+function splitext {
+    param($p)
+    $ext = [System.IO.Path]::GetExtension($p)
+    $stem = $p.Substring(0, $p.Length - $ext.Length)
+    return @($stem, $ext)
+}
+
+function abspath {
+    param($p)
+    return [System.IO.Path]::GetFullPath($p)
+}
+
+function exists {
+    param($p)
+    return (Test-Path $p)
+}
+
+function makedirs {
+    param($p, $exist_ok = $false)
+    if (-not (Test-Path $p)) {
+        New-Item -ItemType Directory -Path $p -Force | Out-Null
+    }
+}
+
+function getcwd {
+    return (Get-Location).Path
+}
+
+function listdir {
+    param($p = ".")
+    return @(Get-ChildItem -Path $p -Name)
+}
+
 function __pytra_in {
     param($item, $collection)
     if ($collection -is [hashtable] -or $collection -is [System.Collections.IDictionary]) {
