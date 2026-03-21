@@ -84,8 +84,12 @@ _DART_KEYWORDS = {
     "yield",
 }
 # Dart top-level built-in names that user-defined identifiers should not shadow.
+# Dart top-level built-in type/class names that user-defined identifiers
+# should not shadow.  Function names like print are excluded because Pytra's
+# runtime may reference them and _safe_ident cannot distinguish user
+# definitions from runtime references.
 _DART_RESERVED_BUILTINS = {
-    "print", "identical", "override",
+    "identical", "override",
     "int", "double", "num", "String", "bool", "List", "Map", "Set",
     "Object", "Type", "Symbol", "Future", "Stream", "Iterable",
     "Iterator", "Duration", "DateTime", "RegExp", "Error",

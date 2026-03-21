@@ -54,30 +54,28 @@ _JULIA_KEYWORDS = {
     "while",
 }
 # Julia Base built-in names that user-defined identifiers must not shadow.
+# NOTE: Only include names that are NOT used as runtime/stdlib function names
+# in Pytra, since _safe_ident cannot distinguish user definitions from runtime
+# references.  Names like open/sin/cos/sqrt etc. are used by the runtime and
+# must NOT be listed here.
 _JULIA_RESERVED_BUILTINS = {
-    "length", "size", "string", "print", "println", "display",
-    "open", "read", "write", "close", "readline", "readlines",
+    "length", "size", "string", "display",
+    "readline", "readlines",
     "push!", "pop!", "append!", "insert!", "deleteat!",
-    "sort", "sort!", "reverse", "reverse!", "filter", "map", "reduce",
-    "sum", "prod", "minimum", "maximum", "any", "all",
-    "keys", "values", "pairs", "haskey", "get", "merge",
-    "parse", "tryparse", "repr", "show",
-    "error", "throw", "rethrow",
-    "collect", "enumerate", "zip", "range",
-    "abs", "sign", "div", "rem", "mod",
-    "sqrt", "exp", "log", "sin", "cos", "tan",
-    "floor", "ceil", "round", "trunc",
+    "sort!", "reverse!", "filter", "reduce",
+    "prod", "minimum", "maximum",
+    "pairs", "haskey", "merge",
+    "tryparse", "repr", "show",
+    "rethrow",
+    "collect",
+    "sign",
+    "trunc",
     "convert", "promote", "typeof", "isa",
-    "copy", "deepcopy", "hash", "isequal",
+    "deepcopy", "isequal",
     "iterate", "eltype", "first", "last", "step",
     "isempty", "isnothing", "ismissing",
     "fill", "zeros", "ones",
-    "Array", "Vector", "Matrix", "Dict", "Set", "Tuple", "Pair",
-    "Int", "Int8", "Int16", "Int32", "Int64",
-    "UInt", "UInt8", "UInt16", "UInt32", "UInt64",
-    "Float16", "Float32", "Float64",
-    "Bool", "Char", "String", "Symbol",
-    "Nothing", "Missing", "Any",
+    "Array", "Vector", "Matrix",
 }
 _COMPILETIME_STD_IMPORT_SYMBOLS = {"abi", "template", "extern"}
 

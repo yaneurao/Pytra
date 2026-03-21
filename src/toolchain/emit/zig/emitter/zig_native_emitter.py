@@ -27,16 +27,18 @@ _ZIG_KEYWORDS = {
     "switch", "test", "threadlocal", "true", "try", "undefined",
     "union", "unreachable", "var", "volatile", "while",
 }
-# Zig std built-in names that user-defined identifiers should not shadow.
+# Zig std built-in type/namespace names that user-defined identifiers should
+# not shadow.  Names used by the Pytra runtime (print, math, etc.) are
+# excluded since _safe_ident cannot distinguish user vs runtime references.
 _ZIG_RESERVED_BUILTINS = {
-    "std", "print", "assert",
+    "std",
     "i8", "i16", "i32", "i64", "i128",
     "u8", "u16", "u32", "u64", "u128",
     "f16", "f32", "f64", "f128",
     "usize", "isize", "bool",
-    "type", "void", "anyerror",
+    "void", "anyerror",
     "allocator", "ArrayList", "HashMap",
-    "mem", "fmt", "math", "debug", "heap", "io", "os", "fs",
+    "mem", "fmt", "debug", "heap", "io", "os", "fs",
     "testing", "log",
 }
 _NIL_FREE_DECL_TYPES = {"int", "int64", "float", "float64", "bool", "str"}
