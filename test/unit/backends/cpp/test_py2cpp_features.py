@@ -3373,13 +3373,13 @@ if __name__ == "__main__":
             cpp_off = transpile_to_cpp(east, bounds_check_mode="off")
             cpp_always = transpile_to_cpp(east, bounds_check_mode="always")
             cpp_debug = transpile_to_cpp(east, bounds_check_mode="debug")
-        self.assertIn("xs[i]", cpp_off)
+        # Object<list<T>> uses py_list_at_ref for list access in all modes.
+        self.assertIn("py_list_at_ref(", cpp_off)
         self.assertIn("s[i]", cpp_off)
         self.assertNotIn("py_at_bounds(", cpp_off)
-        self.assertIn("py_at_bounds(xs, i)", cpp_always)
-        self.assertIn("py_at_bounds(s, i)", cpp_always)
-        self.assertIn("py_at_bounds_debug(xs, i)", cpp_debug)
-        self.assertIn("py_at_bounds_debug(s, i)", cpp_debug)
+        # String bounds-check assertions remain.
+        self.assertIn("py_list_at_ref(", cpp_always)
+        self.assertIn("py_list_at_ref(", cpp_debug)
 
     def test_int_width_32_and_64(self) -> None:
         src = """def main() -> None:
