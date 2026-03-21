@@ -125,9 +125,18 @@ def _module_to_ps_path(module: str) -> str:
     # browser / external modules → skip
     if module.startswith("browser"):
         return ""
-    # random (stdlib) → skip (not linked as separate module)
-    if module in ("random", "timeit", "traceback"):
-        return ""
+    # bare stdlib name (e.g. "pathlib", "json", "math") → X/east.ps1
+    # linker resolves these via std/ fallback
+    _KNOWN_STD_MODULES = {
+        "pathlib", "json", "math", "re", "os", "sys", "glob", "random",
+        "argparse", "time", "timeit", "collections", "subprocess",
+    }
+    if module in _KNOWN_STD_MODULES:
+        # Prevent self-reference: don't dot-source yourself
+        cur = _CURRENT_MODULE_ID[0]
+        if cur != "" and (cur == module + ".east" or cur.endswith("." + module)):
+            return ""
+        return module + "/east.ps1"
     # user module: direct relative
     return module.replace(".", "/") + ".ps1"
 
@@ -483,6 +492,10 @@ def _render_expr(expr_any: Any) -> str:
                 return "(__pytra_isinstance " + obj_expr + ' "' + type_name + '")'
         return "$true"
 
+    if kind == "Cast":
+        # 動的言語では cast は no-op: 値をそのまま返す
+        return _render_expr(expr.get("value"))
+
     if kind == "ObjLen":
         return "(__pytra_len " + _render_expr(expr.get("value")) + ")"
 
@@ -568,6 +581,16 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 return "[Math]::Max(" + ", ".join(rendered_args) + ")" if len(rendered_args) > 0 else "0"
             if fn_name == "isinstance":
                 return "$true"
+            if fn_name == "cast":
+                # typing.cast(Type, value) → value (no-op in dynamic languages)
+                if len(rendered_args) >= 2:
+                    return rendered_args[1]
+                return "$null"
+            if fn_name == "extern":
+                # @extern decorator / extern(value) → value (no-op)
+                if len(rendered_args) >= 1:
+                    return rendered_args[0]
+                return "$null"
             # Imported function aliases (e.g. from math import sqrt -> [Math]::Sqrt)
             if fn_name in _IMPORT_ALIASES[0]:
                 ps_func = _IMPORT_ALIASES[0][fn_name]
@@ -1145,6 +1168,15 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
     if kind == "Raise":
         exc = stmt.get("exc")
         if exc is not None:
+            # raise ExceptionType("msg") → throw "ExceptionType: msg"
+            if isinstance(exc, dict) and _get_str(exc, "kind") == "Call":
+                exc_func = exc.get("func")
+                exc_args = _get_list(exc, "args")
+                if isinstance(exc_func, dict) and _get_str(exc_func, "kind") == "Name":
+                    exc_name = _get_str(exc_func, "id")
+                    if len(exc_args) > 0:
+                        return [indent + "throw " + _ps_string_literal(exc_name + ": " + "") + " + " + _render_expr(exc_args[0])]
+                    return [indent + "throw " + _ps_string_literal(exc_name)]
             return [indent + "throw " + _render_expr(exc)]
         return [indent + "throw"]
 
@@ -1401,6 +1433,9 @@ def _simplify_main_guard_stmt(stmt: dict[str, Any]) -> dict[str, Any]:
 # Module-level entry point
 # ---------------------------------------------------------------------------
 
+_CURRENT_MODULE_ID: list[str] = [""]
+
+
 def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
     """EAST ドキュメントを PowerShell コードへ変換する。"""
     if not isinstance(east_doc, dict) or _get_str(east_doc, "kind") != "Module":
@@ -1409,6 +1444,10 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
     body = _get_list(east_doc, "body")
     if not isinstance(body, list):
         raise RuntimeError("powershell native emitter: Module.body must be list")
+
+    # Track current module ID for self-reference prevention
+    meta = _get_dict(east_doc, "meta")
+    _CURRENT_MODULE_ID[0] = _get_str(meta, "module_id")
 
     # Note: union type and typed vararg rejections are disabled for PowerShell
     # to allow transpilation of all linked modules (including assertions).

@@ -31,6 +31,11 @@ def _resolve_runtime_east_path(module_id: str) -> Path | None:
             east_path = _RUNTIME_EAST_ROOT / bucket / (name + ".east")
             if east_path.exists():
                 return east_path
+    # Fallback: bare module name → try pytra.std.X
+    # e.g. "pathlib" → std/pathlib.east, "json" → std/json.east
+    bare_path = _RUNTIME_EAST_ROOT / "std" / (module_id + ".east")
+    if bare_path.exists():
+        return bare_path
     return None
 
 
