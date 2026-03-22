@@ -163,6 +163,23 @@ def _module_id_from_east_or_path(east_doc: dict[str, object], source_path: Path)
         if isinstance(module_id_any, str) and module_id_any.strip() != "":
             return module_id_any.strip()
 
+    # For runtime .east files, derive module_id from path relative to _RUNTIME_EAST_ROOT.
+    # e.g. src/runtime/east/std/time.east → pytra.std.time
+    resolved = source_path.resolve()
+    east_root = _RUNTIME_EAST_ROOT.resolve()
+    try:
+        rel = resolved.relative_to(east_root)
+        rel_str = str(rel).replace("\\", "/")
+        # Strip .east extension
+        if rel_str.endswith(".east"):
+            rel_str = rel_str[:-5]
+        # Convert path separators to dots: std/time → std.time
+        module_id = "pytra." + rel_str.replace("/", ".")
+        if module_id != "":
+            return module_id
+    except ValueError:
+        pass
+
     file_name = source_path.name
     for suffix in (".east3.json", ".json", ".py"):
         if file_name.endswith(suffix):

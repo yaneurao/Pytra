@@ -32,7 +32,10 @@ def write_js_runtime_shims(output_dir: Path) -> None:
         if not src_root.exists():
             continue
         dst_root = stage_root / dst_name
-        if dst_root.exists():
-            shutil.rmtree(dst_root)
-        dst_root.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(src_root, dst_root)
+        dst_root.mkdir(parents=True, exist_ok=True)
+        # Copy individual files without overwriting generated outputs
+        for src_file in src_root.iterdir():
+            if src_file.is_file():
+                dst_file = dst_root / src_file.name
+                if not dst_file.exists():
+                    shutil.copy2(src_file, dst_file)

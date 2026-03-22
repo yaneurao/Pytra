@@ -101,8 +101,12 @@ def emit_all_modules(
         module_id = mod["module_id"]
         east_doc = mod["east_doc"]
         is_entry = mod.get("is_entry", False)
-        # Use module_id as filename, replacing dots with path separators
-        rel_path = module_id.replace(".", "/") + ext
+        # Use module_id as filename, replacing dots with path separators.
+        # Strip "pytra." prefix for runtime modules (pytra.std.time → std/time).
+        rel_module = module_id
+        if rel_module.startswith("pytra."):
+            rel_module = rel_module[len("pytra."):]
+        rel_path = rel_module.replace(".", "/") + ext
         out_path = out / rel_path
         out_path.parent.mkdir(parents=True, exist_ok=True)
         # Compute root-relative prefix for sub-module import path resolution.
