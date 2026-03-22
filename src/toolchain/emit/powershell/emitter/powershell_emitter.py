@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from toolchain.emit.common.emitter.code_emitter import build_import_alias_map
+from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 
 
 
@@ -146,12 +147,14 @@ _NO_EMIT_IMPORT_MODULES: set[str] = {
 def _module_id_to_import_path(module_id: str) -> str:
     """module_id から import パスを機械的に生成する (spec-emitter-guide.md §3)。
 
-    pytra. prefix を除去し、. を / に置換して .ps1 を付加。
+    canonical_runtime_module_id で正規化後、pytra. prefix を除去し、
+    . を / に置換して .ps1 を付加。
     root_rel_prefix を付加してサブモジュール間の相対パスを解決。
     """
     if module_id == "":
         return ""
-    rel = module_id
+    # Normalize bare names: math → pytra.std.math
+    rel = canonical_runtime_module_id(module_id)
     if rel.startswith("pytra."):
         rel = rel[len("pytra."):]
     raw = rel.replace(".", "/") + ".ps1"
