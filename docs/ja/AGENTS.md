@@ -14,8 +14,9 @@
 - `docs/ja/` を正本（source of truth）とし、`docs/en/` は翻訳ミラーとして扱う。
 - `docs/ja/` 直下（トップレベル）への新規ファイル追加は原則禁止（同一ターンの明示依頼がある場合のみ許可）。
 - `docs/ja/plans/`、`docs/ja/language/`、`docs/ja/todo/archive/`、`docs/ja/spec/` 配下は、運用ルールに沿う範囲で作成可。
-- 作業生成物は `work/tmp/` を使用する。selfhost テストは `work/selfhost/` を使用する。**`out/` / `selfhost/` / `/tmp/` への出力は禁止**。
-- リポジトリ直下に `out/` / `selfhost/` 等の新規ディレクトリを作成してはならない。
+- 作業生成物は `work/tmp/` を使用する。selfhost テストは `work/selfhost/` を使用する。
+- **以下への出力は禁止**: `out/`, `selfhost/`, `sample/out/`, `sample/obj/`, `/tmp/`。
+- リポジトリ直下や `sample/` 配下に一時出力ディレクトリを作成してはならない。
 - `materials/` はユーザー資料置き場として扱い、Codex は read-only（明示指示がある場合のみ編集可）。
 - `materials/Yanesdk/` と `materials/microgpt/` はユーザー管理資料として扱う。
 - 変換互換性テストの原本（例: `materials/microgpt/microgpt-20260222.py`）は改変禁止とし、変換器都合の回避版が必要な場合は `work/tmp/*-lite.py` を別名で作成して分離する。

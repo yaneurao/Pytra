@@ -105,10 +105,10 @@
 - 変換回避の検証用派生ファイルが必要な場合は `work/tmp/*-lite.py` を作成して分離し、原本を評価基準（最終的に通す対象）として維持します。
 - 実行速度比較時の C++ は `-O3 -ffast-math -flto` を使用します。
 - 生成物ディレクトリ（`out/`, `test/transpile/obj/`, `test/transpile/cpp2/`, `sample/obj/`, `sample/out/`）は Git 管理外運用を維持します。
-- **`out/` / `selfhost/` / `/tmp/` への一時出力は禁止**。
+- **以下への一時出力は禁止**: `out/`, `selfhost/`, `sample/out/`, `sample/obj/`, `/tmp/`。
   - ビルド・変換・検証の一時出力は `work/tmp/` を使用する。
   - selfhost テストの出力は `work/selfhost/` を使用する。
-  - `out/` / `selfhost/` はリポジトリ直下に残存する互換ディレクトリであり、新規の出力先として使ってはならない。複数インスタンスの競合リスクがある。
+  - `out/` / `selfhost/` / `sample/out/` / `sample/obj/` は過去の互換ディレクトリであり、新規の出力先として使ってはならない。複数インスタンスの競合リスクがある。
   - `/tmp/` はシステム共有領域であり、掃除されずゴミが蓄積する。使用禁止。
   - `tempfile.TemporaryDirectory()` も `/tmp/` を使うため禁止。代わりに `work/tmp/` 配下にサブディレクトリを作成する。
 - `src/toolchain/emit/common/emitter/code_emitter.py` を変更した場合は `test/unit/common/test_code_emitter.py` を必ず実行し、共通ユーティリティ回帰を先に確認します。
