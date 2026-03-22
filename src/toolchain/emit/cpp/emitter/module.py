@@ -560,6 +560,16 @@ class CppModuleEmitter:
             if inc != "" and inc not in seen:
                 seen.add(inc)
                 includes.append(inc)
+        # Also resolve includes from import bindings (catches sub-module imports
+        # like `from pytra.utils import png` where dep is "pytra.utils" not "pytra.utils.png")
+        meta = self.doc.get("meta") if isinstance(self.doc, dict) else None
+        if isinstance(meta, dict):
+            bindings = dict_any_get_dict_list(meta, "import_bindings")
+            for item in bindings:
+                inc = self._import_binding_cpp_include(item)
+                if inc != "" and inc not in seen:
+                    seen.add(inc)
+                    includes.append(inc)
         # Helper includes (C++ specific: RuntimeSpecialOp, PathRuntimeOp, etc.)
         # These are language-specific and stay in the emitter.
         scan_nodes: list[dict[str, Any]] = list(body)
