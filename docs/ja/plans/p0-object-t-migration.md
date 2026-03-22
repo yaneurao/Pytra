@@ -95,3 +95,4 @@ emitter が生成する C++ コードを `Object<T>` 形式に順次移行する
   - conftest の @extern 関数自己再帰 C++ 生成修正
   - `load_cpp_identifier_rules` の profile override 復元
   - REPO_ROOT ずれ（parents[4]→parents[5]）を特定。import alias 解決に必要だが include path 退行のため保留 → P0-22 として起票
+- 2026-03-22: Phase 4 S5 完了。header_builder.py の `rc<T>` → `Object<T>` 移行、py_types.h の legacy alias 除去、gc.h/gc.cpp 削除。check_py2x_transpile 136/150 ok（regression なし）。
