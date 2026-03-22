@@ -80,6 +80,27 @@
 1. [ ] [ID: P0-MAIN-GUARD-DISCARD-01] main_guard_body 内の Expr Call を Discard でラップする。
 2. [ ] [ID: P0-MAIN-GUARD-DISCARD-02] ユニットテストを追加する。
 
+#### P0-29: 未使用変数の検出
+
+文脈: [docs/ja/plans/p0-unused-variable-detection.md](../plans/p0-unused-variable-detection.md)
+
+1. [ ] [ID: P0-UNUSED-VAR-01] 未使用変数検出パスを実装し、Assign target / VarDecl に `unused` フラグを付与する。
+2. [ ] [ID: P0-UNUSED-VAR-02] ユニットテストを追加する。
+
+#### P0-30: タプル代入の正規化（swap 検出）
+
+文脈: [docs/ja/plans/p0-tuple-assign-normalization.md](../plans/p0-tuple-assign-normalization.md)
+
+1. [ ] [ID: P0-TUPLE-ASSIGN-NORM-01] 2 要素 swap パターンを検出して Swap ノードに変換する。
+2. [ ] [ID: P0-TUPLE-ASSIGN-NORM-02] ユニットテストを追加する。
+
+#### P0-31: for ループの TupleTarget 事前展開
+
+文脈: [docs/ja/plans/p0-for-tuple-target-expansion.md](../plans/p0-for-tuple-target-expansion.md)
+
+1. [ ] [ID: P0-FOR-TUPLE-EXPAND-01] ForCore TupleTarget を事前展開する EAST3 パスを実装する。
+2. [ ] [ID: P0-FOR-TUPLE-EXPAND-02] ユニットテストを追加する。
+
 #### P0-22: REPO_ROOT 修正 + import alias 解決 + conftest extern 関数修正
 
 文脈: [docs/ja/plans/p0-cpp-repo-root-and-import-alias-fix.md](../plans/p0-cpp-repo-root-and-import-alias-fix.md)
