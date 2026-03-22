@@ -56,10 +56,16 @@ def _generate_go_runtime(output_dir: str) -> None:
     """Generate Go runtime files from .east sources and copy native .go files."""
     out = NativePath(output_dir)
 
-    # 1. Copy py_runtime.go (built_in)
+    # 1. Copy py_runtime.go (built_in) and image helpers from sample/go/
     dst = out / "py_runtime.go"
     if _GO_RUNTIME_SRC.exists() and not dst.exists():
         shutil.copy2(str(_GO_RUNTIME_SRC), str(dst))
+    _GO_SAMPLE_DIR = _ROOT / "sample" / "go"
+    for name in ("png.go", "gif.go"):
+        src = _GO_SAMPLE_DIR / name
+        d = out / name
+        if src.exists() and not d.exists():
+            shutil.copy2(str(src), str(d))
 
     # 2. Copy native std files (math_native.go, time_native.go)
     if _GO_NATIVE_STD_DIR.is_dir():
