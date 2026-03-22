@@ -227,6 +227,31 @@ if len(parts) > 1 and parts[0] == "pytra":
 
 変換ルール: `module_id` から `pytra.` prefix を除去し、`.` を `/` に置換して拡張子を付加。`emit_all_modules` が自動で行うため、emitter 側での実装は不要。
 
+### フラット配置が必要な言語
+
+Go のようにサブディレクトリの `.go` ファイルが別パッケージ扱いになる言語では、全ファイルを `emit/` 直下にフラット配置する必要がある。
+
+この場合:
+- `emit_all_modules` は使わず、独自ループでフラット出力する
+- `copy_native_runtime` の代わりに、`built_in/` / `std/` 内のファイルを `emit/` 直下にコピーする
+- ファイル名の衝突を避けるため、サブディレクトリ名を prefix として付ける（例: `std_time.<ext>`, `built_in_py_runtime.<ext>`）
+
+```
+# フラット配置の例（Go）
+emit/
+├── 17_monte_carlo_pi.go
+├── std_time.go              # pytra.std.time
+├── std_time_native.go       # 手書き native
+├── std_math.go              # pytra.std.math
+├── std_math_native.go
+├── built_in_py_runtime.go   # 手書き built-in
+└── utils_gif.go             # pytra.utils.gif
+```
+
+`loader.py` の `copy_native_runtime` に `flat=True` オプションを渡すとフラットコピーになる。`emit_all_modules` にも同様の `flat=True` オプションがある。
+
+対象言語: Go（他にフラット配置が必要な言語があれば追加）。
+
 ### native ファイルの命名
 
 手書きランタイムファイルは `_native` suffix を付ける:
