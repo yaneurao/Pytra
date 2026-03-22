@@ -278,6 +278,7 @@
           "is_generator": 0,
           "yield_value_type": "unknown",
           "decorators": [],
+          "mutates_self": true,
           "meta": {
             "lifetime_analysis": {
               "schema_version": "east3_lifetime_v1",
@@ -1183,6 +1184,7 @@
           "is_generator": 0,
           "yield_value_type": "unknown",
           "decorators": [],
+          "mutates_self": false,
           "meta": {
             "lifetime_analysis": {
               "schema_version": "east3_lifetime_v1",
@@ -71252,6 +71254,7 @@
           "is_generator": 0,
           "yield_value_type": "unknown",
           "decorators": [],
+          "mutates_self": true,
           "meta": {
             "lifetime_analysis": {
               "schema_version": "east3_lifetime_v1",
@@ -71521,6 +71524,7 @@
           "is_generator": 0,
           "yield_value_type": "unknown",
           "decorators": [],
+          "mutates_self": false,
           "meta": {
             "lifetime_analysis": {
               "schema_version": "east3_lifetime_v1",
@@ -72137,7 +72141,7 @@
                   "end_lineno": 510,
                   "end_col_offset": 27
                 },
-                "resolved_type": "list[unknown]",
+                "resolved_type": "list[str]",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "[]",
@@ -74822,7 +74826,7 @@
                   "end_lineno": 535,
                   "end_col_offset": 27
                 },
-                "resolved_type": "list[unknown]",
+                "resolved_type": "list[str]",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "[]",

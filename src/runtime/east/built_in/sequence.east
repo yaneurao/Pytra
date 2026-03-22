@@ -140,7 +140,7 @@
               "end_lineno": 8,
               "end_col_offset": 23
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",

@@ -1554,7 +1554,7 @@
                   "end_lineno": 21,
                   "end_col_offset": 29
                 },
-                "resolved_type": "list[unknown]",
+                "resolved_type": "list[int64]",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "[]",
@@ -2183,7 +2183,7 @@
               "end_lineno": 28,
               "end_col_offset": 23
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -7771,7 +7771,7 @@
               "end_lineno": 71,
               "end_col_offset": 21
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -9319,7 +9319,7 @@
               "end_lineno": 94,
               "end_col_offset": 37
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[list[int64]]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -9571,7 +9571,7 @@
                   "end_lineno": 96,
                   "end_col_offset": 31
                 },
-                "resolved_type": "list[unknown]",
+                "resolved_type": "list[int64]",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "[]",
@@ -10621,7 +10621,7 @@
               "end_lineno": 103,
               "end_col_offset": 32
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -11011,7 +11011,7 @@
               "end_lineno": 107,
               "end_col_offset": 23
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",

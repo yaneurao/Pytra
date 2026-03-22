@@ -115,7 +115,7 @@
               "end_lineno": 5,
               "end_col_offset": 26
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[object]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -712,7 +712,7 @@
               "end_lineno": 12,
               "end_col_offset": 26
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[object]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",

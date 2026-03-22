@@ -467,6 +467,7 @@
           "is_generator": 0,
           "yield_value_type": "unknown",
           "decorators": [],
+          "mutates_self": true,
           "meta": {
             "lifetime_analysis": {
               "schema_version": "east3_lifetime_v1",
@@ -2508,6 +2509,7 @@
           "is_generator": 0,
           "yield_value_type": "unknown",
           "decorators": [],
+          "mutates_self": true,
           "meta": {
             "lifetime_analysis": {
               "schema_version": "east3_lifetime_v1",
@@ -3191,7 +3193,7 @@
                   "end_lineno": 63,
                   "end_col_offset": 40
                 },
-                "resolved_type": "list[unknown]",
+                "resolved_type": "list[_ArgSpec]",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "[]",
@@ -3221,6 +3223,7 @@
           "is_generator": 0,
           "yield_value_type": "unknown",
           "decorators": [],
+          "mutates_self": true,
           "meta": {
             "lifetime_analysis": {
               "schema_version": "east3_lifetime_v1",
@@ -3516,7 +3519,7 @@
                   "end_lineno": 76,
                   "end_col_offset": 29
                 },
-                "resolved_type": "list[unknown]",
+                "resolved_type": "list[str]",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "[]",
@@ -5290,6 +5293,7 @@
           "is_generator": 0,
           "yield_value_type": "unknown",
           "decorators": [],
+          "mutates_self": true,
           "meta": {
             "lifetime_analysis": {
               "schema_version": "east3_lifetime_v1",
@@ -6389,6 +6393,7 @@
           "is_generator": 0,
           "yield_value_type": "unknown",
           "decorators": [],
+          "mutates_self": false,
           "meta": {
             "lifetime_analysis": {
               "schema_version": "east3_lifetime_v1",
@@ -7154,7 +7159,7 @@
                   "end_lineno": 102,
                   "end_col_offset": 38
                 },
-                "resolved_type": "list[unknown]",
+                "resolved_type": "list[_ArgSpec]",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "[]",
@@ -7262,7 +7267,7 @@
                   "end_lineno": 103,
                   "end_col_offset": 38
                 },
-                "resolved_type": "list[unknown]",
+                "resolved_type": "list[_ArgSpec]",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "[]",
@@ -7833,7 +7838,7 @@
                   "end_lineno": 109,
                   "end_col_offset": 38
                 },
-                "resolved_type": "dict[unknown,unknown]",
+                "resolved_type": "dict[str,int64]",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "{}",
@@ -8399,7 +8404,7 @@
                   "end_lineno": 116,
                   "end_col_offset": 40
                 },
-                "resolved_type": "dict[unknown,unknown]",
+                "resolved_type": "dict[str,ArgValue]",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "{}",
@@ -13791,6 +13796,7 @@
           "is_generator": 0,
           "yield_value_type": "unknown",
           "decorators": [],
+          "mutates_self": false,
           "meta": {
             "lifetime_analysis": {
               "schema_version": "east3_lifetime_v1",

@@ -88,7 +88,7 @@
           "end_lineno": 6,
           "end_col_offset": 25
         },
-        "resolved_type": "list[unknown]",
+        "resolved_type": "list[int64]",
         "casts": [],
         "borrow_kind": "value",
         "repr": "[]",
@@ -181,7 +181,7 @@
           "end_lineno": 7,
           "end_col_offset": 31
         },
-        "resolved_type": "dict[unknown,unknown]",
+        "resolved_type": "dict[int64,int64]",
         "casts": [],
         "borrow_kind": "value",
         "repr": "{}",
@@ -293,7 +293,7 @@
           "end_lineno": 8,
           "end_col_offset": 41
         },
-        "resolved_type": "dict[unknown,unknown]",
+        "resolved_type": "dict[int64,list[int64]]",
         "casts": [],
         "borrow_kind": "value",
         "repr": "{}",
@@ -387,7 +387,7 @@
           "end_lineno": 9,
           "end_col_offset": 32
         },
-        "resolved_type": "dict[unknown,unknown]",
+        "resolved_type": "dict[int64,int64]",
         "casts": [],
         "borrow_kind": "value",
         "repr": "{}",
@@ -481,7 +481,7 @@
           "end_lineno": 10,
           "end_col_offset": 30
         },
-        "resolved_type": "dict[unknown,unknown]",
+        "resolved_type": "dict[int64,int64]",
         "casts": [],
         "borrow_kind": "value",
         "repr": "{}",
@@ -575,7 +575,7 @@
           "end_lineno": 11,
           "end_col_offset": 30
         },
-        "resolved_type": "dict[unknown,unknown]",
+        "resolved_type": "dict[int64,int64]",
         "casts": [],
         "borrow_kind": "value",
         "repr": "{}",
@@ -669,7 +669,7 @@
           "end_lineno": 12,
           "end_col_offset": 32
         },
-        "resolved_type": "dict[unknown,unknown]",
+        "resolved_type": "dict[str,int64]",
         "casts": [],
         "borrow_kind": "value",
         "repr": "{}",
@@ -1660,7 +1660,7 @@
               "end_lineno": 56,
               "end_col_offset": 23
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -1903,7 +1903,7 @@
               "end_lineno": 61,
               "end_col_offset": 23
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -3155,7 +3155,7 @@
               "end_lineno": 76,
               "end_col_offset": 23
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -8528,7 +8528,7 @@
               "end_lineno": 123,
               "end_col_offset": 25
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",

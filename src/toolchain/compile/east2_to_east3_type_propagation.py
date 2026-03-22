@@ -48,6 +48,15 @@ def _propagate_assign_target_type(node: Any) -> None:
                     if _safe_str(nd.get("decl_type")) in ("", "unknown"):
                         nd["decl_type"] = inferred
 
+            # Propagate decl_type to empty container value ([] / {})
+            if isinstance(value, dict):
+                val_type = _safe_str(value.get("resolved_type"))
+                decl_type = _safe_str(nd.get("decl_type"))
+                if decl_type not in ("", "unknown") and "unknown" in val_type:
+                    val_kind = value.get("kind", "")
+                    if val_kind in ("List", "Dict", "Set"):
+                        value["resolved_type"] = decl_type
+
             # Tuple target: propagate element types
             if target.get("kind") == "Tuple" and isinstance(value, dict):
                 _propagate_tuple_target_types(target, value)

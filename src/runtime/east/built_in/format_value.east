@@ -4459,7 +4459,7 @@
               "end_lineno": 68,
               "end_col_offset": 26
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[str]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -37114,7 +37114,7 @@
               "end_lineno": 315,
               "end_col_offset": 26
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[str]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -39330,7 +39330,7 @@
               "end_lineno": 331,
               "end_col_offset": 26
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[str]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -41417,7 +41417,7 @@
               "end_lineno": 347,
               "end_col_offset": 26
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[str]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -66728,7 +66728,7 @@
               "end_lineno": 532,
               "end_col_offset": 25
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[str]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",

@@ -170,7 +170,7 @@
               "end_lineno": 10,
               "end_col_offset": 31
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[tuple[A,B]]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",

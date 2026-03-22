@@ -10,6 +10,7 @@ from toolchain.compile.east2_to_east3_default_arg_expansion import expand_defaul
 from toolchain.compile.east2_to_east3_enumerate_lowering import lower_enumerate
 from toolchain.compile.east2_to_east3_integer_promotion import apply_integer_promotion
 from toolchain.compile.east2_to_east3_listcomp_lowering import lower_listcomp
+from toolchain.compile.east2_to_east3_mutates_self import detect_mutates_self
 from toolchain.compile.east2_to_east3_main_guard_discard import mark_main_guard_discard
 from toolchain.compile.east2_to_east3_tuple_target_expansion import expand_forcore_tuple_targets
 from toolchain.compile.east2_to_east3_swap_detection import detect_swap_patterns
@@ -655,6 +656,9 @@ def lower_east2_to_east3(east_module: dict[str, Any], object_dispatch_mode: str 
 
     # Swap pattern detection: a,b = b,a → Swap(lhs=a, rhs=b)
     detect_swap_patterns(lowered)
+
+    # mutates_self detection: mark class methods that mutate self
+    detect_mutates_self(lowered)
 
     # Unused variable detection: mark variables that are assigned but
     # never referenced with unused=true.

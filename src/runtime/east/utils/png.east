@@ -5373,7 +5373,7 @@
               "end_lineno": 55,
               "end_col_offset": 23
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -8949,7 +8949,7 @@
               "end_lineno": 77,
               "end_col_offset": 29
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -9477,7 +9477,7 @@
               "end_lineno": 81,
               "end_col_offset": 23
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -10679,7 +10679,7 @@
               "end_lineno": 90,
               "end_col_offset": 23
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -12369,7 +12369,7 @@
               "end_lineno": 97,
               "end_col_offset": 29
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -13871,7 +13871,7 @@
               "end_lineno": 110,
               "end_col_offset": 24
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -14561,7 +14561,7 @@
               "end_lineno": 116,
               "end_col_offset": 23
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
@@ -15298,7 +15298,7 @@
               "end_lineno": 120,
               "end_col_offset": 29
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
