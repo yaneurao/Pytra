@@ -94,14 +94,24 @@ def _expand_call_defaults(node: Any, sigs: dict[str, dict[str, Any]]) -> None:
             args = nd.get("args")
             if isinstance(args, list) and isinstance(arg_order, list) and isinstance(arg_defaults, dict):
                 n_args = len(args)
-                n_params = len(arg_order)
                 # Filter out 'self' from param count
                 effective_params = [p for p in arg_order if isinstance(p, str) and p != "self"]
                 n_effective = len(effective_params)
+                # Collect keyword argument names to avoid duplicates
+                kw_names: set[str] = set()
+                keywords = nd.get("keywords")
+                if isinstance(keywords, list):
+                    for kw in keywords:
+                        if isinstance(kw, dict):
+                            kw_arg = kw.get("arg")
+                            if isinstance(kw_arg, str) and kw_arg != "":
+                                kw_names.add(kw_arg)
                 if n_args < n_effective and len(arg_defaults) > 0:
-                    # Append missing default values
+                    # Append missing default values (skip if already in keywords)
                     for i in range(n_args, n_effective):
                         param_name = effective_params[i]
+                        if param_name in kw_names:
+                            continue  # Already provided as keyword arg
                         if param_name in arg_defaults:
                             default_node = arg_defaults[param_name]
                             if isinstance(default_node, dict):

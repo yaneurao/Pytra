@@ -528,20 +528,6 @@
                 "borrow_kind": "readonly_ref",
                 "repr": "p",
                 "id": "p"
-              },
-              {
-                "kind": "Constant",
-                "source_span": {
-                  "lineno": 21,
-                  "col_offset": 38,
-                  "end_lineno": 21,
-                  "end_col_offset": 43
-                },
-                "resolved_type": "bool",
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "False",
-                "value": false
               }
             ],
             "keywords": [
