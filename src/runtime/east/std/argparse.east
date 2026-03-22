@@ -6628,7 +6628,7 @@
                 ]
               },
               "meta": {
-                "lifetime_node_id": "n54",
+                "lifetime_node_id": "n55",
                 "lifetime_defs": [
                   "args"
                 ],
@@ -6906,7 +6906,7 @@
                     "dynamic_name": "unknown"
                   },
                   "meta": {
-                    "lifetime_node_id": "n52",
+                    "lifetime_node_id": "n53",
                     "lifetime_defs": [
                       "args"
                     ],
@@ -7026,7 +7026,7 @@
                     "mirror": "list[unknown]"
                   },
                   "meta": {
-                    "lifetime_node_id": "n53",
+                    "lifetime_node_id": "n54",
                     "lifetime_defs": [
                       "args"
                     ],
@@ -7061,7 +7061,7 @@
                 }
               ],
               "meta": {
-                "lifetime_node_id": "n51",
+                "lifetime_node_id": "n52",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "argv"
@@ -7172,7 +7172,7 @@
                 "rhs_kind": "List"
               },
               "meta": {
-                "lifetime_node_id": "n50",
+                "lifetime_node_id": "n51",
                 "lifetime_defs": [
                   "specs_pos"
                 ],
@@ -7280,7 +7280,7 @@
                 "rhs_kind": "List"
               },
               "meta": {
-                "lifetime_node_id": "n49",
+                "lifetime_node_id": "n50",
                 "lifetime_defs": [
                   "specs_opt"
                 ],
@@ -7293,6 +7293,40 @@
                   "continue",
                   "len",
                   "self",
+                  "specs_pos"
+                ],
+                "lifetime_live_out": [
+                  "PYTRA_TID_BOOL",
+                  "args",
+                  "bool",
+                  "cast",
+                  "continue",
+                  "len",
+                  "self",
+                  "specs_opt",
+                  "specs_pos"
+                ],
+                "lifetime_last_use_vars": []
+              }
+            },
+            {
+              "kind": "VarDecl",
+              "name": "s",
+              "type": "_ArgSpec",
+              "hoisted": true,
+              "meta": {
+                "lifetime_node_id": "n49",
+                "lifetime_defs": [],
+                "lifetime_uses": [],
+                "lifetime_live_in": [
+                  "PYTRA_TID_BOOL",
+                  "args",
+                  "bool",
+                  "cast",
+                  "continue",
+                  "len",
+                  "self",
+                  "specs_opt",
                   "specs_pos"
                 ],
                 "lifetime_live_out": [
@@ -13762,7 +13796,7 @@
               "schema_version": "east3_lifetime_v1",
               "status": "ok",
               "reason": "",
-              "entry_node": "n54",
+              "entry_node": "n55",
               "order": [
                 "n0",
                 "n1",
@@ -13818,7 +13852,8 @@
                 "n51",
                 "n52",
                 "n53",
-                "n54"
+                "n54",
+                "n55"
               ],
               "cfg": [
                 {
@@ -14421,10 +14456,8 @@
                 },
                 {
                   "id": "n49",
-                  "kind": "AnnAssign",
-                  "defs": [
-                    "specs_opt"
-                  ],
+                  "kind": "VarDecl",
+                  "defs": [],
                   "uses": [],
                   "succ": [
                     "n45"
@@ -14434,7 +14467,7 @@
                   "id": "n50",
                   "kind": "AnnAssign",
                   "defs": [
-                    "specs_pos"
+                    "specs_opt"
                   ],
                   "uses": [],
                   "succ": [
@@ -14443,27 +14476,25 @@
                 },
                 {
                   "id": "n51",
+                  "kind": "AnnAssign",
+                  "defs": [
+                    "specs_pos"
+                  ],
+                  "uses": [],
+                  "succ": [
+                    "n50"
+                  ]
+                },
+                {
+                  "id": "n52",
                   "kind": "If",
                   "defs": [],
                   "uses": [
                     "argv"
                   ],
                   "succ": [
-                    "n52",
-                    "n53"
-                  ]
-                },
-                {
-                  "id": "n52",
-                  "kind": "Assign",
-                  "defs": [
-                    "args"
-                  ],
-                  "uses": [
-                    "sys"
-                  ],
-                  "succ": [
-                    "n50"
+                    "n53",
+                    "n54"
                   ]
                 },
                 {
@@ -14473,31 +14504,44 @@
                     "args"
                   ],
                   "uses": [
-                    "argv",
-                    "list"
+                    "sys"
                   ],
                   "succ": [
-                    "n50"
+                    "n51"
                   ]
                 },
                 {
                   "id": "n54",
+                  "kind": "Assign",
+                  "defs": [
+                    "args"
+                  ],
+                  "uses": [
+                    "argv",
+                    "list"
+                  ],
+                  "succ": [
+                    "n51"
+                  ]
+                },
+                {
+                  "id": "n55",
                   "kind": "AnnAssign",
                   "defs": [
                     "args"
                   ],
                   "uses": [],
                   "succ": [
-                    "n51"
+                    "n52"
                   ]
                 }
               ],
               "def_use": {
                 "defs": {
                   "args": [
-                    "n52",
                     "n53",
-                    "n54"
+                    "n54",
+                    "n55"
                   ],
                   "by_name": [
                     "n44"
@@ -14529,10 +14573,10 @@
                     "n43"
                   ],
                   "specs_opt": [
-                    "n49"
+                    "n50"
                   ],
                   "specs_pos": [
-                    "n50"
+                    "n51"
                   ],
                   "tok": [
                     "n27"
@@ -14555,8 +14599,8 @@
                     "n3"
                   ],
                   "argv": [
-                    "n51",
-                    "n53"
+                    "n52",
+                    "n54"
                   ],
                   "bool": [
                     "n33"
@@ -14588,7 +14632,7 @@
                     "n8"
                   ],
                   "list": [
-                    "n53"
+                    "n54"
                   ],
                   "pos_i": [
                     "n1",
@@ -14638,7 +14682,7 @@
                     "n8"
                   ],
                   "sys": [
-                    "n52"
+                    "n53"
                   ],
                   "tok": [
                     "n10",
@@ -14691,7 +14735,8 @@
                     "n51",
                     "n52",
                     "n53",
-                    "n54"
+                    "n54",
+                    "n55"
                   ],
                   "live_out_nodes": [
                     "n30",
@@ -14718,16 +14763,17 @@
                     "n51",
                     "n52",
                     "n53",
-                    "n54"
+                    "n54",
+                    "n55"
                   ],
                   "last_use_nodes": [],
                   "lifetime_class": "local_non_escape_candidate"
                 },
                 "args": {
                   "def_nodes": [
-                    "n52",
                     "n53",
-                    "n54"
+                    "n54",
+                    "n55"
                   ],
                   "use_nodes": [
                     "n16",
@@ -14783,7 +14829,8 @@
                     "n47",
                     "n48",
                     "n49",
-                    "n50"
+                    "n50",
+                    "n51"
                   ],
                   "live_out_nodes": [
                     "n3",
@@ -14834,8 +14881,9 @@
                     "n48",
                     "n49",
                     "n50",
-                    "n52",
-                    "n53"
+                    "n51",
+                    "n53",
+                    "n54"
                   ],
                   "last_use_nodes": [],
                   "lifetime_class": "local_non_escape_candidate"
@@ -14843,20 +14891,20 @@
                 "argv": {
                   "def_nodes": [],
                   "use_nodes": [
-                    "n51",
-                    "n53"
+                    "n52",
+                    "n54"
                   ],
                   "live_in_nodes": [
-                    "n51",
-                    "n53",
-                    "n54"
+                    "n52",
+                    "n54",
+                    "n55"
                   ],
                   "live_out_nodes": [
-                    "n51",
-                    "n54"
+                    "n52",
+                    "n55"
                   ],
                   "last_use_nodes": [
-                    "n53"
+                    "n54"
                   ],
                   "lifetime_class": "escape_or_unknown"
                 },
@@ -14890,7 +14938,8 @@
                     "n51",
                     "n52",
                     "n53",
-                    "n54"
+                    "n54",
+                    "n55"
                   ],
                   "live_out_nodes": [
                     "n30",
@@ -14917,7 +14966,8 @@
                     "n51",
                     "n52",
                     "n53",
-                    "n54"
+                    "n54",
+                    "n55"
                   ],
                   "last_use_nodes": [],
                   "lifetime_class": "local_non_escape_candidate"
@@ -15050,7 +15100,8 @@
                     "n51",
                     "n52",
                     "n53",
-                    "n54"
+                    "n54",
+                    "n55"
                   ],
                   "live_out_nodes": [
                     "n30",
@@ -15077,7 +15128,8 @@
                     "n51",
                     "n52",
                     "n53",
-                    "n54"
+                    "n54",
+                    "n55"
                   ],
                   "last_use_nodes": [],
                   "lifetime_class": "local_non_escape_candidate"
@@ -15140,7 +15192,8 @@
                     "n51",
                     "n52",
                     "n53",
-                    "n54"
+                    "n54",
+                    "n55"
                   ],
                   "live_out_nodes": [
                     "n3",
@@ -15194,7 +15247,8 @@
                     "n51",
                     "n52",
                     "n53",
-                    "n54"
+                    "n54",
+                    "n55"
                   ],
                   "last_use_nodes": [],
                   "lifetime_class": "local_non_escape_candidate"
@@ -15334,7 +15388,8 @@
                     "n51",
                     "n52",
                     "n53",
-                    "n54"
+                    "n54",
+                    "n55"
                   ],
                   "live_out_nodes": [
                     "n3",
@@ -15388,7 +15443,8 @@
                     "n51",
                     "n52",
                     "n53",
-                    "n54"
+                    "n54",
+                    "n55"
                   ],
                   "last_use_nodes": [
                     "n1"
@@ -15398,19 +15454,19 @@
                 "list": {
                   "def_nodes": [],
                   "use_nodes": [
-                    "n53"
+                    "n54"
                   ],
                   "live_in_nodes": [
-                    "n51",
-                    "n53",
-                    "n54"
+                    "n52",
+                    "n54",
+                    "n55"
                   ],
                   "live_out_nodes": [
-                    "n51",
-                    "n54"
+                    "n52",
+                    "n55"
                   ],
                   "last_use_nodes": [
-                    "n53"
+                    "n54"
                   ],
                   "lifetime_class": "local_non_escape_candidate"
                 },
@@ -15614,7 +15670,8 @@
                     "n51",
                     "n52",
                     "n53",
-                    "n54"
+                    "n54",
+                    "n55"
                   ],
                   "live_out_nodes": [
                     "n1",
@@ -15669,7 +15726,8 @@
                     "n51",
                     "n52",
                     "n53",
-                    "n54"
+                    "n54",
+                    "n55"
                   ],
                   "last_use_nodes": [
                     "n2"
@@ -15737,7 +15795,7 @@
                 },
                 "specs_opt": {
                   "def_nodes": [
-                    "n49"
+                    "n50"
                   ],
                   "use_nodes": [
                     "n23",
@@ -15790,7 +15848,8 @@
                     "n45",
                     "n46",
                     "n47",
-                    "n48"
+                    "n48",
+                    "n49"
                   ],
                   "live_out_nodes": [
                     "n3",
@@ -15839,14 +15898,15 @@
                     "n46",
                     "n47",
                     "n48",
-                    "n49"
+                    "n49",
+                    "n50"
                   ],
                   "last_use_nodes": [],
                   "lifetime_class": "local_non_escape_candidate"
                 },
                 "specs_pos": {
                   "def_nodes": [
-                    "n50"
+                    "n51"
                   ],
                   "use_nodes": [
                     "n1",
@@ -15904,7 +15964,8 @@
                     "n46",
                     "n47",
                     "n48",
-                    "n49"
+                    "n49",
+                    "n50"
                   ],
                   "live_out_nodes": [
                     "n1",
@@ -15955,7 +16016,8 @@
                     "n47",
                     "n48",
                     "n49",
-                    "n50"
+                    "n50",
+                    "n51"
                   ],
                   "last_use_nodes": [
                     "n2"
@@ -15965,19 +16027,19 @@
                 "sys": {
                   "def_nodes": [],
                   "use_nodes": [
-                    "n52"
+                    "n53"
                   ],
                   "live_in_nodes": [
-                    "n51",
                     "n52",
-                    "n54"
+                    "n53",
+                    "n55"
                   ],
                   "live_out_nodes": [
-                    "n51",
-                    "n54"
+                    "n52",
+                    "n55"
                   ],
                   "last_use_nodes": [
-                    "n52"
+                    "n53"
                   ],
                   "lifetime_class": "local_non_escape_candidate"
                 },

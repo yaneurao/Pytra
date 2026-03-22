@@ -3381,7 +3381,7 @@
             "mirror": "int64"
           },
           "meta": {
-            "lifetime_node_id": "n31",
+            "lifetime_node_id": "n32",
             "lifetime_defs": [
               "n"
             ],
@@ -3536,7 +3536,7 @@
                 "elements": []
               },
               "meta": {
-                "lifetime_node_id": "n30",
+                "lifetime_node_id": "n31",
                 "lifetime_defs": [],
                 "lifetime_uses": [],
                 "lifetime_live_in": [],
@@ -3547,7 +3547,7 @@
           ],
           "orelse": [],
           "meta": {
-            "lifetime_node_id": "n29",
+            "lifetime_node_id": "n30",
             "lifetime_defs": [],
             "lifetime_uses": [
               "n"
@@ -3621,7 +3621,7 @@
             "mirror": "int64"
           },
           "meta": {
-            "lifetime_node_id": "n28",
+            "lifetime_node_id": "n29",
             "lifetime_defs": [
               "draws"
             ],
@@ -3801,7 +3801,7 @@
                 "mirror": "int64"
               },
               "meta": {
-                "lifetime_node_id": "n27",
+                "lifetime_node_id": "n28",
                 "lifetime_defs": [
                   "draws"
                 ],
@@ -3831,7 +3831,7 @@
           ],
           "orelse": [],
           "meta": {
-            "lifetime_node_id": "n26",
+            "lifetime_node_id": "n27",
             "lifetime_defs": [],
             "lifetime_uses": [
               "draws"
@@ -3940,7 +3940,7 @@
             "rhs_kind": "List"
           },
           "meta": {
-            "lifetime_node_id": "n25",
+            "lifetime_node_id": "n26",
             "lifetime_defs": [
               "weight_vals"
             ],
@@ -3953,6 +3953,40 @@
               "population",
               "randint",
               "random",
+              "weights"
+            ],
+            "lifetime_live_out": [
+              "break",
+              "draws",
+              "len",
+              "n",
+              "population",
+              "randint",
+              "random",
+              "weight_vals",
+              "weights"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "VarDecl",
+          "name": "w",
+          "type": "float64",
+          "hoisted": true,
+          "meta": {
+            "lifetime_node_id": "n25",
+            "lifetime_defs": [],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "break",
+              "draws",
+              "len",
+              "n",
+              "population",
+              "randint",
+              "random",
+              "weight_vals",
               "weights"
             ],
             "lifetime_live_out": [
@@ -7056,7 +7090,7 @@
           "schema_version": "east3_lifetime_v1",
           "status": "ok",
           "reason": "",
-          "entry_node": "n31",
+          "entry_node": "n32",
           "order": [
             "n0",
             "n1",
@@ -7089,7 +7123,8 @@
             "n28",
             "n29",
             "n30",
-            "n31"
+            "n31",
+            "n32"
           ],
           "cfg": [
             {
@@ -7410,10 +7445,8 @@
             },
             {
               "id": "n25",
-              "kind": "AnnAssign",
-              "defs": [
-                "weight_vals"
-              ],
+              "kind": "VarDecl",
+              "defs": [],
               "uses": [],
               "succ": [
                 "n23"
@@ -7421,25 +7454,25 @@
             },
             {
               "id": "n26",
+              "kind": "AnnAssign",
+              "defs": [
+                "weight_vals"
+              ],
+              "uses": [],
+              "succ": [
+                "n25"
+              ]
+            },
+            {
+              "id": "n27",
               "kind": "If",
               "defs": [],
               "uses": [
                 "draws"
               ],
               "succ": [
-                "n25",
-                "n27"
-              ]
-            },
-            {
-              "id": "n27",
-              "kind": "Assign",
-              "defs": [
-                "draws"
-              ],
-              "uses": [],
-              "succ": [
-                "n25"
+                "n26",
+                "n28"
               ]
             },
             {
@@ -7448,34 +7481,45 @@
               "defs": [
                 "draws"
               ],
-              "uses": [
-                "k"
-              ],
+              "uses": [],
               "succ": [
                 "n26"
               ]
             },
             {
               "id": "n29",
+              "kind": "Assign",
+              "defs": [
+                "draws"
+              ],
+              "uses": [
+                "k"
+              ],
+              "succ": [
+                "n27"
+              ]
+            },
+            {
+              "id": "n30",
               "kind": "If",
               "defs": [],
               "uses": [
                 "n"
               ],
               "succ": [
-                "n28",
-                "n30"
+                "n29",
+                "n31"
               ]
             },
             {
-              "id": "n30",
+              "id": "n31",
               "kind": "Return",
               "defs": [],
               "uses": [],
               "succ": []
             },
             {
-              "id": "n31",
+              "id": "n32",
               "kind": "Assign",
               "defs": [
                 "n"
@@ -7485,7 +7529,7 @@
                 "population"
               ],
               "succ": [
-                "n29"
+                "n30"
               ]
             }
           ],
@@ -7500,14 +7544,14 @@
                 "n16"
               ],
               "draws": [
-                "n27",
-                "n28"
+                "n28",
+                "n29"
               ],
               "i": [
                 "n8"
               ],
               "n": [
-                "n31"
+                "n32"
               ],
               "out": [
                 "n22"
@@ -7529,7 +7573,7 @@
                 "n23"
               ],
               "weight_vals": [
-                "n25"
+                "n26"
               ]
             },
             "uses": {
@@ -7542,7 +7586,7 @@
               ],
               "draws": [
                 "n1",
-                "n26",
+                "n27",
                 "n6"
               ],
               "i": [
@@ -7550,17 +7594,17 @@
                 "n14"
               ],
               "k": [
-                "n28"
+                "n29"
               ],
               "len": [
                 "n3",
-                "n31"
+                "n32"
               ],
               "n": [
                 "n15",
                 "n2",
-                "n29",
                 "n3",
+                "n30",
                 "n8"
               ],
               "out": [
@@ -7574,7 +7618,7 @@
               ],
               "population": [
                 "n2",
-                "n31",
+                "n32",
                 "n7"
               ],
               "r": [
@@ -7686,7 +7730,8 @@
                 "n27",
                 "n28",
                 "n29",
-                "n31"
+                "n30",
+                "n32"
               ],
               "live_out_nodes": [
                 "n3",
@@ -7715,19 +7760,20 @@
                 "n27",
                 "n28",
                 "n29",
-                "n31"
+                "n30",
+                "n32"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
             },
             "draws": {
               "def_nodes": [
-                "n27",
-                "n28"
+                "n28",
+                "n29"
               ],
               "use_nodes": [
                 "n1",
-                "n26",
+                "n27",
                 "n6"
               ],
               "live_in_nodes": [
@@ -7755,7 +7801,8 @@
                 "n23",
                 "n24",
                 "n25",
-                "n26"
+                "n26",
+                "n27"
               ],
               "live_out_nodes": [
                 "n1",
@@ -7784,7 +7831,8 @@
                 "n25",
                 "n26",
                 "n27",
-                "n28"
+                "n28",
+                "n29"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -7819,19 +7867,19 @@
             "k": {
               "def_nodes": [],
               "use_nodes": [
-                "n28"
+                "n29"
               ],
               "live_in_nodes": [
-                "n28",
                 "n29",
-                "n31"
+                "n30",
+                "n32"
               ],
               "live_out_nodes": [
-                "n29",
-                "n31"
+                "n30",
+                "n32"
               ],
               "last_use_nodes": [
-                "n28"
+                "n29"
               ],
               "lifetime_class": "escape_or_unknown"
             },
@@ -7839,7 +7887,7 @@
               "def_nodes": [],
               "use_nodes": [
                 "n3",
-                "n31"
+                "n32"
               ],
               "live_in_nodes": [
                 "n3",
@@ -7851,7 +7899,8 @@
                 "n27",
                 "n28",
                 "n29",
-                "n31"
+                "n30",
+                "n32"
               ],
               "live_out_nodes": [
                 "n22",
@@ -7862,7 +7911,8 @@
                 "n27",
                 "n28",
                 "n29",
-                "n31"
+                "n30",
+                "n32"
               ],
               "last_use_nodes": [
                 "n3"
@@ -7871,13 +7921,13 @@
             },
             "n": {
               "def_nodes": [
-                "n31"
+                "n32"
               ],
               "use_nodes": [
                 "n15",
                 "n2",
-                "n29",
                 "n3",
+                "n30",
                 "n8"
               ],
               "live_in_nodes": [
@@ -7908,7 +7958,8 @@
                 "n26",
                 "n27",
                 "n28",
-                "n29"
+                "n29",
+                "n30"
               ],
               "live_out_nodes": [
                 "n1",
@@ -7939,7 +7990,8 @@
                 "n27",
                 "n28",
                 "n29",
-                "n31"
+                "n30",
+                "n32"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -8043,7 +8095,7 @@
               "def_nodes": [],
               "use_nodes": [
                 "n2",
-                "n31",
+                "n32",
                 "n7"
               ],
               "live_in_nodes": [
@@ -8075,7 +8127,8 @@
                 "n27",
                 "n28",
                 "n29",
-                "n31"
+                "n30",
+                "n32"
               ],
               "live_out_nodes": [
                 "n1",
@@ -8106,7 +8159,8 @@
                 "n27",
                 "n28",
                 "n29",
-                "n31"
+                "n30",
+                "n32"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -8166,7 +8220,8 @@
                 "n27",
                 "n28",
                 "n29",
-                "n31"
+                "n30",
+                "n32"
               ],
               "live_out_nodes": [
                 "n1",
@@ -8185,7 +8240,8 @@
                 "n27",
                 "n28",
                 "n29",
-                "n31"
+                "n30",
+                "n32"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -8222,7 +8278,8 @@
                 "n27",
                 "n28",
                 "n29",
-                "n31"
+                "n30",
+                "n32"
               ],
               "live_out_nodes": [
                 "n3",
@@ -8251,7 +8308,8 @@
                 "n27",
                 "n28",
                 "n29",
-                "n31"
+                "n30",
+                "n32"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -8342,7 +8400,7 @@
             },
             "weight_vals": {
               "def_nodes": [
-                "n25"
+                "n26"
               ],
               "use_nodes": [
                 "n14",
@@ -8371,7 +8429,8 @@
                 "n21",
                 "n22",
                 "n23",
-                "n24"
+                "n24",
+                "n25"
               ],
               "live_out_nodes": [
                 "n3",
@@ -8395,7 +8454,8 @@
                 "n22",
                 "n23",
                 "n24",
-                "n25"
+                "n25",
+                "n26"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -8413,7 +8473,8 @@
                 "n27",
                 "n28",
                 "n29",
-                "n31"
+                "n30",
+                "n32"
               ],
               "live_out_nodes": [
                 "n23",
@@ -8423,7 +8484,8 @@
                 "n27",
                 "n28",
                 "n29",
-                "n31"
+                "n30",
+                "n32"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
