@@ -271,7 +271,7 @@ class CppTypeBridgeEmitter:
                 return expr_txt
             return f"py_to_{t_norm}({expr_txt})"
         if t_norm == "bool":
-            return f"py_to<bool>({expr_txt})"
+            return f"py_to_bool({expr_txt})"
         if t_norm == "str":
             return f"py_to_string({expr_txt})"
         if t_norm.startswith("tuple[") and t_norm.endswith("]"):

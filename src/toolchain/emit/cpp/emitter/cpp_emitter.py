@@ -2989,7 +2989,7 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
         if eff_t == "str":
             return f"py_to<str>({value_expr})"
         if eff_t == "bool":
-            return f"py_to<bool>({value_expr})"
+            return f"py_to_bool({value_expr})"
         int_out_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
         float_out_types = {"float32", "float64"}
         if eff_t in int_out_types or eff_t in float_out_types or eff_t.startswith("list["):
@@ -4581,7 +4581,7 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
             if value_t == "bool":
                 return value_expr
             return f"bool({value_expr})"
-        return f"py_to<bool>({value_expr})"
+        return f"py_to_bool({value_expr})"
 
     def _render_expr_kind_obj_len(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr
@@ -4664,7 +4664,7 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
         body = self._strip_outer_parens(body_raw)
         if body == "":
             return "false"
-        return f"py_to<bool>({body})"
+        return f"py_to_bool({body})"
 
     def render_expr(self, expr: Any) -> str:
         """式ノードを C++ の式文字列へ変換する中核処理。"""

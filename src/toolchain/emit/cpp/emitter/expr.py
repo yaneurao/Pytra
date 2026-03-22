@@ -40,7 +40,7 @@ class CppExpressionEmitter:
                 return rendered_expr
             return f"{norm_t}({rendered_expr})"
         if norm_t == "bool":
-            return f"py_to<bool>({rendered_expr})"
+            return f"py_to_bool({rendered_expr})"
         if norm_t == "str":
             return f"py_to_string({rendered_expr})"
         cast_cpp = self._cpp_type_text(norm_t)

@@ -14,7 +14,14 @@ static inline bool py_to_bool(const Object<list<T>>& v) {
 }
 
 static inline bool py_to_bool(bool v) {
-    return py_to<bool>(v);
+    return v;
+}
+
+static inline bool py_to_bool(const object& v) {
+    if (!v) return false;
+    if (v.type_id() == PYTRA_TID_BOOL)
+        return static_cast<PyBoxedValue<bool>*>(v.get())->value;
+    return static_cast<bool>(v);
 }
 
 template <class... Ts>
@@ -46,6 +53,7 @@ template <class T>
 static inline T py_to(const T& v) {
     return v;
 }
+
 
 // Conversions from object (= Object<void>) to concrete types.
 static inline int64 py_to_int64(int64 v) { return v; }
