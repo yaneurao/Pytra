@@ -88,3 +88,4 @@ fn foo(data: pytra.Obj) void { ... } // Obj は値渡し（内部はポインタ
 - 2026-03-22: list を std.ArrayList 値型で扱う方式では関数引数のコピー問題が解決不可能と判明。spec-object.md の Obj（rc）管理に統一する方針を決定。
 - 2026-03-22: S1〜S3 完了。test/fixtures 28/30 OK（try/except 2 件は仕様通り）。sample 01 PNG 生成成功（5.7MB、Python と同サイズ）。MD5 不一致は CRC32 の i64 vs u32 演算差異（S4 残）。
 - 2026-03-22: S4 完了。MD5 不一致は浮動小数点演算精度差（232/5761703 バイト = 0.004%）。CRC32 は正確に一致。PNG ファイルサイズも完全一致。
+- 2026-03-23: MD5 不一致の真因は `_wrap_for_binop_operand` が同優先度右 BinOp（例: `255.0 * (t * t)`）の括弧を省略していたこと。`a * (b * c)` → `a * b * c` で浮動小数点の評価順が変わっていた。共通 emitter（`code_emitter.py`）を修正し、同優先度・右オペランドの括弧を全演算子で保持するよう変更。C++ / Zig 含む全 backend に波及。
