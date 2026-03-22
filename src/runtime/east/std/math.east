@@ -377,7 +377,7 @@
               "end_lineno": 13,
               "end_col_offset": 23
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "math.sqrt(x)",
@@ -428,10 +428,9 @@
             "keywords": [],
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "float64"
             }
           },
           "meta": {
@@ -585,7 +584,7 @@
               "end_lineno": 18,
               "end_col_offset": 22
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "math.sin(x)",
@@ -636,10 +635,9 @@
             "keywords": [],
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "float64"
             }
           },
           "meta": {
@@ -793,7 +791,7 @@
               "end_lineno": 23,
               "end_col_offset": 22
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "math.cos(x)",
@@ -844,10 +842,9 @@
             "keywords": [],
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "float64"
             }
           },
           "meta": {
@@ -1001,7 +998,7 @@
               "end_lineno": 28,
               "end_col_offset": 22
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "math.tan(x)",
@@ -1052,10 +1049,9 @@
             "keywords": [],
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "float64"
             }
           },
           "meta": {
@@ -1209,7 +1205,7 @@
               "end_lineno": 33,
               "end_col_offset": 22
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "math.exp(x)",
@@ -1260,10 +1256,9 @@
             "keywords": [],
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "float64"
             }
           },
           "meta": {
@@ -1417,7 +1412,7 @@
               "end_lineno": 38,
               "end_col_offset": 22
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "math.log(x)",
@@ -1468,10 +1463,9 @@
             "keywords": [],
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "float64"
             }
           },
           "meta": {
@@ -1625,7 +1619,7 @@
               "end_lineno": 43,
               "end_col_offset": 24
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "math.log10(x)",
@@ -1676,10 +1670,9 @@
             "keywords": [],
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "float64"
             }
           },
           "meta": {
@@ -1833,7 +1826,7 @@
               "end_lineno": 48,
               "end_col_offset": 23
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "math.fabs(x)",
@@ -1884,10 +1877,9 @@
             "keywords": [],
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "float64"
             }
           },
           "meta": {
@@ -2041,7 +2033,7 @@
               "end_lineno": 53,
               "end_col_offset": 24
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "math.floor(x)",
@@ -2092,10 +2084,9 @@
             "keywords": [],
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "float64"
             }
           },
           "meta": {
@@ -2249,7 +2240,7 @@
               "end_lineno": 58,
               "end_col_offset": 23
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "math.ceil(x)",
@@ -2300,10 +2291,9 @@
             "keywords": [],
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "float64"
             }
           },
           "meta": {
@@ -2461,7 +2451,7 @@
               "end_lineno": 63,
               "end_col_offset": 25
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "math.pow(x, y)",
@@ -2526,10 +2516,9 @@
             "keywords": [],
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "float64"
             }
           },
           "meta": {

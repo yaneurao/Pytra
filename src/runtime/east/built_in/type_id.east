@@ -2263,7 +2263,7 @@
               "end_lineno": 67,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "i",
@@ -3206,7 +3206,7 @@
               "end_lineno": 77,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "i",
@@ -4007,7 +4007,7 @@
               "end_lineno": 85,
               "end_col_offset": 7
             },
-            "resolved_type": "unknown",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "out",
@@ -4112,7 +4112,7 @@
               "end_lineno": 86,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "i",
@@ -4361,7 +4361,7 @@
                   "end_lineno": 88,
                   "end_col_offset": 9
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "j",
@@ -4895,7 +4895,7 @@
                           "end_lineno": 91,
                           "end_col_offset": 19
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "tmp",
@@ -6184,7 +6184,7 @@
               "end_lineno": 102,
               "end_col_offset": 23
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_TYPE_BASE[type_id]",
@@ -6381,7 +6381,7 @@
                   "end_lineno": 104,
                   "end_col_offset": 31
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "list[int64]",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_TYPE_CHILDREN[type_id]",
@@ -6770,7 +6770,7 @@
                   "end_lineno": 108,
                   "end_col_offset": 36
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "list[int64]",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_TYPE_CHILDREN[base_type_id]",
@@ -7814,7 +7814,7 @@
               "end_lineno": 116,
               "end_col_offset": 12
             },
-            "resolved_type": "unknown",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "children",
@@ -8581,7 +8581,7 @@
               "end_lineno": 124,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "i",
@@ -8888,7 +8888,7 @@
                   "end_lineno": 127,
                   "end_col_offset": 16
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "base_tid",
@@ -10260,7 +10260,7 @@
               "end_lineno": 137,
               "end_col_offset": 24
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_TYPE_ORDER[type_id]",
@@ -10355,7 +10355,7 @@
               "end_lineno": 138,
               "end_col_offset": 22
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_TYPE_MIN[type_id]",
@@ -10450,7 +10450,7 @@
               "end_lineno": 139,
               "end_col_offset": 7
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "cur",
@@ -10593,7 +10593,7 @@
               "end_lineno": 140,
               "end_col_offset": 12
             },
-            "resolved_type": "unknown",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "children",
@@ -10702,7 +10702,7 @@
               "end_lineno": 141,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "i",
@@ -11202,7 +11202,7 @@
               "end_lineno": 145,
               "end_col_offset": 22
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_TYPE_MAX[type_id]",
@@ -12101,7 +12101,7 @@
               "end_lineno": 154,
               "end_col_offset": 14
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "next_order",
@@ -12178,7 +12178,7 @@
               "end_lineno": 155,
               "end_col_offset": 9
             },
-            "resolved_type": "unknown",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "roots",
@@ -12275,7 +12275,7 @@
               "end_lineno": 156,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "i",
@@ -12799,7 +12799,7 @@
               "end_lineno": 161,
               "end_col_offset": 11
             },
-            "resolved_type": "unknown",
+            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "all_ids",
@@ -13165,7 +13165,7 @@
                   "end_lineno": 164,
                   "end_col_offset": 11
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "tid",
@@ -14385,7 +14385,7 @@
               "end_lineno": 171,
               "end_col_offset": 31
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_TYPE_STATE[\"ranges_dirty\"]",
@@ -14524,7 +14524,7 @@
               "end_lineno": 175,
               "end_col_offset": 31
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_TYPE_STATE[\"ranges_dirty\"]",
@@ -15460,7 +15460,7 @@
                   "end_lineno": 190,
                   "end_col_offset": 40
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_TYPE_STATE[\"next_user_type_id\"]",
@@ -15744,7 +15744,7 @@
                   "end_lineno": 192,
                   "end_col_offset": 35
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_TYPE_STATE[\"ranges_dirty\"]",
@@ -19439,7 +19439,7 @@
               "end_lineno": 221,
               "end_col_offset": 12
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "base_tid",
@@ -19855,7 +19855,7 @@
               "end_lineno": 226,
               "end_col_offset": 36
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_TYPE_STATE[\"next_user_type_id\"]",
@@ -19889,7 +19889,7 @@
             }
           },
           "declare": true,
-          "decl_type": "unknown",
+          "decl_type": "int64",
           "declare_init": true,
           "value": {
             "kind": "BinOp",
@@ -19899,7 +19899,7 @@
               "end_lineno": 226,
               "end_col_offset": 46
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "tid + 1",
@@ -19941,7 +19941,7 @@
                 "end_lineno": 226,
                 "end_col_offset": 46
               },
-              "resolved_type": "unknown",
+              "resolved_type": "int64",
               "casts": [],
               "borrow_kind": "value",
               "repr": "tid + 1",
@@ -21418,7 +21418,7 @@
               "end_lineno": 241,
               "end_col_offset": 12
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "base_tid",
@@ -22258,7 +22258,7 @@
                   "end_lineno": 250,
                   "end_col_offset": 40
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_TYPE_STATE[\"next_user_type_id\"]",
@@ -23266,14 +23266,14 @@
               "end_lineno": 256,
               "end_col_offset": 10
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "tagged",
             "id": "tagged"
           },
           "declare": true,
-          "decl_type": "unknown",
+          "decl_type": "int64",
           "declare_init": true,
           "value": {
             "kind": "ObjTypeId",
@@ -23423,7 +23423,7 @@
                   "end_lineno": 258,
                   "end_col_offset": 17
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "tagged_id",
@@ -25502,7 +25502,7 @@
               "end_lineno": 283,
               "end_col_offset": 10
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "tagged",
@@ -29214,7 +29214,7 @@
               "end_lineno": 320,
               "end_col_offset": 36
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_TYPE_STATE[\"next_user_type_id\"]",
@@ -29325,7 +29325,7 @@
               "end_lineno": 321,
               "end_col_offset": 31
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_TYPE_STATE[\"ranges_dirty\"]",
@@ -29850,7 +29850,11 @@
           "local_name": "pytra.built_in.scalar_ops",
           "binding_kind": "implicit_builtin",
           "source_file": "src/pytra/built_in/type_id.py",
-          "source_line": 0
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.scalar_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.scalar_ops",
+          "runtime_group": "built_in"
         },
         {
           "module_id": "pytra.built_in.sequence",
@@ -29858,7 +29862,11 @@
           "local_name": "pytra.built_in.sequence",
           "binding_kind": "implicit_builtin",
           "source_file": "src/pytra/built_in/type_id.py",
-          "source_line": 0
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.sequence",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.sequence",
+          "runtime_group": "built_in"
         }
       ],
       "qualified_refs": []

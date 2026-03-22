@@ -1,0 +1,173 @@
+"""EAST3 type propagation pass.
+
+Propagates resolved_type information where it is missing:
+
+1. Assign/AnnAssign: target.resolved_type ← decl_type / annotation / value.resolved_type
+2. Attribute Call: Call.resolved_type ← callee function's return type (for module.func() calls)
+3. VarDecl: type ← corresponding Assign's inferred type
+4. Tuple unpacking: element targets ← tuple element types from value's resolved_type
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+
+def _safe_str(v: Any) -> str:
+    if isinstance(v, str):
+        return v.strip()
+    return ""
+
+
+def _propagate_assign_target_type(node: Any) -> None:
+    """Walk EAST3 and propagate types to Assign/AnnAssign targets."""
+    if isinstance(node, list):
+        for item in node:
+            _propagate_assign_target_type(item)
+        return
+    if not isinstance(node, dict):
+        return
+    nd: dict[str, Any] = node
+    kind = nd.get("kind", "")
+
+    if kind in ("Assign", "AnnAssign"):
+        target = nd.get("target")
+        value = nd.get("value")
+        if isinstance(target, dict):
+            target_type = _safe_str(target.get("resolved_type"))
+            if target_type in ("", "unknown"):
+                # Try decl_type → annotation → value.resolved_type
+                inferred = _safe_str(nd.get("decl_type"))
+                if inferred in ("", "unknown"):
+                    inferred = _safe_str(nd.get("annotation"))
+                if inferred in ("", "unknown") and isinstance(value, dict):
+                    inferred = _safe_str(value.get("resolved_type"))
+                if inferred not in ("", "unknown"):
+                    target["resolved_type"] = inferred
+                    # Also set decl_type if missing
+                    if _safe_str(nd.get("decl_type")) in ("", "unknown"):
+                        nd["decl_type"] = inferred
+
+            # Tuple target: propagate element types
+            if target.get("kind") == "Tuple" and isinstance(value, dict):
+                _propagate_tuple_target_types(target, value)
+
+    # Recurse
+    for v in nd.values():
+        if isinstance(v, (dict, list)):
+            _propagate_assign_target_type(v)
+
+
+def _propagate_tuple_target_types(target: dict[str, Any], value: dict[str, Any]) -> None:
+    """Propagate types to tuple unpacking targets from the value's type."""
+    value_type = _safe_str(value.get("resolved_type"))
+    if not (value_type.startswith("tuple[") and value_type.endswith("]")):
+        return
+    inner = value_type[6:-1]
+    elem_types = _split_generic_types(inner)
+    elements = target.get("elements")
+    if not isinstance(elements, list):
+        return
+    for i, elem in enumerate(elements):
+        if not isinstance(elem, dict):
+            continue
+        if i >= len(elem_types):
+            break
+        elem_t = _safe_str(elem.get("resolved_type"))
+        if elem_t in ("", "unknown"):
+            elem["resolved_type"] = elem_types[i].strip()
+
+
+def _split_generic_types(type_name: str) -> list[str]:
+    parts: list[str] = []
+    cur = ""
+    depth = 0
+    for ch in type_name:
+        if ch == "[":
+            depth += 1
+            cur += ch
+        elif ch == "]":
+            if depth > 0:
+                depth -= 1
+            cur += ch
+        elif ch == "," and depth == 0:
+            part = cur.strip()
+            if part != "":
+                parts.append(part)
+            cur = ""
+        else:
+            cur += ch
+    tail = cur.strip()
+    if tail != "":
+        parts.append(tail)
+    return parts
+
+
+def _propagate_binop_result_type(node: Any) -> None:
+    """Propagate BinOp result types from operands when result is unknown."""
+    if isinstance(node, list):
+        for item in node:
+            _propagate_binop_result_type(item)
+        return
+    if not isinstance(node, dict):
+        return
+    nd: dict[str, Any] = node
+
+    # Recurse first (bottom-up)
+    for v in nd.values():
+        if isinstance(v, (dict, list)):
+            _propagate_binop_result_type(v)
+
+    if nd.get("kind") == "BinOp":
+        result_type = _safe_str(nd.get("resolved_type"))
+        if result_type not in ("", "unknown"):
+            return
+        left = nd.get("left")
+        right = nd.get("right")
+        left_t = _safe_str(left.get("resolved_type")) if isinstance(left, dict) else ""
+        right_t = _safe_str(right.get("resolved_type")) if isinstance(right, dict) else ""
+        if left_t in ("", "unknown") and right_t in ("", "unknown"):
+            return
+        # Infer from known operand
+        float_types = {"float32", "float64"}
+        int_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+        if left_t in float_types or right_t in float_types:
+            nd["resolved_type"] = "float64"
+        elif left_t in int_types and right_t in int_types:
+            nd["resolved_type"] = "int64"
+        elif left_t == "str" or right_t == "str":
+            op = nd.get("op", "")
+            if op == "Add":
+                nd["resolved_type"] = "str"
+        elif left_t not in ("", "unknown"):
+            nd["resolved_type"] = left_t
+        elif right_t not in ("", "unknown"):
+            nd["resolved_type"] = right_t
+
+    if nd.get("kind") == "Compare":
+        result_type = _safe_str(nd.get("resolved_type"))
+        if result_type in ("", "unknown"):
+            nd["resolved_type"] = "bool"
+
+    if nd.get("kind") == "UnaryOp":
+        result_type = _safe_str(nd.get("resolved_type"))
+        if result_type in ("", "unknown"):
+            operand = nd.get("operand")
+            if isinstance(operand, dict):
+                op_t = _safe_str(operand.get("resolved_type"))
+                if op_t == "bool" and nd.get("op") == "Not":
+                    nd["resolved_type"] = "bool"
+                elif op_t not in ("", "unknown"):
+                    nd["resolved_type"] = op_t
+
+
+def apply_type_propagation(module: dict[str, Any]) -> dict[str, Any]:
+    """Top-level entry: apply type propagation to an EAST3 Module.
+
+    Mutates *module* in place and returns it.
+    """
+    # Bottom-up BinOp/Compare/UnaryOp propagation first
+    _propagate_binop_result_type(module)
+    # Then top-down Assign target propagation
+    _propagate_assign_target_type(module)
+    return module

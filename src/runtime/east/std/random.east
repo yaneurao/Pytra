@@ -356,7 +356,7 @@
               "end_lineno": 17,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "v",
@@ -668,7 +668,7 @@
               "end_lineno": 20,
               "end_col_offset": 17
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_state_box[0]",
@@ -755,7 +755,7 @@
               "end_lineno": 21,
               "end_col_offset": 23
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_gauss_has_spare[0]",
@@ -1097,14 +1097,14 @@
               "end_lineno": 27,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "s",
             "id": "s"
           },
           "declare": true,
-          "decl_type": "unknown",
+          "decl_type": "int64",
           "declare_init": true,
           "value": {
             "kind": "BinOp",
@@ -1114,7 +1114,7 @@
               "end_lineno": 27,
               "end_col_offset": 45
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "(1103515245 * s + 12345) & 2147483647",
@@ -1126,7 +1126,7 @@
                 "end_lineno": 27,
                 "end_col_offset": 32
               },
-              "resolved_type": "unknown",
+              "resolved_type": "int64",
               "casts": [],
               "borrow_kind": "value",
               "repr": "(1103515245 * s + 12345)",
@@ -1138,7 +1138,7 @@
                   "end_lineno": 27,
                   "end_col_offset": 23
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "1103515245 * s",
@@ -1180,7 +1180,7 @@
                     "end_lineno": 27,
                     "end_col_offset": 23
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "1103515245 * s",
@@ -1239,7 +1239,7 @@
                   "end_lineno": 27,
                   "end_col_offset": 32
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "(1103515245 * s + 12345)",
@@ -1251,7 +1251,7 @@
                     "end_lineno": 27,
                     "end_col_offset": 23
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "1103515245 * s",
@@ -1326,7 +1326,7 @@
                 "end_lineno": 27,
                 "end_col_offset": 45
               },
-              "resolved_type": "unknown",
+              "resolved_type": "int64",
               "casts": [],
               "borrow_kind": "value",
               "repr": "(1103515245 * s + 12345) & 2147483647",
@@ -1338,7 +1338,7 @@
                   "end_lineno": 27,
                   "end_col_offset": 32
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "(1103515245 * s + 12345)",
@@ -1350,7 +1350,7 @@
                     "end_lineno": 27,
                     "end_col_offset": 23
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "1103515245 * s",
@@ -1991,7 +1991,7 @@
               "end_lineno": 39,
               "end_col_offset": 6
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "lo",
@@ -2061,7 +2061,7 @@
               "end_lineno": 40,
               "end_col_offset": 6
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "hi",
@@ -2315,7 +2315,7 @@
               "end_lineno": 43,
               "end_col_offset": 8
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "span",
@@ -3309,7 +3309,7 @@
               "end_lineno": 54,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "n",
@@ -3591,7 +3591,7 @@
               "end_lineno": 58,
               "end_col_offset": 9
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "draws",
@@ -4482,7 +4482,7 @@
                   "end_lineno": 68,
                   "end_col_offset": 13
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "float64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "total",
@@ -5006,7 +5006,7 @@
                           "end_lineno": 74,
                           "end_col_offset": 17
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "float64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "r",
@@ -5197,7 +5197,7 @@
                           "end_lineno": 75,
                           "end_col_offset": 19
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "float64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "acc",
@@ -5274,7 +5274,7 @@
                           "end_lineno": 76,
                           "end_col_offset": 24
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "picked_i",
@@ -8675,7 +8675,7 @@
                   "end_lineno": 95,
                   "end_col_offset": 27
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_gauss_has_spare[0]",
@@ -9086,7 +9086,7 @@
               "end_lineno": 98,
               "end_col_offset": 6
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "u1",
@@ -9370,7 +9370,7 @@
               "end_lineno": 101,
               "end_col_offset": 6
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "u2",
@@ -9463,14 +9463,14 @@
               "end_lineno": 102,
               "end_col_offset": 7
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "mag",
             "id": "mag"
           },
           "declare": true,
-          "decl_type": "unknown",
+          "decl_type": "float64",
           "declare_init": true,
           "value": {
             "kind": "Call",
@@ -9480,7 +9480,7 @@
               "end_lineno": 102,
               "end_col_offset": 42
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_math.sqrt(-2.0 * _math.log(u1))",
@@ -9562,7 +9562,7 @@
                     "end_lineno": 102,
                     "end_col_offset": 41
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "float64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_math.log(u1)",
@@ -9613,10 +9613,9 @@
                   "keywords": [],
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "float64"
                   }
                 },
                 "normalized_expr_version": "east3_expr_v1",
@@ -9669,7 +9668,7 @@
                       "end_lineno": 102,
                       "end_col_offset": 41
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "_math.log(u1)",
@@ -9720,10 +9719,9 @@
                     "keywords": [],
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "float64"
                     }
                   }
                 }
@@ -9732,18 +9730,16 @@
             "keywords": [],
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "float64"
             }
           },
           "type_expr_summary_v1": {
             "schema_version": 1,
-            "kind": "DynamicType",
-            "category": "dynamic",
-            "mirror": "unknown",
-            "dynamic_name": "unknown"
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "float64"
           },
           "meta": {
             "lifetime_node_id": "n5",
@@ -9789,14 +9785,14 @@
               "end_lineno": 103,
               "end_col_offset": 6
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "z0",
             "id": "z0"
           },
           "declare": true,
-          "decl_type": "unknown",
+          "decl_type": "float64",
           "declare_init": true,
           "value": {
             "kind": "BinOp",
@@ -9806,7 +9802,7 @@
               "end_lineno": 103,
               "end_col_offset": 45
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "mag * _math.cos(2.0 * _math.pi * u2)",
@@ -9818,9 +9814,9 @@
                 "end_lineno": 103,
                 "end_col_offset": 12
               },
-              "resolved_type": "unknown",
+              "resolved_type": "float64",
               "casts": [],
-              "borrow_kind": "value",
+              "borrow_kind": "readonly_ref",
               "repr": "mag",
               "id": "mag"
             },
@@ -9833,7 +9829,7 @@
                 "end_lineno": 103,
                 "end_col_offset": 45
               },
-              "resolved_type": "unknown",
+              "resolved_type": "float64",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_math.cos(2.0 * _math.pi * u2)",
@@ -10096,10 +10092,9 @@
               "keywords": [],
               "type_expr_summary_v1": {
                 "schema_version": 1,
-                "kind": "DynamicType",
-                "category": "dynamic",
-                "mirror": "unknown",
-                "dynamic_name": "unknown"
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "float64"
               }
             },
             "normalized_expr_version": "east3_expr_v1",
@@ -10111,7 +10106,7 @@
                 "end_lineno": 103,
                 "end_col_offset": 45
               },
-              "resolved_type": "unknown",
+              "resolved_type": "float64",
               "casts": [],
               "borrow_kind": "value",
               "repr": "mag * _math.cos(2.0 * _math.pi * u2)",
@@ -10123,9 +10118,9 @@
                   "end_lineno": 103,
                   "end_col_offset": 12
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "float64",
                 "casts": [],
-                "borrow_kind": "value",
+                "borrow_kind": "readonly_ref",
                 "repr": "mag",
                 "id": "mag"
               },
@@ -10138,7 +10133,7 @@
                   "end_lineno": 103,
                   "end_col_offset": 45
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "float64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_math.cos(2.0 * _math.pi * u2)",
@@ -10259,20 +10254,18 @@
                 "keywords": [],
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "float64"
                 }
               }
             }
           },
           "type_expr_summary_v1": {
             "schema_version": 1,
-            "kind": "DynamicType",
-            "category": "dynamic",
-            "mirror": "unknown",
-            "dynamic_name": "unknown"
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "float64"
           },
           "meta": {
             "lifetime_node_id": "n4",
@@ -10318,14 +10311,14 @@
               "end_lineno": 104,
               "end_col_offset": 6
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "z1",
             "id": "z1"
           },
           "declare": true,
-          "decl_type": "unknown",
+          "decl_type": "float64",
           "declare_init": true,
           "value": {
             "kind": "BinOp",
@@ -10335,7 +10328,7 @@
               "end_lineno": 104,
               "end_col_offset": 45
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "mag * _math.sin(2.0 * _math.pi * u2)",
@@ -10347,9 +10340,9 @@
                 "end_lineno": 104,
                 "end_col_offset": 12
               },
-              "resolved_type": "unknown",
+              "resolved_type": "float64",
               "casts": [],
-              "borrow_kind": "value",
+              "borrow_kind": "readonly_ref",
               "repr": "mag",
               "id": "mag"
             },
@@ -10362,7 +10355,7 @@
                 "end_lineno": 104,
                 "end_col_offset": 45
               },
-              "resolved_type": "unknown",
+              "resolved_type": "float64",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_math.sin(2.0 * _math.pi * u2)",
@@ -10625,10 +10618,9 @@
               "keywords": [],
               "type_expr_summary_v1": {
                 "schema_version": 1,
-                "kind": "DynamicType",
-                "category": "dynamic",
-                "mirror": "unknown",
-                "dynamic_name": "unknown"
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "float64"
               }
             },
             "normalized_expr_version": "east3_expr_v1",
@@ -10640,7 +10632,7 @@
                 "end_lineno": 104,
                 "end_col_offset": 45
               },
-              "resolved_type": "unknown",
+              "resolved_type": "float64",
               "casts": [],
               "borrow_kind": "value",
               "repr": "mag * _math.sin(2.0 * _math.pi * u2)",
@@ -10652,9 +10644,9 @@
                   "end_lineno": 104,
                   "end_col_offset": 12
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "float64",
                 "casts": [],
-                "borrow_kind": "value",
+                "borrow_kind": "readonly_ref",
                 "repr": "mag",
                 "id": "mag"
               },
@@ -10667,7 +10659,7 @@
                   "end_lineno": 104,
                   "end_col_offset": 45
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "float64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_math.sin(2.0 * _math.pi * u2)",
@@ -10788,20 +10780,18 @@
                 "keywords": [],
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "float64"
                 }
               }
             }
           },
           "type_expr_summary_v1": {
             "schema_version": 1,
-            "kind": "DynamicType",
-            "category": "dynamic",
-            "mirror": "unknown",
-            "dynamic_name": "unknown"
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "float64"
           },
           "meta": {
             "lifetime_node_id": "n3",
@@ -10850,7 +10840,7 @@
               "end_lineno": 105,
               "end_col_offset": 19
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_gauss_spare[0]",
@@ -10884,7 +10874,7 @@
             }
           },
           "declare": true,
-          "decl_type": "unknown",
+          "decl_type": "float64",
           "declare_init": true,
           "value": {
             "kind": "Name",
@@ -10894,18 +10884,17 @@
               "end_lineno": 105,
               "end_col_offset": 24
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
-            "borrow_kind": "value",
+            "borrow_kind": "readonly_ref",
             "repr": "z1",
             "id": "z1"
           },
           "type_expr_summary_v1": {
             "schema_version": 1,
-            "kind": "DynamicType",
-            "category": "dynamic",
-            "mirror": "unknown",
-            "dynamic_name": "unknown"
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "float64"
           },
           "meta": {
             "lifetime_node_id": "n2",
@@ -10945,7 +10934,7 @@
               "end_lineno": 106,
               "end_col_offset": 23
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_gauss_has_spare[0]",
@@ -11088,9 +11077,9 @@
                   "end_lineno": 107,
                   "end_col_offset": 40
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "float64",
                 "casts": [],
-                "borrow_kind": "value",
+                "borrow_kind": "readonly_ref",
                 "repr": "z0",
                 "id": "z0"
               },
@@ -11130,9 +11119,9 @@
                     "end_lineno": 107,
                     "end_col_offset": 40
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "float64",
                   "casts": [],
-                  "borrow_kind": "value",
+                  "borrow_kind": "readonly_ref",
                   "repr": "z0",
                   "id": "z0"
                 }
@@ -11201,9 +11190,9 @@
                     "end_lineno": 107,
                     "end_col_offset": 40
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "float64",
                   "casts": [],
-                  "borrow_kind": "value",
+                  "borrow_kind": "readonly_ref",
                   "repr": "z0",
                   "id": "z0"
                 }
@@ -11828,7 +11817,7 @@
               "end_lineno": 112,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "i",
@@ -12154,7 +12143,7 @@
                   "end_lineno": 114,
                   "end_col_offset": 9
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "j",
@@ -12374,7 +12363,7 @@
                       "end_lineno": 116,
                       "end_col_offset": 15
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "tmp",
@@ -13154,7 +13143,11 @@
           "local_name": "pytra.built_in.scalar_ops",
           "binding_kind": "implicit_builtin",
           "source_file": "src/pytra/std/random.py",
-          "source_line": 0
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.scalar_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.scalar_ops",
+          "runtime_group": "built_in"
         },
         {
           "module_id": "pytra.built_in.sequence",
@@ -13162,7 +13155,11 @@
           "local_name": "pytra.built_in.sequence",
           "binding_kind": "implicit_builtin",
           "source_file": "src/pytra/std/random.py",
-          "source_line": 0
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.sequence",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.sequence",
+          "runtime_group": "built_in"
         }
       ],
       "qualified_refs": []

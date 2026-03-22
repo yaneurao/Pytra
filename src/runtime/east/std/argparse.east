@@ -1872,7 +1872,7 @@
                       "end_lineno": 49,
                       "end_col_offset": 16
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "base",
@@ -4978,7 +4978,7 @@
                   "end_lineno": 87,
                   "end_col_offset": 12
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "_ArgSpec",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "spec",
@@ -7865,7 +7865,7 @@
                   "end_lineno": 110,
                   "end_col_offset": 14
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "spec_i",
@@ -9634,7 +9634,7 @@
                   "end_lineno": 128,
                   "end_col_offset": 13
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "pos_i",
@@ -9709,7 +9709,7 @@
                   "end_lineno": 129,
                   "end_col_offset": 9
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "i",
@@ -10502,7 +10502,7 @@
                           "end_lineno": 135,
                           "end_col_offset": 20
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "_ArgSpec",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "spec",
@@ -12921,7 +12921,7 @@
                       "end_lineno": 151,
                       "end_col_offset": 16
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "_ArgSpec",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "spec",
@@ -16206,7 +16206,11 @@
           "local_name": "pytra.built_in.sequence",
           "binding_kind": "implicit_builtin",
           "source_file": "src/pytra/std/argparse.py",
-          "source_line": 0
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.sequence",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.sequence",
+          "runtime_group": "built_in"
         }
       ],
       "qualified_refs": [

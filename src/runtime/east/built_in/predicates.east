@@ -782,7 +782,11 @@
           "local_name": "pytra.built_in.scalar_ops",
           "binding_kind": "implicit_builtin",
           "source_file": "src/pytra/built_in/predicates.py",
-          "source_line": 0
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.scalar_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.scalar_ops",
+          "runtime_group": "built_in"
         }
       ],
       "qualified_refs": [

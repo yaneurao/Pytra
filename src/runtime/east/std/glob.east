@@ -85,7 +85,7 @@
               "end_lineno": 11,
               "end_col_offset": 34
             },
-            "resolved_type": "unknown",
+            "resolved_type": "list[str]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_glob_mod.glob(pattern)",
@@ -136,10 +136,9 @@
             "keywords": [],
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "GenericType",
+              "category": "static",
+              "mirror": "list[str]"
             }
           },
           "meta": {

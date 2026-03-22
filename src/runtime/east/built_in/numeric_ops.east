@@ -326,14 +326,14 @@
               "end_lineno": 12,
               "end_col_offset": 7
             },
-            "resolved_type": "unknown",
+            "resolved_type": "T",
             "casts": [],
             "borrow_kind": "value",
             "repr": "acc",
             "id": "acc"
           },
           "declare": true,
-          "decl_type": "unknown",
+          "decl_type": "T",
           "declare_init": true,
           "value": {
             "kind": "BinOp",
@@ -343,7 +343,7 @@
               "end_lineno": 12,
               "end_col_offset": 31
             },
-            "resolved_type": "unknown",
+            "resolved_type": "T",
             "casts": [],
             "borrow_kind": "value",
             "repr": "values[0] - values[0]",
@@ -439,7 +439,7 @@
                 "end_lineno": 12,
                 "end_col_offset": 31
               },
-              "resolved_type": "unknown",
+              "resolved_type": "T",
               "casts": [],
               "borrow_kind": "value",
               "repr": "values[0] - values[0]",
@@ -571,7 +571,7 @@
               "end_lineno": 13,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "i",
@@ -636,7 +636,7 @@
               "end_lineno": 14,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "n",
@@ -2182,7 +2182,11 @@
           "local_name": "pytra.built_in.sequence",
           "binding_kind": "implicit_builtin",
           "source_file": "src/pytra/built_in/numeric_ops.py",
-          "source_line": 0
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.sequence",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.sequence",
+          "runtime_group": "built_in"
         }
       ],
       "qualified_refs": [

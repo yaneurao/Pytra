@@ -72,7 +72,7 @@
               "end_lineno": 5,
               "end_col_offset": 10
             },
-            "resolved_type": "unknown",
+            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "needle",
@@ -1495,7 +1495,7 @@
               "end_lineno": 27,
               "end_col_offset": 10
             },
-            "resolved_type": "unknown",
+            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "needle",
@@ -1584,7 +1584,7 @@
               "end_lineno": 28,
               "end_col_offset": 12
             },
-            "resolved_type": "unknown",
+            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "haystack",
@@ -1673,7 +1673,7 @@
               "end_lineno": 29,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "n",
@@ -1785,7 +1785,7 @@
               "end_lineno": 30,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "m",
@@ -2058,7 +2058,7 @@
               "end_lineno": 33,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "i",
@@ -2127,7 +2127,7 @@
               "end_lineno": 34,
               "end_col_offset": 8
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "last",
@@ -2375,7 +2375,7 @@
                   "end_lineno": 36,
                   "end_col_offset": 9
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "j",
@@ -2446,7 +2446,7 @@
                   "end_lineno": 37,
                   "end_col_offset": 10
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "ok",
@@ -4178,7 +4178,11 @@
           "local_name": "pytra.built_in.scalar_ops",
           "binding_kind": "implicit_builtin",
           "source_file": "src/pytra/built_in/contains.py",
-          "source_line": 0
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.scalar_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.scalar_ops",
+          "runtime_group": "built_in"
         },
         {
           "module_id": "pytra.built_in.sequence",
@@ -4186,7 +4190,11 @@
           "local_name": "pytra.built_in.sequence",
           "binding_kind": "implicit_builtin",
           "source_file": "src/pytra/built_in/contains.py",
-          "source_line": 0
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.sequence",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.sequence",
+          "runtime_group": "built_in"
         }
       ],
       "qualified_refs": []

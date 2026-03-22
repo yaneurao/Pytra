@@ -3672,7 +3672,7 @@
               "end_lineno": 45,
               "end_col_offset": 6
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "v0",
@@ -3848,7 +3848,7 @@
               "end_lineno": 46,
               "end_col_offset": 6
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "v1",
@@ -4026,7 +4026,7 @@
               "end_lineno": 47,
               "end_col_offset": 6
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "v2",
@@ -4206,7 +4206,7 @@
               "end_lineno": 48,
               "end_col_offset": 6
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "v3",
@@ -5553,7 +5553,7 @@
               "end_lineno": 53,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "v",
@@ -5690,7 +5690,7 @@
               "end_lineno": 54,
               "end_col_offset": 6
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "d3",
@@ -5963,7 +5963,7 @@
               "end_lineno": 56,
               "end_col_offset": 6
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "d2",
@@ -6240,7 +6240,7 @@
               "end_lineno": 58,
               "end_col_offset": 6
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "d1",
@@ -6521,7 +6521,7 @@
               "end_lineno": 60,
               "end_col_offset": 6
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "d0",
@@ -25643,7 +25643,7 @@
                   "end_lineno": 234,
                   "end_col_offset": 10
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "ch",
@@ -30729,7 +30729,7 @@
                       "end_lineno": 263,
                       "end_col_offset": 15
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "key",
@@ -31998,7 +31998,7 @@
                       "end_lineno": 273,
                       "end_col_offset": 14
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "ch",
@@ -34583,7 +34583,7 @@
                       "end_lineno": 293,
                       "end_col_offset": 14
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "ch",
@@ -36322,7 +36322,7 @@
                       "end_lineno": 306,
                       "end_col_offset": 14
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "ch",
@@ -37142,7 +37142,7 @@
                           "end_lineno": 313,
                           "end_col_offset": 19
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "str",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "esc",
@@ -39633,7 +39633,7 @@
                                                               "end_lineno": 334,
                                                               "end_col_offset": 22
                                                             },
-                                                            "resolved_type": "unknown",
+                                                            "resolved_type": "str",
                                                             "casts": [],
                                                             "borrow_kind": "value",
                                                             "repr": "hx",
@@ -42282,7 +42282,7 @@
                   "end_lineno": 344,
                   "end_col_offset": 13
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "start",
@@ -43916,7 +43916,7 @@
                   "end_lineno": 356,
                   "end_col_offset": 16
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "is_float",
@@ -45513,7 +45513,7 @@
                       "end_lineno": 365,
                       "end_col_offset": 18
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "exp_ch",
@@ -46169,7 +46169,7 @@
                               "end_lineno": 370,
                               "end_col_offset": 24
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "str",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "sign",
@@ -47520,7 +47520,7 @@
                   "end_lineno": 377,
                   "end_col_offset": 13
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "token",
@@ -51389,7 +51389,7 @@
               "end_lineno": 407,
               "end_col_offset": 5
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "i",
@@ -58853,7 +58853,7 @@
               "end_lineno": 462,
               "end_col_offset": 89
             },
-            "resolved_type": "unknown",
+            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "\"[\\n\" + _join_strs(inner, _COMMA_NL) + \"\\n\" + (\" \" * (indent_i * level)) + \"]\"",
@@ -58865,7 +58865,7 @@
                 "end_lineno": 462,
                 "end_col_offset": 83
               },
-              "resolved_type": "unknown",
+              "resolved_type": "str",
               "casts": [],
               "borrow_kind": "value",
               "repr": "\"[\\n\" + _join_strs(inner, _COMMA_NL) + \"\\n\" + (\" \" * (indent_i * level))",
@@ -59397,7 +59397,7 @@
                   "end_lineno": 462,
                   "end_col_offset": 83
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"[\\n\" + _join_strs(inner, _COMMA_NL) + \"\\n\" + (\" \" * (indent_i * level))",
@@ -59618,7 +59618,7 @@
                 "end_lineno": 462,
                 "end_col_offset": 89
               },
-              "resolved_type": "unknown",
+              "resolved_type": "str",
               "casts": [],
               "borrow_kind": "value",
               "repr": "\"[\\n\" + _join_strs(inner, _COMMA_NL) + \"\\n\" + (\" \" * (indent_i * level)) + \"]\"",
@@ -59630,7 +59630,7 @@
                   "end_lineno": 462,
                   "end_col_offset": 83
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"[\\n\" + _join_strs(inner, _COMMA_NL) + \"\\n\" + (\" \" * (indent_i * level))",
@@ -64532,7 +64532,7 @@
               "end_lineno": 489,
               "end_col_offset": 89
             },
-            "resolved_type": "unknown",
+            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "\"{\\n\" + _join_strs(inner, _COMMA_NL) + \"\\n\" + (\" \" * (indent_i * level)) + \"}\"",
@@ -64544,7 +64544,7 @@
                 "end_lineno": 489,
                 "end_col_offset": 83
               },
-              "resolved_type": "unknown",
+              "resolved_type": "str",
               "casts": [],
               "borrow_kind": "value",
               "repr": "\"{\\n\" + _join_strs(inner, _COMMA_NL) + \"\\n\" + (\" \" * (indent_i * level))",
@@ -65076,7 +65076,7 @@
                   "end_lineno": 489,
                   "end_col_offset": 83
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"{\\n\" + _join_strs(inner, _COMMA_NL) + \"\\n\" + (\" \" * (indent_i * level))",
@@ -65297,7 +65297,7 @@
                 "end_lineno": 489,
                 "end_col_offset": 89
               },
-              "resolved_type": "unknown",
+              "resolved_type": "str",
               "casts": [],
               "borrow_kind": "value",
               "repr": "\"{\\n\" + _join_strs(inner, _COMMA_NL) + \"\\n\" + (\" \" * (indent_i * level)) + \"}\"",
@@ -65309,7 +65309,7 @@
                   "end_lineno": 489,
                   "end_col_offset": 83
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"{\\n\" + _join_strs(inner, _COMMA_NL) + \"\\n\" + (\" \" * (indent_i * level))",
@@ -70066,7 +70066,7 @@
               "end_lineno": 527,
               "end_col_offset": 12
             },
-            "resolved_type": "unknown",
+            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "item_sep",
@@ -70135,7 +70135,7 @@
               "end_lineno": 528,
               "end_col_offset": 11
             },
-            "resolved_type": "unknown",
+            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "key_sep",
@@ -70430,7 +70430,7 @@
                   "end_lineno": 530,
                   "end_col_offset": 25
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "tuple[str,str] | None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "item_sep, key_sep",
@@ -70466,7 +70466,7 @@
                 ]
               },
               "declare": false,
-              "decl_type": null,
+              "decl_type": "tuple[str,str] | None",
               "value": {
                 "kind": "Name",
                 "source_span": {
@@ -71140,7 +71140,7 @@
               "end_lineno": 541,
               "end_col_offset": 12
             },
-            "resolved_type": "unknown",
+            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "item_sep",
@@ -71209,7 +71209,7 @@
               "end_lineno": 542,
               "end_col_offset": 11
             },
-            "resolved_type": "unknown",
+            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "key_sep",
@@ -71504,7 +71504,7 @@
                   "end_lineno": 544,
                   "end_col_offset": 25
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "tuple[str,str] | None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "item_sep, key_sep",
@@ -71540,7 +71540,7 @@
                 ]
               },
               "declare": false,
-              "decl_type": null,
+              "decl_type": "tuple[str,str] | None",
               "value": {
                 "kind": "Name",
                 "source_span": {
@@ -72148,7 +72148,11 @@
           "local_name": "pytra.built_in.scalar_ops",
           "binding_kind": "implicit_builtin",
           "source_file": "src/pytra/std/json.py",
-          "source_line": 0
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.scalar_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.scalar_ops",
+          "runtime_group": "built_in"
         },
         {
           "module_id": "pytra.built_in.sequence",
@@ -72156,7 +72160,11 @@
           "local_name": "pytra.built_in.sequence",
           "binding_kind": "implicit_builtin",
           "source_file": "src/pytra/std/json.py",
-          "source_line": 0
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.sequence",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.sequence",
+          "runtime_group": "built_in"
         }
       ],
       "qualified_refs": [

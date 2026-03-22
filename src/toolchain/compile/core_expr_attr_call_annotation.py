@@ -18,6 +18,14 @@ class _ShExprAttrCallAnnotationMixin:
             return "unknown"
         owner_t = self._owner_expr_resolved_type(owner)
         if owner_t == "unknown":
+            # For import module calls (math.sin etc.), try function return type
+            if owner.get("kind") == "Name":
+                owner_id = str(owner.get("id", ""))
+                if owner_id in _SH_IMPORT_MODULES:
+                    from toolchain.frontends.signature_registry import lookup_stdlib_function_return_type
+                    fn_ret = lookup_stdlib_function_return_type(attr)
+                    if fn_ret != "":
+                        return fn_ret
             return "unknown"
         if owner_t == "PyFile" and attr in {"close", "write"}:
             return "None"
