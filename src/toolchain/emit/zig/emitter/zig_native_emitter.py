@@ -936,6 +936,13 @@ class ZigNativeEmitter:
                 if decl_type != "":
                     self._current_type_map()[target_name] = decl_type
                 zig_ty = self._zig_type(decl_type)
+                # PyObject fallback の場合、値の resolved_type で型を補正
+                if zig_ty == "pytra.PyObject" and isinstance(value_node, dict):
+                    val_resolved = self._get_expr_type(value_node)
+                    if val_resolved in {"float64", "float32", "float"}:
+                        zig_ty = "f64"
+                    elif val_resolved in {"int64", "int32"}:
+                        zig_ty = "i64"
                 # VarDecl で既に宣言済みなら再代入
                 already_declared = len(self._local_var_stack) > 0 and target_name in self._current_local_vars()
                 if already_declared:
@@ -1308,8 +1315,8 @@ class ZigNativeEmitter:
         stop = self._render_expr(plan.get("stop"))
         step_any = plan.get("step")
         step = self._render_expr(step_any) if isinstance(step_any, dict) else "1"
-        already_declared = len(self._local_var_stack) > 0 and target_name in self._current_local_vars()
-        if already_declared:
+        already_hoisted = target_name in self._hoisted_var_names
+        if already_hoisted:
             # Reuse existing variable (avoid shadow)
             self._emit_line(target_name + " = " + start + ";")
         else:
@@ -1912,9 +1919,14 @@ class ZigNativeEmitter:
                 if fname == "int":
                     if len(arg_strs) > 0:
                         arg_t = self._lookup_expr_type(args[0]) if len(args) > 0 else ""
+                        if arg_t == "":
+                            arg_t = self._get_expr_type(args[0]) if len(args) > 0 else ""
                         if arg_t in {"float64", "float32", "float"}:
                             return "@as(i64, @intFromFloat(" + arg_strs[0] + "))"
-                        return "@as(i64, @intCast(" + arg_strs[0] + "))"
+                        if arg_t in {"int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64"}:
+                            return "@as(i64, @intCast(" + arg_strs[0] + "))"
+                        # 型不明: @intFromFloat で安全に変換（int にも @as(f64,...) 経由で対応）
+                        return "@as(i64, @intFromFloat(@as(f64, " + arg_strs[0] + ")))"
                     return "0"
                 if fname == "float":
                     if len(arg_strs) > 0:
