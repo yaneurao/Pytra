@@ -9159,7 +9159,7 @@
               },
               "cause": null,
               "meta": {
-                "lifetime_node_id": "n50",
+                "lifetime_node_id": "n51",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "ValueError"
@@ -9204,7 +9204,7 @@
           ],
           "orelse": [],
           "meta": {
-            "lifetime_node_id": "n49",
+            "lifetime_node_id": "n50",
             "lifetime_defs": [],
             "lifetime_uses": [
               "len",
@@ -9346,7 +9346,7 @@
             "rhs_kind": "List"
           },
           "meta": {
-            "lifetime_node_id": "n48",
+            "lifetime_node_id": "n49",
             "lifetime_defs": [
               "frame_lists"
             ],
@@ -9393,6 +9393,54 @@
           "kind": "VarDecl",
           "name": "fr_list",
           "type": "list[int64]",
+          "hoisted": true,
+          "meta": {
+            "lifetime_node_id": "n48",
+            "lifetime_defs": [],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "ValueError",
+              "_gif_append_list",
+              "_gif_u16le",
+              "_lzw_encode",
+              "bytes",
+              "delay_cs",
+              "frame_lists",
+              "frames",
+              "height",
+              "int",
+              "len",
+              "loop",
+              "open",
+              "palette",
+              "path",
+              "width"
+            ],
+            "lifetime_live_out": [
+              "ValueError",
+              "_gif_append_list",
+              "_gif_u16le",
+              "_lzw_encode",
+              "bytes",
+              "delay_cs",
+              "frame_lists",
+              "frames",
+              "height",
+              "int",
+              "len",
+              "loop",
+              "open",
+              "palette",
+              "path",
+              "width"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "VarDecl",
+          "name": "v",
+          "type": "uint8",
           "hoisted": true,
           "meta": {
             "lifetime_node_id": "n47",
@@ -16604,7 +16652,7 @@
           "schema_version": "east3_lifetime_v1",
           "status": "ok",
           "reason": "",
-          "entry_node": "n49",
+          "entry_node": "n50",
           "order": [
             "n0",
             "n1",
@@ -16656,7 +16704,8 @@
             "n47",
             "n48",
             "n49",
-            "n50"
+            "n50",
+            "n51"
           ],
           "cfg": [
             {
@@ -17259,10 +17308,8 @@
             },
             {
               "id": "n48",
-              "kind": "AnnAssign",
-              "defs": [
-                "frame_lists"
-              ],
+              "kind": "VarDecl",
+              "defs": [],
               "uses": [],
               "succ": [
                 "n47"
@@ -17270,6 +17317,17 @@
             },
             {
               "id": "n49",
+              "kind": "AnnAssign",
+              "defs": [
+                "frame_lists"
+              ],
+              "uses": [],
+              "succ": [
+                "n48"
+              ]
+            },
+            {
+              "id": "n50",
               "kind": "If",
               "defs": [],
               "uses": [
@@ -17277,19 +17335,19 @@
                 "palette"
               ],
               "succ": [
-                "n48",
-                "n50"
+                "n49",
+                "n51"
               ]
             },
             {
-              "id": "n50",
+              "id": "n51",
               "kind": "Raise",
               "defs": [],
               "uses": [
                 "ValueError"
               ],
               "succ": [
-                "n48"
+                "n49"
               ]
             }
           ],
@@ -17312,7 +17370,7 @@
                 "n46"
               ],
               "frame_lists": [
-                "n48"
+                "n49"
               ],
               "i": [
                 "n10",
@@ -17339,7 +17397,7 @@
             "uses": {
               "ValueError": [
                 "n43",
-                "n50"
+                "n51"
               ],
               "_gif_append_list": [
                 "n18",
@@ -17418,8 +17476,8 @@
               "len": [
                 "n13",
                 "n42",
-                "n49",
-                "n5"
+                "n5",
+                "n50"
               ],
               "loop": [
                 "n27"
@@ -17455,7 +17513,7 @@
               ],
               "palette": [
                 "n37",
-                "n49"
+                "n50"
               ],
               "palette_list": [
                 "n29",
@@ -17489,7 +17547,7 @@
               "def_nodes": [],
               "use_nodes": [
                 "n43",
-                "n50"
+                "n51"
               ],
               "live_in_nodes": [
                 "n40",
@@ -17502,7 +17560,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "live_out_nodes": [
                 "n40",
@@ -17515,7 +17574,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -17585,7 +17645,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "live_out_nodes": [
                 "n3",
@@ -17635,7 +17696,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -17700,7 +17762,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "live_out_nodes": [
                 "n3",
@@ -17750,7 +17813,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -17808,7 +17872,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "live_out_nodes": [
                 "n3",
@@ -17858,7 +17923,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -17916,7 +17982,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "live_out_nodes": [
                 "n3",
@@ -17966,7 +18033,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -18091,7 +18159,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "live_out_nodes": [
                 "n3",
@@ -18141,7 +18210,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -18232,7 +18302,7 @@
             },
             "frame_lists": {
               "def_nodes": [
-                "n48"
+                "n49"
               ],
               "use_nodes": [
                 "n3",
@@ -18283,7 +18353,8 @@
                 "n44",
                 "n45",
                 "n46",
-                "n47"
+                "n47",
+                "n48"
               ],
               "live_out_nodes": [
                 "n3",
@@ -18331,7 +18402,8 @@
                 "n45",
                 "n46",
                 "n47",
-                "n48"
+                "n48",
+                "n49"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -18352,7 +18424,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "live_out_nodes": [
                 "n40",
@@ -18365,7 +18438,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -18425,7 +18499,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "live_out_nodes": [
                 "n3",
@@ -18475,7 +18550,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -18524,7 +18600,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "live_out_nodes": [
                 "n37",
@@ -18540,7 +18617,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -18550,8 +18628,8 @@
               "use_nodes": [
                 "n13",
                 "n42",
-                "n49",
-                "n5"
+                "n5",
+                "n50"
               ],
               "live_in_nodes": [
                 "n3",
@@ -18601,7 +18679,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "live_out_nodes": [
                 "n3",
@@ -18651,7 +18730,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -18685,7 +18765,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "live_out_nodes": [
                 "n28",
@@ -18710,7 +18791,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "last_use_nodes": [
                 "n27"
@@ -18772,7 +18854,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "live_out_nodes": [
                 "n2",
@@ -18823,7 +18906,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "last_use_nodes": [
                 "n1"
@@ -18941,7 +19025,7 @@
               "def_nodes": [],
               "use_nodes": [
                 "n37",
-                "n49"
+                "n50"
               ],
               "live_in_nodes": [
                 "n37",
@@ -18957,7 +19041,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "live_out_nodes": [
                 "n37",
@@ -18973,7 +19058,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -19070,7 +19156,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "live_out_nodes": [
                 "n2",
@@ -19121,7 +19208,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "last_use_nodes": [
                 "n1"
@@ -19261,7 +19349,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "live_out_nodes": [
                 "n3",
@@ -19311,7 +19400,8 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50"
+                "n50",
+                "n51"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"

@@ -51,6 +51,27 @@ def _collect_assigned_names_in_stmts(stmts: list[Any]) -> dict[str, str]:
                 sub = _collect_assigned_names_in_stmts(orelse)
                 _merge_name_types(out, sub)
         elif kind in ("While", "For", "ForRange", "ForCore"):
+            # Collect ForCore target_plan as an assigned name
+            if kind == "ForCore":
+                target_plan = sd.get("target_plan")
+                if isinstance(target_plan, dict):
+                    tp_kind = target_plan.get("kind")
+                    if tp_kind == "NameTarget":
+                        tp_name = target_plan.get("id")
+                        tp_type = target_plan.get("target_type", "")
+                        if isinstance(tp_name, str) and tp_name != "":
+                            if tp_name not in out:
+                                out[tp_name] = tp_type if isinstance(tp_type, str) else ""
+                    elif tp_kind == "TupleTarget":
+                        elements = target_plan.get("elements")
+                        if isinstance(elements, list):
+                            for elem in elements:
+                                if isinstance(elem, dict) and elem.get("kind") == "NameTarget":
+                                    elem_name = elem.get("id")
+                                    elem_type = elem.get("target_type", "")
+                                    if isinstance(elem_name, str) and elem_name != "":
+                                        if elem_name not in out:
+                                            out[elem_name] = elem_type if isinstance(elem_type, str) else ""
             body = sd.get("body")
             orelse = sd.get("orelse")
             if isinstance(body, list):

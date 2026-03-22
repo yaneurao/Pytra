@@ -56427,7 +56427,7 @@
                 "value": "[]"
               },
               "meta": {
-                "lifetime_node_id": "n14",
+                "lifetime_node_id": "n15",
                 "lifetime_defs": [],
                 "lifetime_uses": [],
                 "lifetime_live_in": [],
@@ -56438,7 +56438,7 @@
           ],
           "orelse": [],
           "meta": {
-            "lifetime_node_id": "n13",
+            "lifetime_node_id": "n14",
             "lifetime_defs": [],
             "lifetime_uses": [
               "len",
@@ -56472,6 +56472,42 @@
             "lifetime_last_use_vars": [
               "len"
             ]
+          }
+        },
+        {
+          "kind": "VarDecl",
+          "name": "x",
+          "type": "JsonVal",
+          "hoisted": true,
+          "meta": {
+            "lifetime_node_id": "n13",
+            "lifetime_defs": [],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "_COMMA_NL",
+              "_dump_json_value",
+              "_join_strs",
+              "_json_indent_value",
+              "ensure_ascii",
+              "indent",
+              "item_sep",
+              "key_sep",
+              "level",
+              "values"
+            ],
+            "lifetime_live_out": [
+              "_COMMA_NL",
+              "_dump_json_value",
+              "_join_strs",
+              "_json_indent_value",
+              "ensure_ascii",
+              "indent",
+              "item_sep",
+              "key_sep",
+              "level",
+              "values"
+            ],
+            "lifetime_last_use_vars": []
           }
         },
         {
@@ -59894,7 +59930,7 @@
           "schema_version": "east3_lifetime_v1",
           "status": "ok",
           "reason": "",
-          "entry_node": "n13",
+          "entry_node": "n14",
           "order": [
             "n0",
             "n1",
@@ -59910,7 +59946,8 @@
             "n11",
             "n12",
             "n13",
-            "n14"
+            "n14",
+            "n15"
           ],
           "cfg": [
             {
@@ -60092,6 +60129,15 @@
             },
             {
               "id": "n13",
+              "kind": "VarDecl",
+              "defs": [],
+              "uses": [],
+              "succ": [
+                "n7"
+              ]
+            },
+            {
+              "id": "n14",
               "kind": "If",
               "defs": [],
               "uses": [
@@ -60099,12 +60145,12 @@
                 "values"
               ],
               "succ": [
-                "n14",
-                "n7"
+                "n13",
+                "n15"
               ]
             },
             {
-              "id": "n14",
+              "id": "n15",
               "kind": "Return",
               "defs": [],
               "uses": [],
@@ -60186,7 +60232,7 @@
                 "n3"
               ],
               "len": [
-                "n13"
+                "n14"
               ],
               "level": [
                 "n0",
@@ -60202,7 +60248,7 @@
               ],
               "values": [
                 "n1",
-                "n13",
+                "n14",
                 "n9"
               ],
               "x": [
@@ -60226,7 +60272,8 @@
                 "n5",
                 "n6",
                 "n7",
-                "n13"
+                "n13",
+                "n14"
               ],
               "live_out_nodes": [
                 "n1",
@@ -60236,7 +60283,8 @@
                 "n5",
                 "n6",
                 "n7",
-                "n13"
+                "n13",
+                "n14"
               ],
               "last_use_nodes": [
                 "n0"
@@ -60261,7 +60309,8 @@
                 "n10",
                 "n11",
                 "n12",
-                "n13"
+                "n13",
+                "n14"
               ],
               "live_out_nodes": [
                 "n1",
@@ -60275,7 +60324,8 @@
                 "n10",
                 "n11",
                 "n12",
-                "n13"
+                "n13",
+                "n14"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -60300,7 +60350,8 @@
                 "n10",
                 "n11",
                 "n12",
-                "n13"
+                "n13",
+                "n14"
               ],
               "live_out_nodes": [
                 "n1",
@@ -60314,7 +60365,8 @@
                 "n10",
                 "n11",
                 "n12",
-                "n13"
+                "n13",
+                "n14"
               ],
               "last_use_nodes": [
                 "n0",
@@ -60330,11 +60382,13 @@
               "live_in_nodes": [
                 "n6",
                 "n7",
-                "n13"
+                "n13",
+                "n14"
               ],
               "live_out_nodes": [
                 "n7",
-                "n13"
+                "n13",
+                "n14"
               ],
               "last_use_nodes": [
                 "n6"
@@ -60402,7 +60456,8 @@
                 "n10",
                 "n11",
                 "n12",
-                "n13"
+                "n13",
+                "n14"
               ],
               "live_out_nodes": [
                 "n1",
@@ -60416,7 +60471,8 @@
                 "n10",
                 "n11",
                 "n12",
-                "n13"
+                "n13",
+                "n14"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -60441,7 +60497,8 @@
                 "n10",
                 "n11",
                 "n12",
-                "n13"
+                "n13",
+                "n14"
               ],
               "live_out_nodes": [
                 "n1",
@@ -60455,7 +60512,8 @@
                 "n10",
                 "n11",
                 "n12",
-                "n13"
+                "n13",
+                "n14"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -60536,7 +60594,8 @@
                 "n10",
                 "n11",
                 "n12",
-                "n13"
+                "n13",
+                "n14"
               ],
               "live_out_nodes": [
                 "n1",
@@ -60550,7 +60609,8 @@
                 "n10",
                 "n11",
                 "n12",
-                "n13"
+                "n13",
+                "n14"
               ],
               "last_use_nodes": [
                 "n8"
@@ -60575,7 +60635,8 @@
                 "n10",
                 "n11",
                 "n12",
-                "n13"
+                "n13",
+                "n14"
               ],
               "live_out_nodes": [
                 "n1",
@@ -60589,7 +60650,8 @@
                 "n10",
                 "n11",
                 "n12",
-                "n13"
+                "n13",
+                "n14"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -60597,14 +60659,14 @@
             "len": {
               "def_nodes": [],
               "use_nodes": [
-                "n13"
+                "n14"
               ],
               "live_in_nodes": [
-                "n13"
+                "n14"
               ],
               "live_out_nodes": [],
               "last_use_nodes": [
-                "n13"
+                "n14"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
@@ -60629,7 +60691,8 @@
                 "n10",
                 "n11",
                 "n12",
-                "n13"
+                "n13",
+                "n14"
               ],
               "live_out_nodes": [
                 "n1",
@@ -60643,7 +60706,8 @@
                 "n10",
                 "n11",
                 "n12",
-                "n13"
+                "n13",
+                "n14"
               ],
               "last_use_nodes": [
                 "n0"
@@ -60692,7 +60756,7 @@
               "def_nodes": [],
               "use_nodes": [
                 "n1",
-                "n13",
+                "n14",
                 "n9"
               ],
               "live_in_nodes": [
@@ -60707,7 +60771,8 @@
                 "n10",
                 "n11",
                 "n12",
-                "n13"
+                "n13",
+                "n14"
               ],
               "live_out_nodes": [
                 "n1",
@@ -60721,7 +60786,8 @@
                 "n10",
                 "n11",
                 "n12",
-                "n13"
+                "n13",
+                "n14"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -61028,7 +61094,7 @@
                 "value": "{}"
               },
               "meta": {
-                "lifetime_node_id": "n18",
+                "lifetime_node_id": "n20",
                 "lifetime_defs": [],
                 "lifetime_uses": [],
                 "lifetime_live_in": [],
@@ -61039,7 +61105,7 @@
           ],
           "orelse": [],
           "meta": {
-            "lifetime_node_id": "n17",
+            "lifetime_node_id": "n19",
             "lifetime_defs": [],
             "lifetime_uses": [
               "len",
@@ -61079,7 +61145,83 @@
         },
         {
           "kind": "VarDecl",
+          "name": "k",
+          "type": "object",
+          "hoisted": true,
+          "meta": {
+            "lifetime_node_id": "n18",
+            "lifetime_defs": [],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "_COMMA_NL",
+              "_dump_json_value",
+              "_escape_str",
+              "_join_strs",
+              "_json_indent_value",
+              "ensure_ascii",
+              "indent",
+              "item_sep",
+              "key_sep",
+              "level",
+              "values"
+            ],
+            "lifetime_live_out": [
+              "_COMMA_NL",
+              "_dump_json_value",
+              "_escape_str",
+              "_join_strs",
+              "_json_indent_value",
+              "ensure_ascii",
+              "indent",
+              "item_sep",
+              "key_sep",
+              "level",
+              "values"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "VarDecl",
           "name": "k_txt",
+          "type": "str",
+          "hoisted": true,
+          "meta": {
+            "lifetime_node_id": "n17",
+            "lifetime_defs": [],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "_COMMA_NL",
+              "_dump_json_value",
+              "_escape_str",
+              "_join_strs",
+              "_json_indent_value",
+              "ensure_ascii",
+              "indent",
+              "item_sep",
+              "key_sep",
+              "level",
+              "values"
+            ],
+            "lifetime_live_out": [
+              "_COMMA_NL",
+              "_dump_json_value",
+              "_escape_str",
+              "_join_strs",
+              "_json_indent_value",
+              "ensure_ascii",
+              "indent",
+              "item_sep",
+              "key_sep",
+              "level",
+              "values"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "VarDecl",
+          "name": "v_txt",
           "type": "str",
           "hoisted": true,
           "meta": {
@@ -61117,8 +61259,8 @@
         },
         {
           "kind": "VarDecl",
-          "name": "v_txt",
-          "type": "str",
+          "name": "x",
+          "type": "object",
           "hoisted": true,
           "meta": {
             "lifetime_node_id": "n15",
@@ -65487,7 +65629,7 @@
           "schema_version": "east3_lifetime_v1",
           "status": "ok",
           "reason": "",
-          "entry_node": "n17",
+          "entry_node": "n19",
           "order": [
             "n0",
             "n1",
@@ -65507,7 +65649,9 @@
             "n15",
             "n16",
             "n17",
-            "n18"
+            "n18",
+            "n19",
+            "n20"
           ],
           "cfg": [
             {
@@ -65743,6 +65887,24 @@
             },
             {
               "id": "n17",
+              "kind": "VarDecl",
+              "defs": [],
+              "uses": [],
+              "succ": [
+                "n16"
+              ]
+            },
+            {
+              "id": "n18",
+              "kind": "VarDecl",
+              "defs": [],
+              "uses": [],
+              "succ": [
+                "n17"
+              ]
+            },
+            {
+              "id": "n19",
               "kind": "If",
               "defs": [],
               "uses": [
@@ -65750,12 +65912,12 @@
                 "values"
               ],
               "succ": [
-                "n16",
-                "n18"
+                "n18",
+                "n20"
               ]
             },
             {
-              "id": "n18",
+              "id": "n20",
               "kind": "Return",
               "defs": [],
               "uses": [],
@@ -65852,7 +66014,7 @@
                 "n3"
               ],
               "len": [
-                "n17"
+                "n19"
               ],
               "level": [
                 "n0",
@@ -65874,7 +66036,7 @@
               "values": [
                 "n1",
                 "n10",
-                "n17"
+                "n19"
               ],
               "x": [
                 "n12",
@@ -65900,7 +66062,9 @@
                 "n8",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "live_out_nodes": [
                 "n1",
@@ -65913,7 +66077,9 @@
                 "n8",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "last_use_nodes": [
                 "n0"
@@ -65942,7 +66108,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "live_out_nodes": [
                 "n1",
@@ -65960,7 +66128,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -65987,7 +66157,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "live_out_nodes": [
                 "n1",
@@ -66005,7 +66177,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -66034,7 +66208,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "live_out_nodes": [
                 "n1",
@@ -66052,7 +66228,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "last_use_nodes": [
                 "n0",
@@ -66070,13 +66248,17 @@
                 "n8",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "live_out_nodes": [
                 "n8",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "last_use_nodes": [
                 "n7"
@@ -66107,7 +66289,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "live_out_nodes": [
                 "n1",
@@ -66125,7 +66309,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -66154,7 +66340,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "live_out_nodes": [
                 "n1",
@@ -66172,7 +66360,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -66261,7 +66451,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "live_out_nodes": [
                 "n1",
@@ -66279,7 +66471,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "last_use_nodes": [
                 "n9"
@@ -66362,7 +66556,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "live_out_nodes": [
                 "n1",
@@ -66380,7 +66576,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -66388,14 +66586,14 @@
             "len": {
               "def_nodes": [],
               "use_nodes": [
-                "n17"
+                "n19"
               ],
               "live_in_nodes": [
-                "n17"
+                "n19"
               ],
               "live_out_nodes": [],
               "last_use_nodes": [
-                "n17"
+                "n19"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
@@ -66424,7 +66622,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "live_out_nodes": [
                 "n1",
@@ -66442,7 +66642,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "last_use_nodes": [
                 "n0"
@@ -66526,7 +66728,7 @@
               "use_nodes": [
                 "n1",
                 "n10",
-                "n17"
+                "n19"
               ],
               "live_in_nodes": [
                 "n1",
@@ -66544,7 +66746,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "live_out_nodes": [
                 "n1",
@@ -66562,7 +66766,9 @@
                 "n14",
                 "n15",
                 "n16",
-                "n17"
+                "n17",
+                "n18",
+                "n19"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
