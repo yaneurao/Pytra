@@ -120,18 +120,18 @@ function __pytra_list {
     param([object]$value = 0)
     if ($value -is [int] -or $value -is [long]) {
         $count = __pytra_int $value
-        $result = New-Object System.Collections.Generic.List[object]
+        $result = [System.Collections.Generic.List[object]]::new()
         for ($i = 0; $i -lt $count; $i++) {
             [void]$result.Add($null)
         }
-        return $result.ToArray()
+        return ,$result
     }
     if ($value -is [System.Collections.ICollection]) {
-        $result = New-Object System.Collections.Generic.List[object]
+        $result = [System.Collections.Generic.List[object]]::new()
         foreach ($item in $value) {
             [void]$result.Add($item)
         }
-        return $result.ToArray()
+        return ,$result
     }
     return @()
 }

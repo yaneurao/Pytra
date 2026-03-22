@@ -394,7 +394,16 @@ def _render_expr(expr_any: Any) -> str:
     if kind == "Call":
         return _render_call_expr(expr)
 
-    if kind == "List" or kind == "Tuple":
+    if kind == "List":
+        elements = _get_list(expr, "elements")
+        if len(elements) == 0:
+            elements = _get_list(expr, "elts")
+        if len(elements) == 0:
+            return "[System.Collections.Generic.List[object]]::new()"
+        rendered = [_render_expr(e) for e in elements]
+        return "([System.Collections.Generic.List[object]]@(" + ", ".join(rendered) + "))"
+
+    if kind == "Tuple":
         elements = _get_list(expr, "elements")
         if len(elements) == 0:
             elements = _get_list(expr, "elts")
@@ -792,7 +801,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 return "(" + safe_fn + " " + " ".join(rendered_args) + ")"
             if attr == "append":
                 if len(rendered_args) > 0:
-                    return owner + " += @(" + rendered_args[0] + ")"
+                    return owner + ".Add(" + rendered_args[0] + ")"
                 return owner
             if attr == "join":
                 if len(rendered_args) > 0:
@@ -879,7 +888,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 return "-1"
             if attr == "extend":
                 if len(rendered_args) > 0:
-                    return owner + " += @(" + rendered_args[0] + ")"
+                    return owner + ".AddRange([object[]]@(" + rendered_args[0] + "))"
                 return owner
             if attr == "insert":
                 if len(rendered_args) >= 2:
