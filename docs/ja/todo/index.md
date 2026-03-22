@@ -199,9 +199,9 @@
 
 文脈: [docs/ja/plans/p7-math-pi-type-resolution.md](../plans/p7-math-pi-type-resolution.md)
 
-1. [ ] [ID: P7-MODULE-CONST-TYPE-01] linked program の全モジュールからトップレベル export テーブルを収集する。
-2. [ ] [ID: P7-MODULE-CONST-TYPE-02] Attribute ノードの `resolved_type` を export テーブルで更新する post-link pass を実装する。
-3. [ ] [ID: P7-MODULE-CONST-TYPE-03] ユニットテストを追加する。
+1. [x] [ID: P7-MODULE-CONST-TYPE-01] linked program の全モジュールからトップレベル export テーブルを収集する。
+2. [x] [ID: P7-MODULE-CONST-TYPE-02] Attribute ノードの `resolved_type` を export テーブルで更新する post-link pass を実装する。
+3. [x] [ID: P7-MODULE-CONST-TYPE-03] ユニットテストを追加する。
 
 ### P6: Zig コンテナ型の Obj（rc）管理
 
