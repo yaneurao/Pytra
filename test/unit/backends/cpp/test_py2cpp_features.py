@@ -2191,8 +2191,9 @@ def main() -> None:
                 )
             self.assertEqual(proc.returncode, 0, msg=proc.stderr)
             main_cpp = (out_dir / "src" / "main.cpp").read_text(encoding="utf-8")
-        self.assertIn("namespace pytra_mod_helper {", main_cpp)
+        # In multi-file mode, helper namespace is in helper.cpp, not main.cpp
         self.assertIn("pytra_mod_helper::add(1, 2)", main_cpp)
+        self.assertNotIn("namespace pytra_mod_helper {", main_cpp)
 
     def test_cli_reports_input_invalid_for_missing_user_module(self) -> None:
         src_main = """import missing_mod
@@ -4546,7 +4547,9 @@ if __name__ == "__main__":
             obj_dir.mkdir(parents=True, exist_ok=True)
             generated_header = (out_dir / "include" / "apu.h").read_text(encoding="utf-8")
             generated_user = (out_dir / "src" / "user.cpp").read_text(encoding="utf-8")
-            self.assertLess(generated_header.index("extern list<int64> LENGTH_TABLE;"), generated_header.index("struct PulseChannel : public RcObject {"))
+            # Object<T> mode: no RcObject inheritance
+            self.assertIn("extern list<int64> LENGTH_TABLE;", generated_header)
+            self.assertIn("struct PulseChannel {", generated_header)
             self.assertIn("channel->write_timer_high(8);", generated_user)
             self.assertIn("return channel->sample();", generated_user)
             for source_name in ("apu.cpp", "user.cpp"):
