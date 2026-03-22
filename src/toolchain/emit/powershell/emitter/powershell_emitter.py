@@ -146,6 +146,8 @@ _IGNORED_IMPORT_MODULES: set[str] = {
 def _module_to_ps_path(module: str) -> str:
     """Python モジュール名をリンク済み PS1 の相対パスに変換する。
 
+    emit_all_modules が pytra. prefix を strip して配置するので、
+    pytra.std.time → std/time.ps1 に変換する。
     root_rel_prefix を付加して、サブモジュール間の相対パスを正しく解決する。
     """
     if module == "" or module in _IGNORED_IMPORT_MODULES:
@@ -153,25 +155,21 @@ def _module_to_ps_path(module: str) -> str:
     if module in ("pytra.std", "pytra", "pytra.utils"):
         return ""
     raw = ""
-    for prefix in ("pytra.std.", "pytra.utils."):
-        if module.startswith(prefix):
-            tail = module[len(prefix):]
-            if tail != "":
-                raw = tail.replace(".", "/") + "/east.ps1"
-            break
-    if raw == "" and module == "pytra.enum":
-        raw = "enum/east.ps1"
+    # pytra.X → X (strip pytra. prefix, matching emit_all_modules behavior)
+    if module.startswith("pytra."):
+        tail = module[len("pytra."):]
+        if tail != "":
+            raw = tail.replace(".", "/") + ".ps1"
     if raw == "" and module.startswith("browser"):
         return ""
-    _KNOWN_STD_MODULES = {
-        "pathlib", "json", "math", "re", "os", "sys", "glob", "random",
-        "argparse", "time", "timeit", "collections", "subprocess",
-    }
-    if raw == "" and module in _KNOWN_STD_MODULES:
+    # bare stdlib name (e.g. "pathlib", "json") → std/X.ps1
+    if raw == "":
         cur = _CURRENT_MODULE_ID[0]
-        if cur != "" and (cur == module + ".east" or cur.endswith("." + module)):
+        # Self-reference check
+        mod_as_id = module.replace(".", "_")
+        if cur != "" and (cur == "pytra.std." + module or cur.endswith("." + module)):
             return ""
-        raw = module + "/east.ps1"
+        raw = "std/" + module.replace(".", "/") + ".ps1"
     if raw == "":
         # Self-reference check for any module
         cur = _CURRENT_MODULE_ID[0]
@@ -1413,13 +1411,13 @@ def _is_stdlib_passthrough_function(stmt: dict[str, Any]) -> bool:
 
 def _emit_function_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
     name = _safe_ident(_get_str(stmt, "name"), "_fn")
-    # Skip @extern decorated functions (native seam provides them)
+    # @extern: skip — native seam is dot-sourced and provides the function directly
     decs = _get_list(stmt, "decorators")
-    if "extern" in decs:
-        return [indent + "# extern: " + name + " (provided by native seam)"]
+    if "extern" in decs and _CURRENT_CLASS_NAME[0] == "":
+        return [indent + "# @extern " + name + " — provided by native seam"]
     # Skip stdlib passthrough functions (runtime already provides them)
     if _is_stdlib_passthrough_function(stmt):
-        return [indent + "# extern: " + name + " (provided by py_runtime.ps1)"]
+        return [indent + "# passthrough: " + name]
     body = _get_list(stmt, "body")
 
     # EAST3 uses arg_order (list[str]) + arg_defaults (dict[str, Any])
@@ -1745,7 +1743,7 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
     lines: list[str] = [
         "#Requires -Version 5.1",
         "",
-        "$pytra_runtime = Join-Path $PSScriptRoot \"" + rp + "py_runtime.ps1\"",
+        "$pytra_runtime = Join-Path $PSScriptRoot \"" + rp + "built_in/py_runtime.ps1\"",
         "if (Test-Path $pytra_runtime) { . $pytra_runtime }",
         "",
         "Set-StrictMode -Version Latest",
@@ -1753,20 +1751,14 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
         "",
     ]
 
-    # Dot-source native seam for stdlib modules
-    _NATIVE_SEAM_MAP: dict[str, str] = {
-        "math.east": "std/math_native.ps1",
-        "time.east": "std/time_native.ps1",
-        "os.east": "std/os_native.ps1",
-        "os_path.east": "std/os_path_native.ps1",
-        "sys.east": "std/sys_native.ps1",
-        "glob.east": "std/glob_native.ps1",
-    }
+    # Dot-source native seam for stdlib modules (spec-runtime.md §0.6a)
+    # module_id "pytra.std.time" → native seam "std/time_native.ps1"
     cur_mod = _CURRENT_MODULE_ID[0]
-    rp = _ROOT_REL_PREFIX[0]
-    native_seam = _NATIVE_SEAM_MAP.get(cur_mod, "")
-    if native_seam != "":
-        lines.append('. (Join-Path $PSScriptRoot "' + rp + native_seam + '")')
+    if cur_mod.startswith("pytra.std.") or cur_mod.startswith("pytra.built_in."):
+        # Strip pytra. prefix and add _native suffix
+        mod_tail = cur_mod[len("pytra."):]  # e.g. "std.time"
+        native_path = mod_tail.replace(".", "/") + "_native.ps1"  # e.g. "std/time_native.ps1"
+        lines.append('. (Join-Path $PSScriptRoot "' + rp + native_path + '")')
         lines.append("")
 
     # Detect implicit format_value dependency (f-string format_spec)

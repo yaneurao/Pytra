@@ -168,9 +168,8 @@ def _transpile_and_run(
     with tempfile.TemporaryDirectory() as td:
         out_dir = Path(td)
         stem = fixture_path.stem
-        out_ps1 = out_dir / (stem + ".ps1")
 
-        # Stage 1: transpile
+        # Stage 1: transpile (pytra-cli outputs to out_dir/emit/)
         cmd = [
             sys.executable, str(ROOT / "src" / "pytra-cli.py"),
             "--target", "powershell",
@@ -181,12 +180,12 @@ def _transpile_and_run(
         if tp.returncode != 0:
             return tp  # transpile failure
 
-        # Copy runtime
-        import shutil
-        shutil.copy2(str(RUNTIME_PS1), str(out_dir / "py_runtime.ps1"))
-        assertions_dir = out_dir / "assertions"
-        if assertions_dir.exists():
-            shutil.copy2(str(RUNTIME_PS1), str(assertions_dir / "py_runtime.ps1"))
+        # Find the entry PS1 in emit/ directory
+        emit_dir = out_dir / "emit"
+        out_ps1 = emit_dir / (stem + ".ps1")
+        if not out_ps1.exists():
+            # Fallback: check out_dir directly (legacy)
+            out_ps1 = out_dir / (stem + ".ps1")
 
         # Stage 2: run with pwsh
         return subprocess.run(
