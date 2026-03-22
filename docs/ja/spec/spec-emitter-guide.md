@@ -323,11 +323,30 @@ native_import_path = root_rel_prefix + "std/time_native.<ext>"
 # root_rel_prefix = "./"  (depth=0)  → "./std/time_native.<ext>"
 ```
 
-## 6. runtime コピー
+## 6. runtime コピーと py_runtime の責務範囲
 
 `emit_all_modules` に `lang="<lang>"` を渡せば、`src/runtime/<lang>/{built_in,std}/` から自動コピーされる。個別の `_copy_runtime` は不要。
 
 コピーは生成済みファイルを上書きしない（@extern 委譲コードが先に生成されるため）。
+
+### py_runtime の責務範囲
+
+`built_in/py_runtime.<ext>` は **Python の built-in 関数に相当するヘルパーのみ** を提供する:
+
+| 含めてよいもの | 例 |
+|---|---|
+| print / len / range / int / float / str / bool | Python の built-in 関数 |
+| 型変換（py_to_bool 等） | Python の暗黙型変換 |
+| コンテナ操作（list append 等） | Python のメソッド |
+| 文字列操作（split, join 等） | str のメソッド |
+
+| 含めてはならないもの | 理由 |
+|---|---|
+| `write_rgb_png` / `save_gif` / `grayscale_palette` | `pytra.utils.*` のモジュール関数。linker が必要な場合のみ生成 |
+| `perf_counter` / `sqrt` / `sin` | `pytra.std.*` のモジュール関数。`_native` ファイルが提供 |
+| JSON / pathlib / os 操作 | `pytra.std.*` のモジュール関数 |
+
+`pytra.std.*` / `pytra.utils.*` の関数は、linker が依存解決した場合のみ `.east` → emitter 経由で生成される。`py_runtime` に含めると、その関数を使わないプログラムでもコンパイルエラー（未定義シンボル参照）が発生する。
 
 ## 7. 共通ユーティリティ（`code_emitter.py` スタンドアロン関数）
 
