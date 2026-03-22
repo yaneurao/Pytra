@@ -461,6 +461,9 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
         """Module import binding を除いた local shadow 判定。"""
         if name == "":
             return False
+        # Check declared_var_types (AnnAssign, Assign, for-target etc.)
+        if name in self.declared_var_types:
+            return True
         scope_len = len(self.scope_stack)
         if scope_len <= 1:
             return False

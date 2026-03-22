@@ -192,8 +192,12 @@ class CppStatementEmitter:
             if t == "auto" and ann_text_fallback not in {"", "{}", "None"}:
                 t = self._cpp_type_text(self.normalize_type_name(ann_text_fallback))
         target_node = self.any_to_dict_or_empty(stmt.get("target"))
-        target = self.render_expr(stmt.get("target"))
         target_name_raw = self.any_dict_get_str(target_node, "id", "")
+        # Pre-register target name so _render_name_expr treats it as local
+        # (prevents import symbol resolution for locally declared variables)
+        if target_name_raw != "" and target_name_raw not in self.declared_var_types:
+            self.declared_var_types[target_name_raw] = t if t != "auto" else "unknown"
+        target = self.render_expr(stmt.get("target"))
         stack_list_local = self._is_stack_list_local_name(target_name_raw)
         val = self.any_to_dict_or_empty(stmt.get("value"))
         val_is_dict: bool = len(val) > 0

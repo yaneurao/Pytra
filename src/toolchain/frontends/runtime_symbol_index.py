@@ -128,6 +128,11 @@ def resolve_import_binding_doc(module_id: str, export_name: str, binding_kind: s
         out["resolved_binding_kind"] = "module"
         return out
     child_module = canonical_runtime_module_id(source_module_id)
+    # Normalize bare names for comparison (e.g. "math" vs "pytra.std.math")
+    if not runtime_module_exists(child_module) and "." not in child_module:
+        normalized = "pytra.std." + child_module
+        if runtime_module_exists(normalized):
+            child_module = normalized
     if child_module != "" and runtime_module_id != child_module:
         out["resolved_binding_kind"] = "module"
         return out
@@ -181,7 +186,14 @@ def resolve_import_binding_runtime_module(module_id: str, export_name: str, bind
     mod = canonical_runtime_module_id(module_id.strip())
     if mod == "":
         return ""
+    # Try normalizing bare module names (e.g. "math" → "pytra.std.math")
+    if not runtime_module_exists(mod) and "." not in mod:
+        candidate = "pytra.std." + mod
+        if runtime_module_exists(candidate):
+            mod = candidate
     if binding_kind == "module":
+        return mod if runtime_module_exists(mod) else ""
+    if binding_kind == "implicit_builtin":
         return mod if runtime_module_exists(mod) else ""
     if binding_kind != "symbol":
         return ""
