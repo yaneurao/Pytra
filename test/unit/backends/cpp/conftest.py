@@ -60,7 +60,9 @@ def _generate_runtime_cpp() -> Path:
 
         cpp = transpile_to_cpp(emit_east, top_namespace=ns)
         cpp = re.sub(r'\nint main\(int argc, char\*\* argv\) \{.*', '', cpp, flags=re.DOTALL)
-        header = build_cpp_header_from_east(east, east_path, out_base.with_suffix(".h"), cpp_text=cpp, top_namespace=ns)
+        # Remove trailing namespace close from cpp to avoid duplication in header
+        cpp_for_header = re.sub(r'\n\}  // namespace [^\n]+\s*$', '', cpp.rstrip())
+        header = build_cpp_header_from_east(east, east_path, out_base.with_suffix(".h"), cpp_text=cpp_for_header, top_namespace=ns)
 
         # Add using namespace before #endif
         lines = header.rstrip().split("\n")

@@ -93,6 +93,12 @@ struct PyBoxedValue {
     PyBoxedValue(T v) : value(::std::move(v)) {}
 };
 
+// Object<void>::unbox — deferred definition (PyBoxedValue must be complete)
+template<typename T, uint32_t TID>
+inline const T& Object<void>::unbox() const {
+    return static_cast<PyBoxedValue<T>*>(cb->base_ptr)->value;
+}
+
 inline Object<void>::Object(int64 v) : cb(nullptr) {
     auto* boxed = new PyBoxedValue<int64>(v);
     cb = new ControlBlock{0, PYTRA_TID_INT, boxed};

@@ -904,7 +904,7 @@ class CppStatementEmitter:
             self.emit(
                 self.syntax_line(
                     "scope_exit_open",
-                    "auto {guard} = py_make_scope_exit([&]() {{",
+                    "auto {guard} = py_make_scope_exit([&]() {",
                     {"guard": gid},
                 )
             )
