@@ -574,13 +574,45 @@ class JsEmitter(CodeEmitter):
         runtime_symbols = self._collect_runtime_symbols(analysis_body, main_guard_body)
         runtime_import_line = ""
         if len(runtime_symbols) > 0:
-            runtime_import_line = "import { " + ", ".join(runtime_symbols) + " } from " + self.quote_string_literal(_JS_OUTPUT_RUNTIME_NATIVE_ROOT + "/built_in/py_runtime.js") + ";"
+            runtime_import_line = "import { " + ", ".join(runtime_symbols) + " } from " + self.quote_string_literal(_JS_OUTPUT_RUNTIME_ROOT + "/built_in/py_runtime.js") + ";"
         import_lines = self._collect_import_statements(analysis_body, meta, used_names)
+        # Detect @extern functions and generate _native import
+        has_extern = False
+        for stmt in analysis_body:
+            if self.any_dict_get_str(stmt, "kind", "") == "FunctionDef":
+                decs = stmt.get("decorators")
+                if isinstance(decs, list) and "extern" in decs:
+                    has_extern = True
+                    break
+        native_import_line = ""
+        if has_extern:
+            # Derive _native module path from emit_context
+            emit_ctx = self.any_to_dict_or_empty(meta.get("emit_context"))
+            root_rel = self.any_dict_get_str(emit_ctx, "root_rel_prefix", "./")
+            mod_id = self.any_dict_get_str(emit_ctx, "module_id", "")
+            # Resolve canonical module name for native file lookup
+            from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
+            # Strip .east suffix from module_id if present
+            clean_mod_id = mod_id.replace(".east", "") if mod_id.endswith(".east") else mod_id
+            canonical = canonical_runtime_module_id(clean_mod_id) if clean_mod_id != "" else ""
+            if canonical != "":
+                # pytra.std.time → std/time_native.js
+                parts = canonical.split(".")
+                if len(parts) > 1 and parts[0] == "pytra":
+                    native_path = "/".join(parts[1:]) + "_native.js"
+                else:
+                    native_path = "/".join(parts) + "_native.js"
+            else:
+                native_stem = clean_mod_id.rsplit(".", 1)[-1] if "." in clean_mod_id else clean_mod_id
+                native_path = native_stem + "_native.js"
+            native_import_line = "import * as __native from " + self.quote_string_literal(root_rel + native_path) + ";"
         if runtime_import_line != "":
             self.emit(runtime_import_line)
+        if native_import_line != "":
+            self.emit(native_import_line)
         for line in import_lines:
             self.emit(line)
-        if runtime_import_line != "" or len(import_lines) > 0:
+        if runtime_import_line != "" or native_import_line != "" or len(import_lines) > 0:
             self.emit("")
 
         self.class_names = set()
@@ -710,6 +742,20 @@ class JsEmitter(CodeEmitter):
         fn_name_raw = self.any_to_str(fn.get("name"))
         arg_order = self.any_to_str_list(fn.get("arg_order"))
         arg_types = self.any_to_dict_or_empty(fn.get("arg_types"))
+
+        # @extern: generate delegation to _native module
+        decorators = fn.get("decorators")
+        if isinstance(decorators, list) and "extern" in decorators and in_class == "":
+            fn_name = self._safe_name(fn_name_raw)
+            safe_args: list[str] = [self._safe_name(a) for a in arg_order]
+            self.emit("export function " + fn_name + "(" + ", ".join(safe_args) + ") {")
+            self.indent += 1
+            call_args = ", ".join(safe_args)
+            self.emit("return __native." + fn_name + "(" + call_args + ");")
+            self.indent -= 1
+            self.emit("}")
+            return
+
         args: list[str] = []
         scope_names: set[str] = set()
         prev_ref_vars = self.current_ref_vars
