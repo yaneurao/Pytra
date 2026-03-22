@@ -63,6 +63,75 @@ class _ShExprResolutionSemanticsMixin:
                 "capitalize": "str",
                 "split": "list[str]",
                 "splitlines": "list[str]",
+                "join": "str",
+                "replace": "str",
+                "find": "int64",
+                "rfind": "int64",
+                "index": "int64",
+                "rindex": "int64",
+                "count": "int64",
+                "startswith": "bool",
+                "endswith": "bool",
+                "isdigit": "bool",
+                "isalpha": "bool",
+                "isalnum": "bool",
+                "encode": "bytes",
+            }
+        elif cls_name == "list" or cls_name.startswith("list["):
+            methods = {
+                "append": "None",
+                "extend": "None",
+                "insert": "None",
+                "pop": "object",
+                "remove": "None",
+                "clear": "None",
+                "sort": "None",
+                "reverse": "None",
+                "copy": cls_name,
+                "index": "int64",
+                "count": "int64",
+            }
+        elif cls_name == "dict" or cls_name.startswith("dict["):
+            methods = {
+                "get": "object",
+                "pop": "object",
+                "keys": "list[object]",
+                "values": "list[object]",
+                "items": "list[object]",
+                "update": "None",
+                "clear": "None",
+                "copy": cls_name,
+                "setdefault": "object",
+            }
+            # Refine types from generic parameters if available
+            if cls_name.startswith("dict[") and cls_name.endswith("]"):
+                inner = cls_name[5:-1]
+                parts = self._split_generic_types(inner)
+                if len(parts) == 2:
+                    key_t = parts[0].strip()
+                    val_t = parts[1].strip()
+                    methods["get"] = val_t
+                    methods["pop"] = val_t
+                    methods["keys"] = "list[" + key_t + "]"
+                    methods["values"] = "list[" + val_t + "]"
+                    methods["items"] = "list[tuple[" + key_t + ", " + val_t + "]]"
+                    methods["setdefault"] = val_t
+                    methods["copy"] = cls_name
+        elif cls_name == "set" or cls_name.startswith("set["):
+            methods = {
+                "add": "None",
+                "discard": "None",
+                "remove": "None",
+                "clear": "None",
+                "copy": cls_name,
+                "pop": "object",
+                "union": cls_name,
+                "intersection": cls_name,
+                "difference": cls_name,
+            }
+        elif cls_name == "bytes" or cls_name == "bytearray":
+            methods = {
+                "decode": "str",
             }
         return methods.get(method, "unknown")
 

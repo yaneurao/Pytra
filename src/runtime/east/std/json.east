@@ -9474,7 +9474,7 @@
                 "end_lineno": 76,
                 "end_col_offset": 31
               },
-              "resolved_type": "unknown",
+              "resolved_type": "list[tuple[str, JsonVal]]",
               "casts": [],
               "borrow_kind": "value",
               "repr": "raw.items()",
@@ -9528,32 +9528,44 @@
                 "repr": "raw",
                 "id": "raw"
               },
-              "iterable_trait": "unknown",
+              "iterable_trait": "yes",
               "iter_protocol": "static_range",
-              "iter_element_type": "unknown",
+              "iter_element_type": "tuple[str, JsonVal]",
               "type_expr_summary_v1": {
                 "schema_version": 1,
-                "kind": "DynamicType",
-                "category": "dynamic",
-                "mirror": "unknown",
-                "dynamic_name": "unknown"
+                "kind": "GenericType",
+                "category": "static",
+                "mirror": "list[tuple[str,JsonVal]]"
               }
             },
             "dispatch_mode": "native",
             "init_op": "ObjIterInit",
-            "next_op": "ObjIterNext"
+            "next_op": "ObjIterNext",
+            "iter_item_type": "tuple[str, JsonVal]"
           },
           "target_plan": {
             "kind": "TupleTarget",
             "elements": [
               {
                 "kind": "NameTarget",
-                "id": "k"
+                "id": "k",
+                "target_type": "str"
               },
               {
                 "kind": "NameTarget",
-                "id": "value"
+                "id": "value",
+                "target_type": "JsonVal"
               }
+            ],
+            "target_type": "tuple[str, JsonVal]",
+            "direct_unpack": true,
+            "direct_unpack_names": [
+              "k",
+              "value"
+            ],
+            "direct_unpack_types": [
+              "str",
+              "JsonVal"
             ]
           },
           "body": [
@@ -9585,9 +9597,9 @@
                     "end_lineno": 77,
                     "end_col_offset": 12
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "str",
                   "casts": [],
-                  "borrow_kind": "value",
+                  "borrow_kind": "readonly_ref",
                   "repr": "k",
                   "id": "k"
                 },
@@ -9631,9 +9643,9 @@
                       "end_lineno": 77,
                       "end_col_offset": 12
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "str",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "k",
                     "id": "k"
                   },
@@ -9675,9 +9687,9 @@
                       "end_lineno": 78,
                       "end_col_offset": 24
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "JsonVal",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "value",
                     "id": "value"
                   },
@@ -34090,7 +34102,7 @@
                       "end_lineno": 289,
                       "end_col_offset": 43
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "None",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "out.append(self._parse_value())",
@@ -34196,10 +34208,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "None"
                     }
                   },
                   "meta": {
@@ -37451,7 +37462,7 @@
                               "end_lineno": 316,
                               "end_col_offset": 41
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "None",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "out_chars.append('\"')",
@@ -37522,10 +37533,9 @@
                             },
                             "type_expr_summary_v1": {
                               "schema_version": 1,
-                              "kind": "DynamicType",
-                              "category": "dynamic",
-                              "mirror": "unknown",
-                              "dynamic_name": "unknown"
+                              "kind": "NamedType",
+                              "category": "static",
+                              "mirror": "None"
                             }
                           },
                           "meta": {
@@ -37675,7 +37685,7 @@
                                   "end_lineno": 318,
                                   "end_col_offset": 42
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "None",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "out_chars.append(\"\\\\\")",
@@ -37746,10 +37756,9 @@
                                 },
                                 "type_expr_summary_v1": {
                                   "schema_version": 1,
-                                  "kind": "DynamicType",
-                                  "category": "dynamic",
-                                  "mirror": "unknown",
-                                  "dynamic_name": "unknown"
+                                  "kind": "NamedType",
+                                  "category": "static",
+                                  "mirror": "None"
                                 }
                               },
                               "meta": {
@@ -37899,7 +37908,7 @@
                                       "end_lineno": 320,
                                       "end_col_offset": 41
                                     },
-                                    "resolved_type": "unknown",
+                                    "resolved_type": "None",
                                     "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "out_chars.append(\"/\")",
@@ -37970,10 +37979,9 @@
                                     },
                                     "type_expr_summary_v1": {
                                       "schema_version": 1,
-                                      "kind": "DynamicType",
-                                      "category": "dynamic",
-                                      "mirror": "unknown",
-                                      "dynamic_name": "unknown"
+                                      "kind": "NamedType",
+                                      "category": "static",
+                                      "mirror": "None"
                                     }
                                   },
                                   "meta": {
@@ -38123,7 +38131,7 @@
                                           "end_lineno": 322,
                                           "end_col_offset": 42
                                         },
-                                        "resolved_type": "unknown",
+                                        "resolved_type": "None",
                                         "casts": [],
                                         "borrow_kind": "value",
                                         "repr": "out_chars.append(\"\\b\")",
@@ -38194,10 +38202,9 @@
                                         },
                                         "type_expr_summary_v1": {
                                           "schema_version": 1,
-                                          "kind": "DynamicType",
-                                          "category": "dynamic",
-                                          "mirror": "unknown",
-                                          "dynamic_name": "unknown"
+                                          "kind": "NamedType",
+                                          "category": "static",
+                                          "mirror": "None"
                                         }
                                       },
                                       "meta": {
@@ -38347,7 +38354,7 @@
                                               "end_lineno": 324,
                                               "end_col_offset": 42
                                             },
-                                            "resolved_type": "unknown",
+                                            "resolved_type": "None",
                                             "casts": [],
                                             "borrow_kind": "value",
                                             "repr": "out_chars.append(\"\\f\")",
@@ -38418,10 +38425,9 @@
                                             },
                                             "type_expr_summary_v1": {
                                               "schema_version": 1,
-                                              "kind": "DynamicType",
-                                              "category": "dynamic",
-                                              "mirror": "unknown",
-                                              "dynamic_name": "unknown"
+                                              "kind": "NamedType",
+                                              "category": "static",
+                                              "mirror": "None"
                                             }
                                           },
                                           "meta": {
@@ -38571,7 +38577,7 @@
                                                   "end_lineno": 326,
                                                   "end_col_offset": 42
                                                 },
-                                                "resolved_type": "unknown",
+                                                "resolved_type": "None",
                                                 "casts": [],
                                                 "borrow_kind": "value",
                                                 "repr": "out_chars.append(\"\\n\")",
@@ -38642,10 +38648,9 @@
                                                 },
                                                 "type_expr_summary_v1": {
                                                   "schema_version": 1,
-                                                  "kind": "DynamicType",
-                                                  "category": "dynamic",
-                                                  "mirror": "unknown",
-                                                  "dynamic_name": "unknown"
+                                                  "kind": "NamedType",
+                                                  "category": "static",
+                                                  "mirror": "None"
                                                 }
                                               },
                                               "meta": {
@@ -38795,7 +38800,7 @@
                                                       "end_lineno": 328,
                                                       "end_col_offset": 42
                                                     },
-                                                    "resolved_type": "unknown",
+                                                    "resolved_type": "None",
                                                     "casts": [],
                                                     "borrow_kind": "value",
                                                     "repr": "out_chars.append(\"\\r\")",
@@ -38866,10 +38871,9 @@
                                                     },
                                                     "type_expr_summary_v1": {
                                                       "schema_version": 1,
-                                                      "kind": "DynamicType",
-                                                      "category": "dynamic",
-                                                      "mirror": "unknown",
-                                                      "dynamic_name": "unknown"
+                                                      "kind": "NamedType",
+                                                      "category": "static",
+                                                      "mirror": "None"
                                                     }
                                                   },
                                                   "meta": {
@@ -39019,7 +39023,7 @@
                                                           "end_lineno": 330,
                                                           "end_col_offset": 42
                                                         },
-                                                        "resolved_type": "unknown",
+                                                        "resolved_type": "None",
                                                         "casts": [],
                                                         "borrow_kind": "value",
                                                         "repr": "out_chars.append(\"\\t\")",
@@ -39090,10 +39094,9 @@
                                                         },
                                                         "type_expr_summary_v1": {
                                                           "schema_version": 1,
-                                                          "kind": "DynamicType",
-                                                          "category": "dynamic",
-                                                          "mirror": "unknown",
-                                                          "dynamic_name": "unknown"
+                                                          "kind": "NamedType",
+                                                          "category": "static",
+                                                          "mirror": "None"
                                                         }
                                                       },
                                                       "meta": {
@@ -40107,7 +40110,7 @@
                                                               "end_lineno": 336,
                                                               "end_col_offset": 61
                                                             },
-                                                            "resolved_type": "unknown",
+                                                            "resolved_type": "None",
                                                             "casts": [],
                                                             "borrow_kind": "value",
                                                             "repr": "out_chars.append(chr(_int_from_hex4(hx)))",
@@ -40257,10 +40260,9 @@
                                                             },
                                                             "type_expr_summary_v1": {
                                                               "schema_version": 1,
-                                                              "kind": "DynamicType",
-                                                              "category": "dynamic",
-                                                              "mirror": "unknown",
-                                                              "dynamic_name": "unknown"
+                                                              "kind": "NamedType",
+                                                              "category": "static",
+                                                              "mirror": "None"
                                                             }
                                                           },
                                                           "meta": {
@@ -40674,7 +40676,7 @@
                           "end_lineno": 340,
                           "end_col_offset": 36
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "None",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "out_chars.append(ch)",
@@ -40745,10 +40747,9 @@
                         },
                         "type_expr_summary_v1": {
                           "schema_version": 1,
-                          "kind": "DynamicType",
-                          "category": "dynamic",
-                          "mirror": "unknown",
-                          "dynamic_name": "unknown"
+                          "kind": "NamedType",
+                          "category": "static",
+                          "mirror": "None"
                         }
                       },
                       "meta": {
@@ -52840,7 +52841,7 @@
                       "end_lineno": 419,
                       "end_col_offset": 29
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "None",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "out.append('\\\\\"')",
@@ -52911,10 +52912,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "None"
                     }
                   },
                   "meta": {
@@ -53064,7 +53064,7 @@
                           "end_lineno": 421,
                           "end_col_offset": 30
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "None",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "out.append(\"\\\\\\\\\")",
@@ -53135,10 +53135,9 @@
                         },
                         "type_expr_summary_v1": {
                           "schema_version": 1,
-                          "kind": "DynamicType",
-                          "category": "dynamic",
-                          "mirror": "unknown",
-                          "dynamic_name": "unknown"
+                          "kind": "NamedType",
+                          "category": "static",
+                          "mirror": "None"
                         }
                       },
                       "meta": {
@@ -53288,7 +53287,7 @@
                               "end_lineno": 423,
                               "end_col_offset": 29
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "None",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "out.append(\"\\\\b\")",
@@ -53359,10 +53358,9 @@
                             },
                             "type_expr_summary_v1": {
                               "schema_version": 1,
-                              "kind": "DynamicType",
-                              "category": "dynamic",
-                              "mirror": "unknown",
-                              "dynamic_name": "unknown"
+                              "kind": "NamedType",
+                              "category": "static",
+                              "mirror": "None"
                             }
                           },
                           "meta": {
@@ -53512,7 +53510,7 @@
                                   "end_lineno": 425,
                                   "end_col_offset": 29
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "None",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "out.append(\"\\\\f\")",
@@ -53583,10 +53581,9 @@
                                 },
                                 "type_expr_summary_v1": {
                                   "schema_version": 1,
-                                  "kind": "DynamicType",
-                                  "category": "dynamic",
-                                  "mirror": "unknown",
-                                  "dynamic_name": "unknown"
+                                  "kind": "NamedType",
+                                  "category": "static",
+                                  "mirror": "None"
                                 }
                               },
                               "meta": {
@@ -53736,7 +53733,7 @@
                                       "end_lineno": 427,
                                       "end_col_offset": 29
                                     },
-                                    "resolved_type": "unknown",
+                                    "resolved_type": "None",
                                     "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "out.append(\"\\\\n\")",
@@ -53807,10 +53804,9 @@
                                     },
                                     "type_expr_summary_v1": {
                                       "schema_version": 1,
-                                      "kind": "DynamicType",
-                                      "category": "dynamic",
-                                      "mirror": "unknown",
-                                      "dynamic_name": "unknown"
+                                      "kind": "NamedType",
+                                      "category": "static",
+                                      "mirror": "None"
                                     }
                                   },
                                   "meta": {
@@ -53960,7 +53956,7 @@
                                           "end_lineno": 429,
                                           "end_col_offset": 29
                                         },
-                                        "resolved_type": "unknown",
+                                        "resolved_type": "None",
                                         "casts": [],
                                         "borrow_kind": "value",
                                         "repr": "out.append(\"\\\\r\")",
@@ -54031,10 +54027,9 @@
                                         },
                                         "type_expr_summary_v1": {
                                           "schema_version": 1,
-                                          "kind": "DynamicType",
-                                          "category": "dynamic",
-                                          "mirror": "unknown",
-                                          "dynamic_name": "unknown"
+                                          "kind": "NamedType",
+                                          "category": "static",
+                                          "mirror": "None"
                                         }
                                       },
                                       "meta": {
@@ -54184,7 +54179,7 @@
                                               "end_lineno": 431,
                                               "end_col_offset": 29
                                             },
-                                            "resolved_type": "unknown",
+                                            "resolved_type": "None",
                                             "casts": [],
                                             "borrow_kind": "value",
                                             "repr": "out.append(\"\\\\t\")",
@@ -54255,10 +54250,9 @@
                                             },
                                             "type_expr_summary_v1": {
                                               "schema_version": 1,
-                                              "kind": "DynamicType",
-                                              "category": "dynamic",
-                                              "mirror": "unknown",
-                                              "dynamic_name": "unknown"
+                                              "kind": "NamedType",
+                                              "category": "static",
+                                              "mirror": "None"
                                             }
                                           },
                                           "meta": {
@@ -54438,7 +54432,7 @@
                                                   "end_lineno": 433,
                                                   "end_col_offset": 43
                                                 },
-                                                "resolved_type": "unknown",
+                                                "resolved_type": "None",
                                                 "casts": [],
                                                 "borrow_kind": "value",
                                                 "repr": "out.append(\"\\\\u\" + _hex4(code))",
@@ -54652,10 +54646,9 @@
                                                 },
                                                 "type_expr_summary_v1": {
                                                   "schema_version": 1,
-                                                  "kind": "DynamicType",
-                                                  "category": "dynamic",
-                                                  "mirror": "unknown",
-                                                  "dynamic_name": "unknown"
+                                                  "kind": "NamedType",
+                                                  "category": "static",
+                                                  "mirror": "None"
                                                 }
                                               },
                                               "meta": {
@@ -54708,7 +54701,7 @@
                                                   "end_lineno": 435,
                                                   "end_col_offset": 26
                                                 },
-                                                "resolved_type": "unknown",
+                                                "resolved_type": "None",
                                                 "casts": [],
                                                 "borrow_kind": "value",
                                                 "repr": "out.append(ch)",
@@ -54779,10 +54772,9 @@
                                                 },
                                                 "type_expr_summary_v1": {
                                                   "schema_version": 1,
-                                                  "kind": "DynamicType",
-                                                  "category": "dynamic",
-                                                  "mirror": "unknown",
-                                                  "dynamic_name": "unknown"
+                                                  "kind": "NamedType",
+                                                  "category": "static",
+                                                  "mirror": "None"
                                                 }
                                               },
                                               "meta": {
@@ -55127,7 +55119,7 @@
               "end_lineno": 436,
               "end_col_offset": 19
             },
-            "resolved_type": "unknown",
+            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "out.append('\"')",
@@ -55198,10 +55190,9 @@
             },
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
             }
           },
           "meta": {
@@ -57014,7 +57005,7 @@
                       "end_lineno": 454,
                       "end_col_offset": 37
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "None",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "dumped.append(dumped_txt)",
@@ -57085,10 +57076,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "None"
                     }
                   },
                   "meta": {
@@ -58612,7 +58602,7 @@
                   "end_lineno": 461,
                   "end_col_offset": 40
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "inner.append(prefix + value_txt)",
@@ -58754,10 +58744,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -61146,7 +61135,7 @@
         {
           "kind": "VarDecl",
           "name": "k",
-          "type": "object",
+          "type": "str",
           "hoisted": true,
           "meta": {
             "lifetime_node_id": "n18",
@@ -61260,7 +61249,7 @@
         {
           "kind": "VarDecl",
           "name": "x",
-          "type": "object",
+          "type": "JsonVal",
           "hoisted": true,
           "meta": {
             "lifetime_node_id": "n15",
@@ -61522,7 +61511,7 @@
                     "end_lineno": 477,
                     "end_col_offset": 34
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "list[tuple[str, JsonVal]]",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "values.items()",
@@ -61576,32 +61565,44 @@
                     "repr": "values",
                     "id": "values"
                   },
-                  "iterable_trait": "unknown",
+                  "iterable_trait": "yes",
                   "iter_protocol": "static_range",
-                  "iter_element_type": "unknown",
+                  "iter_element_type": "tuple[str, JsonVal]",
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                    "kind": "GenericType",
+                    "category": "static",
+                    "mirror": "list[tuple[str,JsonVal]]"
                   }
                 },
                 "dispatch_mode": "native",
                 "init_op": "ObjIterInit",
-                "next_op": "ObjIterNext"
+                "next_op": "ObjIterNext",
+                "iter_item_type": "tuple[str, JsonVal]"
               },
               "target_plan": {
                 "kind": "TupleTarget",
                 "elements": [
                   {
                     "kind": "NameTarget",
-                    "id": "k"
+                    "id": "k",
+                    "target_type": "str"
                   },
                   {
                     "kind": "NameTarget",
-                    "id": "x"
+                    "id": "x",
+                    "target_type": "JsonVal"
                   }
+                ],
+                "target_type": "tuple[str, JsonVal]",
+                "direct_unpack": true,
+                "direct_unpack_names": [
+                  "k",
+                  "x"
+                ],
+                "direct_unpack_types": [
+                  "str",
+                  "JsonVal"
                 ]
               },
               "body": [
@@ -61670,37 +61671,18 @@
                     },
                     "args": [
                       {
-                        "kind": "ObjStr",
-                        "resolved_type": "str",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "value": {
-                          "kind": "Name",
-                          "source_span": {
-                            "lineno": 478,
-                            "col_offset": 41,
-                            "end_lineno": 478,
-                            "end_col_offset": 42
-                          },
-                          "resolved_type": "unknown",
-                          "casts": [],
-                          "borrow_kind": "value",
-                          "repr": "k",
-                          "id": "k"
-                        },
+                        "kind": "Name",
                         "source_span": {
                           "lineno": 478,
-                          "col_offset": 37,
+                          "col_offset": 41,
                           "end_lineno": 478,
-                          "end_col_offset": 43
+                          "end_col_offset": 42
                         },
-                        "repr": "str(k)",
-                        "type_expr_summary_v1": {
-                          "schema_version": 1,
-                          "kind": "NamedType",
-                          "category": "static",
-                          "mirror": "str"
-                        }
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "k",
+                        "id": "k"
                       },
                       {
                         "kind": "Name",
@@ -61852,9 +61834,9 @@
                             "end_lineno": 479,
                             "end_col_offset": 43
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "JsonVal",
                           "casts": [],
-                          "borrow_kind": "value",
+                          "borrow_kind": "readonly_ref",
                           "repr": "x",
                           "id": "x"
                         },
@@ -62040,7 +62022,7 @@
                       "end_lineno": 480,
                       "end_col_offset": 49
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "None",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "parts.append(k_txt + key_sep + v_txt)",
@@ -62281,10 +62263,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "None"
                     }
                   },
                   "meta": {
@@ -63036,7 +63017,7 @@
                 "end_lineno": 484,
                 "end_col_offset": 30
               },
-              "resolved_type": "unknown",
+              "resolved_type": "list[tuple[str, JsonVal]]",
               "casts": [],
               "borrow_kind": "value",
               "repr": "values.items()",
@@ -63090,32 +63071,44 @@
                 "repr": "values",
                 "id": "values"
               },
-              "iterable_trait": "unknown",
+              "iterable_trait": "yes",
               "iter_protocol": "static_range",
-              "iter_element_type": "unknown",
+              "iter_element_type": "tuple[str, JsonVal]",
               "type_expr_summary_v1": {
                 "schema_version": 1,
-                "kind": "DynamicType",
-                "category": "dynamic",
-                "mirror": "unknown",
-                "dynamic_name": "unknown"
+                "kind": "GenericType",
+                "category": "static",
+                "mirror": "list[tuple[str,JsonVal]]"
               }
             },
             "dispatch_mode": "native",
             "init_op": "ObjIterInit",
-            "next_op": "ObjIterNext"
+            "next_op": "ObjIterNext",
+            "iter_item_type": "tuple[str, JsonVal]"
           },
           "target_plan": {
             "kind": "TupleTarget",
             "elements": [
               {
                 "kind": "NameTarget",
-                "id": "k"
+                "id": "k",
+                "target_type": "str"
               },
               {
                 "kind": "NameTarget",
-                "id": "x"
+                "id": "x",
+                "target_type": "JsonVal"
               }
+            ],
+            "target_type": "tuple[str, JsonVal]",
+            "direct_unpack": true,
+            "direct_unpack_names": [
+              "k",
+              "x"
+            ],
+            "direct_unpack_types": [
+              "str",
+              "JsonVal"
             ]
           },
           "body": [
@@ -63620,37 +63613,18 @@
                 },
                 "args": [
                   {
-                    "kind": "ObjStr",
-                    "resolved_type": "str",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 486,
-                        "col_offset": 37,
-                        "end_lineno": 486,
-                        "end_col_offset": 38
-                      },
-                      "resolved_type": "unknown",
-                      "casts": [],
-                      "borrow_kind": "value",
-                      "repr": "k",
-                      "id": "k"
-                    },
+                    "kind": "Name",
                     "source_span": {
                       "lineno": 486,
-                      "col_offset": 33,
+                      "col_offset": 37,
                       "end_lineno": 486,
-                      "end_col_offset": 39
+                      "end_col_offset": 38
                     },
-                    "repr": "str(k)",
-                    "type_expr_summary_v1": {
-                      "schema_version": 1,
-                      "kind": "NamedType",
-                      "category": "static",
-                      "mirror": "str"
-                    }
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "k",
+                    "id": "k"
                   },
                   {
                     "kind": "Name",
@@ -63807,9 +63781,9 @@
                         "end_lineno": 487,
                         "end_col_offset": 39
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "JsonVal",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "x",
                       "id": "x"
                     },
@@ -64071,7 +64045,7 @@
                   "end_lineno": 488,
                   "end_col_offset": 54
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "inner.append(prefix + k_txt + key_sep + v_txt)",
@@ -64439,10 +64413,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {

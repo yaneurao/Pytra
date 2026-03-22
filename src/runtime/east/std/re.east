@@ -9450,7 +9450,7 @@
         {
           "kind": "VarDecl",
           "name": "i",
-          "type": "object",
+          "type": "int64",
           "hoisted": true,
           "meta": {
             "lifetime_node_id": "n345",
@@ -9616,7 +9616,7 @@
                     "end_lineno": 111,
                     "end_col_offset": 33
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "bool",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "text.endswith(\"]\")",
@@ -9687,10 +9687,9 @@
                   },
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "bool"
                   }
                 }
               },
@@ -9770,7 +9769,7 @@
                 "id": "i"
               },
               "declare": true,
-              "decl_type": "unknown",
+              "decl_type": "int64",
               "declare_init": true,
               "value": {
                 "kind": "Call",
@@ -9780,7 +9779,7 @@
                   "end_lineno": 113,
                   "end_col_offset": 26
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "text.find(\"[\")",
@@ -9851,18 +9850,16 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int64"
                 }
               },
               "type_expr_summary_v1": {
                 "schema_version": 1,
-                "kind": "DynamicType",
-                "category": "dynamic",
-                "mirror": "unknown",
-                "dynamic_name": "unknown"
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "int64"
               },
               "is_reassign": true,
               "meta": {
@@ -9915,9 +9912,9 @@
                     "end_lineno": 114,
                     "end_col_offset": 12
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "int64",
                   "casts": [],
-                  "borrow_kind": "value",
+                  "borrow_kind": "readonly_ref",
                   "repr": "i",
                   "id": "i"
                 },
@@ -9961,9 +9958,9 @@
                       "end_lineno": 114,
                       "end_col_offset": 12
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "i",
                     "id": "i"
                   },
@@ -10105,9 +10102,9 @@
                       "end_lineno": 116,
                       "end_col_offset": 22
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "i",
                     "id": "i"
                   },
@@ -10123,9 +10120,9 @@
                     "end_lineno": 116,
                     "end_col_offset": 22
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "int64",
                   "casts": [],
-                  "borrow_kind": "value",
+                  "borrow_kind": "readonly_ref",
                   "repr": "i",
                   "id": "i"
                 }
@@ -10404,7 +10401,7 @@
                               "end_lineno": 119,
                               "end_col_offset": 44
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "int64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "i + 1",
@@ -10416,9 +10413,9 @@
                                 "end_lineno": 119,
                                 "end_col_offset": 40
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "int64",
                               "casts": [],
-                              "borrow_kind": "value",
+                              "borrow_kind": "readonly_ref",
                               "repr": "i",
                               "id": "i"
                             },
@@ -10446,7 +10443,7 @@
                                 "end_lineno": 119,
                                 "end_col_offset": 44
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "int64",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "i + 1",
@@ -10458,9 +10455,9 @@
                                   "end_lineno": 119,
                                   "end_col_offset": 40
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "int64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "i",
                                 "id": "i"
                               },
@@ -10520,7 +10517,7 @@
                             "end_lineno": 119,
                             "end_col_offset": 44
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "int64",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "i + 1",
@@ -10532,9 +10529,9 @@
                               "end_lineno": 119,
                               "end_col_offset": 40
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "int64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "i",
                             "id": "i"
                           },
@@ -10562,7 +10559,7 @@
                               "end_lineno": 119,
                               "end_col_offset": 44
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "int64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "i + 1",
@@ -10574,9 +10571,9 @@
                                 "end_lineno": 119,
                                 "end_col_offset": 40
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "int64",
                               "casts": [],
-                              "borrow_kind": "value",
+                              "borrow_kind": "readonly_ref",
                               "repr": "i",
                               "id": "i"
                             },
@@ -11344,7 +11341,7 @@
                     "end_lineno": 127,
                     "end_col_offset": 34
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "bool",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "t.startswith(\"def\")",
@@ -11415,10 +11412,9 @@
                   },
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "bool"
                   }
                 }
               },
@@ -14145,74 +14141,30 @@
                 "name": "int64"
               },
               "value": {
-                "kind": "Unbox",
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 143,
+                  "col_offset": 17,
+                  "end_lineno": 143,
+                  "end_col_offset": 29
+                },
                 "resolved_type": "int64",
-                "borrow_kind": "value",
                 "casts": [],
-                "value": {
-                  "kind": "Call",
+                "borrow_kind": "value",
+                "repr": "t.rfind(\")\")",
+                "func": {
+                  "kind": "Attribute",
                   "source_span": {
                     "lineno": 143,
                     "col_offset": 17,
                     "end_lineno": 143,
-                    "end_col_offset": 29
+                    "end_col_offset": 24
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "t.rfind(\")\")",
-                  "func": {
-                    "kind": "Attribute",
-                    "source_span": {
-                      "lineno": 143,
-                      "col_offset": 17,
-                      "end_lineno": 143,
-                      "end_col_offset": 24
-                    },
-                    "resolved_type": "unknown",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "t.rfind",
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 143,
-                        "col_offset": 17,
-                        "end_lineno": 143,
-                        "end_col_offset": 18
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "t",
-                      "id": "t"
-                    },
-                    "attr": "rfind"
-                  },
-                  "args": [
-                    {
-                      "kind": "Constant",
-                      "source_span": {
-                        "lineno": 143,
-                        "col_offset": 25,
-                        "end_lineno": 143,
-                        "end_col_offset": 28
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "value",
-                      "repr": "\")\"",
-                      "value": ")"
-                    }
-                  ],
-                  "keywords": [],
-                  "lowered_kind": "BuiltinCall",
-                  "builtin_name": "rfind",
-                  "runtime_call": "py_rfind",
-                  "runtime_module_id": "pytra.built_in.string_ops",
-                  "runtime_symbol": "str.rfind",
-                  "semantic_tag": "stdlib.method.rfind",
-                  "runtime_owner": {
+                  "repr": "t.rfind",
+                  "value": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 143,
@@ -14226,44 +14178,50 @@
                     "repr": "t",
                     "id": "t"
                   },
-                  "type_expr_summary_v1": {
-                    "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                  "attr": "rfind"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 143,
+                      "col_offset": 25,
+                      "end_lineno": 143,
+                      "end_col_offset": 28
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\")\"",
+                    "value": ")"
                   }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "rfind",
+                "runtime_call": "py_rfind",
+                "runtime_module_id": "pytra.built_in.string_ops",
+                "runtime_symbol": "str.rfind",
+                "semantic_tag": "stdlib.method.rfind",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 143,
+                    "col_offset": 17,
+                    "end_lineno": 143,
+                    "end_col_offset": 18
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "t",
+                  "id": "t"
                 },
-                "source_span": {
-                  "lineno": 143,
-                  "col_offset": 17,
-                  "end_lineno": 143,
-                  "end_col_offset": 29
-                },
-                "repr": "t.rfind(\")\")",
                 "type_expr_summary_v1": {
                   "schema_version": 1,
                   "kind": "NamedType",
                   "category": "static",
                   "mirror": "int64"
-                },
-                "target": "int64",
-                "on_fail": "raise",
-                "bridge_lane_v1": {
-                  "schema_version": 1,
-                  "target": {
-                    "kind": "NamedType",
-                    "category": "static",
-                    "mirror": "int64"
-                  },
-                  "target_category": "static",
-                  "value": {
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
-                  },
-                  "value_category": "dynamic"
                 }
               },
               "type_expr_summary_v1": {
@@ -15581,7 +15539,7 @@
                     "end_lineno": 150,
                     "end_col_offset": 36
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "bool",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "tail.startswith(\"->\")",
@@ -15652,10 +15610,9 @@
                   },
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "bool"
                   }
                 }
               },
@@ -16329,7 +16286,7 @@
         {
           "kind": "VarDecl",
           "name": "c",
-          "type": "object",
+          "type": "int64",
           "hoisted": true,
           "meta": {
             "lifetime_node_id": "n295",
@@ -16367,7 +16324,7 @@
         {
           "kind": "VarDecl",
           "name": "eq",
-          "type": "object",
+          "type": "int64",
           "hoisted": true,
           "meta": {
             "lifetime_node_id": "n294",
@@ -16565,7 +16522,7 @@
                 "id": "c"
               },
               "declare": true,
-              "decl_type": "unknown",
+              "decl_type": "int64",
               "declare_init": true,
               "value": {
                 "kind": "Call",
@@ -16575,7 +16532,7 @@
                   "end_lineno": 159,
                   "end_col_offset": 26
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "text.find(\":\")",
@@ -16646,18 +16603,16 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int64"
                 }
               },
               "type_expr_summary_v1": {
                 "schema_version": 1,
-                "kind": "DynamicType",
-                "category": "dynamic",
-                "mirror": "unknown",
-                "dynamic_name": "unknown"
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "int64"
               },
               "is_reassign": true,
               "meta": {
@@ -16710,9 +16665,9 @@
                     "end_lineno": 160,
                     "end_col_offset": 12
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "int64",
                   "casts": [],
-                  "borrow_kind": "value",
+                  "borrow_kind": "readonly_ref",
                   "repr": "c",
                   "id": "c"
                 },
@@ -16756,9 +16711,9 @@
                       "end_lineno": 160,
                       "end_col_offset": 12
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "c",
                     "id": "c"
                   },
@@ -16924,9 +16879,9 @@
                           "end_lineno": 162,
                           "end_col_offset": 22
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "c",
                         "id": "c"
                       },
@@ -16942,9 +16897,9 @@
                         "end_lineno": 162,
                         "end_col_offset": 22
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "c",
                       "id": "c"
                     }
@@ -16996,9 +16951,9 @@
                         "end_lineno": 162,
                         "end_col_offset": 22
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "c",
                       "id": "c"
                     },
@@ -17014,9 +16969,9 @@
                       "end_lineno": 162,
                       "end_col_offset": 22
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "c",
                     "id": "c"
                   }
@@ -17251,7 +17206,7 @@
                       "end_lineno": 165,
                       "end_col_offset": 24
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "c + 1",
@@ -17263,9 +17218,9 @@
                         "end_lineno": 165,
                         "end_col_offset": 20
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "c",
                       "id": "c"
                     },
@@ -17293,7 +17248,7 @@
                         "end_lineno": 165,
                         "end_col_offset": 24
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "c + 1",
@@ -17305,9 +17260,9 @@
                           "end_lineno": 165,
                           "end_col_offset": 20
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "c",
                         "id": "c"
                       },
@@ -17340,7 +17295,7 @@
                     "end_lineno": 165,
                     "end_col_offset": 24
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "c + 1",
@@ -17352,9 +17307,9 @@
                       "end_lineno": 165,
                       "end_col_offset": 20
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "c",
                     "id": "c"
                   },
@@ -17382,7 +17337,7 @@
                       "end_lineno": 165,
                       "end_col_offset": 24
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "c + 1",
@@ -17394,9 +17349,9 @@
                         "end_lineno": 165,
                         "end_col_offset": 20
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "c",
                       "id": "c"
                     },
@@ -17475,7 +17430,7 @@
                 "id": "eq"
               },
               "declare": true,
-              "decl_type": "unknown",
+              "decl_type": "int64",
               "declare_init": true,
               "value": {
                 "kind": "Call",
@@ -17485,7 +17440,7 @@
                   "end_lineno": 166,
                   "end_col_offset": 26
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "rhs.find(\"=\")",
@@ -17556,18 +17511,16 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int64"
                 }
               },
               "type_expr_summary_v1": {
                 "schema_version": 1,
-                "kind": "DynamicType",
-                "category": "dynamic",
-                "mirror": "unknown",
-                "dynamic_name": "unknown"
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "int64"
               },
               "is_reassign": true,
               "meta": {
@@ -17622,9 +17575,9 @@
                     "end_lineno": 167,
                     "end_col_offset": 13
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "int64",
                   "casts": [],
-                  "borrow_kind": "value",
+                  "borrow_kind": "readonly_ref",
                   "repr": "eq",
                   "id": "eq"
                 },
@@ -17668,9 +17621,9 @@
                       "end_lineno": 167,
                       "end_col_offset": 13
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "eq",
                     "id": "eq"
                   },
@@ -18228,9 +18181,9 @@
                           "end_lineno": 172,
                           "end_col_offset": 21
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "eq",
                         "id": "eq"
                       },
@@ -18246,9 +18199,9 @@
                         "end_lineno": 172,
                         "end_col_offset": 21
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "eq",
                       "id": "eq"
                     }
@@ -18300,9 +18253,9 @@
                         "end_lineno": 172,
                         "end_col_offset": 21
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "eq",
                       "id": "eq"
                     },
@@ -18318,9 +18271,9 @@
                       "end_lineno": 172,
                       "end_col_offset": 21
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "eq",
                     "id": "eq"
                   }
@@ -18451,7 +18404,7 @@
                           "end_lineno": 173,
                           "end_col_offset": 24
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "eq + 1",
@@ -18463,9 +18416,9 @@
                             "end_lineno": 173,
                             "end_col_offset": 20
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "int64",
                           "casts": [],
-                          "borrow_kind": "value",
+                          "borrow_kind": "readonly_ref",
                           "repr": "eq",
                           "id": "eq"
                         },
@@ -18493,7 +18446,7 @@
                             "end_lineno": 173,
                             "end_col_offset": 24
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "int64",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "eq + 1",
@@ -18505,9 +18458,9 @@
                               "end_lineno": 173,
                               "end_col_offset": 20
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "int64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "eq",
                             "id": "eq"
                           },
@@ -18540,7 +18493,7 @@
                         "end_lineno": 173,
                         "end_col_offset": 24
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "eq + 1",
@@ -18552,9 +18505,9 @@
                           "end_lineno": 173,
                           "end_col_offset": 20
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "eq",
                         "id": "eq"
                       },
@@ -18582,7 +18535,7 @@
                           "end_lineno": 173,
                           "end_col_offset": 24
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "eq + 1",
@@ -18594,9 +18547,9 @@
                             "end_lineno": 173,
                             "end_col_offset": 20
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "int64",
                           "casts": [],
-                          "borrow_kind": "value",
+                          "borrow_kind": "readonly_ref",
                           "repr": "eq",
                           "id": "eq"
                         },
@@ -18665,7 +18618,7 @@
                         "end_lineno": 173,
                         "end_col_offset": 24
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "eq + 1",
@@ -18677,9 +18630,9 @@
                           "end_lineno": 173,
                           "end_col_offset": 20
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "eq",
                         "id": "eq"
                       },
@@ -18707,7 +18660,7 @@
                           "end_lineno": 173,
                           "end_col_offset": 24
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "eq + 1",
@@ -18719,9 +18672,9 @@
                             "end_lineno": 173,
                             "end_col_offset": 20
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "int64",
                           "casts": [],
-                          "borrow_kind": "value",
+                          "borrow_kind": "readonly_ref",
                           "repr": "eq",
                           "id": "eq"
                         },
@@ -18754,7 +18707,7 @@
                       "end_lineno": 173,
                       "end_col_offset": 24
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "eq + 1",
@@ -18766,9 +18719,9 @@
                         "end_lineno": 173,
                         "end_col_offset": 20
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "eq",
                       "id": "eq"
                     },
@@ -18796,7 +18749,7 @@
                         "end_lineno": 173,
                         "end_col_offset": 24
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "eq + 1",
@@ -18808,9 +18761,9 @@
                           "end_lineno": 173,
                           "end_col_offset": 20
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "eq",
                         "id": "eq"
                       },
@@ -20649,7 +20602,7 @@
                     "end_lineno": 198,
                     "end_col_offset": 36
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "bool",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "t.startswith(\"class\")",
@@ -20720,10 +20673,9 @@
                   },
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "bool"
                   }
                 }
               },
@@ -23021,7 +22973,7 @@
                         "end_lineno": 213,
                         "end_col_offset": 36
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "bool",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "tail.startswith(\"(\")",
@@ -23092,10 +23044,9 @@
                       },
                       "type_expr_summary_v1": {
                         "schema_version": 1,
-                        "kind": "DynamicType",
-                        "category": "dynamic",
-                        "mirror": "unknown",
-                        "dynamic_name": "unknown"
+                        "kind": "NamedType",
+                        "category": "static",
+                        "mirror": "bool"
                       }
                     },
                     {
@@ -23106,7 +23057,7 @@
                         "end_lineno": 213,
                         "end_col_offset": 59
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "bool",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "tail.endswith(\")\")",
@@ -23177,10 +23128,9 @@
                       },
                       "type_expr_summary_v1": {
                         "schema_version": 1,
-                        "kind": "DynamicType",
-                        "category": "dynamic",
-                        "mirror": "unknown",
-                        "dynamic_name": "unknown"
+                        "kind": "NamedType",
+                        "category": "static",
+                        "mirror": "bool"
                       }
                     }
                   ]
@@ -24011,7 +23961,7 @@
                       "end_lineno": 222,
                       "end_col_offset": 34
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "bool",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "text.startswith(\"any(\")",
@@ -24082,10 +24032,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "bool"
                     }
                   },
                   {
@@ -24096,7 +24045,7 @@
                       "end_lineno": 222,
                       "end_col_offset": 57
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "bool",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "text.endswith(\")\")",
@@ -24167,10 +24116,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "bool"
                     }
                   },
                   {
@@ -24626,7 +24574,7 @@
                       "end_lineno": 224,
                       "end_col_offset": 34
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "bool",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "text.startswith(\"all(\")",
@@ -24697,10 +24645,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "bool"
                     }
                   },
                   {
@@ -24711,7 +24658,7 @@
                       "end_lineno": 224,
                       "end_col_offset": 57
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "bool",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "text.endswith(\")\")",
@@ -24782,10 +24729,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "bool"
                     }
                   },
                   {
@@ -25489,7 +25435,7 @@
                         "end_lineno": 230,
                         "end_col_offset": 36
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "bool",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "text.startswith(\"[\")",
@@ -25560,10 +25506,9 @@
                       },
                       "type_expr_summary_v1": {
                         "schema_version": 1,
-                        "kind": "DynamicType",
-                        "category": "dynamic",
-                        "mirror": "unknown",
-                        "dynamic_name": "unknown"
+                        "kind": "NamedType",
+                        "category": "static",
+                        "mirror": "bool"
                       }
                     },
                     {
@@ -25574,7 +25519,7 @@
                         "end_lineno": 230,
                         "end_col_offset": 59
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "bool",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "text.endswith(\"]\")",
@@ -25645,10 +25590,9 @@
                       },
                       "type_expr_summary_v1": {
                         "schema_version": 1,
-                        "kind": "DynamicType",
-                        "category": "dynamic",
-                        "mirror": "unknown",
-                        "dynamic_name": "unknown"
+                        "kind": "NamedType",
+                        "category": "static",
+                        "mirror": "bool"
                       }
                     }
                   ]
@@ -26227,74 +26171,30 @@
                 "name": "int64"
               },
               "value": {
-                "kind": "Unbox",
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 235,
+                  "col_offset": 17,
+                  "end_lineno": 235,
+                  "end_col_offset": 31
+                },
                 "resolved_type": "int64",
-                "borrow_kind": "value",
                 "casts": [],
-                "value": {
-                  "kind": "Call",
+                "borrow_kind": "value",
+                "repr": "inner.find(m1)",
+                "func": {
+                  "kind": "Attribute",
                   "source_span": {
                     "lineno": 235,
                     "col_offset": 17,
                     "end_lineno": 235,
-                    "end_col_offset": 31
+                    "end_col_offset": 27
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "inner.find(m1)",
-                  "func": {
-                    "kind": "Attribute",
-                    "source_span": {
-                      "lineno": 235,
-                      "col_offset": 17,
-                      "end_lineno": 235,
-                      "end_col_offset": 27
-                    },
-                    "resolved_type": "unknown",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "inner.find",
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 235,
-                        "col_offset": 17,
-                        "end_lineno": 235,
-                        "end_col_offset": 22
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "inner",
-                      "id": "inner"
-                    },
-                    "attr": "find"
-                  },
-                  "args": [
-                    {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 235,
-                        "col_offset": 28,
-                        "end_lineno": 235,
-                        "end_col_offset": 30
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "m1",
-                      "id": "m1"
-                    }
-                  ],
-                  "keywords": [],
-                  "lowered_kind": "BuiltinCall",
-                  "builtin_name": "find",
-                  "runtime_call": "py_find",
-                  "runtime_module_id": "pytra.built_in.string_ops",
-                  "runtime_symbol": "str.find",
-                  "semantic_tag": "stdlib.method.find",
-                  "runtime_owner": {
+                  "repr": "inner.find",
+                  "value": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 235,
@@ -26308,44 +26208,50 @@
                     "repr": "inner",
                     "id": "inner"
                   },
-                  "type_expr_summary_v1": {
-                    "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                  "attr": "find"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 235,
+                      "col_offset": 28,
+                      "end_lineno": 235,
+                      "end_col_offset": 30
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "m1",
+                    "id": "m1"
                   }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "find",
+                "runtime_call": "py_find",
+                "runtime_module_id": "pytra.built_in.string_ops",
+                "runtime_symbol": "str.find",
+                "semantic_tag": "stdlib.method.find",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 235,
+                    "col_offset": 17,
+                    "end_lineno": 235,
+                    "end_col_offset": 22
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "inner",
+                  "id": "inner"
                 },
-                "source_span": {
-                  "lineno": 235,
-                  "col_offset": 17,
-                  "end_lineno": 235,
-                  "end_col_offset": 31
-                },
-                "repr": "inner.find(m1)",
                 "type_expr_summary_v1": {
                   "schema_version": 1,
                   "kind": "NamedType",
                   "category": "static",
                   "mirror": "int64"
-                },
-                "target": "int64",
-                "on_fail": "raise",
-                "bridge_lane_v1": {
-                  "schema_version": 1,
-                  "target": {
-                    "kind": "NamedType",
-                    "category": "static",
-                    "mirror": "int64"
-                  },
-                  "target_category": "static",
-                  "value": {
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
-                  },
-                  "value_category": "dynamic"
                 }
               },
               "type_expr_summary_v1": {
@@ -27283,74 +27189,30 @@
                 "name": "int64"
               },
               "value": {
-                "kind": "Unbox",
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 240,
+                  "col_offset": 17,
+                  "end_lineno": 240,
+                  "end_col_offset": 30
+                },
                 "resolved_type": "int64",
-                "borrow_kind": "value",
                 "casts": [],
-                "value": {
-                  "kind": "Call",
+                "borrow_kind": "value",
+                "repr": "rest.find(m2)",
+                "func": {
+                  "kind": "Attribute",
                   "source_span": {
                     "lineno": 240,
                     "col_offset": 17,
                     "end_lineno": 240,
-                    "end_col_offset": 30
+                    "end_col_offset": 26
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "rest.find(m2)",
-                  "func": {
-                    "kind": "Attribute",
-                    "source_span": {
-                      "lineno": 240,
-                      "col_offset": 17,
-                      "end_lineno": 240,
-                      "end_col_offset": 26
-                    },
-                    "resolved_type": "unknown",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "rest.find",
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 240,
-                        "col_offset": 17,
-                        "end_lineno": 240,
-                        "end_col_offset": 21
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "rest",
-                      "id": "rest"
-                    },
-                    "attr": "find"
-                  },
-                  "args": [
-                    {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 240,
-                        "col_offset": 27,
-                        "end_lineno": 240,
-                        "end_col_offset": 29
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "m2",
-                      "id": "m2"
-                    }
-                  ],
-                  "keywords": [],
-                  "lowered_kind": "BuiltinCall",
-                  "builtin_name": "find",
-                  "runtime_call": "py_find",
-                  "runtime_module_id": "pytra.built_in.string_ops",
-                  "runtime_symbol": "str.find",
-                  "semantic_tag": "stdlib.method.find",
-                  "runtime_owner": {
+                  "repr": "rest.find",
+                  "value": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 240,
@@ -27364,44 +27226,50 @@
                     "repr": "rest",
                     "id": "rest"
                   },
-                  "type_expr_summary_v1": {
-                    "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                  "attr": "find"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 240,
+                      "col_offset": 27,
+                      "end_lineno": 240,
+                      "end_col_offset": 29
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "m2",
+                    "id": "m2"
                   }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "find",
+                "runtime_call": "py_find",
+                "runtime_module_id": "pytra.built_in.string_ops",
+                "runtime_symbol": "str.find",
+                "semantic_tag": "stdlib.method.find",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 240,
+                    "col_offset": 17,
+                    "end_lineno": 240,
+                    "end_col_offset": 21
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "rest",
+                  "id": "rest"
                 },
-                "source_span": {
-                  "lineno": 240,
-                  "col_offset": 17,
-                  "end_lineno": 240,
-                  "end_col_offset": 30
-                },
-                "repr": "rest.find(m2)",
                 "type_expr_summary_v1": {
                   "schema_version": 1,
                   "kind": "NamedType",
                   "category": "static",
                   "mirror": "int64"
-                },
-                "target": "int64",
-                "on_fail": "raise",
-                "bridge_lane_v1": {
-                  "schema_version": 1,
-                  "target": {
-                    "kind": "NamedType",
-                    "category": "static",
-                    "mirror": "int64"
-                  },
-                  "target_category": "static",
-                  "value": {
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
-                  },
-                  "value_category": "dynamic"
                 }
               },
               "type_expr_summary_v1": {
@@ -29606,7 +29474,7 @@
                         "end_lineno": 252,
                         "end_col_offset": 45
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "bool",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "t.startswith(\"for\")",
@@ -29677,10 +29545,9 @@
                       },
                       "type_expr_summary_v1": {
                         "schema_version": 1,
-                        "kind": "DynamicType",
-                        "category": "dynamic",
-                        "mirror": "unknown",
-                        "dynamic_name": "unknown"
+                        "kind": "NamedType",
+                        "category": "static",
+                        "mirror": "bool"
                       }
                     }
                   }
@@ -30008,74 +29875,30 @@
                 "name": "int64"
               },
               "value": {
-                "kind": "Unbox",
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 255,
+                  "col_offset": 17,
+                  "end_lineno": 255,
+                  "end_col_offset": 34
+                },
                 "resolved_type": "int64",
-                "borrow_kind": "value",
                 "casts": [],
-                "value": {
-                  "kind": "Call",
+                "borrow_kind": "value",
+                "repr": "rest.find(\" in \")",
+                "func": {
+                  "kind": "Attribute",
                   "source_span": {
                     "lineno": 255,
                     "col_offset": 17,
                     "end_lineno": 255,
-                    "end_col_offset": 34
+                    "end_col_offset": 26
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "rest.find(\" in \")",
-                  "func": {
-                    "kind": "Attribute",
-                    "source_span": {
-                      "lineno": 255,
-                      "col_offset": 17,
-                      "end_lineno": 255,
-                      "end_col_offset": 26
-                    },
-                    "resolved_type": "unknown",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "rest.find",
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 255,
-                        "col_offset": 17,
-                        "end_lineno": 255,
-                        "end_col_offset": 21
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "rest",
-                      "id": "rest"
-                    },
-                    "attr": "find"
-                  },
-                  "args": [
-                    {
-                      "kind": "Constant",
-                      "source_span": {
-                        "lineno": 255,
-                        "col_offset": 27,
-                        "end_lineno": 255,
-                        "end_col_offset": 33
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "value",
-                      "repr": "\" in \"",
-                      "value": " in "
-                    }
-                  ],
-                  "keywords": [],
-                  "lowered_kind": "BuiltinCall",
-                  "builtin_name": "find",
-                  "runtime_call": "py_find",
-                  "runtime_module_id": "pytra.built_in.string_ops",
-                  "runtime_symbol": "str.find",
-                  "semantic_tag": "stdlib.method.find",
-                  "runtime_owner": {
+                  "repr": "rest.find",
+                  "value": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 255,
@@ -30089,44 +29912,50 @@
                     "repr": "rest",
                     "id": "rest"
                   },
-                  "type_expr_summary_v1": {
-                    "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                  "attr": "find"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 255,
+                      "col_offset": 27,
+                      "end_lineno": 255,
+                      "end_col_offset": 33
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\" in \"",
+                    "value": " in "
                   }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "find",
+                "runtime_call": "py_find",
+                "runtime_module_id": "pytra.built_in.string_ops",
+                "runtime_symbol": "str.find",
+                "semantic_tag": "stdlib.method.find",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 255,
+                    "col_offset": 17,
+                    "end_lineno": 255,
+                    "end_col_offset": 21
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "rest",
+                  "id": "rest"
                 },
-                "source_span": {
-                  "lineno": 255,
-                  "col_offset": 17,
-                  "end_lineno": 255,
-                  "end_col_offset": 34
-                },
-                "repr": "rest.find(\" in \")",
                 "type_expr_summary_v1": {
                   "schema_version": 1,
                   "kind": "NamedType",
                   "category": "static",
                   "mirror": "int64"
-                },
-                "target": "int64",
-                "on_fail": "raise",
-                "bridge_lane_v1": {
-                  "schema_version": 1,
-                  "target": {
-                    "kind": "NamedType",
-                    "category": "static",
-                    "mirror": "int64"
-                  },
-                  "target_category": "static",
-                  "value": {
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
-                  },
-                  "value_category": "dynamic"
                 }
               },
               "type_expr_summary_v1": {
@@ -31837,7 +31666,7 @@
                         "end_lineno": 267,
                         "end_col_offset": 46
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "bool",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "t.startswith(\"with\")",
@@ -31908,10 +31737,9 @@
                       },
                       "type_expr_summary_v1": {
                         "schema_version": 1,
-                        "kind": "DynamicType",
-                        "category": "dynamic",
-                        "mirror": "unknown",
-                        "dynamic_name": "unknown"
+                        "kind": "NamedType",
+                        "category": "static",
+                        "mirror": "bool"
                       }
                     }
                   }
@@ -32243,74 +32071,30 @@
                 "name": "int64"
               },
               "value": {
-                "kind": "Unbox",
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 270,
+                  "col_offset": 17,
+                  "end_lineno": 270,
+                  "end_col_offset": 35
+                },
                 "resolved_type": "int64",
-                "borrow_kind": "value",
                 "casts": [],
-                "value": {
-                  "kind": "Call",
+                "borrow_kind": "value",
+                "repr": "rest.rfind(\" as \")",
+                "func": {
+                  "kind": "Attribute",
                   "source_span": {
                     "lineno": 270,
                     "col_offset": 17,
                     "end_lineno": 270,
-                    "end_col_offset": 35
+                    "end_col_offset": 27
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "rest.rfind(\" as \")",
-                  "func": {
-                    "kind": "Attribute",
-                    "source_span": {
-                      "lineno": 270,
-                      "col_offset": 17,
-                      "end_lineno": 270,
-                      "end_col_offset": 27
-                    },
-                    "resolved_type": "unknown",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "rest.rfind",
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 270,
-                        "col_offset": 17,
-                        "end_lineno": 270,
-                        "end_col_offset": 21
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "rest",
-                      "id": "rest"
-                    },
-                    "attr": "rfind"
-                  },
-                  "args": [
-                    {
-                      "kind": "Constant",
-                      "source_span": {
-                        "lineno": 270,
-                        "col_offset": 28,
-                        "end_lineno": 270,
-                        "end_col_offset": 34
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "value",
-                      "repr": "\" as \"",
-                      "value": " as "
-                    }
-                  ],
-                  "keywords": [],
-                  "lowered_kind": "BuiltinCall",
-                  "builtin_name": "rfind",
-                  "runtime_call": "py_rfind",
-                  "runtime_module_id": "pytra.built_in.string_ops",
-                  "runtime_symbol": "str.rfind",
-                  "semantic_tag": "stdlib.method.rfind",
-                  "runtime_owner": {
+                  "repr": "rest.rfind",
+                  "value": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 270,
@@ -32324,44 +32108,50 @@
                     "repr": "rest",
                     "id": "rest"
                   },
-                  "type_expr_summary_v1": {
-                    "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                  "attr": "rfind"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 270,
+                      "col_offset": 28,
+                      "end_lineno": 270,
+                      "end_col_offset": 34
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\" as \"",
+                    "value": " as "
                   }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "rfind",
+                "runtime_call": "py_rfind",
+                "runtime_module_id": "pytra.built_in.string_ops",
+                "runtime_symbol": "str.rfind",
+                "semantic_tag": "stdlib.method.rfind",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 270,
+                    "col_offset": 17,
+                    "end_lineno": 270,
+                    "end_col_offset": 21
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "rest",
+                  "id": "rest"
                 },
-                "source_span": {
-                  "lineno": 270,
-                  "col_offset": 17,
-                  "end_lineno": 270,
-                  "end_col_offset": 35
-                },
-                "repr": "rest.rfind(\" as \")",
                 "type_expr_summary_v1": {
                   "schema_version": 1,
                   "kind": "NamedType",
                   "category": "static",
                   "mirror": "int64"
-                },
-                "target": "int64",
-                "on_fail": "raise",
-                "bridge_lane_v1": {
-                  "schema_version": 1,
-                  "target": {
-                    "kind": "NamedType",
-                    "category": "static",
-                    "mirror": "int64"
-                  },
-                  "target_category": "static",
-                  "value": {
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
-                  },
-                  "value_category": "dynamic"
                 }
               },
               "type_expr_summary_v1": {
@@ -34053,7 +33843,7 @@
                         "end_lineno": 282,
                         "end_col_offset": 48
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "bool",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "t.startswith(\"except\")",
@@ -34124,10 +33914,9 @@
                       },
                       "type_expr_summary_v1": {
                         "schema_version": 1,
-                        "kind": "DynamicType",
-                        "category": "dynamic",
-                        "mirror": "unknown",
-                        "dynamic_name": "unknown"
+                        "kind": "NamedType",
+                        "category": "static",
+                        "mirror": "bool"
                       }
                     }
                   }
@@ -34459,74 +34248,30 @@
                 "name": "int64"
               },
               "value": {
-                "kind": "Unbox",
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 285,
+                  "col_offset": 17,
+                  "end_lineno": 285,
+                  "end_col_offset": 35
+                },
                 "resolved_type": "int64",
-                "borrow_kind": "value",
                 "casts": [],
-                "value": {
-                  "kind": "Call",
+                "borrow_kind": "value",
+                "repr": "rest.rfind(\" as \")",
+                "func": {
+                  "kind": "Attribute",
                   "source_span": {
                     "lineno": 285,
                     "col_offset": 17,
                     "end_lineno": 285,
-                    "end_col_offset": 35
+                    "end_col_offset": 27
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "rest.rfind(\" as \")",
-                  "func": {
-                    "kind": "Attribute",
-                    "source_span": {
-                      "lineno": 285,
-                      "col_offset": 17,
-                      "end_lineno": 285,
-                      "end_col_offset": 27
-                    },
-                    "resolved_type": "unknown",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "rest.rfind",
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 285,
-                        "col_offset": 17,
-                        "end_lineno": 285,
-                        "end_col_offset": 21
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "rest",
-                      "id": "rest"
-                    },
-                    "attr": "rfind"
-                  },
-                  "args": [
-                    {
-                      "kind": "Constant",
-                      "source_span": {
-                        "lineno": 285,
-                        "col_offset": 28,
-                        "end_lineno": 285,
-                        "end_col_offset": 34
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "value",
-                      "repr": "\" as \"",
-                      "value": " as "
-                    }
-                  ],
-                  "keywords": [],
-                  "lowered_kind": "BuiltinCall",
-                  "builtin_name": "rfind",
-                  "runtime_call": "py_rfind",
-                  "runtime_module_id": "pytra.built_in.string_ops",
-                  "runtime_symbol": "str.rfind",
-                  "semantic_tag": "stdlib.method.rfind",
-                  "runtime_owner": {
+                  "repr": "rest.rfind",
+                  "value": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 285,
@@ -34540,44 +34285,50 @@
                     "repr": "rest",
                     "id": "rest"
                   },
-                  "type_expr_summary_v1": {
-                    "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                  "attr": "rfind"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 285,
+                      "col_offset": 28,
+                      "end_lineno": 285,
+                      "end_col_offset": 34
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\" as \"",
+                    "value": " as "
                   }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "rfind",
+                "runtime_call": "py_rfind",
+                "runtime_module_id": "pytra.built_in.string_ops",
+                "runtime_symbol": "str.rfind",
+                "semantic_tag": "stdlib.method.rfind",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 285,
+                    "col_offset": 17,
+                    "end_lineno": 285,
+                    "end_col_offset": 21
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "rest",
+                  "id": "rest"
                 },
-                "source_span": {
-                  "lineno": 285,
-                  "col_offset": 17,
-                  "end_lineno": 285,
-                  "end_col_offset": 35
-                },
-                "repr": "rest.rfind(\" as \")",
                 "type_expr_summary_v1": {
                   "schema_version": 1,
                   "kind": "NamedType",
                   "category": "static",
                   "mirror": "int64"
-                },
-                "target": "int64",
-                "on_fail": "raise",
-                "bridge_lane_v1": {
-                  "schema_version": 1,
-                  "target": {
-                    "kind": "NamedType",
-                    "category": "static",
-                    "mirror": "int64"
-                  },
-                  "target_category": "static",
-                  "value": {
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
-                  },
-                  "value_category": "dynamic"
                 }
               },
               "type_expr_summary_v1": {
@@ -36267,7 +36018,7 @@
                         "end_lineno": 297,
                         "end_col_offset": 48
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "bool",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "t.startswith(\"except\")",
@@ -36338,10 +36089,9 @@
                       },
                       "type_expr_summary_v1": {
                         "schema_version": 1,
-                        "kind": "DynamicType",
-                        "category": "dynamic",
-                        "mirror": "unknown",
-                        "dynamic_name": "unknown"
+                        "kind": "NamedType",
+                        "category": "static",
+                        "mirror": "bool"
                       }
                     }
                   }
@@ -37085,7 +36835,7 @@
                 "id": "c"
               },
               "declare": true,
-              "decl_type": "unknown",
+              "decl_type": "int64",
               "declare_init": true,
               "value": {
                 "kind": "Call",
@@ -37095,7 +36845,7 @@
                   "end_lineno": 306,
                   "end_col_offset": 26
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "text.find(\":\")",
@@ -37166,18 +36916,16 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int64"
                 }
               },
               "type_expr_summary_v1": {
                 "schema_version": 1,
-                "kind": "DynamicType",
-                "category": "dynamic",
-                "mirror": "unknown",
-                "dynamic_name": "unknown"
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "int64"
               },
               "meta": {
                 "lifetime_node_id": "n160",
@@ -37229,9 +36977,9 @@
                     "end_lineno": 307,
                     "end_col_offset": 12
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "int64",
                   "casts": [],
-                  "borrow_kind": "value",
+                  "borrow_kind": "readonly_ref",
                   "repr": "c",
                   "id": "c"
                 },
@@ -37275,9 +37023,9 @@
                       "end_lineno": 307,
                       "end_col_offset": 12
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "c",
                     "id": "c"
                   },
@@ -37455,9 +37203,9 @@
                           "end_lineno": 309,
                           "end_col_offset": 29
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "c",
                         "id": "c"
                       },
@@ -37473,9 +37221,9 @@
                         "end_lineno": 309,
                         "end_col_offset": 29
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "c",
                       "id": "c"
                     }
@@ -37527,9 +37275,9 @@
                         "end_lineno": 309,
                         "end_col_offset": 29
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "c",
                       "id": "c"
                     },
@@ -37545,9 +37293,9 @@
                       "end_lineno": 309,
                       "end_col_offset": 29
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "c",
                     "id": "c"
                   }
@@ -37688,7 +37436,7 @@
                           "end_lineno": 310,
                           "end_col_offset": 29
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "c + 1",
@@ -37700,9 +37448,9 @@
                             "end_lineno": 310,
                             "end_col_offset": 25
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "int64",
                           "casts": [],
-                          "borrow_kind": "value",
+                          "borrow_kind": "readonly_ref",
                           "repr": "c",
                           "id": "c"
                         },
@@ -37730,7 +37478,7 @@
                             "end_lineno": 310,
                             "end_col_offset": 29
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "int64",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "c + 1",
@@ -37742,9 +37490,9 @@
                               "end_lineno": 310,
                               "end_col_offset": 25
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "int64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "c",
                             "id": "c"
                           },
@@ -37777,7 +37525,7 @@
                         "end_lineno": 310,
                         "end_col_offset": 29
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "c + 1",
@@ -37789,9 +37537,9 @@
                           "end_lineno": 310,
                           "end_col_offset": 25
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "c",
                         "id": "c"
                       },
@@ -37819,7 +37567,7 @@
                           "end_lineno": 310,
                           "end_col_offset": 29
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "c + 1",
@@ -37831,9 +37579,9 @@
                             "end_lineno": 310,
                             "end_col_offset": 25
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "int64",
                           "casts": [],
-                          "borrow_kind": "value",
+                          "borrow_kind": "readonly_ref",
                           "repr": "c",
                           "id": "c"
                         },
@@ -37902,7 +37650,7 @@
                         "end_lineno": 310,
                         "end_col_offset": 29
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "c + 1",
@@ -37914,9 +37662,9 @@
                           "end_lineno": 310,
                           "end_col_offset": 25
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "c",
                         "id": "c"
                       },
@@ -37944,7 +37692,7 @@
                           "end_lineno": 310,
                           "end_col_offset": 29
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "c + 1",
@@ -37956,9 +37704,9 @@
                             "end_lineno": 310,
                             "end_col_offset": 25
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "int64",
                           "casts": [],
-                          "borrow_kind": "value",
+                          "borrow_kind": "readonly_ref",
                           "repr": "c",
                           "id": "c"
                         },
@@ -37991,7 +37739,7 @@
                       "end_lineno": 310,
                       "end_col_offset": 29
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "c + 1",
@@ -38003,9 +37751,9 @@
                         "end_lineno": 310,
                         "end_col_offset": 25
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "c",
                       "id": "c"
                     },
@@ -38033,7 +37781,7 @@
                         "end_lineno": 310,
                         "end_col_offset": 29
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "c + 1",
@@ -38045,9 +37793,9 @@
                           "end_lineno": 310,
                           "end_col_offset": 25
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "c",
                         "id": "c"
                       },
@@ -38635,7 +38383,7 @@
                 "id": "c"
               },
               "declare": true,
-              "decl_type": "unknown",
+              "decl_type": "int64",
               "declare_init": true,
               "value": {
                 "kind": "Call",
@@ -38645,7 +38393,7 @@
                   "end_lineno": 317,
                   "end_col_offset": 26
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "text.find(\":\")",
@@ -38716,18 +38464,16 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int64"
                 }
               },
               "type_expr_summary_v1": {
                 "schema_version": 1,
-                "kind": "DynamicType",
-                "category": "dynamic",
-                "mirror": "unknown",
-                "dynamic_name": "unknown"
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "int64"
               },
               "meta": {
                 "lifetime_node_id": "n151",
@@ -38779,9 +38525,9 @@
                     "end_lineno": 318,
                     "end_col_offset": 12
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "int64",
                   "casts": [],
-                  "borrow_kind": "value",
+                  "borrow_kind": "readonly_ref",
                   "repr": "c",
                   "id": "c"
                 },
@@ -38825,9 +38571,9 @@
                       "end_lineno": 318,
                       "end_col_offset": 12
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "c",
                     "id": "c"
                   },
@@ -39005,9 +38751,9 @@
                           "end_lineno": 320,
                           "end_col_offset": 29
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "c",
                         "id": "c"
                       },
@@ -39023,9 +38769,9 @@
                         "end_lineno": 320,
                         "end_col_offset": 29
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "c",
                       "id": "c"
                     }
@@ -39077,9 +38823,9 @@
                         "end_lineno": 320,
                         "end_col_offset": 29
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "c",
                       "id": "c"
                     },
@@ -39095,9 +38841,9 @@
                       "end_lineno": 320,
                       "end_col_offset": 29
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "c",
                     "id": "c"
                   }
@@ -39213,7 +38959,7 @@
                       "end_lineno": 321,
                       "end_col_offset": 29
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "c + 1",
@@ -39225,9 +38971,9 @@
                         "end_lineno": 321,
                         "end_col_offset": 25
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "c",
                       "id": "c"
                     },
@@ -39255,7 +39001,7 @@
                         "end_lineno": 321,
                         "end_col_offset": 29
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "c + 1",
@@ -39267,9 +39013,9 @@
                           "end_lineno": 321,
                           "end_col_offset": 25
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "c",
                         "id": "c"
                       },
@@ -39302,7 +39048,7 @@
                     "end_lineno": 321,
                     "end_col_offset": 29
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "c + 1",
@@ -39314,9 +39060,9 @@
                       "end_lineno": 321,
                       "end_col_offset": 25
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "c",
                     "id": "c"
                   },
@@ -39344,7 +39090,7 @@
                       "end_lineno": 321,
                       "end_col_offset": 29
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "c + 1",
@@ -39356,9 +39102,9 @@
                         "end_lineno": 321,
                         "end_col_offset": 25
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "c",
                       "id": "c"
                     },
@@ -39453,74 +39199,30 @@
                 "name": "int64"
               },
               "value": {
-                "kind": "Unbox",
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 322,
+                  "col_offset": 18,
+                  "end_lineno": 322,
+                  "end_col_offset": 31
+                },
                 "resolved_type": "int64",
-                "borrow_kind": "value",
                 "casts": [],
-                "value": {
-                  "kind": "Call",
+                "borrow_kind": "value",
+                "repr": "rhs.find(\"=\")",
+                "func": {
+                  "kind": "Attribute",
                   "source_span": {
                     "lineno": 322,
                     "col_offset": 18,
                     "end_lineno": 322,
-                    "end_col_offset": 31
+                    "end_col_offset": 26
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "rhs.find(\"=\")",
-                  "func": {
-                    "kind": "Attribute",
-                    "source_span": {
-                      "lineno": 322,
-                      "col_offset": 18,
-                      "end_lineno": 322,
-                      "end_col_offset": 26
-                    },
-                    "resolved_type": "unknown",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "rhs.find",
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 322,
-                        "col_offset": 18,
-                        "end_lineno": 322,
-                        "end_col_offset": 21
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "rhs",
-                      "id": "rhs"
-                    },
-                    "attr": "find"
-                  },
-                  "args": [
-                    {
-                      "kind": "Constant",
-                      "source_span": {
-                        "lineno": 322,
-                        "col_offset": 27,
-                        "end_lineno": 322,
-                        "end_col_offset": 30
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "value",
-                      "repr": "\"=\"",
-                      "value": "="
-                    }
-                  ],
-                  "keywords": [],
-                  "lowered_kind": "BuiltinCall",
-                  "builtin_name": "find",
-                  "runtime_call": "py_find",
-                  "runtime_module_id": "pytra.built_in.string_ops",
-                  "runtime_symbol": "str.find",
-                  "semantic_tag": "stdlib.method.find",
-                  "runtime_owner": {
+                  "repr": "rhs.find",
+                  "value": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 322,
@@ -39534,44 +39236,50 @@
                     "repr": "rhs",
                     "id": "rhs"
                   },
-                  "type_expr_summary_v1": {
-                    "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                  "attr": "find"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 322,
+                      "col_offset": 27,
+                      "end_lineno": 322,
+                      "end_col_offset": 30
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"=\"",
+                    "value": "="
                   }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "find",
+                "runtime_call": "py_find",
+                "runtime_module_id": "pytra.built_in.string_ops",
+                "runtime_symbol": "str.find",
+                "semantic_tag": "stdlib.method.find",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 322,
+                    "col_offset": 18,
+                    "end_lineno": 322,
+                    "end_col_offset": 21
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "rhs",
+                  "id": "rhs"
                 },
-                "source_span": {
-                  "lineno": 322,
-                  "col_offset": 18,
-                  "end_lineno": 322,
-                  "end_col_offset": 31
-                },
-                "repr": "rhs.find(\"=\")",
                 "type_expr_summary_v1": {
                   "schema_version": 1,
                   "kind": "NamedType",
                   "category": "static",
                   "mirror": "int64"
-                },
-                "target": "int64",
-                "on_fail": "raise",
-                "bridge_lane_v1": {
-                  "schema_version": 1,
-                  "target": {
-                    "kind": "NamedType",
-                    "category": "static",
-                    "mirror": "int64"
-                  },
-                  "target_category": "static",
-                  "value": {
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
-                  },
-                  "value_category": "dynamic"
                 }
               },
               "type_expr_summary_v1": {
@@ -41572,7 +41280,7 @@
                     "id": "p"
                   },
                   "declare": true,
-                  "decl_type": "unknown",
+                  "decl_type": "int64",
                   "declare_init": true,
                   "value": {
                     "kind": "Call",
@@ -41582,7 +41290,7 @@
                       "end_lineno": 337,
                       "end_col_offset": 29
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "text.find(op)",
@@ -41653,18 +41361,16 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "int64"
                     }
                   },
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "int64"
                   },
                   "meta": {
                     "lifetime_node_id": "n134",
@@ -41741,9 +41447,9 @@
                             "end_lineno": 338,
                             "end_col_offset": 16
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "int64",
                           "casts": [],
-                          "borrow_kind": "value",
+                          "borrow_kind": "readonly_ref",
                           "repr": "p",
                           "id": "p"
                         },
@@ -41787,9 +41493,9 @@
                               "end_lineno": 338,
                               "end_col_offset": 16
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "int64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "p",
                             "id": "p"
                           },
@@ -41941,9 +41647,9 @@
                                 "end_lineno": 338,
                                 "end_col_offset": 42
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "int64",
                               "casts": [],
-                              "borrow_kind": "value",
+                              "borrow_kind": "readonly_ref",
                               "repr": "p",
                               "id": "p"
                             },
@@ -41987,9 +41693,9 @@
                                   "end_lineno": 338,
                                   "end_col_offset": 42
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "int64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "p",
                                 "id": "p"
                               },
@@ -42042,65 +41748,27 @@
                         "id": "op_pos"
                       },
                       "declare": true,
-                      "decl_type": "unknown",
+                      "decl_type": "int64",
                       "declare_init": true,
                       "value": {
-                        "kind": "Unbox",
-                        "resolved_type": "int64",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "value": {
-                          "kind": "Name",
-                          "source_span": {
-                            "lineno": 339,
-                            "col_offset": 17,
-                            "end_lineno": 339,
-                            "end_col_offset": 18
-                          },
-                          "resolved_type": "unknown",
-                          "casts": [],
-                          "borrow_kind": "value",
-                          "repr": "p",
-                          "id": "p"
-                        },
+                        "kind": "Name",
                         "source_span": {
                           "lineno": 339,
                           "col_offset": 17,
                           "end_lineno": 339,
                           "end_col_offset": 18
                         },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
                         "repr": "p",
-                        "type_expr_summary_v1": {
-                          "schema_version": 1,
-                          "kind": "NamedType",
-                          "category": "static",
-                          "mirror": "int64"
-                        },
-                        "target": "int64",
-                        "on_fail": "raise",
-                        "bridge_lane_v1": {
-                          "schema_version": 1,
-                          "target": {
-                            "kind": "NamedType",
-                            "category": "static",
-                            "mirror": "int64"
-                          },
-                          "target_category": "static",
-                          "value": {
-                            "kind": "DynamicType",
-                            "category": "dynamic",
-                            "mirror": "unknown",
-                            "dynamic_name": "unknown"
-                          },
-                          "value_category": "dynamic"
-                        }
+                        "id": "p"
                       },
                       "type_expr_summary_v1": {
                         "schema_version": 1,
-                        "kind": "DynamicType",
-                        "category": "dynamic",
-                        "mirror": "unknown",
-                        "dynamic_name": "unknown"
+                        "kind": "NamedType",
+                        "category": "static",
+                        "mirror": "int64"
                       },
                       "meta": {
                         "lifetime_node_id": "n133",
@@ -44098,74 +43766,30 @@
                 "name": "int64"
               },
               "value": {
-                "kind": "Unbox",
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 351,
+                  "col_offset": 18,
+                  "end_lineno": 351,
+                  "end_col_offset": 32
+                },
                 "resolved_type": "int64",
-                "borrow_kind": "value",
                 "casts": [],
-                "value": {
-                  "kind": "Call",
+                "borrow_kind": "value",
+                "repr": "text.find(\"=\")",
+                "func": {
+                  "kind": "Attribute",
                   "source_span": {
                     "lineno": 351,
                     "col_offset": 18,
                     "end_lineno": 351,
-                    "end_col_offset": 32
+                    "end_col_offset": 27
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "text.find(\"=\")",
-                  "func": {
-                    "kind": "Attribute",
-                    "source_span": {
-                      "lineno": 351,
-                      "col_offset": 18,
-                      "end_lineno": 351,
-                      "end_col_offset": 27
-                    },
-                    "resolved_type": "unknown",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "text.find",
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 351,
-                        "col_offset": 18,
-                        "end_lineno": 351,
-                        "end_col_offset": 22
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "text",
-                      "id": "text"
-                    },
-                    "attr": "find"
-                  },
-                  "args": [
-                    {
-                      "kind": "Constant",
-                      "source_span": {
-                        "lineno": 351,
-                        "col_offset": 28,
-                        "end_lineno": 351,
-                        "end_col_offset": 31
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "value",
-                      "repr": "\"=\"",
-                      "value": "="
-                    }
-                  ],
-                  "keywords": [],
-                  "lowered_kind": "BuiltinCall",
-                  "builtin_name": "find",
-                  "runtime_call": "py_find",
-                  "runtime_module_id": "pytra.built_in.string_ops",
-                  "runtime_symbol": "str.find",
-                  "semantic_tag": "stdlib.method.find",
-                  "runtime_owner": {
+                  "repr": "text.find",
+                  "value": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 351,
@@ -44179,44 +43803,50 @@
                     "repr": "text",
                     "id": "text"
                   },
-                  "type_expr_summary_v1": {
-                    "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                  "attr": "find"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 351,
+                      "col_offset": 28,
+                      "end_lineno": 351,
+                      "end_col_offset": 31
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"=\"",
+                    "value": "="
                   }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "find",
+                "runtime_call": "py_find",
+                "runtime_module_id": "pytra.built_in.string_ops",
+                "runtime_symbol": "str.find",
+                "semantic_tag": "stdlib.method.find",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 351,
+                    "col_offset": 18,
+                    "end_lineno": 351,
+                    "end_col_offset": 22
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "text",
+                  "id": "text"
                 },
-                "source_span": {
-                  "lineno": 351,
-                  "col_offset": 18,
-                  "end_lineno": 351,
-                  "end_col_offset": 32
-                },
-                "repr": "text.find(\"=\")",
                 "type_expr_summary_v1": {
                   "schema_version": 1,
                   "kind": "NamedType",
                   "category": "static",
                   "mirror": "int64"
-                },
-                "target": "int64",
-                "on_fail": "raise",
-                "bridge_lane_v1": {
-                  "schema_version": 1,
-                  "target": {
-                    "kind": "NamedType",
-                    "category": "static",
-                    "mirror": "int64"
-                  },
-                  "target_category": "static",
-                  "value": {
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
-                  },
-                  "value_category": "dynamic"
                 }
               },
               "type_expr_summary_v1": {
@@ -45249,74 +44879,30 @@
                 "name": "int64"
               },
               "value": {
-                "kind": "Unbox",
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 358,
+                  "col_offset": 17,
+                  "end_lineno": 358,
+                  "end_col_offset": 31
+                },
                 "resolved_type": "int64",
-                "borrow_kind": "value",
                 "casts": [],
-                "value": {
-                  "kind": "Call",
+                "borrow_kind": "value",
+                "repr": "left.find(\",\")",
+                "func": {
+                  "kind": "Attribute",
                   "source_span": {
                     "lineno": 358,
                     "col_offset": 17,
                     "end_lineno": 358,
-                    "end_col_offset": 31
+                    "end_col_offset": 26
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "left.find(\",\")",
-                  "func": {
-                    "kind": "Attribute",
-                    "source_span": {
-                      "lineno": 358,
-                      "col_offset": 17,
-                      "end_lineno": 358,
-                      "end_col_offset": 26
-                    },
-                    "resolved_type": "unknown",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "left.find",
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 358,
-                        "col_offset": 17,
-                        "end_lineno": 358,
-                        "end_col_offset": 21
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "left",
-                      "id": "left"
-                    },
-                    "attr": "find"
-                  },
-                  "args": [
-                    {
-                      "kind": "Constant",
-                      "source_span": {
-                        "lineno": 358,
-                        "col_offset": 27,
-                        "end_lineno": 358,
-                        "end_col_offset": 30
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "value",
-                      "repr": "\",\"",
-                      "value": ","
-                    }
-                  ],
-                  "keywords": [],
-                  "lowered_kind": "BuiltinCall",
-                  "builtin_name": "find",
-                  "runtime_call": "py_find",
-                  "runtime_module_id": "pytra.built_in.string_ops",
-                  "runtime_symbol": "str.find",
-                  "semantic_tag": "stdlib.method.find",
-                  "runtime_owner": {
+                  "repr": "left.find",
+                  "value": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 358,
@@ -45330,44 +44916,50 @@
                     "repr": "left",
                     "id": "left"
                   },
-                  "type_expr_summary_v1": {
-                    "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                  "attr": "find"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 358,
+                      "col_offset": 27,
+                      "end_lineno": 358,
+                      "end_col_offset": 30
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\",\"",
+                    "value": ","
                   }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "find",
+                "runtime_call": "py_find",
+                "runtime_module_id": "pytra.built_in.string_ops",
+                "runtime_symbol": "str.find",
+                "semantic_tag": "stdlib.method.find",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 358,
+                    "col_offset": 17,
+                    "end_lineno": 358,
+                    "end_col_offset": 21
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "left",
+                  "id": "left"
                 },
-                "source_span": {
-                  "lineno": 358,
-                  "col_offset": 17,
-                  "end_lineno": 358,
-                  "end_col_offset": 31
-                },
-                "repr": "left.find(\",\")",
                 "type_expr_summary_v1": {
                   "schema_version": 1,
                   "kind": "NamedType",
                   "category": "static",
                   "mirror": "int64"
-                },
-                "target": "int64",
-                "on_fail": "raise",
-                "bridge_lane_v1": {
-                  "schema_version": 1,
-                  "target": {
-                    "kind": "NamedType",
-                    "category": "static",
-                    "mirror": "int64"
-                  },
-                  "target_category": "static",
-                  "value": {
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
-                  },
-                  "value_category": "dynamic"
                 }
               },
               "type_expr_summary_v1": {
@@ -47243,7 +46835,7 @@
                     "end_lineno": 373,
                     "end_col_offset": 36
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "bool",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "rest.startswith(\"if\")",
@@ -47314,10 +46906,9 @@
                   },
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "bool"
                   }
                 }
               },
@@ -47624,7 +47215,7 @@
                     "end_lineno": 376,
                     "end_col_offset": 42
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "bool",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "rest.startswith(\"__name__\")",
@@ -47695,10 +47286,9 @@
                   },
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "bool"
                   }
                 }
               },
@@ -48175,7 +47765,7 @@
                     "end_lineno": 379,
                     "end_col_offset": 36
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "bool",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "rest.startswith(\"==\")",
@@ -48246,10 +47836,9 @@
                   },
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "bool"
                   }
                 }
               },
@@ -49041,7 +48630,7 @@
                     "end_lineno": 388,
                     "end_col_offset": 40
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "bool",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "text.startswith(\"import\")",
@@ -49112,10 +48701,9 @@
                   },
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "bool"
                   }
                 }
               },
@@ -52242,7 +51830,7 @@
                     "end_lineno": 417,
                     "end_col_offset": 39
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "bool",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "text.startswith(\"from \")",
@@ -52313,10 +51901,9 @@
                   },
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "bool"
                   }
                 }
               },
@@ -52538,74 +52125,30 @@
                 "name": "int64"
               },
               "value": {
-                "kind": "Unbox",
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 420,
+                  "col_offset": 17,
+                  "end_lineno": 420,
+                  "end_col_offset": 38
+                },
                 "resolved_type": "int64",
-                "borrow_kind": "value",
                 "casts": [],
-                "value": {
-                  "kind": "Call",
+                "borrow_kind": "value",
+                "repr": "rest.find(\" import \")",
+                "func": {
+                  "kind": "Attribute",
                   "source_span": {
                     "lineno": 420,
                     "col_offset": 17,
                     "end_lineno": 420,
-                    "end_col_offset": 38
+                    "end_col_offset": 26
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "rest.find(\" import \")",
-                  "func": {
-                    "kind": "Attribute",
-                    "source_span": {
-                      "lineno": 420,
-                      "col_offset": 17,
-                      "end_lineno": 420,
-                      "end_col_offset": 26
-                    },
-                    "resolved_type": "unknown",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "rest.find",
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 420,
-                        "col_offset": 17,
-                        "end_lineno": 420,
-                        "end_col_offset": 21
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "rest",
-                      "id": "rest"
-                    },
-                    "attr": "find"
-                  },
-                  "args": [
-                    {
-                      "kind": "Constant",
-                      "source_span": {
-                        "lineno": 420,
-                        "col_offset": 27,
-                        "end_lineno": 420,
-                        "end_col_offset": 37
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "value",
-                      "repr": "\" import \"",
-                      "value": " import "
-                    }
-                  ],
-                  "keywords": [],
-                  "lowered_kind": "BuiltinCall",
-                  "builtin_name": "find",
-                  "runtime_call": "py_find",
-                  "runtime_module_id": "pytra.built_in.string_ops",
-                  "runtime_symbol": "str.find",
-                  "semantic_tag": "stdlib.method.find",
-                  "runtime_owner": {
+                  "repr": "rest.find",
+                  "value": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 420,
@@ -52619,44 +52162,50 @@
                     "repr": "rest",
                     "id": "rest"
                   },
-                  "type_expr_summary_v1": {
-                    "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                  "attr": "find"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 420,
+                      "col_offset": 27,
+                      "end_lineno": 420,
+                      "end_col_offset": 37
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\" import \"",
+                    "value": " import "
                   }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "find",
+                "runtime_call": "py_find",
+                "runtime_module_id": "pytra.built_in.string_ops",
+                "runtime_symbol": "str.find",
+                "semantic_tag": "stdlib.method.find",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 420,
+                    "col_offset": 17,
+                    "end_lineno": 420,
+                    "end_col_offset": 21
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "rest",
+                  "id": "rest"
                 },
-                "source_span": {
-                  "lineno": 420,
-                  "col_offset": 17,
-                  "end_lineno": 420,
-                  "end_col_offset": 38
-                },
-                "repr": "rest.find(\" import \")",
                 "type_expr_summary_v1": {
                   "schema_version": 1,
                   "kind": "NamedType",
                   "category": "static",
                   "mirror": "int64"
-                },
-                "target": "int64",
-                "on_fail": "raise",
-                "bridge_lane_v1": {
-                  "schema_version": 1,
-                  "target": {
-                    "kind": "NamedType",
-                    "category": "static",
-                    "mirror": "int64"
-                  },
-                  "target_category": "static",
-                  "value": {
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
-                  },
-                  "value_category": "dynamic"
                 }
               },
               "type_expr_summary_v1": {
@@ -56020,7 +55569,7 @@
                 "id": "c"
               },
               "declare": true,
-              "decl_type": "unknown",
+              "decl_type": "int64",
               "declare_init": true,
               "value": {
                 "kind": "Call",
@@ -56030,7 +55579,7 @@
                   "end_lineno": 447,
                   "end_col_offset": 26
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "text.find(\":\")",
@@ -56101,18 +55650,16 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int64"
                 }
               },
               "type_expr_summary_v1": {
                 "schema_version": 1,
-                "kind": "DynamicType",
-                "category": "dynamic",
-                "mirror": "unknown",
-                "dynamic_name": "unknown"
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "int64"
               },
               "meta": {
                 "lifetime_node_id": "n35",
@@ -56164,9 +55711,9 @@
                     "end_lineno": 448,
                     "end_col_offset": 12
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "int64",
                   "casts": [],
-                  "borrow_kind": "value",
+                  "borrow_kind": "readonly_ref",
                   "repr": "c",
                   "id": "c"
                 },
@@ -56210,9 +55757,9 @@
                       "end_lineno": 448,
                       "end_col_offset": 12
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "c",
                     "id": "c"
                   },
@@ -56390,9 +55937,9 @@
                           "end_lineno": 450,
                           "end_col_offset": 27
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "c",
                         "id": "c"
                       },
@@ -56408,9 +55955,9 @@
                         "end_lineno": 450,
                         "end_col_offset": 27
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "c",
                       "id": "c"
                     }
@@ -56462,9 +56009,9 @@
                         "end_lineno": 450,
                         "end_col_offset": 27
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "c",
                       "id": "c"
                     },
@@ -56480,9 +56027,9 @@
                       "end_lineno": 450,
                       "end_col_offset": 27
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "c",
                     "id": "c"
                   }
@@ -56598,7 +56145,7 @@
                       "end_lineno": 451,
                       "end_col_offset": 29
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "c + 1",
@@ -56610,9 +56157,9 @@
                         "end_lineno": 451,
                         "end_col_offset": 25
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "c",
                       "id": "c"
                     },
@@ -56640,7 +56187,7 @@
                         "end_lineno": 451,
                         "end_col_offset": 29
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "c + 1",
@@ -56652,9 +56199,9 @@
                           "end_lineno": 451,
                           "end_col_offset": 25
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "c",
                         "id": "c"
                       },
@@ -56687,7 +56234,7 @@
                     "end_lineno": 451,
                     "end_col_offset": 29
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "c + 1",
@@ -56699,9 +56246,9 @@
                       "end_lineno": 451,
                       "end_col_offset": 25
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "c",
                     "id": "c"
                   },
@@ -56729,7 +56276,7 @@
                       "end_lineno": 451,
                       "end_col_offset": 29
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "c + 1",
@@ -56741,9 +56288,9 @@
                         "end_lineno": 451,
                         "end_col_offset": 25
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "int64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "c",
                       "id": "c"
                     },
@@ -56838,74 +56385,30 @@
                 "name": "int64"
               },
               "value": {
-                "kind": "Unbox",
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 452,
+                  "col_offset": 18,
+                  "end_lineno": 452,
+                  "end_col_offset": 31
+                },
                 "resolved_type": "int64",
-                "borrow_kind": "value",
                 "casts": [],
-                "value": {
-                  "kind": "Call",
+                "borrow_kind": "value",
+                "repr": "rhs.find(\"=\")",
+                "func": {
+                  "kind": "Attribute",
                   "source_span": {
                     "lineno": 452,
                     "col_offset": 18,
                     "end_lineno": 452,
-                    "end_col_offset": 31
+                    "end_col_offset": 26
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "rhs.find(\"=\")",
-                  "func": {
-                    "kind": "Attribute",
-                    "source_span": {
-                      "lineno": 452,
-                      "col_offset": 18,
-                      "end_lineno": 452,
-                      "end_col_offset": 26
-                    },
-                    "resolved_type": "unknown",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "rhs.find",
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 452,
-                        "col_offset": 18,
-                        "end_lineno": 452,
-                        "end_col_offset": 21
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "rhs",
-                      "id": "rhs"
-                    },
-                    "attr": "find"
-                  },
-                  "args": [
-                    {
-                      "kind": "Constant",
-                      "source_span": {
-                        "lineno": 452,
-                        "col_offset": 27,
-                        "end_lineno": 452,
-                        "end_col_offset": 30
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "value",
-                      "repr": "\"=\"",
-                      "value": "="
-                    }
-                  ],
-                  "keywords": [],
-                  "lowered_kind": "BuiltinCall",
-                  "builtin_name": "find",
-                  "runtime_call": "py_find",
-                  "runtime_module_id": "pytra.built_in.string_ops",
-                  "runtime_symbol": "str.find",
-                  "semantic_tag": "stdlib.method.find",
-                  "runtime_owner": {
+                  "repr": "rhs.find",
+                  "value": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 452,
@@ -56919,44 +56422,50 @@
                     "repr": "rhs",
                     "id": "rhs"
                   },
-                  "type_expr_summary_v1": {
-                    "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                  "attr": "find"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 452,
+                      "col_offset": 27,
+                      "end_lineno": 452,
+                      "end_col_offset": 30
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"=\"",
+                    "value": "="
                   }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "find",
+                "runtime_call": "py_find",
+                "runtime_module_id": "pytra.built_in.string_ops",
+                "runtime_symbol": "str.find",
+                "semantic_tag": "stdlib.method.find",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 452,
+                    "col_offset": 18,
+                    "end_lineno": 452,
+                    "end_col_offset": 21
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "rhs",
+                  "id": "rhs"
                 },
-                "source_span": {
-                  "lineno": 452,
-                  "col_offset": 18,
-                  "end_lineno": 452,
-                  "end_col_offset": 31
-                },
-                "repr": "rhs.find(\"=\")",
                 "type_expr_summary_v1": {
                   "schema_version": 1,
                   "kind": "NamedType",
                   "category": "static",
                   "mirror": "int64"
-                },
-                "target": "int64",
-                "on_fail": "raise",
-                "bridge_lane_v1": {
-                  "schema_version": 1,
-                  "target": {
-                    "kind": "NamedType",
-                    "category": "static",
-                    "mirror": "int64"
-                  },
-                  "target_category": "static",
-                  "value": {
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
-                  },
-                  "value_category": "dynamic"
                 }
               },
               "type_expr_summary_v1": {
@@ -58556,74 +58065,30 @@
                 "name": "int64"
               },
               "value": {
-                "kind": "Unbox",
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 463,
+                  "col_offset": 18,
+                  "end_lineno": 463,
+                  "end_col_offset": 32
+                },
                 "resolved_type": "int64",
-                "borrow_kind": "value",
                 "casts": [],
-                "value": {
-                  "kind": "Call",
+                "borrow_kind": "value",
+                "repr": "text.find(\"=\")",
+                "func": {
+                  "kind": "Attribute",
                   "source_span": {
                     "lineno": 463,
                     "col_offset": 18,
                     "end_lineno": 463,
-                    "end_col_offset": 32
+                    "end_col_offset": 27
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "text.find(\"=\")",
-                  "func": {
-                    "kind": "Attribute",
-                    "source_span": {
-                      "lineno": 463,
-                      "col_offset": 18,
-                      "end_lineno": 463,
-                      "end_col_offset": 27
-                    },
-                    "resolved_type": "unknown",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "text.find",
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 463,
-                        "col_offset": 18,
-                        "end_lineno": 463,
-                        "end_col_offset": 22
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "text",
-                      "id": "text"
-                    },
-                    "attr": "find"
-                  },
-                  "args": [
-                    {
-                      "kind": "Constant",
-                      "source_span": {
-                        "lineno": 463,
-                        "col_offset": 28,
-                        "end_lineno": 463,
-                        "end_col_offset": 31
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "value",
-                      "repr": "\"=\"",
-                      "value": "="
-                    }
-                  ],
-                  "keywords": [],
-                  "lowered_kind": "BuiltinCall",
-                  "builtin_name": "find",
-                  "runtime_call": "py_find",
-                  "runtime_module_id": "pytra.built_in.string_ops",
-                  "runtime_symbol": "str.find",
-                  "semantic_tag": "stdlib.method.find",
-                  "runtime_owner": {
+                  "repr": "text.find",
+                  "value": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 463,
@@ -58637,44 +58102,50 @@
                     "repr": "text",
                     "id": "text"
                   },
-                  "type_expr_summary_v1": {
-                    "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                  "attr": "find"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 463,
+                      "col_offset": 28,
+                      "end_lineno": 463,
+                      "end_col_offset": 31
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"=\"",
+                    "value": "="
                   }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "find",
+                "runtime_call": "py_find",
+                "runtime_module_id": "pytra.built_in.string_ops",
+                "runtime_symbol": "str.find",
+                "semantic_tag": "stdlib.method.find",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 463,
+                    "col_offset": 18,
+                    "end_lineno": 463,
+                    "end_col_offset": 22
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "text",
+                  "id": "text"
                 },
-                "source_span": {
-                  "lineno": 463,
-                  "col_offset": 18,
-                  "end_lineno": 463,
-                  "end_col_offset": 32
-                },
-                "repr": "text.find(\"=\")",
                 "type_expr_summary_v1": {
                   "schema_version": 1,
                   "kind": "NamedType",
                   "category": "static",
                   "mirror": "int64"
-                },
-                "target": "int64",
-                "on_fail": "raise",
-                "bridge_lane_v1": {
-                  "schema_version": 1,
-                  "target": {
-                    "kind": "NamedType",
-                    "category": "static",
-                    "mirror": "int64"
-                  },
-                  "target_category": "static",
-                  "value": {
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
-                  },
-                  "value_category": "dynamic"
                 }
               },
               "type_expr_summary_v1": {
@@ -60136,7 +59607,7 @@
                     "end_lineno": 474,
                     "end_col_offset": 39
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "bool",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "text.startswith(\"type \")",
@@ -60207,10 +59678,9 @@
                   },
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "bool"
                   }
                 }
               },
@@ -60535,74 +60005,30 @@
                 "name": "int64"
               },
               "value": {
-                "kind": "Unbox",
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 477,
+                  "col_offset": 18,
+                  "end_lineno": 477,
+                  "end_col_offset": 32
+                },
                 "resolved_type": "int64",
-                "borrow_kind": "value",
                 "casts": [],
-                "value": {
-                  "kind": "Call",
+                "borrow_kind": "value",
+                "repr": "rest.find(\"=\")",
+                "func": {
+                  "kind": "Attribute",
                   "source_span": {
                     "lineno": 477,
                     "col_offset": 18,
                     "end_lineno": 477,
-                    "end_col_offset": 32
+                    "end_col_offset": 27
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "rest.find(\"=\")",
-                  "func": {
-                    "kind": "Attribute",
-                    "source_span": {
-                      "lineno": 477,
-                      "col_offset": 18,
-                      "end_lineno": 477,
-                      "end_col_offset": 27
-                    },
-                    "resolved_type": "unknown",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "rest.find",
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 477,
-                        "col_offset": 18,
-                        "end_lineno": 477,
-                        "end_col_offset": 22
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "rest",
-                      "id": "rest"
-                    },
-                    "attr": "find"
-                  },
-                  "args": [
-                    {
-                      "kind": "Constant",
-                      "source_span": {
-                        "lineno": 477,
-                        "col_offset": 28,
-                        "end_lineno": 477,
-                        "end_col_offset": 31
-                      },
-                      "resolved_type": "str",
-                      "casts": [],
-                      "borrow_kind": "value",
-                      "repr": "\"=\"",
-                      "value": "="
-                    }
-                  ],
-                  "keywords": [],
-                  "lowered_kind": "BuiltinCall",
-                  "builtin_name": "find",
-                  "runtime_call": "py_find",
-                  "runtime_module_id": "pytra.built_in.string_ops",
-                  "runtime_symbol": "str.find",
-                  "semantic_tag": "stdlib.method.find",
-                  "runtime_owner": {
+                  "repr": "rest.find",
+                  "value": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 477,
@@ -60616,44 +60042,50 @@
                     "repr": "rest",
                     "id": "rest"
                   },
-                  "type_expr_summary_v1": {
-                    "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                  "attr": "find"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 477,
+                      "col_offset": 28,
+                      "end_lineno": 477,
+                      "end_col_offset": 31
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"=\"",
+                    "value": "="
                   }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "find",
+                "runtime_call": "py_find",
+                "runtime_module_id": "pytra.built_in.string_ops",
+                "runtime_symbol": "str.find",
+                "semantic_tag": "stdlib.method.find",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 477,
+                    "col_offset": 18,
+                    "end_lineno": 477,
+                    "end_col_offset": 22
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "rest",
+                  "id": "rest"
                 },
-                "source_span": {
-                  "lineno": 477,
-                  "col_offset": 18,
-                  "end_lineno": 477,
-                  "end_col_offset": 32
-                },
-                "repr": "rest.find(\"=\")",
                 "type_expr_summary_v1": {
                   "schema_version": 1,
                   "kind": "NamedType",
                   "category": "static",
                   "mirror": "int64"
-                },
-                "target": "int64",
-                "on_fail": "raise",
-                "bridge_lane_v1": {
-                  "schema_version": 1,
-                  "target": {
-                    "kind": "NamedType",
-                    "category": "static",
-                    "mirror": "int64"
-                  },
-                  "target_category": "static",
-                  "value": {
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
-                  },
-                  "value_category": "dynamic"
                 }
               },
               "type_expr_summary_v1": {
@@ -72950,7 +72382,7 @@
                               "end_lineno": 515,
                               "end_col_offset": 36
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "None",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "out.append(repl)",
@@ -73021,10 +72453,9 @@
                             },
                             "type_expr_summary_v1": {
                               "schema_version": 1,
-                              "kind": "DynamicType",
-                              "category": "dynamic",
-                              "mirror": "unknown",
-                              "dynamic_name": "unknown"
+                              "kind": "NamedType",
+                              "category": "static",
+                              "mirror": "None"
                             }
                           },
                           "meta": {
@@ -73153,7 +72584,7 @@
                           "end_lineno": 518,
                           "end_col_offset": 30
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "None",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "out.append(ch)",
@@ -73224,10 +72655,9 @@
                         },
                         "type_expr_summary_v1": {
                           "schema_version": 1,
-                          "kind": "DynamicType",
-                          "category": "dynamic",
-                          "mirror": "unknown",
-                          "dynamic_name": "unknown"
+                          "kind": "NamedType",
+                          "category": "static",
+                          "mirror": "None"
                         }
                       },
                       "meta": {
@@ -73390,7 +72820,7 @@
                   "end_lineno": 520,
                   "end_col_offset": 27
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"\".join(out)",
@@ -73461,10 +72891,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "str"
                 }
               },
               "meta": {
@@ -75490,7 +74919,7 @@
                           "end_lineno": 537,
                           "end_col_offset": 27
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "bool",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "ch.isalnum()",
@@ -75526,10 +74955,9 @@
                         "keywords": [],
                         "type_expr_summary_v1": {
                           "schema_version": 1,
-                          "kind": "DynamicType",
-                          "category": "dynamic",
-                          "mirror": "unknown",
-                          "dynamic_name": "unknown"
+                          "kind": "NamedType",
+                          "category": "static",
+                          "mirror": "bool"
                         }
                       },
                       {
@@ -75644,7 +75072,7 @@
                           "end_lineno": 538,
                           "end_col_offset": 30
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "None",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "out.append(ch)",
@@ -75715,10 +75143,9 @@
                         },
                         "type_expr_summary_v1": {
                           "schema_version": 1,
-                          "kind": "DynamicType",
-                          "category": "dynamic",
-                          "mirror": "unknown",
-                          "dynamic_name": "unknown"
+                          "kind": "NamedType",
+                          "category": "static",
+                          "mirror": "None"
                         }
                       },
                       "meta": {
@@ -75762,7 +75189,7 @@
                           "end_lineno": 540,
                           "end_col_offset": 32
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "None",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "out.append(repl)",
@@ -75833,10 +75260,9 @@
                         },
                         "type_expr_summary_v1": {
                           "schema_version": 1,
-                          "kind": "DynamicType",
-                          "category": "dynamic",
-                          "mirror": "unknown",
-                          "dynamic_name": "unknown"
+                          "kind": "NamedType",
+                          "category": "static",
+                          "mirror": "None"
                         }
                       },
                       "meta": {
@@ -75927,7 +75353,7 @@
                   "end_lineno": 541,
                   "end_col_offset": 27
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"\".join(out)",
@@ -75998,10 +75424,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "str"
                 }
               },
               "meta": {

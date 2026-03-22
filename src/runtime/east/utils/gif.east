@@ -369,7 +369,7 @@
                   "end_lineno": 11,
                   "end_col_offset": 26
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "dst.append(src[i])",
@@ -467,10 +467,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -2730,7 +2729,7 @@
                   "end_lineno": 35,
                   "end_col_offset": 37
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "out.append(bit_buffer & 0xFF)",
@@ -2872,10 +2871,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -3693,7 +3691,7 @@
                       "end_lineno": 44,
                       "end_col_offset": 41
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "None",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "out.append(bit_buffer & 0xFF)",
@@ -3835,10 +3833,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "None"
                     }
                   },
                   "meta": {
@@ -4482,7 +4479,7 @@
                       "end_lineno": 51,
                       "end_col_offset": 41
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "None",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "out.append(bit_buffer & 0xFF)",
@@ -4624,10 +4621,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "None"
                     }
                   },
                   "meta": {
@@ -5446,7 +5442,7 @@
                   "end_lineno": 60,
                   "end_col_offset": 37
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "out.append(bit_buffer & 0xFF)",
@@ -5588,10 +5584,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -5964,7 +5959,7 @@
                   "end_lineno": 65,
                   "end_col_offset": 37
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "out.append(bit_buffer & 0xFF)",
@@ -6106,10 +6101,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -7991,7 +7985,7 @@
                   "end_lineno": 74,
                   "end_col_offset": 19
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "p.append(i)",
@@ -8062,10 +8056,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -8104,7 +8097,7 @@
                   "end_lineno": 75,
                   "end_col_offset": 19
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "p.append(i)",
@@ -8175,10 +8168,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -8217,7 +8209,7 @@
                   "end_lineno": 76,
                   "end_col_offset": 19
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "p.append(i)",
@@ -8288,10 +8280,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -9694,7 +9685,7 @@
                       "end_lineno": 98,
                       "end_col_offset": 34
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "None",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "fr_list.append(int(v))",
@@ -9807,10 +9798,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "None"
                     }
                   },
                   "meta": {
@@ -10387,7 +10377,7 @@
                   "end_lineno": 101,
                   "end_col_offset": 35
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "frame_lists.append(fr_list)",
@@ -10458,10 +10448,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -10739,7 +10728,7 @@
                   "end_lineno": 105,
                   "end_col_offset": 35
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "palette_list.append(int(v))",
@@ -10852,10 +10841,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -11599,7 +11587,7 @@
               "end_lineno": 111,
               "end_col_offset": 20
             },
-            "resolved_type": "unknown",
+            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "out.append(0xF7)",
@@ -11670,10 +11658,9 @@
             },
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
             }
           },
           "meta": {
@@ -11733,7 +11720,7 @@
               "end_lineno": 112,
               "end_col_offset": 17
             },
-            "resolved_type": "unknown",
+            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "out.append(0)",
@@ -11804,10 +11791,9 @@
             },
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
             }
           },
           "meta": {
@@ -11867,7 +11853,7 @@
               "end_lineno": 113,
               "end_col_offset": 17
             },
-            "resolved_type": "unknown",
+            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "out.append(0)",
@@ -11938,10 +11924,9 @@
             },
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
             }
           },
           "meta": {
@@ -12611,7 +12596,7 @@
               "end_lineno": 118,
               "end_col_offset": 17
             },
-            "resolved_type": "unknown",
+            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "out.append(0)",
@@ -12682,10 +12667,9 @@
             },
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
             }
           },
           "meta": {
@@ -13233,7 +13217,7 @@
                   "end_lineno": 125,
                   "end_col_offset": 24
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "out.append(0x2C)",
@@ -13304,10 +13288,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "leading_trivia": [
@@ -13969,7 +13952,7 @@
                   "end_lineno": 130,
                   "end_col_offset": 21
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "out.append(0)",
@@ -14040,10 +14023,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -14101,7 +14083,7 @@
                   "end_lineno": 131,
                   "end_col_offset": 21
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "out.append(8)",
@@ -14172,10 +14154,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -15144,7 +15125,7 @@
                       "end_lineno": 137,
                       "end_col_offset": 33
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "None",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "out.append(chunk_len)",
@@ -15215,10 +15196,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "None"
                     }
                   },
                   "meta": {
@@ -15472,7 +15452,7 @@
                           "end_lineno": 140,
                           "end_col_offset": 47
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "None",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "out.append(compressed[pos + i])",
@@ -15641,10 +15621,9 @@
                         },
                         "type_expr_summary_v1": {
                           "schema_version": 1,
-                          "kind": "DynamicType",
-                          "category": "dynamic",
-                          "mirror": "unknown",
-                          "dynamic_name": "unknown"
+                          "kind": "NamedType",
+                          "category": "static",
+                          "mirror": "None"
                         }
                       },
                       "meta": {
@@ -15988,7 +15967,7 @@
                   "end_lineno": 143,
                   "end_col_offset": 21
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "out.append(0)",
@@ -16059,10 +16038,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -16172,7 +16150,7 @@
               "end_lineno": 145,
               "end_col_offset": 20
             },
-            "resolved_type": "unknown",
+            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "out.append(0x3B)",
@@ -16243,10 +16221,9 @@
             },
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
             }
           },
           "meta": {

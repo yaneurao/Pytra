@@ -4038,7 +4038,7 @@
                   "end_lineno": 50,
                   "end_col_offset": 21
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "out.append(s)",
@@ -4109,10 +4109,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -5401,7 +5400,7 @@
                   "end_lineno": 63,
                   "end_col_offset": 29
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "out.append(s[pos:at])",
@@ -5546,10 +5545,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -5882,7 +5880,7 @@
               "end_lineno": 66,
               "end_col_offset": 24
             },
-            "resolved_type": "unknown",
+            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "out.append(s[pos:n])",
@@ -6027,10 +6025,9 @@
             },
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
             }
           },
           "meta": {
@@ -7856,7 +7853,7 @@
                       "end_lineno": 79,
                       "end_col_offset": 34
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "None",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "out.append(s[start:i])",
@@ -8001,10 +7998,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "None"
                     }
                   },
                   "meta": {
@@ -9130,7 +9126,7 @@
                   "end_lineno": 87,
                   "end_col_offset": 30
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "out.append(s[start:n])",
@@ -9275,10 +9271,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -9804,7 +9799,7 @@
                           "end_lineno": 91,
                           "end_col_offset": 26
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "None",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "out.append(\"\")",
@@ -9875,10 +9870,9 @@
                         },
                         "type_expr_summary_v1": {
                           "schema_version": 1,
-                          "kind": "DynamicType",
-                          "category": "dynamic",
-                          "mirror": "unknown",
-                          "dynamic_name": "unknown"
+                          "kind": "NamedType",
+                          "category": "static",
+                          "mirror": "None"
                         }
                       },
                       "meta": {

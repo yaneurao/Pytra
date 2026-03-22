@@ -1660,7 +1660,7 @@
                       "end_lineno": 47,
                       "end_col_offset": 70
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "bool",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "names[0].startswith(\"-\")",
@@ -1785,10 +1785,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "bool"
                     }
                   }
                 ]
@@ -1880,7 +1879,7 @@
                     "id": "base"
                   },
                   "declare": true,
-                  "decl_type": "unknown",
+                  "decl_type": "str",
                   "declare_init": true,
                   "value": {
                     "kind": "Call",
@@ -1890,7 +1889,7 @@
                       "end_lineno": 49,
                       "end_col_offset": 58
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "names[-1].lstrip(\"-\").replace(\"-\", \"_\")",
@@ -2279,18 +2278,16 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "str"
                     }
                   },
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "str"
                   },
                   "meta": {
                     "lifetime_node_id": "n2",
@@ -2348,65 +2345,27 @@
                     "attr": "dest"
                   },
                   "declare": true,
-                  "decl_type": "unknown",
+                  "decl_type": "str",
                   "declare_init": true,
                   "value": {
-                    "kind": "Unbox",
-                    "resolved_type": "str",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 50,
-                        "col_offset": 24,
-                        "end_lineno": 50,
-                        "end_col_offset": 28
-                      },
-                      "resolved_type": "unknown",
-                      "casts": [],
-                      "borrow_kind": "value",
-                      "repr": "base",
-                      "id": "base"
-                    },
+                    "kind": "Name",
                     "source_span": {
                       "lineno": 50,
                       "col_offset": 24,
                       "end_lineno": 50,
                       "end_col_offset": 28
                     },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
                     "repr": "base",
-                    "type_expr_summary_v1": {
-                      "schema_version": 1,
-                      "kind": "NamedType",
-                      "category": "static",
-                      "mirror": "str"
-                    },
-                    "target": "str",
-                    "on_fail": "raise",
-                    "bridge_lane_v1": {
-                      "schema_version": 1,
-                      "target": {
-                        "kind": "NamedType",
-                        "category": "static",
-                        "mirror": "str"
-                      },
-                      "target_category": "static",
-                      "value": {
-                        "kind": "DynamicType",
-                        "category": "dynamic",
-                        "mirror": "unknown",
-                        "dynamic_name": "unknown"
-                      },
-                      "value_category": "dynamic"
-                    }
+                    "id": "base"
                   },
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "str"
                   },
                   "meta": {
                     "lifetime_node_id": "n1",
@@ -3730,7 +3689,7 @@
                       "end_lineno": 78,
                       "end_col_offset": 31
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "None",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "names.append(name0)",
@@ -3801,10 +3760,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "None"
                     }
                   },
                   "meta": {
@@ -4007,7 +3965,7 @@
                       "end_lineno": 80,
                       "end_col_offset": 31
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "None",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "names.append(name1)",
@@ -4078,10 +4036,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "None"
                     }
                   },
                   "meta": {
@@ -4280,7 +4237,7 @@
                       "end_lineno": 82,
                       "end_col_offset": 31
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "None",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "names.append(name2)",
@@ -4351,10 +4308,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "None"
                     }
                   },
                   "meta": {
@@ -4549,7 +4505,7 @@
                       "end_lineno": 84,
                       "end_col_offset": 31
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "None",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "names.append(name3)",
@@ -4620,10 +4576,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "None"
                     }
                   },
                   "meta": {
@@ -5209,7 +5164,7 @@
                   "end_lineno": 88,
                   "end_col_offset": 32
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "self._specs.append(spec)",
@@ -5308,10 +5263,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -7454,7 +7408,7 @@
                           "end_lineno": 106,
                           "end_col_offset": 35
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "None",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "specs_opt.append(s)",
@@ -7525,10 +7479,9 @@
                         },
                         "type_expr_summary_v1": {
                           "schema_version": 1,
-                          "kind": "DynamicType",
-                          "category": "dynamic",
-                          "mirror": "unknown",
-                          "dynamic_name": "unknown"
+                          "kind": "NamedType",
+                          "category": "static",
+                          "mirror": "None"
                         }
                       },
                       "meta": {
@@ -7584,7 +7537,7 @@
                           "end_lineno": 108,
                           "end_col_offset": 35
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "None",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "specs_pos.append(s)",
@@ -7655,10 +7608,9 @@
                         },
                         "type_expr_summary_v1": {
                           "schema_version": 1,
-                          "kind": "DynamicType",
-                          "category": "dynamic",
-                          "mirror": "unknown",
-                          "dynamic_name": "unknown"
+                          "kind": "NamedType",
+                          "category": "static",
+                          "mirror": "None"
                         }
                       },
                       "meta": {
@@ -10179,7 +10131,7 @@
                       "end_lineno": 132,
                       "end_col_offset": 34
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "bool",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "tok.startswith(\"-\")",
@@ -10250,10 +10202,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "bool"
                     }
                   },
                   "body": [

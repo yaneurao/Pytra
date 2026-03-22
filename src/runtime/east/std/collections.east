@@ -320,7 +320,7 @@
                   "end_lineno": 19,
                   "end_col_offset": 33
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "self._items.append(value)",
@@ -419,10 +419,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -568,7 +567,7 @@
                   "end_lineno": 22,
                   "end_col_offset": 36
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "self._items.insert(0, value)",
@@ -647,10 +646,9 @@
                 "keywords": [],
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
                 }
               },
               "meta": {
@@ -1107,7 +1105,7 @@
                   "end_lineno": 27,
                   "end_col_offset": 32
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "object",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "self._items.pop()",
@@ -1193,8 +1191,8 @@
                   "schema_version": 1,
                   "kind": "DynamicType",
                   "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "mirror": "object",
+                  "dynamic_name": "object"
                 }
               },
               "meta": {

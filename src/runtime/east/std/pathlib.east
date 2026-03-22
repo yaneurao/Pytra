@@ -3318,7 +3318,7 @@
                       "end_lineno": 49,
                       "end_col_offset": 37
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "None",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "out.append(Path(current))",
@@ -3425,10 +3425,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "None"
                     }
                   },
                   "meta": {
@@ -7198,7 +7197,7 @@
                     "end_lineno": 85,
                     "end_col_offset": 37
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "bool",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "base_abs.endswith(\"/\")",
@@ -7269,10 +7268,9 @@
                   },
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "bool"
                   }
                 }
               },
@@ -7933,7 +7931,7 @@
                   "end_lineno": 89,
                   "end_col_offset": 40
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "self_abs.startswith(base_abs)",
@@ -8004,10 +8002,9 @@
                 },
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "bool"
                 }
               },
               "body": [
@@ -13026,7 +13023,7 @@
                       "end_lineno": 128,
                       "end_col_offset": 31
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "None",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "out.append(Path(p))",
@@ -13133,10 +13130,9 @@
                     },
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "None"
                     }
                   },
                   "meta": {

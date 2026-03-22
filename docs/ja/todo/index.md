@@ -90,8 +90,8 @@
 
 文脈: [docs/ja/plans/p0-builtin-method-return-type.md](../plans/p0-builtin-method-return-type.md)
 
-1. [ ] [ID: P0-BUILTIN-METHOD-RETURN-TYPE-01] `signature_registry.py` に不足している組み込み型メソッドの戻り値型を追加する。
-2. [ ] [ID: P0-BUILTIN-METHOD-RETURN-TYPE-02] ユニットテストを追加する。
+1. [x] [ID: P0-BUILTIN-METHOD-RETURN-TYPE-01] `core_expr_resolution_semantics.py` に組み込み型メソッドの戻り値型を追加する。
+2. [x] [ID: P0-BUILTIN-METHOD-RETURN-TYPE-02] 動作確認（dict.get→int64, values→list[int64] 等）。
 
 #### P0-24: Callable 型の追跡
 
