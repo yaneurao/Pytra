@@ -166,9 +166,16 @@ def runtime_module_exists(module_id: str) -> bool:
 
 
 def canonical_runtime_module_id(module_id: str) -> str:
-    # Python 標準モジュール名の暗黙リマップは廃止。
-    # pytra.* 経由の import のみを受け付ける。
-    return module_id
+    # pytra.* 経由の import はそのまま返す。
+    mod = module_id.strip()
+    if mod.startswith("pytra.") or mod.startswith("toolchain."):
+        return mod
+    # Bare module name (e.g. "math", "time") → "pytra.std.math" if runtime module exists.
+    if "." not in mod and mod != "":
+        candidate = "pytra.std." + mod
+        if runtime_module_exists(candidate):
+            return candidate
+    return mod
 
 
 def _resolve_frontend_facade_runtime_module(module_id: str, export_name: str, binding_kind: str) -> str:
