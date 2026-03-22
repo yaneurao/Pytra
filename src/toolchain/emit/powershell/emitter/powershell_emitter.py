@@ -998,22 +998,16 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
                 if raw == "pass":
                     return [indent + "# pass"]
         rendered = _render_expr(value)
-        # discard_result flag: EAST3 marks Expr(Call) where return value is unused
-        # Exclude print/__pytra_print — their output is intentional
-        if stmt.get("discard_result"):
-            is_print_call = False
-            if isinstance(value, dict) and _get_str(value, "kind") == "Call":
+        # PS: all Expr(Call) must suppress return value to prevent pipeline leak.
+        # Exclude print/__pytra_print — their Write-Output is intentional.
+        # In main_guard_body, don't suppress (inner print would be silenced).
+        if isinstance(value, dict) and _get_str(value, "kind") == "Call":
+            if not ctx.get("in_main_guard"):
+                is_print_call = False
                 fn_node = value.get("func")
                 if isinstance(fn_node, dict) and _get_str(fn_node, "id") in ("print", "__pytra_print"):
                     is_print_call = True
-            if not is_print_call:
-                return [indent + "[void](" + rendered + ")"]
-        # Fallback: suppress known side-effect-only calls
-        if isinstance(value, dict) and _get_str(value, "kind") == "Call":
-            func_node = value.get("func")
-            if isinstance(func_node, dict):
-                fn = _get_str(func_node, "id")
-                if fn.startswith("py_assert_"):
+                if not is_print_call:
                     return [indent + "[void](" + rendered + ")"]
         return [indent + rendered]
 
@@ -1738,12 +1732,11 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
             if isinstance(stmt, dict):
                 stmt_d2: dict[str, object] = stmt
                 simplified = _simplify_main_guard_stmt(stmt_d2)
-                # Strip discard_result in main_guard_body:
-                # [void] suppresses Write-Output inside called functions
-                if isinstance(simplified, dict) and simplified.get("discard_result"):
-                    simplified = dict(simplified)
-                    simplified.pop("discard_result", None)
+                # In main_guard_body, don't suppress Call return values
+                # because [void] would also suppress Write-Output inside called functions
+                ctx["in_main_guard"] = True
                 emitted = _emit_stmt(simplified, indent="", ctx=ctx)
+                ctx.pop("in_main_guard", None)
                 lines.extend(emitted)
         lines.append("")
 

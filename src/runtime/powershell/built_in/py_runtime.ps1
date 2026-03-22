@@ -8,7 +8,7 @@ function __pytra_print {
     )
 
     if ($items.Count -eq 0) {
-        Write-Output ""
+        [Console]::Out.WriteLine("")
         return
     }
 
@@ -16,7 +16,7 @@ function __pytra_print {
     foreach ($item in $items) {
         $parts.Add((__pytra_str $item))
     }
-    Write-Output ($parts -join " ")
+    [Console]::Out.WriteLine(($parts -join " "))
 }
 
 function __pytra_len {
@@ -495,14 +495,26 @@ function py_assert_all {
 
 function py_assert_stdout {
     param($expected, $fn)
-    # Capture stdout from function call and compare with expected lines
+    # Capture [Console]::Out.WriteLine output by redirecting Console.Out
     $captured = @()
-    if ($fn -is [scriptblock]) {
-        $captured = @(& $fn | ForEach-Object { [string]$_ })
-    } elseif ($fn -is [string]) {
-        $captured = @(& (Get-Command $fn) | ForEach-Object { [string]$_ })
-    } else {
-        return $true
+    $old_out = [Console]::Out
+    $sw = [System.IO.StringWriter]::new()
+    [Console]::SetOut($sw)
+    try {
+        if ($fn -is [scriptblock]) {
+            & $fn | Out-Null
+        } elseif ($fn -is [string]) {
+            & (Get-Command $fn) | Out-Null
+        } else {
+            [Console]::SetOut($old_out)
+            return $true
+        }
+    } finally {
+        [Console]::SetOut($old_out)
+    }
+    $raw = $sw.ToString()
+    if ($raw -ne "") {
+        $captured = @($raw.TrimEnd("`r`n").Split("`n") | ForEach-Object { $_.TrimEnd("`r") })
     }
     if ($expected -eq $null) { return $true }
     $exp_arr = @($expected)
