@@ -249,13 +249,7 @@ def build_cpp_header_from_east(
     seen_classes: set[str] = set()
     class_names: set[str] = set()
     ref_classes: set[str] = set()
-    # Runtime modules (pytra::std::*, pytra::built_in::*, pytra::utils::*)
-    # use value-type list<T> in signatures, not Object<list<T>>.
-    pyobj_ref_lists = not (
-        top_namespace.startswith("pytra::std")
-        or top_namespace.startswith("pytra::built_in")
-        or top_namespace.startswith("pytra::utils")
-    )
+    pyobj_ref_lists = True
     import_include_symbol_map = _header_import_include_symbol_map(east_module)
 
     for st in body:

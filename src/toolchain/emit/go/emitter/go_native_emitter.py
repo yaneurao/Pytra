@@ -452,6 +452,10 @@ def _cast_from_any(expr: str, go_type: str, value_any: Any = None, type_map: dic
         if _is_float_cast_expr(expr):
             return expr
         return "__pytra_float(" + expr + ")"
+    if go_type == "int32":
+        return "__pytra_as_int32(" + expr + ")"
+    if go_type == "uint8":
+        return "__pytra_as_uint8(" + expr + ")"
     if go_type == "bool":
         return "__pytra_truthy(" + expr + ")"
     if go_type == "string":
@@ -1627,6 +1631,29 @@ def _collect_read_names_stmt(stmt: Any, out: set[str]) -> None:
         orelse = orelse_any if isinstance(orelse_any, list) else []
         _collect_read_names_block(orelse, out)
         return
+    if kind == "Try":
+        body_any = crs.get("body")
+        body = body_any if isinstance(body_any, list) else []
+        _collect_read_names_block(body, out)
+        handlers_any = crs.get("handlers")
+        if isinstance(handlers_any, list):
+            for h in handlers_any:
+                if isinstance(h, dict):
+                    h_body = h.get("body", [])
+                    if isinstance(h_body, list):
+                        _collect_read_names_block(h_body, out)
+        finalbody_any = crs.get("finalbody")
+        if isinstance(finalbody_any, list):
+            _collect_read_names_block(finalbody_any, out)
+        return
+    if kind == "ForRange":
+        _collect_read_names_expr(crs.get("start"), out)
+        _collect_read_names_expr(crs.get("stop"), out)
+        _collect_read_names_expr(crs.get("step"), out)
+        body_any = crs.get("body")
+        body = body_any if isinstance(body_any, list) else []
+        _collect_read_names_block(body, out)
+        return
     if kind == "Raise":
         _collect_read_names_expr(crs.get("exc"), out)
 
@@ -2145,9 +2172,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         value_node = esd.get("value")
 
         if lhs_is_name and lhs not in used_names:
-            # Don't discard Call results (may be used as Attribute receiver later)
-            if not (isinstance(value_node, dict) and value_node.get("kind") == "Call"):
-                return [indent + "_ = " + value]
+            return [indent + "_ = " + value]
 
         if esd.get("declare"):
             if lhs in declared:
