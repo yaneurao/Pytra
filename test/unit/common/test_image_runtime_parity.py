@@ -23,7 +23,7 @@ class ImageRuntimeParityTest(unittest.TestCase):
 
     def test_runtime_parity_check_does_not_leak_png_to_repo_root(self) -> None:
         leaked_root = ROOT / "import_pytra_runtime_png.png"
-        leaked_out = ROOT / "out" / "import_pytra_runtime_png.png"
+        leaked_out = ROOT / "work" / "out" / "import_pytra_runtime_png.png"
         for leaked in (leaked_root, leaked_out):
             if leaked.exists():
                 leaked.unlink()

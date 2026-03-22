@@ -34,7 +34,7 @@ def _generate_runtime_cpp() -> Path:
 
     east_dir = ROOT / "src" / "runtime" / "east"
     # Use a stable location so it persists across test collection
-    gen_dir = ROOT / "out" / "_test_generated_cpp"
+    gen_dir = ROOT / "work" / "out" / "_test_generated_cpp"
     gen_dir.mkdir(parents=True, exist_ok=True)
 
     ns_map = {

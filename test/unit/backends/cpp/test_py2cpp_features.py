@@ -4454,7 +4454,7 @@ if __name__ == "__main__":
             # Object<list<T>> mode: py_repeat returns list<T>, wrapped in Object via ctor
             self.assertIn("py_repeat(", cpp)
             self.assertNotIn("= [&]() {", cpp)
-            gen_dir = os.environ.get("PYTRA_GENERATED_CPP_DIR", "out/_test_generated_cpp")
+            gen_dir = os.environ.get("PYTRA_GENERATED_CPP_DIR", "work/out/_test_generated_cpp")
             comp = self._run_subprocess_with_timeout(
                 [
                     "g++",
