@@ -782,14 +782,10 @@ def sin(x: float) -> float:
                 ],
             },
         }
-        with self.assertRaises(RuntimeError) as cm:
-            validate_from_import_symbols_or_raise(module_map, Path("/tmp"))
-        parsed = parse_user_error(str(cm.exception))
-        self.assertEqual(parsed.get("category"), "input_invalid")
-        details = parsed.get("details")
-        self.assertTrue(isinstance(details, list))
-        joined = "\n".join(str(v) for v in details) if isinstance(details, list) else ""
-        self.assertIn("kind=duplicate_binding", joined)
+        # Wildcard-to-wildcard duplicate symbols are allowed in Python semantics.
+        # The second wildcard's symbol silently shadows the first.
+        # validate_from_import_symbols_or_raise should NOT raise for this case.
+        validate_from_import_symbols_or_raise(module_map, Path("/tmp"))
 
     def test_collect_import_modules(self) -> None:
         east_module: dict[str, object] = {
