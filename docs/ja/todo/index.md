@@ -167,6 +167,18 @@
 
 1. [ ] [ID: P5-SWIFT-PARITY-01] `runtime_parity_check.py --targets swift` で sample/py の全 18 ケースが PASS する。
 
+### P7: C++ test_py2cpp_features.py テストパス率改善
+
+文脈: [docs/ja/plans/p7-cpp-test-pass-rate-improvement.md](../plans/p7-cpp-test-pass-rate-improvement.md)
+
+1. [ ] [ID: P7-CPP-TEST-PASS-S1] Multi-file cross-module include 生成修正（~12件）
+2. [ ] [ID: P7-CPP-TEST-PASS-S2] conftest 生成 C++ の Object<T> 互換修正（~5件）
+3. [ ] [ID: P7-CPP-TEST-PASS-S3] Any/Object<void> runtime 修正（~4件）
+4. [ ] [ID: P7-CPP-TEST-PASS-S4] その他テスト修正（~10件）
+
+進捗:
+- 2026-03-22: 192/107 (64%) → 268/31 (89.3%)。+76テスト改善。残り31件の計画書起票。
+
 ### P6: Zig コンテナ型の Obj（rc）管理
 
 文脈: [docs/ja/plans/p6-zig-obj-managed-containers.md](../plans/p6-zig-obj-managed-containers.md)
