@@ -73,6 +73,13 @@
 19. [ ] [ID: P0-OBJECT-T-MIGRATION-05-S3] selfhost multi-module transpile が動作する。
 20. [ ] [ID: P0-OBJECT-T-MIGRATION-05-S4] sample/py の全 18 ケースが C++ で compile + run できる。
 
+#### P0-28: main_guard_body の Expr Call 戻り値を Discard でラップ
+
+文脈: [docs/ja/plans/p0-main-guard-discard.md](../plans/p0-main-guard-discard.md)
+
+1. [ ] [ID: P0-MAIN-GUARD-DISCARD-01] main_guard_body 内の Expr Call を Discard でラップする。
+2. [ ] [ID: P0-MAIN-GUARD-DISCARD-02] ユニットテストを追加する。
+
 #### P0-22: REPO_ROOT 修正 + import alias 解決 + conftest extern 関数修正
 
 文脈: [docs/ja/plans/p0-cpp-repo-root-and-import-alias-fix.md](../plans/p0-cpp-repo-root-and-import-alias-fix.md)
