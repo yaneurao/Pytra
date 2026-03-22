@@ -348,6 +348,34 @@ native_import_path = root_rel_prefix + "std/time_native.<ext>"
 
 `pytra.std.*` / `pytra.utils.*` の関数は、linker が依存解決した場合のみ `.east` → emitter 経由で生成される。`py_runtime` に含めると、その関数を使わないプログラムでもコンパイルエラー（未定義シンボル参照）が発生する。
 
+### built_in モジュールの emit スキップ
+
+linker は `pytra.built_in.io_ops` / `pytra.built_in.scalar_ops` 等を link-output に含める（依存追跡のため）。しかし emitter はこれらのモジュールの **emit をスキップ** すべき。
+
+理由: `built_in` モジュールの `@extern` 関数（`py_print`, `py_ord` 等）は `py_runtime.<ext>` が直接提供しており、`_native` ファイルへの委譲コード生成は不要。`io_ops_native` のような native ファイルも存在しない。
+
+```python
+# transpile_fn 内で built_in モジュールをスキップ
+def _transpile(east_doc: dict) -> str:
+    meta = east_doc.get("meta", {})
+    emit_ctx = meta.get("emit_context", {}) if isinstance(meta, dict) else {}
+    module_id = emit_ctx.get("module_id", "") if isinstance(emit_ctx, dict) else ""
+    # built_in モジュールは py_runtime が提供するため emit 不要
+    if module_id.startswith("pytra.built_in."):
+        return ""  # 空文字を返すと emit_all_modules がファイル生成をスキップ
+    ...
+```
+
+`emit_all_modules` は `transpile_fn` が空文字を返した場合、ファイルを生成しない。
+
+| module_id | emit | 理由 |
+|---|---|---|
+| `pytra.built_in.io_ops` | **スキップ** | `py_runtime` が `py_print` 等を直接提供 |
+| `pytra.built_in.scalar_ops` | **スキップ** | `py_runtime` が `py_ord` 等を直接提供 |
+| `pytra.built_in.sequence` | **スキップ** | `py_runtime` が `py_range` 等を直接提供 |
+| `pytra.std.time` | emit | `@extern` → `__native` 委譲コード生成 |
+| `pytra.utils.png` | emit | 通常の関数コード生成 |
+
 ## 7. 共通ユーティリティ（`code_emitter.py` スタンドアロン関数）
 
 `CodeEmitter` を継承しない emitter でも使える関数:
