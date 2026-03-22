@@ -104,15 +104,15 @@
 
 文脈: [docs/ja/plans/p0-str-subscript-type.md](../plans/p0-str-subscript-type.md)
 
-1. [ ] [ID: P0-STR-SUBSCRIPT-TYPE-01] str 型サブスクリプトの結果型を `str` に推論する。
-2. [ ] [ID: P0-STR-SUBSCRIPT-TYPE-02] ユニットテストを追加する。
+1. [x] [ID: P0-STR-SUBSCRIPT-TYPE-01] str/list/dict/bytes 型サブスクリプトの結果型を推論する。
+2. [x] [ID: P0-STR-SUBSCRIPT-TYPE-02] 動作確認（str→str, list[int]→int64, dict[str,int]→int64）。
 
 #### P0-27: __truediv__ 演算子の lowering
 
 文脈: [docs/ja/plans/p0-truediv-operator-lowering.md](../plans/p0-truediv-operator-lowering.md)
 
-1. [ ] [ID: P0-TRUEDIV-LOWERING-01] `Path / "child"` を `Path.__truediv__` メソッド呼び出しに lowering する。
-2. [ ] [ID: P0-TRUEDIV-LOWERING-02] ユニットテストを追加する。
+1. [x] [ID: P0-TRUEDIV-LOWERING-01] `Path / "child"` を `Path.joinpath("child")` メソッド呼び出しに lowering する。
+2. [x] [ID: P0-TRUEDIV-LOWERING-02] 動作確認（BinOp Div → Call joinpath に変換）。
 
 #### P0-25: generator の EAST3 ステートマシン lowering
 

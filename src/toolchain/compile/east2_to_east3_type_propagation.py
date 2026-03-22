@@ -149,6 +149,23 @@ def _propagate_binop_result_type(node: Any) -> None:
         if result_type in ("", "unknown"):
             nd["resolved_type"] = "bool"
 
+    if nd.get("kind") == "Subscript":
+        result_type = _safe_str(nd.get("resolved_type"))
+        if result_type in ("", "unknown"):
+            value = nd.get("value")
+            if isinstance(value, dict):
+                val_t = _safe_str(value.get("resolved_type"))
+                if val_t == "str":
+                    nd["resolved_type"] = "str"
+                elif val_t == "bytes" or val_t == "bytearray":
+                    nd["resolved_type"] = "int32"
+                elif val_t.startswith("list[") and val_t.endswith("]"):
+                    nd["resolved_type"] = val_t[5:-1].strip()
+                elif val_t.startswith("dict[") and val_t.endswith("]"):
+                    parts = _split_generic_types(val_t[5:-1])
+                    if len(parts) >= 2:
+                        nd["resolved_type"] = parts[1].strip()
+
     if nd.get("kind") == "UnaryOp":
         result_type = _safe_str(nd.get("resolved_type"))
         if result_type in ("", "unknown"):
@@ -161,13 +178,72 @@ def _propagate_binop_result_type(node: Any) -> None:
                     nd["resolved_type"] = op_t
 
 
+def _lower_truediv_to_method_call(node: Any) -> None:
+    """Convert Path / "child" (BinOp Div) to Path.joinpath("child") call."""
+    if isinstance(node, list):
+        for i in range(len(node)):
+            item = node[i]
+            replacement = _try_lower_truediv(item)
+            if replacement is not None:
+                node[i] = replacement
+            _lower_truediv_to_method_call(item)
+        return
+    if not isinstance(node, dict):
+        return
+    nd: dict[str, Any] = node
+    # Check all dict values for BinOp replacement
+    for key in list(nd.keys()):
+        val = nd[key]
+        if isinstance(val, dict):
+            replacement = _try_lower_truediv(val)
+            if replacement is not None:
+                nd[key] = replacement
+            else:
+                _lower_truediv_to_method_call(val)
+        elif isinstance(val, list):
+            _lower_truediv_to_method_call(val)
+
+
+def _try_lower_truediv(node: Any) -> dict[str, Any] | None:
+    """If node is BinOp(Div) with Path-typed left, return a Call node."""
+    if not isinstance(node, dict):
+        return None
+    if node.get("kind") != "BinOp" or node.get("op") != "Div":
+        return None
+    left = node.get("left")
+    if not isinstance(left, dict):
+        return None
+    left_t = _safe_str(left.get("resolved_type"))
+    if left_t != "Path":
+        return None
+    right = node.get("right")
+    call: dict[str, Any] = {
+        "kind": "Call",
+        "func": {
+            "kind": "Attribute",
+            "value": left,
+            "attr": "joinpath",
+            "resolved_type": "Path",
+        },
+        "args": [right] if right is not None else [],
+        "keywords": [],
+        "resolved_type": "Path",
+    }
+    span = node.get("source_span")
+    if isinstance(span, dict):
+        call["source_span"] = span
+    return call
+
+
 def apply_type_propagation(module: dict[str, Any]) -> dict[str, Any]:
     """Top-level entry: apply type propagation to an EAST3 Module.
 
     Mutates *module* in place and returns it.
     """
-    # Bottom-up BinOp/Compare/UnaryOp propagation first
+    # Bottom-up BinOp/Compare/UnaryOp/Subscript propagation first
     _propagate_binop_result_type(module)
+    # Lower Path / "child" to Path.joinpath("child")
+    _lower_truediv_to_method_call(module)
     # Then top-down Assign target propagation
     _propagate_assign_target_type(module)
     return module
