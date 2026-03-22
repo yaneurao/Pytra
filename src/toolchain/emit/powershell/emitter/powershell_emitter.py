@@ -250,6 +250,12 @@ def _render_expr(expr_any: Any) -> str:
         if raw == "None" or raw == "null" or raw == "undefined":
             return "$null"
         renamed = _RENAMED_SYMBOLS[0].get(raw, raw)
+        # Callable type: function names (not lambda vars) are passed as string
+        rt = _get_str(expr, "resolved_type")
+        if isinstance(rt, str) and rt.startswith("callable["):
+            # Check both original name and renamed name
+            if (raw in _FUNCTION_NAMES[0] or renamed in _FUNCTION_NAMES[0]) and raw not in _LAMBDA_VARS[0]:
+                return '"' + _safe_ident(renamed, "_fn") + '"'
         return "$" + _safe_ident(renamed, "_v")
 
     if kind == "Constant":
