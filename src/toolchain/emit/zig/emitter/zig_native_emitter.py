@@ -1731,6 +1731,10 @@ class ZigNativeEmitter:
                 return "@mod(" + left + ", " + right + ")"
             if op in {"LShift", "RShift"}:
                 sym = _binop_symbol(op)
+                # LHS が comptime literal の場合 @as(i64, ...) にキャスト
+                left_node = ed.get("left")
+                if isinstance(left_node, dict) and left_node.get("kind") == "Constant":
+                    left = "@as(i64, " + left + ")"
                 return "(" + left + " " + sym + " @intCast(" + right + "))"
             sym = _binop_symbol(op)
             return "(" + left + " " + sym + " " + right + ")"
