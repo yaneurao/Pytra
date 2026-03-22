@@ -369,7 +369,7 @@ public static class Program
         for (i = 0; i < frames_n; i += 1) {
             frames.Add(render_frame(width, height, i, frames_n));
         }
-        Pytra.CsModule.gif_helper.save_gif(out_path, width, height, frames, palette_332());
+        Pytra.CsModule.gif_helper.save_gif(out_path, width, height, frames, palette_332(), 6, 0);
         double elapsed = Pytra.CsModule.time.perf_counter() - start;
         System.Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
         System.Console.WriteLine(string.Join(" ", new object[] { "frames:", frames_n }));

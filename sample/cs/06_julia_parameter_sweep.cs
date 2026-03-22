@@ -97,7 +97,7 @@ public static class Program
             long phase = (phase_offset + i * 5) % 255;
             frames.Add(render_frame(width, height, cr, ci, max_iter, phase));
         }
-        Pytra.CsModule.gif_helper.save_gif(out_path, width, height, frames, julia_palette());
+        Pytra.CsModule.gif_helper.save_gif(out_path, width, height, frames, julia_palette(), 8, 0);
         double elapsed = Pytra.CsModule.time.perf_counter() - start;
         System.Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
         System.Console.WriteLine(string.Join(" ", new object[] { "frames:", frames_n }));

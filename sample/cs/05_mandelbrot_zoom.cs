@@ -61,7 +61,7 @@ public static class Program
             frames.Add(render_frame(width, height, center_x, center_y, scale, max_iter));
             scale *= zoom_per_frame;
         }
-        Pytra.CsModule.gif_helper.save_gif(out_path, width, height, frames, Pytra.CsModule.gif_helper.grayscale_palette());
+        Pytra.CsModule.gif_helper.save_gif(out_path, width, height, frames, Pytra.CsModule.gif_helper.grayscale_palette(), 5, 0);
         double elapsed = Pytra.CsModule.time.perf_counter() - start;
         System.Console.WriteLine(string.Join(" ", new object[] { "output:", out_path }));
         System.Console.WriteLine(string.Join(" ", new object[] { "frames:", frame_count }));
