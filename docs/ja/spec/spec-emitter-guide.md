@@ -154,13 +154,100 @@ if len(parts) > 1 and parts[0] == "pytra":
     native_path = "/".join(parts[1:]) + "_native.<ext>"
 ```
 
-## 5. runtime コピー
+## 5. 出力ファイル名の統一規約
+
+### モジュール → ファイル名のマッピング
+
+全言語共通で以下のルールに従う。emitter が独自の命名規則を使ってはならない。
+
+| module_id | 出力ファイル名 |
+|---|---|
+| `17_monte_carlo_pi` (entry) | `17_monte_carlo_pi.<ext>` |
+| `pytra.std.time` | `std/time.<ext>` |
+| `pytra.std.math` | `std/math.<ext>` |
+| `pytra.utils.gif` | `utils/gif.<ext>` |
+| `pytra.built_in.io_ops` | `built_in/io_ops.<ext>` |
+
+変換ルール: `module_id` から `pytra.` prefix を除去し、`.` を `/` に置換して拡張子を付加。`emit_all_modules` が自動で行うため、emitter 側での実装は不要。
+
+### native ファイルの命名
+
+手書きランタイムファイルは `_native` suffix を付ける:
+
+| module_id | 生成ファイル | native ファイル |
+|---|---|---|
+| `pytra.std.time` | `std/time.<ext>` | `std/time_native.<ext>` |
+| `pytra.std.math` | `std/math.<ext>` | `std/math_native.<ext>` |
+| `pytra.built_in.io_ops` | `built_in/io_ops.<ext>` | （built_in は py_runtime に統合） |
+
+### エントリモジュールの命名
+
+- **標準**: module_id そのまま → `17_monte_carlo_pi.<ext>`
+- **Java のみ例外**: `Main.java`（Java 言語仕様でクラス名 = ファイル名が必須）
+- **Scala のみ例外**: 全モジュールを単一ファイルにマージ
+
+これら以外のエントリファイル名の変更は禁止。
+
+## 5.1 @extern 委譲の命名統一
+
+### 委譲先の変数名
+
+全言語で `__native` を使う:
+
+```javascript
+// JS
+import * as __native from "../std/time_native.js";
+export function perf_counter() { return __native.perf_counter(); }
+```
+
+```zig
+// Zig
+const __native = @import("../std/time_native.zig");
+pub fn perf_counter() f64 { return __native.perf_counter(); }
+```
+
+```powershell
+# PowerShell
+. "$PSScriptRoot/../std/time_native.ps1"
+function perf_counter { return (__native_perf_counter) }
+```
+
+`__native` は予約語として扱い、ユーザーコードと衝突しないことを前提とする。PowerShell のように namespace がない言語では `__native_` prefix を関数名に付ける。
+
+### 委譲関数の命名
+
+- 生成される関数名は元の Python 関数名と**完全一致**させる。
+- native ファイル内の実装関数名も元の Python 関数名と一致させる。
+- `py_` prefix や `_native` suffix を関数名に付けてはならない（ファイル名の `_native` と関数名は別）。
+
+```
+# 正しい
+def perf_counter() → std/time.js の export function perf_counter()
+                   → std/time_native.js の function perf_counter()
+
+# 間違い
+def perf_counter() → function py_perf_counter()      ← prefix 禁止
+                   → function perf_counter_native()   ← suffix 禁止
+```
+
+### native ファイルの import パス
+
+`emit_context.root_rel_prefix` を使い、**同じモジュールの `_native` ファイル** を参照する:
+
+```python
+# std/time.<ext> から std/time_native.<ext> を参照
+native_import_path = root_rel_prefix + "std/time_native.<ext>"
+# root_rel_prefix = "../" (depth=1)  → "../std/time_native.<ext>"
+# root_rel_prefix = "./"  (depth=0)  → "./std/time_native.<ext>"
+```
+
+## 6. runtime コピー
 
 `emit_all_modules` に `lang="<lang>"` を渡せば、`src/runtime/<lang>/{built_in,std}/` から自動コピーされる。個別の `_copy_runtime` は不要。
 
 コピーは生成済みファイルを上書きしない（@extern 委譲コードが先に生成されるため）。
 
-## 6. 共通ユーティリティ（`code_emitter.py` スタンドアロン関数）
+## 7. 共通ユーティリティ（`code_emitter.py` スタンドアロン関数）
 
 `CodeEmitter` を継承しない emitter でも使える関数:
 
@@ -178,7 +265,7 @@ from toolchain.emit.common.emitter.code_emitter import (
 )
 ```
 
-## 7. emit_context の利用
+## 8. emit_context の利用
 
 `emit_all_modules` が各モジュールの `meta.emit_context` に設定する情報:
 
@@ -193,7 +280,7 @@ is_entry = emit_ctx.get("is_entry", False)         # エントリモジュール
 - `is_entry` は main 関数の emit や emit_main フラグに使う
 - `module_id` は @extern 委譲先の native パス解決に使う
 
-## 8. EAST3 ノードで emitter が対応すべきもの
+## 9. EAST3 ノードで emitter が対応すべきもの
 
 | ノード | 説明 | emitter の責務 |
 |---|---|---|
@@ -205,7 +292,7 @@ is_entry = emit_ctx.get("is_entry", False)         # エントリモジュール
 | `decorators: ["property"]` | @property メソッド | getter アクセスに変換 |
 | `mutates_self: true/false` | メソッドの self mutation | mutable/immutable self を選択 |
 
-## 9. チェックリスト
+## 10. チェックリスト
 
 新しい emitter を実装するときのチェックリスト:
 
