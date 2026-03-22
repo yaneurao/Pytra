@@ -284,26 +284,35 @@ def cmd_build(argv: list[str]) -> int:
             result = _run([go_exe])
             return result.returncode
 
-        # Java: javac all .java in emit_dir, then java main class
+        # Java: javac all .java in emit_dir (recursive), then java main class
         if target == "java":
             java_files: list[str] = []
-            for f in sorted(_os.listdir(emit_dir)):
-                if f.endswith(".java"):
-                    java_files.append(emit_dir + "/" + f)
+            for root_dir, dirs, files in _os.walk(emit_dir):
+                for f in sorted(files):
+                    if f.endswith(".java"):
+                        java_files.append(_os.path.join(root_dir, f))
             javac_cmd = ["javac", "-encoding", "UTF-8"] + java_files
             result = _run(javac_cmd)
             if result.returncode != 0:
                 return result.returncode
-            result = _run(["java", "-cp", emit_dir, "Main"])
+            # Include all subdirectories in classpath
+            cp_parts = [emit_dir]
+            for sub in sorted(_os.listdir(emit_dir)):
+                sub_path = emit_dir + "/" + sub
+                if _os.path.isdir(sub_path):
+                    cp_parts.append(sub_path)
+            cp = ":".join(cp_parts)
+            result = _run(["java", "-cp", cp, "Main"])
             return result.returncode
 
-        # Swift: swiftc all .swift in emit_dir → exe
+        # Swift: swiftc all .swift in emit_dir (recursive) → exe
         if target == "swift":
             swift_exe = emit_dir + "/" + exe_name
             swift_files: list[str] = []
-            for f in sorted(_os.listdir(emit_dir)):
-                if f.endswith(".swift"):
-                    swift_files.append(emit_dir + "/" + f)
+            for root_dir, dirs, files in _os.walk(emit_dir):
+                for f in sorted(files):
+                    if f.endswith(".swift"):
+                        swift_files.append(_os.path.join(root_dir, f))
             swiftc_cmd = ["swiftc"] + swift_files + ["-o", swift_exe]
             result = _run(swiftc_cmd)
             if result.returncode != 0:
@@ -339,9 +348,10 @@ def cmd_build(argv: list[str]) -> int:
         # Kotlin: kotlinc all .kt → jar, then java -cp jar main
         if target == "kotlin":
             kt_files: list[str] = []
-            for f in sorted(_os.listdir(emit_dir)):
-                if f.endswith(".kt"):
-                    kt_files.append(emit_dir + "/" + f)
+            for root_dir, dirs, files in _os.walk(emit_dir):
+                for f in sorted(files):
+                    if f.endswith(".kt"):
+                        kt_files.append(_os.path.join(root_dir, f))
             jar_path = emit_dir + "/" + entry_stem + ".jar"
             kotlinc_cmd = ["kotlinc"] + kt_files + ["-include-runtime", "-d", jar_path]
             result = _run(kotlinc_cmd)

@@ -779,6 +779,7 @@ _ASSERTION_RUNTIME_CALLS = set(list_noncpp_assertion_runtime_calls())
 _CURRENT_IMPORT_SYMBOLS: dict[str, dict[str, str]] = {}
 _RELATIVE_IMPORT_NAME_ALIASES: dict[str, str] = {}
 _IMPORT_ALIAS_MAP: list[dict[str, str]] = [{}]
+_CURRENT_MODULE_ID_JAVA: list[str] = [""]
 
 # stdlib module → Java class mapping for module.attr calls
 _JAVA_STDLIB_CLASS_MAP: dict[str, str] = {
@@ -2552,6 +2553,27 @@ def _block_guarantees_return(body: list[Any]) -> bool:
 
 
 def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[str]:
+    # @extern function → generate delegation to _native class
+    decorators = fn.get("decorators")
+    if isinstance(decorators, list) and "extern" in decorators and not in_class:
+        name = _safe_ident(fn.get("name"), "func")
+        return_type = _java_type(fn.get("return_type"), allow_void=True)
+        params = _function_params(fn, drop_self=False)
+        param_names: list[str] = []
+        arg_order = fn.get("arg_order", [])
+        if isinstance(arg_order, list):
+            for a in arg_order:
+                if isinstance(a, str):
+                    param_names.append(_safe_ident(a, "arg"))
+        # Determine native class name from module_id
+        module_id = _CURRENT_MODULE_ID_JAVA[0]
+        parts = module_id.split(".")
+        native_class = parts[-1] + "_native" if len(parts) > 0 else "native"
+        call = native_class + "." + name + "(" + ", ".join(param_names) + ")"
+        sig = indent + "public static " + return_type + " " + name + "(" + ", ".join(params) + ")"
+        if return_type == "void":
+            return [sig + " {", indent + "    " + call + ";", indent + "}"]
+        return [sig + " {", indent + "    return " + call + ";", indent + "}"]
     return _emit_function_in_class(fn, indent=indent, in_class=in_class, class_name=None)
 
 
@@ -2762,7 +2784,17 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
                         _CURRENT_IMPORT_SYMBOLS[key] = {"module": module_id, "name": symbol}
                     i += 1
 
-        main_class = _safe_ident(class_name, "Main")
+        # Determine class name and is_entry from emit_context
+        emit_ctx = meta.get("emit_context", {}) if isinstance(meta.get("emit_context"), dict) else {}
+        is_entry = bool(emit_ctx.get("is_entry", True))
+        emit_module_id = emit_ctx.get("module_id", "") if isinstance(emit_ctx.get("module_id"), str) else ""
+        _CURRENT_MODULE_ID_JAVA[0] = emit_module_id
+        if is_entry:
+            main_class = _safe_ident(class_name, "Main")
+        else:
+            # Sub-module: use module stem as class name
+            parts = emit_module_id.split(".")
+            main_class = _safe_ident(parts[-1] if len(parts) > 0 else class_name, "Module")
         functions: list[dict[str, Any]] = []
         classes: list[dict[str, Any]] = []
         i = 0
@@ -2848,25 +2880,26 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
             lines.extend(_emit_function(functions[i], indent="    ", in_class=False))
             i += 1
 
-        lines.append("")
-        lines.append("    public static void main(String[] args) {")
-        ctx: dict[str, Any] = {"tmp": 0}
-        if len(main_guard) > 0:
-            i = 0
-            while i < len(main_guard):
-                lines.extend(_emit_stmt(main_guard[i], indent="        ", ctx=ctx))
-                i += 1
-        else:
-            has_case_main = False
-            i = 0
-            while i < len(functions):
-                if functions[i].get("name") == "_case_main":
-                    has_case_main = True
-                    break
-                i += 1
-            if has_case_main:
-                lines.append("        _case_main();")
-        lines.append("    }")
+        if is_entry:
+            lines.append("")
+            lines.append("    public static void main(String[] args) {")
+            ctx: dict[str, Any] = {"tmp": 0}
+            if len(main_guard) > 0:
+                i = 0
+                while i < len(main_guard):
+                    lines.extend(_emit_stmt(main_guard[i], indent="        ", ctx=ctx))
+                    i += 1
+            else:
+                has_case_main = False
+                i = 0
+                while i < len(functions):
+                    if functions[i].get("name") == "_case_main":
+                        has_case_main = True
+                        break
+                    i += 1
+                if has_case_main:
+                    lines.append("        _case_main();")
+            lines.append("    }")
         lines.append("}")
         lines.append("")
         return "\n".join(lines)

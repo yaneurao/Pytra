@@ -1138,14 +1138,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     rendered_args = []
     i = 0
     while i < len(args):
-        arg_node = args[i]
-        rendered = _render_expr(arg_node)
-        # If argument has type 'object'/'unknown', cast to Double to avoid Any → Double errors
-        if isinstance(arg_node, dict):
-            arg_type = arg_node.get("resolved_type", "")
-            if isinstance(arg_type, str) and arg_type in ("object", "unknown", "any"):
-                rendered = "__pytra_float(" + rendered + ")"
-        rendered_args.append(rendered)
+        rendered_args.append(_render_expr(args[i]))
         i += 1
     return func_expr + "(" + ", ".join(rendered_args) + ")"
 
@@ -1372,7 +1365,10 @@ def _function_params(fn: dict[str, Any], *, drop_self: bool) -> list[str]:
     while i < len(names):
         name = names[i]
         param_name = mutable_param_name(name) if name in reassigned else name
-        out.append("_ " + param_name + ": " + _swift_type(arg_types.get(name), allow_void=False))
+        original_type = _swift_type(arg_types.get(name), allow_void=False)
+        # Use Any for all parameter types to avoid callers needing explicit casts
+        # (VarDecl may declare variables as Any/object that are passed to typed parameters)
+        out.append("_ " + param_name + ": Any")
         i += 1
     return out
 
@@ -2423,9 +2419,42 @@ def _emit_function(
             mutable_copies.append((p, mutable_param_name(p)))
         i += 1
 
+    # Emit type-cast shadows for parameters declared as Any
+    param_cast_names: set[str] = set()
+    j = 0
+    while j < len(param_names):
+        p = param_names[j]
+        original_type = _swift_type(arg_types.get(p), allow_void=False)
+        if original_type != "Any" and p not in reassigned:
+            cast_fn = ""
+            if original_type == "Int64":
+                cast_fn = "__pytra_int"
+            elif original_type == "Double":
+                cast_fn = "__pytra_float"
+            elif original_type == "String":
+                cast_fn = "__pytra_str"
+            elif original_type == "Bool":
+                cast_fn = "__pytra_truthy"
+            elif original_type == "[Any]":
+                cast_fn = "__pytra_as_list"
+            if cast_fn != "":
+                lines.append(indent + "    let " + p + ": " + original_type + " = " + cast_fn + "(" + p + ")")
+                param_cast_names.add(p)
+        j += 1
     # Emit mutable copies for reassigned params
     for orig, renamed in mutable_copies:
-        lines.append(indent + "    var " + orig + " = " + renamed)
+        original_type = _swift_type(arg_types.get(orig), allow_void=False)
+        cast_fn = ""
+        if original_type == "Int64":
+            cast_fn = "__pytra_int"
+        elif original_type == "Double":
+            cast_fn = "__pytra_float"
+        elif original_type == "String":
+            cast_fn = "__pytra_str"
+        if cast_fn != "":
+            lines.append(indent + "    var " + orig + ": " + original_type + " = " + cast_fn + "(" + renamed + ")")
+        else:
+            lines.append(indent + "    var " + orig + " = " + renamed)
 
     i = 0
     while i < len(body):
