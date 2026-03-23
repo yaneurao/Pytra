@@ -4613,8 +4613,8 @@ if __name__ == "__main__":
             self.assertIn("struct RAMBus : public pytra_mod_bus_port::BusPort {", generated_bus_h)
             self.assertIn("int64 read(int64 address) const override", generated_bus_h)
             self.assertIn("void write(int64 address, int64 value) override", generated_bus_h)
-            self.assertIn("cpu.poke(bus);", generated_bus)
-            self.assertIn("return cpu.reset(bus);", generated_bus)
+            self.assertIn("cpu.poke(*bus);", generated_bus)
+            self.assertIn("return cpu.reset(*bus);", generated_bus)
             self.assertNotIn("throw NotImplementedError;", generated_bus_port)
             self.assertIn('throw NotImplementedError("NotImplementedError");', generated_bus_port)
             header_cpu_src = out_dir / "header_cpu.cc"
