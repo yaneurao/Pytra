@@ -2559,9 +2559,12 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
                     param_txt = f"{ct}& {emitted_n}"
                     fn_sig_params.append(f"{ct}&")
                 else:
-                    use_object_param = borrow_ct == "object"
-                    param_txt = f"{borrow_ct} {emitted_n}" if use_object_param else f"{borrow_ct}& {emitted_n}"
-                    fn_sig_params.append(borrow_ct if use_object_param else f"{borrow_ct}&")
+                    # Object<T> (reference-counted handle) は値渡しで十分。
+                    # 値渡しでも内部 ControlBlock を共有するため参照セマンティクスが保たれる。
+                    # &渡しだと rc_list_from_value() 等の rvalue をバインドできない。
+                    use_value_param = borrow_ct == "object" or borrow_ct.startswith("Object<")
+                    param_txt = f"{borrow_ct} {emitted_n}" if use_value_param else f"{borrow_ct}& {emitted_n}"
+                    fn_sig_params.append(borrow_ct if use_value_param else f"{borrow_ct}&")
             elif by_ref:
                 if borrow_param:
                     param_txt = f"const {borrow_ct}& {emitted_n}"

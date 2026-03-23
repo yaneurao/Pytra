@@ -142,6 +142,9 @@ def write_multi_file_cpp(
             bucket, stem = _runtime_module_bucket_and_stem(mod_key)
             label = bucket + "/" + stem if bucket != "" else label
             is_extern = _runtime_module_has_native_cpp(bucket, stem)
+            # §6: built_in modules are provided by py_runtime — skip emit
+            if bucket == "built_in":
+                continue
         else:
             is_extern = False
         optimized_east: dict[str, Any] = east
