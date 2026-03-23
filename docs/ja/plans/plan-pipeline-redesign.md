@@ -298,7 +298,7 @@ class Call:
 | ファイル | selfhost 対象 | `Any` | 動的 import | Python 標準 |
 |---|---|---|---|---|
 | `src/toolchain2/**/*.py` | **対象** | 禁止 | 禁止 | 禁止 |
-| `src/pytra-cli2.py` | 非対象 | 許可 | 許可 | 許可 |
+| `src/pytra-cli2.py` | **対象** | 禁止 | 禁止 | 禁止（`pytra.std.*` を使用） |
 | `src/toolchain/**/*.py` | 非対象（旧） | 許可 | 許可 | 許可 |
 | `test/**/*.py` | 非対象 | 許可 | 許可 | 許可 |
 | `tools/**/*.py` | 非対象 | 許可 | 許可 | 許可 |
@@ -327,10 +327,12 @@ pytra-cli2 -golden --stage=east3-opt -o test/east3-opt/
 pytra-cli2 -golden --stage=emit --target=cpp -o test/emit/cpp/
 ```
 
-- `pytra-cli2.py` は selfhost 非対象（§5.7）なので、内部で現行 `toolchain/` を呼んでよい
+- golden file 生成は `tools/generate_golden.py`（selfhost 非対象）に分離する。`pytra-cli2.py` の `-golden` サブコマンドは廃止予定。
+- `pytra-cli2.py` は selfhost 対象とし、`toolchain/` への依存を持たない。
+- `tools/generate_golden.py` は内部で現行 `toolchain/` を呼んでよい。
 - 入力は `sample/py/*.py`（全 sample を自動列挙）
 - 出力先を `-o` で指定。省略時はデフォルトの `test/<stage>/` に出力
-- `toolchain2/` の自前実装が完成したら、`-golden` は不要になる（テスト自体が回帰テストに移行）
+- `toolchain2/` の自前実装が完成したら、golden file は回帰テスト用として維持する
 
 例（parse 段）:
 
