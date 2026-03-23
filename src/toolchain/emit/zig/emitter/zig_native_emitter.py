@@ -310,6 +310,8 @@ class ZigNativeEmitter:
         # Class context for parameter shadowing detection
         self._current_class_name: str = ""
         self._current_class_methods: list[dict[str, Any]] = []
+        # Parameter rename stack: original_name → zig_name (for shadowing avoidance)
+        self._param_rename_stack: list[dict[str, str]] = []
 
     def _zig_tuple_type(self, normalized_tuple_type: str) -> str:
         """タプル型を名前付き型として返す。初出時に typedef を登録する。"""
@@ -478,11 +480,31 @@ class ZigNativeEmitter:
         return t in self._classes_with_mut_method
 
     def _body_uses_name(self, body_any: Any, name: str) -> bool:
-        """body 内で指定した名前が参照されているか簡易判定する。"""
+        """body 内で指定した名前が Name ノードの id として参照されているか判定する。"""
         if not isinstance(body_any, list):
             return False
-        text = str(body_any)
-        return "'" + name + "'" in text
+        return self._node_uses_name(body_any, name)
+
+    def _node_uses_name(self, node: Any, name: str) -> bool:
+        """AST ノードツリー内で Name.id == name の参照を検索する。"""
+        if isinstance(node, dict):
+            nd: dict[str, Any] = node
+            if nd.get("kind") == "Name" and nd.get("id") == name:
+                return True
+            for key, val in nd.items():
+                # Skip non-structural fields
+                if key in {"repr", "source_span", "resolved_type", "semantic_tag",
+                           "runtime_call", "resolved_runtime_call", "runtime_module_id",
+                           "runtime_symbol", "escape_summary", "type_expr_summary_v1"}:
+                    continue
+                if self._node_uses_name(val, name):
+                    return True
+            return False
+        if isinstance(node, list):
+            for item in node:
+                if self._node_uses_name(item, name):
+                    return True
+        return False
 
     def _strip_dead_branches(self, body_any: Any) -> list[dict[str, Any]]:
         """body から dead branch (if false / isinstance) を除去したリストを返す。"""
@@ -1530,15 +1552,16 @@ class ZigNativeEmitter:
                 sib_name = sib.get("name", "") if isinstance(sib, dict) else ""
                 if sib_name != "":
                     sibling_method_names.add(sib_name)
+        fn_live_body = self._strip_dead_branches(stmt.get("body"))
         i = 0
         while i < len(arg_names):
             raw_name = args[i] if i < len(args) else arg_names[i]
             zig_ty = self._resolve_arg_zig_type(arg_names[i], raw_name, arg_types)
             param_name = arg_names[i]
-            # Check unused: EAST3 arg_usage or body scan
+            # Check unused: EAST3 arg_usage or body scan (excluding dead branches)
             is_unused = raw_name not in arg_usage
             if not is_unused:
-                is_unused = not self._body_uses_name(stmt.get("body"), param_name)
+                is_unused = not self._body_uses_name(fn_live_body, param_name)
             if is_unused:
                 param_name = "_"
             # Rename param if it shadows a sibling method name
@@ -1643,7 +1666,10 @@ class ZigNativeEmitter:
                     iter_expr = "pytra.list_items(" + iter_expr + ", " + elem + ")"
                 capture_name = target_name
                 reassign_after_capture = False
-                if target_name in self._hoisted_var_names:
+                # If loop variable is unused in body, use _ to avoid Zig error
+                if not self._body_uses_name(self._strip_dead_branches(stmt.get("body")), target_name):
+                    capture_name = "_"
+                elif target_name in self._hoisted_var_names:
                     capture_name = "_cap_" + target_name
                     reassign_after_capture = True
                 self._emit_line("for (" + iter_expr + ") |" + capture_name + "| {")
@@ -1836,7 +1862,8 @@ class ZigNativeEmitter:
         self._current_class_name = cls_name
         body_all = self._dict_list(stmt.get("body"))
         self._current_class_methods = [s for s in body_all if isinstance(s, dict) and s.get("kind") == "FunctionDef"]
-        self._emit_line("const " + cls_name + " = struct {")
+        struct_kw = "pub const" if self.is_submodule else "const"
+        self._emit_line(struct_kw + " " + cls_name + " = struct {")
         self.indent += 1
         # composition: 基底クラスフィールド
         if base_name != "":
@@ -1945,6 +1972,13 @@ class ZigNativeEmitter:
             self_mutated = self._body_mutates_self(stmt.get("body"))
             if not self_mutated:
                 self_mutated = cls_name in self._classes_with_mut_method
+        sibling_names: set[str] = set()
+        for sib in self._current_class_methods:
+            sn = sib.get("name", "") if isinstance(sib, dict) else ""
+            if sn != "":
+                sibling_names.add(sn)
+        live_body = self._strip_dead_branches(stmt.get("body"))
+        param_renames: dict[str, str] = {}  # original → renamed
         for i, arg in enumerate(arg_order):
             arg_name = _safe_ident(arg, "arg")
             if i == 0 and arg_name == "self":
@@ -1956,10 +1990,17 @@ class ZigNativeEmitter:
                 else:
                     arg_strs.append("self: *const " + cls_name)
                 continue
-            # Check if param name shadows a sibling method name
-            sibling_names = {m.get("name", "") for m in self._current_class_methods if isinstance(m, dict)}
+            # Unused param (not referenced in live branches) → _
+            if not self._body_uses_name(live_body, arg_name):
+                args.append("_")
+                zig_ty = self._resolve_arg_zig_type(arg_name, arg, arg_types)
+                arg_strs.append("_: " + zig_ty)
+                continue
+            # Param name shadows sibling method → rename + track mapping
             if arg_name in sibling_names and arg_name != method_name:
-                arg_name = arg_name + "_param"
+                new_name = arg_name + "_arg"
+                param_renames[arg_name] = new_name
+                arg_name = new_name
             args.append(arg_name)
             zig_ty = self._resolve_arg_zig_type(arg_name, arg, arg_types)
             arg_strs.append(arg_name + ": " + zig_ty)
@@ -1972,33 +2013,51 @@ class ZigNativeEmitter:
             self._emit_line("pub fn init(" + ", ".join(arg_strs[1:]) + ") " + cls_name + " {")
             self.indent += 1
             self._emit_line("var self: " + cls_name + " = undefined;")
+            self._param_rename_stack.append(param_renames)
             self._push_function_context(stmt, args, arg_order[1:] if len(arg_order) > 0 else arg_order)
             self._emit_block(stmt.get("body"))
             self._pop_function_context()
+            self._param_rename_stack.pop()
             self._emit_line("return self;")
             self.indent -= 1
             self._emit_line("}")
             self._emit_line("")
         else:
-            self._emit_line("pub fn " + method_name + "(" + ", ".join(arg_strs) + ") " + ret_type + " {")
+            # Emit method body to a temporary buffer, then post-check for unused params
+            saved_lines = self.lines
+            self.lines = []
             self.indent += 1
-            # Handle renamed params (shadowing avoidance) and unused params
-            live_body = self._strip_dead_branches(stmt.get("body"))
-            for idx_p, p in enumerate(args):
-                if p == "_" or p == "self":
-                    continue
-                # For renamed params (e.g. suffix_param), create alias to original name
-                if p.endswith("_param"):
-                    orig = p[:-len("_param")]
-                    self._emit_line("const " + orig + " = " + p + ";")
-                # Discard params unused in live branches
-                orig_name = p[:-len("_param")] if p.endswith("_param") else p
-                if not self._body_uses_name(live_body, orig_name):
-                    self._emit_line("_ = " + p + ";")
+            self._param_rename_stack.append(param_renames)
             self._push_function_context(stmt, args, arg_order[1:] if len(arg_order) > 0 else arg_order)
             self._emit_block(stmt.get("body"))
             self._pop_function_context()
+            self._param_rename_stack.pop()
             self.indent -= 1
+            method_body_lines = self.lines
+            self.lines = saved_lines
+            # Determine which non-self params are actually used in generated code
+            body_text = "\n".join(method_body_lines)
+            actual_unused: list[str] = []
+            for p in args:
+                if p == "_" or p == "self":
+                    continue
+                # Check if param name (or its renamed form) appears in the generated body
+                check_name = p
+                if check_name not in body_text:
+                    actual_unused.append(p)
+            # Rebuild arg_strs with _ for truly unused params
+            final_arg_strs: list[str] = []
+            for astr in arg_strs:
+                replaced = False
+                for unused_p in actual_unused:
+                    if astr.startswith(unused_p + ":"):
+                        final_arg_strs.append("_: " + astr.split(": ", 1)[1])
+                        replaced = True
+                        break
+                if not replaced:
+                    final_arg_strs.append(astr)
+            self._emit_line("pub fn " + method_name + "(" + ", ".join(final_arg_strs) + ") " + ret_type + " {")
+            self.lines.extend(method_body_lines)
             self._emit_line("}")
             self._emit_line("")
         self.current_class_name = prev_class
@@ -2174,6 +2233,13 @@ class ZigNativeEmitter:
                 return "false"
             if name == "None":
                 return "null"
+            # Apply param rename mapping (for Zig shadowing avoidance)
+            i_pr = len(self._param_rename_stack) - 1
+            while i_pr >= 0:
+                renamed = self._param_rename_stack[i_pr].get(name)
+                if renamed is not None:
+                    return renamed
+                i_pr -= 1
             return name
         if kind == "BinOp":
             left = self._render_expr(ed.get("left"))
@@ -2624,7 +2690,14 @@ class ZigNativeEmitter:
                         fn_expr = self._render_expr(args[1])
                         return fn_expr + "()"
                     return "{}"
-                if fname in self.class_names:
+                # Local class or imported class constructor (resolved_type matches func name)
+                call_resolved = str(node.get("resolved_type", ""))
+                is_local_class = fname in self.class_names
+                is_imported_class = not is_local_class and call_resolved == fname and fname != "" and fname[0].isupper()
+                if is_imported_class:
+                    # Imported class: use Type.init(args)
+                    return "pytra.make_object(" + fname + ", " + fname + ".init(" + ", ".join(arg_strs) + "))"
+                if is_local_class:
                     if self._has_vtable(fname):
                         vt_inst = "&" + fname + "_vt"
                         drop_arg = fname + "_drop_wrap" if fname in self._classes_with_del else "null"
@@ -2706,12 +2779,15 @@ class ZigNativeEmitter:
                             return "pytra.list_append(" + obj + ", " + elem_type + ", @intCast(" + arg_strs[0] + "))"
                         return "pytra.list_append(" + obj + ", " + elem_type + ", " + arg_strs[0] + ")"
                 if attr == "join":
-                    if len(arg_strs) > 0:
-                        arg_type = self._lookup_expr_type(args[0]) if len(args) > 0 else ""
-                        if arg_type.startswith("list["):
-                            return "pytra.str_join_sep(" + obj + ", pytra.list_items(" + arg_strs[0] + ", []const u8))"
-                        return "pytra.str_join_sep(" + obj + ", " + arg_strs[0] + ")"
-                    return "pytra.str_join_sep(" + obj + ", &.{})"
+                    # Only str.join → str_join_sep; module.join passes through
+                    owner_type = self._lookup_expr_type(obj_node_for_attr) if isinstance(obj_node_for_attr, dict) else ""
+                    if owner_type == "str":
+                        if len(arg_strs) > 0:
+                            arg_type = self._lookup_expr_type(args[0]) if len(args) > 0 else ""
+                            if arg_type.startswith("list["):
+                                return "pytra.str_join_sep(" + obj + ", pytra.list_items(" + arg_strs[0] + ", []const u8))"
+                            return "pytra.str_join_sep(" + obj + ", " + arg_strs[0] + ")"
+                        return "pytra.str_join_sep(" + obj + ", &.{})"
                 if attr == "pop":
                     obj_type = self._lookup_expr_type(obj_node_for_attr)
                     elem_type = "i64"
