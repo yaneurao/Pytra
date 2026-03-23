@@ -146,29 +146,16 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 - `../test/transpile/`: 変換生成物の作業ディレクトリ（Git 管理外）
   - GitHub 上では閲覧できません。必要な場合はローカルでトランスパイル実行して生成してください。
 
-### 画像一致に関する補足
+### parity check（出力一致検証）
 
-- `tools/verify_sample_outputs.py` は `sample/golden/manifest.json` を基準に、C++ 実行結果（`stdout` / 生成物）を照合します。
-- 通常実行では Python を毎回実行せず、ゴールデン更新時だけ Python 実行を使います。
-- 生成物は `suffix` / `size` / `sha256` で照合し、実質的にバイト列一致を確認します。
-
-画像一致検証を自動実行する場合:
+`tools/runtime_parity_check.py` が全言語共通の parity check 正本ツールです。Python 実行結果（stdout + artifact）とターゲット言語の実行結果を比較します。
 
 ```bash
-python3 tools/verify_sample_outputs.py --compile-flags="-O2"
-```
+# C++ のみ
+python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples
 
-- `stdout` 差分と、画像ファイル（`sha256` / `size` / `suffix`）差分をまとめて確認できます。
-- ソース更新でゴールデンが古くなっている場合は `--refresh-golden` を促すエラーになります。
-
-実行時間などの `stdout` 差分を無視して、画像一致のみ確認したい場合:
-
-```bash
-python3 tools/verify_sample_outputs.py --ignore-stdout --compile-flags="-O2"
-```
-
-ゴールデン基準を更新したい場合（Python 実行で再生成）:
-
-```bash
-python3 tools/verify_sample_outputs.py --refresh-golden --refresh-golden-only
+# 全言語
+python3 tools/runtime_parity_check.py \
+  --targets cpp,rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,php,scala,nim \
+  --case-root sample --all-samples
 ```

@@ -199,11 +199,10 @@ def _verify_cpp_outputs(changed_cpp_stems: set[str], compile_flags: str) -> tupl
     stems = sorted(changed_cpp_stems)
     cmd = [
         "python3",
-        "tools/verify_sample_outputs.py",
-        "--samples",
+        "tools/runtime_parity_check.py",
+        "--targets", "cpp",
+        "--case-root", "sample",
         *stems,
-        "--compile-flags",
-        compile_flags,
     ]
     cp = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
     if cp.returncode == 0:
@@ -212,7 +211,7 @@ def _verify_cpp_outputs(changed_cpp_stems: set[str], compile_flags: str) -> tupl
     if msg == "":
         msg = cp.stderr.strip()
     if msg == "":
-        msg = "verify_sample_outputs failed with no output"
+        msg = "runtime_parity_check failed with no output"
     first = msg.splitlines()[0]
     return False, first
 
@@ -242,12 +241,12 @@ def main() -> int:
     ap.add_argument(
         "--verify-cpp-on-diff",
         action="store_true",
-        help="run tools/verify_sample_outputs.py only for changed C++ outputs",
+        help="run runtime_parity_check.py --targets cpp for changed C++ outputs",
     )
     ap.add_argument(
         "--verify-cpp-flags",
         default="-O2",
-        help="compile flags passed to verify_sample_outputs.py --compile-flags",
+        help="compile flags (reserved for future use)",
     )
     args = ap.parse_args()
 

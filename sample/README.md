@@ -144,29 +144,16 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 - `../test/transpile/`: Working directory for transpilation artifacts (not tracked by Git)
   - Not viewable on GitHub. Generate locally by running transpilation when needed.
 
-### Notes On Image Matching
+### Parity Check (Output Verification)
 
-- `tools/verify_sample_outputs.py` compares C++ execution results (`stdout` / artifacts) against `sample/golden/manifest.json`.
-- In normal runs, Python is not executed every time; Python runs only when refreshing golden baselines.
-- Artifacts are checked by `suffix` / `size` / `sha256`, which effectively enforces byte-level parity.
-
-To run image parity checks automatically:
+`tools/runtime_parity_check.py` is the canonical parity check tool for all languages. It compares Python execution results (stdout + artifacts) against target language results.
 
 ```bash
-python3 tools/verify_sample_outputs.py --compile-flags="-O2"
-```
+# C++ only
+python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples
 
-- You can inspect both `stdout` diffs and artifact diffs (`sha256` / `size` / `suffix`) together.
-- If the source changed and golden is stale, the command fails and asks you to run `--refresh-golden`.
-
-If you want to ignore `stdout` diffs such as elapsed time and check image parity only:
-
-```bash
-python3 tools/verify_sample_outputs.py --ignore-stdout --compile-flags="-O2"
-```
-
-To refresh golden baselines by running Python outputs:
-
-```bash
-python3 tools/verify_sample_outputs.py --refresh-golden --refresh-golden-only
+# All languages
+python3 tools/runtime_parity_check.py \
+  --targets cpp,rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,php,scala,nim \
+  --case-root sample --all-samples
 ```

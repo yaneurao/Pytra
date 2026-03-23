@@ -201,18 +201,36 @@ def collect_sample_case_stems() -> list[str]:
     return out
 
 
+def collect_fixture_case_stems() -> list[str]:
+    """Collect all fixture case stems, excluding negative tests (ng_*) and __init__."""
+    out: list[str] = []
+    for p in sorted(FIXTURE_ROOT.rglob("*.py")):
+        stem = p.stem
+        if stem == "__init__":
+            continue
+        if stem.startswith("ng_"):
+            continue
+        if stem not in out:
+            out.append(stem)
+    return out
+
+
 def resolve_case_stems(cases: list[str], case_root: str, all_samples: bool) -> tuple[list[str], str]:
     if all_samples:
-        if case_root != "sample":
-            return [], "--all-samples requires --case-root sample"
         if len(cases) > 0:
             return [], "--all-samples cannot be combined with positional cases"
-        return collect_sample_case_stems(), ""
+        if case_root == "sample":
+            return collect_sample_case_stems(), ""
+        if case_root == "fixture":
+            return collect_fixture_case_stems(), ""
+        return [], "--all-samples: unknown case_root"
     if len(cases) > 0:
         return cases, ""
     if case_root == "sample":
         return collect_sample_case_stems(), ""
-    return ["math_extended", "pathlib_extended", "inheritance_virtual_dispatch_multilang"], ""
+    if case_root == "fixture":
+        return collect_fixture_case_stems(), ""
+    return [], "no cases specified"
 
 
 def build_targets(

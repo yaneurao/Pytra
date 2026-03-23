@@ -58,14 +58,11 @@
   - 目的: 変換器関連ファイルが変更されたとき、`src/toolchain/misc/transpiler_versions.json` の対応コンポーネント（`shared` / 言語別）で minor 以上のバージョン更新が行われているかを検証する。
 - `tools/regenerate_samples.py`
   - 目的: `sample/py` から各 `sample/<lang>` を再生成し、`src/toolchain/misc/transpiler_versions.json` のバージョン・トークンが変わらない限り再生成を skip する。
-  - 主要オプション: `--verify-cpp-on-diff`（C++ 生成差分が出たケースだけ `verify_sample_outputs.py` で compile/run 検証）
+  - 主要オプション: `--verify-cpp-on-diff`（C++ 生成差分が出たケースだけ `runtime_parity_check.py --targets cpp` で compile/run 検証）
 - `tools/run_regen_on_version_bump.py`
   - 目的: `transpiler_versions.json` の minor 以上の更新を検出したときだけ `regenerate_samples.py` を起動し、影響言語のみ再生成する。
 - `tools/sync_todo_history_translation.py`
   - 目的: `docs/ja/todo/archive` を正本として `docs/en/todo/archive` の日付ファイル雛形と index を同期し、`--check` で同期漏れを検出する。
-- `tools/verify_sample_outputs.py`
-  - 目的: `sample/golden/manifest.json` のゴールデン基準と C++ 実行結果（stdout/生成物）を比較し、通常検証で Python 実行を省略する。
-  - 主要オプション: `--samples`, `--compile-flags`, `--ignore-stdout`, `--golden-manifest`, `--refresh-golden`, `--refresh-golden-only`
 - `tools/verify_image_runtime_parity.py`
   - 目的: 画像ランタイム（PNG/GIF）の Python 正本と C++ 側の一致を確認する。
 - `tools/check_runtime_std_sot_guard.py`

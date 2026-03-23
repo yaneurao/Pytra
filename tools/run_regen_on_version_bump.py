@@ -145,7 +145,7 @@ def main() -> int:
     ap.add_argument(
         "--verify-cpp-flags",
         default="-O2",
-        help="compile flags for verify_sample_outputs.py",
+        help="compile flags (reserved for future use)",
     )
     args = ap.parse_args()
 
