@@ -349,7 +349,7 @@ def cmd_build(argv: list[str]) -> int:
                 safe_path = emit_dir + "/" + safe_name
                 _os.rename(nim_entry, safe_path)
                 nim_entry = safe_path
-            nim_cmd = ["nim", "c", "--hints:off", "-o:" + nim_exe, nim_entry]
+            nim_cmd = ["nim", "c", "--hints:off", "--warnings:off", "--path:" + emit_dir, "-o:" + nim_exe, nim_entry]
             result = _run(nim_cmd)
             if result.returncode != 0:
                 return result.returncode

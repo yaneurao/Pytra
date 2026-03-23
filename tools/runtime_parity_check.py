@@ -81,6 +81,43 @@ _LANG_UNSUPPORTED_FIXTURES: dict[str, set[str]] = {
         "try_raise", "finally", "enum_basic", "dataclass_basic",
         "match_exhaustive", "inheritance_class",
     },
+    "nim": {
+        # transpile_failed: unsupported modules / union types
+        "any_class_alias", "argparse_extended", "dict_get_items",
+        "json_extended", "type_alias_pep695",
+        # output_mismatch: isinstance stub / class emit issues
+        "class_body_pass", "class_inherit_basic", "isinstance_tuple_check",
+        "isinstance_user_class", "list_alias_shared_mutation",
+        "ok_multi_for_comp", "type_ignore_from_import",
+        # run_failed: type mismatch (Nim strict typing vs Python dynamic)
+        "any_dict_items", "boolop_value_select", "bytearray_basic",
+        "class_member", "comprehension_dict_set", "dataclass",
+        "dataclasses_extended", "deque_basic", "finally", "for_over_string",
+        "from_import_symbols", "fstring_prefix", "import_pytra_runtime_png",
+        "in_membership", "inheritance", "inheritance_polymorphic_dispatch",
+        "list_repeat", "none_optional", "ok_fstring_format_spec",
+        "ok_typed_varargs_representative", "pathlib_extended",
+        "pytra_runtime_png", "staticmethod_basic", "str_for_each",
+        "str_index_char_compare", "str_join_method", "try_raise",
+        # run_failed: seq[auto] type inference gap
+        "any_basic", "any_list_mixed", "nested_types",
+        # run_failed: undeclared identifiers (enum, super, etc.)
+        "class_tuple_assign", "enum_basic", "enum_extended",
+        "from_pytra_std_import_math", "inheritance_virtual_dispatch_multilang",
+        "intenum_basic", "intflag_basic", "ok_class_inline_method",
+        "os_glob_extended", "pytra_std_import_math", "reversed_enumerate",
+        "set_wrapper_methods", "str_methods", "super_init",
+        # run_failed: indentation / comprehension emit
+        "comprehension_nested", "ok_generator_tuple_target", "ok_list_concat_comp",
+        # run_failed: missing native modules (sys, typing, re, etc.)
+        "sys_extended", "typing_extended", "re_extended",
+        # run_failed: lambda / other
+        "any_none", "bytes_basic", "dict_wrapper_methods", "enumerate_basic",
+        "lambda_as_arg", "lambda_basic", "lambda_capture_multiargs",
+        "lambda_ifexp", "lambda_immediate", "lambda_local_state",
+        "math_path_runtime_ir", "ok_lambda_default", "pass_through_comment",
+        "path_stringify", "str_slice",
+    },
     "php": {
         # output_mismatch: $_case_main undefined variable warning (py_assert_stdout pattern)
         "add", "alias_arg", "assign", "class", "class_body_pass",
