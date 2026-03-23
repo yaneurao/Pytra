@@ -27,8 +27,8 @@ from toolchain.emit.cpp.emitter.header_builder import build_cpp_header_from_east
 from toolchain.emit.cpp.optimizer import optimize_cpp_ir
 from toolchain.emit.cpp.optimizer import render_cpp_opt_trace
 
-_RUNTIME_EAST_ROOT_STR = str(Path(__file__).resolve().parents[3] / "runtime" / "east")
-_RUNTIME_CPP_ROOT_STR = str(Path(__file__).resolve().parents[3] / "runtime" / "cpp")
+_RUNTIME_EAST_ROOT_STR = str(Path(__file__).resolve().parents[4] / "runtime" / "east")
+_RUNTIME_CPP_ROOT_STR = str(Path(__file__).resolve().parents[4] / "runtime" / "cpp")
 
 
 def _is_runtime_module_path(path_str: str) -> bool:
@@ -247,11 +247,20 @@ def write_multi_file_cpp(
         seen_dep_includes: set[str] = set()
         for mod_name in dep_modules:
             target_key = module_key_by_name.get(mod_name, "")
-            # Resolve relative module IDs (e.g. ".controller" → match "nes.controller")
+            # Resolve relative module IDs (e.g. ".controller" → match "nes.controller",
+            # "..helper" or "...helper" → match "helper")
             if target_key == "" and mod_name.startswith("."):
                 suffix = mod_name.lstrip(".")
+                if suffix != "":
+                    for candidate_name, candidate_key in module_key_by_name.items():
+                        if candidate_name.endswith("." + suffix) or candidate_name == suffix:
+                            target_key = candidate_key
+                            break
+            # Also try bare export_name match for relative imports
+            # (e.g. "from .. import helper" produces module_id=".." with export_name="helper")
+            if target_key == "":
                 for candidate_name, candidate_key in module_key_by_name.items():
-                    if candidate_name.endswith("." + suffix) or candidate_name == suffix:
+                    if candidate_name == mod_name:
                         target_key = candidate_key
                         break
             if target_key != "" and target_key != mod_key:

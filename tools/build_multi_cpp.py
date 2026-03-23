@@ -53,36 +53,52 @@ def main(argv: list[str]) -> int:
         print(f"error: manifest not found: {manifest_path}", file=sys.stderr)
         return 1
     def _collect_generated_cpp_sources() -> list[str]:
-        """Collect only the generated .cpp files that are actually #included by module sources."""
+        """Collect generated .cpp files that are actually referenced by module sources.
+
+        Scans module sources for #include directives, resolves them against
+        the generated directory, and links the corresponding .cpp if it exists.
+        """
         gen_dir = os.environ.get("PYTRA_GENERATED_CPP_DIR", "out/_test_generated_cpp")
         gen_path = Path(gen_dir)
         if not gen_path.exists():
             return []
-        # Include generated .cpp files needed for test compilation.
-        # Only include files verified to compile correctly.
-        # NOTE: Most generated std/*.cpp files have Object<T> migration
-        # incompatibilities (py_repeat on str, expected primary-expression, etc.)
-        # Only include files verified to compile correctly.
-        needed = [
-            gen_path / "utils" / "assertions.cpp",
-            gen_path / "utils" / "png.cpp",
-            gen_path / "built_in" / "type_id.cpp",
-        ]
+        import re as _re
+        _inc_re = _re.compile(r'^\s*#include\s+"([^"]+)"', _re.MULTILINE)
+        # Collect all #include targets from module sources
+        included_headers: set[str] = set()
+        for src_path in module_sources:
+            p = Path(src_path)
+            if p.exists():
+                for inc in _inc_re.findall(p.read_text(encoding="utf-8")):
+                    included_headers.add(inc)
+        # Also scan include dir headers (transitive deps)
+        if include_dir_path.exists():
+            for hdr in include_dir_path.rglob("*.h"):
+                for inc in _inc_re.findall(hdr.read_text(encoding="utf-8")):
+                    included_headers.add(inc)
+        needed: list[Path] = []
+        seen: set[str] = set()
+        for inc in sorted(included_headers):
+            # Resolve against generated dir
+            gen_file = gen_path / inc
+            if gen_file.exists() and gen_file.suffix == ".h":
+                cpp_file = gen_file.with_suffix(".cpp")
+                if cpp_file.exists() and str(cpp_file) not in seen:
+                    seen.add(str(cpp_file))
+                    needed.append(cpp_file)
         # Also include native C++ implementations for extern runtime modules.
-        # Only include if the corresponding generated header exists (native .cpp
-        # includes generated .h, so linking without the header causes errors).
-        native_exclude = {"glob.cpp"}  # glob.cpp uses Object<list<str>> but conftest header uses rc<list<str>>
         native_cpp_root = Path("src/runtime/cpp")
         for subdir in ["std", "utils"]:
             native_dir = native_cpp_root / subdir
             if native_dir.exists():
                 for cpp_file in sorted(native_dir.glob("*.cpp")):
-                    if cpp_file.name in native_exclude:
-                        continue
-                    # Check that the generated header exists
                     gen_header = gen_path / subdir / cpp_file.with_suffix(".h").name
-                    if gen_header.exists():
-                        needed.append(cpp_file)
+                    if gen_header.exists() and str(cpp_file) not in seen:
+                        # Only include if a module actually references this header
+                        header_ref = subdir + "/" + cpp_file.with_suffix(".h").name
+                        if header_ref in included_headers:
+                            seen.add(str(cpp_file))
+                            needed.append(cpp_file)
         return [str(f) for f in needed if f.exists()]
 
     manifest = _load_manifest(manifest_path)

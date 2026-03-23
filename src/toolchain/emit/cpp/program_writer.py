@@ -19,21 +19,22 @@ from toolchain.misc.transpile_cli import (
 from toolchain.json_adapters import dumps_object as _json_dumps_object
 
 
-_PROJECT_ROOT = Path(__file__).resolve().parents[3]
-_RUNTIME_CPP_ROOT = _PROJECT_ROOT / "src" / "runtime" / "cpp"
-_RUNTIME_EAST_ROOT = _PROJECT_ROOT / "src" / "runtime" / "east"
+_SRC_ROOT = Path(__file__).resolve().parents[3]
+_RUNTIME_CPP_ROOT = _SRC_ROOT / "runtime" / "cpp"
+_RUNTIME_EAST_ROOT = _SRC_ROOT / "runtime" / "east"
 
 
 def _copy_native_runtime_to_output(output_root: Path) -> list[str]:
-    """Copy native C++ runtime headers/sources to output directory.
+    """Copy native and generated C++ runtime headers/sources to output directory.
 
-    Preserves namespace folder structure (core/, built_in/, std/).
+    Preserves namespace folder structure (core/, built_in/, std/, utils/).
     Returns list of copied file paths.
     """
     copied: list[str] = []
     src_root_str = str(_RUNTIME_CPP_ROOT)
     if not os.path.isdir(src_root_str):
         return copied
+    # Copy from top-level layout (core/, built_in/, std/)
     for subdir in ("core", "built_in", "std"):
         src_dir_str = os.path.join(src_root_str, subdir)
         if not os.path.isdir(src_dir_str):
@@ -48,6 +49,25 @@ def _copy_native_runtime_to_output(output_root: Path) -> list[str]:
                     dst_file = os.path.join(dst_dir_str, name)
                     shutil.copy2(src_file, dst_file)
                     copied.append(dst_file)
+    # Copy from generated/ and native/ layout into namespace folders
+    for layout in ("generated", "native"):
+        layout_dir_str = os.path.join(src_root_str, layout)
+        if not os.path.isdir(layout_dir_str):
+            continue
+        for subdir in ("core", "built_in", "std", "utils"):
+            src_dir_str = os.path.join(layout_dir_str, subdir)
+            if not os.path.isdir(src_dir_str):
+                continue
+            dst_dir = output_root / subdir
+            dst_dir.mkdir(parents=True, exist_ok=True)
+            dst_dir_str = str(dst_dir)
+            for name in sorted(os.listdir(src_dir_str)):
+                if name.endswith(".h") or name.endswith(".cpp"):
+                    src_file = os.path.join(src_dir_str, name)
+                    dst_file = os.path.join(dst_dir_str, name)
+                    if os.path.isfile(src_file) and not os.path.isfile(dst_file):
+                        shutil.copy2(src_file, dst_file)
+                        copied.append(dst_file)
     return copied
 
 
@@ -332,19 +352,23 @@ def write_cpp_rendered_program(
         kind = _text(item.get("kind")) if _text(item.get("kind")) != "" else "user"
         if kind == "runtime":
             # Runtime modules: write header to output_root/<label>.h
+            # Skip if canonical generated/native header was already copied
             hdr_path = output_root / (label + ".h")
             mkdirs_for_cli(str(hdr_path.parent))
-            generated_lines_total += count_text_lines(header_text)
-            _check_generated_limit(generated_lines_total, max_generated_lines, module_key if module_key != "" else label)
-            write_text_file(hdr_path, header_text)
+            if not hdr_path.exists():
+                generated_lines_total += count_text_lines(header_text)
+                _check_generated_limit(generated_lines_total, max_generated_lines, module_key if module_key != "" else label)
+                write_text_file(hdr_path, header_text)
             output_files.append(str(hdr_path))
             # Write .cpp only if there is meaningful source (not @extern placeholder)
+            # and canonical generated/native source was not already copied
             if source_text != "" and not source_text.startswith("// @extern:"):
                 cpp_path = output_root / (label + ".cpp")
                 mkdirs_for_cli(str(cpp_path.parent))
-                generated_lines_total += count_text_lines(source_text)
-                _check_generated_limit(generated_lines_total, max_generated_lines, module_key if module_key != "" else label)
-                write_text_file(cpp_path, source_text)
+                if not cpp_path.exists():
+                    generated_lines_total += count_text_lines(source_text)
+                    _check_generated_limit(generated_lines_total, max_generated_lines, module_key if module_key != "" else label)
+                    write_text_file(cpp_path, source_text)
                 output_files.append(str(cpp_path))
             else:
                 cpp_path = output_root / (label + ".cpp")

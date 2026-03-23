@@ -569,21 +569,12 @@ class CppModuleEmitter:
             if inc != "" and inc not in seen:
                 seen.add(inc)
                 includes.append(inc)
-        # User module dependencies: module_id → module_id.replace(".", "/") + ".h"
+        # User module dependencies are NOT resolved here.
+        # In multi-file mode, the multifile_writer adds user module includes
+        # using the correct label-based paths from module_label_map.
+        # The emitter does not know the label, so it must not generate
+        # user module includes.
         meta = self.doc.get("meta") if isinstance(self.doc, dict) else None
-        if isinstance(meta, dict):
-            linked_meta = dict_any_get_dict(meta, "linked_program_v1")
-            user_deps = linked_meta.get("user_module_dependencies_v1") if isinstance(linked_meta, dict) else None
-            if isinstance(user_deps, list):
-                for ud in user_deps:
-                    if isinstance(ud, str) and ud != "":
-                        # Skip runtime modules — they are handled by resolved_dependencies_v1
-                        if ud.startswith("pytra."):
-                            continue
-                        inc = ud.replace(".", "/") + ".h"
-                        if inc not in seen:
-                            seen.add(inc)
-                            includes.append(inc)
         # Also resolve includes from import bindings (catches sub-module imports
         # like `from pytra.utils import png` where dep is "pytra.utils" not "pytra.utils.png")
         if isinstance(meta, dict):
