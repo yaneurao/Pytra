@@ -160,7 +160,7 @@
 1. [x] [ID: P2-COMMON-TEST-S1] 共通テスト基盤 — `runtime_parity_check.py --case-root fixture --all-samples` で 128 fixture を全言語実行可能
 2. [x] [ID: P2-COMMON-TEST-S2] 言語ごとの unsupported fixture を `_LANG_UNSUPPORTED_FIXTURES` に登録し、skip 分類する
 3. [ ] [ID: P2-COMMON-TEST-S3] `test_py2cpp_features.py` から共通化済みテストを除去し、C++ 固有テストのみに絞る
-4. [ ] [ID: P2-COMMON-TEST-S4] smoke テストのインライン Python ソースを `test/fixtures/` に棚卸し（print 付き main guard 追加、smoke は fixture 参照に変更）
+4. [x] [ID: P2-COMMON-TEST-S4] smoke テストのインライン Python ソースを `test/fixtures/` に棚卸し（print 付き main guard 追加）
 
 進捗:
 - 2026-03-23: S1 完了。`runtime_parity_check.py` の fixture 対応で代替達成。pytest ラッパーは不要と判断。
