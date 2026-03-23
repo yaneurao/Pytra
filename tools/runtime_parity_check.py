@@ -12,7 +12,7 @@ import shlex
 import shutil
 import subprocess
 import sys
-import tempfile
+
 import zlib
 from dataclasses import dataclass
 from pathlib import Path
@@ -321,8 +321,11 @@ def check_case(
         print(f"[ERROR] missing case: {case_stem}")
         _record("-", "case_missing", "missing case")
         return 1
-    with tempfile.TemporaryDirectory() as tmpdir:
-        work = Path(tmpdir)
+    work = ROOT / "work" / "transpile" / "parity" / case_stem
+    if work.exists():
+        shutil.rmtree(work)
+    work.mkdir(parents=True, exist_ok=True)
+    try:
         (work / "src").symlink_to(ROOT / "src", target_is_directory=True)
         (work / "test").symlink_to(ROOT / "test", target_is_directory=True)
         (work / "out").mkdir(parents=True, exist_ok=True)
@@ -474,6 +477,11 @@ def check_case(
             )
             print(f"[OK] {case_stem}:{target.name} {artifact_info}")
             _record(target.name, "ok", artifact_info)
+
+    finally:
+        # Clean up work directory after parity check
+        if work.exists():
+            shutil.rmtree(work, ignore_errors=True)
 
     if mismatches:
         print("\n[FAIL] mismatches")
