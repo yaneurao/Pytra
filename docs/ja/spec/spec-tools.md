@@ -92,6 +92,14 @@
   - [ ] `src/toolchain/emit/*/emitter/*.py` に禁止 runtime 実装シンボルの増分がない。
   - [ ] runtime/stdlib 呼び出し解決が EAST3 正本（`runtime_call` / `resolved_runtime_call` / `resolved_runtime_source`）のみを利用している。
 
+### 1.x golden file 生成
+
+- `tools/generate_golden.py`
+  - 目的: 現行 `toolchain/` を使って各段（east1 / east2 / east3 / east3-opt）の golden file を `test/` に一括生成する。`toolchain2/` の自前実装が golden file と一致するかを検証するための正解データ。
+  - 主要オプション: `--stage={east1,east2,east3,east3-opt}`, `-o OUTPUT_DIR`, `--from=python`, `--sample-dir`
+  - 設計文書: `docs/ja/plans/plan-pipeline-redesign.md` §6.1
+  - 注意: golden file 生成は本ツールに一元化する。各 agent が独自スクリプトで golden file を作ることを禁止する。
+
 ## 2. selfhost 関連
 
 - `tools/build_selfhost.py`
