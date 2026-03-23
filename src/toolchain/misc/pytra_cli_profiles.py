@@ -123,7 +123,7 @@ def resolve_output_path(input_path: Path, target: str, output: str, output_dir: 
     if output != "":
         return Path(output)
     profile = get_target_profile(target)
-    out_dir = Path(output_dir) if output_dir != "" else Path("out")
+    out_dir = Path(output_dir) if output_dir != "" else Path("work/tmp")
     if profile.fixed_output_name != "":
         return out_dir / profile.fixed_output_name
     stem = input_path.stem if input_path.stem != "" else "output"
@@ -257,7 +257,7 @@ def make_noncpp_build_plan(
             import glob as _glob
             for native_f in sorted(_glob.glob(str(out_dir / "std" / "*_native.scala"))):
                 scala_files.append(native_f)
-            run_cmd = ["scala-cli", "run"] + scala_files
+            run_cmd = ["scala-cli", "run", "--jvm", "17"] + scala_files
         else:
             run_cmd = None
         return NonCppBuildPlan(build_cmd=None, run_cmd=run_cmd)

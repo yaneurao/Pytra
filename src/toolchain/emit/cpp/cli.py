@@ -1257,7 +1257,7 @@ def main(argv: list[str]) -> int:
                 )
             else:
                 module_east_map: dict[str, dict[str, Any]] = {str(input_path): east_module}
-            out_dir = Path(output_dir_txt) if output_dir_txt != "" else Path("out")
+            out_dir = Path(output_dir_txt) if output_dir_txt != "" else Path("work/tmp")
             out_dir = Path(output_txt) if output_txt != "" else out_dir
             mf = _write_multi_file_cpp(
                 input_path,
