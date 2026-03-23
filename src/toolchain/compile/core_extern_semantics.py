@@ -51,9 +51,7 @@ def _sh_collect_extern_var_metadata(
     import_module_bindings: dict[str, str],
     import_symbol_bindings: dict[str, dict[str, str]],
 ) -> dict[str, Any] | None:
-    """`name: Any = extern(...)` から ambient global metadata を抽出する。"""
-    if annotation not in {"Any", "object", ""}:
-        return None
+    """`name: T = extern(...)` から ambient global metadata を抽出する。"""
     if not isinstance(value_expr, dict) or str(value_expr.get("kind", "")) != "Call":
         return None
     call_head = _sh_expr_attr_chain(value_expr.get("func"))
@@ -72,15 +70,14 @@ def _sh_collect_extern_var_metadata(
         symbol = target_name
     elif len(args) == 1:
         arg0 = args[0]
-        if (
-            not isinstance(arg0, dict)
-            or str(arg0.get("kind", "")) != "Constant"
-            or str(arg0.get("resolved_type", "")) != "str"
-        ):
-            return None
-        symbol = str(arg0.get("value", "")).strip()
-        if symbol == "":
-            return None
+        if isinstance(arg0, dict) and str(arg0.get("kind", "")) == "Constant" and str(arg0.get("resolved_type", "")) == "str":
+            symbol = str(arg0.get("value", "")).strip()
+            if symbol == "":
+                return None
+        else:
+            # extern(expr) — expr is a Python host fallback value.
+            # Transpiler ignores it and delegates to _native module.
+            symbol = target_name
     else:
         return None
     return {

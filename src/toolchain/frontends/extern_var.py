@@ -6,7 +6,11 @@ from dataclasses import dataclass
 from typing import Any
 
 
-_AMBIENT_EXTERN_SUPPORTED_TARGETS = {"js", "ts"}
+_AMBIENT_EXTERN_SUPPORTED_TARGETS = {
+    "cpp", "rs", "cs", "js", "ts", "go", "java", "kotlin", "swift",
+    "ruby", "lua", "php", "scala", "nim", "zig", "dart", "julia",
+    "powershell",
+}
 
 
 @dataclass(frozen=True)
