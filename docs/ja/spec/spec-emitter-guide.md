@@ -115,6 +115,20 @@ def _module_id_to_import_path(module_id: str, ext: str, root_rel_prefix: str) ->
     return root_rel_prefix + rel.replace(".", "/") + ext
 ```
 
+### import 文生成が不要な言語
+
+Swift のように全ファイルを一括コンパイルし、同一モジュール内のシンボルが `import` なしで相互参照可能な言語では、**ソースに import 文を生成する必要がない**。
+
+ただし `build_import_alias_map` は import 文生成のためだけでなく、**module attr call の owner 名解決**（`math.sqrt` → `pytra.std.math` → 正しい namespace/関数呼び出し）にも使われる。import 文を生成しない言語でも `build_import_alias_map` は必要。
+
+| 言語 | import 文生成 | `build_import_alias_map` |
+|---|---|---|
+| JS/TS | `import { ... } from "..."` を生成 | 必要（import 生成 + alias 解決） |
+| Go | import 不要（フラット配置） | 必要（alias 解決） |
+| Swift | import 不要（一括コンパイル） | 必要（alias 解決） |
+| Zig | `@import("...")` を生成 | 必要（import 生成 + alias 解決） |
+| その他 | 言語に応じて生成 | 必要 |
+
 ### symbol import と module import の区別
 
 `import_bindings` の `binding_kind` には `"module"` と `"symbol"` がある。これらを正しく区別すること。
