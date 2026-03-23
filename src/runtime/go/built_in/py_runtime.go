@@ -1522,6 +1522,15 @@ func __pytra_as_list(v any) []any {
 	if t, ok := v.(*PyList); ok {
 		return t.Items
 	}
+	if t, ok := v.(string); ok {
+		// String iteration: split into individual characters
+		runes := []rune(t)
+		out := make([]any, len(runes))
+		for i, r := range runes {
+			out[i] = string(r)
+		}
+		return out
+	}
 	return []any{}
 }
 
@@ -1567,7 +1576,11 @@ func __pytra_print(args ...any) {
 		fmt.Println()
 		return
 	}
-	fmt.Println(args...)
+	parts := make([]string, 0, len(args))
+	for _, a := range args {
+		parts = append(parts, pyToString(a))
+	}
+	fmt.Println(strings.Join(parts, " "))
 }
 
 func __pytra_min(a any, b any) any {

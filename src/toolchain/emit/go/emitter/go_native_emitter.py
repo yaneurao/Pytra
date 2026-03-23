@@ -637,9 +637,9 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
 
 
 def _compare_op_symbol(op: Any) -> str:
-    if op == "Eq":
+    if op == "Eq" or op == "Is":
         return "=="
-    if op == "NotEq":
+    if op == "NotEq" or op == "IsNot":
         return "!="
     if op == "Lt":
         return "<"
