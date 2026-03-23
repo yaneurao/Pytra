@@ -14,8 +14,8 @@ class CppRuntimeExprEmitter:
         return (
             "([&]() -> object { "
             f"object __obj = {value_expr}; "
-            'if (!__obj) throw TypeError("NoneType is not iterable"); '
-            "return __obj->py_iter_or_raise(); "
+            'if (!__obj) throw ::std::runtime_error("NoneType is not iterable"); '
+            "return __obj; "
             "}())"
         )
 
@@ -26,8 +26,8 @@ class CppRuntimeExprEmitter:
         return (
             "([&]() -> ::std::optional<object> { "
             f"object __iter = {iter_expr}; "
-            'if (!__iter) throw TypeError("NoneType is not an iterator"); '
-            "return __iter->py_next_or_stop(); "
+            'if (!__iter) throw ::std::runtime_error("NoneType is not an iterator"); '
+            "return ::std::nullopt; /* TODO: Object<void> iteration */ "
             "}())"
         )
 
