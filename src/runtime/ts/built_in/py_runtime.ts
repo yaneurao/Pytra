@@ -1,6 +1,9 @@
 // Python 互換ランタイム（TypeScript版）の共通関数群。
 // 将来的な Python -> TypeScript ネイティブ変換コードから利用する。
 
+import { writeFileSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+
 export const PY_TYPE_NONE = 0;
 export const PY_TYPE_BOOL = 1;
 export const PY_TYPE_NUMBER = 2;
@@ -485,4 +488,25 @@ export function pyIsDigit(value: unknown): boolean {
 /** Python の str.isalpha 相当。 */
 export function pyIsAlpha(value: unknown): boolean {
   return typeof value === "string" && value.length > 0 && /^[A-Za-z]+$/.test(value);
+}
+
+/** Python の open 相当（バイナリ書き込み専用）。 */
+export function open(filePath: string, _mode?: string): { write(data: number[]): void; close(): void } {
+  const dir = dirname(filePath);
+  if (dir !== "" && dir !== ".") {
+    mkdirSync(dir, { recursive: true });
+  }
+  const buf: number[] = [];
+  return {
+    write(data: number[]): void {
+      if (Array.isArray(data)) {
+        for (let i = 0; i < data.length; i++) {
+          buf.push(data[i] & 0xFF);
+        }
+      }
+    },
+    close(): void {
+      writeFileSync(filePath, Buffer.from(buf));
+    },
+  };
 }
