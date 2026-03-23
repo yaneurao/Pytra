@@ -85,71 +85,9 @@
 
 ## 2. selfhost 関連
 
-- `tools/build_selfhost.py`
-  - 目的: selfhost 用 `selfhost/py2cpp.out` を生成する（生成 C++ への手動 main パッチなし）。
-- `tools/build_selfhost_stage2.py`
-  - 目的: `selfhost/py2cpp.out` で `selfhost/py2cpp.py` を再変換し、2段自己変換バイナリ `selfhost/py2cpp_stage2.out` を生成する。
-- `tools/prepare_selfhost_source.py`
-  - 目的: `CodeEmitter` などを selfhost 用ソースへ展開し、自己完結化する。
-- `tools/selfhost_transpile.py`
-  - 目的: 暫定ブリッジとして `.py -> EAST JSON -> selfhost` 経路を実行する。
-- `tools/check_selfhost_cpp_diff.py`
-  - 目的: Python 版と selfhost 版の生成 C++ 差分を比較する。
-  - 主要オプション: `--mode strict`, `--show-diff`, `--selfhost-driver`
-- `tools/check_selfhost_direct_compile.py`
-  - 目的: selfhost の `.py` 直入力経路を `sample/py` で一括変換し、`g++ -fsyntax-only` でコンパイル回帰を即時検出する。
-- `tools/check_selfhost_stage2_cpp_diff.py`
-  - 目的: Python 版と 2段自己変換版（`selfhost/py2cpp_stage2.out`）の生成 C++ 差分を比較する。
-  - 主要オプション: `--skip-build`, `--mode strict`, `--show-diff`
-- `tools/check_selfhost_stage2_sample_parity.py`
-  - 目的: `selfhost/py2cpp_stage2.out` を使って `sample/py/*.py` 全件の transpile + compile + run parity を確認する。
+旧 selfhost ツール群（`build_selfhost.py`, `prepare_selfhost_source.py`, `check_selfhost_*.py` 等）は `tools/unregistered/` に退避済み。
 
-補足:
-- 2026-03-08 時点で C++ selfhost の stage1 build、direct `.py` route、representative host/selfhost diff、stage2 build は current runtime/layout 契約で green である。
-- 2026-03-09 時点で `tools/check_selfhost_stage2_sample_parity.py --skip-build` により stage2 selfhost binary の full sample parity（`pass=18 fail=0`）も green である。
-- `tools/selfhost_transpile.py` は direct `.py` route の代替ではなく、調査時の fallback としてだけ扱う。
-- `tools/summarize_selfhost_errors.py`
-  - 目的: selfhost ビルドログのエラーをカテゴリ別に集計する。
-- `tools/selfhost_error_hotspots.py`
-  - 目的: エラー集中箇所を関数単位で集約する。
-- `tools/selfhost_error_report.py`
-  - 目的: selfhost エラー解析結果のレポートを整形出力する。
-
-### 2.1 selfhost 暴走ガード（実装済み）
-
-selfhost の調査時に、深い再帰・巨大構文木・シンボル爆発で実行が長時間化するケースを早期停止できるよう、以下のガードを `pytra-cli.py --target cpp` / 共通 CLI へ段階導入する。
-
-- `--guard-profile {off,default,strict}`
-  - 既定は `default`。`off` は制限無効、`strict` は調査向けに低い上限を適用する。
-  - `default` の既定値:
-    - `max-ast-depth=800`
-    - `max-parse-nodes=2000000`
-    - `max-symbols-per-module=200000`
-    - `max-scope-depth=400`
-    - `max-import-graph-nodes=5000`
-    - `max-import-graph-edges=20000`
-    - `max-generated-lines=2000000`
-  - `strict` の既定値:
-    - `max-ast-depth=200`
-    - `max-parse-nodes=200000`
-    - `max-symbols-per-module=20000`
-    - `max-scope-depth=120`
-    - `max-import-graph-nodes=1000`
-    - `max-import-graph-edges=4000`
-    - `max-generated-lines=300000`
-- 個別上限オプション（`guard_profile` より優先）
-  - `--max-ast-depth`
-  - `--max-parse-nodes`
-  - `--max-symbols-per-module`
-  - `--max-scope-depth`
-  - `--max-import-graph-nodes`
-  - `--max-import-graph-edges`
-  - `--max-generated-lines`
-
-失敗契約:
-
-- いずれかの上限超過時は、`input_invalid(kind=limit_exceeded, stage=<parse|analyze|emit>, limit=<name>, value=<n>)` 形式で fail-fast する。
-- `tools/build_selfhost.py` など selfhost 実行系ツールは、必要に応じて `--timeout-sec` 併用でプロセス時間上限を設定できるようにする。
+新パイプライン（`toolchain2/`）では selfhost は通常のビルドパイプライン（`pytra-cli2 -build --target=cpp`）で完結する設計とし、専用ツールを不要にする。詳細は `docs/ja/plans/plan-pipeline-redesign.md` を参照。
 
 ## 3. 言語間確認
 - `tools/runtime_parity_check.py`
