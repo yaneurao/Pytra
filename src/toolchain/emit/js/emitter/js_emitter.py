@@ -396,6 +396,8 @@ class JsEmitter(CodeEmitter):
                             self._collect_isinstance_type_symbols(self.any_to_dict_or_empty(args[1]), required)
                     elif call_id == "open":
                         required.add("open")
+                    elif call_id == "print":
+                        required.add("pyPrint")
             for key, value in node_dict.items():
                 if key == "comments":
                     continue
@@ -432,6 +434,7 @@ class JsEmitter(CodeEmitter):
             "pyLen",
             "pyStr",
             "pyTypeId",
+            "pyPrint",
             "open",
         ]
         out: list[str] = []
@@ -740,14 +743,22 @@ class JsEmitter(CodeEmitter):
                 self.emit("this." + safe + " = " + safe + ";")
             self.emit("}")
 
+        has_str_method = False
         for member in members:
             if self.any_dict_get_str(member, "kind", "") != "FunctionDef":
                 continue
             name = self.any_to_str(member.get("name"))
             if name == "__init__":
                 continue
+            if name == "__str__":
+                has_str_method = True
             self.emit("")
             self._emit_function(member, in_class=class_name)
+
+        # __str__ が定義されていれば JS の toString() にも委譲
+        if has_str_method:
+            self.emit("")
+            self.emit("toString() { return this.__str__(); }")
 
         self.indent -= 1
         self.emit("}")
@@ -802,15 +813,17 @@ class JsEmitter(CodeEmitter):
         self.in_method_scope = in_class != ""
 
         if in_class != "":
+            is_static = isinstance(decorators, list) and "staticmethod" in decorators
             method_name = "constructor" if fn_name_raw == "__init__" else self._safe_name(fn_name_raw)
-            if len(arg_order) > 0 and arg_order[0] == "self":
+            if not is_static and len(arg_order) > 0 and arg_order[0] == "self":
                 arg_order = arg_order[1:]
             for arg_name in arg_order:
                 args.append(self._safe_name(arg_name))
                 scope_names.add(arg_name)
                 if self._is_container_east_type(self.any_to_str(arg_types.get(arg_name))):
                     self.current_ref_vars.add(arg_name)
-            self.emit(method_name + "(" + ", ".join(args) + ") {")
+            method_prefix = "static " if is_static else ""
+            self.emit(method_prefix + method_name + "(" + ", ".join(args) + ") {")
         else:
             fn_name = self._safe_name(fn_name_raw)
             for arg_name in arg_order:
@@ -1360,7 +1373,7 @@ class JsEmitter(CodeEmitter):
         if fn_name_raw == "cast" and len(rendered_args) >= 2:
             return rendered_args[1]
         if fn_name_raw == "print":
-            return "console.log(" + ", ".join(rendered_args) + ")"
+            return "pyPrint(" + ", ".join(rendered_args) + ")"
         if fn_name_raw == "len" and len(rendered_args) == 1:
             return "(" + rendered_args[0] + ").length"
         if fn_name_raw == "str" and len(rendered_args) == 1:
