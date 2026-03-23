@@ -528,7 +528,7 @@ emitter は以下のルールに従う:
 | `VarDecl` | hoist された変数宣言 | 型付き変数宣言を生成 |
 | `Swap` | `a, b = b, a` パターン（**left/right は常に Name**） | 言語固有の swap コードを生成 |
 | `discard_result: true` | main_guard_body の戻り値抑制 | 戻り値を捨てるコードを生成 |
-| `unused: true` | 未使用変数 | 警告抑制コード or 宣言省略 |
+| `unused: true` | 未使用変数（Assign / VarDecl / tuple 要素） | 警告抑制コード or 宣言省略 |
 | `decorators: ["extern"]` | @extern 関数 | `_native` への委譲コードを生成 |
 | `decorators: ["property"]` | @property メソッド | getter アクセスに変換 |
 | `mutates_self: true/false` | メソッドの self mutation | mutable/immutable self を選択 |
@@ -680,6 +680,7 @@ EAST3 パイプラインは以下を保証する。emitter はこれらを前提
 | tuple destructuring | `x, y = stack[-1]` で `stack: list[tuple[int, int]]` の場合、`x` / `y` の `resolved_type` は `int64` に解決される |
 | `FunctionDef.returns` | `return_type` が設定されていれば `returns` にも同じ値が反映される。emitter は forward declaration 等で `returns` を参照してよい |
 | `VarDecl.name` | 常に非空文字列。`None` や空文字の VarDecl は生成されない |
+| tuple 要素の `unused` | `root, _ = s.split(".")` のように body 内で参照されない要素には `unused: true` が付与される。Assign 単体だけでなく Tuple target の個々の要素にも適用 |
 
 注意:
 - Call ノードの `func`（関数名/属性アクセスの式ノード）の `resolved_type` は callable 型であり、`unknown` のまま残り得る。emitter は `func.resolved_type` ではなく **`Call.resolved_type`（呼び出し結果の型）** を使うこと。
