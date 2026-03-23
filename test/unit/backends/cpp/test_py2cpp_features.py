@@ -3556,6 +3556,7 @@ if __name__ == "__main__":
             print(f"  [fixture:{stem}] transpile", flush=True)
             transpile(src_py, out_cpp)
             print(f"  [fixture:{stem}] syntax-check", flush=True)
+            gen_dir = os.environ.get("PYTRA_GENERATED_CPP_DIR", "work/out/_test_generated_cpp")
             comp = self._run_subprocess_with_timeout(
                 [
                     "g++",
@@ -3567,6 +3568,8 @@ if __name__ == "__main__":
                     "src/runtime/cpp",
                     "-I",
                     "src/runtime/east",
+                    "-I",
+                    gen_dir,
                     "-fsyntax-only",
                     str(out_cpp),
                 ],

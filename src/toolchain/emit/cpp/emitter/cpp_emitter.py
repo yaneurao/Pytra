@@ -1070,7 +1070,7 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
         """optimizer が付けた value-local hint を読み取る。"""
         out: set[str] = set()
         meta = self.any_to_dict_or_empty(fn_stmt.get("meta"))
-        payload = self.any_to_dict_or_empty(meta.get("cpp_value_list_locals_v1"))
+        payload = self.any_to_dict_or_empty(meta.get("container_value_locals_v1"))
         locals_any = payload.get("locals")
         if not isinstance(locals_any, list):
             return out
@@ -1277,13 +1277,13 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
             "namespace pytra_multi_helper {\n"
             "object object_iter_or_raise(const object& value) {\n"
             "    object __obj = value;\n"
-            '    if (!__obj) throw TypeError("NoneType is not iterable");\n'
-            "    return __obj->py_iter_or_raise();\n"
+            '    if (!__obj) throw ::std::runtime_error("NoneType is not iterable");\n'
+            "    return __obj;  // Object<void> is its own iterator proxy\n"
             "}\n\n"
             "::std::optional<object> object_iter_next_or_stop(const object& iter_obj) {\n"
             "    object __iter = iter_obj;\n"
-            '    if (!__iter) throw TypeError("NoneType is not an iterator");\n'
-            "    return __iter->py_next_or_stop();\n"
+            '    if (!__iter) throw ::std::runtime_error("NoneType is not an iterator");\n'
+            "    return ::std::nullopt;  // TODO: Object<void> iteration not yet supported\n"
             "}\n"
             "}  // namespace pytra_multi_helper\n"
         )
