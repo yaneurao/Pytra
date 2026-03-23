@@ -257,6 +257,7 @@ class Call:
 ```
 
 - `typing.Any` の import 自体を禁止する（`typing` は注釈専用 no-op として許可するが、`Any` は使わない）。
+- `typing.Optional[X]` と `typing.Union[X, Y]` は使用可。パーサーが `X | None` / `X | Y` に正規化する。
 - `object` 型も禁止する（Python では `Any` と同義であり、C++ 等に写像できない）。
 - `dict[str, Any]` だけでなく `dict[str, object]` も同様に禁止。
 - JSON シリアライズには `pytra.std.json` を使う（Python 標準 `json` は §5.2 で禁止）。
