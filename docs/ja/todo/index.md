@@ -131,6 +131,19 @@
 進捗:
 - 2026-03-23: S1-S3 完了。`__pytra` prefix → `pytra` prefix（Dart `_` private 制約）。hand-written `std/pathlib.dart` 追加。`cast()` → `as` キャスト生成。18/18 PASS。
 
+### P1: Swift sample parity（EAST3 生成 utils 有効化）
+
+文脈: [docs/ja/plans/p1-swift-gif-lzw-parity.md](../plans/p1-swift-gif-lzw-parity.md)
+
+1. [x] [ID: P1-SWIFT-PARITY-S1] emitter の `let` パラメータ問題を修正（コンテナ型パラメータの `var` 再宣言）。
+2. [ ] [ID: P1-SWIFT-PARITY-S2] `pytra.utils.*` スキップを解除し EAST3 生成版を有効化する。→ **§10 ブロック**
+3. [ ] [ID: P1-SWIFT-PARITY-S3] py_runtime.swift から画像スタブ（`write_rgb_png` / `__pytra_save_gif`）を除去する。→ **§10 ブロック**
+4. [ ] [ID: P1-SWIFT-PARITY-S4] sample/py 01-16 が Swift でバイナリ一致することを検証する。
+
+進捗:
+- 2026-03-23: extern_var_v1 対応、int32 型マッピング、PyFile / open() 追加、let→var 修正完了。PNG 4/4 PASS。
+- 2026-03-23: EAST3 生成 utils/png.swift を有効化して検証。§10 コンテナ参照セマンティクス（値型 `[Any]` の関数内変更が呼び出し元に反映されない）がブロッカーであることを確認。GIF/PNG とも EAST3 生成版は §10 解決まで使用不可。utils スキップと py_runtime スタブを維持。
+
 ### P2: built-in 依存を EAST1 → linker 経由で解決
 
 文脈: [docs/ja/plans/p2-builtin-dependency-via-linker.md](../plans/p2-builtin-dependency-via-linker.md)
@@ -183,6 +196,13 @@
 
 進捗:
 - 2026-03-23: S1 tuple target の name_types 更新を `core_stmt_parser.py` に追加。S3 `_SH_IMPORT_SYMBOLS` チェックを `core_expr_attr_call_annotation.py` に追加。全 sample で VarDecl object/unknown と Assign unknown decl_type がゼロに。S2 は S1+S3 で自動解決。
+
+### P2: tuple 分割代入の `_` 要素に unused: true を付与
+
+1. [x] [ID: P2-TUPLE-UNDERSCORE-UNUSED-S1] tuple 分割代入で target 名が `_` の場合に unused: true を付与する
+
+進捗:
+- 2026-03-23: S1 完了。`east2_to_east3_unused_var_detection.py` で Tuple target の個々の Name 要素に対して unused 判定を追加。`_` / `_unused` 等が正しく `unused: true` になることを確認。
 
 ### P2: cast() の resolved_type 修正 + list.pop() の generic 解決
 

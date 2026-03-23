@@ -87,6 +87,15 @@ def _mark_unused_in_stmts(stmts: list[Any], all_refs: set[str]) -> None:
                 name = target.get("id")
                 if isinstance(name, str) and name != "" and name not in all_refs:
                     stmt["unused"] = True
+            elif isinstance(target, dict) and target.get("kind") == "Tuple":
+                # Mark individual tuple elements as unused
+                elements = target.get("elements")
+                if isinstance(elements, list):
+                    for elem in elements:
+                        if isinstance(elem, dict) and elem.get("kind") == "Name":
+                            elem_name = elem.get("id")
+                            if isinstance(elem_name, str) and elem_name != "" and elem_name not in all_refs:
+                                elem["unused"] = True
         # Recurse into nested blocks
         for key in ("body", "orelse", "finalbody"):
             nested = stmt.get(key)
