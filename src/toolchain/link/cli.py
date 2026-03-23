@@ -52,7 +52,7 @@ def main(argv: list[str] | None = None) -> int:
         print("error: input file is required", file=__import__("sys").stderr)
         return 1
     if output_dir_text == "":
-        output_dir_text = "work/tmp"
+        output_dir_text = "out"
 
     input_path = Path(input_text)
 

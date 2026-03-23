@@ -123,7 +123,7 @@ def resolve_output_path(input_path: Path, target: str, output: str, output_dir: 
     if output != "":
         return Path(output)
     profile = get_target_profile(target)
-    out_dir = Path(output_dir) if output_dir != "" else Path("work/tmp")
+    out_dir = Path(output_dir) if output_dir != "" else Path("out")
     if profile.fixed_output_name != "":
         return out_dir / profile.fixed_output_name
     stem = input_path.stem if input_path.stem != "" else "output"

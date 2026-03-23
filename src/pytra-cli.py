@@ -6,10 +6,10 @@ The same code path works in both Python host and C++ selfhost binary.
 
 Usage:
     pytra compile INPUT.py -o out.east
-    pytra link INPUT.py --output-dir work/tmp/ --target cpp
-    pytra emit --target cpp work/tmp/manifest.json --output-dir work/tmp/emit/
-    pytra build INPUT.py --output-dir work/tmp/ --exe app.out
-    pytra build INPUT.py --output-dir work/tmp/ --exe app.out --run
+    pytra link INPUT.py --output-dir out/ --target cpp
+    pytra emit --target cpp out/manifest.json --output-dir out/emit/
+    pytra build INPUT.py --output-dir out/ --exe app.out
+    pytra build INPUT.py --output-dir out/ --exe app.out --run
 """
 
 from __future__ import annotations
@@ -100,7 +100,7 @@ def cmd_build(argv: list[str]) -> int:
     """pytra build INPUT.py --output-dir DIR [--target TARGET] [--exe NAME] [--run] [-o FILE]"""
     # Parse args
     input_file = ""
-    output_dir = "work/tmp"
+    output_dir = "out"
     single_output = ""
     target = "cpp"
     exe_name = "app.out"
@@ -415,9 +415,9 @@ def _print_help() -> None:
     print("")
     print("examples:")
     print("  pytra compile foo.py -o foo.east")
-    print("  pytra link foo.py --output-dir work/tmp/ --target cpp")
-    print("  pytra emit --target cpp work/tmp/manifest.json --output-dir work/tmp/emit/")
-    print("  pytra build foo.py --output-dir work/tmp/ --exe app.out --run")
+    print("  pytra link foo.py --output-dir out/ --target cpp")
+    print("  pytra emit --target cpp out/manifest.json --output-dir out/emit/")
+    print("  pytra build foo.py --output-dir out/ --exe app.out --run")
 
 
 def main() -> int:
