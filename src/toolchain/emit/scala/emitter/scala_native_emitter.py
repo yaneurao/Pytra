@@ -1343,6 +1343,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             rendered_assert_args.append(_render_expr(args[i]))
             i += 1
         return "__pytra_assert(" + ", ".join(rendered_assert_args) + ")"
+    if callee == "set":
+        if len(args) == 0:
+            return "mutable.LinkedHashSet[Any]()"
+        return "mutable.LinkedHashSet[Any](" + _render_expr(args[0]) + ": _*)"
     if callee == "bytearray":
         if len(args) == 0:
             return "mutable.ArrayBuffer[Long]()"
@@ -1408,7 +1412,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             rendered_args.append(_render_expr(args[i]))
             i += 1
         return "__pytra_print(" + ", ".join(rendered_args) + ")"
-    if callee in {"RuntimeError", "ValueError", "TypeError", "Exception", "AssertionError"}:
+    if callee in {"RuntimeError", "ValueError", "TypeError", "Exception", "AssertionError", "IndexError", "KeyError", "NameError"}:
         if len(args) == 0:
             return '""'
         return _render_expr(args[0])

@@ -60,8 +60,12 @@ def __pytra_any_default(): Any = {
     0L
 }
 
-def __pytra_assert(args: Any*): String = {
-    "True"
+def __pytra_assert(args: Any*): Boolean = {
+    true
+}
+
+def py_to_string(v: Any): String = {
+    __pytra_str(v)
 }
 
 def __pytra_perf_counter(): Double = {
