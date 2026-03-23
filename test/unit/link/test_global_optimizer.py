@@ -393,11 +393,11 @@ class LinkedProgramGlobalOptimizerTests(unittest.TestCase):
 
             result = optimize_linked_program(program)
             global_hints = result.link_output_doc["global"]["container_ownership_hints_v1"]
-            cpp_hints = global_hints["cpp_value_list_locals_v1"]
-            self.assertEqual(cpp_hints["pkg.main::main"]["locals"], ["xs"])
+            container_hints = global_hints["container_value_locals_v1"]
+            self.assertEqual(container_hints["pkg.main::main"]["locals"], ["xs"])
 
             linked_meta = result.linked_program.modules[0].east_doc["meta"]["linked_program_v1"]
-            local_hints = linked_meta["container_ownership_hints_v1"]["cpp_value_list_locals_v1"]
+            local_hints = linked_meta["container_ownership_hints_v1"]["container_value_locals_v1"]
             self.assertEqual(local_hints["pkg.main::main"]["locals"], ["xs"])
 
     def test_optimizer_respects_opt_level_zero_for_global_passes(self) -> None:
@@ -441,7 +441,7 @@ class LinkedProgramGlobalOptimizerTests(unittest.TestCase):
             self.assertNotIn("non_escape_summary", linked_main.get("meta", {}))
             fn_meta = linked_main["body"][0].get("meta", {})
             self.assertNotIn("escape_summary", fn_meta)
-            self.assertNotIn("cpp_value_list_locals_v1", fn_meta)
+            self.assertNotIn("container_value_locals_v1", fn_meta)
 
     def test_optimizer_specializes_runtime_template_within_same_module(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -7,7 +7,7 @@ from src.toolchain.misc.east_parts.east3_opt_passes import build_default_passes
 from src.toolchain.misc.east_parts.east3_opt_passes import build_global_post_link_passes
 from src.toolchain.misc.east_parts.east3_opt_passes import build_local_only_passes
 from src.toolchain.misc.east_parts.east3_opt_passes.dict_str_key_normalization_pass import DictStrKeyNormalizationPass
-from src.toolchain.misc.east_parts.east3_opt_passes.cpp_list_value_local_hint_pass import CppListValueLocalHintPass
+from src.toolchain.misc.east_parts.east3_opt_passes.cpp_list_value_local_hint_pass import ContainerValueLocalHintPass
 from src.toolchain.misc.east_parts.east3_opt_passes.empty_init_shorthand_pass import EmptyInitShorthandPass
 from src.toolchain.misc.east_parts.east3_opt_passes.expression_normalization_pass import ExpressionNormalizationPass
 from src.toolchain.misc.east_parts.east3_opt_passes.identity_py_to_elision_pass import IdentityPyToElisionPass
@@ -98,8 +98,9 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertEqual(default_names, local_names)
         self.assertIn("LifetimeAnalysisPass", default_names)
         self.assertNotIn("NonEscapeInterproceduralPass", default_names)
-        self.assertNotIn("CppListValueLocalHintPass", default_names)
-        self.assertEqual(global_names, ["NonEscapeInterproceduralPass", "CppListValueLocalHintPass"])
+        self.assertNotIn("ContainerValueLocalHintPass", default_names)
+
+        self.assertEqual(global_names, ["NonEscapeInterproceduralPass", "ContainerValueLocalHintPass"])
 
     def test_pass_manager_runs_and_collects_trace(self) -> None:
         doc = _module_doc()
@@ -200,7 +201,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertFalse(by_name.get("DictStrKeyNormalizationPass", True))
         self.assertFalse(by_name.get("TupleTargetDirectExpansionPass", True))
         self.assertNotIn("NonEscapeInterproceduralPass", by_name)
-        self.assertNotIn("CppListValueLocalHintPass", by_name)
+        self.assertNotIn("ContainerValueLocalHintPass", by_name)
         self.assertFalse(by_name.get("LifetimeAnalysisPass", True))
         self.assertNotIn("LoopInvariantCastHoistPass", by_name)
         self.assertFalse(by_name.get("UnusedLoopVarElisionPass", True))
@@ -219,7 +220,7 @@ class East3OptimizerTest(unittest.TestCase):
         self.assertIn("DictStrKeyNormalizationPass", trace_text)
         self.assertIn("TupleTargetDirectExpansionPass", trace_text)
         self.assertNotIn("NonEscapeInterproceduralPass", trace_text)
-        self.assertNotIn("CppListValueLocalHintPass", trace_text)
+        self.assertNotIn("ContainerValueLocalHintPass", trace_text)
         self.assertIn("LifetimeAnalysisPass", trace_text)
         self.assertNotIn("LoopInvariantCastHoistPass", trace_text)
         self.assertIn("UnusedLoopVarElisionPass", trace_text)
@@ -260,11 +261,11 @@ class East3OptimizerTest(unittest.TestCase):
             }
         ]
 
-        result = CppListValueLocalHintPass().run(doc, PassContext(opt_level=1, target_lang="cpp"))
+        result = ContainerValueLocalHintPass().run(doc, PassContext(opt_level=1, target_lang="cpp"))
 
         self.assertTrue(result.changed)
         meta = doc["body"][0].get("meta", {})
-        self.assertEqual(meta.get("cpp_value_list_locals_v1"), {"version": "1", "locals": ["xs"]})
+        self.assertEqual(meta.get("container_value_locals_v1"), {"version": "1", "locals": ["xs"]})
 
     def test_cpp_list_value_local_hint_pass_fail_closes_on_alias_escape(self) -> None:
         doc = _module_doc()
@@ -292,11 +293,54 @@ class East3OptimizerTest(unittest.TestCase):
             }
         ]
 
-        result = CppListValueLocalHintPass().run(doc, PassContext(opt_level=1, target_lang="cpp"))
+        result = ContainerValueLocalHintPass().run(doc, PassContext(opt_level=1, target_lang="cpp"))
 
         self.assertFalse(result.changed)
         meta = doc["body"][0].get("meta", {})
-        self.assertNotIn("cpp_value_list_locals_v1", meta)
+        self.assertNotIn("container_value_locals_v1", meta)
+
+    def test_container_value_local_hint_pass_works_for_non_cpp_targets(self) -> None:
+        """ContainerValueLocalHintPass runs for all targets, not just C++."""
+        from src.toolchain.misc.east_parts.east3_opt_passes.cpp_list_value_local_hint_pass import ContainerValueLocalHintPass as CVLHP
+
+        for target in ["go", "swift", "rs", "java", "kotlin"]:
+            doc = _module_doc()
+            doc["body"] = [
+                {
+                    "kind": "FunctionDef",
+                    "name": "f",
+                    "arg_order": [],
+                    "arg_types": {},
+                    "return_type": "None",
+                    "body": [
+                        {
+                            "kind": "AnnAssign",
+                            "target": {"kind": "Name", "id": "xs"},
+                            "annotation": "list[int64]",
+                            "value": {"kind": "List", "elements": []},
+                        },
+                        {
+                            "kind": "Expr",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Attribute", "value": {"kind": "Name", "id": "xs"}, "attr": "append"},
+                                "args": [_const_i(1)],
+                                "keywords": [],
+                            },
+                        },
+                    ],
+                }
+            ]
+
+            result = CVLHP().run(doc, PassContext(opt_level=1, target_lang=target))
+
+            self.assertTrue(result.changed, f"target={target}: expected changed=True")
+            meta = doc["body"][0].get("meta", {})
+            self.assertEqual(
+                meta.get("container_value_locals_v1"),
+                {"version": "1", "locals": ["xs"]},
+                f"target={target}: container_value_locals_v1 missing",
+            )
 
     def test_noop_cast_cleanup_pass_removes_only_proven_noops(self) -> None:
         doc = _module_doc()

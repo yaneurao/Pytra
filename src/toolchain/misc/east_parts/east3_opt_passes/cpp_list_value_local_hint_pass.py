@@ -1,4 +1,4 @@
-"""Compatibility shim for CppListValueLocalHintPass.
+"""Compatibility shim for ContainerValueLocalHintPass.
 
 Canonical implementation moved to toolchain.compile.east3_opt_passes.cpp_list_value_local_hint_pass.
 """

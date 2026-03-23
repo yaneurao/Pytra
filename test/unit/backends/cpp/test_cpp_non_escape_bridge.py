@@ -114,7 +114,7 @@ class CppNonEscapeBridgeTest(unittest.TestCase):
                     "arg_order": [],
                     "arg_types": {},
                     "return_type": "None",
-                    "meta": {"cpp_value_list_locals_v1": {"version": "1", "locals": ["xs"]}},
+                    "meta": {"container_value_locals_v1": {"version": "1", "locals": ["xs"]}},
                     "body": [
                         {
                             "kind": "AnnAssign",
@@ -173,7 +173,7 @@ class CppNonEscapeBridgeTest(unittest.TestCase):
                     "arg_order": [],
                     "arg_types": {},
                     "return_type": "None",
-                    "meta": {"cpp_value_list_locals_v1": {"version": "1", "locals": "xs"}},
+                    "meta": {"container_value_locals_v1": {"version": "1", "locals": "xs"}},
                     "body": [
                         {
                             "kind": "AnnAssign",

@@ -1,4 +1,4 @@
-"""Annotate C++-only list locals eligible for value lowering."""
+"""Annotate list locals eligible for value lowering (all backends)."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from toolchain.compile.east3_optimizer import PassContext
 from toolchain.compile.east3_optimizer import PassResult
 
 
-_CPP_VALUE_LIST_LOCAL_HINT_KEY = "cpp_value_list_locals_v1"
+_CONTAINER_VALUE_LOCAL_HINT_KEY = "container_value_locals_v1"
 
 
 def _normalize_type_name(value: Any) -> str:
@@ -88,10 +88,10 @@ def _dict_items(raw: Any) -> list[dict[str, Any]]:
     return out
 
 
-class CppListValueLocalHintPass(East3OptimizerPass):
-    """Mark proven-safe C++ list locals for value lowering."""
+class ContainerValueLocalHintPass(East3OptimizerPass):
+    """Mark proven-safe list locals for value lowering (all backends)."""
 
-    name = "CppListValueLocalHintPass"
+    name = "ContainerValueLocalHintPass"
     min_opt_level = 1
 
     def _collect_name_reads(self, node: Any, out: set[str]) -> None:
@@ -256,10 +256,10 @@ class CppListValueLocalHintPass(East3OptimizerPass):
         meta_node = fn_node.get("meta")
         meta = meta_node if isinstance(meta_node, dict) else {}
         payload = {"version": "1", "locals": sorted(list(names))} if len(names) > 0 else None
-        current = meta.get(_CPP_VALUE_LIST_LOCAL_HINT_KEY)
+        current = meta.get(_CONTAINER_VALUE_LOCAL_HINT_KEY)
         if payload is None:
-            if _CPP_VALUE_LIST_LOCAL_HINT_KEY in meta:
-                meta.pop(_CPP_VALUE_LIST_LOCAL_HINT_KEY, None)
+            if _CONTAINER_VALUE_LOCAL_HINT_KEY in meta:
+                meta.pop(_CONTAINER_VALUE_LOCAL_HINT_KEY, None)
                 if len(meta) == 0:
                     fn_node.pop("meta", None)
                 else:
@@ -268,13 +268,11 @@ class CppListValueLocalHintPass(East3OptimizerPass):
             return 0
         if current == payload:
             return 0
-        meta[_CPP_VALUE_LIST_LOCAL_HINT_KEY] = payload
+        meta[_CONTAINER_VALUE_LOCAL_HINT_KEY] = payload
         fn_node["meta"] = meta
         return 1
 
     def run(self, east3_doc: dict[str, object], context: PassContext) -> PassResult:
-        if context.target_lang != "cpp":
-            return PassResult(changed=False, change_count=0)
         body = _dict_items(east3_doc.get("body"))
         change_count = 0
         for stmt in body:

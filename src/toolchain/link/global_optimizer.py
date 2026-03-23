@@ -6,7 +6,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
-from toolchain.compile.east3_opt_passes.cpp_list_value_local_hint_pass import CppListValueLocalHintPass
+from toolchain.compile.east3_opt_passes.cpp_list_value_local_hint_pass import ContainerValueLocalHintPass
 from toolchain.compile.east3_opt_passes.non_escape_call_graph import collect_non_escape_import_maps
 from toolchain.compile.east3_opt_passes.non_escape_call_graph import collect_non_escape_symbols
 from toolchain.compile.east3_opt_passes.non_escape_interprocedural_pass import NonEscapeInterproceduralPass
@@ -30,7 +30,7 @@ from toolchain.link.runtime_template_specializer import materialize_runtime_temp
 
 
 _LINKED_META_KEY = "linked_program_v1"
-_CPP_VALUE_LIST_LOCAL_HINT_KEY = "cpp_value_list_locals_v1"
+_CONTAINER_VALUE_LOCAL_HINT_KEY = "container_value_locals_v1"
 _BUILTIN_TYPE_IDS: dict[str, int] = {
     "None": 0,
     "bool": 1,
@@ -177,13 +177,13 @@ def _run_program_non_escape(program: LinkedProgram) -> tuple[tuple[LinkedProgram
     return tuple(linked_modules), global_summary
 
 
-def _extract_cpp_container_hints(module_doc: dict[str, Any]) -> dict[str, object]:
+def _extract_container_hints(module_doc: dict[str, Any]) -> dict[str, object]:
     _module_id, symbols, _local_map = collect_non_escape_symbols(module_doc)
     out: dict[str, object] = {}
     for symbol, fn_node in sorted(symbols.items()):
         meta_any = fn_node.get("meta")
         meta = meta_any if isinstance(meta_any, dict) else {}
-        hint_any = meta.get(_CPP_VALUE_LIST_LOCAL_HINT_KEY)
+        hint_any = meta.get(_CONTAINER_VALUE_LOCAL_HINT_KEY)
         hint = hint_any if isinstance(hint_any, dict) else {}
         locals_any = hint.get("locals")
         locals_list = locals_any if isinstance(locals_any, list) else []
@@ -203,22 +203,19 @@ def _materialize_container_hints(
     *,
     target: str,
 ) -> tuple[tuple[LinkedProgramModule, ...], dict[str, object]]:
-    if target != "cpp":
-        return linked_modules, {}
-
-    hint_pass = CppListValueLocalHintPass()
+    hint_pass = ContainerValueLocalHintPass()
     context = PassContext(opt_level=1, target_lang=target)
     updated_modules: list[LinkedProgramModule] = []
     global_hints: dict[str, object] = {}
-    cpp_locals: dict[str, object] = {}
+    container_locals: dict[str, object] = {}
 
     for module in linked_modules:
         doc_any = deepcopy(module.east_doc)
         doc = doc_any if isinstance(doc_any, dict) else {}
         _ = hint_pass.run(doc, context)
-        module_hints = _extract_cpp_container_hints(doc)
+        module_hints = _extract_container_hints(doc)
         for symbol, payload in sorted(module_hints.items()):
-            cpp_locals[symbol] = payload
+            container_locals[symbol] = payload
         updated_modules.append(
             LinkedProgramModule(
                 module_id=module.module_id,
@@ -233,7 +230,7 @@ def _materialize_container_hints(
             )
         )
 
-    global_hints["cpp_value_list_locals_v1"] = cpp_locals
+    global_hints["container_value_locals_v1"] = container_locals
     return tuple(updated_modules), global_hints
 
 
@@ -785,7 +782,7 @@ def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimization
     if _is_global_pass_enabled(pass_config, "NonEscapeInterproceduralPass"):
         linked_modules, non_escape_summary = _run_program_non_escape(linked_input_program)
     container_hints: dict[str, object] = {}
-    if _is_global_pass_enabled(pass_config, "CppListValueLocalHintPass"):
+    if _is_global_pass_enabled(pass_config, "ContainerValueLocalHintPass"):
         linked_modules, container_hints = _materialize_container_hints(linked_modules, target=program.target)
     # Cross-module vararg call site packing: pack trailing positional args of calls to
     # desugared vararg functions (marked with vararg_desugared_v1) into List nodes.
@@ -822,15 +819,15 @@ def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimization
         doc = doc_any if isinstance(doc_any, dict) else {}
         meta = _ensure_meta(doc)
         module_hints: dict[str, object] = {}
-        cpp_hints_any = container_hints.get("cpp_value_list_locals_v1")
-        cpp_hints = cpp_hints_any if isinstance(cpp_hints_any, dict) else {}
-        if len(cpp_hints) > 0:
+        container_hints_any = container_hints.get("container_value_locals_v1")
+        container_hints_dict = container_hints_any if isinstance(container_hints_any, dict) else {}
+        if len(container_hints_dict) > 0:
             local_slice: dict[str, object] = {}
             prefix = module.module_id + "::"
-            for symbol, payload in sorted(cpp_hints.items()):
+            for symbol, payload in sorted(container_hints_dict.items()):
                 if symbol.startswith(prefix):
                     local_slice[symbol] = payload
-            module_hints["cpp_value_list_locals_v1"] = local_slice
+            module_hints["container_value_locals_v1"] = local_slice
         meta[_LINKED_META_KEY] = {
             "program_id": program_id,
             "module_id": module.module_id,

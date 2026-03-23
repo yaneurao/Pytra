@@ -114,7 +114,7 @@
 
 - 現行実装は fail-closed を優先し、適用範囲を意図的に狭くしている。
 - `O0` は全 pass 無効、`O1` は上表 `O1` pass、`O2` は `O1 + O2` pass を実行する。
-- `NonEscapeInterproceduralPass` と `CppListValueLocalHintPass` は 2026-03-07 以降、`EAST3 local optimizer` の既定 pass 列から外し、`LinkedProgramOptimizer` 側の whole-program/global annotation pass として扱う。
+- `NonEscapeInterproceduralPass` と `ContainerValueLocalHintPass`（旧 `CppListValueLocalHintPass`、2026-03-23 に汎化・改名）は 2026-03-07 以降、`EAST3 local optimizer` の既定 pass 列から外し、`LinkedProgramOptimizer` 側の whole-program/global annotation pass として扱う。
 - `LifetimeAnalysisPass` は local-only pass として残し、linked program 段へ移さない。
 
 ### 8.1 `for ... in range(...)` 最適化の責務境界
