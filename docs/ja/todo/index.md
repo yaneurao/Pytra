@@ -336,6 +336,24 @@
 8. [ ] [ID: P5-CALLABLE-TYPE-S8] callable 型変数の間接呼び出し `f(x)` で `Call.resolved_type` を `CallableType.return_type` から導出する
 9. [ ] [ID: P5-CALLABLE-TYPE-S9] 高階関数パターンのテスト fixture を追加する
 
+### P7: tools/ 整理（未登録ツール退避 + 登録済みツール分類統合）
+
+1. [ ] [ID: P7-TOOLS-CLEANUP-S1] spec-tools.md 未登録 + run_local_ci.py 未使用の 93 ファイルを `tools/old/` に退避
+2. [ ] [ID: P7-TOOLS-CLEANUP-S2] 類似チェッカーを統合（`check_backend_parity_*.py` 7 件 → 1 件、`check_backend_conformance_*.py` 6 件 → 1 件 等）
+3. [ ] [ID: P7-TOOLS-CLEANUP-S3] run_local_ci.py で使用しているが spec-tools.md 未登録のツール（5 件）を spec に登録
+4. [ ] [ID: P7-TOOLS-CLEANUP-S4] spec-codex.md に「tools/ にファイル追加時は spec-tools.md 登録 + run_local_ci.py 追加を必須とする」ルールを追記
+
+注意: 複数インスタンス並行作業中は実施しない。全 agent の作業が落ち着いてから一括で実施する。
+
+### P7: test/ ディレクトリ整理（リネーム + EAST3 スナップショットテスト）
+
+1. [ ] [ID: P7-TEST-CLEANUP-S1] `test/fixtures/` → `test/emit_fixtures/` リネーム
+2. [ ] [ID: P7-TEST-CLEANUP-S2] `test/unit/ir/` → `test/unit/east/` リネーム
+3. [ ] [ID: P7-TEST-CLEANUP-S3] `test/east3_fixtures/` に EAST3 golden file + 自動差分チェックツール作成
+4. [ ] [ID: P7-TEST-CLEANUP-S4] `.east` ファイル鮮度チェックツール（`check_east_freshness.py`）作成 + run_local_ci.py 追加
+
+注意: 複数インスタンス並行作業中は実施しない。全 agent の作業が落ち着いてから一括で実施する。
+
 ### P7: C++ test_py2cpp_features.py テストパス率改善
 
 文脈: [docs/ja/plans/p7-cpp-test-pass-rate-improvement.md](../plans/p7-cpp-test-pass-rate-improvement.md)
