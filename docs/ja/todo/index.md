@@ -35,13 +35,12 @@
 
 文脈: [docs/ja/plans/plan-pipeline-redesign.md](../plans/plan-pipeline-redesign.md)
 
-1. [ ] [ID: P0-PIPELINE-V2-S1] `toolchain2/parse/py/` で built-in + stdlib + ユーザーコードの .py.east1 生成が全 sample で動作する
-2. [ ] [ID: P0-PIPELINE-V2-S2] `toolchain2/resolve/py/` で cross-module 型解決を実装し、signature_registry のハードコードなしで .east2 を生成する
-3. [ ] [ID: P0-PIPELINE-V2-S3] `toolchain2/compile/` で .east2 → .east3 の core lowering を実装する
-4. [ ] [ID: P0-PIPELINE-V2-S4] `toolchain2/optimize/` で whole-program 最適化を実装する
-5. [ ] [ID: P0-PIPELINE-V2-S5] `toolchain2/emit/cpp/` で .east3 → .cpp の emit を実装する
+1. [ ] [ID: P0-PIPELINE-V2-S1] `toolchain2/parse/py/` で built-in + stdlib + ユーザーコードの .py.east1 生成が全 sample で動作する + `test/east1/py/` golden file テスト
+2. [ ] [ID: P0-PIPELINE-V2-S2] `toolchain2/resolve/py/` で cross-module 型解決を実装し、signature_registry のハードコードなしで .east2 を生成する + `test/east2/py/` golden file テスト
+3. [ ] [ID: P0-PIPELINE-V2-S3] `toolchain2/compile/` で .east2 → .east3 の core lowering を実装する + `test/east3/` golden file テスト
+4. [ ] [ID: P0-PIPELINE-V2-S4] `toolchain2/optimize/` で whole-program 最適化を実装する + `test/east3-opt/` golden file テスト
+5. [ ] [ID: P0-PIPELINE-V2-S5] `toolchain2/emit/cpp/` で .east3 → .cpp の emit を実装する + `test/emit/cpp/` golden file テスト
 6. [ ] [ID: P0-PIPELINE-V2-S6] `pytra-cli2 -build --target=cpp` で全 18 sample が compile + run できる
-7. [ ] [ID: P0-PIPELINE-V2-S7] 各段の golden file テスト整備（`test/east1/py/`, `test/east2/py/`, `test/east3/`, `test/east3-opt/`, `test/emit/cpp/`）
 
 注: 旧 TODO は [2026-03-24 アーカイブ](archive/20260324.md) に移動済み。
 
