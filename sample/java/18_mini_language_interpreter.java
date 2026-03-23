@@ -400,4 +400,8 @@ final class _18_mini_language_interpreter {
         run_demo();
         run_benchmark();
     }
+
+    public static void _case_main() {
+        __pytra_main();
+    }
 }

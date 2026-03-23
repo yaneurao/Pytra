@@ -80,4 +80,8 @@ final class _06_julia_parameter_sweep {
         System.out.println(String.valueOf("frames:") + " " + String.valueOf(frames_n));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
     }
+
+    public static void _case_main() {
+        run_06_julia_parameter_sweep();
+    }
 }

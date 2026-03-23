@@ -38,4 +38,8 @@ final class _10_plasma_effect {
         System.out.println(String.valueOf("frames:") + " " + String.valueOf(frames_n));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
     }
+
+    public static void _case_main() {
+        run_10_plasma_effect();
+    }
 }

@@ -64,4 +64,8 @@ final class _12_sort_visualizer {
         System.out.println(String.valueOf("frames:") + " " + String.valueOf(((long)(frames.size()))));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
     }
+
+    public static void _case_main() {
+        run_12_sort_visualizer();
+    }
 }

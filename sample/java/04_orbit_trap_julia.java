@@ -97,4 +97,8 @@ final class _04_orbit_trap_julia {
         System.out.println(String.valueOf("max_iter:") + " " + String.valueOf(max_iter));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
     }
+
+    public static void _case_main() {
+        run_04_orbit_trap_julia();
+    }
 }

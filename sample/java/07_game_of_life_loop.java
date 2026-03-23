@@ -129,4 +129,8 @@ final class _07_game_of_life_loop {
         System.out.println(String.valueOf("frames:") + " " + String.valueOf(steps));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
     }
+
+    public static void _case_main() {
+        run_07_game_of_life_loop();
+    }
 }

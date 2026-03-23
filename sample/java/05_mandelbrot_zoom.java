@@ -54,4 +54,8 @@ final class _05_mandelbrot_zoom {
         System.out.println(String.valueOf("frames:") + " " + String.valueOf(frame_count));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
     }
+
+    public static void _case_main() {
+        run_05_mandelbrot_zoom();
+    }
 }

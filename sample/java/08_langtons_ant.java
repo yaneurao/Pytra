@@ -62,4 +62,8 @@ final class _08_langtons_ant {
         System.out.println(String.valueOf("frames:") + " " + String.valueOf(((long)(frames.size()))));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
     }
+
+    public static void _case_main() {
+        run_08_langtons_ant();
+    }
 }

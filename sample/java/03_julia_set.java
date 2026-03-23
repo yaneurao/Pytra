@@ -59,4 +59,8 @@ final class _03_julia_set {
         System.out.println(String.valueOf("max_iter:") + " " + String.valueOf(max_iter));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
     }
+
+    public static void _case_main() {
+        run_julia();
+    }
 }

@@ -77,4 +77,8 @@ final class _09_fire_simulation {
         System.out.println(String.valueOf("frames:") + " " + String.valueOf(steps));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
     }
+
+    public static void _case_main() {
+        run_09_fire_simulation();
+    }
 }

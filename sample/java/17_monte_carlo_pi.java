@@ -36,4 +36,8 @@ final class _17_monte_carlo_pi {
         System.out.println(String.valueOf("checksum:") + " " + String.valueOf(checksum));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
     }
+
+    public static void _case_main() {
+        run_integer_benchmark();
+    }
 }

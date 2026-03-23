@@ -39,4 +39,8 @@ final class _15_wave_interference_loop {
         System.out.println(String.valueOf("frames:") + " " + String.valueOf(frames_n));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
     }
+
+    public static void _case_main() {
+        run_15_wave_interference_loop();
+    }
 }

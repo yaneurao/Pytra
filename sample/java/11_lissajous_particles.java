@@ -59,4 +59,8 @@ final class _11_lissajous_particles {
         System.out.println(String.valueOf("frames:") + " " + String.valueOf(frames_n));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
     }
+
+    public static void _case_main() {
+        run_11_lissajous_particles();
+    }
 }
