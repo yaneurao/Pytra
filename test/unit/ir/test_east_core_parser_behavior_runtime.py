@@ -86,6 +86,7 @@ if __name__ == "__main__":
         self.assertIn("py_print", runtime_calls)
         self.assertIn("core.len", semantic_tags)
         self.assertIn("core.print", semantic_tags)
+        self.assertIn("container.dict.get", semantic_tags)
         self.assertIn("cast.bool", semantic_tags)
         self.assertIn("cast.int", semantic_tags)
         self.assertIn("iter.init", semantic_tags)
@@ -441,3 +442,48 @@ def f(xs: list[int], d: dict[str, int], x: object) -> None:
         self.assertEqual(obj_for.get("iter_source_type"), "object")
         self.assertEqual(obj_for.get("iter", {}).get("iterable_trait"), "unknown")
         self.assertEqual(obj_for.get("iter", {}).get("iter_protocol"), "runtime_protocol")
+
+    def test_container_extraction_yields_dynamic_annotation(self) -> None:
+        """dict.get() on dict[str,int] sets yields_dynamic=True and
+        container.dict.get semantic_tag; dict[str,Any].get() does NOT
+        set yields_dynamic because resolved_type is already Any."""
+        src = """
+from pytra.typing import Any
+
+def concrete(d: dict[str, int]) -> int:
+    return d.get("x", 0)
+
+def dynamic(d: dict[str, Any]) -> Any:
+    return d.get("x", 0)
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        funcs = {
+            str(n.get("name")): n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "FunctionDef"
+        }
+        # concrete dict[str,int].get() → yields_dynamic=True
+        concrete_calls = [
+            n
+            for n in _walk(funcs["concrete"])
+            if isinstance(n, dict)
+            and n.get("kind") == "Call"
+            and n.get("runtime_call") == "dict.get"
+        ]
+        self.assertEqual(len(concrete_calls), 1)
+        self.assertTrue(concrete_calls[0].get("yields_dynamic"))
+        self.assertEqual(concrete_calls[0].get("semantic_tag"), "container.dict.get")
+        self.assertEqual(concrete_calls[0].get("resolved_type"), "int64")
+
+        # dynamic dict[str,Any].get() → no yields_dynamic
+        dynamic_calls = [
+            n
+            for n in _walk(funcs["dynamic"])
+            if isinstance(n, dict)
+            and n.get("kind") == "Call"
+            and n.get("runtime_call") == "dict.get"
+        ]
+        self.assertEqual(len(dynamic_calls), 1)
+        self.assertIsNone(dynamic_calls[0].get("yields_dynamic"))
+        self.assertEqual(dynamic_calls[0].get("semantic_tag"), "container.dict.get")
+        self.assertEqual(dynamic_calls[0].get("resolved_type"), "Any")

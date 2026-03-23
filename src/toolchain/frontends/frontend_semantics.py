@@ -62,6 +62,11 @@ _OWNER_METHOD_SEMANTIC_TAGS: dict[tuple[str, str], str] = {
     ("JsonArr", "get_int"): "json.arr.get_int",
     ("JsonArr", "get_float"): "json.arr.get_float",
     ("JsonArr", "get_bool"): "json.arr.get_bool",
+    # Container extraction methods — yields_dynamic annotation target
+    ("dict", "get"): "container.dict.get",
+    ("dict", "pop"): "container.dict.pop",
+    ("dict", "setdefault"): "container.dict.setdefault",
+    ("list", "pop"): "container.list.pop",
 }
 
 
@@ -100,4 +105,12 @@ def lookup_owner_method_semantic_tag(owner_type: str, name: str) -> str:
     method = name.strip()
     if owner == "" or method == "":
         return ""
-    return _OWNER_METHOD_SEMANTIC_TAGS.get((owner, method), "")
+    result = _OWNER_METHOD_SEMANTIC_TAGS.get((owner, method), "")
+    if result != "":
+        return result
+    # Strip generic parameters for lookup: "dict[str,int64]" → "dict"
+    bracket = owner.find("[")
+    if bracket > 0:
+        base = owner[:bracket]
+        return _OWNER_METHOD_SEMANTIC_TAGS.get((base, method), "")
+    return ""

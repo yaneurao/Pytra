@@ -12,6 +12,7 @@ from toolchain.frontends.frontend_semantics import lookup_stdlib_function_semant
 from toolchain.frontends.frontend_semantics import lookup_stdlib_method_semantic_tag
 from toolchain.frontends.frontend_semantics import lookup_stdlib_symbol_semantic_tag
 from toolchain.frontends.runtime_symbol_index import lookup_runtime_call_adapter_kind
+from toolchain.frontends.runtime_symbol_index import lookup_runtime_module_group
 from toolchain.frontends.signature_registry import lookup_noncpp_imported_symbol_runtime_call
 from toolchain.frontends.signature_registry import lookup_noncpp_module_attr_runtime_call
 from toolchain.frontends.signature_registry import lookup_stdlib_function_return_type
@@ -29,6 +30,13 @@ def _set_runtime_binding_fields(payload: dict[str, Any], module_id: str, runtime
     payload["runtime_module_id"] = module_id
     payload["runtime_symbol"] = runtime_symbol
     adapter_kind = lookup_runtime_call_adapter_kind(module_id, runtime_symbol)
+    if adapter_kind == "":
+        # Auto-derive from module group: built_in → "builtin", std/utils → "extern_delegate"
+        group = lookup_runtime_module_group(module_id)
+        if group == "built_in" or group == "core":
+            adapter_kind = "builtin"
+        elif group == "std" or group == "utils":
+            adapter_kind = "extern_delegate"
     if adapter_kind != "":
         payload["runtime_call_adapter_kind"] = adapter_kind
 
@@ -92,6 +100,25 @@ def _sh_annotate_runtime_attr_expr(
     return payload
 
 
+def _mark_yields_dynamic(payload: dict[str, Any]) -> None:
+    """Container extraction methods may return a dynamic type at runtime
+    even when resolved_type is concrete (e.g. dict[str,int].get() returns
+    int64 in Python semantics but any/interface{}/object in non-template
+    target languages).  Mark such Call nodes so emitters can insert type
+    assertions without maintaining their own method lists."""
+    resolved = str(payload.get("resolved_type", "")).strip()
+    if (
+        resolved == ""
+        or resolved == "Any"
+        or resolved == "any"
+        or resolved == "object"
+        or resolved == "unknown"
+        or resolved == "None"
+    ):
+        return
+    payload["yields_dynamic"] = True
+
+
 def _sh_annotate_runtime_method_call_expr(
     payload: dict[str, Any],
     *,
@@ -104,10 +131,12 @@ def _sh_annotate_runtime_method_call_expr(
         payload["semantic_tag"] = owner_method_semantic_tag
     runtime_call = lookup_stdlib_method_runtime_call(owner_type, attr)
     if runtime_call == "":
+        if owner_method_semantic_tag.startswith("container."):
+            _mark_yields_dynamic(payload)
         return payload
     mod_id, runtime_symbol = lookup_stdlib_method_runtime_binding(owner_type, attr)
     method_semantic_tag = lookup_stdlib_method_semantic_tag(attr)
-    return _sh_annotate_runtime_call_expr(
+    result = _sh_annotate_runtime_call_expr(
         payload,
         lowered_kind="BuiltinCall",
         builtin_name=attr,
@@ -119,6 +148,9 @@ def _sh_annotate_runtime_method_call_expr(
         ),
         runtime_owner=runtime_owner,
     )
+    if owner_method_semantic_tag.startswith("container."):
+        _mark_yields_dynamic(result)
+    return result
 
 
 def _sh_annotate_enumerate_call_expr(
@@ -534,6 +566,13 @@ def _sh_infer_known_name_call_return_type(
     *,
     infer_item_type: Any,
 ) -> str:
+    if fn_name == "cast" and len(args) >= 2:
+        # cast(T, value) → return type is T (first argument is the target type name)
+        first_arg = args[0]
+        if isinstance(first_arg, dict) and first_arg.get("kind") == "Name":
+            type_name = str(first_arg.get("id", ""))
+            if type_name != "":
+                return type_name
     if fn_name == "print":
         return "None"
     if stdlib_imported_ret != "":

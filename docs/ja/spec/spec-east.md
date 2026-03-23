@@ -441,6 +441,15 @@
   - `write_rgb_png`, `save_gif`, `grayscale_palette`
   - `py_isdigit`, `py_isalpha`
 
+`yields_dynamic` について:
+
+- コンテナ要素を抽出するメソッド呼び出し（`dict.get`, `dict.pop`, `dict.setdefault`, `list.pop`）では、Python 意味論上の型（`resolved_type`）は具象型（例: `int64`）だが、非テンプレート言語（Go, Java 等）の runtime 実装は動的型（`any` / `interface{}` / `Object`）を返す場合がある。
+- このような Call ノードには `yields_dynamic: true` を付与する。
+- `resolved_type` が既に動的型（`Any`, `object`, `unknown`, `None`）の場合は付与しない。
+- emitter は `yields_dynamic: true` を見て型アサーション / ダウンキャストの要否を判断できる。生成済み式文字列のパターンマッチで判断してはならない。
+- 対応する `semantic_tag` は `container.dict.get`, `container.dict.pop`, `container.dict.setdefault`, `container.list.pop` である。
+- 将来のコンテナ抽出メソッド追加時は `container.*` prefix の semantic_tag と `yields_dynamic` を対で付与する。
+
 `runtime_module_id` / `runtime_symbol` / `runtime_call` の責務境界（必須）:
 
 - `runtime_module_id`, `runtime_symbol`, `runtime_call`, `resolved_runtime_call`, `resolved_runtime_source`, `semantic_tag` は EAST3 の正本情報として扱う。
