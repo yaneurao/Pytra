@@ -63,6 +63,8 @@
   - 目的: `transpiler_versions.json` の minor 以上の更新を検出したときだけ `regenerate_samples.py` を起動し、影響言語のみ再生成する。
 - `tools/sync_todo_history_translation.py`
   - 目的: `docs/ja/todo/archive` を正本として `docs/en/todo/archive` の日付ファイル雛形と index を同期し、`--check` で同期漏れを検出する。
+- `tools/check_east3_golden.py`
+  - 目的: EAST3 スナップショットテスト（`test/east3_fixtures/` の golden file と EAST3 出力の差分チェック）。`--check-runtime-east` で `src/runtime/east/` の `.east` ファイル鮮度チェック。`--update` で再生成。
 - `tools/verify_image_runtime_parity.py`
   - 目的: 画像ランタイム（PNG/GIF）の Python 正本と C++ 側の一致を確認する。
 - `tools/check_runtime_std_sot_guard.py`
