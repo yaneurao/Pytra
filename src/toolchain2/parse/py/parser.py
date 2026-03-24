@@ -1695,6 +1695,7 @@ def _parse_function_def(
     trivia: list[TriviaNode],
     comments: list[str],
     class_name: str = "",
+    parent_indent: int = 0,
 ) -> tuple[FunctionDef, int]:
     """関数定義をパースする。"""
     header_line = lines[start_ln]
@@ -1713,7 +1714,7 @@ def _parse_function_def(
     arg_type_exprs: dict[str, dict[str, JsonVal]] = {}
 
     name_types_empty: dict[str, str] = {}
-    if args_text.strip() != "" and args_text.strip() != "self":
+    if args_text.strip() != "" and (args_text.strip() != "self" or class_name != ""):
         idx = 0
         for param in _split_type_args_outer(args_text):
             param = param.strip()
@@ -1755,7 +1756,7 @@ def _parse_function_def(
             idx += 1
 
     # Collect body
-    block_lines, end_ln = _collect_block(lines, start_ln + 1, 0)
+    block_lines, end_ln = _collect_block(lines, start_ln + 1, header_indent)
 
     # Parse body with arg types in scope
     name_types: dict[str, str] = dict(arg_types)
@@ -1855,9 +1856,10 @@ def _parse_class_def(
         field_types=field_types,
         class_storage_hint=_infer_class_storage_hint(is_dataclass, base_name, field_types, body_stmts),
     )
-    # ClassDef は常に leading_comments/leading_trivia を出力
-    cd.leading_comments = list(comments)
-    cd.leading_trivia = list(trivia)
+    # ClassDef: trivia/comments がある場合のみ出力
+    if len(comments) > 0 or len(trivia) > 0:
+        cd.leading_comments = list(comments)
+        cd.leading_trivia = list(trivia)
 
     return cd, end_ln
 
@@ -2180,17 +2182,17 @@ def _parse_block_lines(
         if fn_name_block != "":
             # scope_label がクラス名ならクラスメソッドとして self の型を設定
             block_class_name = scope_label if scope_label in ctx.class_names else ""
-            fn_stmt, i = _parse_function_def(ctx, ctx.lines, abs_ln - 1, fn_name_block, pending_trivia, pending_comments, class_name=block_class_name)
+            fn_stmt, fn_end_ln = _parse_function_def(ctx, ctx.lines, abs_ln - 1, fn_name_block, pending_trivia, pending_comments, class_name=block_class_name, parent_indent=indent)
             stmts.append(fn_stmt)
-            # Skip the block lines that were consumed
+            # Skip block_lines that were consumed by _parse_function_def
+            # fn_end_ln is 0-based file line index. Advance i past those lines.
+            i += 1  # skip the def line itself
             while i < total:
-                bl_check = block_lines[i].strip()
-                if bl_check == "" or bl_check.startswith("#"):
-                    i += 1
-                    continue
-                bl_indent = len(block_lines[i]) - len(block_lines[i].lstrip(" "))
-                if bl_indent <= base_indent:
-                    break
+                bl_s = block_lines[i].strip()
+                if bl_s != "" and not bl_s.startswith("#"):
+                    bl_indent = len(block_lines[i]) - len(block_lines[i].lstrip(" "))
+                    if bl_indent <= indent:
+                        break
                 i += 1
             pending_trivia = []
             pending_comments = []
