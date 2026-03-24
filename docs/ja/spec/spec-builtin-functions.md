@@ -391,11 +391,33 @@ def sqrt(x: float) -> float: ...
 2. **resolve**: meta から tag/module/symbol を取り、EAST2 ノードに `semantic_tag` / `runtime_module_id` / `runtime_symbol` を付与
 3. **emitter**: 解決済み属性を見て各言語に写像するだけ
 
-メリット:
+### 変数 extern
+
+変数 extern も同じ引数で runtime 情報を指定する。
+
+```python
+pi: float = extern(module="pytra.std.math", symbol="pi", tag="stdlib.symbol.pi")
+MAX_SIZE: int = extern(module="my_game.config", symbol="MAX_SIZE", tag="user.config.max_size")
+```
+
+### 必須性
+
+v2 では `module`, `symbol`, `tag` を **全て必須** とする。理由:
+- 省略すると resolve がハードコードや推測に頼ることになり、§5.7（ハードコードテーブル禁止）に反する
+- 明示的に書くことで、宣言ファイルだけ読めば runtime 配置が完全に分かる
+- emitter が `@extern` を見て「module/symbol がないから何もできない」という状態を防ぐ
+
+v1（引数なし `@extern`）からの移行:
+- v1 の `@extern` は引き続き受理するが、新規コードでは v2 を推奨
+- `toolchain2/` のコードでは v2 を必須とする
+
+### メリット
+
 - ハードコードテーブルが不要になる
 - built-in の追加・変更が宣言ファイルの編集だけで完結
 - ユーザー定義の `@extern` も同じ仕組みで runtime 情報を指定可能
 - runtime 情報が宣言ファイルに 1 箇所で集約され、全 emitter で共有される
+- 関数 extern も変数 extern も同じ引数体系で統一される
 
 ## 11. 未決事項
 
