@@ -108,12 +108,86 @@ def cmd_parse(args: list[str]) -> int:
 
 
 # ---------------------------------------------------------------------------
-# resolve: *.py.east1 → *.east2 (未実装)
+# resolve: *.py.east1 → *.east2
 # ---------------------------------------------------------------------------
 
+def _resolve_one(input_path: Path, output_path: Path | None, pretty: bool) -> int:
+    """1 ファイルを resolve して .east2 を生成する。"""
+    from toolchain2.resolve.py.resolver import resolve_file, east2_output_path_from_east1
+
+    if not input_path.exists():
+        print("error: file not found: " + str(input_path))
+        return 1
+
+    try:
+        result = resolve_file(input_path)
+    except Exception as e:
+        print("error: resolve failed: " + str(input_path) + ": " + str(e))
+        return 1
+
+    if output_path is None:
+        output_path = east2_output_path_from_east1(input_path)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    indent = 2 if pretty else None
+    output_path.write_text(
+        json.dumps(result.east2_doc, ensure_ascii=False, indent=indent) + "\n",
+        encoding="utf-8",
+    )
+    print("resolved: " + str(output_path))
+    return 0
+
+
 def cmd_resolve(args: list[str]) -> int:
-    print("error: -resolve is not yet implemented")
-    return 1
+    """resolve サブコマンド: *.py.east1 → *.east2"""
+    inputs: list[str] = []
+    output_text = ""
+    pretty = False
+
+    i = 0
+    while i < len(args):
+        tok = args[i]
+        if tok == "-o" or tok == "--output":
+            if i + 1 >= len(args):
+                print("error: missing value for " + tok)
+                return 1
+            output_text = args[i + 1]
+            i += 2
+            continue
+        if tok == "--pretty":
+            pretty = True
+            i += 1
+            continue
+        if tok == "-h" or tok == "--help":
+            print("usage: pytra-cli2 -resolve INPUT.py.east1 [-o OUTPUT.east2] [--pretty]")
+            print("       pytra-cli2 -resolve INPUT1.py.east1 INPUT2.py.east1 ...  (multiple files)")
+            return 0
+        if tok == "--from" or tok.startswith("--from="):
+            # --from=python は現時点では Python のみサポート (無視)
+            if tok == "--from":
+                i += 1
+            i += 1
+            continue
+        if not tok.startswith("-"):
+            inputs.append(tok)
+        i += 1
+
+    if len(inputs) == 0:
+        print("error: at least one input file is required")
+        return 1
+
+    if output_text != "" and len(inputs) > 1:
+        print("error: -o cannot be used with multiple input files")
+        return 1
+
+    exit_code = 0
+    for inp in inputs:
+        input_path = Path(inp)
+        out = Path(output_text) if output_text != "" else None
+        rc = _resolve_one(input_path, out, pretty)
+        if rc != 0:
+            exit_code = rc
+    return exit_code
 
 
 # ---------------------------------------------------------------------------

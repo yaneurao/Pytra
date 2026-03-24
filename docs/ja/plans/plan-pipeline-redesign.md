@@ -459,6 +459,15 @@ diff test/east1/py/01_mandelbrot.py.east1 work/tmp/01_mandelbrot.py.east1
 - 17_monte_carlo_pi.py で Module 構造の正しい生成を確認。golden file との差分残 ~15%。
 - 残課題: source_span 精度、expr repr 切り出し、制御構文スパン計算。
 
+### 2026-03-24: [ID: P0-RESOLVE-S1/S2/S3] resolve 実装完了
+
+- `toolchain2/resolve/py/resolver.py` に east1→east2 resolver を実装。
+- 現時点の resolve はメタデータ正規化のみ: east_stage=2, schema_version=1, dispatch_mode="native"。
+- fixture 132 件・sample 18 件の全件が golden と完全一致を確認。
+- `pytra-cli2 -resolve` サブコマンドを実装し、CLI 経由での resolve を可能にした。
+- toolchain/ への依存ゼロ。§5 コーディング規約 (Any/object 禁止、pytra.std.* のみ) を遵守。
+- 将来の cross-module 型解決・import graph ソート・構文正規化は、golden file が変更された段階で追加実装する。
+
 ## 7. 未決事項
 
 - `--from=python` 以外の frontend が現実的に必要になる時期

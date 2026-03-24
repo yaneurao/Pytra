@@ -54,9 +54,9 @@
 入力: `test/fixture/east1/py/*.py.east1`, `test/sample/east1/py/*.py.east1`
 正解: `test/fixture/east2/`, `test/sample/east2/`
 
-1. [ ] [ID: P0-RESOLVE-S1] cross-module 型解決を実装し、fixture 132 件の .east2 が golden と一致する
-2. [ ] [ID: P0-RESOLVE-S2] sample 18 件の .east2 が golden と一致する（signature_registry のハードコードなし）
-3. [ ] [ID: P0-RESOLVE-S3] `pytra-cli2 -resolve` を実装する
+1. [x] [ID: P0-RESOLVE-S1] cross-module 型解決を実装し、fixture 132 件の .east2 が golden と一致する — 完了
+2. [x] [ID: P0-RESOLVE-S2] sample 18 件の .east2 が golden と一致する（signature_registry のハードコードなし） — 完了
+3. [x] [ID: P0-RESOLVE-S3] `pytra-cli2 -resolve` を実装する — 完了
 
 ### P0-COMPILE: east2 → east3 (Agent C)
 
