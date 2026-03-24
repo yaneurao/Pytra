@@ -206,7 +206,6 @@ test/
   fixture/
     source/py/                       ← fixture ソース（小さい .py）
       optional_syntax.py
-      union_syntax.py
     east1/py/                        ← parse の期待出力
       optional_syntax.py.east1
     east2/                           ← resolve の期待出力
@@ -215,14 +214,15 @@ test/
       optional_syntax.east3
     east3-opt/                       ← optimize の期待出力
       optional_syntax.east3
-    emit/
-      cpp/                           ← emit parity テスト
+    emit/                            ← emit parity の正解 stdout（全言語共通）
+      optional_syntax.stdout
 ```
 
 #### sample 系（大きい・18件・重い end-to-end）
 
 ```
 sample/py/                           ← sample ソース（既存のまま、移動しない）
+sample/golden/manifest.json          ← emit parity の正解（stdout_normalized + artifact sha256）
 
 test/
   sample/                            ← sample の golden のみ
@@ -234,11 +234,10 @@ test/
       01_mandelbrot.east3
     east3-opt/                       ← optimize の期待出力
       01_mandelbrot.east3
-    emit/
-      cpp/                           ← emit parity テスト
 ```
 
-sample のソースは `sample/py/` を直接参照する（コピーや symlink は作らない）。テストランナーが参照先を明示的に指定する。
+- sample のソースは `sample/py/` を直接参照する（コピーや symlink は作らない）
+- sample の emit parity 正解は `sample/golden/manifest.json` を参照する（`test/sample/emit/` は作らない）
 
 #### データの流れ
 
@@ -248,7 +247,7 @@ test/fixture/source/py/*.py      → parse    → test/fixture/east1/py/*.py.eas
 test/fixture/east1/py/*.py.east1 → resolve  → test/fixture/east2/*.east2
 test/fixture/east2/*.east2       → compile  → test/fixture/east3/*.east3
 test/fixture/east3/*.east3       → optimize → test/fixture/east3-opt/*.east3
-test/fixture/east3-opt/*.east3   → emit     → compile → run → Python と実行結果一致
+test/fixture/east3-opt/*.east3   → emit     → compile → run → test/fixture/emit/*.stdout と一致
 ```
 
 sample 系:
@@ -257,15 +256,17 @@ sample/py/*.py                   → parse    → test/sample/east1/py/*.py.east
 test/sample/east1/py/*.py.east1  → resolve  → test/sample/east2/*.east2
 test/sample/east2/*.east2        → compile  → test/sample/east3/*.east3
 test/sample/east3/*.east3        → optimize → test/sample/east3-opt/*.east3
-test/sample/east3-opt/*.east3    → emit     → compile → run → Python と実行結果一致
+test/sample/east3-opt/*.east3    → emit     → compile → run → sample/golden/manifest.json と一致
 ```
 
 #### 設計原則
 
 - fixture と sample は独立に実行できる（CI で分けられる）
 - 各段のディレクトリは期待出力のみを持つ（`source/py/` だけが入力ソース）
-- `emit/` は golden file テスト（テキスト一致）ではなく parity テスト（実行結果一致）
+- emit は golden file テスト（テキスト一致）ではなく parity テスト（実行結果一致）
   - emit の生成コードはフォーマット変更で頻繁に変わるため、テキスト一致は脆い
+- emit parity の正解 stdout は全言語共通（言語別サブディレクトリなし、CRLF/LF は比較時に正規化）
+- fixture の emit 正解は `test/fixture/emit/*.stdout`、sample は `sample/golden/manifest.json`
 - `source/py/` は将来 `source/rb/` 等に対応可能
 
 ## 4. 除去されるもの
