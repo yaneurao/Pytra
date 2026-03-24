@@ -234,12 +234,28 @@ def _resolve_expr(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
         return _resolve_slice(expr, ctx)
     if kind == "JoinedStr":
         expr["resolved_type"] = "str"
-        # Resolve child values
+        # Resolve child values — each part gets resolved_type: "str"
         values = expr.get("values")
         if isinstance(values, list):
             for v in values:
                 if isinstance(v, dict):
-                    _resolve_expr(v, ctx)
+                    vk: str = str(v.get("kind", ""))
+                    if vk == "FormattedValue":
+                        # FormattedValue wraps an expression
+                        inner = v.get("value")
+                        if isinstance(inner, dict):
+                            _resolve_expr(inner, ctx)
+                        v["resolved_type"] = "str"
+                    elif vk == "Constant":
+                        _resolve_expr(v, ctx)
+                    else:
+                        _resolve_expr(v, ctx)
+        return "str"
+    if kind == "FormattedValue":
+        inner2 = expr.get("value")
+        if isinstance(inner2, dict):
+            _resolve_expr(inner2, ctx)
+        expr["resolved_type"] = "str"
         return "str"
 
     # Fallback: resolve children recursively
@@ -619,6 +635,20 @@ def _resolve_builtin_call(
 
     # Add runtime metadata from extern_v2
     extern: ExternV2 | None = sig.extern if sig is not None else None
+
+    # isinstance/issubclass use TypePredicateCall lowered_kind
+    if name == "isinstance":
+        expr["lowered_kind"] = "TypePredicateCall"
+        expr["predicate_kind"] = "isinstance"
+        if extern is not None:
+            expr["semantic_tag"] = extern.tag
+        return ret
+    if name == "issubclass":
+        expr["lowered_kind"] = "TypePredicateCall"
+        expr["predicate_kind"] = "issubclass"
+        if extern is not None:
+            expr["semantic_tag"] = extern.tag
+        return ret
 
     expr["lowered_kind"] = "BuiltinCall"
     expr["builtin_name"] = name

@@ -33,8 +33,8 @@ _TYPE_MAP: dict[str, str] = {
     "any": "Any",
     "object": "object",
     "Any": "Any",
-    "bytes": "list[uint8]",
-    "bytearray": "list[uint8]",
+    "bytes": "bytes",
+    "bytearray": "bytearray",
     "complex": "complex128",
 }
 
@@ -108,6 +108,10 @@ def make_type_expr(type_str: str) -> dict[str, JsonVal]:
     t: str = type_str.strip()
     if t == "":
         return {"kind": "NamedType", "name": "unknown"}
+
+    # Any/object → DynamicType (spec-east2.md §6.3)
+    if t == "Any" or t == "object":
+        return {"kind": "DynamicType", "name": t}
 
     # Generic types
     bracket: int = t.find("[")
