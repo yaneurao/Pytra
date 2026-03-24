@@ -3,14 +3,14 @@
 Port of toolchain/compile/east2_to_east3_lowering.py for toolchain2.
 §5.1: Any/object 禁止 — uses JsonVal throughout.
 §5.3: Python 標準モジュール直接 import 禁止。
+§5.6: グローバル可変状態禁止 — CompileContext 経由。
 """
 
 from __future__ import annotations
 
-import copy
 from typing import Union, Callable
 
-from toolchain2.compile.jv import JsonVal, Node
+from toolchain2.compile.jv import JsonVal, Node, CompileContext, deep_copy_json
 from toolchain2.compile.jv import jv_str, jv_dict, jv_list, jv_is_dict, jv_is_list
 from toolchain2.compile.jv import nd_kind, nd_get_str, nd_get_dict, nd_get_list
 from toolchain2.compile.jv import normalize_type_name
@@ -25,7 +25,6 @@ from toolchain2.compile.type_summary import (
     bridge_lane_payload,
     unknown_type_summary,
     collect_nominal_adt_table,
-    swap_nominal_adt_table,
     lookup_nominal_adt_decl,
     make_nominal_adt_type_summary,
     collect_nominal_adt_family_variants,
@@ -49,12 +48,6 @@ from toolchain2.compile.passes import (
     detect_unused_variables,
     mark_main_guard_discard,
 )
-
-# ---------------------------------------------------------------------------
-# Legacy compat bridge holder
-# ---------------------------------------------------------------------------
-
-_LEGACY_COMPAT_BRIDGE_HOLDER: list[bool] = [True]
 
 
 def _normalize_dispatch_mode(value: JsonVal) -> str:
@@ -134,8 +127,8 @@ def _tuple_element_types(type_name: JsonVal) -> list[str]:
 # AST node helpers
 # ---------------------------------------------------------------------------
 
-def _is_any_like_type(type_name: JsonVal) -> bool:
-    return is_dynamic_like_summary(type_expr_summary_from_payload(None, type_name))
+def _is_any_like_type(type_name: JsonVal, ctx: CompileContext) -> bool:
+    return is_dynamic_like_summary(type_expr_summary_from_payload(ctx, None, type_name))
 
 
 def _const_int_node(value: int) -> Node:
@@ -203,6 +196,7 @@ def _make_boundary_expr(
     value_node: JsonVal,
     resolved_type: str,
     source_expr: JsonVal,
+    ctx: CompileContext,
 ) -> Node:
     out: Node = {
         "kind": kind,
@@ -212,7 +206,7 @@ def _make_boundary_expr(
         value_key: value_node,
     }
     _copy_source_span_and_repr(source_expr, out)
-    set_type_expr_summary(out, type_expr_summary_from_payload(None, resolved_type))
+    set_type_expr_summary(out, type_expr_summary_from_payload(ctx, None, resolved_type))
     return out
 
 
@@ -275,16 +269,18 @@ def _wrap_value_for_target_type(
     value_expr: JsonVal, target_type: str,
     *,
     target_type_expr: JsonVal = None,
+    ctx: CompileContext,
 ) -> JsonVal:
-    target_summary = type_expr_summary_from_payload(target_type_expr, target_type)
+    target_summary = type_expr_summary_from_payload(ctx, target_type_expr, target_type)
     target_t = normalize_type_name(target_summary.get("mirror"))
     if target_t == "unknown":
         return value_expr
-    value_summary = expr_type_summary(value_expr)
+    value_summary = expr_type_summary(ctx, value_expr)
     if is_dynamic_like_summary(target_summary) and not is_dynamic_like_summary(value_summary):
         out = _make_boundary_expr(
             kind="Box", value_key="value", value_node=value_expr,
             resolved_type="object", source_expr=value_expr,
+            ctx=ctx,
         )
         out["bridge_lane_v1"] = bridge_lane_payload(target_summary, value_summary)
         set_type_expr_summary(out, target_summary)
@@ -293,6 +289,7 @@ def _wrap_value_for_target_type(
         out = _make_boundary_expr(
             kind="Unbox", value_key="value", value_node=value_expr,
             resolved_type=target_t, source_expr=value_expr,
+            ctx=ctx,
         )
         out["target"] = target_t
         out["on_fail"] = "raise"
@@ -302,26 +299,26 @@ def _wrap_value_for_target_type(
     return value_expr
 
 
-def _resolve_assign_target_type_summary(stmt: Node) -> Node:
+def _resolve_assign_target_type_summary(stmt: Node, ctx: CompileContext) -> Node:
     decl_expr = stmt.get("decl_type_expr")
-    summary = type_expr_summary_from_payload(decl_expr, stmt.get("decl_type"))
+    summary = type_expr_summary_from_payload(ctx, decl_expr, stmt.get("decl_type"))
     if jv_str(summary.get("category", "unknown")) != "unknown":
         return summary
     ann_expr = stmt.get("annotation_type_expr")
-    summary = type_expr_summary_from_payload(ann_expr, stmt.get("annotation"))
+    summary = type_expr_summary_from_payload(ctx, ann_expr, stmt.get("annotation"))
     if jv_str(summary.get("category", "unknown")) != "unknown":
         return summary
     target_obj = stmt.get("target")
     if isinstance(target_obj, dict):
         tod: Node = target_obj
-        summary = type_expr_summary_from_payload(tod.get("type_expr"), tod.get("resolved_type"))
+        summary = type_expr_summary_from_payload(ctx, tod.get("type_expr"), tod.get("resolved_type"))
         if jv_str(summary.get("category", "unknown")) != "unknown":
             return summary
     return unknown_type_summary()
 
 
-def _resolve_assign_target_type(stmt: Node) -> str:
-    summary = _resolve_assign_target_type_summary(stmt)
+def _resolve_assign_target_type(stmt: Node, ctx: CompileContext) -> str:
+    summary = _resolve_assign_target_type_summary(stmt, ctx)
     mirror = normalize_type_name(summary.get("mirror"))
     if mirror != "unknown":
         return mirror
@@ -345,6 +342,7 @@ def _build_target_plan(
     target_type: JsonVal,
     *,
     lower_node_fn: Callable[[JsonVal], JsonVal],
+    ctx: CompileContext,
 ) -> Node:
     tt_norm = normalize_type_name(target_type)
     if isinstance(target, dict):
@@ -365,7 +363,7 @@ def _build_target_plan(
                     et = "unknown"
                     if i < len(elem_types):
                         et = elem_types[i]
-                    elem_plans.append(_build_target_plan(elem, et, lower_node_fn=lower_node_fn))
+                    elem_plans.append(_build_target_plan(elem, et, lower_node_fn=lower_node_fn, ctx=ctx))
             out = {"kind": "TupleTarget", "elements": elem_plans}
             if tt_norm != "unknown":
                 out["target_type"] = tt_norm
@@ -376,7 +374,7 @@ def _build_target_plan(
     return out
 
 
-def _lower_assignment_like_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal], JsonVal]) -> Node:
+def _lower_assignment_like_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal], JsonVal], ctx: CompileContext) -> Node:
     out: Node = {}
     for key in stmt:
         if key == "value":
@@ -385,10 +383,10 @@ def _lower_assignment_like_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal]
     if "value" not in stmt or stmt.get("value") is None:
         return out
     value_lowered = lower_node_fn(stmt.get("value"))
-    target_summary = _resolve_assign_target_type_summary(stmt)
+    target_summary = _resolve_assign_target_type_summary(stmt, ctx)
     target_type = normalize_type_name(target_summary.get("mirror"))
     if target_type == "unknown":
-        target_type = _resolve_assign_target_type(stmt)
+        target_type = _resolve_assign_target_type(stmt, ctx)
     target_obj = stmt.get("target")
     target_type_expr = stmt.get("decl_type_expr")
     if target_type_expr is None:
@@ -398,12 +396,13 @@ def _lower_assignment_like_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal]
         target_type_expr = tod.get("type_expr")
     out["value"] = _wrap_value_for_target_type(
         value_lowered, target_type, target_type_expr=target_type_expr,
+        ctx=ctx,
     )
     set_type_expr_summary(out, target_summary)
     return out
 
 
-def _lower_for_stmt(stmt: Node, *, dispatch_mode: str, lower_node_fn: Callable[[JsonVal], JsonVal]) -> Node:
+def _lower_for_stmt(stmt: Node, *, dispatch_mode: str, lower_node_fn: Callable[[JsonVal], JsonVal], ctx: CompileContext) -> Node:
     iter_expr = lower_node_fn(stmt.get("iter"))
     iter_plan: Node = {
         "kind": "RuntimeIterForPlan",
@@ -419,7 +418,7 @@ def _lower_for_stmt(stmt: Node, *, dispatch_mode: str, lower_node_fn: Callable[[
         "kind": "ForCore",
         "iter_mode": "runtime_protocol",
         "iter_plan": iter_plan,
-        "target_plan": _build_target_plan(stmt.get("target"), target_type, lower_node_fn=lower_node_fn),
+        "target_plan": _build_target_plan(stmt.get("target"), target_type, lower_node_fn=lower_node_fn, ctx=ctx),
         "body": lower_node_fn(stmt.get("body", [])),
         "orelse": lower_node_fn(stmt.get("orelse", [])),
     }
@@ -428,7 +427,7 @@ def _lower_for_stmt(stmt: Node, *, dispatch_mode: str, lower_node_fn: Callable[[
     return out
 
 
-def _lower_forrange_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal], JsonVal]) -> Node:
+def _lower_forrange_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal], JsonVal], ctx: CompileContext) -> Node:
     start_node = lower_node_fn(stmt.get("start"))
     stop_node = lower_node_fn(stmt.get("stop"))
     step_node = lower_node_fn(stmt.get("step"))
@@ -444,7 +443,7 @@ def _lower_forrange_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal], JsonV
         "kind": "ForCore",
         "iter_mode": "static_fastpath",
         "iter_plan": iter_plan,
-        "target_plan": _build_target_plan(stmt.get("target"), stmt.get("target_type"), lower_node_fn=lower_node_fn),
+        "target_plan": _build_target_plan(stmt.get("target"), stmt.get("target_type"), lower_node_fn=lower_node_fn, ctx=ctx),
         "body": lower_node_fn(stmt.get("body", [])),
         "orelse": lower_node_fn(stmt.get("orelse", [])),
     }
@@ -453,7 +452,7 @@ def _lower_forrange_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal], JsonV
     return out
 
 
-def _lower_forcore_stmt(stmt: Node, *, dispatch_mode: str, lower_node_fn: Callable[[JsonVal], JsonVal]) -> Node:
+def _lower_forcore_stmt(stmt: Node, *, dispatch_mode: str, lower_node_fn: Callable[[JsonVal], JsonVal], ctx: CompileContext) -> Node:
     out: Node = {}
     for key in stmt:
         out[key] = lower_node_fn(stmt[key])
@@ -469,12 +468,12 @@ def _lower_forcore_stmt(stmt: Node, *, dispatch_mode: str, lower_node_fn: Callab
 # Nominal ADT metadata helpers
 # ---------------------------------------------------------------------------
 
-def _build_nominal_adt_ctor_meta(call: Node) -> Node | None:
+def _build_nominal_adt_ctor_meta(call: Node, ctx: CompileContext) -> Node | None:
     func_obj = call.get("func")
     if not isinstance(func_obj, dict) or func_obj.get("kind") != "Name":
         return None
     ctor_name = normalize_type_name(func_obj.get("id"))
-    decl = lookup_nominal_adt_decl(ctor_name)
+    decl = lookup_nominal_adt_decl(ctx, ctor_name)
     if decl is None or jv_str(decl.get("role", "")).strip() != "variant":
         return None
     ps = jv_str(decl.get("payload_style", "")).strip()
@@ -489,8 +488,8 @@ def _build_nominal_adt_ctor_meta(call: Node) -> Node | None:
     }
 
 
-def _decorate_nominal_adt_ctor_call(call: Node) -> Node:
-    meta = _build_nominal_adt_ctor_meta(call)
+def _decorate_nominal_adt_ctor_call(call: Node, ctx: CompileContext) -> Node:
+    meta = _build_nominal_adt_ctor_meta(call, ctx)
     if meta is None:
         return call
     call["semantic_tag"] = "nominal_adt.variant_ctor"
@@ -500,17 +499,17 @@ def _decorate_nominal_adt_ctor_call(call: Node) -> Node:
     return call
 
 
-def _decorate_nominal_adt_projection_attr(attr_expr: Node) -> Node:
+def _decorate_nominal_adt_projection_attr(attr_expr: Node, ctx: CompileContext) -> Node:
     attr_name = jv_str(attr_expr.get("attr", "")).strip()
     if attr_name == "":
         return attr_expr
-    owner_summary = expr_type_summary(attr_expr.get("value"))
+    owner_summary = expr_type_summary(ctx, attr_expr.get("value"))
     if jv_str(owner_summary.get("category", "unknown")).strip() != "nominal_adt":
         return attr_expr
     variant_name = normalize_type_name(owner_summary.get("nominal_adt_name"))
     if variant_name == "unknown":
         variant_name = normalize_type_name(owner_summary.get("mirror"))
-    decl = lookup_nominal_adt_decl(variant_name)
+    decl = lookup_nominal_adt_decl(ctx, variant_name)
     if decl is None or jv_str(decl.get("role", "")).strip() != "variant":
         return attr_expr
     ft_obj = decl.get("field_types")
@@ -533,17 +532,17 @@ def _decorate_nominal_adt_projection_attr(attr_expr: Node) -> Node:
     attr_expr["lowered_kind"] = "NominalAdtProjection"
     attr_expr["nominal_adt_projection_v1"] = meta
     attr_expr["resolved_type"] = field_type
-    set_type_expr_summary(attr_expr, type_expr_summary_from_payload(None, field_type))
+    set_type_expr_summary(attr_expr, type_expr_summary_from_payload(ctx, None, field_type))
     return attr_expr
 
 
-def _decorate_nominal_adt_variant_pattern(pattern: Node) -> Node:
+def _decorate_nominal_adt_variant_pattern(pattern: Node, ctx: CompileContext) -> Node:
     if pattern.get("kind") != "VariantPattern":
         return pattern
     variant_name = normalize_type_name(pattern.get("variant_name"))
     if variant_name == "unknown":
         return pattern
-    decl = lookup_nominal_adt_decl(variant_name)
+    decl = lookup_nominal_adt_decl(ctx, variant_name)
     if decl is None or jv_str(decl.get("role", "")).strip() != "variant":
         return pattern
     family_name = jv_str(pattern.get("family_name", "")).strip()
@@ -600,12 +599,12 @@ def _decorate_nominal_adt_variant_pattern(pattern: Node) -> Node:
             spd["nominal_adt_pattern_bind_v1"] = pb_meta
             if field_type != "unknown":
                 spd["resolved_type"] = field_type
-                set_type_expr_summary(spd, type_expr_summary_from_payload(None, field_type))
+                set_type_expr_summary(spd, type_expr_summary_from_payload(ctx, None, field_type))
     return pattern
 
 
-def _decorate_nominal_adt_match_stmt(match_stmt: Node) -> Node:
-    subject_summary = expr_type_summary(match_stmt.get("subject"))
+def _decorate_nominal_adt_match_stmt(match_stmt: Node, ctx: CompileContext) -> Node:
+    subject_summary = expr_type_summary(ctx, match_stmt.get("subject"))
     family_cat = jv_str(subject_summary.get("category", "unknown")).strip()
     family_name = ""
     if family_cat == "nominal_adt":
@@ -618,7 +617,7 @@ def _decorate_nominal_adt_match_stmt(match_stmt: Node) -> Node:
                 family_name = ""
     if family_name == "":
         return match_stmt
-    family_variants = collect_nominal_adt_family_variants(family_name)
+    family_variants = collect_nominal_adt_family_variants(ctx, family_name)
     if len(family_variants) == 0:
         return match_stmt
     cases_obj = match_stmt.get("cases")
@@ -646,7 +645,7 @@ def _decorate_nominal_adt_match_stmt(match_stmt: Node) -> Node:
             if vf != family_name or vn not in family_variants:
                 invalid = True
                 continue
-            ddecl = lookup_nominal_adt_decl(vn)
+            ddecl = lookup_nominal_adt_decl(ctx, vn)
             if ddecl is None:
                 invalid = True
                 continue
@@ -719,7 +718,7 @@ def _decorate_nominal_adt_match_stmt(match_stmt: Node) -> Node:
         if pd2.get("kind") != "VariantPattern":
             continue
         vn2 = normalize_type_name(pd2.get("variant_name"))
-        ddecl2 = lookup_nominal_adt_decl(vn2)
+        ddecl2 = lookup_nominal_adt_decl(ctx, vn2)
         if ddecl2 is None:
             continue
         ps2 = jv_str(ddecl2.get("payload_style", "")).strip()
@@ -762,7 +761,7 @@ def _decorate_nominal_adt_match_stmt(match_stmt: Node) -> Node:
             }
             if ft5 != "unknown":
                 spd2["resolved_type"] = ft5
-                set_type_expr_summary(spd2, type_expr_summary_from_payload(None, ft5))
+                set_type_expr_summary(spd2, type_expr_summary_from_payload(ctx, None, ft5))
     return match_stmt
 
 
@@ -773,7 +772,7 @@ def _decorate_nominal_adt_match_stmt(match_stmt: Node) -> Node:
 _JSON_DECODE_META_KEY: str = "json_decode_v1"
 
 
-def _infer_json_semantic_tag(call: Node, *, legacy_compat_bridge_enabled: bool) -> str:
+def _infer_json_semantic_tag(call: Node, *, legacy_compat_bridge_enabled: bool, ctx: CompileContext) -> str:
     st = jv_str(call.get("semantic_tag", "")).strip()
     if st.startswith("json."):
         return st
@@ -790,7 +789,7 @@ def _infer_json_semantic_tag(call: Node, *, legacy_compat_bridge_enabled: bool) 
     if isinstance(func_obj, dict) and func_obj.get("kind") == "Attribute":
         attr = jv_str(func_obj.get("attr", "")).strip()
         owner = func_obj.get("value")
-        os = expr_type_summary(owner)
+        os = expr_type_summary(ctx, owner)
         on = json_nominal_type_name(os)
         if on == "JsonValue" and attr in ("as_obj", "as_arr", "as_str", "as_int", "as_float", "as_bool"):
             return "json.value." + attr
@@ -806,11 +805,11 @@ def _infer_json_semantic_tag(call: Node, *, legacy_compat_bridge_enabled: bool) 
     return ""
 
 
-def _build_json_decode_meta(call: Node, semantic_tag: str) -> Node:
+def _build_json_decode_meta(call: Node, semantic_tag: str, ctx: CompileContext) -> Node:
     meta: Node = {
         "schema_version": 1,
         "semantic_tag": semantic_tag,
-        "result_type": type_expr_summary_from_node(call),
+        "result_type": type_expr_summary_from_node(ctx, call),
     }
     if semantic_tag.startswith("json.loads"):
         meta["decode_kind"] = "module_load"
@@ -820,7 +819,7 @@ def _build_json_decode_meta(call: Node, semantic_tag: str) -> Node:
         meta["decode_kind"] = "helper_call"
         return meta
     owner = func_obj.get("value")
-    os2 = expr_type_summary(owner)
+    os2 = expr_type_summary(ctx, owner)
     raise_json_contract_violation(semantic_tag, os2)
     meta["decode_kind"] = "narrow"
     meta["receiver_type"] = os2
@@ -836,7 +835,7 @@ def _build_json_decode_meta(call: Node, semantic_tag: str) -> Node:
     return meta
 
 
-def _lower_representative_json_decode_call(out_call: Node) -> Node:
+def _lower_representative_json_decode_call(out_call: Node, ctx: CompileContext) -> Node:
     st = jv_str(out_call.get("semantic_tag", "")).strip()
     if st != "json.value.as_obj":
         return out_call
@@ -848,11 +847,11 @@ def _lower_representative_json_decode_call(out_call: Node) -> Node:
     if not isinstance(func_obj, dict) or func_obj.get("kind") != "Attribute":
         return out_call
     receiver_node = func_obj.get("value")
-    cs, rc, recc = representative_json_contract_metadata(out_call, receiver_node)
+    cs, rc, recc = representative_json_contract_metadata(ctx, out_call, receiver_node)
     out_call["lowered_kind"] = "JsonDecodeCall"
     out_call["json_decode_receiver"] = receiver_node
     m_obj = out_call.get(_JSON_DECODE_META_KEY)
-    meta: Node = dict(m_obj) if isinstance(m_obj, dict) else _build_json_decode_meta(out_call, st)
+    meta: Node = dict(m_obj) if isinstance(m_obj, dict) else _build_json_decode_meta(out_call, st, ctx)
     meta["ir_category"] = "JsonDecodeCall"
     meta["decode_entry"] = "json.value.as_obj"
     meta["contract_source"] = cs
@@ -869,13 +868,13 @@ def _lower_representative_json_decode_call(out_call: Node) -> Node:
     return out_call
 
 
-def _decorate_call_metadata(call: Node, *, legacy_compat_bridge_enabled: bool) -> Node:
-    call = _decorate_nominal_adt_ctor_call(call)
-    json_tag = _infer_json_semantic_tag(call, legacy_compat_bridge_enabled=legacy_compat_bridge_enabled)
+def _decorate_call_metadata(call: Node, *, legacy_compat_bridge_enabled: bool, ctx: CompileContext) -> Node:
+    call = _decorate_nominal_adt_ctor_call(call, ctx)
+    json_tag = _infer_json_semantic_tag(call, legacy_compat_bridge_enabled=legacy_compat_bridge_enabled, ctx=ctx)
     if json_tag != "":
         call["semantic_tag"] = json_tag
-        call[_JSON_DECODE_META_KEY] = _build_json_decode_meta(call, json_tag)
-        call = _lower_representative_json_decode_call(call)
+        call[_JSON_DECODE_META_KEY] = _build_json_decode_meta(call, json_tag, ctx)
+        call = _lower_representative_json_decode_call(call, ctx)
     return call
 
 
@@ -897,6 +896,7 @@ def _builtin_type_id_symbol(type_name: str) -> str:
 def _make_type_predicate_expr(
     *, kind: str, left_key: str, left_expr: JsonVal,
     expected_type_id_expr: JsonVal, source_expr: JsonVal,
+    ctx: CompileContext,
 ) -> Node:
     out: Node = {
         "kind": kind, "resolved_type": "bool",
@@ -904,7 +904,7 @@ def _make_type_predicate_expr(
         left_key: left_expr, "expected_type_id": expected_type_id_expr,
     }
     _copy_source_span_and_repr(source_expr, out)
-    ls = expr_type_summary(left_expr)
+    ls = expr_type_summary(ctx, left_expr)
     set_type_expr_summary(out, ls)
     mode = jv_str(ls.get("category", "unknown")).strip()
     if mode != "" and mode != "unknown":
@@ -916,14 +916,14 @@ def _make_type_predicate_expr(
     return out
 
 
-def _build_nominal_adt_type_test_meta(type_ref_expr: JsonVal) -> Node | None:
+def _build_nominal_adt_type_test_meta(type_ref_expr: JsonVal, ctx: CompileContext) -> Node | None:
     if not isinstance(type_ref_expr, dict):
         return None
     trd: Node = type_ref_expr
     if trd.get("kind") != "Name":
         return None
     tn = normalize_type_name(trd.get("id"))
-    decl = lookup_nominal_adt_decl(tn)
+    decl = lookup_nominal_adt_decl(ctx, tn)
     if decl is None:
         return None
     meta: Node = {"schema_version": 1, "family_name": jv_str(decl.get("family_name", tn))}
@@ -991,6 +991,7 @@ def _type_ref_to_type_id(
 def _collect_expected_type_id_specs(
     type_spec_expr: JsonVal, *, dispatch_mode: str,
     lower_node_fn: Callable[[JsonVal], JsonVal],
+    ctx: CompileContext,
 ) -> list[Node]:
     spec_node = lower_node_fn(type_spec_expr)
     out: list[Node] = []
@@ -1003,7 +1004,7 @@ def _collect_expected_type_id_specs(
                 out.append({
                     "type_id_expr": lowered,
                     "type_ref_expr": elem,
-                    "nominal_adt_test_v1": _build_nominal_adt_type_test_meta(elem),
+                    "nominal_adt_test_v1": _build_nominal_adt_type_test_meta(elem, ctx),
                 })
         return out
     lowered_one = _type_ref_to_type_id(spec_node, dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn)
@@ -1011,7 +1012,7 @@ def _collect_expected_type_id_specs(
         out.append({
             "type_id_expr": lowered_one,
             "type_ref_expr": spec_node,
-            "nominal_adt_test_v1": _build_nominal_adt_type_test_meta(spec_node),
+            "nominal_adt_test_v1": _build_nominal_adt_type_test_meta(spec_node, ctx),
         })
     return out
 
@@ -1019,13 +1020,14 @@ def _collect_expected_type_id_specs(
 def _lower_isinstance_call(
     out_call: Node, *, dispatch_mode: str,
     lower_node_fn: Callable[[JsonVal], JsonVal],
+    ctx: CompileContext,
 ) -> Node:
     args = out_call.get("args")
     al: list[JsonVal] = args if isinstance(args, list) else []
     if len(al) != 2:
         return out_call
     value_expr = al[0]
-    specs = _collect_expected_type_id_specs(al[1], dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn)
+    specs = _collect_expected_type_id_specs(al[1], dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn, ctx=ctx)
     expected = [s.get("type_id_expr") for s in specs if isinstance(s, dict)]
     if len(expected) == 0:
         fo = _const_bool_node(False)
@@ -1041,6 +1043,7 @@ def _lower_isinstance_call(
         check = _make_type_predicate_expr(
             kind="IsInstance", left_key="value", left_expr=value_expr,
             expected_type_id_expr=tid, source_expr=out_call,
+            ctx=ctx,
         )
         check = _attach_nominal_adt_type_test_meta(check, spec.get("nominal_adt_test_v1"))
         checks.append(check)
@@ -1050,6 +1053,7 @@ def _lower_isinstance_call(
 def _lower_issubclass_call(
     out_call: Node, *, dispatch_mode: str,
     lower_node_fn: Callable[[JsonVal], JsonVal],
+    ctx: CompileContext,
 ) -> Node:
     args = out_call.get("args")
     al: list[JsonVal] = args if isinstance(args, list) else []
@@ -1060,7 +1064,7 @@ def _lower_issubclass_call(
         fo = _const_bool_node(False)
         _copy_source_span_and_repr(out_call, fo)
         return fo
-    specs = _collect_expected_type_id_specs(al[1], dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn)
+    specs = _collect_expected_type_id_specs(al[1], dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn, ctx=ctx)
     expected = [s.get("type_id_expr") for s in specs if isinstance(s, dict)]
     if len(expected) == 0:
         fo = _const_bool_node(False)
@@ -1076,6 +1080,7 @@ def _lower_issubclass_call(
         check = _make_type_predicate_expr(
             kind="IsSubclass", left_key="actual_type_id", left_expr=atid,
             expected_type_id_expr=tid, source_expr=out_call,
+            ctx=ctx,
         )
         check = _attach_nominal_adt_type_test_meta(check, spec.get("nominal_adt_test_v1"))
         checks.append(check)
@@ -1086,19 +1091,20 @@ def _lower_type_id_call_expr(
     out_call: Node, *, dispatch_mode: str,
     lower_node_fn: Callable[[JsonVal], JsonVal],
     legacy_compat: bool,
+    ctx: CompileContext,
 ) -> Node:
     st = jv_str(out_call.get("semantic_tag", "")).strip()
     if st == "type.isinstance":
-        return _lower_isinstance_call(out_call, dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn)
+        return _lower_isinstance_call(out_call, dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn, ctx=ctx)
     if st == "type.issubclass":
-        return _lower_issubclass_call(out_call, dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn)
+        return _lower_issubclass_call(out_call, dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn, ctx=ctx)
     lk = jv_str(out_call.get("lowered_kind", "")).strip()
     bn = jv_str(out_call.get("builtin_name", "")).strip()
     if lk == "TypePredicateCall":
         if bn == "isinstance":
-            return _lower_isinstance_call(out_call, dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn)
+            return _lower_isinstance_call(out_call, dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn, ctx=ctx)
         if bn == "issubclass":
-            return _lower_issubclass_call(out_call, dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn)
+            return _lower_issubclass_call(out_call, dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn, ctx=ctx)
     func_obj = out_call.get("func")
     if not isinstance(func_obj, dict) or func_obj.get("kind") != "Name":
         return out_call
@@ -1106,29 +1112,29 @@ def _lower_type_id_call_expr(
     if not legacy_compat:
         return out_call
     if fn == "isinstance":
-        return _lower_isinstance_call(out_call, dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn)
+        return _lower_isinstance_call(out_call, dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn, ctx=ctx)
     if fn == "issubclass":
-        return _lower_issubclass_call(out_call, dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn)
+        return _lower_issubclass_call(out_call, dispatch_mode=dispatch_mode, lower_node_fn=lower_node_fn, ctx=ctx)
     if fn == "py_isinstance" or fn == "py_tid_isinstance":
         al2 = out_call.get("args")
         a2: list[JsonVal] = al2 if isinstance(al2, list) else []
         if len(a2) == 2:
-            return _make_type_predicate_expr(kind="IsInstance", left_key="value", left_expr=a2[0], expected_type_id_expr=a2[1], source_expr=out_call)
+            return _make_type_predicate_expr(kind="IsInstance", left_key="value", left_expr=a2[0], expected_type_id_expr=a2[1], source_expr=out_call, ctx=ctx)
     if fn == "py_issubclass" or fn == "py_tid_issubclass":
         al2 = out_call.get("args")
         a2 = al2 if isinstance(al2, list) else []
         if len(a2) == 2:
-            return _make_type_predicate_expr(kind="IsSubclass", left_key="actual_type_id", left_expr=a2[0], expected_type_id_expr=a2[1], source_expr=out_call)
+            return _make_type_predicate_expr(kind="IsSubclass", left_key="actual_type_id", left_expr=a2[0], expected_type_id_expr=a2[1], source_expr=out_call, ctx=ctx)
     if fn == "py_is_subtype" or fn == "py_tid_is_subtype":
         al2 = out_call.get("args")
         a2 = al2 if isinstance(al2, list) else []
         if len(a2) == 2:
-            return _make_type_predicate_expr(kind="IsSubtype", left_key="actual_type_id", left_expr=a2[0], expected_type_id_expr=a2[1], source_expr=out_call)
+            return _make_type_predicate_expr(kind="IsSubtype", left_key="actual_type_id", left_expr=a2[0], expected_type_id_expr=a2[1], source_expr=out_call, ctx=ctx)
     if fn == "py_runtime_type_id" or fn == "py_tid_runtime_type_id":
         al2 = out_call.get("args")
         a2 = al2 if isinstance(al2, list) else []
         if len(a2) == 1:
-            return _make_boundary_expr(kind="ObjTypeId", value_key="value", value_node=a2[0], resolved_type="int64", source_expr=out_call)
+            return _make_boundary_expr(kind="ObjTypeId", value_key="value", value_node=a2[0], resolved_type="int64", source_expr=out_call, ctx=ctx)
     return out_call
 
 
@@ -1136,9 +1142,9 @@ def _lower_type_id_call_expr(
 # Starred call args expansion
 # ---------------------------------------------------------------------------
 
-def _make_tuple_starred_index_expr(tuple_expr: Node, index: int, elem_type: str, source_expr: JsonVal) -> Node:
+def _make_tuple_starred_index_expr(tuple_expr: Node, index: int, elem_type: str, source_expr: JsonVal, ctx: CompileContext) -> Node:
     idx_node = _const_int_node(index)
-    tuple_node = copy.deepcopy(tuple_expr)
+    tuple_node = deep_copy_json(tuple_expr)
     out: Node = {
         "kind": "Subscript", "value": tuple_node, "slice": idx_node,
         "resolved_type": elem_type, "borrow_kind": "value", "casts": [],
@@ -1149,11 +1155,11 @@ def _make_tuple_starred_index_expr(tuple_expr: Node, index: int, elem_type: str,
     rr = _node_repr(tuple_expr)
     if rr != "":
         out["repr"] = rr + "[" + str(index) + "]"
-    set_type_expr_summary(out, type_expr_summary_from_payload(None, elem_type))
+    set_type_expr_summary(out, type_expr_summary_from_payload(ctx, None, elem_type))
     return out
 
 
-def _expand_starred_call_args(call: Node) -> Node:
+def _expand_starred_call_args(call: Node, ctx: CompileContext) -> Node:
     args_obj = call.get("args")
     args: list[JsonVal] = args_obj if isinstance(args_obj, list) else []
     expanded: list[JsonVal] = []
@@ -1173,19 +1179,19 @@ def _expand_starred_call_args(call: Node) -> Node:
         vd: Node = value_obj
         if vd.get("kind") != "Name":
             raise RuntimeError("starred_call_contract_violation: v1 supports only named tuple starred")
-        tt = _tuple_element_types(expr_type_name(vd))
+        tt = _tuple_element_types(expr_type_name(ctx, vd))
         if len(tt) == 0:
             raise RuntimeError("starred_call_contract_violation: requires fixed tuple TypeExpr")
         has_bad = False
         for t in tt:
             nt = normalize_type_name(t)
-            if nt == "" or nt == "unknown" or _is_any_like_type(t):
+            if nt == "" or nt == "unknown" or _is_any_like_type(t, ctx):
                 has_bad = True
                 break
         if has_bad:
             raise RuntimeError("starred_call_contract_violation: requires non-dynamic tuple TypeExpr")
         for idx in range(len(tt)):
-            expanded.append(_make_tuple_starred_index_expr(vd, idx, tt[idx], ad))
+            expanded.append(_make_tuple_starred_index_expr(vd, idx, tt[idx], ad, ctx))
     if changed:
         call["args"] = expanded
     return call
@@ -1331,22 +1337,23 @@ def _apply_vararg_walk(node: JsonVal, vt: dict[str, Node]) -> JsonVal:
 # Call expression lowering
 # ---------------------------------------------------------------------------
 
-def _lower_call_expr(call: Node, *, dispatch_mode: str) -> Node:
+def _lower_call_expr(call: Node, *, dispatch_mode: str, ctx: CompileContext) -> Node:
     out: Node = {}
     for key in call:
-        out[key] = _lower_node(call[key], dispatch_mode=dispatch_mode)
-    out = _expand_starred_call_args(out)
+        out[key] = _lower_node(call[key], dispatch_mode=dispatch_mode, ctx=ctx)
+    out = _expand_starred_call_args(out, ctx)
     out = _lower_type_id_call_expr(
         out, dispatch_mode=dispatch_mode,
-        lower_node_fn=lambda node: _lower_node(node, dispatch_mode=dispatch_mode),
-        legacy_compat=_LEGACY_COMPAT_BRIDGE_HOLDER[0],
+        lower_node_fn=lambda node: _lower_node(node, dispatch_mode=dispatch_mode, ctx=ctx),
+        legacy_compat=ctx.legacy_compat_bridge,
+        ctx=ctx,
     )
     if not isinstance(out, dict):
         return out
     if out.get("kind") != "Call":
         return out
-    set_type_expr_summary(out, type_expr_summary_from_node(out))
-    out = _decorate_call_metadata(out, legacy_compat_bridge_enabled=_LEGACY_COMPAT_BRIDGE_HOLDER[0])
+    set_type_expr_summary(out, type_expr_summary_from_node(ctx, out))
+    out = _decorate_call_metadata(out, legacy_compat_bridge_enabled=ctx.legacy_compat_bridge, ctx=ctx)
     # Boundary expressions for dynamic-typed arguments
     func_obj = out.get("func")
     if isinstance(func_obj, dict) and func_obj.get("kind") == "Name" and func_obj.get("id") == "getattr":
@@ -1354,57 +1361,57 @@ def _lower_call_expr(call: Node, *, dispatch_mode: str) -> Node:
         al: list[JsonVal] = args if isinstance(args, list) else []
         if len(al) == 3:
             a0 = al[0]
-            if _is_any_like_type(expr_type_name(a0)):
+            if _is_any_like_type(expr_type_name(ctx, a0), ctx):
                 an = _const_string_value(al[1])
                 if an == "PYTRA_TYPE_ID" and _is_none_literal(al[2]):
-                    return _make_boundary_expr(kind="ObjTypeId", value_key="value", value_node=a0, resolved_type="int64", source_expr=out)
+                    return _make_boundary_expr(kind="ObjTypeId", value_key="value", value_node=a0, resolved_type="int64", source_expr=out, ctx=ctx)
     args = out.get("args")
     al2: list[JsonVal] = args if isinstance(args, list) else []
     if len(al2) != 1:
         return out
     a0 = al2[0]
-    a0t = expr_type_name(a0)
-    if not _is_any_like_type(a0t):
+    a0t = expr_type_name(ctx, a0)
+    if not _is_any_like_type(a0t, ctx):
         return out
     st = jv_str(out.get("semantic_tag", "")).strip()
     if st == "cast.bool":
-        return _make_boundary_expr(kind="ObjBool", value_key="value", value_node=a0, resolved_type="bool", source_expr=out)
+        return _make_boundary_expr(kind="ObjBool", value_key="value", value_node=a0, resolved_type="bool", source_expr=out, ctx=ctx)
     if st == "core.len":
-        return _make_boundary_expr(kind="ObjLen", value_key="value", value_node=a0, resolved_type="int64", source_expr=out)
+        return _make_boundary_expr(kind="ObjLen", value_key="value", value_node=a0, resolved_type="int64", source_expr=out, ctx=ctx)
     if st == "cast.str":
-        return _make_boundary_expr(kind="ObjStr", value_key="value", value_node=a0, resolved_type="str", source_expr=out)
+        return _make_boundary_expr(kind="ObjStr", value_key="value", value_node=a0, resolved_type="str", source_expr=out, ctx=ctx)
     if st == "iter.init":
-        return _make_boundary_expr(kind="ObjIterInit", value_key="value", value_node=a0, resolved_type="object", source_expr=out)
+        return _make_boundary_expr(kind="ObjIterInit", value_key="value", value_node=a0, resolved_type="object", source_expr=out, ctx=ctx)
     if st == "iter.next":
-        return _make_boundary_expr(kind="ObjIterNext", value_key="iter", value_node=a0, resolved_type="object", source_expr=out)
+        return _make_boundary_expr(kind="ObjIterNext", value_key="iter", value_node=a0, resolved_type="object", source_expr=out, ctx=ctx)
     rc = jv_str(out.get("runtime_call", ""))
     if rc == "py_to_bool":
-        return _make_boundary_expr(kind="ObjBool", value_key="value", value_node=a0, resolved_type="bool", source_expr=out)
+        return _make_boundary_expr(kind="ObjBool", value_key="value", value_node=a0, resolved_type="bool", source_expr=out, ctx=ctx)
     if rc == "py_len":
-        return _make_boundary_expr(kind="ObjLen", value_key="value", value_node=a0, resolved_type="int64", source_expr=out)
+        return _make_boundary_expr(kind="ObjLen", value_key="value", value_node=a0, resolved_type="int64", source_expr=out, ctx=ctx)
     if rc == "py_to_string":
-        return _make_boundary_expr(kind="ObjStr", value_key="value", value_node=a0, resolved_type="str", source_expr=out)
+        return _make_boundary_expr(kind="ObjStr", value_key="value", value_node=a0, resolved_type="str", source_expr=out, ctx=ctx)
     if rc == "py_iter_or_raise":
-        return _make_boundary_expr(kind="ObjIterInit", value_key="value", value_node=a0, resolved_type="object", source_expr=out)
+        return _make_boundary_expr(kind="ObjIterInit", value_key="value", value_node=a0, resolved_type="object", source_expr=out, ctx=ctx)
     if rc == "py_next_or_stop":
-        return _make_boundary_expr(kind="ObjIterNext", value_key="iter", value_node=a0, resolved_type="object", source_expr=out)
+        return _make_boundary_expr(kind="ObjIterNext", value_key="iter", value_node=a0, resolved_type="object", source_expr=out, ctx=ctx)
     if out.get("lowered_kind") != "BuiltinCall":
         return out
-    if not _LEGACY_COMPAT_BRIDGE_HOLDER[0]:
+    if not ctx.legacy_compat_bridge:
         return out
     bn = jv_str(out.get("builtin_name", ""))
     if bn == "bool":
-        return _make_boundary_expr(kind="ObjBool", value_key="value", value_node=a0, resolved_type="bool", source_expr=out)
+        return _make_boundary_expr(kind="ObjBool", value_key="value", value_node=a0, resolved_type="bool", source_expr=out, ctx=ctx)
     if bn == "len":
-        return _make_boundary_expr(kind="ObjLen", value_key="value", value_node=a0, resolved_type="int64", source_expr=out)
+        return _make_boundary_expr(kind="ObjLen", value_key="value", value_node=a0, resolved_type="int64", source_expr=out, ctx=ctx)
     if bn == "str":
-        return _make_boundary_expr(kind="ObjStr", value_key="value", value_node=a0, resolved_type="str", source_expr=out)
+        return _make_boundary_expr(kind="ObjStr", value_key="value", value_node=a0, resolved_type="str", source_expr=out, ctx=ctx)
     if isinstance(func_obj, dict) and func_obj.get("kind") == "Name":
         fn2 = func_obj.get("id")
         if fn2 == "iter":
-            return _make_boundary_expr(kind="ObjIterInit", value_key="value", value_node=a0, resolved_type="object", source_expr=out)
+            return _make_boundary_expr(kind="ObjIterInit", value_key="value", value_node=a0, resolved_type="object", source_expr=out, ctx=ctx)
         if fn2 == "next":
-            return _make_boundary_expr(kind="ObjIterNext", value_key="iter", value_node=a0, resolved_type="object", source_expr=out)
+            return _make_boundary_expr(kind="ObjIterNext", value_key="iter", value_node=a0, resolved_type="object", source_expr=out, ctx=ctx)
     return out
 
 
@@ -1412,45 +1419,45 @@ def _lower_call_expr(call: Node, *, dispatch_mode: str) -> Node:
 # Node dispatch
 # ---------------------------------------------------------------------------
 
-def _lower_node_dispatch(node: Node, *, dispatch_mode: str) -> JsonVal:
-    lower_fn: Callable[[JsonVal], JsonVal] = lambda v: _lower_node(v, dispatch_mode=dispatch_mode)
+def _lower_node_dispatch(node: Node, *, dispatch_mode: str, ctx: CompileContext) -> JsonVal:
+    lower_fn: Callable[[JsonVal], JsonVal] = lambda v: _lower_node(v, dispatch_mode=dispatch_mode, ctx=ctx)
     kind = node.get("kind")
     if kind == "For":
-        return _lower_for_stmt(node, dispatch_mode=dispatch_mode, lower_node_fn=lower_fn)
+        return _lower_for_stmt(node, dispatch_mode=dispatch_mode, lower_node_fn=lower_fn, ctx=ctx)
     if kind == "ForRange":
-        return _lower_forrange_stmt(node, lower_node_fn=lower_fn)
+        return _lower_forrange_stmt(node, lower_node_fn=lower_fn, ctx=ctx)
     if kind == "Assign" or kind == "AnnAssign" or kind == "AugAssign":
-        return _lower_assignment_like_stmt(node, lower_node_fn=lower_fn)
+        return _lower_assignment_like_stmt(node, lower_node_fn=lower_fn, ctx=ctx)
     if kind == "Call":
-        return _lower_call_expr(node, dispatch_mode=dispatch_mode)
+        return _lower_call_expr(node, dispatch_mode=dispatch_mode, ctx=ctx)
     if kind == "Attribute":
         out: Node = {}
         for key in node:
             out[key] = lower_fn(node[key])
-        return _decorate_nominal_adt_projection_attr(out)
+        return _decorate_nominal_adt_projection_attr(out, ctx)
     if kind == "VariantPattern":
         out = {}
         for key in node:
             out[key] = lower_fn(node[key])
-        return _decorate_nominal_adt_variant_pattern(out)
+        return _decorate_nominal_adt_variant_pattern(out, ctx)
     if kind == "Match":
         out = {}
         for key in node:
             out[key] = lower_fn(node[key])
-        return _decorate_nominal_adt_match_stmt(out)
+        return _decorate_nominal_adt_match_stmt(out, ctx)
     if kind == "ForCore":
-        return _lower_forcore_stmt(node, dispatch_mode=dispatch_mode, lower_node_fn=lower_fn)
+        return _lower_forcore_stmt(node, dispatch_mode=dispatch_mode, lower_node_fn=lower_fn, ctx=ctx)
     out = {}
     for key in node:
         out[key] = lower_fn(node[key])
     return out
 
 
-def _lower_node(node: JsonVal, *, dispatch_mode: str) -> JsonVal:
+def _lower_node(node: JsonVal, *, dispatch_mode: str, ctx: CompileContext) -> JsonVal:
     if isinstance(node, list):
-        return [_lower_node(item, dispatch_mode=dispatch_mode) for item in node]
+        return [_lower_node(item, dispatch_mode=dispatch_mode, ctx=ctx) for item in node]
     if isinstance(node, dict):
-        return _lower_node_dispatch(node, dispatch_mode=dispatch_mode)
+        return _lower_node_dispatch(node, dispatch_mode=dispatch_mode, ctx=ctx)
     return node
 
 
@@ -1476,20 +1483,16 @@ def lower_east2_to_east3(east_module: Node, object_dispatch_mode: str = "") -> N
         md: Node = meta_obj
         dispatch_mode = _normalize_dispatch_mode(md.get("dispatch_mode"))
 
-    prev_legacy = _LEGACY_COMPAT_BRIDGE_HOLDER[0]
-    prev_adt = swap_nominal_adt_table(collect_nominal_adt_table(east_module))
-    _LEGACY_COMPAT_BRIDGE_HOLDER[0] = True
+    ctx = CompileContext()
+    ctx.nominal_adt_table = collect_nominal_adt_table(east_module)
+    ctx.legacy_compat_bridge = True
     if isinstance(meta_obj, dict):
         md2: Node = meta_obj
         lo = md2.get("legacy_compat_bridge")
         if isinstance(lo, bool):
-            _LEGACY_COMPAT_BRIDGE_HOLDER[0] = lo
+            ctx.legacy_compat_bridge = lo
 
-    try:
-        lowered = _lower_node(east_module, dispatch_mode=dispatch_mode)
-    finally:
-        _LEGACY_COMPAT_BRIDGE_HOLDER[0] = prev_legacy
-        swap_nominal_adt_table(prev_adt)
+    lowered = _lower_node(east_module, dispatch_mode=dispatch_mode, ctx=ctx)
 
     if not isinstance(lowered, dict):
         return east_module
@@ -1505,19 +1508,19 @@ def lower_east2_to_east3(east_module: Node, object_dispatch_mode: str = "") -> N
             return east_module
 
     # Post-lowering passes
-    lower_yield_generators(lowered)
-    lower_listcomp(lowered)
-    expand_default_arguments(lowered)
-    expand_forcore_tuple_targets(lowered)
-    lower_enumerate(lowered)
-    hoist_block_scope_variables(lowered)
-    apply_integer_promotion(lowered)
-    apply_type_propagation(lowered)
-    apply_yields_dynamic(lowered)
-    detect_swap_patterns(lowered)
-    detect_mutates_self(lowered)
-    detect_unused_variables(lowered)
-    mark_main_guard_discard(lowered)
+    lower_yield_generators(lowered, ctx)
+    lower_listcomp(lowered, ctx)
+    expand_default_arguments(lowered, ctx)
+    expand_forcore_tuple_targets(lowered, ctx)
+    lower_enumerate(lowered, ctx)
+    hoist_block_scope_variables(lowered, ctx)
+    apply_integer_promotion(lowered, ctx)
+    apply_type_propagation(lowered, ctx)
+    apply_yields_dynamic(lowered, ctx)
+    detect_swap_patterns(lowered, ctx)
+    detect_mutates_self(lowered, ctx)
+    detect_unused_variables(lowered, ctx)
+    mark_main_guard_discard(lowered, ctx)
 
     lowered["east_stage"] = 3
     sv = lowered.get("schema_version")

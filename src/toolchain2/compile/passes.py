@@ -7,10 +7,9 @@ Consolidated port of all toolchain/compile/east2_to_east3_*_*.py passes.
 
 from __future__ import annotations
 
-import copy
 from typing import Union
 
-from toolchain2.compile.jv import JsonVal, Node
+from toolchain2.compile.jv import JsonVal, Node, CompileContext, deep_copy_json
 from toolchain2.compile.jv import jv_str, jv_is_dict, jv_is_list
 from toolchain2.compile.jv import normalize_type_name
 
@@ -35,11 +34,11 @@ def _contains_yield(node: JsonVal) -> bool:
     return False
 
 
-def _replace_yield_with_append(node: JsonVal, acc: str) -> JsonVal:
+def _replace_yield_with_append(node: JsonVal, acc: str, list_type: str) -> JsonVal:
     if isinstance(node, list):
         result: list[JsonVal] = []
         for item in node:
-            replaced = _replace_yield_with_append(item, acc)
+            replaced = _replace_yield_with_append(item, acc, list_type)
             if isinstance(replaced, list):
                 result.extend(replaced)
             else:
@@ -57,7 +56,7 @@ def _replace_yield_with_append(node: JsonVal, acc: str) -> JsonVal:
             "kind": "Expr",
             "value": {
                 "kind": "Call",
-                "func": {"kind": "Attribute", "value": {"kind": "Name", "id": acc, "resolved_type": "list[object]"}, "attr": "append"},
+                "func": {"kind": "Attribute", "value": {"kind": "Name", "id": acc, "resolved_type": list_type}, "attr": "append"},
                 "args": [value],
                 "resolved_type": "None",
             },
@@ -69,14 +68,14 @@ def _replace_yield_with_append(node: JsonVal, acc: str) -> JsonVal:
     out: Node = {}
     for key, val in nd.items():
         if key == "body" or key == "orelse" or key == "finalbody":
-            out[key] = _replace_yield_with_append(val, acc)
+            out[key] = _replace_yield_with_append(val, acc, list_type)
         elif key == "handlers" and isinstance(val, list):
             hs: list[JsonVal] = []
             for h in val:
                 if isinstance(h, dict):
                     nh = dict(h)
                     if "body" in nh:
-                        nh["body"] = _replace_yield_with_append(nh["body"], acc)
+                        nh["body"] = _replace_yield_with_append(nh["body"], acc, list_type)
                     hs.append(nh)
                 else:
                     hs.append(h)
@@ -91,7 +90,7 @@ def _lower_generator_function(func: Node) -> None:
     if not isinstance(body, list):
         return
     ret_type = jv_str(func.get("return_type", "")).strip()
-    elem_type = "object"
+    elem_type = "unknown"
     if ret_type.startswith("list[") and ret_type.endswith("]"):
         elem_type = ret_type[5:-1]
     elif ret_type not in ("", "unknown"):
@@ -105,7 +104,7 @@ def _lower_generator_function(func: Node) -> None:
         "annotation": lt, "decl_type": lt, "declare": True,
         "value": {"kind": "List", "elements": [], "resolved_type": lt},
     }
-    new_body = _replace_yield_with_append(body, acc)
+    new_body = _replace_yield_with_append(body, acc, lt)
     if not isinstance(new_body, list):
         new_body = body
     ret_stmt: Node = {"kind": "Return", "value": {"kind": "Name", "id": acc, "resolved_type": lt}}
@@ -141,7 +140,7 @@ def _yield_walk(node: JsonVal) -> None:
             _yield_walk(val)
 
 
-def lower_yield_generators(module: Node) -> Node:
+def lower_yield_generators(module: Node, ctx: CompileContext) -> Node:
     _yield_walk(module)
     return module
 
@@ -149,13 +148,6 @@ def lower_yield_generators(module: Node) -> Node:
 # ===========================================================================
 # listcomp lowering
 # ===========================================================================
-
-_comp_counter: list[int] = [0]
-
-def _next_comp_name() -> str:
-    _comp_counter[0] += 1
-    return "__comp_" + str(_comp_counter[0])
-
 
 def _build_lc_target_plan(target: JsonVal) -> Node:
     if isinstance(target, dict):
@@ -186,7 +178,7 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
         if annotation_type != "":
             rt = annotation_type
         elif rt in ("", "unknown"):
-            rt = "list[object]"
+            rt = "list[unknown]"
     init: Node = {
         "kind": "AnnAssign",
         "target": {"kind": "Name", "id": result_name, "resolved_type": rt},
@@ -202,7 +194,7 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
         "value": {
             "kind": "Call",
             "func": {"kind": "Attribute", "value": {"kind": "Name", "id": result_name, "resolved_type": rt}, "attr": "append"},
-            "args": [copy.deepcopy(elt)] if elt is not None else [],
+            "args": [deep_copy_json(elt)] if elt is not None else [],
             "resolved_type": "None",
         },
     }
@@ -214,7 +206,7 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
         if isinstance(ifs, list) and len(ifs) > 0:
             for cond in reversed(ifs):
                 if isinstance(cond, dict):
-                    body = [{"kind": "If", "test": copy.deepcopy(cond), "body": body, "orelse": []}]
+                    body = [{"kind": "If", "test": deep_copy_json(cond), "body": body, "orelse": []}]
         target = gen.get("target")
         iter_expr = gen.get("iter")
         tp = _build_lc_target_plan(target)
@@ -223,9 +215,9 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
                 "kind": "ForCore", "iter_mode": "static_fastpath",
                 "iter_plan": {
                     "kind": "StaticRangeForPlan",
-                    "start": copy.deepcopy(iter_expr.get("start", {"kind": "Constant", "value": 0, "resolved_type": "int64"})),
-                    "stop": copy.deepcopy(iter_expr.get("stop", {"kind": "Constant", "value": 0})),
-                    "step": copy.deepcopy(iter_expr.get("step", {"kind": "Constant", "value": 1, "resolved_type": "int64"})),
+                    "start": deep_copy_json(iter_expr.get("start", {"kind": "Constant", "value": 0, "resolved_type": "int64"})),
+                    "stop": deep_copy_json(iter_expr.get("stop", {"kind": "Constant", "value": 0})),
+                    "step": deep_copy_json(iter_expr.get("step", {"kind": "Constant", "value": 1, "resolved_type": "int64"})),
                 },
                 "target_plan": tp, "body": body, "orelse": [],
             }
@@ -234,7 +226,7 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
                 "kind": "ForCore", "iter_mode": "runtime_protocol",
                 "iter_plan": {
                     "kind": "RuntimeIterForPlan",
-                    "iter_expr": copy.deepcopy(iter_expr) if iter_expr else {"kind": "Name", "id": "__empty"},
+                    "iter_expr": deep_copy_json(iter_expr) if iter_expr else {"kind": "Name", "id": "__empty"},
                     "dispatch_mode": "generic", "init_op": "ObjIterInit", "next_op": "ObjIterNext",
                 },
                 "target_plan": tp, "body": body, "orelse": [],
@@ -243,7 +235,7 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
     return [init] + body
 
 
-def _lc_in_stmts(stmts: list[JsonVal]) -> list[JsonVal]:
+def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
     result: list[JsonVal] = []
     for stmt in stmts:
         if not isinstance(stmt, dict):
@@ -257,7 +249,7 @@ def _lc_in_stmts(stmts: list[JsonVal]) -> list[JsonVal]:
                 tn = ""
                 if isinstance(target, dict) and target.get("kind") == "Name":
                     tn = jv_str(target.get("id", "")).strip()
-                cn = tn if tn != "" else _next_comp_name()
+                cn = tn if tn != "" else ctx.next_comp_name()
                 at = ""
                 if kind == "AnnAssign":
                     ann = stmt.get("annotation")
@@ -267,7 +259,7 @@ def _lc_in_stmts(stmts: list[JsonVal]) -> list[JsonVal]:
                 if cn != tn and tn != "":
                     expanded.append({
                         "kind": "Assign",
-                        "target": copy.deepcopy(target),
+                        "target": deep_copy_json(target),
                         "value": {"kind": "Name", "id": cn, "resolved_type": jv_str(value.get("resolved_type", ""))},
                     })
                 result.extend(expanded)
@@ -275,14 +267,14 @@ def _lc_in_stmts(stmts: list[JsonVal]) -> list[JsonVal]:
         if kind == "Expr":
             ev = stmt.get("value")
             if isinstance(ev, dict) and ev.get("kind") == "ListComp":
-                tmp = _next_comp_name()
+                tmp = ctx.next_comp_name()
                 result.extend(_expand_lc_to_stmts(ev, tmp))
                 continue
         # Recurse
         for key in ("body", "orelse", "finalbody"):
             nested = stmt.get(key)
             if isinstance(nested, list):
-                stmt[key] = _lc_in_stmts(nested)
+                stmt[key] = _lc_in_stmts(nested, ctx)
         if kind == "Try":
             hs = stmt.get("handlers")
             if isinstance(hs, list):
@@ -290,16 +282,15 @@ def _lc_in_stmts(stmts: list[JsonVal]) -> list[JsonVal]:
                     if isinstance(h, dict):
                         hb = h.get("body")
                         if isinstance(hb, list):
-                            h["body"] = _lc_in_stmts(hb)
+                            h["body"] = _lc_in_stmts(hb, ctx)
         result.append(stmt)
     return result
 
 
-def lower_listcomp(module: Node) -> Node:
-    _comp_counter[0] = 0
+def lower_listcomp(module: Node, ctx: CompileContext) -> Node:
     body = module.get("body")
     if isinstance(body, list):
-        module["body"] = _lc_in_stmts(body)
+        module["body"] = _lc_in_stmts(body, ctx)
     return module
 
 
@@ -385,11 +376,11 @@ def _expand_defaults_walk(node: JsonVal, sigs: dict[str, Node]) -> None:
                         pn = ep[i]
                         if pn in kw_map:
                             kv2 = kw_map[pn]
-                            args.append(copy.deepcopy(kv2) if isinstance(kv2, dict) else kv2)
+                            args.append(deep_copy_json(kv2) if isinstance(kv2, dict) else kv2)
                         elif pn in ad:
                             dn = ad[pn]
                             if isinstance(dn, dict):
-                                args.append(copy.deepcopy(dn))
+                                args.append(deep_copy_json(dn))
                     if isinstance(kws, list) and len(kw_map) > 0:
                         remaining: list[JsonVal] = []
                         for kw in kws:
@@ -404,7 +395,7 @@ def _expand_defaults_walk(node: JsonVal, sigs: dict[str, Node]) -> None:
             _expand_defaults_walk(v, sigs)
 
 
-def expand_default_arguments(module: Node) -> Node:
+def expand_default_arguments(module: Node, ctx: CompileContext) -> Node:
     sigs = _collect_fn_sigs(module)
     if sigs:
         _expand_defaults_walk(module, sigs)
@@ -415,27 +406,19 @@ def expand_default_arguments(module: Node) -> Node:
 # ForCore TupleTarget expansion (stub — usually already handled by main lowering)
 # ===========================================================================
 
-_tte_counter: list[int] = [0]
-
-
-def _tte_next_tmp() -> str:
-    _tte_counter[0] += 1
-    return "__iter_tmp_" + str(_tte_counter[0])
-
-
 def _tte_subscript(owner: str, index: int, elem_type: str) -> Node:
     return {
         "kind": "Subscript",
         "value": {"kind": "Name", "id": owner, "resolved_type": "tuple"},
         "slice": {"kind": "Constant", "value": index, "resolved_type": "int64"},
-        "resolved_type": elem_type if elem_type != "" else "object",
+        "resolved_type": elem_type if elem_type != "" else "unknown",
     }
 
 
-def _tte_walk(node: JsonVal) -> None:
+def _tte_walk(node: JsonVal, ctx: CompileContext) -> None:
     if isinstance(node, list):
         for item in node:
-            _tte_walk(item)
+            _tte_walk(item, ctx)
         return
     if not isinstance(node, dict):
         return
@@ -445,7 +428,7 @@ def _tte_walk(node: JsonVal) -> None:
         if isinstance(tp, dict) and tp.get("kind") == "TupleTarget":
             elements = tp.get("elements")
             if isinstance(elements, list) and len(elements) >= 2:
-                tmp = _tte_next_tmp()
+                tmp = ctx.next_tte_name()
                 assigns: list[JsonVal] = []
                 direct_names: list[JsonVal] = []
                 for i, elem in enumerate(elements):
@@ -459,7 +442,7 @@ def _tte_walk(node: JsonVal) -> None:
                         et = ""
                     assign: Node = {
                         "kind": "Assign",
-                        "target": {"kind": "Name", "id": en, "resolved_type": et if et != "" else "object"},
+                        "target": {"kind": "Name", "id": en, "resolved_type": et if et != "" else "unknown"},
                         "value": _tte_subscript(tmp, i, et),
                         "decl_type": et if et != "" else "unknown",
                         "declare": True,
@@ -478,12 +461,11 @@ def _tte_walk(node: JsonVal) -> None:
                     nd["body"] = assigns + body
     for v in nd.values():
         if isinstance(v, (dict, list)):
-            _tte_walk(v)
+            _tte_walk(v, ctx)
 
 
-def expand_forcore_tuple_targets(module: Node) -> Node:
-    _tte_counter[0] = 0
-    _tte_walk(module)
+def expand_forcore_tuple_targets(module: Node, ctx: CompileContext) -> Node:
+    _tte_walk(module, ctx)
     return module
 
 
@@ -491,14 +473,7 @@ def expand_forcore_tuple_targets(module: Node) -> Node:
 # enumerate lowering
 # ===========================================================================
 
-_enum_counter: list[int] = [0]
-
-def _next_enum_name() -> str:
-    _enum_counter[0] += 1
-    return "__enum_idx_" + str(_enum_counter[0])
-
-
-def _try_lower_enum_forcore(stmt: Node) -> list[Node] | None:
+def _try_lower_enum_forcore(stmt: Node, ctx: CompileContext) -> list[Node] | None:
     ip = stmt.get("iter_plan")
     if not isinstance(ip, dict) or ip.get("kind") != "RuntimeIterForPlan":
         return None
@@ -557,7 +532,7 @@ def _try_lower_enum_forcore(stmt: Node) -> list[Node] | None:
         remaining.append(s)
     if idx_name == "" or val_name == "":
         return None
-    counter = _next_enum_name()
+    counter = ctx.next_enum_name()
     init: Node = {
         "kind": "Assign",
         "target": {"kind": "Name", "id": counter, "resolved_type": "int64"},
@@ -574,7 +549,7 @@ def _try_lower_enum_forcore(stmt: Node) -> list[Node] | None:
     ntp: Node = {"kind": "NameTarget", "id": val_name, "target_type": vtt}
     nip: Node = {
         "kind": "RuntimeIterForPlan",
-        "iter_expr": copy.deepcopy(iterable),
+        "iter_expr": deep_copy_json(iterable),
         "dispatch_mode": ip.get("dispatch_mode", "native"),
         "init_op": "ObjIterInit", "next_op": "ObjIterNext",
     }
@@ -599,7 +574,7 @@ def _try_lower_enum_forcore(stmt: Node) -> list[Node] | None:
     return [init, nf]
 
 
-def _enum_in_stmts(stmts: list[JsonVal]) -> list[JsonVal]:
+def _enum_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
     result: list[JsonVal] = []
     for stmt in stmts:
         if not isinstance(stmt, dict):
@@ -607,23 +582,22 @@ def _enum_in_stmts(stmts: list[JsonVal]) -> list[JsonVal]:
             continue
         kind = stmt.get("kind", "")
         if kind == "ForCore":
-            expanded = _try_lower_enum_forcore(stmt)
+            expanded = _try_lower_enum_forcore(stmt, ctx)
             if expanded is not None:
                 result.extend(expanded)
                 continue
         for key in ("body", "orelse"):
             nested = stmt.get(key)
             if isinstance(nested, list):
-                stmt[key] = _enum_in_stmts(nested)
+                stmt[key] = _enum_in_stmts(nested, ctx)
         result.append(stmt)
     return result
 
 
-def lower_enumerate(module: Node) -> Node:
-    _enum_counter[0] = 0
+def lower_enumerate(module: Node, ctx: CompileContext) -> Node:
     body = module.get("body")
     if isinstance(body, list):
-        module["body"] = _enum_in_stmts(body)
+        module["body"] = _enum_in_stmts(body, ctx)
     return module
 
 
@@ -920,7 +894,7 @@ def _hoist_in_stmt_list(stmts: list[JsonVal], param_names: set[str]) -> list[Jso
         for n in sorted(to_hoist.keys()):
             if n is None or n == "":
                 continue
-            vd: Node = {"kind": "VarDecl", "name": n, "type": to_hoist[n] if to_hoist[n] != "" else "object", "hoisted": True}
+            vd: Node = {"kind": "VarDecl", "name": n, "type": to_hoist[n] if to_hoist[n] != "" else "unknown", "hoisted": True}
             result.append(vd)
             already.add(n)
         if to_hoist:
@@ -1034,7 +1008,7 @@ def _hoist_walk(node: JsonVal) -> None:
             _hoist_walk(v)
 
 
-def hoist_block_scope_variables(module: Node) -> Node:
+def hoist_block_scope_variables(module: Node, ctx: CompileContext) -> Node:
     _hoist_walk(module)
     return module
 
@@ -1202,7 +1176,7 @@ def _remove_redundant_unbox(node: JsonVal) -> None:
             _remove_redundant_unbox(v)
 
 
-def apply_integer_promotion(module: Node) -> Node:
+def apply_integer_promotion(module: Node, ctx: CompileContext) -> Node:
     _int_promo_walk(module)
     _narrowing_walk(module)
     _remove_redundant_unbox(module)
@@ -1496,7 +1470,7 @@ def _tp_numeric_casts(node: JsonVal) -> None:
             _tp_numeric_casts(v)
 
 
-def apply_type_propagation(module: Node) -> Node:
+def apply_type_propagation(module: Node, ctx: CompileContext) -> Node:
     _tp_binop(module)
     _tp_truediv(module)
     _tp_assign_target(module)
@@ -1545,7 +1519,7 @@ def _yd_walk(node: JsonVal) -> None:
             _yd_walk(v)
 
 
-def apply_yields_dynamic(module: Node) -> None:
+def apply_yields_dynamic(module: Node, ctx: CompileContext) -> None:
     _yd_walk(module)
 
 
@@ -1572,15 +1546,7 @@ def _expr_key(node: JsonVal) -> str:
     return ""
 
 
-_swap_ctr: list[int] = [0]
-
-def _fresh_swap_tmp() -> str:
-    idx = _swap_ctr[0]
-    _swap_ctr[0] = idx + 1
-    return "__swap_tmp_" + str(idx)
-
-
-def _swap_in_stmts(stmts: list[JsonVal]) -> list[JsonVal]:
+def _swap_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
     result: list[JsonVal] = []
     for stmt in stmts:
         if not isinstance(stmt, dict):
@@ -1607,7 +1573,7 @@ def _swap_in_stmts(stmts: list[JsonVal]) -> list[JsonVal]:
                             result.append(swap)
                             continue
                         # Subscript swap expansion
-                        tmp = _fresh_swap_tmp()
+                        tmp = ctx.next_swap_name()
                         bs: Node = span if isinstance(span, dict) else {}
                         tt: Node = {"kind": "Name", "id": tmp}
                         if bs:
@@ -1629,31 +1595,31 @@ def _swap_in_stmts(stmts: list[JsonVal]) -> list[JsonVal]:
         for key in ("body", "orelse"):
             nested = stmt.get(key)
             if isinstance(nested, list):
-                stmt[key] = _swap_in_stmts(nested)
+                stmt[key] = _swap_in_stmts(nested, ctx)
         if kind == "FunctionDef" or kind == "ClassDef":
             body = stmt.get("body")
             if isinstance(body, list):
-                stmt["body"] = _swap_in_stmts(body)
+                stmt["body"] = _swap_in_stmts(body, ctx)
         elif kind == "Try":
             for key in ("body", "orelse", "finalbody"):
                 nested = stmt.get(key)
                 if isinstance(nested, list):
-                    stmt[key] = _swap_in_stmts(nested)
+                    stmt[key] = _swap_in_stmts(nested, ctx)
             hs = stmt.get("handlers")
             if isinstance(hs, list):
                 for h in hs:
                     if isinstance(h, dict):
                         hb = h.get("body")
                         if isinstance(hb, list):
-                            h["body"] = _swap_in_stmts(hb)
+                            h["body"] = _swap_in_stmts(hb, ctx)
         result.append(stmt)
     return result
 
 
-def detect_swap_patterns(module: Node) -> Node:
+def detect_swap_patterns(module: Node, ctx: CompileContext) -> Node:
     body = module.get("body")
     if isinstance(body, list):
-        module["body"] = _swap_in_stmts(body)
+        module["body"] = _swap_in_stmts(body, ctx)
     return module
 
 
@@ -1785,7 +1751,7 @@ def _ms_walk(node: JsonVal) -> None:
             _ms_walk(v)
 
 
-def detect_mutates_self(module: Node) -> Node:
+def detect_mutates_self(module: Node, ctx: CompileContext) -> Node:
     _ms_walk(module)
     return module
 
@@ -1889,7 +1855,7 @@ def _uv_walk(node: JsonVal) -> None:
             _uv_walk(v)
 
 
-def detect_unused_variables(module: Node) -> Node:
+def detect_unused_variables(module: Node, ctx: CompileContext) -> Node:
     _uv_walk(module)
     return module
 
@@ -1908,7 +1874,7 @@ def _mgd_stmts(stmts: list[JsonVal]) -> None:
                 stmt["discard_result"] = True
 
 
-def mark_main_guard_discard(module: Node) -> Node:
+def mark_main_guard_discard(module: Node, ctx: CompileContext) -> Node:
     mg = module.get("main_guard_body")
     if isinstance(mg, list):
         _mgd_stmts(mg)

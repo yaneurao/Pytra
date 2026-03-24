@@ -3,10 +3,12 @@
 Provides typed access to JSON trees without using Any/object.
 §5.1: Any/object 禁止。
 §5.3: Python 標準モジュール直接 import 禁止。
+§5.6: グローバル可変状態禁止 — CompileContext に閉じ込める。
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import Union
 
 
@@ -15,6 +17,54 @@ JsonVal = Union[None, bool, int, float, str, list["JsonVal"], dict[str, "JsonVal
 
 # Node = dict[str, JsonVal]
 Node = dict[str, JsonVal]
+
+
+@dataclass
+class CompileContext:
+    """Lowering 中の可変状態を閉じ込めるコンテキスト (§5.6)。
+
+    グローバル変数の代わりに関数引数で渡す。
+    """
+
+    # nominal ADT 宣言テーブル (type_summary.py が参照)
+    nominal_adt_table: dict[str, Node] = field(default_factory=dict)
+
+    # legacy compat bridge フラグ (lower.py が参照)
+    legacy_compat_bridge: bool = True
+
+    # passes.py のカウンター
+    comp_counter: int = 0
+    enum_counter: int = 0
+    tte_counter: int = 0
+    swap_counter: int = 0
+
+    def next_comp_name(self) -> str:
+        self.comp_counter += 1
+        return "__comp_" + str(self.comp_counter)
+
+    def next_enum_name(self) -> str:
+        self.enum_counter += 1
+        return "__enum_idx_" + str(self.enum_counter)
+
+    def next_tte_name(self) -> str:
+        self.tte_counter += 1
+        return "__iter_tmp_" + str(self.tte_counter)
+
+    def next_swap_name(self) -> str:
+        name = "__swap_tmp_" + str(self.swap_counter)
+        self.swap_counter += 1
+        return name
+
+
+def deep_copy_json(val: JsonVal) -> JsonVal:
+    """Deep copy a JSON-compatible value (copy.deepcopy の代替)。"""
+    if val is None or isinstance(val, bool) or isinstance(val, int) or isinstance(val, float) or isinstance(val, str):
+        return val
+    if isinstance(val, list):
+        return [deep_copy_json(item) for item in val]
+    if isinstance(val, dict):
+        return {key: deep_copy_json(value) for key, value in val.items()}
+    return val
 
 
 def jv_str(v: JsonVal) -> str:

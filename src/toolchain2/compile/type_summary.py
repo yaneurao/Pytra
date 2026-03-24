@@ -5,21 +5,17 @@ and related helpers.
 
 §5.1: Any/object 禁止。
 §5.3: Python 標準モジュール直接 import 禁止。
+§5.6: グローバル可変状態禁止 — CompileContext 経由。
 """
 
 from __future__ import annotations
 
-from toolchain2.compile.jv import JsonVal, Node
+from toolchain2.compile.jv import JsonVal, Node, CompileContext
 from toolchain2.compile.jv import jv_str, jv_dict, jv_list, jv_is_dict
 from toolchain2.compile.jv import nd_kind, nd_get_str, nd_get_dict
 from toolchain2.compile.jv import normalize_type_name
 
 
-# ---------------------------------------------------------------------------
-# Module-level nominal ADT summary table (per-module context)
-# ---------------------------------------------------------------------------
-
-_NOMINAL_ADT_TABLE: list[dict[str, Node]] = [{}]
 _TYPE_EXPR_SUMMARY_KEY: str = "type_expr_summary_v1"
 
 _PRIMITIVE_NAMES: dict[str, str] = {
@@ -233,7 +229,7 @@ def _type_expr_to_string(expr: JsonVal) -> str:
 
 
 # ---------------------------------------------------------------------------
-# summarize_type_expr / summarize_type_text
+# summarize_type_expr / summarize_type_text  (ADT テーブル不要 — 純粋関数)
 # ---------------------------------------------------------------------------
 
 def _is_type_expr_payload(value: JsonVal) -> bool:
@@ -323,40 +319,41 @@ def summarize_type_text(raw: JsonVal) -> Node:
 
 
 # ---------------------------------------------------------------------------
-# Type summary from EAST node payloads
+# Type summary from EAST node payloads  (ctx 必須 — ADT テーブル参照)
 # ---------------------------------------------------------------------------
 
 def unknown_type_summary() -> Node:
     return {"kind": "unknown", "category": "unknown", "mirror": "unknown"}
 
 
-def type_expr_summary_from_payload(type_expr: JsonVal, mirror: JsonVal) -> Node:
+def type_expr_summary_from_payload(ctx: CompileContext, type_expr: JsonVal, mirror: JsonVal) -> Node:
     summary = summarize_type_expr(type_expr)
     if jv_str(summary.get("category", "unknown")) != "unknown":
-        return hydrate_nominal_adt_summary(dict(summary), mirror)
-    return hydrate_nominal_adt_summary(dict(summarize_type_text(mirror)), mirror)
+        return hydrate_nominal_adt_summary(ctx, dict(summary), mirror)
+    return hydrate_nominal_adt_summary(ctx, dict(summarize_type_text(mirror)), mirror)
 
 
-def type_expr_summary_from_node(node: JsonVal) -> Node:
+def type_expr_summary_from_node(ctx: CompileContext, node: JsonVal) -> Node:
     if not isinstance(node, dict):
         return unknown_type_summary()
     nd: Node = node
-    return type_expr_summary_from_payload(nd.get("type_expr"), nd.get("resolved_type"))
+    return type_expr_summary_from_payload(ctx, nd.get("type_expr"), nd.get("resolved_type"))
 
 
 def structured_type_expr_summary_from_node(node: JsonVal) -> Node:
+    """ADT テーブル不要 — type_expr のみから要約。"""
     if not isinstance(node, dict):
         return unknown_type_summary()
     nd: Node = node
     return dict(summarize_type_expr(nd.get("type_expr")))
 
 
-def expr_type_summary(expr: JsonVal) -> Node:
-    return type_expr_summary_from_node(expr)
+def expr_type_summary(ctx: CompileContext, expr: JsonVal) -> Node:
+    return type_expr_summary_from_node(ctx, expr)
 
 
-def expr_type_name(expr: JsonVal) -> str:
-    summary = expr_type_summary(expr)
+def expr_type_name(ctx: CompileContext, expr: JsonVal) -> str:
+    summary = expr_type_summary(ctx, expr)
     mirror = normalize_type_name(summary.get("mirror"))
     if mirror != "unknown":
         return mirror
@@ -367,26 +364,21 @@ def expr_type_name(expr: JsonVal) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Nominal ADT helpers
+# Nominal ADT helpers  (ctx 経由でテーブルにアクセス)
 # ---------------------------------------------------------------------------
 
-def swap_nominal_adt_table(table: dict[str, Node]) -> dict[str, Node]:
-    prev = dict(_NOMINAL_ADT_TABLE[0])
-    _NOMINAL_ADT_TABLE[0] = dict(table)
-    return prev
-
-
-def lookup_nominal_adt_decl(name: JsonVal) -> Node | None:
+def lookup_nominal_adt_decl(ctx: CompileContext, name: JsonVal) -> Node | None:
     type_name = normalize_type_name(name)
     if type_name == "unknown":
         return None
-    entry = _NOMINAL_ADT_TABLE[0].get(type_name)
+    entry = ctx.nominal_adt_table.get(type_name)
     if not isinstance(entry, dict):
         return None
     return dict(entry)
 
 
 def collect_nominal_adt_table(east_module: Node) -> dict[str, Node]:
+    """Module body から nominal ADT 宣言を収集する (純粋関数)。"""
     out: dict[str, Node] = {}
     body_obj = east_module.get("body")
     if not isinstance(body_obj, list):
@@ -438,9 +430,9 @@ def collect_nominal_adt_table(east_module: Node) -> dict[str, Node]:
     return out
 
 
-def collect_nominal_adt_family_variants(family_name: str) -> list[str]:
+def collect_nominal_adt_family_variants(ctx: CompileContext, family_name: str) -> list[str]:
     variants: list[str] = []
-    for type_name, entry in _NOMINAL_ADT_TABLE[0].items():
+    for type_name, entry in ctx.nominal_adt_table.items():
         if not isinstance(entry, dict):
             continue
         if jv_str(entry.get("role", "")).strip() != "variant":
@@ -463,7 +455,7 @@ def make_nominal_adt_type_summary(name: str, family_name: str) -> Node:
     }
 
 
-def hydrate_nominal_adt_summary(summary: Node, mirror: JsonVal) -> Node:
+def hydrate_nominal_adt_summary(ctx: CompileContext, summary: Node, mirror: JsonVal) -> Node:
     category = jv_str(summary.get("category", "unknown")).strip()
     summary_mirror = normalize_type_name(summary.get("mirror"))
     if summary_mirror == "unknown":
@@ -471,7 +463,7 @@ def hydrate_nominal_adt_summary(summary: Node, mirror: JsonVal) -> Node:
     if category == "nominal_adt":
         return summary
     if category == "static":
-        decl = lookup_nominal_adt_decl(summary_mirror)
+        decl = lookup_nominal_adt_decl(ctx, summary_mirror)
         if decl is None:
             return summary
         return make_nominal_adt_type_summary(summary_mirror, jv_str(decl.get("family_name", summary_mirror)))
@@ -479,7 +471,7 @@ def hydrate_nominal_adt_summary(summary: Node, mirror: JsonVal) -> Node:
         if not summary_mirror.endswith(" | None"):
             return summary
         inner_name = summary_mirror[:-7].strip()
-        decl = lookup_nominal_adt_decl(inner_name)
+        decl = lookup_nominal_adt_decl(ctx, inner_name)
         if decl is None:
             return summary
         out = dict(summary)
@@ -571,7 +563,7 @@ def raise_json_contract_violation(semantic_tag: str, owner_summary: Node) -> Non
     )
 
 
-def representative_json_contract_metadata(call: Node, receiver_node: JsonVal) -> tuple[str, Node, Node]:
+def representative_json_contract_metadata(ctx: CompileContext, call: Node, receiver_node: JsonVal) -> tuple[str, Node, Node]:
     result_summary = structured_type_expr_summary_from_node(call)
     receiver_summary = structured_type_expr_summary_from_node(receiver_node)
     rc = jv_str(result_summary.get("category", "unknown"))
@@ -589,8 +581,8 @@ def representative_json_contract_metadata(call: Node, receiver_node: JsonVal) ->
         and recn == "JsonValue"
     ):
         return ("type_expr", result_summary, receiver_summary)
-    compat_result = type_expr_summary_from_node(call)
-    compat_receiver = expr_type_summary(receiver_node)
+    compat_result = type_expr_summary_from_node(ctx, call)
+    compat_receiver = expr_type_summary(ctx, receiver_node)
     crc = jv_str(compat_result.get("category", "unknown"))
     crf = jv_str(compat_result.get("nominal_adt_family", ""))
     crn = jv_str(compat_result.get("nominal_adt_name", ""))
