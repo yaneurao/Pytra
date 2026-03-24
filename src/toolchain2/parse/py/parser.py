@@ -1678,7 +1678,8 @@ def _parse_block_lines(
         # return statement
         if s_clean.startswith("return "):
             expr_text = s_clean[7:].strip()
-            expr = _parse_expr_text(ctx, expr_text, abs_ln, indent + 7, name_types)
+            expr_col = _find_expr_col(ctx, expr_text, abs_ln, indent + 7)
+            expr = _parse_expr_text(ctx, expr_text, abs_ln, expr_col, name_types)
             span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
             stmt: Stmt = Return(source_span=span, value=expr)
             stmts.append(stmt)
@@ -1699,7 +1700,7 @@ def _parse_block_lines(
         # raise
         if s_clean.startswith("raise "):
             expr_text = s_clean[6:].strip()
-            expr = _parse_expr_text(ctx, expr_text, abs_ln, indent + 6, name_types)
+            expr = _parse_expr_text(ctx, expr_text, abs_ln, _find_expr_col(ctx, expr_text, abs_ln, indent + 6), name_types)
             span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
             stmts.append(Raise(source_span=span, exc=expr, cause=None))
             i += 1
@@ -1737,7 +1738,7 @@ def _parse_block_lines(
             resolved = _resolve_type(type_ann, ctx)
             name_types[var_name] = resolved
             target = _make_name_expr(var_name, resolved, abs_ln, indent, ctx)
-            value = _parse_expr_text(ctx, value_text, abs_ln, indent + s_clean.index("=") + 2, name_types)
+            value = _parse_expr_text(ctx, value_text, abs_ln, _find_expr_col(ctx, value_text, abs_ln, indent + s_clean.index("=") + 2), name_types)
             type_expr_node = _make_type_expr(resolved, ctx)
             span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
             ann_stmt = AnnAssign(
@@ -1769,8 +1770,8 @@ def _parse_block_lines(
                 "&=": "BitAnd", "|=": "BitOr", "^=": "BitXor",
                 "<<=": "LShift", ">>=": "RShift",
             }
-            target = _parse_expr_text(ctx, target_text, abs_ln, indent, name_types)
-            value = _parse_expr_text(ctx, value_text, abs_ln, indent + len(target_text) + len(op_text) + 2, name_types)
+            target = _parse_expr_text(ctx, target_text, abs_ln, _find_expr_col(ctx, target_text, abs_ln, indent), name_types)
+            value = _parse_expr_text(ctx, value_text, abs_ln, _find_expr_col(ctx, value_text, abs_ln, indent + len(target_text) + len(op_text) + 2), name_types)
             span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
             aug_stmt = AugAssign(
                 source_span=span,
@@ -1791,8 +1792,8 @@ def _parse_block_lines(
         if target_text != "":
             # Check it's not a comparison or augmented op
             if not target_text.endswith(("!", "<", ">", "+", "-", "*", "/", "%", "&", "|", "^")):
-                target = _parse_expr_text(ctx, target_text, abs_ln, indent, name_types)
-                value = _parse_expr_text(ctx, value_text, abs_ln, indent + len(target_text) + 3, name_types)
+                target = _parse_expr_text(ctx, target_text, abs_ln, _find_expr_col(ctx, target_text, abs_ln, indent), name_types)
+                value = _parse_expr_text(ctx, value_text, abs_ln, _find_expr_col(ctx, value_text, abs_ln, indent + len(target_text) + 3), name_types)
                 # Infer type from value
                 val_type = _get_resolved_type(value)
                 # declare: True if this is a simple Name target (not subscript/attr)
@@ -1841,6 +1842,16 @@ def _find_abs_line(all_lines: list[str], target_line: str, hint: int) -> int:
         if all_lines[i].rstrip() == stripped:
             return i + 1
     return hint + 1
+
+
+def _find_expr_col(ctx: ParseContext, expr_text: str, abs_ln: int, fallback: int) -> int:
+    """元の行テキスト内で式テキストの位置を検索する (golden 準拠)。"""
+    if abs_ln >= 1 and abs_ln <= len(ctx.lines):
+        line_text = ctx.lines[abs_ln - 1]
+        pos = line_text.find(expr_text)
+        if pos >= 0:
+            return pos
+    return fallback
 
 
 def _parse_expr_text(
@@ -2017,7 +2028,7 @@ def _parse_while_stmt(
 
     # Parse: while COND:
     cond_text = s[6:].rstrip(":").strip()
-    test = _parse_expr_text(ctx, cond_text, abs_ln, indent + 6, name_types)
+    test = _parse_expr_text(ctx, cond_text, abs_ln, _find_expr_col(ctx, cond_text, abs_ln, indent + 6), name_types)
 
     sub_lines, end_i = _collect_sub_block(block_lines, start_i + 1, indent)
     body_stmts = _parse_block_lines(ctx, sub_lines, name_types, "while")
@@ -2052,7 +2063,7 @@ def _parse_if_stmt(
 
     # Parse condition
     cond_text = s[3:].rstrip(":").strip()
-    test = _parse_expr_text(ctx, cond_text, abs_ln, indent + 3, name_types)
+    test = _parse_expr_text(ctx, cond_text, abs_ln, _find_expr_col(ctx, cond_text, abs_ln, indent + 3), name_types)
 
     # Collect then block
     then_lines, next_i = _collect_sub_block(block_lines, start_i + 1, indent)
@@ -2113,7 +2124,7 @@ def _parse_elif_stmt(
     abs_ln = _find_abs_line(ctx.lines, ln, 0)
 
     cond_text = s[5:].rstrip(":").strip()
-    test = _parse_expr_text(ctx, cond_text, abs_ln, indent + 5, name_types)
+    test = _parse_expr_text(ctx, cond_text, abs_ln, _find_expr_col(ctx, cond_text, abs_ln, indent + 5), name_types)
 
     then_lines, next_i = _collect_sub_block(block_lines, start_i + 1, indent)
     then_stmts = _parse_block_lines(ctx, then_lines, name_types, "elif")
