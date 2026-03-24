@@ -809,10 +809,10 @@ class FunctionDef:
             d["return_type_expr"] = self.return_type_expr.to_jv()
         if self.decorators is not None:
             d["decorators"] = list(self.decorators)
-        if self.leading_trivia is not None:
-            d["leading_trivia"] = [t.to_jv() for t in self.leading_trivia]
         if self.leading_comments is not None:
             d["leading_comments"] = list(self.leading_comments)
+        if self.leading_trivia is not None:
+            d["leading_trivia"] = [t.to_jv() for t in self.leading_trivia]
         return d
 
 
