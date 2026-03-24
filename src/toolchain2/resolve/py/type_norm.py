@@ -91,7 +91,7 @@ def normalize_type(raw: str) -> str:
         norm_args: list[str] = [normalize_type(a) for a in args]
         if len(norm_args) == 1:
             return base_norm + "[" + norm_args[0] + "]"
-        return base_norm + "[" + ", ".join(norm_args) + "]"
+        return base_norm + "[" + ",".join(norm_args) + "]"
 
     # Union type: X | Y
     if "|" in t:

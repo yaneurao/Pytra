@@ -840,22 +840,16 @@ def _resolve_container_method_call(
         owner_copy: JsonVal = deep_copy_json(value)
         expr["runtime_owner"] = owner_copy
 
-    # Runtime metadata — check extern_v2 on the method sig first
+    # Runtime metadata from extern_v2 (正本)
     method_extern: ExternV2 | None = method_sig.extern
     if method_extern is not None and method_extern.module != "":
         mod = method_extern.module
         runtime_call_name = method_extern.symbol
     else:
-        # Check temporary overrides (until containers get extern_v2)
-        override: tuple[str, str] | None = _get_container_method_override(owner_base, method)
-        if override is not None:
-            mod = override[0]
-            runtime_call_name = override[1]
-        else:
-            # Default: owner_base.method pattern
-            mod = _default_container_module(owner_base)
-            runtime_call_name = owner_base + "." + method
-    sym: str = owner_base + "." + method
+        # Fallback: owner_base.method pattern
+        mod = _default_container_module(owner_base)
+        runtime_call_name = owner_base + "." + method
+    sym: str = runtime_call_name  # e.g., "list.append" or "str.join"
     expr["lowered_kind"] = "BuiltinCall"
     expr["builtin_name"] = method
     expr["runtime_call"] = runtime_call_name
@@ -864,13 +858,17 @@ def _resolve_container_method_call(
     expr["runtime_symbol"] = sym
     adapter: str = "builtin"
     expr["runtime_call_adapter_kind"] = adapter
-    expr["semantic_tag"] = "stdlib.method." + method
+    # semantic_tag from extern_v2 or fallback
+    if method_extern is not None and method_extern.tag != "":
+        expr["semantic_tag"] = method_extern.tag
+    else:
+        expr["semantic_tag"] = "stdlib.method." + method
 
     return ret
 
 
 def _default_container_module(owner_base: str) -> str:
-    """Default runtime module for container types (when no extern_v2)."""
+    """Fallback runtime module for container types (when no extern_v2)."""
     if owner_base == "list":
         return "pytra.core.list"
     if owner_base == "dict":
@@ -880,42 +878,10 @@ def _default_container_module(owner_base: str) -> str:
     if owner_base == "str":
         return "pytra.core.str"
     if owner_base == "tuple":
-        return "pytra.core.py_runtime"
+        return "pytra.core.tuple"
     if owner_base == "deque":
         return "pytra.std.collections"
     return ""
-
-
-# Temporary: str method overrides until containers.py gets extern_v2
-# These will be removed when P0-PARSE-S5 adds extern_v2 to container methods.
-_STR_METHOD_OVERRIDES: dict[str, tuple[str, str]] = {
-    "join": ("pytra.built_in.string_ops", "py_join"),
-    "split": ("pytra.built_in.string_ops", "py_split"),
-    "strip": ("pytra.built_in.string_ops", "py_strip"),
-    "lstrip": ("pytra.built_in.string_ops", "py_lstrip"),
-    "rstrip": ("pytra.built_in.string_ops", "py_rstrip"),
-    "replace": ("pytra.built_in.string_ops", "py_replace"),
-    "find": ("pytra.built_in.string_ops", "py_find"),
-    "rfind": ("pytra.built_in.string_ops", "py_rfind"),
-    "startswith": ("pytra.built_in.string_ops", "py_startswith"),
-    "endswith": ("pytra.built_in.string_ops", "py_endswith"),
-    "count": ("pytra.built_in.string_ops", "py_count"),
-    "upper": ("pytra.built_in.string_ops", "py_upper"),
-    "lower": ("pytra.built_in.string_ops", "py_lower"),
-    "isdigit": ("pytra.built_in.string_ops", "py_isdigit"),
-    "isalpha": ("pytra.built_in.string_ops", "py_isalpha"),
-    "isalnum": ("pytra.built_in.string_ops", "py_isalnum"),
-    "isupper": ("pytra.built_in.string_ops", "py_isupper"),
-    "islower": ("pytra.built_in.string_ops", "py_islower"),
-    "zfill": ("pytra.built_in.string_ops", "py_zfill"),
-}
-
-
-def _get_container_method_override(owner_base: str, method: str) -> tuple[str, str] | None:
-    """Get override for container methods without extern_v2."""
-    if owner_base == "str":
-        return _STR_METHOD_OVERRIDES.get(method)
-    return None
 
 
 def _substitute_type_params(ret_type: str, concrete_type: str, cls: ClassSig) -> str:

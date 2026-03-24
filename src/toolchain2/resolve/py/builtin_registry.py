@@ -25,6 +25,7 @@ class ExternV2:
     module: str
     symbol: str
     tag: str
+    kind: str = ""  # "method" for class methods, "" for functions
 
 
 @dataclass
@@ -134,9 +135,11 @@ def _extract_extern_v2(node: dict[str, JsonVal]) -> ExternV2 | None:
     module: str = str(module_val) if isinstance(module_val, str) else ""
     symbol: str = str(symbol_val) if isinstance(symbol_val, str) else ""
     tag: str = str(tag_val) if isinstance(tag_val, str) else ""
+    kind_val = ev2.get("kind")
+    kind: str = str(kind_val) if isinstance(kind_val, str) else ""
     if module == "" and symbol == "" and tag == "":
         return None
-    return ExternV2(module=module, symbol=symbol, tag=tag)
+    return ExternV2(module=module, symbol=symbol, tag=tag, kind=kind)
 
 
 def _extract_func_sig(node: dict[str, JsonVal], is_method: bool, owner: str) -> FuncSig:
