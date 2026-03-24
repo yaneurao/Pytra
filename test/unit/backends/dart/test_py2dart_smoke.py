@@ -70,7 +70,7 @@ class Py2DartSmokeTest(unittest.TestCase):
     def test_transpile_add(self) -> None:
         east = load_east(find_fixture_case("add"))
         source = transpile_to_dart_native(east)
-        self.assertIn("void main()", source)
+        self.assertIn("int add(", source)
         self.assertIn("+", source)
 
     def test_transpile_if_else(self) -> None:
