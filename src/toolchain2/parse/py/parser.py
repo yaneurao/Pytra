@@ -435,28 +435,36 @@ class ExprParser:
             raise ValueError("expected " + value + " but got " + tok.value)
         return tok
 
-    def _span(self, start: int, end: int) -> SourceSpan:
+    def _span(self, local_start: int, local_end: int) -> SourceSpan:
+        """ローカル位置 → 絶対位置の SourceSpan を返す。"""
         return make_span(
             self.source_line,
-            self.line_col_offset + start,
+            self.line_col_offset + local_start,
             self.source_line,
-            self.line_col_offset + end,
+            self.line_col_offset + local_end,
         )
 
-    def _span_multi(self, start_line: int, start_col: int, end_line: int, end_col: int) -> SourceSpan:
-        return make_span(start_line, start_col, end_line, end_col)
-
-    def _repr(self, start: int, end: int) -> str:
-        return self.source_text[start:end]
-
-    def _base(self, start: int, end: int, resolved_type: str, borrow_kind: str) -> ExprBase:
+    def _base(self, local_start: int, local_end: int, resolved_type: str, borrow_kind: str) -> ExprBase:
+        """ExprBase を生成する。start/end は式テキスト内のローカル位置。"""
         return ExprBase(
-            source_span=self._span(start, end),
+            source_span=self._span(local_start, local_end),
             resolved_type=resolved_type,
             casts=[],
             borrow_kind=borrow_kind,
-            repr_text=self.source_text[start:end],
+            repr_text=self.source_text[local_start:local_end],
         )
+
+    def _to_local(self, abs_col: int) -> int:
+        """絶対 col → ローカル位置に逆算する。"""
+        return abs_col - self.line_col_offset
+
+    def _child_local_start(self, child: Expr) -> int:
+        """子ノードのローカル開始位置。"""
+        return self._to_local(_expr_col(child))
+
+    def _child_local_end(self, child: Expr) -> int:
+        """子ノードのローカル終了位置。"""
+        return self._to_local(_expr_end_col(child))
 
     # --- Precedence climbing ---
 
@@ -483,8 +491,8 @@ class ExprParser:
         while self.peek().value == "or":
             self.advance()
             right = self._parse_and()
-            start = _expr_start(left)
-            end = _expr_end(right)
+            start = self._child_local_start(left)
+            end = self._child_local_end(right)
             base = self._base(start, end, "bool", "value")
             left = BoolOp(base=base, op="Or", values=[left, right])
         return left
@@ -494,8 +502,8 @@ class ExprParser:
         while self.peek().value == "and":
             self.advance()
             right = self._parse_not()
-            start = _expr_start(left)
-            end = _expr_end(right)
+            start = self._child_local_start(left)
+            end = self._child_local_end(right)
             base = self._base(start, end, "bool", "value")
             left = BoolOp(base=base, op="And", values=[left, right])
         return left
@@ -504,7 +512,7 @@ class ExprParser:
         if self.peek().value == "not":
             tok = self.advance()
             operand = self._parse_not()
-            end = _expr_end(operand)
+            end = self._child_local_end(operand)
             base = self._base(tok.start, end, "bool", "value")
             return UnaryOp(base=base, op="Not", operand=operand)
         return self._parse_compare()
@@ -554,8 +562,8 @@ class ExprParser:
             ops.append(op_str)
             comparators.append(self._parse_bitor())
         if len(ops) > 0:
-            start = _expr_start(left)
-            end = _expr_end(comparators[-1])
+            start = self._child_local_start(left)
+            end = self._child_local_end(comparators[-1])
             base = self._base(start, end, "bool", "value")
             return Compare(base=base, left=left, ops=ops, comparators=comparators)
         return left
@@ -565,8 +573,8 @@ class ExprParser:
         while self.peek().value == "|":
             self.advance()
             right = self._parse_bitxor()
-            start = _expr_start(left)
-            end = _expr_end(right)
+            start = self._child_local_start(left)
+            end = self._child_local_end(right)
             base = self._base(start, end, "int64", "value")
             left = BinOp(base=base, left=left, op="BitOr", right=right)
         return left
@@ -576,8 +584,8 @@ class ExprParser:
         while self.peek().value == "^":
             self.advance()
             right = self._parse_bitand()
-            start = _expr_start(left)
-            end = _expr_end(right)
+            start = self._child_local_start(left)
+            end = self._child_local_end(right)
             base = self._base(start, end, "int64", "value")
             left = BinOp(base=base, left=left, op="BitXor", right=right)
         return left
@@ -587,8 +595,8 @@ class ExprParser:
         while self.peek().value == "&":
             self.advance()
             right = self._parse_shift()
-            start = _expr_start(left)
-            end = _expr_end(right)
+            start = self._child_local_start(left)
+            end = self._child_local_end(right)
             base = self._base(start, end, "int64", "value")
             left = BinOp(base=base, left=left, op="BitAnd", right=right)
         return left
@@ -599,8 +607,8 @@ class ExprParser:
             op_tok = self.advance()
             right = self._parse_addsub()
             op_name = "LShift" if op_tok.value == "<<" else "RShift"
-            start = _expr_start(left)
-            end = _expr_end(right)
+            start = self._child_local_start(left)
+            end = self._child_local_end(right)
             base = self._base(start, end, "int64", "value")
             left = BinOp(base=base, left=left, op=op_name, right=right)
         return left
@@ -611,8 +619,8 @@ class ExprParser:
             op_tok = self.advance()
             right = self._parse_muldiv()
             op_name = "Add" if op_tok.value == "+" else "Sub"
-            start = _expr_start(left)
-            end = _expr_end(right)
+            start = self._child_local_start(left)
+            end = self._child_local_end(right)
             res_type = _binop_result_type(_get_resolved_type(left), _get_resolved_type(right), op_name)
             base = self._base(start, end, res_type, "value")
             left = BinOp(base=base, left=left, op=op_name, right=right)
@@ -625,8 +633,8 @@ class ExprParser:
             right = self._parse_unary()
             op_map: dict[str, str] = {"*": "Mult", "/": "Div", "//": "FloorDiv", "%": "Mod"}
             op_name = op_map.get(op_tok.value, op_tok.value)
-            start = _expr_start(left)
-            end = _expr_end(right)
+            start = self._child_local_start(left)
+            end = self._child_local_end(right)
             res_type = _binop_result_type(_get_resolved_type(left), _get_resolved_type(right), op_name)
             base = self._base(start, end, res_type, "value")
             left = BinOp(base=base, left=left, op=op_name, right=right)
@@ -637,21 +645,21 @@ class ExprParser:
         if tok.value == "-" and tok.kind == "OP":
             self.advance()
             operand = self._parse_unary()
-            end = _expr_end(operand)
+            end = self._child_local_end(operand)
             res_type = _get_resolved_type(operand)
             base = self._base(tok.start, end, res_type, "value")
             return UnaryOp(base=base, op="USub", operand=operand)
         if tok.value == "+" and tok.kind == "OP":
             self.advance()
             operand = self._parse_unary()
-            end = _expr_end(operand)
+            end = self._child_local_end(operand)
             res_type = _get_resolved_type(operand)
             base = self._base(tok.start, end, res_type, "value")
             return UnaryOp(base=base, op="UAdd", operand=operand)
         if tok.value == "~" and tok.kind == "OP":
             self.advance()
             operand = self._parse_unary()
-            end = _expr_end(operand)
+            end = self._child_local_end(operand)
             base = self._base(tok.start, end, "int64", "value")
             return UnaryOp(base=base, op="Invert", operand=operand)
         return self._parse_power()
@@ -661,8 +669,8 @@ class ExprParser:
         if self.peek().value == "**":
             self.advance()
             right = self._parse_unary()  # right-associative
-            start = _expr_start(left)
-            end = _expr_end(right)
+            start = self._child_local_start(left)
+            end = self._child_local_end(right)
             base = self._base(start, end, "float64", "value")
             left = BinOp(base=base, left=left, op="Pow", right=right)
         return left
@@ -676,14 +684,14 @@ class ExprParser:
                 self.advance()
                 attr_tok = self.advance()
                 end = attr_tok.end
-                base = self._base(_expr_start(expr), end, "unknown", "value")
+                base = self._base(self._child_local_start(expr), end, "unknown", "value")
                 expr = Attribute(base=base, value=expr, attr=attr_tok.value)
             elif tok.value == "[":
                 self.advance()
                 index = self.parse_expr()
                 self.expect("OP", "]")
                 end_tok = self.tokens[self.pos - 1]
-                base = self._base(_expr_start(expr), end_tok.end, "unknown", "value")
+                base = self._base(self._child_local_start(expr), end_tok.end, "unknown", "value")
                 expr = Subscript(base=base, value=expr, slice_expr=index)
             elif tok.value == "(":
                 expr = self._parse_call(expr)
@@ -711,7 +719,7 @@ class ExprParser:
                 self.advance()  # skip comma
         self.expect("OP", ")")
         end_tok = self.tokens[self.pos - 1]
-        start = _expr_start(func)
+        start = self._child_local_start(func)
         end = end_tok.end
         # Resolve call type
         func_name = _get_func_name(func)
@@ -994,7 +1002,13 @@ def _get_resolved_type(e: Expr) -> str:
     return "unknown"
 
 
-def _expr_start(e: Expr) -> int:
+# ローカル位置追跡: ExprParser 内で _base() に渡す local_start/local_end を
+# 子ノードから取得するためのユーティリティ。
+# ExprBase.source_span.col = line_col_offset + local_start なので、
+# local_start = col - line_col_offset で逆算する。
+
+def _expr_col(e: Expr) -> int:
+    """式ノードの source_span.col (絶対位置)。"""
     if isinstance(e, (Name, Constant, BinOp, UnaryOp, BoolOp, Compare, Call, Attribute, Subscript, IfExp, ListExpr, TupleExpr, DictExpr, ListComp, RangeExpr)):
         sp = e.base.source_span
         if sp.col is not None:
@@ -1002,7 +1016,8 @@ def _expr_start(e: Expr) -> int:
     return 0
 
 
-def _expr_end(e: Expr) -> int:
+def _expr_end_col(e: Expr) -> int:
+    """式ノードの source_span.end_col (絶対位置)。"""
     if isinstance(e, (Name, Constant, BinOp, UnaryOp, BoolOp, Compare, Call, Attribute, Subscript, IfExp, ListExpr, TupleExpr, DictExpr, ListComp, RangeExpr)):
         sp = e.base.source_span
         if sp.end_col is not None:
@@ -1396,17 +1411,15 @@ def _parse_function_def(
     # Extract docstring
     docstring = _extract_docstring(block_lines)
 
-    # Compute end span
-    end_lineno = end_ln
+    # Compute end span: 最終非空行の絶対行番号と行末位置
+    end_lineno = start_ln + 1
     end_col = 0
     if len(block_lines) > 0:
-        last_non_empty = ""
         for bl in reversed(block_lines):
             if bl.strip() != "":
-                last_non_empty = bl
+                end_lineno = _find_abs_line(lines, bl, start_ln)
+                end_col = len(bl.rstrip())
                 break
-        end_col = len(last_non_empty.rstrip())
-        end_lineno = start_ln + len(block_lines)
 
     span = make_span(start_ln + 1, 0, end_lineno, end_col)
 
@@ -1809,22 +1822,38 @@ def _parse_for_stmt(
     if range_args_text is not None:
         range_args = _split_type_args_outer(range_args_text)
         name_types[target_name] = "int64"
-        target = _make_name_expr(target_name, "int64", abs_ln, indent + 4, ctx)
+        # ForRange target: resolved_type="unknown" (型は target_type で別途指定)
+        target = _make_name_expr(target_name, "unknown", abs_ln, indent + 4, ctx)
+        # target は type_expr を持たない
+        target.type_expr = None
         start_expr: Expr
         stop_expr: Expr
         step_expr: Expr
+        # range(...) 内の引数位置を計算
+        # 行テキスト: "    for y in range(height):"
+        # iter_text: "range(height)"
+        # range_args_text: "height"
+        # range( の開始位置を行内で探す
+        line_text = block_lines[start_i] if start_i < len(block_lines) else ""
+        range_pos = line_text.find("range(")
+        range_inner_col = range_pos + 6 if range_pos >= 0 else indent
+        # range のキーワード位置 (暗黙 start=0/step=1 のスパンに使う)
+        range_kw_span = make_span(abs_ln, range_pos if range_pos >= 0 else indent, abs_ln, range_inner_col - 1 if range_pos >= 0 else indent + 5)
         if len(range_args) == 1:
-            start_expr = Constant(base=ExprBase(source_span=NULL_SPAN, resolved_type="int64", casts=[], borrow_kind="value", repr_text="0"), value=0)
-            stop_expr = _parse_expr_text(ctx, range_args[0].strip(), abs_ln, indent, name_types)
-            step_expr = Constant(base=ExprBase(source_span=NULL_SPAN, resolved_type="int64", casts=[], borrow_kind="value", repr_text="1"), value=1)
+            start_expr = Constant(base=ExprBase(source_span=range_kw_span, resolved_type="int64", casts=[], borrow_kind="value", repr_text="0"), value=0)
+            stop_expr = _parse_expr_text(ctx, range_args[0].strip(), abs_ln, range_inner_col, name_types)
+            step_expr = Constant(base=ExprBase(source_span=range_kw_span, resolved_type="int64", casts=[], borrow_kind="value", repr_text="1"), value=1)
         elif len(range_args) == 2:
-            start_expr = _parse_expr_text(ctx, range_args[0].strip(), abs_ln, indent, name_types)
-            stop_expr = _parse_expr_text(ctx, range_args[1].strip(), abs_ln, indent, name_types)
-            step_expr = Constant(base=ExprBase(source_span=NULL_SPAN, resolved_type="int64", casts=[], borrow_kind="value", repr_text="1"), value=1)
+            start_expr = _parse_expr_text(ctx, range_args[0].strip(), abs_ln, range_inner_col, name_types)
+            comma1 = range_inner_col + len(range_args[0]) + 2  # ", "
+            stop_expr = _parse_expr_text(ctx, range_args[1].strip(), abs_ln, comma1, name_types)
+            step_expr = Constant(base=ExprBase(source_span=range_kw_span, resolved_type="int64", casts=[], borrow_kind="value", repr_text="1"), value=1)
         else:
-            start_expr = _parse_expr_text(ctx, range_args[0].strip(), abs_ln, indent, name_types)
-            stop_expr = _parse_expr_text(ctx, range_args[1].strip(), abs_ln, indent, name_types)
-            step_expr = _parse_expr_text(ctx, range_args[2].strip(), abs_ln, indent, name_types)
+            start_expr = _parse_expr_text(ctx, range_args[0].strip(), abs_ln, range_inner_col, name_types)
+            comma1 = range_inner_col + len(range_args[0]) + 2
+            stop_expr = _parse_expr_text(ctx, range_args[1].strip(), abs_ln, comma1, name_types)
+            comma2 = comma1 + len(range_args[1]) + 2
+            step_expr = _parse_expr_text(ctx, range_args[2].strip(), abs_ln, comma2, name_types)
 
         fr = ForRange(
             source_span=span,
@@ -1835,7 +1864,7 @@ def _parse_for_stmt(
             step=step_expr,
             body=body_stmts,
             orelse=[],
-            range_mode="half_open",
+            range_mode="ascending",
         )
         if len(trivia) > 0:
             fr.leading_trivia = list(trivia)
