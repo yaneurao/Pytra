@@ -1,9 +1,11 @@
 """Built-in function and container method registry.
 
-Loads signatures from builtins.py.east1 and containers.py.east1,
-and provides runtime binding metadata for built-in calls.
+Loads signatures from builtins.py.east1, containers.py.east1, and stdlib EAST1 files.
+Runtime binding metadata (module, symbol, tag) is extracted from meta.extern_v2
+in the EAST1 nodes — no hardcoded tables.
 
 §5 準拠: Any/object 禁止、pytra.std.* のみ使用。
+§5.7 準拠: ハードコードテーブル禁止。extern_v2 を正本とする。
 """
 
 from __future__ import annotations
@@ -17,181 +19,12 @@ from pytra.std.pathlib import Path
 from toolchain2.resolve.py.type_norm import normalize_type
 
 
-# --- Builtin semantic tags (matches frontend_semantics.py) ---
-
-_BUILTIN_SEMANTIC_TAGS: dict[str, str] = {
-    "print": "core.print",
-    "len": "core.len",
-    "range": "iter.range",
-    "zip": "iter.zip",
-    "iter": "iter.init",
-    "next": "iter.next",
-    "reversed": "iter.reversed",
-    "enumerate": "iter.enumerate",
-    "str": "cast.str",
-    "int": "cast.int",
-    "float": "cast.float",
-    "bool": "cast.bool",
-    "ord": "cast.ord",
-    "chr": "cast.chr",
-    "min": "math.min",
-    "max": "math.max",
-    "any": "logic.any",
-    "all": "logic.all",
-    "bytes": "ctor.bytes",
-    "bytearray": "ctor.bytearray",
-    "list": "ctor.list",
-    "set": "ctor.set",
-    "dict": "ctor.dict",
-    "open": "io.open",
-    "Exception": "error.raise_ctor",
-    "RuntimeError": "error.raise_ctor",
-    "NotImplementedError": "error.raise_ctor",
-    "isinstance": "type.isinstance",
-    "issubclass": "type.issubclass",
-    "cast": "cast.typed",
-    "abs": "math.abs",
-    "round": "math.round",
-    "repr": "cast.repr",
-    "sorted": "iter.sorted",
-    "sum": "math.sum",
-}
-
-# Builtin name → runtime module ID
-_BUILTIN_RUNTIME_MODULES: dict[str, str] = {
-    "print": "pytra.built_in.io_ops",
-    "len": "pytra.core.py_runtime",
-    "range": "pytra.built_in.sequence",
-    "int": "pytra.core.py_runtime",
-    "float": "pytra.core.py_runtime",
-    "str": "pytra.core.py_runtime",
-    "bool": "pytra.core.py_runtime",
-    "abs": "pytra.core.py_runtime",
-    "round": "pytra.core.py_runtime",
-    "ord": "pytra.built_in.scalar_ops",
-    "chr": "pytra.built_in.scalar_ops",
-    "isinstance": "pytra.core.py_runtime",
-    "issubclass": "pytra.core.py_runtime",
-    "min": "pytra.built_in.numeric_ops",
-    "max": "pytra.built_in.numeric_ops",
-    "sum": "pytra.built_in.numeric_ops",
-    "any": "pytra.built_in.predicates",
-    "all": "pytra.built_in.predicates",
-    "enumerate": "pytra.built_in.iter_ops",
-    "zip": "pytra.built_in.zip_ops",
-    "reversed": "pytra.built_in.iter_ops",
-    "sorted": "pytra.built_in.iter_ops",
-    "repr": "pytra.core.py_runtime",
-    "open": "pytra.core.io",
-}
-
-# Builtin name → runtime symbol name
-_BUILTIN_RUNTIME_SYMBOLS: dict[str, str] = {
-    "print": "py_print",
-    "len": "len",
-    "int": "int",
-    "float": "float",
-    "str": "str",
-    "bool": "bool",
-    "abs": "py_abs",
-    "round": "py_round",
-    "ord": "py_ord",
-    "chr": "py_chr",
-    "isinstance": "isinstance",
-    "issubclass": "issubclass",
-    "min": "py_min",
-    "max": "py_max",
-    "sum": "sum",
-    "any": "py_any",
-    "all": "py_all",
-    "enumerate": "py_enumerate_object",
-    "zip": "zip",
-    "reversed": "py_reversed_object",
-    "sorted": "py_sorted",
-    "repr": "repr",
-    "range": "py_range",
-    "open": "open",
-}
-
-# Builtin name → runtime_call (py_* function name)
-_BUILTIN_RUNTIME_CALLS: dict[str, str] = {
-    "print": "py_print",
-    "len": "py_len",
-    "int": "static_cast",
-    "float": "static_cast",
-    "str": "py_to_string",
-    "bool": "py_to_bool",
-    "abs": "py_abs",
-    "round": "py_round",
-    "ord": "py_ord",
-    "chr": "py_chr",
-    "min": "py_min",
-    "max": "py_max",
-    "repr": "py_repr",
-}
-
-# Container method → runtime module
-_CONTAINER_METHOD_MODULES: dict[str, str] = {
-    "list": "pytra.core.list",
-    "dict": "pytra.core.dict",
-    "set": "pytra.core.set",
-    "str": "pytra.core.str",
-    "tuple": "pytra.core.py_runtime",
-    "deque": "pytra.std.collections",
-}
-
-# Specific method overrides: (owner, method) → (runtime_module, runtime_call)
-_METHOD_RUNTIME_OVERRIDES: dict[tuple[str, str], tuple[str, str]] = {
-    ("str", "join"): ("pytra.built_in.string_ops", "py_join"),
-    ("str", "split"): ("pytra.built_in.string_ops", "py_split"),
-    ("str", "strip"): ("pytra.built_in.string_ops", "py_strip"),
-    ("str", "lstrip"): ("pytra.built_in.string_ops", "py_lstrip"),
-    ("str", "rstrip"): ("pytra.built_in.string_ops", "py_rstrip"),
-    ("str", "replace"): ("pytra.built_in.string_ops", "py_replace"),
-    ("str", "find"): ("pytra.built_in.string_ops", "py_find"),
-    ("str", "rfind"): ("pytra.built_in.string_ops", "py_rfind"),
-    ("str", "startswith"): ("pytra.built_in.string_ops", "py_startswith"),
-    ("str", "endswith"): ("pytra.built_in.string_ops", "py_endswith"),
-    ("str", "count"): ("pytra.built_in.string_ops", "py_count"),
-    ("str", "upper"): ("pytra.built_in.string_ops", "py_upper"),
-    ("str", "lower"): ("pytra.built_in.string_ops", "py_lower"),
-    ("str", "isdigit"): ("pytra.built_in.string_ops", "py_isdigit"),
-    ("str", "isalpha"): ("pytra.built_in.string_ops", "py_isalpha"),
-    ("str", "isalnum"): ("pytra.built_in.string_ops", "py_isalnum"),
-    ("str", "isupper"): ("pytra.built_in.string_ops", "py_isupper"),
-    ("str", "islower"): ("pytra.built_in.string_ops", "py_islower"),
-    ("str", "zfill"): ("pytra.built_in.string_ops", "py_zfill"),
-}
-
-def get_method_runtime_override(owner_base: str, method: str) -> tuple[str, str] | None:
-    """Get runtime module/call override for specific methods."""
-    return _METHOD_RUNTIME_OVERRIDES.get((owner_base, method))
-
-# Implicit builtin modules needed per builtin name
-_IMPLICIT_BUILTIN_MODULES: dict[str, str] = {
-    "print": "pytra.built_in.io_ops",
-    "len": "pytra.core.py_runtime",
-    "int": "pytra.built_in.scalar_ops",
-    "float": "pytra.built_in.scalar_ops",
-    "str": "pytra.built_in.scalar_ops",
-    "bool": "pytra.built_in.scalar_ops",
-    "ord": "pytra.built_in.scalar_ops",
-    "chr": "pytra.built_in.scalar_ops",
-    "abs": "pytra.built_in.scalar_ops",
-    "round": "pytra.built_in.scalar_ops",
-    "min": "pytra.built_in.numeric_ops",
-    "max": "pytra.built_in.numeric_ops",
-    "sum": "pytra.built_in.numeric_ops",
-    "isinstance": "pytra.built_in.scalar_ops",
-    "issubclass": "pytra.built_in.scalar_ops",
-    "enumerate": "pytra.built_in.iter_ops",
-    "zip": "pytra.built_in.zip_ops",
-    "reversed": "pytra.built_in.iter_ops",
-    "sorted": "pytra.built_in.iter_ops",
-    "any": "pytra.built_in.predicates",
-    "all": "pytra.built_in.predicates",
-    "repr": "pytra.built_in.scalar_ops",
-}
+@dataclass
+class ExternV2:
+    """Runtime binding metadata from meta.extern_v2."""
+    module: str
+    symbol: str
+    tag: str
 
 
 @dataclass
@@ -204,6 +37,15 @@ class FuncSig:
     decorators: list[str]
     is_method: bool = False
     owner_class: str = ""
+    extern: ExternV2 | None = None  # from meta.extern_v2
+
+
+@dataclass
+class VarSig:
+    """Variable declaration extracted from EAST1."""
+    name: str
+    var_type: str  # normalized type
+    extern: ExternV2 | None = None
 
 
 @dataclass
@@ -214,13 +56,27 @@ class ClassSig:
     methods: dict[str, FuncSig]
     fields: dict[str, str]  # field_name → normalized type
     template_params: list[str] = field(default_factory=list)
+    extern: ExternV2 | None = None
+
+
+@dataclass
+class ModuleSig:
+    """Module-level signatures from a stdlib EAST1."""
+    module_id: str  # e.g., "math", "pytra.std.math"
+    functions: dict[str, FuncSig] = field(default_factory=dict)
+    variables: dict[str, VarSig] = field(default_factory=dict)
+    classes: dict[str, ClassSig] = field(default_factory=dict)
 
 
 @dataclass
 class BuiltinRegistry:
     """Registry of built-in functions, container methods, and stdlib signatures."""
+    # Built-in functions (len, print, str, etc.)
     functions: dict[str, FuncSig] = field(default_factory=dict)
+    # Container/type classes (list, dict, str, set, etc.)
     classes: dict[str, ClassSig] = field(default_factory=dict)
+    # Stdlib modules (math, time, etc.)
+    stdlib_modules: dict[str, ModuleSig] = field(default_factory=dict)
 
     def lookup_function(self, name: str) -> FuncSig | None:
         return self.functions.get(name)
@@ -231,26 +87,56 @@ class BuiltinRegistry:
             return None
         return cls.methods.get(method)
 
-    def get_builtin_semantic_tag(self, name: str) -> str:
-        return _BUILTIN_SEMANTIC_TAGS.get(name, "")
+    def lookup_stdlib_function(self, module_id: str, name: str) -> FuncSig | None:
+        """Look up a function in a stdlib module."""
+        mod: ModuleSig | None = self.stdlib_modules.get(module_id)
+        if mod is not None:
+            f: FuncSig | None = mod.functions.get(name)
+            if f is not None:
+                return f
+        # Try canonical form: "math" → "pytra.std.math"
+        canonical: str = "pytra.std." + module_id if "." not in module_id else module_id
+        mod2: ModuleSig | None = self.stdlib_modules.get(canonical)
+        if mod2 is not None:
+            return mod2.functions.get(name)
+        return None
 
-    def get_builtin_runtime_module(self, name: str) -> str:
-        return _BUILTIN_RUNTIME_MODULES.get(name, "")
-
-    def get_builtin_runtime_symbol(self, name: str) -> str:
-        return _BUILTIN_RUNTIME_SYMBOLS.get(name, "")
-
-    def get_builtin_runtime_call(self, name: str) -> str:
-        return _BUILTIN_RUNTIME_CALLS.get(name, "")
-
-    def get_implicit_builtin_module(self, name: str) -> str:
-        return _IMPLICIT_BUILTIN_MODULES.get(name, "")
-
-    def get_container_method_module(self, owner_base: str) -> str:
-        return _CONTAINER_METHOD_MODULES.get(owner_base, "")
+    def lookup_stdlib_variable(self, module_id: str, name: str) -> VarSig | None:
+        """Look up a variable in a stdlib module."""
+        mod: ModuleSig | None = self.stdlib_modules.get(module_id)
+        if mod is not None:
+            v: VarSig | None = mod.variables.get(name)
+            if v is not None:
+                return v
+        canonical: str = "pytra.std." + module_id if "." not in module_id else module_id
+        mod2: ModuleSig | None = self.stdlib_modules.get(canonical)
+        if mod2 is not None:
+            return mod2.variables.get(name)
+        return None
 
     def is_builtin(self, name: str) -> bool:
-        return name in _BUILTIN_SEMANTIC_TAGS
+        return name in self.functions
+
+
+# --- Extraction helpers ---
+
+def _extract_extern_v2(node: dict[str, JsonVal]) -> ExternV2 | None:
+    """Extract ExternV2 from a node's meta.extern_v2."""
+    meta = node.get("meta")
+    if not isinstance(meta, dict):
+        return None
+    ev2 = meta.get("extern_v2")
+    if not isinstance(ev2, dict):
+        return None
+    module_val = ev2.get("module")
+    symbol_val = ev2.get("symbol")
+    tag_val = ev2.get("tag")
+    module: str = str(module_val) if isinstance(module_val, str) else ""
+    symbol: str = str(symbol_val) if isinstance(symbol_val, str) else ""
+    tag: str = str(tag_val) if isinstance(tag_val, str) else ""
+    if module == "" and symbol == "" and tag == "":
+        return None
+    return ExternV2(module=module, symbol=symbol, tag=tag)
 
 
 def _extract_func_sig(node: dict[str, JsonVal], is_method: bool, owner: str) -> FuncSig:
@@ -277,6 +163,7 @@ def _extract_func_sig(node: dict[str, JsonVal], is_method: bool, owner: str) -> 
         for d in decs_raw:
             if isinstance(d, str):
                 decs.append(d)
+    extern: ExternV2 | None = _extract_extern_v2(node)
     return FuncSig(
         name=name,
         arg_names=arg_names,
@@ -285,6 +172,7 @@ def _extract_func_sig(node: dict[str, JsonVal], is_method: bool, owner: str) -> 
         decorators=decs,
         is_method=is_method,
         owner_class=owner,
+        extern=extern,
     )
 
 
@@ -293,11 +181,14 @@ def _extract_class_sig(node: dict[str, JsonVal]) -> ClassSig:
     name_val = node.get("name")
     name: str = str(name_val) if name_val is not None else ""
     bases_raw = node.get("bases")
+    base_raw = node.get("base")
     bases: list[str] = []
     if isinstance(bases_raw, list):
         for b in bases_raw:
             if isinstance(b, str):
                 bases.append(b)
+    elif isinstance(base_raw, str):
+        bases.append(base_raw)
     methods: dict[str, FuncSig] = {}
     fields: dict[str, str] = {}
     body_raw = node.get("body")
@@ -323,22 +214,62 @@ def _extract_class_sig(node: dict[str, JsonVal]) -> ClassSig:
     if isinstance(decs_raw, list):
         for d in decs_raw:
             if isinstance(d, str) and d.startswith("template("):
-                # e.g. template("T") or template("K", "V")
                 inner: str = d[9:-1] if d.endswith(")") else ""
                 for p in inner.split(","):
                     p2: str = p.strip().strip("'\"")
                     if p2 != "":
                         tparams.append(p2)
-    return ClassSig(name=name, bases=bases, methods=methods, fields=fields, template_params=tparams)
+    extern: ExternV2 | None = _extract_extern_v2(node)
+    return ClassSig(name=name, bases=bases, methods=methods, fields=fields,
+                    template_params=tparams, extern=extern)
+
+
+def _load_module_sig(east1_path: Path, module_id: str) -> ModuleSig:
+    """Load a module's signatures from an EAST1 file."""
+    msig: ModuleSig = ModuleSig(module_id=module_id)
+    text: str = east1_path.read_text(encoding="utf-8")
+    raw: JsonVal = json.loads(text).raw
+    if not isinstance(raw, dict):
+        return msig
+    body = raw.get("body")
+    if not isinstance(body, list):
+        return msig
+    for item in body:
+        if not isinstance(item, dict):
+            continue
+        kind = item.get("kind")
+        if kind == "FunctionDef":
+            sig: FuncSig = _extract_func_sig(item, is_method=False, owner="")
+            msig.functions[sig.name] = sig
+        elif kind == "ClassDef":
+            csig: ClassSig = _extract_class_sig(item)
+            msig.classes[csig.name] = csig
+        elif kind == "AnnAssign":
+            target = item.get("target")
+            if isinstance(target, dict) and target.get("kind") == "Name":
+                var_name_val = target.get("id")
+                if isinstance(var_name_val, str):
+                    ann_val = item.get("annotation")
+                    var_type: str = normalize_type(str(ann_val)) if isinstance(ann_val, str) else "unknown"
+                    extern_v: ExternV2 | None = _extract_extern_v2(item)
+                    msig.variables[var_name_val] = VarSig(
+                        name=var_name_val, var_type=var_type, extern=extern_v,
+                    )
+    return msig
 
 
 def load_builtin_registry(
     builtins_east1_path: Path | None = None,
     containers_east1_path: Path | None = None,
+    stdlib_dir: Path | None = None,
 ) -> BuiltinRegistry:
-    """Load the builtin registry from EAST1 declaration files."""
+    """Load the builtin registry from EAST1 declaration files.
+
+    Runtime metadata comes from meta.extern_v2 — no hardcoded tables.
+    """
     reg: BuiltinRegistry = BuiltinRegistry()
 
+    # Load built-in functions
     if builtins_east1_path is not None and builtins_east1_path.exists():
         text: str = builtins_east1_path.read_text(encoding="utf-8")
         raw: JsonVal = json.loads(text).raw
@@ -353,6 +284,7 @@ def load_builtin_registry(
                         sig: FuncSig = _extract_func_sig(item, is_method=False, owner="")
                         reg.functions[sig.name] = sig
 
+    # Load container classes
     if containers_east1_path is not None and containers_east1_path.exists():
         text2: str = containers_east1_path.read_text(encoding="utf-8")
         raw2: JsonVal = json.loads(text2).raw
@@ -366,5 +298,21 @@ def load_builtin_registry(
                     if kind2 == "ClassDef":
                         csig: ClassSig = _extract_class_sig(item2)
                         reg.classes[csig.name] = csig
+
+    # Load stdlib modules
+    if stdlib_dir is not None and stdlib_dir.exists():
+        # Enumerate all .py.east1 files in stdlib dir
+        # Use manual listing since pytra.std.glob might not support this
+        import_candidates: list[str] = [
+            "math", "time", "sys", "os", "os_path", "glob", "subprocess",
+        ]
+        for mod_name in import_candidates:
+            east1_file: Path = stdlib_dir / (mod_name + ".py.east1")
+            if east1_file.exists():
+                canonical: str = "pytra.std." + mod_name
+                msig: ModuleSig = _load_module_sig(east1_file, canonical)
+                reg.stdlib_modules[canonical] = msig
+                # Also register with short name
+                reg.stdlib_modules[mod_name] = msig
 
     return reg

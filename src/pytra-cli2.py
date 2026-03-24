@@ -119,7 +119,8 @@ def _resolve_one(input_path: Path, output_path: Path | None, pretty: bool) -> in
     # Load builtin registry
     builtins_path = Path("test/builtin/east1/py/builtins.py.east1")
     containers_path = Path("test/builtin/east1/py/containers.py.east1")
-    registry = load_builtin_registry(builtins_path, containers_path)
+    stdlib_dir = Path("test/stdlib/east1/py")
+    registry = load_builtin_registry(builtins_path, containers_path, stdlib_dir)
 
     try:
         result = resolve_file(input_path, registry=registry)

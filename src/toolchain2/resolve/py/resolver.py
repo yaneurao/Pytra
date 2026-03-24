@@ -36,7 +36,8 @@ from toolchain2.resolve.py.builtin_registry import (
     load_builtin_registry,
     FuncSig,
     ClassSig,
-    get_method_runtime_override,
+    ExternV2,
+    VarSig,
 )
 from toolchain2.resolve.py.normalize_order import normalize_field_order
 
@@ -578,34 +579,25 @@ def _resolve_builtin_call(
     expr["resolved_type"] = ret
     func["resolved_type"] = "unknown"
 
-    # Add runtime metadata
-    semantic_tag: str = ctx.registry.get_builtin_semantic_tag(name)
-    runtime_module: str = ctx.registry.get_builtin_runtime_module(name)
-    runtime_symbol: str = ctx.registry.get_builtin_runtime_symbol(name)
-    runtime_call: str = ctx.registry.get_builtin_runtime_call(name)
+    # Add runtime metadata from extern_v2
+    extern: ExternV2 | None = sig.extern if sig is not None else None
 
     expr["lowered_kind"] = "BuiltinCall"
     expr["builtin_name"] = name
-    if runtime_call != "":
-        expr["runtime_call"] = runtime_call
-    if runtime_module != "":
-        expr["runtime_module_id"] = runtime_module
-    if runtime_symbol != "":
-        expr["runtime_symbol"] = runtime_symbol
-    # Adapter kind
-    adapter: str = ""
-    if runtime_module != "" and runtime_symbol != "":
-        adapter = ctx.lookup_adapter_kind(runtime_module, runtime_symbol)
-    if adapter == "":
-        adapter = "builtin"
-    expr["runtime_call_adapter_kind"] = adapter
-    if semantic_tag != "":
-        expr["semantic_tag"] = semantic_tag
-
-    # Track implicit builtin module
-    imp_mod: str = ctx.registry.get_implicit_builtin_module(name)
-    if imp_mod != "":
-        ctx.used_builtin_modules.add(imp_mod)
+    if extern is not None:
+        # runtime_call = extern.symbol (e.g., "py_print", "len")
+        expr["runtime_call"] = extern.symbol
+        expr["runtime_module_id"] = extern.module
+        expr["runtime_symbol"] = extern.symbol
+        # Adapter kind from runtime index
+        adapter: str = ctx.lookup_adapter_kind(extern.module, extern.symbol)
+        if adapter == "":
+            adapter = "builtin"
+        expr["runtime_call_adapter_kind"] = adapter
+        if extern.tag != "":
+            expr["semantic_tag"] = extern.tag
+        # Track implicit builtin module
+        ctx.used_builtin_modules.add(extern.module)
 
     return ret
 
@@ -708,29 +700,42 @@ def _resolve_module_attr_call(
     ctx: ResolveContext,
 ) -> str:
     """Resolve a module.attr() call (e.g., math.sqrt(x))."""
-    canonical: str = ctx.canonical_module_id(module_id)
+    # Look up in stdlib registry first
+    stdlib_func: FuncSig | None = ctx.registry.lookup_stdlib_function(module_id, attr)
+    extern: ExternV2 | None = stdlib_func.extern if stdlib_func is not None else None
 
-    # Look up symbol in runtime index for return type and adapter kind
-    sym_doc: dict[str, JsonVal] = ctx.lookup_runtime_symbol_doc(canonical, attr)
-    adapter: str = ""
-    ak_val = sym_doc.get("call_adapter_kind")
-    if isinstance(ak_val, str):
-        adapter = ak_val
-
-    # Determine return type from known stdlib signatures
-    ret: str = _infer_stdlib_return_type(canonical, attr, expr, ctx)
+    # Determine return type
+    ret: str = "unknown"
+    if stdlib_func is not None:
+        ret = stdlib_func.return_type
+    if ret == "unknown":
+        ret = _infer_stdlib_return_type(ctx.canonical_module_id(module_id), attr, expr, ctx)
 
     expr["resolved_type"] = ret
     func["resolved_type"] = "unknown"
 
-    # Runtime metadata
-    expr["resolved_runtime_call"] = receiver_name + "." + attr
-    expr["resolved_runtime_source"] = "module_attr"
-    expr["runtime_module_id"] = module_id  # Keep original module name (e.g., "math")
-    expr["runtime_symbol"] = attr
-    if adapter != "":
-        expr["runtime_call_adapter_kind"] = adapter
-    expr["semantic_tag"] = "stdlib.method." + attr
+    # Runtime metadata from extern_v2
+    if extern is not None:
+        expr["resolved_runtime_call"] = receiver_name + "." + attr
+        expr["resolved_runtime_source"] = "module_attr"
+        expr["runtime_module_id"] = module_id
+        expr["runtime_symbol"] = extern.symbol
+        # Adapter kind from runtime index
+        adapter: str = ctx.lookup_adapter_kind(extern.module, extern.symbol)
+        if adapter != "":
+            expr["runtime_call_adapter_kind"] = adapter
+        expr["semantic_tag"] = extern.tag
+    else:
+        # Fallback for unresolved stdlib calls
+        expr["resolved_runtime_call"] = receiver_name + "." + attr
+        expr["resolved_runtime_source"] = "module_attr"
+        expr["runtime_module_id"] = module_id
+        expr["runtime_symbol"] = attr
+        canonical: str = ctx.canonical_module_id(module_id)
+        adapter2: str = ctx.lookup_adapter_kind(canonical, attr)
+        if adapter2 != "":
+            expr["runtime_call_adapter_kind"] = adapter2
+        expr["semantic_tag"] = "stdlib.method." + attr
 
     return ret
 
@@ -835,14 +840,21 @@ def _resolve_container_method_call(
         owner_copy: JsonVal = deep_copy_json(value)
         expr["runtime_owner"] = owner_copy
 
-    # Runtime metadata — check for method-specific overrides
-    override: tuple[str, str] | None = get_method_runtime_override(owner_base, method)
-    if override is not None:
-        mod = override[0]
-        runtime_call_name = override[1]
+    # Runtime metadata — check extern_v2 on the method sig first
+    method_extern: ExternV2 | None = method_sig.extern
+    if method_extern is not None and method_extern.module != "":
+        mod = method_extern.module
+        runtime_call_name = method_extern.symbol
     else:
-        mod = ctx.registry.get_container_method_module(owner_base)
-        runtime_call_name = owner_base + "." + method
+        # Check temporary overrides (until containers get extern_v2)
+        override: tuple[str, str] | None = _get_container_method_override(owner_base, method)
+        if override is not None:
+            mod = override[0]
+            runtime_call_name = override[1]
+        else:
+            # Default: owner_base.method pattern
+            mod = _default_container_module(owner_base)
+            runtime_call_name = owner_base + "." + method
     sym: str = owner_base + "." + method
     expr["lowered_kind"] = "BuiltinCall"
     expr["builtin_name"] = method
@@ -855,6 +867,55 @@ def _resolve_container_method_call(
     expr["semantic_tag"] = "stdlib.method." + method
 
     return ret
+
+
+def _default_container_module(owner_base: str) -> str:
+    """Default runtime module for container types (when no extern_v2)."""
+    if owner_base == "list":
+        return "pytra.core.list"
+    if owner_base == "dict":
+        return "pytra.core.dict"
+    if owner_base == "set":
+        return "pytra.core.set"
+    if owner_base == "str":
+        return "pytra.core.str"
+    if owner_base == "tuple":
+        return "pytra.core.py_runtime"
+    if owner_base == "deque":
+        return "pytra.std.collections"
+    return ""
+
+
+# Temporary: str method overrides until containers.py gets extern_v2
+# These will be removed when P0-PARSE-S5 adds extern_v2 to container methods.
+_STR_METHOD_OVERRIDES: dict[str, tuple[str, str]] = {
+    "join": ("pytra.built_in.string_ops", "py_join"),
+    "split": ("pytra.built_in.string_ops", "py_split"),
+    "strip": ("pytra.built_in.string_ops", "py_strip"),
+    "lstrip": ("pytra.built_in.string_ops", "py_lstrip"),
+    "rstrip": ("pytra.built_in.string_ops", "py_rstrip"),
+    "replace": ("pytra.built_in.string_ops", "py_replace"),
+    "find": ("pytra.built_in.string_ops", "py_find"),
+    "rfind": ("pytra.built_in.string_ops", "py_rfind"),
+    "startswith": ("pytra.built_in.string_ops", "py_startswith"),
+    "endswith": ("pytra.built_in.string_ops", "py_endswith"),
+    "count": ("pytra.built_in.string_ops", "py_count"),
+    "upper": ("pytra.built_in.string_ops", "py_upper"),
+    "lower": ("pytra.built_in.string_ops", "py_lower"),
+    "isdigit": ("pytra.built_in.string_ops", "py_isdigit"),
+    "isalpha": ("pytra.built_in.string_ops", "py_isalpha"),
+    "isalnum": ("pytra.built_in.string_ops", "py_isalnum"),
+    "isupper": ("pytra.built_in.string_ops", "py_isupper"),
+    "islower": ("pytra.built_in.string_ops", "py_islower"),
+    "zfill": ("pytra.built_in.string_ops", "py_zfill"),
+}
+
+
+def _get_container_method_override(owner_base: str, method: str) -> tuple[str, str] | None:
+    """Get override for container methods without extern_v2."""
+    if owner_base == "str":
+        return _STR_METHOD_OVERRIDES.get(method)
+    return None
 
 
 def _substitute_type_params(ret_type: str, concrete_type: str, cls: ClassSig) -> str:
@@ -890,7 +951,7 @@ def _resolve_attribute(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
         mod_id: str = ctx.import_modules.get(receiver_name, "")
         if mod_id != "":
             canonical: str = ctx.canonical_module_id(mod_id)
-            t: str = _infer_module_attr_type(canonical, attr)
+            t: str = _infer_module_attr_type(canonical, attr, ctx)
             expr["resolved_type"] = t
             return t
 
@@ -907,11 +968,12 @@ def _resolve_attribute(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     return "unknown"
 
 
-def _infer_module_attr_type(canonical: str, attr: str) -> str:
+def _infer_module_attr_type(canonical: str, attr: str, ctx: ResolveContext) -> str:
     """Infer type of a module-level attribute (e.g., math.pi)."""
-    if canonical == "pytra.std.math":
-        if attr == "pi" or attr == "e" or attr == "tau" or attr == "inf":
-            return "float64"
+    # Look up in stdlib registry
+    var_sig: VarSig | None = ctx.registry.lookup_stdlib_variable(canonical, attr)
+    if var_sig is not None:
+        return var_sig.var_type
     return "unknown"
 
 
