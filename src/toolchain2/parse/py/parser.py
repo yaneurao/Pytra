@@ -1447,6 +1447,19 @@ def _parse_module_body(
             ln_no += 1
             continue
 
+        # Module-level string literal (docstring)
+        if (s_clean.startswith('"""') or s_clean.startswith("'''") or
+            (s_clean.startswith('"') and not s_clean.startswith('"""')) or
+            (s_clean.startswith("'") and not s_clean.startswith("'''"))):
+            # Check if it's a standalone string (expression statement)
+            expr = _parse_expr_text(ctx, s_clean, ln_no + 1, indent, {})
+            span = make_span(ln_no + 1, indent, ln_no + 1, indent + len(s_clean))
+            body_items.append(ExprStmt(source_span=span, value=expr))
+            ln_no += 1
+            pending_trivia = []
+            pending_comments = []
+            continue
+
         # Import: from X import Y
         mod, names_text = _parse_from_import(s_clean)
         if mod != "" and names_text != "":
