@@ -14,6 +14,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional, Union
 
+from pytra.std import re
+
 from toolchain2.parse.py.source_span import SourceSpan, NULL_SPAN, make_span
 from toolchain2.parse.py.nodes import (
     JsonVal,
@@ -112,167 +114,80 @@ def _is_identifier(s: str) -> bool:
     return True
 
 
-def _is_word_char(ch: str) -> bool:
-    return ch == "_" or (ch >= "a" and ch <= "z") or (ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9")
-
-
-def _skip_ws(s: str, i: int) -> int:
-    while i < len(s) and (s[i] == " " or s[i] == "\t"):
-        i += 1
-    return i
-
 
 def _parse_from_import(s: str) -> tuple[str, str]:
     """'from MOD import NAMES' をパースして (module, names_text) を返す。失敗時は ("", "")。"""
-    if not s.startswith("from "):
+    m = re.match(r"^from\s+([A-Za-z_][A-Za-z0-9_\.]*)\s+import\s+(.+)$", s)
+    if m is None:
         return "", ""
-    rest = s[5:].lstrip()
-    # module name (non-space)
-    end = 0
-    while end < len(rest) and rest[end] != " " and rest[end] != "\t":
-        end += 1
-    if end == 0:
-        return "", ""
-    mod = rest[:end]
-    rest = rest[end:].lstrip()
-    if not rest.startswith("import "):
-        return "", ""
-    names = rest[7:].strip()
-    if names == "":
-        return "", ""
-    return mod, names
+    return re.strip_group(m, 1), re.strip_group(m, 2)
+
+
+def _parse_def_header(s: str) -> tuple[str, str, str]:
+    """'def NAME(ARGS) -> RET:' をパース。(name, args, ret)。失敗は ("", "", "")。"""
+    m = re.match(r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*(?:->\s*(.+)\s*)?:\s*$", s)
+    if m is None:
+        return "", "", ""
+    return re.strip_group(m, 1), re.strip_group(m, 2), re.strip_group(m, 3)
 
 
 def _parse_def_name(s: str) -> str:
-    """'def NAME(' からNAMEを抽出。失敗時は ""。"""
-    if not s.startswith("def "):
-        return ""
-    rest = s[4:].lstrip()
-    end = 0
-    while end < len(rest) and _is_word_char(rest[end]):
-        end += 1
-    if end == 0:
-        return ""
-    name = rest[:end]
-    # Check '(' follows
-    after = rest[end:].lstrip()
-    if after == "" or after[0] != "(":
-        return ""
+    """'def NAME(...):' からNAMEを抽出。失敗時は ""。"""
+    name, _, _ = _parse_def_header(s)
     return name
 
 
 def _parse_class_name(s: str) -> str:
-    """'class NAME' からNAMEを抽出。"""
-    if not s.startswith("class "):
+    """'class NAME:' からNAMEを抽出。"""
+    m = re.match(r"^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*)\))?\s*:\s*$", s)
+    if m is None:
         return ""
-    rest = s[6:].lstrip()
-    end = 0
-    while end < len(rest) and _is_word_char(rest[end]):
-        end += 1
-    if end == 0:
-        return ""
-    return rest[:end]
+    return re.strip_group(m, 1)
 
 
 def _parse_ann_assign(s: str) -> tuple[str, str, str]:
     """'NAME: TYPE = VALUE' をパース。失敗時は ("", "", "")。"""
-    # Find identifier
-    end = 0
-    while end < len(s) and _is_word_char(s[end]):
-        end += 1
-    if end == 0:
+    m = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)\s*=\s*(.+)$", s)
+    if m is None:
         return "", "", ""
-    var_name = s[:end]
-    rest = s[end:].lstrip()
-    if rest == "" or rest[0] != ":":
-        return "", "", ""
-    rest = rest[1:].lstrip()
-    # Find '=' (top-level, outside brackets)
-    eq_pos = _find_top_level_eq(rest)
-    if eq_pos < 0:
-        return "", "", ""
-    type_ann = rest[:eq_pos].rstrip()
-    value_text = rest[eq_pos + 1:].lstrip()
-    if type_ann == "" or value_text == "":
-        return "", "", ""
-    return var_name, type_ann, value_text
-
-
-def _find_top_level_eq(s: str) -> int:
-    """ブラケットの外側にある最初の '=' の位置を返す。'==' は無視。"""
-    depth = 0
-    i = 0
-    n = len(s)
-    while i < n:
-        ch = s[i]
-        if ch == "(" or ch == "[" or ch == "{":
-            depth += 1
-        elif ch == ")" or ch == "]" or ch == "}":
-            depth -= 1
-        elif ch == "=" and depth == 0:
-            # Ensure not ==
-            if i + 1 < n and s[i + 1] == "=":
-                i += 2
-                continue
-            # Ensure not !=, <=, >=
-            if i > 0 and s[i - 1] in "!<>":
-                i += 1
-                continue
-            return i
-        i += 1
-    return -1
+    return re.strip_group(m, 1), re.strip_group(m, 2), re.strip_group(m, 3)
 
 
 def _parse_aug_assign(s: str) -> tuple[str, str, str]:
     """augmented assignment をパース。失敗時は ("", "", "")。"""
-    ops = ["//=", "**=", "<<=", ">>=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^="]
-    for op in ops:
-        pos = s.find(op)
-        if pos > 0:
-            target = s[:pos].rstrip()
-            value = s[pos + len(op):].lstrip()
-            if target != "" and value != "":
-                return target, op, value
-    return "", "", ""
+    m = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*(\+=|-=|\*=|/=|//=|%=|&=|\|=|\^=|<<=|>>=)\s*(.+)$", s)
+    if m is None:
+        return "", "", ""
+    return re.strip_group(m, 1), re.strip_group(m, 2), re.strip_group(m, 3)
 
 
 def _parse_simple_assign(s: str) -> tuple[str, str]:
-    """simple assignment をパース。失敗時は ("", "")。'==' を除外。"""
-    eq_pos = _find_top_level_eq(s)
-    if eq_pos < 0:
+    """simple assignment をパース。失敗時は ("", "")。"""
+    m = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s)
+    if m is None:
         return "", ""
-    target = s[:eq_pos].rstrip()
-    value = s[eq_pos + 1:].lstrip()
-    if target == "" or value == "":
-        return "", ""
-    # Exclude if target ends with augmented operator
-    if target.endswith(("!", "+", "-", "*", "/", "%", "&", "|", "^", "<", ">")):
-        return "", ""
-    return target, value
+    return re.strip_group(m, 1), re.strip_group(m, 2)
 
 
 def _parse_for_header(s: str) -> tuple[str, str]:
     """'for TARGET in ITER:' をパース。(target_name, iter_text)。失敗は ("", "")。"""
-    if not s.startswith("for "):
+    m = re.match(r"^for\s+(.+)\s+in\s+(.+):$", s)
+    if m is None:
         return "", ""
-    rest = s[4:].lstrip()
-    # Find ' in '
-    in_pos = rest.find(" in ")
-    if in_pos < 0:
-        return "", ""
-    target_name = rest[:in_pos].strip()
-    iter_text = rest[in_pos + 4:].rstrip(":")
-    iter_text = iter_text.strip()
-    return target_name, iter_text
+    return re.strip_group(m, 1), re.strip_group(m, 2)
+
+
+def _parse_main_guard(s: str) -> bool:
+    """'if __name__ == "__main__":' を検出する。"""
+    m = re.match(r"^if\s+__name__\s*==\s*[\"']__main__[\"']\s*:\s*$", s)
+    return m is not None
 
 
 def _parse_range_call(s: str) -> Optional[str]:
     """'range(ARGS)' をパース。ARGS 部分を返す。range でなければ None。"""
+    s = s.strip()
     if not s.startswith("range("):
-        stripped = s.lstrip()
-        if not stripped.startswith("range("):
-            return None
-        s = stripped
+        return None
     if not s.endswith(")"):
         return None
     return s[6:-1]
@@ -1177,11 +1092,9 @@ def _prescan(ctx: ParseContext, lines: list[str]) -> None:
             continue
 
         # def name(...) -> RetType:
-        fn_name = _parse_def_name(s)
+        fn_name, _, ret_ann = _parse_def_header(s)
         if fn_name != "":
-            arrow_pos = s.rfind("->")
-            if arrow_pos >= 0:
-                ret_ann = s[arrow_pos + 2:].rstrip(":").strip()
+            if ret_ann != "":
                 ctx.fn_returns[fn_name] = _resolve_type(ret_ann, ctx)
             continue
 
@@ -1282,7 +1195,7 @@ def _parse_module_body(
             continue
 
         # Main guard: if __name__ == "__main__":
-        if s_clean.startswith("if __name__") and "__main__" in s_clean:
+        if _parse_main_guard(s_clean):
             ln_no += 1
             guard_lines: list[str] = []
             while ln_no < total:
@@ -1357,16 +1270,8 @@ def _parse_function_def(
     header_line = lines[start_ln]
     header = _strip_inline_comment(header_line.strip())
 
-    # Parse signature: def name(args) -> ret:
-    paren_start = header.find("(")
-    paren_end = header.rfind(")")
-    args_text = header[paren_start + 1:paren_end] if paren_start >= 0 and paren_end > paren_start else ""
-
-    # Parse return type
-    arrow_pos = header.rfind("->")
-    return_ann = ""
-    if arrow_pos >= 0:
-        return_ann = header[arrow_pos + 2:].rstrip(":").strip()
+    # Parse signature via pytra.std.re
+    _, args_text, return_ann = _parse_def_header(header)
     return_type = _resolve_type(return_ann, ctx) if return_ann != "" else "None"
 
     # Parse arguments
