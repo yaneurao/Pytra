@@ -2941,6 +2941,19 @@ def _build_meta(ctx: ParseContext) -> dict[str, JsonVal]:
         elif "pytra.built_in." in mod_id:
             rb["runtime_module_id"] = mod_id
             rb["runtime_group"] = "built_in"
+        elif mod_id in ("math", "os", "sys", "glob", "re", "argparse", "subprocess", "time", "timeit", "collections", "json", "random"):
+            # Python stdlib module → pytra.std.<mod>
+            rb["runtime_module_id"] = "pytra.std." + mod_id
+            rb["runtime_group"] = "std"
+            if binding_kind == "module":
+                rb["resolved_binding_kind"] = "module"
+            elif binding_kind == "symbol":
+                rb["resolved_binding_kind"] = "symbol"
+                export = str(binding.get("export_name", ""))
+                rb["runtime_symbol"] = export
+                rb["runtime_symbol_kind"] = "function"
+                rb["runtime_symbol_dispatch"] = "function"
+                rb["runtime_semantic_tag"] = "stdlib.fn." + export
         resolution_bindings.append(rb)
 
     import_resolution: dict[str, JsonVal] = {
