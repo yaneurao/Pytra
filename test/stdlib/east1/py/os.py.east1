@@ -1,0 +1,240 @@
+{
+  "kind": "Module",
+  "source_path": "src/include/py/pytra/std/os.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 2,
+        "col": 0,
+        "end_lineno": 2,
+        "end_col": 40
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 2,
+          "col": 0,
+          "end_lineno": 2,
+          "end_col": 40
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"pytra.std.os: OS 関数の宣言（v2 extern）。\"\"\"",
+        "value": "pytra.std.os: OS 関数の宣言（v2 extern）。"
+      }
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 4,
+        "end_col": 31
+      },
+      "module": "pytra.std",
+      "names": [
+        {
+          "name": "extern_fn",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 7,
+        "col": 0,
+        "end_lineno": 7,
+        "end_col": 0
+      },
+      "name": "getcwd",
+      "original_name": "getcwd",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "str",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.os",
+          "symbol": "getcwd",
+          "tag": "stdlib.fn.getcwd"
+        }
+      },
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 10,
+        "col": 0,
+        "end_lineno": 10,
+        "end_col": 0
+      },
+      "name": "mkdir",
+      "original_name": "mkdir",
+      "arg_types": {
+        "p": "str",
+        "exist_ok": "bool"
+      },
+      "arg_order": [
+        "p",
+        "exist_ok"
+      ],
+      "arg_defaults": {
+        "exist_ok": {
+          "kind": "Constant",
+          "source_span": {
+            "lineno": 10,
+            "col": 35,
+            "end_lineno": 10,
+            "end_col": 40
+          },
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "False",
+          "value": false
+        }
+      },
+      "arg_index": {
+        "p": 0,
+        "exist_ok": 1
+      },
+      "return_type": "None",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.os",
+          "symbol": "mkdir",
+          "tag": "stdlib.fn.mkdir"
+        }
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 13,
+        "col": 0,
+        "end_lineno": 13,
+        "end_col": 0
+      },
+      "name": "makedirs",
+      "original_name": "makedirs",
+      "arg_types": {
+        "p": "str",
+        "exist_ok": "bool"
+      },
+      "arg_order": [
+        "p",
+        "exist_ok"
+      ],
+      "arg_defaults": {
+        "exist_ok": {
+          "kind": "Constant",
+          "source_span": {
+            "lineno": 13,
+            "col": 38,
+            "end_lineno": 13,
+            "end_col": 43
+          },
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "False",
+          "value": false
+        }
+      },
+      "arg_index": {
+        "p": 0,
+        "exist_ok": 1
+      },
+      "return_type": "None",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.os",
+          "symbol": "makedirs",
+          "tag": "stdlib.fn.makedirs"
+        }
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [
+        {
+          "module_id": "pytra.std",
+          "export_name": "extern_fn",
+          "local_name": "extern_fn",
+          "binding_kind": "symbol",
+          "source_file": "src/include/py/pytra/std/os.py",
+          "source_line": 4
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std",
+          "symbol": "extern_fn",
+          "local_name": "extern_fn"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.std",
+        "export_name": "extern_fn",
+        "local_name": "extern_fn",
+        "binding_kind": "symbol",
+        "source_file": "src/include/py/pytra/std/os.py",
+        "source_line": 4
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std",
+        "symbol": "extern_fn",
+        "local_name": "extern_fn"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "extern_fn": {
+        "module": "pytra.std",
+        "name": "extern_fn"
+      }
+    }
+  },
+  "east_stage": 1
+}

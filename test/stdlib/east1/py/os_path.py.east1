@@ -1,0 +1,323 @@
+{
+  "kind": "Module",
+  "source_path": "src/include/py/pytra/std/os_path.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 2,
+        "col": 0,
+        "end_lineno": 2,
+        "end_col": 50
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 2,
+          "col": 0,
+          "end_lineno": 2,
+          "end_col": 50
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"pytra.std.os_path: os.path 関数の宣言（v2 extern）。\"\"\"",
+        "value": "pytra.std.os_path: os.path 関数の宣言（v2 extern）。"
+      }
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 4,
+        "end_col": 31
+      },
+      "module": "pytra.std",
+      "names": [
+        {
+          "name": "extern_fn",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 7,
+        "col": 0,
+        "end_lineno": 7,
+        "end_col": 0
+      },
+      "name": "join",
+      "original_name": "join",
+      "arg_types": {
+        "a": "str",
+        "b": "str"
+      },
+      "arg_order": [
+        "a",
+        "b"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "a": 0,
+        "b": 1
+      },
+      "return_type": "str",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.os_path",
+          "symbol": "join",
+          "tag": "stdlib.fn.path_join"
+        }
+      },
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 10,
+        "col": 0,
+        "end_lineno": 10,
+        "end_col": 0
+      },
+      "name": "dirname",
+      "original_name": "dirname",
+      "arg_types": {
+        "p": "str"
+      },
+      "arg_order": [
+        "p"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "p": 0
+      },
+      "return_type": "str",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.os_path",
+          "symbol": "dirname",
+          "tag": "stdlib.fn.path_dirname"
+        }
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 13,
+        "col": 0,
+        "end_lineno": 13,
+        "end_col": 0
+      },
+      "name": "basename",
+      "original_name": "basename",
+      "arg_types": {
+        "p": "str"
+      },
+      "arg_order": [
+        "p"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "p": 0
+      },
+      "return_type": "str",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.os_path",
+          "symbol": "basename",
+          "tag": "stdlib.fn.path_basename"
+        }
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 16,
+        "col": 0,
+        "end_lineno": 16,
+        "end_col": 0
+      },
+      "name": "splitext",
+      "original_name": "splitext",
+      "arg_types": {
+        "p": "str"
+      },
+      "arg_order": [
+        "p"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "p": 0
+      },
+      "return_type": "tuple[str, str]",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.os_path",
+          "symbol": "splitext",
+          "tag": "stdlib.fn.path_splitext"
+        }
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 19,
+        "col": 0,
+        "end_lineno": 19,
+        "end_col": 0
+      },
+      "name": "abspath",
+      "original_name": "abspath",
+      "arg_types": {
+        "p": "str"
+      },
+      "arg_order": [
+        "p"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "p": 0
+      },
+      "return_type": "str",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.os_path",
+          "symbol": "abspath",
+          "tag": "stdlib.fn.path_abspath"
+        }
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 22,
+        "col": 0,
+        "end_lineno": 22,
+        "end_col": 0
+      },
+      "name": "exists",
+      "original_name": "exists",
+      "arg_types": {
+        "p": "str"
+      },
+      "arg_order": [
+        "p"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "p": 0
+      },
+      "return_type": "bool",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.os_path",
+          "symbol": "exists",
+          "tag": "stdlib.fn.path_exists"
+        }
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [
+        {
+          "module_id": "pytra.std",
+          "export_name": "extern_fn",
+          "local_name": "extern_fn",
+          "binding_kind": "symbol",
+          "source_file": "src/include/py/pytra/std/os_path.py",
+          "source_line": 4
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std",
+          "symbol": "extern_fn",
+          "local_name": "extern_fn"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.std",
+        "export_name": "extern_fn",
+        "local_name": "extern_fn",
+        "binding_kind": "symbol",
+        "source_file": "src/include/py/pytra/std/os_path.py",
+        "source_line": 4
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std",
+        "symbol": "extern_fn",
+        "local_name": "extern_fn"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "extern_fn": {
+        "module": "pytra.std",
+        "name": "extern_fn"
+      }
+    }
+  },
+  "east_stage": 1
+}

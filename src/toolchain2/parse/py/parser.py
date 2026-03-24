@@ -97,6 +97,48 @@ def _is_identifier(s: str) -> bool:
 
 
 
+def _parse_extern_kwargs(text: str) -> Optional[dict[str, str]]:
+    """extern_fn/extern_var/extern_class のキーワード引数を抽出する。
+    例: 'module="pytra.core", symbol="len", tag="core.len"'
+    → {"module": "pytra.core", "symbol": "len", "tag": "core.len"}
+    """
+    result: dict[str, str] = {}
+    for part in text.split(","):
+        part = part.strip()
+        if "=" not in part:
+            continue
+        eq = part.index("=")
+        key = part[:eq].strip()
+        val = part[eq + 1:].strip()
+        # Strip quotes
+        if len(val) >= 2 and val[0] == '"' and val[-1] == '"':
+            val = val[1:-1]
+        elif len(val) >= 2 and val[0] == "'" and val[-1] == "'":
+            val = val[1:-1]
+        result[key] = val
+    if "module" in result and "symbol" in result and "tag" in result:
+        return result
+    return None
+
+
+def _parse_extern_v2_decorator(s: str) -> Optional[dict[str, str]]:
+    """@extern_fn(...) or @extern_class(...) からキーワード引数を抽出。"""
+    for prefix in ("@extern_fn(", "@extern_class("):
+        if s.startswith(prefix) and s.endswith(")"):
+            inner = s[len(prefix):-1]
+            return _parse_extern_kwargs(inner)
+    return None
+
+
+def _parse_extern_var_call(value_text: str) -> Optional[dict[str, str]]:
+    """extern_var(module=..., symbol=..., tag=...) からキーワード引数を抽出。"""
+    vt = value_text.strip()
+    if vt.startswith("extern_var(") and vt.endswith(")"):
+        inner = vt[len("extern_var("):-1]
+        return _parse_extern_kwargs(inner)
+    return None
+
+
 def _normalize_typing_prefix(ann: str) -> str:
     """typing.List[int] → list[int] など、typing. プレフィックスの正規化。"""
     _TYPING_ALIASES: dict[str, str] = {
@@ -1249,6 +1291,7 @@ def _parse_module_body(
     pending_comments: list[str] = []
     leading_file_trivia_done = False
     pending_dataclass = False
+    pending_extern_v2: Optional[dict[str, str]] = None
     skip_next_blanks = False  # import/def/class 直後の空行を蓄積しないためのフラグ
     first_nonimport_done = False  # 最初の non-import body item かどうか
 
@@ -1286,6 +1329,10 @@ def _parse_module_body(
         if s_clean.startswith("@"):
             if s_clean == "@dataclass" or s_clean.startswith("@dataclass("):
                 pending_dataclass = True
+            # v2 extern decorators
+            extern_v2 = _parse_extern_v2_decorator(s_clean)
+            if extern_v2 is not None:
+                pending_extern_v2 = extern_v2
             ln_no += 1
             continue
 
@@ -1422,6 +1469,9 @@ def _parse_module_body(
             fn_name = _parse_def_name(merged)
         if fn_name != "":
             fn_stmt, ln_no = _parse_function_def(ctx, lines, ln_no, fn_name, pending_trivia, pending_comments)
+            if pending_extern_v2 is not None:
+                fn_stmt.node_meta = {"extern_v2": pending_extern_v2}
+                pending_extern_v2 = None
             body_items.append(fn_stmt)
             first_nonimport_done = True
             pending_trivia = []
@@ -1434,6 +1484,9 @@ def _parse_module_body(
         if cls_name != "":
             force_cls_leading = not first_nonimport_done
             cls_stmt, ln_no = _parse_class_def(ctx, lines, ln_no, cls_name, pending_trivia, pending_comments, is_dataclass=pending_dataclass, force_leading=force_cls_leading)
+            if pending_extern_v2 is not None:
+                cls_stmt.node_meta = {"extern_v2": pending_extern_v2}
+                pending_extern_v2 = None
             first_nonimport_done = True
             pending_dataclass = False
             body_items.append(cls_stmt)
@@ -1461,6 +1514,10 @@ def _parse_module_body(
             val_expr = _parse_expr_text(ctx, tl_value, ln_no + 1, _find_expr_col(ctx, tl_value, ln_no + 1, 0), {})
             span = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
             ann_stmt = AnnAssign(source_span=span, target=target, annotation=tl_type, value=val_expr, declare=True)
+            # Check for extern_var(...) in value
+            ev2 = _parse_extern_var_call(tl_value)
+            if ev2 is not None:
+                ann_stmt.node_meta = {"extern_v2": ev2}
             if len(pending_trivia) > 0:
                 ann_stmt.leading_trivia = list(pending_trivia)
             if len(pending_comments) > 0:

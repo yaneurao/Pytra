@@ -33,17 +33,17 @@
     {
       "kind": "Expr",
       "source_span": {
-        "lineno": 8,
+        "lineno": 7,
         "col": 0,
-        "end_lineno": 8,
+        "end_lineno": 7,
         "end_col": 3
       },
       "value": {
         "kind": "Constant",
         "source_span": {
-          "lineno": 8,
+          "lineno": 7,
           "col": 0,
-          "end_lineno": 8,
+          "end_lineno": 7,
           "end_col": 3
         },
         "casts": [],
@@ -55,30 +55,17 @@
     {
       "kind": "ImportFrom",
       "source_span": {
-        "lineno": 10,
+        "lineno": 9,
         "col": 0,
-        "end_lineno": 10,
-        "end_col": 28
+        "end_lineno": 9,
+        "end_col": 41
       },
       "module": "pytra.std",
       "names": [
         {
-          "name": "extern",
+          "name": "extern_fn",
           "asname": null
-        }
-      ],
-      "level": 0
-    },
-    {
-      "kind": "ImportFrom",
-      "source_span": {
-        "lineno": 11,
-        "col": 0,
-        "end_lineno": 11,
-        "end_col": 39
-      },
-      "module": "pytra.std.template",
-      "names": [
+        },
         {
           "name": "template",
           "asname": null
@@ -89,9 +76,9 @@
     {
       "kind": "ImportFrom",
       "source_span": {
-        "lineno": 12,
+        "lineno": 10,
         "col": 0,
-        "end_lineno": 12,
+        "end_lineno": 10,
         "end_col": 27
       },
       "module": "pytra.types",
@@ -106,9 +93,9 @@
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 22,
+        "lineno": 18,
         "col": 0,
-        "end_lineno": 22,
+        "end_lineno": 18,
         "end_col": 0
       },
       "name": "len",
@@ -129,11 +116,16 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.core.py_runtime",
+          "symbol": "len",
+          "tag": "core.len"
+        }
+      },
       "leading_comments": [
         "---------------------------------------------------------------------------",
         "§3.1 dunder 委譲型",
-        "resolve は引数の具象型に該当の dunder があるか型チェックし、",
-        "py_len 等のノードに変換する。",
         "---------------------------------------------------------------------------"
       ],
       "leading_trivia": [
@@ -151,14 +143,6 @@
         },
         {
           "kind": "comment",
-          "text": "resolve は引数の具象型に該当の dunder があるか型チェックし、"
-        },
-        {
-          "kind": "comment",
-          "text": "py_len 等のノードに変換する。"
-        },
-        {
-          "kind": "comment",
           "text": "---------------------------------------------------------------------------"
         }
       ]
@@ -166,9 +150,9 @@
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 25,
+        "lineno": 21,
         "col": 0,
-        "end_lineno": 25,
+        "end_lineno": 21,
         "end_col": 0
       },
       "name": "str",
@@ -189,15 +173,22 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.core.py_runtime",
+          "symbol": "str",
+          "tag": "cast.str"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 28,
+        "lineno": 24,
         "col": 0,
-        "end_lineno": 28,
+        "end_lineno": 24,
         "end_col": 0
       },
       "name": "bool",
@@ -218,15 +209,22 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.core.py_runtime",
+          "symbol": "bool",
+          "tag": "cast.bool"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 31,
+        "lineno": 27,
         "col": 0,
-        "end_lineno": 31,
+        "end_lineno": 27,
         "end_col": 0
       },
       "name": "int",
@@ -247,15 +245,22 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.core.py_runtime",
+          "symbol": "int",
+          "tag": "cast.int"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 34,
+        "lineno": 30,
         "col": 0,
-        "end_lineno": 34,
+        "end_lineno": 30,
         "end_col": 0
       },
       "name": "float",
@@ -276,15 +281,22 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.core.py_runtime",
+          "symbol": "float",
+          "tag": "cast.float"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 37,
+        "lineno": 33,
         "col": 0,
-        "end_lineno": 37,
+        "end_lineno": 33,
         "end_col": 0
       },
       "name": "repr",
@@ -305,15 +317,22 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.core.py_runtime",
+          "symbol": "repr",
+          "tag": "cast.repr"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 46,
+        "lineno": 41,
         "col": 0,
-        "end_lineno": 46,
+        "end_lineno": 41,
         "end_col": 0
       },
       "name": "print",
@@ -330,10 +349,16 @@
       "yield_value_type": "unknown",
       "vararg_name": "args",
       "vararg_type": "Obj",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.built_in.io_ops",
+          "symbol": "py_print",
+          "tag": "core.print"
+        }
+      },
       "leading_comments": [
         "---------------------------------------------------------------------------",
         "§3.2 スタンドアロン型",
-        "各言語の runtime が実装する関数。",
         "---------------------------------------------------------------------------"
       ],
       "leading_trivia": [
@@ -347,10 +372,6 @@
         },
         {
           "kind": "comment",
-          "text": "各言語の runtime が実装する関数。"
-        },
-        {
-          "kind": "comment",
           "text": "---------------------------------------------------------------------------"
         }
       ]
@@ -358,9 +379,9 @@
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 49,
+        "lineno": 44,
         "col": 0,
-        "end_lineno": 49,
+        "end_lineno": 44,
         "end_col": 0
       },
       "name": "isinstance",
@@ -384,15 +405,22 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.core.py_runtime",
+          "symbol": "isinstance",
+          "tag": "type.isinstance"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 52,
+        "lineno": 47,
         "col": 0,
-        "end_lineno": 52,
+        "end_lineno": 47,
         "end_col": 0
       },
       "name": "issubclass",
@@ -416,15 +444,22 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.core.py_runtime",
+          "symbol": "issubclass",
+          "tag": "type.issubclass"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 55,
+        "lineno": 50,
         "col": 0,
-        "end_lineno": 55,
+        "end_lineno": 50,
         "end_col": 0
       },
       "name": "round",
@@ -441,9 +476,9 @@
         "ndigits": {
           "kind": "Constant",
           "source_span": {
-            "lineno": 55,
+            "lineno": 50,
             "col": 35,
-            "end_lineno": 55,
+            "end_lineno": 50,
             "end_col": 36
           },
           "casts": [],
@@ -462,15 +497,22 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.core.py_runtime",
+          "symbol": "py_round",
+          "tag": "math.round"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 58,
+        "lineno": 53,
         "col": 0,
-        "end_lineno": 58,
+        "end_lineno": 53,
         "end_col": 0
       },
       "name": "abs",
@@ -491,15 +533,22 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.core.py_runtime",
+          "symbol": "py_abs",
+          "tag": "math.abs"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 61,
+        "lineno": 56,
         "col": 0,
-        "end_lineno": 61,
+        "end_lineno": 56,
         "end_col": 0
       },
       "name": "ord",
@@ -520,15 +569,22 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.built_in.scalar_ops",
+          "symbol": "py_ord",
+          "tag": "cast.ord"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 64,
+        "lineno": 59,
         "col": 0,
-        "end_lineno": 64,
+        "end_lineno": 59,
         "end_col": 0
       },
       "name": "chr",
@@ -549,15 +605,22 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.built_in.scalar_ops",
+          "symbol": "py_chr",
+          "tag": "cast.chr"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 74,
+        "lineno": 68,
         "col": 0,
-        "end_lineno": 74,
+        "end_lineno": 68,
         "end_col": 0
       },
       "name": "min",
@@ -574,10 +637,16 @@
       "yield_value_type": "unknown",
       "vararg_name": "args",
       "vararg_type": "T",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.built_in.numeric_ops",
+          "symbol": "py_min",
+          "tag": "math.min"
+        }
+      },
       "leading_comments": [
         "---------------------------------------------------------------------------",
         "§3.3 ジェネリック型",
-        "resolve が callsite の具象型から T を解決する。",
         "---------------------------------------------------------------------------"
       ],
       "leading_trivia": [
@@ -591,10 +660,6 @@
         },
         {
           "kind": "comment",
-          "text": "resolve が callsite の具象型から T を解決する。"
-        },
-        {
-          "kind": "comment",
           "text": "---------------------------------------------------------------------------"
         }
       ]
@@ -602,9 +667,9 @@
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 78,
+        "lineno": 72,
         "col": 0,
-        "end_lineno": 78,
+        "end_lineno": 72,
         "end_col": 0
       },
       "name": "max",
@@ -621,15 +686,22 @@
       "yield_value_type": "unknown",
       "vararg_name": "args",
       "vararg_type": "T",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.built_in.numeric_ops",
+          "symbol": "py_max",
+          "tag": "math.max"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 82,
+        "lineno": 76,
         "col": 0,
-        "end_lineno": 82,
+        "end_lineno": 76,
         "end_col": 0
       },
       "name": "sorted",
@@ -650,15 +722,22 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.built_in.iter_ops",
+          "symbol": "py_sorted",
+          "tag": "iter.sorted"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 86,
+        "lineno": 80,
         "col": 0,
-        "end_lineno": 86,
+        "end_lineno": 80,
         "end_col": 0
       },
       "name": "reversed",
@@ -679,15 +758,22 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.built_in.iter_ops",
+          "symbol": "py_reversed_object",
+          "tag": "iter.reversed"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 90,
+        "lineno": 84,
         "col": 0,
-        "end_lineno": 90,
+        "end_lineno": 84,
         "end_col": 0
       },
       "name": "enumerate",
@@ -704,9 +790,9 @@
         "start": {
           "kind": "Constant",
           "source_span": {
-            "lineno": 90,
+            "lineno": 84,
             "col": 39,
-            "end_lineno": 90,
+            "end_lineno": 84,
             "end_col": 40
           },
           "casts": [],
@@ -725,15 +811,22 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.built_in.iter_ops",
+          "symbol": "py_enumerate_object",
+          "tag": "iter.enumerate"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 94,
+        "lineno": 88,
         "col": 0,
-        "end_lineno": 94,
+        "end_lineno": 88,
         "end_col": 0
       },
       "name": "zip",
@@ -757,15 +850,22 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.built_in.zip_ops",
+          "symbol": "zip",
+          "tag": "iter.zip"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 102,
+        "lineno": 96,
         "col": 0,
-        "end_lineno": 102,
+        "end_lineno": 96,
         "end_col": 0
       },
       "name": "range",
@@ -786,9 +886,16 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.built_in.sequence",
+          "symbol": "py_range",
+          "tag": "iter.range"
+        }
+      },
       "leading_comments": [
         "---------------------------------------------------------------------------",
-        "§3.4 range（resolve で ForRange / RangeExpr に変換）",
+        "§3.4 range",
         "---------------------------------------------------------------------------"
       ],
       "leading_trivia": [
@@ -798,7 +905,7 @@
         },
         {
           "kind": "comment",
-          "text": "§3.4 range（resolve で ForRange / RangeExpr に変換）"
+          "text": "§3.4 range"
         },
         {
           "kind": "comment",
@@ -809,9 +916,9 @@
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 105,
+        "lineno": 99,
         "col": 0,
-        "end_lineno": 105,
+        "end_lineno": 99,
         "end_col": 0
       },
       "name": "range",
@@ -835,15 +942,22 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.built_in.sequence",
+          "symbol": "py_range",
+          "tag": "iter.range"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 108,
+        "lineno": 102,
         "col": 0,
-        "end_lineno": 108,
+        "end_lineno": 102,
         "end_col": 0
       },
       "name": "range",
@@ -870,6 +984,13 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.built_in.sequence",
+          "symbol": "py_range",
+          "tag": "iter.range"
+        }
+      },
       "leading_comments": [],
       "leading_trivia": []
     }
@@ -881,19 +1002,19 @@
       "bindings": [
         {
           "module_id": "pytra.std",
-          "export_name": "extern",
-          "local_name": "extern",
+          "export_name": "extern_fn",
+          "local_name": "extern_fn",
           "binding_kind": "symbol",
           "source_file": "src/include/py/pytra/built_in/builtins.py",
-          "source_line": 10
+          "source_line": 9
         },
         {
-          "module_id": "pytra.std.template",
+          "module_id": "pytra.std",
           "export_name": "template",
           "local_name": "template",
           "binding_kind": "symbol",
           "source_file": "src/include/py/pytra/built_in/builtins.py",
-          "source_line": 11
+          "source_line": 9
         },
         {
           "module_id": "pytra.types",
@@ -901,17 +1022,17 @@
           "local_name": "Obj",
           "binding_kind": "symbol",
           "source_file": "src/include/py/pytra/built_in/builtins.py",
-          "source_line": 12
+          "source_line": 10
         }
       ],
       "qualified_refs": [
         {
           "module_id": "pytra.std",
-          "symbol": "extern",
-          "local_name": "extern"
+          "symbol": "extern_fn",
+          "local_name": "extern_fn"
         },
         {
-          "module_id": "pytra.std.template",
+          "module_id": "pytra.std",
           "symbol": "template",
           "local_name": "template"
         },
@@ -925,19 +1046,19 @@
     "import_bindings": [
       {
         "module_id": "pytra.std",
-        "export_name": "extern",
-        "local_name": "extern",
+        "export_name": "extern_fn",
+        "local_name": "extern_fn",
         "binding_kind": "symbol",
         "source_file": "src/include/py/pytra/built_in/builtins.py",
-        "source_line": 10
+        "source_line": 9
       },
       {
-        "module_id": "pytra.std.template",
+        "module_id": "pytra.std",
         "export_name": "template",
         "local_name": "template",
         "binding_kind": "symbol",
         "source_file": "src/include/py/pytra/built_in/builtins.py",
-        "source_line": 11
+        "source_line": 9
       },
       {
         "module_id": "pytra.types",
@@ -945,17 +1066,17 @@
         "local_name": "Obj",
         "binding_kind": "symbol",
         "source_file": "src/include/py/pytra/built_in/builtins.py",
-        "source_line": 12
+        "source_line": 10
       }
     ],
     "qualified_symbol_refs": [
       {
         "module_id": "pytra.std",
-        "symbol": "extern",
-        "local_name": "extern"
+        "symbol": "extern_fn",
+        "local_name": "extern_fn"
       },
       {
-        "module_id": "pytra.std.template",
+        "module_id": "pytra.std",
         "symbol": "template",
         "local_name": "template"
       },
@@ -967,12 +1088,12 @@
     ],
     "import_modules": {},
     "import_symbols": {
-      "extern": {
+      "extern_fn": {
         "module": "pytra.std",
-        "name": "extern"
+        "name": "extern_fn"
       },
       "template": {
-        "module": "pytra.std.template",
+        "module": "pytra.std",
         "name": "template"
       },
       "Obj": {

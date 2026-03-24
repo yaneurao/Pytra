@@ -1,0 +1,766 @@
+{
+  "kind": "Module",
+  "source_path": "src/include/py/pytra/std/sys.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 2,
+        "col": 0,
+        "end_lineno": 2,
+        "end_col": 45
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 2,
+          "col": 0,
+          "end_lineno": 2,
+          "end_col": 45
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"pytra.std.sys: sys モジュールの宣言（v2 extern）。\"\"\"",
+        "value": "pytra.std.sys: sys モジュールの宣言（v2 extern）。"
+      }
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 4,
+        "end_col": 43
+      },
+      "module": "pytra.std",
+      "names": [
+        {
+          "name": "extern_fn",
+          "asname": null
+        },
+        {
+          "name": "extern_var",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 6,
+        "col": 0,
+        "end_lineno": 6,
+        "end_col": 93
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 6,
+          "col": 0,
+          "end_lineno": 6,
+          "end_col": 4
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "argv",
+        "id": "argv"
+      },
+      "annotation": "list[str]",
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 6,
+          "col": 18,
+          "end_lineno": 6,
+          "end_col": 93
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "extern_var(module=\"pytra.std.sys\", symbol=\"argv\", tag=\"stdlib.symbol.argv\")",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 6,
+            "col": 18,
+            "end_lineno": 6,
+            "end_col": 28
+          },
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "extern_var",
+          "id": "extern_var"
+        },
+        "args": [],
+        "keywords": [
+          {
+            "arg": "module",
+            "value": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 6,
+                "col": 36,
+                "end_lineno": 6,
+                "end_col": 51
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"pytra.std.sys\"",
+              "value": "pytra.std.sys"
+            }
+          },
+          {
+            "arg": "symbol",
+            "value": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 6,
+                "col": 60,
+                "end_lineno": 6,
+                "end_col": 66
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"argv\"",
+              "value": "argv"
+            }
+          },
+          {
+            "arg": "tag",
+            "value": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 6,
+                "col": 72,
+                "end_lineno": 6,
+                "end_col": 92
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"stdlib.symbol.argv\"",
+              "value": "stdlib.symbol.argv"
+            }
+          }
+        ]
+      },
+      "declare": true,
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.sys",
+          "symbol": "argv",
+          "tag": "stdlib.symbol.argv"
+        }
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 7,
+        "col": 0,
+        "end_lineno": 7,
+        "end_col": 93
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 7,
+          "col": 0,
+          "end_lineno": 7,
+          "end_col": 4
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "path",
+        "id": "path"
+      },
+      "annotation": "list[str]",
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 7,
+          "col": 18,
+          "end_lineno": 7,
+          "end_col": 93
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "extern_var(module=\"pytra.std.sys\", symbol=\"path\", tag=\"stdlib.symbol.path\")",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 7,
+            "col": 18,
+            "end_lineno": 7,
+            "end_col": 28
+          },
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "extern_var",
+          "id": "extern_var"
+        },
+        "args": [],
+        "keywords": [
+          {
+            "arg": "module",
+            "value": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 7,
+                "col": 36,
+                "end_lineno": 7,
+                "end_col": 51
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"pytra.std.sys\"",
+              "value": "pytra.std.sys"
+            }
+          },
+          {
+            "arg": "symbol",
+            "value": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 7,
+                "col": 60,
+                "end_lineno": 7,
+                "end_col": 66
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"path\"",
+              "value": "path"
+            }
+          },
+          {
+            "arg": "tag",
+            "value": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 7,
+                "col": 72,
+                "end_lineno": 7,
+                "end_col": 92
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"stdlib.symbol.path\"",
+              "value": "stdlib.symbol.path"
+            }
+          }
+        ]
+      },
+      "declare": true,
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.sys",
+          "symbol": "path",
+          "tag": "stdlib.symbol.path"
+        }
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 8,
+        "col": 0,
+        "end_lineno": 8,
+        "end_col": 93
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 8,
+          "col": 0,
+          "end_lineno": 8,
+          "end_col": 6
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "stderr",
+        "id": "stderr"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 8,
+          "col": 14,
+          "end_lineno": 8,
+          "end_col": 93
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "extern_var(module=\"pytra.std.sys\", symbol=\"stderr\", tag=\"stdlib.symbol.stderr\")",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 8,
+            "col": 14,
+            "end_lineno": 8,
+            "end_col": 24
+          },
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "extern_var",
+          "id": "extern_var"
+        },
+        "args": [],
+        "keywords": [
+          {
+            "arg": "module",
+            "value": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 8,
+                "col": 32,
+                "end_lineno": 8,
+                "end_col": 47
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"pytra.std.sys\"",
+              "value": "pytra.std.sys"
+            }
+          },
+          {
+            "arg": "symbol",
+            "value": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 8,
+                "col": 56,
+                "end_lineno": 8,
+                "end_col": 64
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"stderr\"",
+              "value": "stderr"
+            }
+          },
+          {
+            "arg": "tag",
+            "value": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 8,
+                "col": 70,
+                "end_lineno": 8,
+                "end_col": 92
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"stdlib.symbol.stderr\"",
+              "value": "stdlib.symbol.stderr"
+            }
+          }
+        ]
+      },
+      "declare": true,
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.sys",
+          "symbol": "stderr",
+          "tag": "stdlib.symbol.stderr"
+        }
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 9,
+        "col": 0,
+        "end_lineno": 9,
+        "end_col": 93
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 9,
+          "col": 0,
+          "end_lineno": 9,
+          "end_col": 6
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "stdout",
+        "id": "stdout"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 9,
+          "col": 14,
+          "end_lineno": 9,
+          "end_col": 93
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "extern_var(module=\"pytra.std.sys\", symbol=\"stdout\", tag=\"stdlib.symbol.stdout\")",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 9,
+            "col": 14,
+            "end_lineno": 9,
+            "end_col": 24
+          },
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "extern_var",
+          "id": "extern_var"
+        },
+        "args": [],
+        "keywords": [
+          {
+            "arg": "module",
+            "value": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 9,
+                "col": 32,
+                "end_lineno": 9,
+                "end_col": 47
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"pytra.std.sys\"",
+              "value": "pytra.std.sys"
+            }
+          },
+          {
+            "arg": "symbol",
+            "value": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 9,
+                "col": 56,
+                "end_lineno": 9,
+                "end_col": 64
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"stdout\"",
+              "value": "stdout"
+            }
+          },
+          {
+            "arg": "tag",
+            "value": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 9,
+                "col": 70,
+                "end_lineno": 9,
+                "end_col": 92
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"stdlib.symbol.stdout\"",
+              "value": "stdlib.symbol.stdout"
+            }
+          }
+        ]
+      },
+      "declare": true,
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.sys",
+          "symbol": "stdout",
+          "tag": "stdlib.symbol.stdout"
+        }
+      }
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 12,
+        "col": 0,
+        "end_lineno": 12,
+        "end_col": 0
+      },
+      "name": "exit",
+      "original_name": "exit",
+      "arg_types": {
+        "code": "int"
+      },
+      "arg_order": [
+        "code"
+      ],
+      "arg_defaults": {
+        "code": {
+          "kind": "Constant",
+          "source_span": {
+            "lineno": 12,
+            "col": 21,
+            "end_lineno": 12,
+            "end_col": 22
+          },
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "0",
+          "value": 0
+        }
+      },
+      "arg_index": {
+        "code": 0
+      },
+      "return_type": "None",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.sys",
+          "symbol": "exit",
+          "tag": "stdlib.fn.exit"
+        }
+      },
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 15,
+        "col": 0,
+        "end_lineno": 15,
+        "end_col": 0
+      },
+      "name": "set_argv",
+      "original_name": "set_argv",
+      "arg_types": {
+        "values": "list[str]"
+      },
+      "arg_order": [
+        "values"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "values": 0
+      },
+      "return_type": "None",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.sys",
+          "symbol": "set_argv",
+          "tag": "stdlib.fn.set_argv"
+        }
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 18,
+        "col": 0,
+        "end_lineno": 18,
+        "end_col": 0
+      },
+      "name": "set_path",
+      "original_name": "set_path",
+      "arg_types": {
+        "values": "list[str]"
+      },
+      "arg_order": [
+        "values"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "values": 0
+      },
+      "return_type": "None",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.sys",
+          "symbol": "set_path",
+          "tag": "stdlib.fn.set_path"
+        }
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 21,
+        "col": 0,
+        "end_lineno": 21,
+        "end_col": 0
+      },
+      "name": "write_stderr",
+      "original_name": "write_stderr",
+      "arg_types": {
+        "text": "str"
+      },
+      "arg_order": [
+        "text"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "text": 0
+      },
+      "return_type": "None",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.sys",
+          "symbol": "write_stderr",
+          "tag": "stdlib.fn.write_stderr"
+        }
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 24,
+        "col": 0,
+        "end_lineno": 24,
+        "end_col": 0
+      },
+      "name": "write_stdout",
+      "original_name": "write_stdout",
+      "arg_types": {
+        "text": "str"
+      },
+      "arg_order": [
+        "text"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "text": 0
+      },
+      "return_type": "None",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.sys",
+          "symbol": "write_stdout",
+          "tag": "stdlib.fn.write_stdout"
+        }
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [
+        {
+          "module_id": "pytra.std",
+          "export_name": "extern_fn",
+          "local_name": "extern_fn",
+          "binding_kind": "symbol",
+          "source_file": "src/include/py/pytra/std/sys.py",
+          "source_line": 4
+        },
+        {
+          "module_id": "pytra.std",
+          "export_name": "extern_var",
+          "local_name": "extern_var",
+          "binding_kind": "symbol",
+          "source_file": "src/include/py/pytra/std/sys.py",
+          "source_line": 4
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std",
+          "symbol": "extern_fn",
+          "local_name": "extern_fn"
+        },
+        {
+          "module_id": "pytra.std",
+          "symbol": "extern_var",
+          "local_name": "extern_var"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.std",
+        "export_name": "extern_fn",
+        "local_name": "extern_fn",
+        "binding_kind": "symbol",
+        "source_file": "src/include/py/pytra/std/sys.py",
+        "source_line": 4
+      },
+      {
+        "module_id": "pytra.std",
+        "export_name": "extern_var",
+        "local_name": "extern_var",
+        "binding_kind": "symbol",
+        "source_file": "src/include/py/pytra/std/sys.py",
+        "source_line": 4
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std",
+        "symbol": "extern_fn",
+        "local_name": "extern_fn"
+      },
+      {
+        "module_id": "pytra.std",
+        "symbol": "extern_var",
+        "local_name": "extern_var"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "extern_fn": {
+        "module": "pytra.std",
+        "name": "extern_fn"
+      },
+      "extern_var": {
+        "module": "pytra.std",
+        "name": "extern_var"
+      }
+    }
+  },
+  "east_stage": 1
+}

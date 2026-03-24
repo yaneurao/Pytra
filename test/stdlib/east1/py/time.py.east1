@@ -1,0 +1,134 @@
+{
+  "kind": "Module",
+  "source_path": "src/include/py/pytra/std/time.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 2,
+        "col": 0,
+        "end_lineno": 2,
+        "end_col": 41
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 2,
+          "col": 0,
+          "end_lineno": 2,
+          "end_col": 41
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"pytra.std.time: 時間関数の宣言（v2 extern）。\"\"\"",
+        "value": "pytra.std.time: 時間関数の宣言（v2 extern）。"
+      }
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 4,
+        "end_col": 31
+      },
+      "module": "pytra.std",
+      "names": [
+        {
+          "name": "extern_fn",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 7,
+        "col": 0,
+        "end_lineno": 7,
+        "end_col": 0
+      },
+      "name": "perf_counter",
+      "original_name": "perf_counter",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "float",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "meta": {
+        "extern_v2": {
+          "module": "pytra.std.time",
+          "symbol": "perf_counter",
+          "tag": "stdlib.fn.perf_counter"
+        }
+      },
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [
+        {
+          "module_id": "pytra.std",
+          "export_name": "extern_fn",
+          "local_name": "extern_fn",
+          "binding_kind": "symbol",
+          "source_file": "src/include/py/pytra/std/time.py",
+          "source_line": 4
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std",
+          "symbol": "extern_fn",
+          "local_name": "extern_fn"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.std",
+        "export_name": "extern_fn",
+        "local_name": "extern_fn",
+        "binding_kind": "symbol",
+        "source_file": "src/include/py/pytra/std/time.py",
+        "source_line": 4
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std",
+        "symbol": "extern_fn",
+        "local_name": "extern_fn"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "extern_fn": {
+        "module": "pytra.std",
+        "name": "extern_fn"
+      }
+    }
+  },
+  "east_stage": 1
+}

@@ -473,6 +473,7 @@ class AnnAssign:
     annotation: str
     value: Optional[Expr]
     declare: bool
+    node_meta: Optional[dict[str, JsonVal]] = None
     leading_trivia: Optional[list[TriviaNode]] = None
     leading_comments: Optional[list[str]] = None
     def to_jv(self) -> dict[str, JsonVal]:
@@ -482,6 +483,8 @@ class AnnAssign:
             "value": expr_to_jv(self.value) if self.value is not None else None,
             "declare": self.declare,
         }
+        if self.node_meta is not None:
+            d["meta"] = dict(self.node_meta)
         if self.leading_trivia is not None:
             d["leading_trivia"] = [t.to_jv() for t in self.leading_trivia]
         if self.leading_comments is not None:
@@ -676,6 +679,7 @@ class FunctionDef:
     vararg_name: Optional[str] = None
     vararg_type: Optional[str] = None
     decorators: Optional[list[str]] = None
+    node_meta: Optional[dict[str, JsonVal]] = None
     leading_trivia: Optional[list[TriviaNode]] = None
     leading_comments: Optional[list[str]] = None
     def to_jv(self) -> dict[str, JsonVal]:
@@ -694,6 +698,8 @@ class FunctionDef:
             d["vararg_type"] = self.vararg_type if self.vararg_type is not None else "unknown"
         if self.decorators is not None:
             d["decorators"] = list(self.decorators)
+        if self.node_meta is not None:
+            d["meta"] = dict(self.node_meta)
         if self.leading_comments is not None:
             d["leading_comments"] = list(self.leading_comments)
         if self.leading_trivia is not None:
@@ -709,6 +715,7 @@ class ClassDef:
     body: list[Stmt]
     dataclass_flag: bool
     field_types: dict[str, str]
+    node_meta: Optional[dict[str, JsonVal]] = None
     leading_trivia: Optional[list[TriviaNode]] = None
     leading_comments: Optional[list[str]] = None
     def to_jv(self) -> dict[str, JsonVal]:
@@ -719,6 +726,8 @@ class ClassDef:
             "field_types": dict(self.field_types),
             "body": [stmt_to_jv(s) for s in self.body],
         }
+        if self.node_meta is not None:
+            d["meta"] = dict(self.node_meta)
         if self.leading_comments is not None:
             d["leading_comments"] = list(self.leading_comments)
         if self.leading_trivia is not None:
