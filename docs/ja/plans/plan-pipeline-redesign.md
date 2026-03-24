@@ -185,17 +185,43 @@ src/
   pytra/                      ← 共有（std, utils, built_in）
   toolchain/                  ← 現行（触らない）
   toolchain2/
+    common/                   ← 全層共有ユーティリティ
     parse/py/                 ← Python → .py.east1（言語固有）
     resolve/py/               ← .py.east1 → .east2（言語固有の正規化 + cross-module 型解決）
     compile/                  ← .east2 → .east3（言語非依存の core lowering）
     optimize/                 ← .east3 → 最適化済み .east3（whole-program）
     emit/
+      go/                     ← .east3 → .go（お手本 emitter）
       cpp/                    ← .east3 → .cpp（target 固有）
-      rs/
       ...
 ```
 
-### 3.3 テストディレクトリ構成
+### 3.3 共有ユーティリティ (`toolchain2/common/`)
+
+全層で使う共有ユーティリティは `toolchain2/common/` に集約し、各層での重複実装を禁止する。
+
+```
+toolchain2/common/
+  jv.py               ← JsonVal ヘルパー（deep_copy_json, get/set 系）
+  types.py            ← 型名ユーティリティ（normalize_type_name, is_any_like_type, split_generic_types）
+  kinds.py            ← EAST ノード kind 定数（MODULE, FUNCTION_DEF, CALL 等）
+  nodes.py            ← ノードビルダー（const_int_node, binop_expr, compare_expr 等）
+  visitor.py          ← ノード走査の共通 visitor パターン
+```
+
+| モジュール | 内容 | 使用元 |
+|---|---|---|
+| `jv.py` | `deep_copy_json`, JsonVal の dict/list 操作 | 全層 |
+| `types.py` | `normalize_type_name`, `is_any_like_type`, `split_generic_types` | resolve, compile, optimize, emit |
+| `kinds.py` | `MODULE = "Module"`, `CALL = "Call"` 等の文字列定数 | 全層（タイポ防止） |
+| `nodes.py` | EAST ノード生成ヘルパー | compile, optimize |
+| `visitor.py` | 再帰ノード走査の共通パターン | compile, optimize, emit |
+
+ルール:
+- 各層が `common/` にあるものと同じ機能を独自実装することを禁止する。
+- `common/` は selfhost 対象（§5 準拠）。
+
+### 3.4 テストディレクトリ構成
 
 fixture テストと sample テストを分離する。粒度・実行時間が異なるため混在させない。
 
