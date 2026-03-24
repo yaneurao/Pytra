@@ -1895,6 +1895,9 @@ def _enhance_binding(binding: dict[str, JsonVal], ctx: ResolveContext) -> dict[s
         stag_v = sym_doc.get("semantic_tag")
         if isinstance(stag_v, str) and stag_v != "":
             binding["runtime_semantic_tag"] = stag_v
+        adapter_v = sym_doc.get("call_adapter_kind")
+        if isinstance(adapter_v, str) and adapter_v != "":
+            binding["runtime_call_adapter_kind"] = adapter_v
 
     return binding
 
