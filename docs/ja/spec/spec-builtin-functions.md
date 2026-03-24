@@ -74,6 +74,9 @@ def repr(x: Obj) -> str:
 @extern
 def print(*args: Obj) -> None:
     pass  # runtime 実装
+# resolve が *args: Obj → args: list[Obj] に変換。
+# 呼び出し側 print(a, b, c) → print([a, b, c]) に変換。
+# list[Obj] に POD を入れる場合の boxing は compile 段で命令化。
 
 @extern
 def isinstance(x: Obj, t: type) -> bool:
@@ -274,12 +277,33 @@ src/pytra/built_in/
 
 `builtins.py` と `containers.py` は宣言のみ（関数本体は `pass` または Python fallback）。resolve はシグネチャのみ参照する。ランタイムヘルパー（`py_print` 等）は既存ファイルに維持。
 
-## 8. 未決事項
+## 8. varargs の変換ルール
+
+`*args: T` は resolve が以下のように変換する:
+
+- 宣言側: `*args: T` → `args: list[T]`
+- 呼び出し側: `f(a, b, c)` → `f([a, b, c])`
+- `list[Obj]` に POD 値を入れる場合の boxing 命令化は compile 段（EAST2→EAST3）の責務
+
+例:
+
+```
+# ソース
+print(1, "hello", 3.14)
+
+# resolve 後 (EAST2)
+print([1, "hello", 3.14])    # 型: list[Obj]
+
+# compile 後 (EAST3)
+print([ObjBox(1), "hello", ObjBox(3.14)])  # POD を boxing
+```
+
+## 9. 未決事項
 
 - ~~`object` を引数型にしてよいか~~ → `Obj` 型で解決。`object` は使わない。
-- ジェネリック型パラメータ `T` の表現（`@template` を使うか、型変数宣言を使うか）
-- `print` の可変長引数 `*args` の扱い（Pytra で `*args` がサポートされるか）
-- `range` のオーバーロード（引数 1/2/3 の区別をどう宣言するか）
+- ~~ジェネリック型パラメータ `T` の表現~~ → `@template` をクラスにも適用。
+- ~~`print` の可変長引数 `*args` の扱い~~ → `*args: T` を `args: list[T]` に resolve が変換。
+- ~~`range` のオーバーロード~~ → resolve が `start/stop/step` に正規化し `ForRange` / `RangeExpr` に変換。emitter には届かない。
 - dunder 展開のタイミング（resolve で展開するか、emitter に任せるか）
 - `min`/`max` の引数が 2 個以上の場合（可変長か、2 引数固定か）
 - `int(x, base=16)` のような base 引数付き変換の扱い
