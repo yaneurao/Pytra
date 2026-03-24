@@ -468,7 +468,10 @@ diff test/east1/py/01_mandelbrot.py.east1 work/tmp/01_mandelbrot.py.east1
   method call semantic_tag/runtime_owner、container 要素型推論、tuple/dict 型推論、
   arg_defaults、Swap ノード、module-level docstring、lambda/generator/*args 構文。
 - pytra.std.re / pytra.std.json / pytra.std.pathlib を使用 (§5.2 準拠)。
-- parse_err 残 3件: f-string format spec, re.sub 引数, generator tuple target。
+- parse_err: 0件 (全132件パース成功)
+- diff: 95件 (主にセマンティクス・span・OOP の差分)
+- 追加実装: Try/Except/Finally, Lambda ノード, string prefix (r/b/f),
+  generator in call, class_storage_hint 推論, @dataclass 認識, base class パース
 - diff 残 113件: 主にセマンティクス差分 (import symbol runtime 解決の詳細、OOP 型推論)。
 
 ### 2026-03-24: [ID: P0-RESOLVE-S1/S2/S3] resolve 実装完了
