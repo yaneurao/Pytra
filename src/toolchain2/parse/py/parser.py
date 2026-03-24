@@ -199,7 +199,9 @@ def _extract_element_type(container_type: str) -> str:
     if container_type.startswith("dict[") and container_type.endswith("]"):
         inner = container_type[5:-1]
         parts = inner.split(",")
-        if len(parts) > 0:
+        if len(parts) >= 2:
+            return parts[1].strip()  # value type
+        if len(parts) == 1:
             return parts[0].strip()
     if container_type == "str":
         return "str"
@@ -1001,7 +1003,13 @@ class ExprParser:
                     elements.append(self.parse_expr())
                 self.expect("OP", ")")
                 end_tok = self.tokens[self.pos - 1]
-                base = self._base(tok.start, end_tok.end, "unknown", "value")
+                # Tuple 型推論: tuple[elem_type1,elem_type2,...]
+                elem_types = [_get_resolved_type(e) for e in elements]
+                if all(t != "unknown" for t in elem_types):
+                    tuple_type = "tuple[" + ",".join(elem_types) + "]"
+                else:
+                    tuple_type = "unknown"
+                base = self._base(tok.start, end_tok.end, tuple_type, "value")
                 return TupleExpr(base=base, elements=elements)
             close_tok = self.expect("OP", ")")
             # 括弧付き式: span を括弧を含めた範囲に拡張
