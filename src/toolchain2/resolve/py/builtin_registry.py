@@ -60,7 +60,7 @@ _BUILTIN_SEMANTIC_TAGS: dict[str, str] = {
 # Builtin name → runtime module ID
 _BUILTIN_RUNTIME_MODULES: dict[str, str] = {
     "print": "pytra.built_in.io_ops",
-    "len": "pytra.built_in.sequence",
+    "len": "pytra.core.py_runtime",
     "range": "pytra.built_in.sequence",
     "int": "pytra.core.py_runtime",
     "float": "pytra.core.py_runtime",
@@ -88,7 +88,7 @@ _BUILTIN_RUNTIME_MODULES: dict[str, str] = {
 # Builtin name → runtime symbol name
 _BUILTIN_RUNTIME_SYMBOLS: dict[str, str] = {
     "print": "py_print",
-    "len": "py_len",
+    "len": "len",
     "int": "int",
     "float": "float",
     "str": "str",
@@ -140,10 +140,37 @@ _CONTAINER_METHOD_MODULES: dict[str, str] = {
     "deque": "pytra.std.collections",
 }
 
+# Specific method overrides: (owner, method) → (runtime_module, runtime_call)
+_METHOD_RUNTIME_OVERRIDES: dict[tuple[str, str], tuple[str, str]] = {
+    ("str", "join"): ("pytra.built_in.string_ops", "py_join"),
+    ("str", "split"): ("pytra.built_in.string_ops", "py_split"),
+    ("str", "strip"): ("pytra.built_in.string_ops", "py_strip"),
+    ("str", "lstrip"): ("pytra.built_in.string_ops", "py_lstrip"),
+    ("str", "rstrip"): ("pytra.built_in.string_ops", "py_rstrip"),
+    ("str", "replace"): ("pytra.built_in.string_ops", "py_replace"),
+    ("str", "find"): ("pytra.built_in.string_ops", "py_find"),
+    ("str", "rfind"): ("pytra.built_in.string_ops", "py_rfind"),
+    ("str", "startswith"): ("pytra.built_in.string_ops", "py_startswith"),
+    ("str", "endswith"): ("pytra.built_in.string_ops", "py_endswith"),
+    ("str", "count"): ("pytra.built_in.string_ops", "py_count"),
+    ("str", "upper"): ("pytra.built_in.string_ops", "py_upper"),
+    ("str", "lower"): ("pytra.built_in.string_ops", "py_lower"),
+    ("str", "isdigit"): ("pytra.built_in.string_ops", "py_isdigit"),
+    ("str", "isalpha"): ("pytra.built_in.string_ops", "py_isalpha"),
+    ("str", "isalnum"): ("pytra.built_in.string_ops", "py_isalnum"),
+    ("str", "isupper"): ("pytra.built_in.string_ops", "py_isupper"),
+    ("str", "islower"): ("pytra.built_in.string_ops", "py_islower"),
+    ("str", "zfill"): ("pytra.built_in.string_ops", "py_zfill"),
+}
+
+def get_method_runtime_override(owner_base: str, method: str) -> tuple[str, str] | None:
+    """Get runtime module/call override for specific methods."""
+    return _METHOD_RUNTIME_OVERRIDES.get((owner_base, method))
+
 # Implicit builtin modules needed per builtin name
 _IMPLICIT_BUILTIN_MODULES: dict[str, str] = {
     "print": "pytra.built_in.io_ops",
-    "len": "pytra.built_in.sequence",
+    "len": "pytra.core.py_runtime",
     "int": "pytra.built_in.scalar_ops",
     "float": "pytra.built_in.scalar_ops",
     "str": "pytra.built_in.scalar_ops",

@@ -36,6 +36,7 @@ from toolchain2.resolve.py.builtin_registry import (
     load_builtin_registry,
     FuncSig,
     ClassSig,
+    get_method_runtime_override,
 )
 from toolchain2.resolve.py.normalize_order import normalize_field_order
 
@@ -391,13 +392,23 @@ def _resolve_compare(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 def _resolve_boolop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     values = expr.get("values")
-    last_t: str = "unknown"
+    types: list[str] = []
     if isinstance(values, list):
         for v in values:
             if isinstance(v, dict):
-                last_t = _resolve_expr(v, ctx)
-    # BoolOp (and/or) returns the type of the last value for short-circuit evaluation
-    # But in practice, if all are bool, result is bool
+                t: str = _resolve_expr(v, ctx)
+                types.append(t)
+    # BoolOp returns bool if all operands are bool (comparison results)
+    all_bool: bool = True
+    for t2 in types:
+        if t2 != "bool":
+            all_bool = False
+            break
+    if all_bool and len(types) > 0:
+        expr["resolved_type"] = "bool"
+        return "bool"
+    # Otherwise return last operand type (Python short-circuit semantics)
+    last_t: str = types[-1] if len(types) > 0 else "unknown"
     expr["resolved_type"] = last_t
     return last_t
 
@@ -616,7 +627,13 @@ def _resolve_imported_call(
 
     # Runtime binding
     runtime_module: str = ctx.canonical_module_id(module_id)
-    expr["resolved_runtime_call"] = export_name
+    # For bare module imports (math, time etc.), qualify: "math.sqrt"
+    # For dotted module paths (pytra.utils.xxx), just use export name
+    if "." not in module_id:
+        qualified_call: str = module_id + "." + export_name
+    else:
+        qualified_call = export_name
+    expr["resolved_runtime_call"] = qualified_call
     expr["resolved_runtime_source"] = "import_symbol"
     expr["runtime_module_id"] = runtime_module
     expr["runtime_symbol"] = export_name
@@ -818,10 +835,15 @@ def _resolve_container_method_call(
         owner_copy: JsonVal = deep_copy_json(value)
         expr["runtime_owner"] = owner_copy
 
-    # Runtime metadata
-    mod: str = ctx.registry.get_container_method_module(owner_base)
+    # Runtime metadata — check for method-specific overrides
+    override: tuple[str, str] | None = get_method_runtime_override(owner_base, method)
+    if override is not None:
+        mod = override[0]
+        runtime_call_name = override[1]
+    else:
+        mod = ctx.registry.get_container_method_module(owner_base)
+        runtime_call_name = owner_base + "." + method
     sym: str = owner_base + "." + method
-    runtime_call_name: str = owner_base + "." + method
     expr["lowered_kind"] = "BuiltinCall"
     expr["builtin_name"] = method
     expr["runtime_call"] = runtime_call_name
@@ -1218,6 +1240,11 @@ def _resolve_function_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None
     fn_scope: Scope = ctx.scope.child()
     for name, typ in arg_types.items():
         fn_scope.define(name, typ)
+
+    # Normalize yield_value_type
+    yvt_raw = stmt.get("yield_value_type")
+    if isinstance(yvt_raw, str) and yvt_raw != "unknown":
+        stmt["yield_value_type"] = normalize_type(yvt_raw)
 
     # Resolve body in function scope
     old_scope: Scope = ctx.scope

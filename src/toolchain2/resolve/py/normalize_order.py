@@ -50,11 +50,11 @@ _CALL_FIELDS: list[str] = [
     "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr",
     "func", "args", "keywords",
     # Runtime fields come after keywords
-    "runtime_owner",
     "lowered_kind", "builtin_name", "runtime_call",
     "resolved_runtime_call", "resolved_runtime_source",
     "runtime_module_id", "runtime_symbol", "runtime_call_adapter_kind",
     "semantic_tag",
+    "runtime_owner",
 ]
 
 # Attribute
