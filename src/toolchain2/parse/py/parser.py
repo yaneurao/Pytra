@@ -904,25 +904,31 @@ class ExprParser:
                 "core.isinstance": "pytra.built_in.predicates",
                 "core.range": "pytra.built_in.sequence",
             }
+            # perf_counter: builtin_map に含まれない特殊ケース
+            if func_name == "perf_counter" and func_name in self.ctx.import_symbols:
+                call.lowered_kind = "BuiltinCall"
+                call.builtin_name = func_name
+                sym_info_pc = self.ctx.import_symbols[func_name]
+                pc_mod = sym_info_pc.get("module", "")
+                call.runtime_call = func_name
+                call.runtime_module_id = pc_mod
+                call.runtime_symbol = func_name
+                call.runtime_call_adapter_kind = "extern_delegate"
+                call.semantic_tag = "stdlib.fn." + func_name
             builtin_mod = _SEM_TAG_TO_BUILTIN.get(sem_tag, "")
             if builtin_mod != "":
                 self.ctx.implicit_builtin_modules[builtin_mod] = True
-        # Import symbol calls (e.g., perf_counter, Path, py_assert_stdout)
+        # Import symbol calls — only pytra.utils.* gets runtime info
+        # pytra.std.* symbols are plain calls (no runtime info in golden)
         if func_name in self.ctx.import_symbols and call.builtin_name is None:
             sym_info = self.ctx.import_symbols[func_name]
             mod_id = sym_info.get("module", "")
-            if mod_id != "":
+            if mod_id != "" and "pytra.utils." in mod_id:
                 call.runtime_module_id = mod_id
                 call.runtime_symbol = func_name
                 call.runtime_call_adapter_kind = "extern_delegate"
                 call.resolved_runtime_call = func_name
                 call.resolved_runtime_source = "import_symbol"
-                # Resolve semantic tag for known modules
-                if "pytra.std." in mod_id:
-                    call.semantic_tag = "stdlib.fn." + func_name
-                    call.resolved_runtime_source = mod_id
-                elif mod_id == "pathlib":
-                    call.semantic_tag = "stdlib.symbol.Path"
         # Method call: obj.method(...) → semantic_tag, runtime_owner
         # 組み込み型 (list, dict, str, set, Path) のメソッドのみアノテーション
         if isinstance(call.func, Attribute):
