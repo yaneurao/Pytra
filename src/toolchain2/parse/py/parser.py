@@ -1811,13 +1811,33 @@ def _parse_class_def(
         body=body_stmts,
         dataclass_flag=is_dataclass,
         field_types=field_types,
-        class_storage_hint="value",
+        class_storage_hint=_infer_class_storage_hint(is_dataclass, base_name, field_types, body_stmts),
     )
     # ClassDef は常に leading_comments/leading_trivia を出力
     cd.leading_comments = list(comments)
     cd.leading_trivia = list(trivia)
 
     return cd, end_ln
+
+
+def _infer_class_storage_hint(is_dataclass: bool, base: Optional[str], field_types: dict[str, str], body: list[Stmt]) -> str:
+    """class_storage_hint を推論する (golden 準拠)。"""
+    # base がある → ref
+    if base is not None and base != "":
+        return "ref"
+    # __init__ メソッドがある → ref (instance state がある)
+    has_init = False
+    has_instance_fields = len(field_types) > 0
+    for stmt in body:
+        if isinstance(stmt, FunctionDef) and stmt.name == "__init__":
+            has_init = True
+    if has_init or has_instance_fields:
+        return "ref"
+    # dataclass with fields → ref (not value, golden shows ref for Point99)
+    if is_dataclass:
+        return "ref"
+    # 空のクラスやメソッドのみ → value
+    return "value"
 
 
 def _merge_logical_lines(lines: list[str]) -> list[str]:
