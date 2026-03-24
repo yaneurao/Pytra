@@ -836,19 +836,19 @@ class ExprParser:
             # runtime info based on owner type
             owner_base = owner_type.split("[")[0] if "[" in owner_type else owner_type
             if owner_base == "list":
-                call.runtime_call = "py_" + method_name
-                call.runtime_module_id = "pytra.built_in.sequence"
+                call.runtime_call = "list." + method_name
+                call.runtime_module_id = "pytra.core.list"
                 call.runtime_symbol = "list." + method_name
                 call.runtime_call_adapter_kind = "builtin"
             elif owner_base == "dict":
-                call.runtime_call = "py_dict_" + method_name
-                call.runtime_module_id = "pytra.built_in.sequence"
+                call.runtime_call = "dict." + method_name
+                call.runtime_module_id = "pytra.core.dict"
                 call.runtime_symbol = "dict." + method_name
                 call.runtime_call_adapter_kind = "builtin"
                 call.semantic_tag = "container.dict." + method_name
             elif owner_base == "str":
-                call.runtime_call = "py_" + method_name
-                call.runtime_module_id = "pytra.built_in.string_ops"
+                call.runtime_call = "str." + method_name
+                call.runtime_module_id = "pytra.core.str"
                 call.runtime_symbol = "str." + method_name
                 call.runtime_call_adapter_kind = "builtin"
 
