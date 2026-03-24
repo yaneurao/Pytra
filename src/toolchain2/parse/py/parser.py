@@ -935,6 +935,13 @@ class ExprParser:
             self.expect("NAME", "in")
             # iter_expr は 'if', 'for', ']' で止める
             iter_expr = self._parse_comp_iter()
+            # Infer target type from iterable
+            iter_type = _get_resolved_type(iter_expr)
+            elem_type = _extract_element_type(iter_type)
+            if isinstance(target, Name) and elem_type != "unknown":
+                target.base.resolved_type = elem_type
+                target.base.borrow_kind = "readonly_ref"
+                self.name_types[target.id] = elem_type
             ifs: list[Expr] = []
             while self.peek().value == "if":
                 self.advance()
@@ -942,7 +949,15 @@ class ExprParser:
             gens.append(Comprehension(target=target, iter_expr=iter_expr, ifs=ifs, is_async=False))
         self.expect("OP", "]")
         end_tok = self.tokens[self.pos - 1]
-        base = self._base(open_tok.start, end_tok.end, "unknown", "value")
+        # Re-resolve elt type after generators set name_types
+        elt_type = _get_resolved_type(elt)
+        if elt_type == "unknown" and isinstance(elt, Name) and elt.id in self.name_types:
+            elt_type = self.name_types[elt.id]
+            elt.base.resolved_type = elt_type
+            elt.base.borrow_kind = "readonly_ref"
+        # ListComp resolved_type: list[elt_type]
+        comp_type = "list[" + elt_type + "]" if elt_type != "unknown" else "unknown"
+        base = self._base(open_tok.start, end_tok.end, comp_type, "value")
         return ListComp(base=base, elt=elt, generators=gens)
 
     def _parse_comp_target(self) -> Expr:
