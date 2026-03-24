@@ -773,6 +773,27 @@ class ExprParser:
         # Class constructor: ClassName() → ClassName
         if func_name in self.ctx.class_names:
             return func_name
+        # Method return types
+        if func_name == "append" or func_name == "extend" or func_name == "insert" or func_name == "clear" or func_name == "sort" or func_name == "reverse":
+            return "None"
+        if func_name == "pop":
+            return "unknown"
+        if func_name == "get":
+            return "unknown"
+        if func_name == "keys" or func_name == "values" or func_name == "items":
+            return "unknown"
+        if func_name == "join":
+            return "str"
+        if func_name == "split" or func_name == "strip" or func_name == "lstrip" or func_name == "rstrip" or func_name == "lower" or func_name == "upper" or func_name == "replace":
+            return "str"
+        if func_name == "find" or func_name == "index" or func_name == "count":
+            return "int64"
+        if func_name == "startswith" or func_name == "endswith":
+            return "bool"
+        if func_name == "write_text" or func_name == "write_rgb_png" or func_name == "save":
+            return "None"
+        if func_name == "read_text":
+            return "str"
         return "unknown"
 
     def _annotate_call(self, call: Call, func_name: str) -> None:
