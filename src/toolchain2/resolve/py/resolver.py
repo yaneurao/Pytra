@@ -592,7 +592,7 @@ def _resolve_builtin_call(
             elem: str = "unknown"
             if inner.startswith("list[") and inner.endswith("]"):
                 elem = inner[5:-1]
-            ret = "list[tuple[int64, " + elem + "]]"
+            ret = "list[tuple[int64," + elem + "]]"
     elif name == "zip":
         if len(arg_types) >= 2:
             t1: str = arg_types[0]
@@ -603,7 +603,7 @@ def _resolve_builtin_call(
                 e1 = t1[5:-1]
             if t2.startswith("list[") and t2.endswith("]"):
                 e2 = t2[5:-1]
-            ret = "list[tuple[" + e1 + ", " + e2 + "]]"
+            ret = "list[tuple[" + e1 + "," + e2 + "]]"
     elif name == "sum":
         if len(arg_types) > 0:
             inner2: str = arg_types[0]
@@ -1913,6 +1913,20 @@ def _resolve_for(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
         if isinstance(var_name, str):
             ctx.scope.define(var_name, elem_type)
             target["resolved_type"] = elem_type
+    elif isinstance(target, dict) and target.get("kind") == "Tuple":
+        # Tuple unpacking: for i, ch in enumerate(s)
+        # elem_type should be like "tuple[int64, str]"
+        tup_args: list[str] = extract_type_args(elem_type) if elem_type.startswith("tuple[") else []
+        target["resolved_type"] = elem_type
+        elems = target.get("elements")
+        if isinstance(elems, list):
+            for i_el, el in enumerate(elems):
+                if isinstance(el, dict) and el.get("kind") == "Name":
+                    el_name = el.get("id")
+                    if isinstance(el_name, str):
+                        el_type: str = tup_args[i_el] if i_el < len(tup_args) else "unknown"
+                        ctx.scope.define(el_name, el_type)
+                        el["resolved_type"] = el_type
     elif isinstance(target, dict):
         _resolve_expr(target, ctx)
 
