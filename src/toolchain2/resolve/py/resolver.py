@@ -1120,13 +1120,21 @@ def _resolve_listcomp(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
             if isinstance(gen, dict):
                 iter_expr = gen.get("iter")
                 if isinstance(iter_expr, dict):
-                    it: str = _resolve_expr(iter_expr, ctx)
+                    # Convert range() to RangeExpr in comprehension context
+                    if _is_range_call(iter_expr):
+                        _convert_call_to_range_expr(iter_expr, ctx)
+                        it = iter_expr.get("resolved_type")
+                        it = str(it) if isinstance(it, str) else "list[int64]"
+                    else:
+                        it = _resolve_expr(iter_expr, ctx)
                     # Extract element type from iterable
                     elem: str = "unknown"
                     if it.startswith("list[") and it.endswith("]"):
                         elem = it[5:-1]
                     elif it.startswith("set[") and it.endswith("]"):
                         elem = it[4:-1]
+                    elif it == "list[int64]" or it.startswith("RangeExpr"):
+                        elem = "int64"
                     target = gen.get("target")
                     if isinstance(target, dict) and target.get("kind") == "Name":
                         var_name = target.get("id")
@@ -1636,6 +1644,76 @@ def _resolve_for(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
         for s in orelse:
             if isinstance(s, dict):
                 _resolve_stmt(s, ctx)
+
+
+def _convert_call_to_range_expr(expr: dict[str, JsonVal], ctx: ResolveContext) -> None:
+    """Convert a range() Call to a RangeExpr node (in-place)."""
+    args = expr.get("args")
+    if not isinstance(args, list):
+        return
+
+    for a in args:
+        if isinstance(a, dict):
+            _resolve_expr(a, ctx)
+
+    range_func = expr.get("func")
+    source_span = range_func.get("source_span", {}) if isinstance(range_func, dict) else expr.get("source_span", {})
+
+    if len(args) == 1:
+        start: dict[str, JsonVal] = {
+            "kind": "Constant", "source_span": source_span,
+            "resolved_type": "int64", "casts": [], "borrow_kind": "value",
+            "repr": "0", "value": 0,
+        }
+        stop = args[0] if isinstance(args[0], dict) else {}
+        step: dict[str, JsonVal] = {
+            "kind": "Constant", "source_span": source_span,
+            "resolved_type": "int64", "casts": [], "borrow_kind": "value",
+            "repr": "1", "value": 1,
+        }
+    elif len(args) == 2:
+        start = args[0] if isinstance(args[0], dict) else {}
+        stop = args[1] if isinstance(args[1], dict) else {}
+        step = {
+            "kind": "Constant", "source_span": source_span,
+            "resolved_type": "int64", "casts": [], "borrow_kind": "value",
+            "repr": "1", "value": 1,
+        }
+    elif len(args) >= 3:
+        start = args[0] if isinstance(args[0], dict) else {}
+        stop = args[1] if isinstance(args[1], dict) else {}
+        step = args[2] if isinstance(args[2], dict) else {}
+    else:
+        return
+
+    # Determine range_mode
+    range_mode: str = "ascending"
+    if isinstance(step, dict) and step.get("kind") == "Constant":
+        sv = step.get("value")
+        if isinstance(sv, int):
+            if sv < 0:
+                range_mode = "descending"
+            elif sv != 1:
+                range_mode = "dynamic"
+    elif isinstance(step, dict) and step.get("kind") == "UnaryOp" and step.get("op") == "USub":
+        range_mode = "descending"
+    else:
+        range_mode = "dynamic"
+
+    # Replace the Call node in-place with RangeExpr
+    orig_span = expr.get("source_span", {})
+    orig_repr = expr.get("repr", "")
+    expr.clear()
+    expr["kind"] = "RangeExpr"
+    expr["source_span"] = orig_span
+    expr["resolved_type"] = "list[int64]"
+    expr["casts"] = []
+    expr["borrow_kind"] = "value"
+    expr["repr"] = orig_repr
+    expr["start"] = start
+    expr["stop"] = stop
+    expr["step"] = step
+    expr["range_mode"] = range_mode
 
 
 def _is_range_call(expr: dict[str, JsonVal]) -> bool:

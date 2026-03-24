@@ -200,6 +200,8 @@ _KIND_FIELDS: dict[str, list[str]] = {
     "For": ["kind", "source_span", "target", "target_type",
             "iter_mode", "iter_source_type", "iter_element_type",
             "iter", "body", "orelse"],
+    "RangeExpr": ["kind", "source_span", "resolved_type", "casts", "borrow_kind",
+                  "repr", "start", "stop", "step", "range_mode"],
     "ForRange": _FORRANGE_FIELDS,
     "Assign": _ASSIGN_FIELDS,
     "AnnAssign": _ANNASSIGN_FIELDS,
