@@ -49,7 +49,7 @@
 3. [x] [ID: P0-PARSE-S3] `pytra-cli2 -parse` を toolchain2 の自前パーサーに切り替える — 完了
 4. [x] [ID: P0-PARSE-S4] builtins.py / containers.py の新構文に対応し、golden を `test/builtin/east1/py/` に配置する — 完了
 5. [x] [ID: P0-PARSE-S5] v2 extern (`extern_fn` / `extern_var` / `extern_class`) の構文に対応し、include/ の golden を再生成する — 完了
-6. [ ] [ID: P0-PARSE-S6] `extern_method` の構文に対応し、containers.py の golden を再生成する
+6. [x] [ID: P0-PARSE-S6] `extern_method` の構文に対応し、containers.py の golden を再生成する — 完了
 
 P0-PARSE-S6 の詳細:
 
