@@ -84,6 +84,8 @@ class ResolveContext:
     module_classes: dict[str, ClassSig] = field(default_factory=dict)
     # Tracked implicit builtin modules
     used_builtin_modules: set[str] = field(default_factory=set)
+    # Current function parameters (for borrow_kind: readonly_ref)
+    current_params: set[str] = field(default_factory=set)
     # Source file path
     source_file: str = ""
     # Runtime symbol index (loaded lazily)
@@ -269,7 +271,8 @@ def _resolve_name(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     name: str = str(name_val) if isinstance(name_val, str) else ""
     t: str = ctx.scope.lookup(name)
     expr["resolved_type"] = t
-    # Borrow kind: names referencing variables are readonly_ref if typed
+    # Borrow kind: readonly_ref for typed names (references to known variables)
+    # value for untyped (function names, unknown)
     if t != "unknown":
         expr["borrow_kind"] = "readonly_ref"
     return t
@@ -393,25 +396,13 @@ def _resolve_compare(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 def _resolve_boolop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     values = expr.get("values")
-    types: list[str] = []
     if isinstance(values, list):
         for v in values:
             if isinstance(v, dict):
-                t: str = _resolve_expr(v, ctx)
-                types.append(t)
-    # BoolOp returns bool if all operands are bool (comparison results)
-    all_bool: bool = True
-    for t2 in types:
-        if t2 != "bool":
-            all_bool = False
-            break
-    if all_bool and len(types) > 0:
-        expr["resolved_type"] = "bool"
-        return "bool"
-    # Otherwise return last operand type (Python short-circuit semantics)
-    last_t: str = types[-1] if len(types) > 0 else "unknown"
-    expr["resolved_type"] = last_t
-    return last_t
+                _resolve_expr(v, ctx)
+    # BoolOp (and/or) always resolves to bool in Pytra
+    expr["resolved_type"] = "bool"
+    return "bool"
 
 
 def _resolve_call(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
@@ -619,10 +610,16 @@ def _resolve_imported_call(
 
     # Runtime binding
     runtime_module: str = ctx.canonical_module_id(module_id)
-    # For bare module imports (math, time etc.), qualify: "math.sqrt"
-    # For dotted module paths (pytra.utils.xxx), just use export name
-    if "." not in module_id:
-        qualified_call: str = module_id + "." + export_name
+    # Qualify with short module name: "math.sqrt" for stdlib
+    # pytra.std.math → "math", pytra.utils.assertions → keep unqualified
+    short_mod: str = module_id
+    if short_mod.startswith("pytra.std."):
+        short_mod = short_mod[len("pytra.std."):]
+    elif short_mod.startswith("pytra."):
+        # pytra.utils.*, pytra.built_in.* → unqualified
+        short_mod = ""
+    if short_mod != "" and "." not in short_mod:
+        qualified_call: str = short_mod + "." + export_name
     else:
         qualified_call = export_name
     expr["resolved_runtime_call"] = qualified_call
@@ -1007,23 +1004,40 @@ def _resolve_list(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 
 def _resolve_dict(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    keys = expr.get("keys")
-    values = expr.get("values")
     kt: str = "unknown"
     vt: str = "unknown"
-    if isinstance(keys, list):
-        for k in keys:
-            if isinstance(k, dict):
-                t: str = _resolve_expr(k, ctx)
-                if kt == "unknown":
-                    kt = t
-    if isinstance(values, list):
-        for v in values:
-            if isinstance(v, dict):
-                t2: str = _resolve_expr(v, ctx)
-                if vt == "unknown":
-                    vt = t2
-    result: str = "dict[" + kt + ", " + vt + "]"
+    # EAST1 uses "entries" format: [{key: ..., value: ...}, ...]
+    entries = expr.get("entries")
+    if isinstance(entries, list):
+        for entry in entries:
+            if isinstance(entry, dict):
+                key_node = entry.get("key")
+                val_node = entry.get("value")
+                if isinstance(key_node, dict):
+                    t: str = _resolve_expr(key_node, ctx)
+                    if kt == "unknown":
+                        kt = t
+                if isinstance(val_node, dict):
+                    t2: str = _resolve_expr(val_node, ctx)
+                    if vt == "unknown":
+                        vt = t2
+    else:
+        # Fallback: separate keys/values arrays
+        keys = expr.get("keys")
+        values = expr.get("values")
+        if isinstance(keys, list):
+            for k in keys:
+                if isinstance(k, dict):
+                    t3: str = _resolve_expr(k, ctx)
+                    if kt == "unknown":
+                        kt = t3
+        if isinstance(values, list):
+            for v in values:
+                if isinstance(v, dict):
+                    t4: str = _resolve_expr(v, ctx)
+                    if vt == "unknown":
+                        vt = t4
+    result: str = "dict[" + kt + "," + vt + "]"
     expr["resolved_type"] = result
     return result
 
@@ -1276,13 +1290,16 @@ def _resolve_function_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None
 
     # Resolve body in function scope
     old_scope: Scope = ctx.scope
+    old_params: set[str] = ctx.current_params
     ctx.scope = fn_scope
+    ctx.current_params = set(arg_order)
     body = stmt.get("body")
     if isinstance(body, list):
         for s in body:
             if isinstance(s, dict):
                 _resolve_stmt(s, ctx)
     ctx.scope = old_scope
+    ctx.current_params = old_params
 
 
 def _compute_arg_usage(arg_order: list[str], func: dict[str, JsonVal]) -> dict[str, str]:
@@ -1461,6 +1478,7 @@ def _resolve_aug_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     tt: str = "unknown"
     if isinstance(target, dict):
         tt = _resolve_expr(target, ctx)
+        # AugAssign target keeps its resolved_type (it reads the current value)
     if isinstance(value, dict):
         _resolve_expr(value, ctx)
 
