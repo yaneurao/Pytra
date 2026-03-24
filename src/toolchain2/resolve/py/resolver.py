@@ -985,6 +985,7 @@ def _resolve_subscript(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     # Slice subscript: list[T][a:b] → list[T], str[a:b] → str
     if is_slice:
         expr["resolved_type"] = vt
+        expr["lowered_kind"] = "SliceExpr"
         return vt
 
     # list[T][i] → T

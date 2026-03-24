@@ -66,7 +66,7 @@ _ATTRIBUTE_FIELDS: list[str] = [
 # Subscript
 _SUBSCRIPT_FIELDS: list[str] = [
     "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr",
-    "value", "slice",
+    "value", "lowered_kind", "slice",
 ]
 
 # List
