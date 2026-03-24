@@ -9,9 +9,18 @@ body は ... (Ellipsis) — Pylance がスタブとして認識する。
 spec: docs/ja/spec/spec-builtin-functions.md §4
 """
 
-from typing import Iterator
-
 from pytra.std.template import template
+
+
+# ---------------------------------------------------------------------------
+# Iterator[T] — for ループの __iter__ 戻り値型
+# resolve は Iterator[T] の T を要素型として解決する。
+# 各言語の runtime が実装を提供する。
+# ---------------------------------------------------------------------------
+
+@template("T")
+class Iterator:
+    def __next__(self) -> T: ...
 
 
 # ---------------------------------------------------------------------------
