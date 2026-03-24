@@ -593,8 +593,8 @@ class AugAssign:
             "target": expr_to_jv(self.target),
             "op": self.op,
             "value": expr_to_jv(self.value),
-            "decl_type": self.decl_type,
             "declare": self.declare,
+            "decl_type": self.decl_type,
         }
 
 
