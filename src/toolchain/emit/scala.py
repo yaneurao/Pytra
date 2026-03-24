@@ -106,7 +106,8 @@ def main() -> int:
     out = Path(output_dir)
     out_path = out / (entry_stem + ".scala")
     out_path.write_text(merged, encoding="utf-8")
-    print("merged: " + str(out_path), file=sys.stderr)
+    # Suppress merged message to avoid polluting stdout during parity check.
+    # print("merged: " + str(out_path), file=sys.stderr)
 
     # Remove per-module files that were merged into the single output.
     # Keep built_in/ and std/*_native.scala (hand-written runtime).

@@ -68,6 +68,17 @@ _CLASS_BASES: list[dict[str, str]] = [{}]
 _CLASS_METHODS: list[dict[str, set[str]]] = [{}]
 _RELATIVE_IMPORT_NAME_ALIASES: dict[str, str] = {}
 _PYTRA_MODULE_IMPORTS: list[set[str]] = [set()]
+# Maps local variable name → backing def name, for lambdas with default params.
+# Populated per-function; cleared at function entry. Allows call sites to invoke
+# the def directly so Scala can fill in default argument values.
+_G_DEF_BACKED: dict[str, str] = {}
+
+# Module-level symbol renames from EAST3 (e.g. user's "main" → "__pytra_main").
+# Populated at the start of transpile_to_scala_native, cleared before that.
+_G_RENAMED_SYMBOLS: dict[str, str] = {}
+
+# Module-level TypeAlias names — mapped to Any in Scala (e.g. `type Scalar = int | float`)
+_G_TYPE_ALIASES: set[str] = set()
 
 
 def _method_overrides_base(class_name: str, method_name: str) -> bool:
@@ -260,13 +271,9 @@ def _arraybuffer_elem_scala_type(py_type_name: str) -> str:
 
 
 def _list_scala_type(type_name: str) -> str:
-    if not type_name.startswith("list[") or not type_name.endswith("]"):
-        return "mutable.ArrayBuffer[Any]"
-    inner = type_name[5:-1].strip()
-    elem_t = _arraybuffer_elem_scala_type(inner)
-    if elem_t == "Any":
-        return "mutable.ArrayBuffer[Any]"
-    return "mutable.ArrayBuffer[" + elem_t + "]"
+    # Always use ArrayBuffer[Any] for list types to avoid type-mismatch when
+    # appending elements from untyped iterators (e.g., reversed(), comprehensions).
+    return "mutable.ArrayBuffer[Any]"
 
 
 def _tuple_scala_type(type_name: str) -> str:
@@ -349,7 +356,7 @@ def _scala_type(type_name: Any, *, allow_void: bool) -> str:
     ts2: str = type_name
     if type_name == "None":
         return "Unit" if allow_void else "Any"
-    if type_name in {"int", "int32", "int64", "uint8"}:
+    if type_name in {"int", "int8", "int16", "int32", "int64", "uint8"}:
         return "Long"
     if type_name in {"float", "float64"}:
         return "Double"
@@ -365,10 +372,25 @@ def _scala_type(type_name: Any, *, allow_void: bool) -> str:
         return _tuple_scala_type(type_name)
     if ts2.startswith("dict["):
         return "mutable.LinkedHashMap[Any, Any]"
+    if ts2.startswith("set[") or type_name == "set":
+        return "mutable.LinkedHashSet[Any]"
     if type_name in {"bytes", "bytearray"}:
         return "mutable.ArrayBuffer[Long]"
-    if type_name in {"unknown", "object", "any"}:
+    if type_name in {"unknown", "object", "any", "callable", "Callable", "Any", "object"}:
         return "Any"
+    if type_name in _G_TYPE_ALIASES:
+        return "Any"
+    if ts2.startswith("callable[") and ts2.endswith("]"):
+        # callable[A,B->C] → (Any, Any) => Any
+        inner = ts2[9:-1]  # strip "callable[" and "]"
+        if "->" in inner:
+            params_part, _ret_part = inner.split("->", 1)
+        else:
+            params_part = inner
+        params = [p.strip() for p in params_part.split(",") if p.strip()] if params_part.strip() else []
+        if len(params) == 0:
+            return "() => Any"
+        return "(" + ", ".join("Any" for _ in params) + ") => Any"
     if ts2.isidentifier():
         return _safe_ident(type_name, "Any")
     return "Any"
@@ -538,13 +560,23 @@ def _has_resolved_type(node: Any, expected: set[str]) -> bool:
 
 def _int_operand(expr: str, node: Any) -> str:
     if _has_resolved_type(node, {"int", "int64", "uint8"}):
-        return expr
+        # Name nodes may resolve to int64 in EAST3 but be Any-typed in Scala
+        # (e.g. list comprehension iteration vars or loop vars from Any iterables).
+        # Always wrap Names to avoid Long * Any errors; __pytra_int(l: Long) is a no-op.
+        node_kind = node.get("kind") if isinstance(node, dict) else None
+        if node_kind != "Name":
+            return expr
     return _to_int_expr(expr)
 
 
 def _float_operand(expr: str, node: Any) -> str:
     if _has_resolved_type(node, {"float", "float64"}):
-        return expr
+        # Name nodes may have resolved_type=float64 due to a default value, but in
+        # Scala they could be Any-typed (e.g. lambda params). Always wrap Names so
+        # Double * Any errors cannot occur; __pytra_float(d: Double) is a no-op.
+        node_kind = node.get("kind") if isinstance(node, dict) else None
+        if node_kind != "Name":
+            return expr
     return _to_float_expr(expr)
 
 
@@ -588,6 +620,9 @@ def _render_name_expr(expr: dict[str, Any]) -> str:
     name = _safe_ident(expr.get("id"), "value")
     if name == "self":
         return "this"
+    renamed = _G_RENAMED_SYMBOLS.get(name, "")
+    if renamed != "":
+        name = renamed
     relative_alias = _RELATIVE_IMPORT_NAME_ALIASES.get(name, "")
     if relative_alias != "":
         return relative_alias
@@ -803,6 +838,12 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
             op,
         )
 
+    if op == "Add" and (
+        (isinstance(resolved, str) and resolved.startswith("list["))
+        or (left_type.startswith("list[") and right_type.startswith("list["))
+    ):
+        return "__pytra_list_concat(" + left_expr + ", " + right_expr + ")"
+
     if resolved == "str" and op == "Add":
         return _join_binop_expr(
             _to_str_expr(left_expr),
@@ -836,14 +877,31 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
         )
 
     sym = _bin_op_symbol(op)
+    # For bitwise ops, leave operands unwrapped: if they are enum instances
+    # with defined |/&/^ operators, Scala will dispatch correctly.
+    # Wrapping with __pytra_float would produce Double which has no bitwise ops.
+    _bitwise_ops = {"BitAnd", "BitOr", "BitXor", "LShift", "RShift"}
+    if op in _bitwise_ops:
+        return _join_binop_expr(left_expr, right_expr, sym, left_any, right_any, op)
     # Fallback: if either operand is Any/unknown, wrap with __pytra_float
     # to ensure Scala can compile the arithmetic expression.
+    # Also: if one side is float-resolved but might be Any at runtime (e.g. lambda param),
+    # wrap both to avoid Double * Any errors.
+    _needs_float_types = {"unknown", "object", "any", "", "float", "float64"}
     fall_left = left_expr
     fall_right = right_expr
-    if left_type in {"unknown", "object", "any", ""}:
+    _unknown_types = {"unknown", "object", "any", ""}
+    left_needs_wrap = left_type in _unknown_types or left_type in _G_TYPE_ALIASES
+    right_needs_wrap = right_type in _unknown_types or right_type in _G_TYPE_ALIASES
+    if left_needs_wrap:
         fall_left = "__pytra_float(" + left_expr + ")"
-    if right_type in {"unknown", "object", "any", ""}:
+    if right_needs_wrap:
         fall_right = "__pytra_float(" + right_expr + ")"
+    # If left is wrapped to Double, right must also be numeric — wrap if float-typed
+    if left_needs_wrap and not right_needs_wrap and right_type in {"float", "float64"}:
+        fall_right = "__pytra_float(" + right_expr + ")"
+    if right_needs_wrap and not left_needs_wrap and left_type in {"float", "float64"}:
+        fall_left = "__pytra_float(" + left_expr + ")"
     return _join_binop_expr(fall_left, fall_right, sym, left_any, right_any, op)
 
 
@@ -1129,6 +1187,14 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
                 if _uses_math_value_getter(expr):
                     return runtime_symbol + "()"
                 return runtime_symbol
+    # type(v).__name__ → __pytra_type_name(v)
+    if field == "__name__":
+        if isinstance(value_any, dict) and value_any.get("kind") == "Call":
+            _type_callee = _call_name(value_any)
+            if _type_callee == "py_type":  # Python `type` keyword-escaped to py_type
+                _type_args, _ = _call_arg_nodes(value_any)
+                if len(_type_args) == 1:
+                    return "__pytra_type_name(" + _render_expr(_type_args[0]) + ")"
     if isinstance(value_any, dict) and value_any.get("kind") == "Name":
         owner_ident = _safe_ident(value_any.get("id"), "")
         # @extern module delegation: math -> math_native, time -> time_native
@@ -1294,6 +1360,9 @@ def _call_name(expr: dict[str, Any]) -> str:
     if raw == "super":
         return "super"
     ident = _safe_ident(raw, "")
+    renamed = _G_RENAMED_SYMBOLS.get(ident, "")
+    if renamed != "":
+        return renamed
     relative_alias = _RELATIVE_IMPORT_NAME_ALIASES.get(ident, "")
     if relative_alias != "":
         return relative_alias
@@ -1411,6 +1480,24 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             cur = "__pytra_max(" + cur + ", " + _render_expr(args[i]) + ")"
             i += 1
         return cur
+    if callee == "sum":
+        if len(args) == 0:
+            return "0L"
+        return "__pytra_sum(" + _render_expr(args[0]) + ")"
+    if callee == "zip":
+        if len(args) == 0:
+            return "mutable.ArrayBuffer[Any]()"
+        if len(args) == 1:
+            return "__pytra_as_list(" + _render_expr(args[0]) + ")"
+        rendered_zip: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_zip.append(_render_expr(args[i]))
+            i += 1
+        # Only support 2-arg zip; more would need a different helper
+        if len(rendered_zip) == 2:
+            return "__pytra_zip(" + rendered_zip[0] + ", " + rendered_zip[1] + ")"
+        return "__pytra_zip(" + rendered_zip[0] + ", " + rendered_zip[1] + ")"
     if callee == "print":
         rendered_args: list[str] = []
         i = 0
@@ -1467,6 +1554,65 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         while i < len(args):
             rendered_args.append(_render_expr(args[i]))
             i += 1
+        # Python dict method translations
+        if method == "items" and len(rendered_args) == 0:
+            return "__pytra_dict_items(" + owner_expr + ")"
+        if method == "keys" and len(rendered_args) == 0:
+            return "__pytra_dict_keys(" + owner_expr + ")"
+        if method == "values" and len(rendered_args) == 0:
+            return "__pytra_dict_values(" + owner_expr + ")"
+        # Python set method translations
+        _owner_resolved_pre = ""
+        if isinstance(owner_any, dict):
+            _owner_resolved_pre = owner_any.get("resolved_type", "") or ""
+        if _owner_resolved_pre.startswith("set[") or _owner_resolved_pre == "set":
+            if method == "add" and len(rendered_args) == 1:
+                return "__pytra_as_set(" + owner_expr + ").add(" + rendered_args[0] + ")"
+            if method == "discard" and len(rendered_args) == 1:
+                return "__pytra_as_set(" + owner_expr + ").remove(" + rendered_args[0] + ")"
+            if method == "remove" and len(rendered_args) == 1:
+                return "__pytra_as_set(" + owner_expr + ").remove(" + rendered_args[0] + ")"
+        # Skip list/dict method translations if owner is a user-defined class instance
+        _owner_resolved = _owner_resolved_pre
+        _owner_is_class = (
+            _owner_resolved != ""
+            and _owner_resolved not in {
+                "int", "int8", "int16", "int32", "int64", "uint8",
+                "float", "float64", "bool", "str", "unknown", "any", "Any",
+            }
+            and not _owner_resolved.startswith("list[")
+            and not _owner_resolved.startswith("dict[")
+            and not _owner_resolved.startswith("tuple[")
+            and not _owner_resolved.startswith("set[")
+            and _owner_resolved != "set"
+        )
+        if _owner_is_class:
+            return owner_expr + "." + method + "(" + ", ".join(rendered_args) + ")"
+        # Python list method translations
+        if method == "pop" and len(rendered_args) == 0:
+            _pop_res_type = _scala_type(expr.get("resolved_type", ""), allow_void=False)
+            _pop_expr = "{ val __lst = __pytra_as_list(" + owner_expr + "); __lst.remove(__lst.size - 1) }"
+            if _pop_res_type not in {"", "Any"}:
+                _pop_expr = _cast_from_any(_pop_expr, _pop_res_type)
+            return _pop_expr
+        if method == "pop" and len(rendered_args) == 1:
+            _pop_res_type = _scala_type(expr.get("resolved_type", ""), allow_void=False)
+            _pop_expr = "{ val __lst = __pytra_as_list(" + owner_expr + "); __lst.remove((__pytra_int(" + rendered_args[0] + ")).toInt) }"
+            if _pop_res_type not in {"", "Any"}:
+                _pop_expr = _cast_from_any(_pop_expr, _pop_res_type)
+            return _pop_expr
+        if method == "insert" and len(rendered_args) == 2:
+            return "__pytra_as_list(" + owner_expr + ").insert((__pytra_int(" + rendered_args[0] + ")).toInt, " + rendered_args[1] + ")"
+        if method == "index" and len(rendered_args) == 1:
+            return "__pytra_as_list(" + owner_expr + ").indexOf(" + rendered_args[0] + ").toLong"
+        if method == "count" and len(rendered_args) == 1:
+            return "__pytra_as_list(" + owner_expr + ").count(_ == " + rendered_args[0] + ").toLong"
+        if method == "clear" and len(rendered_args) == 0:
+            return "__pytra_as_list(" + owner_expr + ").clear()"
+        if method == "copy" and len(rendered_args) == 0:
+            return "__pytra_as_list(" + owner_expr + ").clone()"
+        if method == "reverse" and len(rendered_args) == 0:
+            return "{ val __tmp = __pytra_as_list(" + owner_expr + "); val __rev = __tmp.reverse; __tmp.clear(); __tmp ++= __rev; __tmp }"
         return owner_expr + "." + method + "(" + ", ".join(rendered_args) + ")"
 
     if callee in _CLASS_NAMES[0]:
@@ -1482,6 +1628,29 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     while i < len(args):
         rendered_args.append(_render_expr(args[i]))
         i += 1
+
+    # Check if callee is a callable/lambda variable (func resolved_type is callable/Any function)
+    func_node = expr.get("func")
+    func_resolved = ""
+    if isinstance(func_node, dict):
+        func_resolved_any = func_node.get("resolved_type")
+        func_resolved = func_resolved_any if isinstance(func_resolved_any, str) else ""
+    _is_callable_var = func_resolved == "callable" or func_resolved.startswith("callable[") or (
+        "=>" in _scala_type(func_resolved, allow_void=False)
+    )
+    if _is_callable_var:
+        # If the callable is backed by a local def (lambda with defaults), call the def directly
+        # so Scala can fill in missing default argument values.
+        if callee != "" and callee in _G_DEF_BACKED:
+            return _G_DEF_BACKED[callee] + "(" + ", ".join(rendered_args) + ")"
+        n = len(rendered_args)
+        if n == 0:
+            fn_type = "() => Any"
+        else:
+            fn_type = "(" + ", ".join("Any" for _ in range(n)) + ") => Any"
+        fn_expr = callee if callee != "" else _render_expr(func_node)
+        return fn_expr + ".asInstanceOf[" + fn_type + "](" + ", ".join(rendered_args) + ")"
+
     if callee != "":
         return callee + "(" + ", ".join(rendered_args) + ")"
     func_expr = _render_expr(expr.get("func"))
@@ -1596,58 +1765,147 @@ def _render_expr(expr: Any) -> str:
             i += 1
         return "mutable.LinkedHashMap[Any, Any](" + ", ".join(parts) + ")"
 
+    if kind == "Set":
+        elements_any = ed2.get("elements")
+        if not isinstance(elements_any, list):
+            elements_any = ed2.get("elts")
+        elements_s = elements_any if isinstance(elements_any, list) else []
+        rendered_s: list[str] = []
+        i = 0
+        while i < len(elements_s):
+            rendered_s.append(_render_expr(elements_s[i]))
+            i += 1
+        if len(rendered_s) == 0:
+            return "mutable.LinkedHashSet[Any]()"
+        return "mutable.LinkedHashSet[Any](" + ", ".join(rendered_s) + ")"
+
     if kind == "ListComp":
         gens_any = ed2.get("generators")
         gens = gens_any if isinstance(gens_any, list) else []
-        if len(gens) != 1 or not isinstance(gens[0], dict):
+        if len(gens) == 0:
             return "mutable.ArrayBuffer[Any]()"
-        gen = gens[0]
-        ifs_any = gen.get("ifs")
-        ifs = ifs_any if isinstance(ifs_any, list) else []
-        if len(ifs) != 0:
-            return "mutable.ArrayBuffer[Any]()"
-        target_any = gen.get("target")
-        iter_any = gen.get("iter")
-        if not isinstance(target_any, dict):
-            return "mutable.ArrayBuffer[Any]()"
-        td2: dict[str, Any] = target_any
-        if td2.get("kind") != "Name":
-            return "mutable.ArrayBuffer[Any]()"
-        if not isinstance(iter_any, dict):
-            return "mutable.ArrayBuffer[Any]()"
-        id: dict[str, Any] = iter_any
-        if id.get("kind") != "RangeExpr":
-            return "mutable.ArrayBuffer[Any]()"
-        loop_var = _safe_ident(td2.get("id"), "i")
-        if loop_var == "_":
-            loop_var = "__lc_i"
-        start = _render_expr(id.get("start"))
-        stop = _render_expr(id.get("stop"))
-        step = _render_expr(id.get("step"))
-        elt = _render_expr(ed2.get("elt"))
-        return (
-            "({ "
-            "val __out = mutable.ArrayBuffer[Any](); "
-            "val __step = __pytra_int(" + step + "); "
-            "var " + loop_var + " = __pytra_int(" + start + "); "
-            "while ((__step >= 0L && "
-            + loop_var
-            + " < __pytra_int(" + stop + ")) || (__step < 0L && "
-            + loop_var
-            + " > __pytra_int(" + stop + "))) { "
-            "__out.append(" + elt + "); "
-            + loop_var
-            + " += __step "
-            "}; "
-            "__out "
-            "})"
-        )
+        elt_node = ed2.get("elt")
+        # Build nested loops for each generator
+        def _lc_body(gen_list: list[Any], depth: int) -> str:
+            if len(gen_list) == 0:
+                return "__lc_out.append(" + _render_expr(elt_node) + "); "
+            gen = gen_list[0]
+            if not isinstance(gen, dict):
+                return "__lc_out.append(" + _render_expr(elt_node) + "); "
+            target_any2 = gen.get("target")
+            iter_any2 = gen.get("iter")
+            ifs_any2 = gen.get("ifs")
+            ifs2 = ifs_any2 if isinstance(ifs_any2, list) else []
+            if isinstance(iter_any2, dict) and iter_any2.get("kind") == "RangeExpr":
+                td3 = target_any2 if isinstance(target_any2, dict) else {}
+                loop_var = _safe_ident(td3.get("id"), "__lc_v")
+                if loop_var == "_":
+                    loop_var = "__lc_v" + str(depth)
+                start = _render_expr(iter_any2.get("start"))
+                stop = _render_expr(iter_any2.get("stop"))
+                step = _render_expr(iter_any2.get("step"))
+                inner = _lc_body(gen_list[1:], depth + 1)
+                step_var = "__lc_step" + str(depth)
+                loop_code = (
+                    "val " + step_var + " = __pytra_int(" + step + "); "
+                    "var " + loop_var + " = __pytra_int(" + start + "); "
+                    "while ((" + step_var + " >= 0L && " + loop_var + " < __pytra_int(" + stop + ")) || (" + step_var + " < 0L && " + loop_var + " > __pytra_int(" + stop + "))) { "
+                )
+                if ifs2:
+                    cond = " && ".join(_render_truthy_expr(c) for c in ifs2 if isinstance(c, dict))
+                    loop_code += "if (" + cond + ") { " + inner + " }; "
+                else:
+                    loop_code += inner
+                loop_code += loop_var + " += " + step_var + " }; "
+                return loop_code
+            else:
+                iter_var = "__lc_iter" + str(depth)
+                idx_var = "__lc_i" + str(depth)
+                elem_var = "__lc_v" + str(depth)
+                iter_expr2 = _render_expr(iter_any2) if isinstance(iter_any2, dict) else "__pytra_any_default()"
+                td3 = target_any2 if isinstance(target_any2, dict) else {}
+                inner = _lc_body(gen_list[1:], depth + 1)
+                loop_code = (
+                    "val " + iter_var + " = __pytra_as_list(" + iter_expr2 + "); "
+                    "var " + idx_var + " = 0L; "
+                    "while (" + idx_var + " < " + iter_var + ".size.toLong) { "
+                    "val " + elem_var + " = " + iter_var + "(" + idx_var + ".toInt); "
+                )
+                # Unpack tuple targets: for (wi, xi) in zip(...)
+                if td3.get("kind") == "Tuple":
+                    elts_any3 = td3.get("elements") or td3.get("elts")
+                    elts3 = elts_any3 if isinstance(elts_any3, list) else []
+                    tuple_list = elem_var + "_tup"
+                    loop_code += "val " + tuple_list + " = __pytra_as_list(" + elem_var + "); "
+                    j = 0
+                    while j < len(elts3):
+                        elt3 = elts3[j]
+                        if isinstance(elt3, dict) and elt3.get("kind") == "Name":
+                            vname3 = _safe_ident(elt3.get("id"), "__lc_t" + str(j))
+                            loop_code += "val " + vname3 + " = " + tuple_list + "(" + str(j) + "); "
+                        j += 1
+                elif td3.get("kind") == "Name":
+                    vname3 = _safe_ident(td3.get("id"), elem_var)
+                    if vname3 != elem_var:
+                        loop_code += "val " + vname3 + " = " + elem_var + "; "
+                if ifs2:
+                    cond = " && ".join(_render_truthy_expr(c) for c in ifs2 if isinstance(c, dict))
+                    loop_code += "if (" + cond + ") { " + inner + " }; "
+                else:
+                    loop_code += inner
+                loop_code += idx_var + " += 1L }; "
+                return loop_code
+        body_code = _lc_body(gens, 0)
+        return "({ val __lc_out = mutable.ArrayBuffer[Any](); " + body_code + "__lc_out })"
+
+    if kind == "SetComp":
+        _sc_gens_any = ed2.get("generators")
+        _sc_gens = _sc_gens_any if isinstance(_sc_gens_any, list) else []
+        if len(_sc_gens) == 0:
+            return "mutable.LinkedHashSet[Any]()"
+        _sc_elt_node = ed2.get("elt")
+        def _sc_lc_body(gen_list: list[Any], depth: int) -> str:
+            if len(gen_list) == 0:
+                return "__sc_out.add(" + _render_expr(_sc_elt_node) + "); "
+            gen = gen_list[0]
+            if not isinstance(gen, dict):
+                return "__sc_out.add(" + _render_expr(_sc_elt_node) + "); "
+            target_any3 = gen.get("target")
+            iter_any3 = gen.get("iter")
+            ifs_any3 = gen.get("ifs")
+            ifs3 = ifs_any3 if isinstance(ifs_any3, list) else []
+            iter_var3 = "__sc_iter" + str(depth)
+            idx_var3 = "__sc_i" + str(depth)
+            elem_var3 = "__sc_v" + str(depth)
+            iter_expr3 = _render_expr(iter_any3) if isinstance(iter_any3, dict) else "__pytra_any_default()"
+            td3b = target_any3 if isinstance(target_any3, dict) else {}
+            inner3 = _sc_lc_body(gen_list[1:], depth + 1)
+            loop3 = (
+                "val " + iter_var3 + " = __pytra_as_list(" + iter_expr3 + "); "
+                "var " + idx_var3 + " = 0L; "
+                "while (" + idx_var3 + " < " + iter_var3 + ".size.toLong) { "
+                "val " + elem_var3 + " = " + iter_var3 + "(" + idx_var3 + ".toInt); "
+            )
+            if td3b.get("kind") == "Name":
+                vname4 = _safe_ident(td3b.get("id"), elem_var3)
+                if vname4 != elem_var3:
+                    loop3 += "val " + vname4 + " = " + elem_var3 + "; "
+            if ifs3:
+                cond3 = " && ".join(_render_truthy_expr(c) for c in ifs3 if isinstance(c, dict))
+                loop3 += "if (" + cond3 + ") { " + inner3 + " }; "
+            else:
+                loop3 += inner3
+            loop3 += idx_var3 + " += 1L }; "
+            return loop3
+        _sc_body = _sc_lc_body(_sc_gens, 0)
+        return "({ val __sc_out = mutable.LinkedHashSet[Any](); " + _sc_body + "__sc_out })"
 
     if kind == "IfExp":
         test_expr = _render_truthy_expr(ed2.get("test"))
         body_expr = _render_expr(ed2.get("body"))
         else_expr = _render_expr(ed2.get("orelse"))
-        return "__pytra_ifexp(" + test_expr + ", " + body_expr + ", " + else_expr + ")"
+        # Use Scala's native if/else to preserve the concrete return type (avoids Any).
+        return "(if (" + test_expr + ") " + body_expr + " else " + else_expr + ")"
 
     if kind == "Subscript":
         owner = _render_expr(ed2.get("value"))
@@ -1678,6 +1936,82 @@ def _render_expr(expr: Any) -> str:
 
     if kind == "Unbox" or kind == "Box":
         return _render_expr(ed2.get("value"))
+
+    if kind == "Lambda":
+        args_any = ed2.get("args")
+        args = args_any if isinstance(args_any, list) else []
+        body_node = ed2.get("body")
+        params: list[str] = []
+        for a in args:
+            if isinstance(a, dict):
+                param_name = _safe_ident(a.get("arg"), "p")
+                # Always use Any for lambda params to match (Any,...) => Any function type
+                params.append(param_name + ": Any")
+        body_expr = _render_expr(body_node)
+        if len(params) == 0:
+            return "(() => " + body_expr + ")"
+        return "((" + ", ".join(params) + ") => " + body_expr + ")"
+
+    if kind == "JoinedStr":
+        values_any = ed2.get("values")
+        values = values_any if isinstance(values_any, list) else []
+        # Check if any FormattedValue has a format_spec
+        has_spec = any(
+            isinstance(v, dict) and v.get("kind") == "FormattedValue" and v.get("format_spec")
+            for v in values
+        )
+        if has_spec:
+            # Build a String.format() call
+            fmt_str_parts: list[str] = []
+            fmt_args: list[str] = []
+            for v in values:
+                if not isinstance(v, dict):
+                    continue
+                vkind = v.get("kind")
+                if vkind == "Constant":
+                    raw_val = v.get("value", "")
+                    fmt_str_parts.append(str(raw_val).replace("%", "%%"))
+                elif vkind == "FormattedValue":
+                    spec = v.get("format_spec", "")
+                    val_node = v.get("value")
+                    val_expr = _render_expr(val_node) if isinstance(val_node, dict) else "__pytra_any_default()"
+                    if spec:
+                        # Convert Python format spec to Java format spec
+                        # e.g. "4d" → "%4d", ".4f" → "%.4f"
+                        fmt_str_parts.append("%" + spec)
+                        # Wrap with appropriate type conversion
+                        if spec.endswith("d"):
+                            fmt_args.append("__pytra_int(" + val_expr + "): java.lang.Long")
+                        elif spec.endswith("f"):
+                            fmt_args.append("__pytra_float(" + val_expr + "): java.lang.Double")
+                        else:
+                            fmt_args.append("__pytra_str(" + val_expr + ")")
+                    else:
+                        fmt_str_parts.append("%s")
+                        fmt_args.append("__pytra_str(" + val_expr + ")")
+            fmt_literal = _scala_string_literal("".join(fmt_str_parts))
+            if fmt_args:
+                return "String.format(" + fmt_literal + ", " + ", ".join(fmt_args) + ")"
+            return fmt_literal
+        else:
+            # Simple f-string without format specs: concatenate parts
+            parts: list[str] = []
+            for v in values:
+                if not isinstance(v, dict):
+                    continue
+                vkind = v.get("kind")
+                if vkind == "Constant":
+                    raw_val = v.get("value", "")
+                    parts.append(_scala_string_literal(str(raw_val)))
+                elif vkind == "FormattedValue":
+                    val_node = v.get("value")
+                    val_expr = _render_expr(val_node) if isinstance(val_node, dict) else "__pytra_any_default()"
+                    parts.append("__pytra_str(" + val_expr + ")")
+            if not parts:
+                return '""'
+            if len(parts) == 1:
+                return parts[0]
+            return "(" + " + ".join(parts) + ")"
 
     return "__pytra_any_default()"
 
@@ -1907,7 +2241,14 @@ def _expr_emits_target_type(value_expr: Any, target_type: str, type_map: dict[st
             fd: dict[str, Any] = func_any
             f_kind = fd.get("kind")
             if f_kind == "Name":
-                if callee != "" and not callee.startswith("__pytra_") and resolved == target_type:
+                # If the callee is a lambda variable (function type), its call returns Any —
+                # trust EAST3 resolved_type only when callee is not a lambda var.
+                callee_is_lambda = False
+                if isinstance(type_map, dict) and callee in type_map:
+                    mapped_t = type_map.get(callee, "Any")
+                    if isinstance(mapped_t, str) and "=>" in mapped_t:
+                        callee_is_lambda = True
+                if not callee_is_lambda and callee != "" and not callee.startswith("__pytra_") and resolved == target_type:
                     return True
             if f_kind == "Attribute":
                 attr = _safe_ident(fd.get("attr"), "")
@@ -2116,6 +2457,12 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
                 iter_elem_t_any = id.get("iter_element_type")
                 if isinstance(iter_elem_t_any, str) and iter_elem_t_any not in {"", "unknown"}:
                     target_type_txt = iter_elem_t_any
+                elif target_type_txt in {"", "unknown"}:
+                    # Infer element type from the iterator's resolved_type (e.g. "list[int64]" → "int64")
+                    res_t_any = id.get("resolved_type")
+                    res_t = res_t_any if isinstance(res_t_any, str) else ""
+                    if res_t.startswith("list[") and res_t.endswith("]"):
+                        target_type_txt = res_t[5:-1].strip()
         target_scala_type = _scala_type(target_type_txt, allow_void=False)
         if loop_uses_control:
             lines.append(indent + "boundary:")
@@ -2367,18 +2714,37 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                         owner_name = _safe_ident(owner_any.get("id"), "")
                         type_hint_any = _type_map(ctx).get(owner_name)
                         owner_type = type_hint_any if isinstance(type_hint_any, str) else ""
-                    args_any = value_any.get("args")
-                    args = args_any if isinstance(args_any, list) else []
-                    if len(args) == 1:
-                        if owner_type.startswith("mutable.ArrayBuffer["):
-                            return [indent + owner + ".append(" + _render_expr(args[0]) + ")"]
-                        return [indent + owner + " = " + _to_list_expr(owner) + "; " + owner + ".append(" + _render_expr(args[0]) + ")"]
+                    # If owner is a user-defined class or non-list type, call the method directly
+                    _is_list_owner = (
+                        owner_type in {"", "Any"}
+                        or owner_type.startswith("mutable.ArrayBuffer[")
+                    )
+                    if not _is_list_owner:
+                        pass  # fall through to generic expr rendering
+                    else:
+                        args_any = value_any.get("args")
+                        args = args_any if isinstance(args_any, list) else []
+                        if len(args) == 1:
+                            if owner_type.startswith("mutable.ArrayBuffer["):
+                                return [indent + owner + ".append(" + _render_expr(args[0]) + ")"]
+                            return [indent + owner + " = " + _to_list_expr(owner) + "; " + owner + ".append(" + _render_expr(args[0]) + ")"]
                 if attr == "pop":
-                    owner = _render_expr(func_any.get("value"))
-                    args_any = value_any.get("args")
-                    args = args_any if isinstance(args_any, list) else []
-                    if len(args) == 0:
-                        return [indent + owner + " = __pytra_pop_last(__pytra_as_list(" + owner + "))"]
+                    owner_any2 = func_any.get("value")
+                    owner_type2 = ""
+                    if isinstance(owner_any2, dict) and owner_any2.get("kind") == "Name":
+                        owner_name2 = _safe_ident(owner_any2.get("id"), "")
+                        type_hint2 = _type_map(ctx).get(owner_name2)
+                        owner_type2 = type_hint2 if isinstance(type_hint2, str) else ""
+                    _is_list_owner2 = (
+                        owner_type2 in {"", "Any"}
+                        or owner_type2.startswith("mutable.ArrayBuffer[")
+                    )
+                    if _is_list_owner2:
+                        owner = _render_expr(func_any.get("value"))
+                        args_any = value_any.get("args")
+                        args = args_any if isinstance(args_any, list) else []
+                        if len(args) == 0:
+                            return [indent + owner + " = __pytra_pop_last(__pytra_as_list(" + owner + "))"]
         # discard_result: suppress return value (spec §9)
         if bool(sd3.get("discard_result")):
             return [indent + "val _ = " + _render_expr(value_any)]
@@ -2491,7 +2857,13 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
 
         if isinstance(targets[0], dict) and targets[0].get("kind") == "Attribute":
             lhs_attr = _render_attribute_expr(targets[0])
-            value_attr = _render_expr(sd3.get("value"))
+            value_node = sd3.get("value")
+            value_attr = _render_expr(value_node)
+            # Cast if the target attribute has a known concrete type and the value is Any-typed
+            tgt_resolved = targets[0].get("resolved_type", "")
+            tgt_scala = _scala_type(tgt_resolved, allow_void=False) if tgt_resolved else "Any"
+            if tgt_scala != "Any" and _needs_cast(value_node, tgt_scala, _type_map(ctx)):
+                value_attr = _cast_from_any(value_attr, tgt_scala)
             return [indent + lhs_attr + " = " + value_attr]
 
         if isinstance(targets[0], dict) and targets[0].get("kind") == "Subscript":
@@ -2504,6 +2876,18 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         lhs = _target_name(targets[0])
         declared = _declared_set(ctx)
         type_map = _type_map(ctx)
+
+        # Lambda with default params: emit a local def so Scala can use defaults at call sites.
+        _val_node = sd3.get("value")
+        if isinstance(_val_node, dict) and _val_node.get("kind") == "Lambda" and lhs != "":
+            _largs = _val_node.get("args") or []
+            if any(isinstance(_a, dict) and _a.get("default") is not None for _a in _largs):
+                _def_lines, _def_name = _emit_lambda_as_def(lhs, _val_node, indent)
+                _G_DEF_BACKED[lhs] = _def_name
+                declared.add(lhs)
+                type_map[lhs] = "Any"
+                return _def_lines + [indent + "var " + lhs + ": Any = null"]
+
         value = _render_expr(sd3.get("value"))
 
         if sd3.get("declare"):
@@ -2539,7 +2923,13 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
 
     if kind == "AugAssign":
         lhs = _target_name(sd3.get("target"))
-        rhs = _render_expr(sd3.get("value"))
+        type_map = _type_map(ctx)
+        lhs_scala_type = type_map.get(lhs, "Any") if isinstance(type_map, dict) else "Any"
+        rhs_node = sd3.get("value")
+        rhs = _render_expr(rhs_node)
+        # If lhs is a concrete type and rhs is Any, cast rhs to match
+        if lhs_scala_type != "Any" and _needs_cast(rhs_node, lhs_scala_type, type_map):
+            rhs = _cast_from_any(rhs, lhs_scala_type)
         op = sd3.get("op")
         if op == "Add":
             return [indent + lhs + " += " + rhs]
@@ -2828,6 +3218,29 @@ def _block_contains_yield(body: list[Any]) -> bool:
     return False
 
 
+def _emit_lambda_as_def(var_name: str, lambda_node: dict[str, Any], indent: str) -> tuple[list[str], str]:
+    """Emit a local `def` with default params for a lambda that has default arguments.
+    Returns (lines, def_name). The caller should also emit `var var_name: Any = null`
+    as a placeholder so the variable is declared in scope.
+    """
+    args = lambda_node.get("args") or []
+    body_node = lambda_node.get("body")
+    def_name = "__pytra_fn_" + var_name
+    params: list[str] = []
+    for a in args:
+        if isinstance(a, dict):
+            p = _safe_ident(a.get("arg"), "p")
+            default_node = a.get("default")
+            if default_node is not None:
+                default_val = _render_expr(default_node)
+                params.append(p + ": Any = (" + default_val + ": Any)")
+            else:
+                params.append(p + ": Any")
+    body_expr = _render_expr(body_node)
+    line = indent + "def " + def_name + "(" + ", ".join(params) + "): Any = " + body_expr
+    return [line], def_name
+
+
 def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool, is_override: bool = False) -> list[str]:
     name = _safe_ident(fn.get("name"), "func")
     is_init = in_class and name == "__init__"
@@ -2838,13 +3251,23 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool, is_overri
 
     params = _function_params(fn, drop_self=in_class)
 
+    # Detect @property decorator — emit as no-arg Scala property (no parentheses)
+    _decorators_any = fn.get("decorators")
+    _decorators = _decorators_any if isinstance(_decorators_any, list) else []
+    _is_property = "property" in _decorators
+
     lines: list[str] = []
     if is_init:
+        init_override = "override " if is_override else ""
         if len(params) == 0:
-            lines.append(indent + "def __init__(): Unit = {")
+            lines.append(indent + init_override + "def __init__(): Unit = {")
         else:
             lines.append(indent + "def this(" + ", ".join(params) + ") = {")
             lines.append(indent + "    this()")
+    elif _is_property and len(params) == 0:
+        override_prefix = "override " if in_class and is_override else ""
+        sig = indent + override_prefix + "def " + name + ": " + return_type + " = {"
+        lines.append(sig)
     else:
         override_prefix = "override " if in_class and is_override else ""
         sig = indent + override_prefix + "def " + name + "(" + ", ".join(params) + "): " + return_type + " = {"
@@ -2854,6 +3277,8 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool, is_overri
     body = body_any if isinstance(body_any, list) else []
     is_generator = (not is_init) and _block_contains_yield(body)
 
+    # Clear def-backed lambda map for each new function scope
+    _G_DEF_BACKED.clear()
     ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}, "return_type": return_type}
     declared = _declared_set(ctx)
     type_map = _type_map(ctx)
@@ -2893,18 +3318,109 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool, is_overri
     return lines
 
 
+def _detect_class_vars(body: list[Any]) -> set[str]:
+    """Return set of field names that are class-level variables (non-self Assign/AnnAssign in class body).
+
+    Only AnnAssign nodes WITH a value (initializer) are class vars; bare annotations like
+    `x: int` without a value are just type hints for instance vars and are excluded.
+    """
+    class_vars: set[str] = set()
+    for node in body:
+        if not isinstance(node, dict):
+            continue
+        if node.get("kind") == "AnnAssign":
+            # Only count as class var if there is an initializer value
+            if node.get("value") is not None:
+                target = node.get("target", {})
+                if isinstance(target, dict) and target.get("kind") == "Name":
+                    name = _safe_ident(target.get("id"), "")
+                    if name:
+                        class_vars.add(name)
+        elif node.get("kind") == "Assign":
+            # Plain unannotated class-level assignment (e.g. X = 0,)
+            tgt = node.get("target") or (node.get("targets") or [None])[0]
+            if isinstance(tgt, dict) and tgt.get("kind") == "Name":
+                name = _safe_ident(tgt.get("id"), "")
+                if name:
+                    class_vars.add(name)
+        elif node.get("kind") == "FunctionDef":
+            # scan __init__ for self.field = ... assignments to detect instance vars
+            if _safe_ident(node.get("name"), "") == "__init__":
+                pass  # instance vars identified separately
+    return class_vars
+
+
+_ENUM_BASE_NAMES: set[str] = {"Enum", "IntEnum", "IntFlag", "Flag"}
+
+
+def _emit_enum_class(cls: dict[str, Any], *, indent: str) -> list[str]:
+    """Emit a Python Enum subclass as a sealed class + companion object."""
+    class_name = _safe_ident(cls.get("name"), "PytraEnum")
+    body_any = cls.get("body")
+    body = body_any if isinstance(body_any, list) else []
+
+    # Collect enum members from Assign nodes in the class body
+    members: list[tuple[str, str]] = []  # (name, value_expr)
+    for node in body:
+        if not isinstance(node, dict):
+            continue
+        if node.get("kind") in ("Assign", "AugAssign"):
+            tgt_any = node.get("target", node.get("targets", [{}]))
+            if isinstance(tgt_any, list):
+                tgt = tgt_any[0] if tgt_any else {}
+            else:
+                tgt = tgt_any
+            if not isinstance(tgt, dict):
+                continue
+            member_name = _safe_ident(tgt.get("id"), "")
+            if not member_name:
+                continue
+            value_node = node.get("value", node.get("rhs"))
+            val_expr = _render_expr(value_node) if isinstance(value_node, dict) else "0L"
+            members.append((member_name, val_expr))
+
+    lines: list[str] = []
+    lines.append(indent + "final class " + class_name + " private (_value: Long, _name: String) extends PytraEnumLike {")
+    lines.append(indent + "    override def toString: String = _name")
+    lines.append(indent + "    def value: Long = _value")
+    lines.append(indent + "    def |(other: " + class_name + "): " + class_name + " = new " + class_name + "(_value | other.value, _name + \"|\" + other.toString)")
+    lines.append(indent + "    def &(other: " + class_name + "): " + class_name + " = new " + class_name + "(_value & other.value, _name + \"&\" + other.toString)")
+    lines.append(indent + "    def ^(other: " + class_name + "): " + class_name + " = new " + class_name + "(_value ^ other.value, _name + \"^\" + other.toString)")
+    lines.append(indent + "    override def equals(other: Any): Boolean = other.isInstanceOf[" + class_name + "] && other.asInstanceOf[" + class_name + "].value == _value")
+    lines.append(indent + "    override def hashCode: Int = _value.toInt")
+    lines.append(indent + "}")
+    lines.append("")
+    lines.append(indent + "object " + class_name + " {")
+    for mname, mval in members:
+        lines.append(indent + '    val ' + mname + " = new " + class_name + "(" + mval + ", \"" + class_name + "." + mname + "\")")
+    lines.append(indent + "}")
+    return lines
+
+
 def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     class_name = _safe_ident(cls.get("name"), "PytraClass")
     base_any = cls.get("base")
     base_name = _safe_ident(base_any, "") if isinstance(base_any, str) else ""
     extends = " extends " + base_name + "()" if base_name != "" else ""
 
-    lines: list[str] = []
-    lines.append(indent + "class " + class_name + "()" + extends + " {")
+    body_any = cls.get("body")
+    body = body_any if isinstance(body_any, list) else []
+
+    # Handle Python Enum subclasses specially
+    if base_name in _ENUM_BASE_NAMES:
+        return _emit_enum_class(cls, indent=indent)
+
+    is_dataclass = cls.get("dataclass", False) is True
+
+    # Detect class variables (declared at class level without self.)
+    # For dataclasses, all fields are instance fields (no class vars).
+    class_var_names = set() if is_dataclass else _detect_class_vars(body)
 
     field_types_any = cls.get("field_types")
     field_types = field_types_any if isinstance(field_types_any, dict) else {}
     instance_fields: list[tuple[str, str]] = []
+    companion_fields: list[tuple[str, str, str]] = []  # (name, type, value_expr)
+    companion_names_seen: set[str] = set()
     for raw_name, raw_type in field_types.items():
         if not isinstance(raw_name, str):
             continue
@@ -2913,27 +3429,73 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
         default = _default_return_expr(field_type)
         if default == "":
             default = "0L"
-        lines.append(indent + "    var " + field_name + ": " + field_type + " = " + default)
-        instance_fields.append((field_name, field_type))
+        if field_name in class_var_names:
+            # class variable → companion object
+            companion_fields.append((field_name, field_type, default))
+            companion_names_seen.add(field_name)
+        else:
+            instance_fields.append((field_name, field_type))
 
-    body_any = cls.get("body")
-    body = body_any if isinstance(body_any, list) else []
+    # Also collect plain (unannotated) Assign class vars not captured in field_types
+    for node in body:
+        if not isinstance(node, dict) or node.get("kind") != "Assign":
+            continue
+        tgt = node.get("target") or (node.get("targets") or [None])[0]
+        if not isinstance(tgt, dict) or tgt.get("kind") != "Name":
+            continue
+        fname = _safe_ident(tgt.get("id"), "")
+        if not fname or fname in companion_names_seen:
+            continue
+        if fname in class_var_names:
+            val_expr = _render_expr(node.get("value"))
+            companion_fields.append((fname, "Any", val_expr))
+            companion_names_seen.add(fname)
+
+    lines: list[str] = []
+    lines.append(indent + "class " + class_name + "()" + extends + " {")
+
+    for field_name, field_type in instance_fields:
+        default = _default_return_expr(field_type)
+        if default == "":
+            default = "0L"
+        lines.append(indent + "    var " + field_name + ": " + field_type + " = " + default)
+
     has_init = False
+    init_has_params = False  # True if __init__ has params other than self
     i = 0
     while i < len(body):
         node = body[i]
         if isinstance(node, dict) and node.get("kind") == "FunctionDef":
             if _safe_ident(node.get("name"), "") == "__init__":
                 has_init = True
+                # Check if __init__ has params beyond self
+                arg_order_any = node.get("arg_order")
+                arg_order = arg_order_any if isinstance(arg_order_any, list) else []
+                non_self_params = [a for a in arg_order if isinstance(a, str) and a != "self"]
+                init_has_params = len(non_self_params) > 0
                 break
         i += 1
 
     if not has_init and len(instance_fields) > 0:
+        # Collect default values from AnnAssign nodes (for dataclasses)
+        field_defaults: dict[str, str] = {}
+        for node in body:
+            if isinstance(node, dict) and node.get("kind") == "AnnAssign":
+                tgt = node.get("target", {})
+                if isinstance(tgt, dict) and tgt.get("kind") == "Name":
+                    fname = _safe_ident(tgt.get("id"), "")
+                    value_node = node.get("value")
+                    if fname and isinstance(value_node, dict):
+                        field_defaults[fname] = _render_expr(value_node)
         ctor_params: list[str] = []
         i = 0
         while i < len(instance_fields):
             fname, ftype = instance_fields[i]
-            ctor_params.append(fname + ": " + ftype)
+            default_val = field_defaults.get(fname)
+            if default_val is not None:
+                ctor_params.append(fname + ": " + ftype + " = " + default_val)
+            else:
+                ctor_params.append(fname + ": " + ftype)
             i += 1
         lines.append("")
         lines.append(indent + "    def this(" + ", ".join(ctor_params) + ") = {")
@@ -2945,17 +3507,46 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
             i += 1
         lines.append(indent + "    }")
 
+    # If __init__ exists AND has no params, call it from the primary constructor body
+    # so Python semantics (automatic __init__ on construction) are preserved.
+    # If __init__ has params, it's emitted as def this(...) so the primary ctor doesn't call it.
+    if has_init and not init_has_params:
+        lines.append(indent + "    __init__()")
+
+    static_methods: list[dict[str, Any]] = []
     i = 0
     while i < len(body):
         node = body[i]
         if isinstance(node, dict) and node.get("kind") == "FunctionDef":
             method_name = _safe_ident(node.get("name"), "")
-            is_override = method_name != "__init__" and _method_overrides_base(class_name, method_name)
-            lines.append("")
-            lines.extend(_emit_function(node, indent=indent + "    ", in_class=True, is_override=is_override))
+            decorators_any = node.get("decorators")
+            decorators = decorators_any if isinstance(decorators_any, list) else []
+            is_static = "staticmethod" in decorators
+            if is_static:
+                static_methods.append(node)
+            else:
+                # __init__ in a subclass needs override if base also has it
+                if method_name == "__init__":
+                    is_override = base_name != ""
+                else:
+                    is_override = _method_overrides_base(class_name, method_name)
+                lines.append("")
+                lines.extend(_emit_function(node, indent=indent + "    ", in_class=True, is_override=is_override))
         i += 1
 
     lines.append(indent + "}")
+
+    # Emit companion object for class variables and static methods
+    if companion_fields or static_methods:
+        lines.append("")
+        lines.append(indent + "object " + class_name + " {")
+        for fname, ftype, fdefault in companion_fields:
+            lines.append(indent + "    var " + fname + ": " + ftype + " = " + fdefault)
+        for sm in static_methods:
+            lines.append("")
+            lines.extend(_emit_function(sm, indent=indent + "    ", in_class=False, is_override=False))
+        lines.append(indent + "}")
+
     return lines
 
 
@@ -2971,6 +3562,18 @@ def transpile_to_scala_native(east_doc: dict[str, Any], *, emit_main: bool = Tru
         raise RuntimeError("scala native emitter: Module.body must be list")
     _RELATIVE_IMPORT_NAME_ALIASES.clear()
     _RELATIVE_IMPORT_NAME_ALIASES.update(_collect_relative_import_name_aliases(east_doc))
+    _G_RENAMED_SYMBOLS.clear()
+    _renamed_any = east_doc.get("renamed_symbols")
+    if isinstance(_renamed_any, dict):
+        for _k, _v in _renamed_any.items():
+            if isinstance(_k, str) and isinstance(_v, str):
+                _G_RENAMED_SYMBOLS[_safe_ident(_k, "")] = _safe_ident(_v, "")
+    _G_TYPE_ALIASES.clear()
+    for _body_node in (body_any if isinstance(body_any, list) else []):
+        if isinstance(_body_node, dict) and _body_node.get("kind") == "TypeAlias":
+            _alias_name = _safe_ident(_body_node.get("name"), "")
+            if _alias_name != "":
+                _G_TYPE_ALIASES.add(_alias_name)
     _PYTRA_MODULE_IMPORTS[0] = _collect_pytra_module_imports(east_doc)
     reject_backend_typed_vararg_signatures(east_doc, backend_name="Scala backend")
     reject_backend_general_union_type_exprs(east_doc, backend_name="Scala backend")
@@ -2980,6 +3583,7 @@ def transpile_to_scala_native(east_doc: dict[str, Any], *, emit_main: bool = Tru
 
     classes: list[dict[str, Any]] = []
     functions: list[dict[str, Any]] = []
+    module_vars: list[dict[str, Any]] = []
     i = 0
     while i < len(body_any):
         node = body_any[i]
@@ -2990,6 +3594,8 @@ def transpile_to_scala_native(east_doc: dict[str, Any], *, emit_main: bool = Tru
                 classes.append(node)
             elif kind == "FunctionDef":
                 functions.append(node)
+            elif kind in {"AnnAssign", "Assign"}:
+                module_vars.append(node)
         i += 1
 
     _CLASS_NAMES[0] = set()
@@ -3034,7 +3640,10 @@ def transpile_to_scala_native(east_doc: dict[str, Any], *, emit_main: bool = Tru
 
     i = 0
     while i < len(classes):
-        cname = _safe_ident(classes[i].get("name"), "PytraClass")
+        cls_i = classes[i]
+        cname = _safe_ident(cls_i.get("name"), "PytraClass")
+        base_i = _safe_ident(cls_i.get("base"), "") if isinstance(cls_i.get("base"), str) else ""
+        is_enum_cls = base_i in _ENUM_BASE_NAMES
         lines.append("")
         lines.append("def __pytra_is_" + cname + "(v: Any): Boolean = {")
         lines.append("    v.isInstanceOf[" + cname + "]")
@@ -3043,7 +3652,10 @@ def transpile_to_scala_native(east_doc: dict[str, Any], *, emit_main: bool = Tru
         lines.append("def __pytra_as_" + cname + "(v: Any): " + cname + " = {")
         lines.append("    v match {")
         lines.append("        case obj: " + cname + " => obj")
-        lines.append("        case _ => new " + cname + "()")
+        if is_enum_cls:
+            lines.append("        case _ => null.asInstanceOf[" + cname + "]")
+        else:
+            lines.append("        case _ => new " + cname + "()")
         lines.append("    }")
         lines.append("}")
         i += 1
@@ -3066,6 +3678,33 @@ def transpile_to_scala_native(east_doc: dict[str, Any], *, emit_main: bool = Tru
             lines.extend(fn_comments)
         lines.append("")
         lines.extend(_emit_function(functions[i], indent="", in_class=False))
+        i += 1
+
+    # Emit module-level variable declarations (AnnAssign / Assign at module scope)
+    _mod_var_ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}}
+    i = 0
+    while i < len(module_vars):
+        mv = module_vars[i]
+        # Skip extern vars — they are provided by the runtime, not user-defined
+        _mv_is_extern = False
+        _mv_meta = mv.get("meta")
+        if isinstance(_mv_meta, dict) and _mv_meta.get("extern_var_v1") is not None:
+            _mv_is_extern = True
+        if not _mv_is_extern:
+            _mv_val = mv.get("value")
+            if isinstance(_mv_val, dict):
+                _mv_val_kind = _mv_val.get("kind")
+                if _mv_val_kind == "Unbox":
+                    _mv_inner = _mv_val.get("value")
+                    if isinstance(_mv_inner, dict) and _mv_inner.get("kind") == "Call":
+                        if _call_name(_mv_inner) == "extern":
+                            _mv_is_extern = True
+                elif _mv_val_kind == "Call":
+                    if _call_name(_mv_val) == "extern":
+                        _mv_is_extern = True
+        if not _mv_is_extern:
+            _mod_var_lines = _emit_stmt(mv, indent="", ctx=_mod_var_ctx)
+            lines.extend(_mod_var_lines)
         i += 1
 
     if emit_main:

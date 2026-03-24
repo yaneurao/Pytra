@@ -4,6 +4,11 @@
 import scala.collection.mutable
 import java.nio.file.{Files, Paths}
 
+// Trait for Python enum-like classes so __pytra_int() can extract their integer value.
+trait PytraEnumLike {
+    def value: Long
+}
+
 def __pytra_noop(args: Any*): Unit = { }
 
 // Implicit conversion: Any → Double for arithmetic in dynamically-typed contexts.
@@ -95,6 +100,7 @@ def __pytra_int(v: Any): Long = {
         case d: Double => d.toLong
         case f: Float => f.toLong
         case b: Boolean => if (b) 1L else 0L
+        case e: PytraEnumLike => e.value
         case s: String =>
             try s.toLong
             catch { case _: NumberFormatException => 0L }
@@ -117,10 +123,30 @@ def __pytra_float(v: Any): Double = {
     }
 }
 
+// repr-style: strings are quoted, booleans are True/False, collections use Python syntax.
+def __pytra_repr(v: Any): String = {
+    if (v == null) return "None"
+    v match {
+        case b: Boolean => if (b) "True" else "False"
+        case s: String => "'" + s.replace("\\", "\\\\").replace("'", "\\'") + "'"
+        case xs: mutable.ArrayBuffer[?] =>
+            "[" + xs.map(x => __pytra_repr(x.asInstanceOf[Any])).mkString(", ") + "]"
+        case m: mutable.LinkedHashMap[?, ?] =>
+            val entries = m.asInstanceOf[mutable.LinkedHashMap[Any, Any]]
+            "{" + entries.map(e => __pytra_repr(e._1) + ": " + __pytra_repr(e._2)).mkString(", ") + "}"
+        case _ => __pytra_str(v)
+    }
+}
+
 def __pytra_str(v: Any): String = {
     if (v == null) return "None"
     v match {
         case b: Boolean => if (b) "True" else "False"
+        case xs: mutable.ArrayBuffer[?] =>
+            "[" + xs.map(x => __pytra_repr(x.asInstanceOf[Any])).mkString(", ") + "]"
+        case m: mutable.LinkedHashMap[?, ?] =>
+            val entries = m.asInstanceOf[mutable.LinkedHashMap[Any, Any]]
+            "{" + entries.map(e => __pytra_repr(e._1) + ": " + __pytra_repr(e._2)).mkString(", ") + "}"
         case _ => v.toString
     }
 }
@@ -131,6 +157,7 @@ def __pytra_len(v: Any): Long = {
         case s: String => s.length.toLong
         case xs: scala.collection.Seq[?] => xs.size.toLong
         case m: scala.collection.Map[?, ?] => m.size.toLong
+        case s: scala.collection.Set[?] => s.size.toLong
         case _ => 0L
     }
 }
@@ -224,11 +251,53 @@ def __pytra_isalpha(v: Any): Boolean = {
     s.forall(_.isLetter)
 }
 
+def __pytra_strip(v: Any): String = __pytra_str(v).trim
+def __pytra_lstrip(v: Any): String = __pytra_str(v).replaceAll("^\\s+", "")
+def __pytra_rstrip(v: Any): String = __pytra_str(v).replaceAll("\\s+$", "")
+def __pytra_startswith(v: Any, prefix: Any): Boolean = __pytra_str(v).startsWith(__pytra_str(prefix))
+def __pytra_endswith(v: Any, suffix: Any): Boolean = __pytra_str(v).endsWith(__pytra_str(suffix))
+def __pytra_replace(v: Any, old: Any, newStr: Any): String = __pytra_str(v).replace(__pytra_str(old), __pytra_str(newStr))
+def __pytra_join(sep: Any, items: Any): String = {
+    val s = __pytra_str(sep)
+    val list = __pytra_as_list(items)
+    list.map(__pytra_str).mkString(s)
+}
+def __pytra_split(v: Any, sep: Any): mutable.ArrayBuffer[Any] = {
+    val s = __pytra_str(v)
+    val parts: Array[String] = if (sep == null || __pytra_str(sep) == "") s.split("\\s+") else s.split(java.util.regex.Pattern.quote(__pytra_str(sep)), -1)
+    val out = mutable.ArrayBuffer[Any]()
+    for (p <- parts) out.append(p)
+    out
+}
+def __pytra_upper(v: Any): String = __pytra_str(v).toUpperCase
+def __pytra_lower(v: Any): String = __pytra_str(v).toLowerCase
+def __pytra_find(v: Any, sub: Any): Long = __pytra_str(v).indexOf(__pytra_str(sub)).toLong
+def __pytra_count_substr(v: Any, sub: Any): Long = {
+    val s = __pytra_str(v)
+    val t = __pytra_str(sub)
+    if (t.isEmpty) return (s.length + 1).toLong
+    var count = 0L; var idx = 0
+    while ({ val i = s.indexOf(t, idx); i >= 0 && { count += 1L; idx = i + t.length; true } }) ()
+    count
+}
+
+def __pytra_reversed(v: Any): mutable.ArrayBuffer[Any] = {
+    val list = __pytra_as_list(v)
+    val out = mutable.ArrayBuffer[Any]()
+    var i = list.size - 1
+    while (i >= 0) { out.append(list(i)); i -= 1 }
+    out
+}
+
+def reversed(v: Any): mutable.ArrayBuffer[Any] = __pytra_reversed(v)
+
 def __pytra_contains(container: Any, value: Any): Boolean = {
     val needle = __pytra_str(value)
     container match {
         case s: String => s.contains(needle)
         case m: scala.collection.Map[?, ?] => m.asInstanceOf[scala.collection.Map[Any, Any]].contains(needle)
+        case s: scala.collection.Set[?] =>
+            s.exists(item => item == value || __pytra_str(item) == needle)
         case _ =>
             val list = __pytra_as_list(container)
             var i = 0
@@ -296,6 +365,13 @@ def __pytra_list_repeat(value: Any, count: Any): mutable.ArrayBuffer[Any] = {
     out
 }
 
+def __pytra_list_concat(a: Any, b: Any): mutable.ArrayBuffer[Any] = {
+    val out = mutable.ArrayBuffer[Any]()
+    out ++= __pytra_as_list(a)
+    out ++= __pytra_as_list(b)
+    out
+}
+
 def __pytra_enumerate(v: Any): mutable.ArrayBuffer[Any] = {
     val items = __pytra_as_list(v)
     val out = mutable.ArrayBuffer[Any]()
@@ -314,7 +390,27 @@ def __pytra_as_list(v: Any): mutable.ArrayBuffer[Any] = {
             val out = mutable.ArrayBuffer[Any]()
             for (item <- xs) out.append(item)
             out
+        case s: String =>
+            val out = mutable.ArrayBuffer[Any]()
+            var i = 0
+            while (i < s.length) { out.append(s.charAt(i).toString); i += 1 }
+            out
+        case s: scala.collection.Set[?] =>
+            val out = mutable.ArrayBuffer[Any]()
+            for (item <- s) out.append(item)
+            out
         case _ => mutable.ArrayBuffer[Any]()
+    }
+}
+
+def __pytra_as_set(v: Any): mutable.LinkedHashSet[Any] = {
+    v match {
+        case s: mutable.LinkedHashSet[?] => s.asInstanceOf[mutable.LinkedHashSet[Any]]
+        case s: scala.collection.Set[?] =>
+            val out = mutable.LinkedHashSet[Any]()
+            s.foreach(out.add)
+            out
+        case _ => mutable.LinkedHashSet[Any]()
     }
 }
 
@@ -334,6 +430,14 @@ def __pytra_as_dict(v: Any): mutable.LinkedHashMap[Any, Any] = {
 def __pytra_pop_last(v: mutable.ArrayBuffer[Any]): mutable.ArrayBuffer[Any] = {
     if (v.nonEmpty) v.remove(v.size - 1)
     v
+}
+
+def __pytra_type_name(v: Any): String = {
+    if (v == null) "NoneType"
+    else {
+        val n = v.getClass.getSimpleName
+        if (n == null || n.isEmpty) v.getClass.getName.split("\\.").last else n
+    }
 }
 
 def __pytra_print(args: Any*): Unit = {
@@ -368,6 +472,61 @@ def __pytra_max(a: Any, b: Any): Any = {
     }
     if (__pytra_is_float(a) || __pytra_is_float(b)) return bf
     __pytra_int(b)
+}
+
+def __pytra_dict_items(d: Any): mutable.ArrayBuffer[Any] = {
+    val m = __pytra_as_dict(d)
+    val out = mutable.ArrayBuffer[Any]()
+    m.foreach { case (k, v) => out.append(mutable.ArrayBuffer[Any](k, v)) }
+    out
+}
+
+def __pytra_dict_keys(d: Any): mutable.ArrayBuffer[Any] = {
+    val m = __pytra_as_dict(d)
+    val out = mutable.ArrayBuffer[Any]()
+    m.foreach { case (k, _) => out.append(k) }
+    out
+}
+
+def __pytra_dict_values(d: Any): mutable.ArrayBuffer[Any] = {
+    val m = __pytra_as_dict(d)
+    val out = mutable.ArrayBuffer[Any]()
+    m.foreach { case (_, v) => out.append(v) }
+    out
+}
+
+def __pytra_sum(xs: Any): Any = {
+    val lst = __pytra_as_list(xs)
+    var hasFloat = false
+    val iter = lst.iterator
+    while (iter.hasNext) {
+        val v = iter.next()
+        if (v.isInstanceOf[Double] || v.isInstanceOf[Float]) hasFloat = true
+    }
+    if (hasFloat) {
+        var acc: Double = 0.0
+        val iter2 = lst.iterator
+        while (iter2.hasNext) acc += __pytra_float(iter2.next())
+        acc
+    } else {
+        var acc: Long = 0L
+        val iter2 = lst.iterator
+        while (iter2.hasNext) acc += __pytra_int(iter2.next())
+        acc
+    }
+}
+
+def __pytra_zip(a: Any, b: Any): mutable.ArrayBuffer[Any] = {
+    val la = __pytra_as_list(a)
+    val lb = __pytra_as_list(b)
+    val n = la.size.min(lb.size)
+    val out = mutable.ArrayBuffer[Any]()
+    var i = 0
+    while (i < n) {
+        out.append(mutable.ArrayBuffer[Any](la(i), lb(i)))
+        i += 1
+    }
+    out
 }
 
 def __pytra_is_int(v: Any): Boolean = v.isInstanceOf[Long] || v.isInstanceOf[Int]
