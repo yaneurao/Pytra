@@ -482,8 +482,115 @@ def cmd_link(args: list[str]) -> int:
 # ---------------------------------------------------------------------------
 
 def cmd_emit(args: list[str]) -> int:
-    print("error: -emit is not yet implemented")
-    return 1
+    """emit サブコマンド: linked output → target code (暫定: 現行 toolchain/emit/ への橋渡し)"""
+    input_text = ""
+    output_dir_text = ""
+    target = "cpp"
+    emitter_options: dict[str, str] = {}
+
+    i = 0
+    while i < len(args):
+        tok = args[i]
+        if tok == "-o" or tok == "--output-dir":
+            if i + 1 >= len(args):
+                print("error: missing value for " + tok)
+                return 1
+            output_dir_text = args[i + 1]
+            i += 2
+            continue
+        if tok == "--target":
+            if i + 1 >= len(args):
+                print("error: missing value for --target")
+                return 1
+            target = args[i + 1]
+            i += 2
+            continue
+        if tok == "--emitter-option":
+            if i + 1 >= len(args):
+                print("error: missing value for --emitter-option")
+                return 1
+            eq = args[i + 1].find("=")
+            if eq > 0:
+                emitter_options[args[i + 1][:eq]] = args[i + 1][eq + 1:]
+            i += 2
+            continue
+        if tok == "-h" or tok == "--help":
+            print("usage: pytra-cli2 -emit MANIFEST_DIR [-o OUTPUT_DIR] [--target TARGET] [--emitter-option key=value]")
+            print("  MANIFEST_DIR: directory containing manifest.json + east3/ (output of -link)")
+            return 0
+        if not tok.startswith("-") and input_text == "":
+            input_text = tok
+        i += 1
+
+    if input_text == "":
+        print("error: input directory (containing manifest.json) is required")
+        return 1
+
+    manifest_path = Path(input_text) / "manifest.json"
+    if not manifest_path.exists():
+        # Maybe the input IS the manifest.json directly
+        if Path(input_text).name == "manifest.json" and Path(input_text).exists():
+            manifest_path = Path(input_text)
+        else:
+            print("error: manifest.json not found in: " + input_text)
+            return 1
+
+    if output_dir_text == "":
+        output_dir_text = "work/tmp/emit/" + target
+
+    if target != "cpp":
+        print("error: only --target=cpp is currently supported")
+        return 1
+
+    try:
+        from toolchain.link import load_linked_output_bundle
+        from toolchain.link import LinkedProgramModule
+        from toolchain.emit.cpp.emitter.multifile_writer import write_multi_file_cpp
+
+        manifest_doc, linked_modules = load_linked_output_bundle(manifest_path)
+        entry_modules_raw = manifest_doc.get("entry_modules", [])
+        entry_modules: list[str] = []
+        if isinstance(entry_modules_raw, (list, tuple)):
+            for item in entry_modules_raw:
+                if isinstance(item, str) and item != "":
+                    entry_modules.append(item)
+
+        # Build module_east_map and find entry_path (same logic as toolchain/emit/cpp.py)
+        module_east_map: dict[str, dict[str, object]] = {}
+        entry_path = Path("")
+        entry_set = set(entry_modules)
+        for module in linked_modules:
+            if module.module_id == "":
+                continue
+            mod_path = Path(module.source_path) if module.source_path != "" else Path(module.module_id + ".py")
+            module_east_map[str(mod_path)] = module.east_doc
+            if module.is_entry and module.module_id in entry_set:
+                entry_path = mod_path
+
+        if str(entry_path) == "":
+            print("error: linked C++ entry module not found")
+            return 1
+
+        write_multi_file_cpp(
+            entry_path,
+            module_east_map,
+            Path(output_dir_text),
+            negative_index_mode=emitter_options.get("negative_index_mode", "const_only"),
+            bounds_check_mode=emitter_options.get("bounds_check_mode", "off"),
+            floor_div_mode=emitter_options.get("floor_div_mode", "native"),
+            mod_mode=emitter_options.get("mod_mode", "native"),
+            int_width=emitter_options.get("int_width", "64"),
+            str_index_mode=emitter_options.get("str_index_mode", "native"),
+            str_slice_mode=emitter_options.get("str_slice_mode", "byte"),
+            opt_level=emitter_options.get("opt_level", "2"),
+            top_namespace="",
+            emit_main=True,
+        )
+        print("emitted: " + output_dir_text)
+        return 0
+    except Exception as e:
+        print("error: emit failed: " + str(e))
+        return 1
 
 
 # ---------------------------------------------------------------------------

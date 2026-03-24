@@ -173,7 +173,7 @@ EAST1 の `meta.extern_v2` を正本にすること。
 入力は link 段の出力（`manifest.json` + linked east3 群）。
 `toolchain2/` の新規 emitter は P1-EMIT で実装する。
 
-1. [ ] [ID: P0-EMIT-S1] `pytra-cli2 -emit --target=cpp` を暫定実装（現行 toolchain/emit/ への橋渡し）
+1. [x] [ID: P0-EMIT-S1] `pytra-cli2 -emit --target=cpp` を暫定実装（現行 toolchain/emit/ への橋渡し） — 完了
 2. [ ] [ID: P0-EMIT-S2] fixture + sample の parity テストが通る
 
 ### P0-BUILD: 一括実行
