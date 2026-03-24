@@ -226,6 +226,8 @@ def _resolve_expr(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
         return _resolve_setcomp(expr, ctx)
     if kind == "DictComp":
         return _resolve_dictcomp(expr, ctx)
+    if kind == "Lambda":
+        return _resolve_lambda(expr, ctx)
     if kind == "Starred":
         return _resolve_starred(expr, ctx)
     if kind == "Slice":
@@ -1299,6 +1301,47 @@ def _resolve_dictcomp(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     return result
 
 
+def _resolve_lambda(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    """Resolve a Lambda expression."""
+    # Build callable type string from arg types and return type
+    arg_types_raw = expr.get("arg_types")
+    ret_raw = expr.get("return_type")
+    arg_type_strs: list[str] = []
+    if isinstance(arg_types_raw, dict):
+        arg_order = expr.get("arg_order", [])
+        if isinstance(arg_order, list):
+            for a in arg_order:
+                if isinstance(a, str):
+                    at = arg_types_raw.get(a)
+                    arg_type_strs.append(normalize_type(str(at)) if isinstance(at, str) else "unknown")
+    ret: str = normalize_type(str(ret_raw)) if isinstance(ret_raw, str) else "unknown"
+
+    # Resolve body in lambda scope
+    lam_scope: Scope = ctx.scope.child()
+    if isinstance(arg_types_raw, dict):
+        for k, v in arg_types_raw.items():
+            if isinstance(v, str):
+                lam_scope.define(k, normalize_type(v))
+    old_scope: Scope = ctx.scope
+    ctx.scope = lam_scope
+    body = expr.get("body")
+    if isinstance(body, dict):
+        _resolve_expr(body, ctx)
+    elif isinstance(body, list):
+        for s in body:
+            if isinstance(s, dict):
+                _resolve_stmt(s, ctx)
+    ctx.scope = old_scope
+
+    # Build callable type
+    if len(arg_type_strs) > 0:
+        callable_type: str = "callable[" + ",".join(arg_type_strs) + "->" + ret + "]"
+    else:
+        callable_type = "callable[" + ret + "]"
+    expr["resolved_type"] = callable_type
+    return callable_type
+
+
 def _resolve_slice(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     """Resolve a Slice node (lower:upper:step)."""
     for key in ("lower", "upper", "step"):
@@ -1700,8 +1743,10 @@ def _resolve_ann_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
             target["resolved_type"] = ann_type
             target["type_expr"] = make_type_expr(ann_type)
     elif isinstance(target, dict) and target.get("kind") == "Attribute":
-        # self.field = ... — resolve the receiver (self)
+        # self.field = ... — resolve the receiver (self) and add type_expr
         _resolve_expr(target, ctx)
+        if ann_type != "unknown":
+            target["type_expr"] = make_type_expr(ann_type)
 
 
 def _resolve_aug_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
