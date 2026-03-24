@@ -992,18 +992,35 @@ class ExprParser:
         if tok.kind == "STR":
             self.advance()
             raw = tok.value
+            # Strip string prefix (r, b, f, rb, br, rf, fr)
+            is_raw = False
+            is_fstring = False
+            prefix_end = 0
+            while prefix_end < len(raw) and raw[prefix_end] in "rRbBfF":
+                if raw[prefix_end] in "rR":
+                    is_raw = True
+                if raw[prefix_end] in "fF":
+                    is_fstring = True
+                prefix_end += 1
+            stripped = raw[prefix_end:]
             # Evaluate string value
-            if raw.startswith('"""') or raw.startswith("'''"):
-                inner = raw[3:-3]
-            elif raw.startswith('"'):
-                inner = raw[1:-1]
-            elif raw.startswith("'"):
-                inner = raw[1:-1]
+            if stripped.startswith('"""') or stripped.startswith("'''"):
+                inner = stripped[3:-3]
+            elif stripped.startswith('"'):
+                inner = stripped[1:-1]
+            elif stripped.startswith("'"):
+                inner = stripped[1:-1]
             else:
-                inner = raw
-            # Basic escape handling
-            val_s = _unescape_string(inner)
-            base = self._base(tok.start, tok.end, "str", "value")
+                inner = stripped
+            # Escape handling (raw strings don't process escapes)
+            if is_raw:
+                val_s = inner
+            else:
+                val_s = _unescape_string(inner)
+            res_type = "str"
+            if prefix_end > 0 and raw[0] in "bB":
+                res_type = "bytes"
+            base = self._base(tok.start, tok.end, res_type, "value")
             return Constant(base=base, value=val_s)
 
         # Name / keyword literals
@@ -1518,6 +1535,7 @@ def _parse_module_body(
     leading_file_trivia_done = False
     pending_dataclass = False
     skip_next_blanks = False  # import/def/class 直後の空行を蓄積しないためのフラグ
+    first_nonimport_done = False  # 最初の non-import body item かどうか
 
     while ln_no < total:
         ln = lines[ln_no]
@@ -1682,6 +1700,7 @@ def _parse_module_body(
         if fn_name != "":
             fn_stmt, ln_no = _parse_function_def(ctx, lines, ln_no, fn_name, pending_trivia, pending_comments)
             body_items.append(fn_stmt)
+            first_nonimport_done = True
             pending_trivia = []
             pending_comments = []
             skip_next_blanks = True
@@ -1690,7 +1709,9 @@ def _parse_module_body(
         # Class def
         cls_name = _parse_class_name(s_clean)
         if cls_name != "":
-            cls_stmt, ln_no = _parse_class_def(ctx, lines, ln_no, cls_name, pending_trivia, pending_comments, is_dataclass=pending_dataclass)
+            force_cls_leading = not first_nonimport_done
+            cls_stmt, ln_no = _parse_class_def(ctx, lines, ln_no, cls_name, pending_trivia, pending_comments, is_dataclass=pending_dataclass, force_leading=force_cls_leading)
+            first_nonimport_done = True
             pending_dataclass = False
             body_items.append(cls_stmt)
             pending_trivia = []
@@ -1857,6 +1878,7 @@ def _parse_class_def(
     trivia: list[TriviaNode],
     comments: list[str],
     is_dataclass: bool = False,
+    force_leading: bool = True,
 ) -> tuple[ClassDef, int]:
     """クラス定義をパースする。"""
     # Check for base class: class Name(Base):
@@ -1893,9 +1915,10 @@ def _parse_class_def(
         field_types=field_types,
         class_storage_hint=_infer_class_storage_hint(is_dataclass, base_name, field_types, body_stmts),
     )
-    # ClassDef: leading を出力 (空でも最初のクラスは出力)
-    cd.leading_comments = list(comments)
-    cd.leading_trivia = list(trivia)
+    # ClassDef: 最初の body item は常に出力、2番目以降は trivia がある場合のみ
+    if force_leading or len(comments) > 0 or len(trivia) > 0:
+        cd.leading_comments = list(comments)
+        cd.leading_trivia = list(trivia)
 
     return cd, end_ln
 
@@ -2000,16 +2023,16 @@ def _infer_class_storage_hint(is_dataclass: bool, base: Optional[str], field_typ
         return "ref"
     # __init__ メソッドがある → ref (instance state がある)
     has_init = False
-    has_instance_fields = len(field_types) > 0
     for stmt in body:
         if isinstance(stmt, FunctionDef) and stmt.name == "__init__":
             has_init = True
-    if has_init or has_instance_fields:
+    if has_init:
         return "ref"
-    # dataclass with fields → ref (not value, golden shows ref for Point99)
+    # dataclass → ref
     if is_dataclass:
         return "ref"
-    # 空のクラスやメソッドのみ → value
+    # class-level AnnAssign (static field) のみ → value
+    # instance field は __init__ 内の self.x = ... で検出
     return "value"
 
 
@@ -2320,7 +2343,7 @@ def _parse_block_lines(
                 target=target,
                 op=op_map.get(op_text, op_text),
                 value=value,
-                decl_type=_get_resolved_type(target),
+                decl_type=_get_resolved_type(target) if _get_resolved_type(target) != "unknown" else None,
                 declare=False,
             )
             stmts.append(aug_stmt)
