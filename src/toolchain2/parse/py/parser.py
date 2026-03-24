@@ -1476,7 +1476,7 @@ def _parse_function_def(
 
     # Parse body with arg types in scope
     name_types: dict[str, str] = dict(arg_types)
-    body_stmts = _parse_block_lines(ctx, block_lines, name_types, fn_name)
+    body_stmts = _parse_block_lines(ctx, block_lines, name_types, fn_name, start_hint=start_ln)
 
 
     # Extract docstring
@@ -1545,7 +1545,7 @@ def _parse_class_def(
                 base_name = None
     block_lines, end_ln = _collect_block(lines, start_ln + 1, 0)
     name_types: dict[str, str] = {}
-    body_stmts = _parse_block_lines(ctx, block_lines, name_types, cls_name)
+    body_stmts = _parse_block_lines(ctx, block_lines, name_types, cls_name, start_hint=start_ln)
 
     # Collect field types from annotated assignments
     field_types: dict[str, str] = {}
@@ -1761,13 +1761,14 @@ def _parse_block_lines(
     block_lines: list[str],
     name_types: dict[str, str],
     scope_label: str,
+    start_hint: int = 0,
 ) -> list[Stmt]:
     """インデントされたブロック内の文をパースする。"""
     block_lines = _merge_logical_lines(block_lines)
     stmts: list[Stmt] = []
     i = 0
     total = len(block_lines)
-    last_abs_ln = 0  # hint for _find_abs_line
+    last_abs_ln = start_hint  # hint for _find_abs_line
     pending_trivia: list[TriviaNode] = []
     pending_comments: list[str] = []
     pending_decorators: list[str] = []
