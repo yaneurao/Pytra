@@ -1536,6 +1536,7 @@ def _parse_module_body(
             # Skip typing / __future__ / dataclasses imports
             if mod == "typing" or mod == "__future__" or mod == "dataclasses":
                 ln_no += 1
+                after_last_import = True
                 continue
             span = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
             stmt = ImportFrom(source_span=span, module=mod, names=aliases, level=0)
