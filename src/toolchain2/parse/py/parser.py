@@ -397,11 +397,9 @@ class ExprParser:
         start = tok.start
         # Parse parameter list until ':'
         params: list[str] = []
-        arg_types: dict[str, str] = {}
         while self.peek().value != ":" and self.peek().kind != "EOF":
             if self.peek().kind == "NAME":
                 pname = self.advance().value
-                arg_types[pname] = "unknown"
                 params.append(pname)
             elif self.peek().value == ",":
                 self.advance()
@@ -424,7 +422,7 @@ class ExprParser:
         body = self._parse_ternary()
         end = self._child_local_end(body)
         base = self._base(start, end)
-        return LambdaExpr(base=base, args=params, arg_types=arg_types, body=body, return_type="unknown")
+        return LambdaExpr(base=base, args=params, body=body, return_type="unknown")
 
     def _parse_ternary(self) -> Expr:
         """a if cond else b"""
@@ -1820,6 +1818,8 @@ def _parse_block_lines(
             expr = _parse_expr_text(ctx, expr_text, abs_ln, expr_col, name_types)
             span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
             ret_stmt = Return(source_span=span, value=expr)
+            if len(pending_comments) > 0:
+                ret_stmt.leading_comments = list(pending_comments)
             if len(pending_trivia) > 0:
                 ret_stmt.leading_trivia = list(pending_trivia)
             stmts.append(ret_stmt)

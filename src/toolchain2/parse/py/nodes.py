@@ -320,14 +320,12 @@ class ListComp:
 class LambdaExpr:
     base: ExprBase
     args: list[str]
-    arg_types: dict[str, str]
     body: Expr
     return_type: str
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "Lambda"}
         d.update(_expr_base_jv(self.base))
-        d["args"] = list(self.args)
-        d["arg_types"] = dict(self.arg_types)
+        d["args"] = [{"kind": "arg", "arg": a, "annotation": None} for a in self.args]
         d["body"] = expr_to_jv(self.body)
         d["return_type"] = self.return_type
         return d
@@ -464,9 +462,12 @@ class Return:
     source_span: SourceSpan
     value: Expr
     leading_trivia: Optional[list[TriviaNode]] = None
+    leading_comments: Optional[list[str]] = None
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": K.RETURN, "source_span": self.source_span.to_jv(),
                                   "value": expr_to_jv(self.value)}
+        if self.leading_comments is not None:
+            d["leading_comments"] = list(self.leading_comments)
         if self.leading_trivia is not None:
             d["leading_trivia"] = [t.to_jv() for t in self.leading_trivia]
         return d
