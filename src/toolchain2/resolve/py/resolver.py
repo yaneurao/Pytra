@@ -929,14 +929,26 @@ def _resolve_attribute(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
             expr["resolved_type"] = t
             return t
 
-    # Class field access
+    # Class field access — check field_types from ClassDef (parse が収集済み)
     owner_base: str = extract_base_type(receiver_type)
-    cls: ClassSig | None = ctx.lookup_class(owner_base)
-    if cls is not None and attr in cls.fields:
-        ft: str = cls.fields[attr]
-        ft_resolved: str = _substitute_type_params(ft, receiver_type, cls)
+
+    # Look up in module classes first (field_types from EAST1)
+    cls_sig: ClassSig | None = ctx.module_classes.get(owner_base)
+    if cls_sig is None:
+        cls_sig = ctx.module_classes.get(receiver_type)
+    if cls_sig is not None and attr in cls_sig.fields:
+        ft: str = cls_sig.fields[attr]
+        ft_resolved: str = normalize_type(ft)
         expr["resolved_type"] = ft_resolved
         return ft_resolved
+
+    # Fall back to builtin registry classes
+    cls2: ClassSig | None = ctx.registry.classes.get(owner_base)
+    if cls2 is not None and attr in cls2.fields:
+        ft2: str = cls2.fields[attr]
+        ft2_resolved: str = _substitute_type_params(ft2, receiver_type, cls2)
+        expr["resolved_type"] = normalize_type(ft2_resolved)
+        return normalize_type(ft2_resolved)
 
     expr["resolved_type"] = "unknown"
     return "unknown"
@@ -1388,11 +1400,13 @@ def _resolve_class_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
 
     # Add class_storage_hint if not present
     if "class_storage_hint" not in stmt:
-        # Classes with base class or @dataclass use "ref", others use "value"
         base_val = stmt.get("base")
         has_base: bool = base_val is not None and isinstance(base_val, str) and base_val != ""
         is_dataclass: bool = stmt.get("dataclass") is True
-        stmt["class_storage_hint"] = "ref" if (has_base or is_dataclass) else "value"
+        ft = stmt.get("field_types")
+        has_fields: bool = isinstance(ft, dict) and len(ft) > 0
+        # Classes with base, @dataclass, or mutable fields use "ref"
+        stmt["class_storage_hint"] = "ref" if (has_base or is_dataclass or has_fields) else "value"
 
     # Normalize field_types
     ft_raw = stmt.get("field_types")
@@ -1467,13 +1481,18 @@ def _resolve_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
             else:
                 _resolve_expr(target, ctx)
 
-    # Add decl_type and declare_init if applicable
-    if vt != "unknown":
-        if "decl_type" not in stmt:
-            stmt["decl_type"] = vt
+    # Add decl_type only for declarations (declare=true)
     declare_val = stmt.get("declare")
-    if declare_val is True and isinstance(value, dict):
-        stmt["declare_init"] = True
+    if declare_val is True:
+        if vt != "unknown":
+            stmt["decl_type"] = vt
+        if isinstance(value, dict):
+            stmt["declare_init"] = True
+    elif declare_val is False:
+        # Re-assignment: decl_type should be null if present
+        if "decl_type" in stmt:
+            pass  # preserve existing
+        # Don't add decl_type for non-declarations
 
 
 def _resolve_ann_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
@@ -2048,6 +2067,12 @@ def _extract_class_sig_for_prescan(node: dict[str, JsonVal]) -> ClassSig:
                     ann = item.get("annotation")
                     if isinstance(fld_name, str) and isinstance(ann, str):
                         fields[fld_name] = normalize_type(ann)
+    # Also extract from field_types (top-level ClassDef field from parse)
+    ft_raw = node.get("field_types")
+    if isinstance(ft_raw, dict):
+        for fk, fv in ft_raw.items():
+            if isinstance(fk, str) and isinstance(fv, str) and fk not in fields:
+                fields[fk] = normalize_type(fv)
     return ClassSig(name=name, bases=bases, methods=methods, fields=fields)
 
 
