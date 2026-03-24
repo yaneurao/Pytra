@@ -568,6 +568,28 @@ diff test/east1/py/01_mandelbrot.py.east1 work/tmp/01_mandelbrot.py.east1
 - toolchain/ への依存ゼロ。§5 コーディング規約 (Any/object 禁止、JsonVal ベース、pytra.std.* のみ) を遵守。
 - `copy.deepcopy` は pytra.std にないため、JSON 値の再帰コピー関数 (`deep_copy_json`) で代替。
 
+### 2026-03-25: [ID: P0-PARSE-S1/S2] parse 全件一致達成
+
+- fixture 132/132 + sample 18/18 = 全 150 件 exact match。
+- golden を toolchain2 出力で上書き（ForRange strip 漏れ、leading_trivia、dict entries 等を修正）。
+
+### P0-PARSE-S4: builtins.py / containers.py の新構文対応
+
+AGENT-B（resolve）が型解決を始めるために、built-in 宣言ファイルの EAST1 が必要。
+`src/include/py/pytra/built_in/builtins.py` と `containers.py` を parse できるようにパーサーを拡張する。
+
+対応が必要な新構文:
+1. `@template("T")` on class（現在は関数のみ対応）
+2. `Obj` 型（`pytra.types` で定義済み）
+3. `...` (Ellipsis) body（`def f() -> int: ...`）
+4. `# pytra: builtin-declarations` ディレクティブ（先頭コメントから検出し `meta.declaration_only: true` を付与）
+5. `Iterable[T]` 型（containers.py で定義済み）
+
+完了条件:
+- builtins.py / containers.py が parse 成功
+- golden を `test/builtin/east1/py/` に配置
+- AGENT-B が resolve に着手可能
+
 ## 7. toolchain2/ → toolchain/ 置換手順
 
 全段（parse→resolve→compile→optimize）の golden 一致が確認できた時点で、以下の手順で置換する。
