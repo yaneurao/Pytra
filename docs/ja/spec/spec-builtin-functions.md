@@ -297,9 +297,8 @@ class set:
 ```python
 # pytra: builtin-declarations
 
-@extern
-def len(x: Obj) -> int:
-    return x.__len__()
+@extern_fn(module="pytra.core.py_runtime", symbol="len", tag="core.len")
+def len(x: Obj) -> int: ...
 ```
 
 各言語のコメント記法で書くが、ディレクティブ文字列は共通:
@@ -322,9 +321,8 @@ def len(x: Obj) -> int:
 ```python
 # pytra: builtin-declarations
 
-@extern
-def my_native_sqrt(x: float) -> float:
-    pass  # 実装は各言語の runtime に手書き
+@extern_fn(module="my_game.physics", symbol="apply_gravity", tag="user.physics.gravity")
+def apply_gravity(x: float, y: float, dt: float) -> float: ...
 ```
 
 ## 8. ファイル配置
@@ -361,63 +359,70 @@ print([1, "hello", 3.14])    # 型: list[Obj]
 print([ObjBox(1), "hello", ObjBox(3.14)])  # POD を boxing
 ```
 
-## 10. `@extern` decorator への runtime 情報集約（将来）
+## 10. v2 extern: `extern_fn` / `extern_var` / `extern_class`
 
-現状は `builtin_registry.py` にハードコードテーブル（`_BUILTIN_SEMANTIC_TAGS`, `_BUILTIN_RUNTIME_MODULES`, `_BUILTIN_RUNTIME_SYMBOLS`, `_BUILTIN_RUNTIME_CALLS`）で runtime 情報を管理している。
+v2 では `@extern` を用途別に 3 つに分離し、`module` / `symbol` / `tag` を必須引数とする。
 
-将来、これらを `@extern` decorator の引数として宣言ファイルに集約し、ハードコードテーブルをゼロにする。
+### 10.1 `extern_fn` — 外部関数宣言
 
 ```python
-# pytra: builtin-declarations
-
-@extern(module="pytra.built_in.io_ops", symbol="py_print", tag="core.print")
+@extern_fn(module="pytra.built_in.io_ops", symbol="py_print", tag="core.print")
 def print(*args: Obj) -> None: ...
 
-@extern(module="pytra.core.py_runtime", symbol="len", tag="core.len")
-def len(x: Obj) -> int: ...
-
-@extern(module="pytra.std.math", symbol="sqrt", tag="stdlib.method.sqrt")
+@extern_fn(module="pytra.std.math", symbol="sqrt", tag="stdlib.method.sqrt")
 def sqrt(x: float) -> float: ...
 ```
 
-| 引数 | 意味 |
-|---|---|
-| `module` | この関数の実装がある runtime モジュール（言語非依存） |
-| `symbol` | runtime モジュール内での実際の関数名 |
-| `tag` | resolve が EAST2 に付与する semantic_tag（emitter が意味を識別するキー） |
-
-処理の流れ:
-1. **parse**: `@extern(module=..., symbol=..., tag=...)` を読み、EAST1 の FunctionDef.meta に格納
-2. **resolve**: meta から tag/module/symbol を取り、EAST2 ノードに `semantic_tag` / `runtime_module_id` / `runtime_symbol` を付与
-3. **emitter**: 解決済み属性を見て各言語に写像するだけ
-
-### 変数 extern
-
-変数 extern も同じ引数で runtime 情報を指定する。
+### 10.2 `extern_var` — 外部変数宣言
 
 ```python
-pi: float = extern(module="pytra.std.math", symbol="pi", tag="stdlib.symbol.pi")
-MAX_SIZE: int = extern(module="my_game.config", symbol="MAX_SIZE", tag="user.config.max_size")
+pi: float = extern_var(module="pytra.std.math", symbol="pi", tag="stdlib.symbol.pi")
+argv: list[str] = extern_var(module="pytra.std.sys", symbol="argv", tag="stdlib.symbol.argv")
 ```
 
-### 必須性
+### 10.3 `extern_class` — 外部クラス宣言
+
+```python
+@extern_class(module="pytra.std.pathlib", symbol="Path", tag="stdlib.class.Path")
+class Path:
+    def read_text(self, encoding: str = "utf-8") -> str: ...
+    def write_text(self, text: str, encoding: str = "utf-8") -> int: ...
+```
+
+### 10.4 引数
+
+| 引数 | 意味 | 必須 |
+|---|---|---|
+| `module` | 実装がある runtime モジュール（言語非依存） | 必須 |
+| `symbol` | runtime モジュール内での名前 | 必須 |
+| `tag` | resolve が EAST2 に付与する semantic_tag | 必須 |
+
+### 10.5 処理の流れ
+
+1. **parse**: `extern_fn` / `extern_var` / `extern_class` の引数を読み、EAST1 の meta に `extern_v2: {module, symbol, tag}` として格納
+2. **resolve**: meta から module/symbol/tag を取り、EAST2 ノードに `runtime_module_id` / `runtime_symbol` / `semantic_tag` を付与
+3. **emitter**: 解決済み属性を見て各言語に写像するだけ
+
+### 10.6 必須性
 
 v2 では `module`, `symbol`, `tag` を **全て必須** とする。理由:
 - 省略すると resolve がハードコードや推測に頼ることになり、§5.7（ハードコードテーブル禁止）に反する
 - 明示的に書くことで、宣言ファイルだけ読めば runtime 配置が完全に分かる
-- emitter が `@extern` を見て「module/symbol がないから何もできない」という状態を防ぐ
+- emitter が extern を見て「module/symbol がないから何もできない」という状態を防ぐ
 
-v1（引数なし `@extern`）からの移行:
-- v1 の `@extern` は引き続き受理するが、新規コードでは v2 を推奨
+### 10.7 v1 との関係
+
+- v1（`@extern` 引数なし）は現行 `src/pytra/std/` で引き続き使用
+- v2（`extern_fn` / `extern_var` / `extern_class`）は `src/include/py/pytra/` で使用
 - `toolchain2/` のコードでは v2 を必須とする
 
-### メリット
+### 10.8 メリット
 
-- ハードコードテーブルが不要になる
-- built-in の追加・変更が宣言ファイルの編集だけで完結
-- ユーザー定義の `@extern` も同じ仕組みで runtime 情報を指定可能
+- ハードコードテーブルが不要になる（`builtin_registry.py` の 4 テーブルを除去可能）
+- built-in / stdlib の追加・変更が宣言ファイルの編集だけで完結
+- ユーザーも同じ仕組みで独自の extern を定義可能
 - runtime 情報が宣言ファイルに 1 箇所で集約され、全 emitter で共有される
-- 関数 extern も変数 extern も同じ引数体系で統一される
+- 用途別に分離することで Pylance の型チェックが正しく動く
 
 ## 11. 未決事項
 

@@ -16,25 +16,39 @@ def sin(x: float) -> float:
     ...
 ```
 
-### 将来: runtime 情報の指定（v2）
+### v2 extern: `extern_fn` / `extern_var` / `extern_class`
 
-将来的に `@extern` の引数で runtime の配置情報を指定できるようになります。
-これにより、ユーザーが独自のネイティブ関数を宣言し、全 backend から呼び出せるようになります。
+新パイプライン（toolchain2）では `@extern` を用途別に分離し、runtime 情報を必須で指定します。
 
 ```python
 # pytra: builtin-declarations
 
-@extern(module="my_game.physics", symbol="apply_gravity", tag="user.physics.gravity")
+# 関数
+@extern_fn(module="my_game.physics", symbol="apply_gravity", tag="user.physics.gravity")
 def apply_gravity(x: float, y: float, dt: float) -> float: ...
+
+# 変数
+gravity: float = extern_var(module="my_game.physics", symbol="GRAVITY", tag="user.physics.const_gravity")
+
+# クラス
+@extern_class(module="my_game.entity", symbol="Player", tag="user.entity.player")
+class Player:
+    def move(self, dx: float, dy: float) -> None: ...
 ```
+
+| 関数 | 用途 |
+|---|---|
+| `extern_fn` | 外部関数宣言（decorator） |
+| `extern_var` | 外部変数宣言 |
+| `extern_class` | 外部クラス宣言（decorator） |
 
 | 引数 | 意味 |
 |---|---|
 | `module` | 実装がある runtime モジュール（言語非依存） |
-| `symbol` | runtime モジュール内での関数名 |
+| `symbol` | runtime モジュール内での名前 |
 | `tag` | semantic_tag（emitter が意味を識別するキー） |
 
-詳細は [spec-builtin-functions.md §10](../spec/spec-builtin-functions.md) を参照してください。
+全引数が必須です。詳細は [spec-builtin-functions.md §10](../spec/spec-builtin-functions.md) を参照。
 
 ## 変数 extern
 

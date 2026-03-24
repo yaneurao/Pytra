@@ -86,7 +86,7 @@ def extern(fn):
 ```
 
 - 現行（v1）では `@extern(...)` のような引数付きデコレータはサポートしない。
-- 将来（v2）では `@extern(module=..., symbol=..., tag=...)` で runtime 情報を指定可能にする予定。詳細は [spec-builtin-functions.md §10](./spec-builtin-functions.md#10-extern-decorator-への-runtime-情報集約将来) を参照。
+- v2 では `extern_fn` / `extern_var` / `extern_class` に分離し、`module` / `symbol` / `tag` を必須引数とする。詳細は [spec-builtin-functions.md §10](./spec-builtin-functions.md) を参照。
 - 変数に対する extern マーカーは `name = extern(...)` 形式で表す。
 - `name: Any = extern()` は「同名 ambient global 変数宣言」として扱う。
 - `name: Any = extern("symbol")` は「別名 ambient global 変数宣言」として扱う。
