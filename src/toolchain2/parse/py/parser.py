@@ -2235,6 +2235,38 @@ def _parse_block_lines(
             pending_comments = []
             continue
 
+        # Annotation-only: x: Type (no value)
+        ann_only = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\s*:\s*(.+)$", s_clean)
+        if ann_only is not None:
+            ann_var = re.strip_group(ann_only, 1)
+            ann_type = re.strip_group(ann_only, 2)
+            # Ensure it's not a dict/slice by checking no '=' follows
+            if "=" not in ann_type:
+                resolved = _resolve_type(ann_type, ctx)
+                name_types[ann_var] = resolved
+                target = _make_name_expr(ann_var, resolved, abs_ln, indent, ctx)
+                type_expr_node = _make_type_expr(resolved, ctx)
+                span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+                ann_stmt = AnnAssign(
+                    source_span=span,
+                    target=target,
+                    annotation=resolved,
+                    annotation_type_expr=type_expr_node,
+                    value=None,
+                    decl_type=resolved,
+                    decl_type_expr=type_expr_node,
+                    declare=True,
+                )
+                if len(pending_trivia) > 0:
+                    ann_stmt.leading_trivia = list(pending_trivia)
+                if len(pending_comments) > 0:
+                    ann_stmt.leading_comments = list(pending_comments)
+                stmts.append(ann_stmt)
+                i += 1
+                pending_trivia = []
+                pending_comments = []
+                continue
+
         # Augmented assignment: x += value
         target_text, op_text, value_text = _parse_aug_assign(s_clean)
         if target_text != "":
