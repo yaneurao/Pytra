@@ -7,7 +7,22 @@
 
 Python の built-in 関数（`len`, `str`, `print` 等）の型情報を、ハードコードテーブルではなく `.py` ファイルの宣言として提供する。resolve 段がこの宣言の EAST1 を読んで型解決する。
 
-## 2. 設計方針: dunder メソッド委譲
+## 2. 型の二分類: POD と Obj
+
+Pytra の全ての値は POD（プリミティブ値型）か Obj（参照型）のいずれかに分類される。
+
+- **POD**: `None`, `bool`, `int8`〜`int64`, `uint8`〜`uint64`, `float32`, `float64`, `str`
+  - immutable。メソッドを持たない（`str` は例外で一部メソッドを持つ）。
+  - コピーは値のコピー。
+- **Obj**: `list[T]`, `dict[K,V]`, `set[T]`, `tuple[T,...]`, `Path`, ユーザー定義クラス
+  - dunder メソッド（`__len__`, `__str__` 等）を持ちうる。
+  - 参照セマンティクス。
+
+`Obj` は言語非依存の概念であり、Python 固有ではない。`pytra/types.py` に `POD` と `Obj` を定義する。
+
+resolve は built-in 関数の引数型が `Obj` の場合、実引数の具象型に該当の dunder メソッドがあるかを静的にチェックし、なければ `semantic_conflict` で拒否する。
+
+## 3. 設計方針: dunder メソッド委譲
 
 Python の built-in 関数の多くは、オブジェクトの dunder メソッドへの委譲として定義される。
 
@@ -32,31 +47,31 @@ next(x)    →  x.__next__()
 ### 3.1 dunder 委譲型（オブジェクトの dunder を呼ぶ）
 
 ```python
-def len(x: object) -> int:
+def len(x: Obj) -> int:
     return x.__len__()
 
-def str(x: object) -> str:
+def str(x: Obj) -> str:
     return x.__str__()
 
-def bool(x: object) -> bool:
+def bool(x: Obj) -> bool:
     return x.__bool__()
 
-def int(x: object) -> int:
+def int(x: Obj) -> int:
     return x.__int__()
 
-def float(x: object) -> float:
+def float(x: Obj) -> float:
     return x.__float__()
 
-def repr(x: object) -> str:
+def repr(x: Obj) -> str:
     return x.__repr__()
 ```
 
 ### 3.2 スタンドアロン型（dunder に委譲しない）
 
 ```python
-def print(*args: object) -> None: ...
+def print(*args: Obj) -> None: ...
 
-def isinstance(x: object, t: type) -> bool: ...
+def isinstance(x: Obj, t: type) -> bool: ...
 
 def issubclass(cls: type, parent: type) -> bool: ...
 
@@ -208,7 +223,7 @@ src/pytra/built_in/
 
 ## 8. 未決事項
 
-- `object` を引数型にしてよいか（§5.1 で `object` 禁止だが、built-in 宣言では多態性が必要）
+- ~~`object` を引数型にしてよいか~~ → `Obj` 型で解決。`object` は使わない。
 - ジェネリック型パラメータ `T` の表現（`@template` を使うか、型変数宣言を使うか）
 - `print` の可変長引数 `*args` の扱い（Pytra で `*args` がサポートされるか）
 - `range` のオーバーロード（引数 1/2/3 の区別をどう宣言するか）
