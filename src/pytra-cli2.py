@@ -288,12 +288,90 @@ def cmd_compile(args: list[str]) -> int:
 
 
 # ---------------------------------------------------------------------------
-# optimize: *.east3 → *.east3 (未実装)
+# optimize: *.east3 → *.east3
 # ---------------------------------------------------------------------------
 
+def _optimize_one(input_path: Path, output_path: Path | None, pretty: bool) -> int:
+    """1 ファイルを optimize して .east3 を生成する。"""
+    if not input_path.exists():
+        print("error: file not found: " + str(input_path))
+        return 1
+
+    from toolchain2.optimize.optimizer import optimize_east3_document
+
+    try:
+        east3_text = input_path.read_text(encoding="utf-8")
+        east3_doc = json.loads(east3_text).raw
+        if not isinstance(east3_doc, dict):
+            print("error: invalid east3 document: " + str(input_path))
+            return 1
+    except Exception as e:
+        print("error: failed to read east3: " + str(input_path) + ": " + str(e))
+        return 1
+
+    try:
+        east3_doc, _report = optimize_east3_document(east3_doc, opt_level=1)
+    except Exception as e:
+        print("error: optimize failed: " + str(input_path) + ": " + str(e))
+        return 1
+
+    if output_path is None:
+        output_path = input_path
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    indent = 2 if pretty else None
+    output_path.write_text(
+        json.dumps(east3_doc, ensure_ascii=False, indent=indent) + "\n",
+        encoding="utf-8",
+    )
+    print("optimized: " + str(output_path))
+    return 0
+
+
 def cmd_optimize(args: list[str]) -> int:
-    print("error: -optimize is not yet implemented")
-    return 1
+    """optimize サブコマンド: *.east3 → *.east3"""
+    inputs: list[str] = []
+    output_text = ""
+    pretty = False
+
+    i = 0
+    while i < len(args):
+        tok = args[i]
+        if tok == "-o" or tok == "--output":
+            if i + 1 >= len(args):
+                print("error: missing value for " + tok)
+                return 1
+            output_text = args[i + 1]
+            i += 2
+            continue
+        if tok == "--pretty":
+            pretty = True
+            i += 1
+            continue
+        if tok == "-h" or tok == "--help":
+            print("usage: pytra-cli2 -optimize INPUT.east3 [-o OUTPUT.east3] [--pretty]")
+            print("       pytra-cli2 -optimize INPUT1.east3 INPUT2.east3 ...  (multiple files)")
+            return 0
+        if not tok.startswith("-"):
+            inputs.append(tok)
+        i += 1
+
+    if len(inputs) == 0:
+        print("error: at least one input file is required")
+        return 1
+
+    if output_text != "" and len(inputs) > 1:
+        print("error: -o cannot be used with multiple input files")
+        return 1
+
+    exit_code = 0
+    for inp in inputs:
+        input_path = Path(inp)
+        out = Path(output_text) if output_text != "" else None
+        rc = _optimize_one(input_path, out, pretty)
+        if rc != 0:
+            exit_code = rc
+    return exit_code
 
 
 # ---------------------------------------------------------------------------

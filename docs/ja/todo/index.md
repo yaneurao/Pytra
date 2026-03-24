@@ -74,9 +74,9 @@
 入力: `test/fixture/east3/*.east3`, `test/sample/east3/*.east3`
 正解: `test/fixture/east3-opt/`, `test/sample/east3-opt/`
 
-1. [ ] [ID: P0-OPTIMIZE-S1] whole-program 最適化を実装し、fixture 132 件の .east3 が golden と一致する
-2. [ ] [ID: P0-OPTIMIZE-S2] sample 18 件の .east3 が golden と一致する
-3. [ ] [ID: P0-OPTIMIZE-S3] `pytra-cli2 -optimize` を実装する
+1. [x] [ID: P0-OPTIMIZE-S1] whole-program 最適化を実装し、fixture 132 件の .east3 が golden と一致する — 完了
+2. [x] [ID: P0-OPTIMIZE-S2] sample 18 件の .east3 が golden と一致する — 完了
+3. [x] [ID: P0-OPTIMIZE-S3] `pytra-cli2 -optimize` を実装する — 完了
 
 ### P0-EMIT: east3 → target (Agent E 以降)
 

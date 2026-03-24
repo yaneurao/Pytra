@@ -487,6 +487,16 @@ diff test/east1/py/01_mandelbrot.py.east1 work/tmp/01_mandelbrot.py.east1
 - `pytra-cli2 -compile` サブコマンドを実装。
 - toolchain/ への依存ゼロ。§5 コーディング規約 (Any/object 禁止、JsonVal ベース) を遵守。
 
+### 2026-03-24: [ID: P0-OPTIMIZE-S1/S2/S3] optimize (east3→east3) 実装完了
+
+- `toolchain2/optimize/` に EAST3 optimizer を実装。
+- ファイル構成: `optimizer.py` (PassContext/PassResult/PassManager フレームワーク)、`utils.py` (共有ユーティリティ)、`passes/` (15 パスを個別ファイルに分離)。
+- toolchain/ の全 15 ローカルパスを toolchain2/ へ移植: NoOpCastCleanup, LiteralCastFold, IdentityPyToElision, NumericCastChainReduction, RangeForCanonicalization, ExpressionNormalization, EmptyInitShorthand, SafeReserveHint, TypedEnumerateNormalization, TypedRepeatMaterialization, DictStrKeyNormalization, TupleTargetDirectExpansion, LifetimeAnalysis, UnusedLoopVarElision, StrengthReductionFloatLoop。
+- fixture 132 件・sample 18 件の全 150 件が golden と完全一致を確認。
+- `pytra-cli2 -optimize` サブコマンドを実装。
+- toolchain/ への依存ゼロ。§5 コーディング規約 (Any/object 禁止、JsonVal ベース、pytra.std.* のみ) を遵守。
+- `copy.deepcopy` は pytra.std にないため、JSON 値の再帰コピー関数 (`deep_copy_json`) で代替。
+
 ## 7. 未決事項
 
 - `--from=python` 以外の frontend が現実的に必要になる時期
