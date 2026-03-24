@@ -40,19 +40,28 @@ class Path {
 
   bool exists() => File(_value).existsSync() || Directory(_value).existsSync();
 
-  void mkdir([bool existOk = false]) {
+  void mkdir([bool parents = false, bool existOk = false]) {
     try {
-      Directory(_value).createSync(recursive: false);
+      Directory(_value).createSync(recursive: parents);
     } catch (e) {
       if (!existOk) rethrow;
     }
+  }
+
+  Path joinpath(String first, [List<dynamic> rest = const []]) {
+    Path result = Path('$_value/$first');
+    for (var part in rest) {
+      String s = (part is Path) ? part._value : part.toString();
+      result = Path('${result._value}/$s');
+    }
+    return result;
   }
 
   void write_text(String text, [String encoding = "utf-8"]) {
     File(_value).writeAsStringSync(text);
   }
 
-  String read_text() => File(_value).readAsStringSync();
+  String read_text([String encoding = "utf-8"]) => File(_value).readAsStringSync();
 
   Path resolve() => Path(File(_value).absolute.path);
 

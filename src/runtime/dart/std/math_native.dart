@@ -20,4 +20,10 @@ double floor(num x) => x.toDouble().floorToDouble();
 double ceil(num x) => x.toDouble().ceilToDouble();
 double fabs(num x) => x.toDouble().abs();
 double pow(num x, num y) => _m.pow(x, y).toDouble();
-double log10(num x) => _m.log(x) / _m.ln10;
+double log10(num x) {
+  double r = _m.log(x) / _m.ln10;
+  // Correct floating point errors near exact integers (e.g. log10(1000.0) = 2.9999...)
+  double rounded = r.roundToDouble();
+  if ((r - rounded).abs() < 1e-10) return rounded;
+  return r;
+}

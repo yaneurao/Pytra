@@ -93,8 +93,8 @@ _DART_RESERVED_BUILTINS = {
     "int", "double", "num", "String", "bool", "List", "Map", "Set",
     "Object", "Type", "Symbol", "Future", "Stream", "Iterable",
     "Iterator", "Duration", "DateTime", "RegExp", "Error",
-    "Exception", "StateError", "ArgumentError", "RangeError",
-    "TypeError", "FormatException", "UnsupportedError",
+    "StateError", "ArgumentError", "RangeError",
+    "FormatException", "UnsupportedError",
     "Comparable", "Pattern", "Match", "Sink", "StringSink",
     "Null", "Never", "Enum",
 }
@@ -344,12 +344,13 @@ class DartNativeEmitter:
         self.indent = 0
         self.tmp_seq = 0
         self.class_names: set[str] = set()
+        self.intflag_classes: set[str] = set()  # classes extending IntEnum/IntFlag → use int type
         self.imported_modules: set[str] = set()
         self.function_names: set[str] = set()
         self.relative_import_name_aliases: dict[str, str] = {}
         self.current_class_name: str = ""
         self.current_class_base_name: str = ""
-        self._local_type_stack: list[dict[str, str]] = []
+        self._local_type_stack: list[dict[str, str]] = [{}]  # [0] = module-level frame
         self._ref_var_stack: list[set[str]] = []
         self._local_var_stack: list[set[str]] = []
         self._needs_math_import = False
@@ -422,6 +423,9 @@ class DartNativeEmitter:
             return "Function"
         # User-defined class
         if t in self.class_names:
+            # IntEnum/IntFlag subclasses: use int type for bitwise ops support
+            if t in self.intflag_classes:
+                return "int"
             return t
         return "dynamic"
 
@@ -614,11 +618,68 @@ class DartNativeEmitter:
             return True
         return False
 
+    def _is_list_expr(self, node_any: Any) -> bool:
+        """Return True if node is definitively a list/sequence (not a string)."""
+        if not isinstance(node_any, dict):
+            return False
+        kind = node_any.get("kind")
+        if kind == "List":
+            return True
+        if kind == "ListComp":
+            return True
+        resolved = self._lookup_expr_type(node_any)
+        if resolved.startswith("list[") or resolved == "list":
+            return True
+        return False
+
     def _render_cond_expr(self, test_any: Any) -> str:
         test = self._render_expr(test_any)
         if self._is_sequence_expr(test_any):
             return "pytraTruthy(" + test + ")"
+        # Dynamic/unknown type: use pytraTruthy to handle Python truthiness
+        if isinstance(test_any, dict):
+            resolved = self._lookup_expr_type(test_any)
+            if resolved in {"", "dynamic", "unknown", "Any", "object"} or resolved in {"bytes", "bytearray"}:
+                return "pytraTruthy(" + test + ")"
         return test
+
+    def _render_format_spec(self, val_expr: str, fmt_spec: Any) -> str:
+        """Render a Python format spec (e.g. '4d', '.4f') to Dart string formatting."""
+        import re as _re
+        if not isinstance(fmt_spec, str) or fmt_spec == "":
+            return "(" + val_expr + ").toString()"
+        # Parse: [[fill]align][sign][#][0][width][grouping][.precision][type]
+        m = _re.match(r'^([<>^=]?)(\+|-| )?#?0?(\d*)([_,]?)(?:\.(\d+))?([bcdeEfFgGnosxX%]?)$', fmt_spec)
+        if not m:
+            return "(" + val_expr + ").toString()"
+        align, _sign, width_str, _group, precision_str, type_char = m.groups()
+        width = int(width_str) if width_str else 0
+        precision = int(precision_str) if precision_str else -1
+        # Float types
+        if type_char in ("f", "F", "e", "E", "g", "G"):
+            if precision >= 0:
+                result = "(" + val_expr + ").toStringAsFixed(" + str(precision) + ")"
+            else:
+                result = "(" + val_expr + ").toStringAsFixed(6)"
+            if width > 0:
+                result = result + ".padLeft(" + str(width) + ")"
+            return result
+        # Integer types
+        if type_char in ("d", "i", ""):
+            result = "(" + val_expr + ").toString()"
+            if width > 0:
+                pad_fn = ".padLeft(" if (align == "" or align == ">") else ".padRight("
+                result = result + pad_fn + str(width) + ")"
+            return result
+        # Hex
+        if type_char in ("x", "X"):
+            result = "(" + val_expr + ").toRadixString(16)"
+            if type_char == "X":
+                result = result + ".toUpperCase()"
+            if width > 0:
+                result = result + ".padLeft(" + str(width) + ")"
+            return result
+        return "(" + val_expr + ").toString()"
 
     def _is_str_expr(self, node_any: Any) -> bool:
         if not isinstance(node_any, dict):
@@ -633,15 +694,17 @@ class DartNativeEmitter:
             return ""
         nd2: dict[str, Any] = node_any
         resolved = nd2.get("resolved_type")
-        if isinstance(resolved, str) and resolved != "":
+        if isinstance(resolved, str) and resolved not in {"", "unknown"}:
             return resolved
         kind = nd2.get("kind")
         if kind == "Name":
             safe_name = _safe_ident(nd2.get("id"), "")
             if safe_name != "":
-                mapped = self._current_type_map().get(safe_name)
-                if isinstance(mapped, str) and mapped != "":
-                    return mapped
+                # Search all frames from innermost to outermost
+                for frame in reversed(self._local_type_stack):
+                    mapped = frame.get(safe_name)
+                    if isinstance(mapped, str) and mapped != "":
+                        return mapped
         if kind == "Constant":
             value = nd2.get("value")
             if isinstance(value, bool):
@@ -678,12 +741,40 @@ class DartNativeEmitter:
     def _is_extern_var(self, stmt: dict[str, Any]) -> bool:
         """Check if a statement is an extern() variable declaration (§4).
 
-        Uses meta.extern_var_v1 as the canonical detection method.
+        Uses meta.extern_var_v1 as the canonical detection method,
+        or detects Assign with value = extern(...) call pattern.
         """
         meta_any = stmt.get("meta")
         if isinstance(meta_any, dict) and isinstance(meta_any.get("extern_var_v1"), dict):
             return True
+        # Detect: x = extern(some.attr) or x = extern(some_val)
+        value_any = stmt.get("value")
+        if isinstance(value_any, dict) and value_any.get("kind") == "Call":
+            func = value_any.get("func")
+            if isinstance(func, dict) and func.get("kind") == "Name" and func.get("id") == "extern":
+                return True
         return False
+
+    def _extern_var_symbol(self, stmt: dict[str, Any], default_name: str) -> str:
+        """Get the __native symbol name for an extern var."""
+        meta_any = stmt.get("meta")
+        if isinstance(meta_any, dict):
+            ev1 = meta_any.get("extern_var_v1")
+            if isinstance(ev1, dict):
+                sym = ev1.get("symbol", "")
+                if isinstance(sym, str) and sym != "":
+                    return sym
+        # Fallback: extract attribute name from extern(module.attr) call
+        value_any = stmt.get("value")
+        if isinstance(value_any, dict) and value_any.get("kind") == "Call":
+            args_any = value_any.get("args")
+            if isinstance(args_any, list) and len(args_any) > 0:
+                arg = args_any[0]
+                if isinstance(arg, dict) and arg.get("kind") == "Attribute":
+                    return _safe_ident(arg.get("attr"), default_name)
+                if isinstance(arg, dict) and arg.get("kind") == "Name":
+                    return _safe_ident(arg.get("id"), default_name)
+        return default_name
 
     def _scan_extern_usage(self, body: list[dict[str, Any]]) -> None:
         """Pre-scan body for @extern functions/variables to set _has_extern_delegation."""
@@ -821,16 +912,23 @@ class DartNativeEmitter:
 
     def _scan_module_symbols(self, body: list[dict[str, Any]]) -> None:
         self.class_names = set()
+        self.intflag_classes = set()
         self.imported_modules = set()
         self.function_names = set()
         self._function_return_types = {}
         self._class_field_types = {}
+        self._class_method_names: dict[str, set[str]] = {}  # cls_name → method names
+        self._toplevel_fn_conflicts: set[str] = set()  # function names shadowed by class methods
         self.relative_import_name_aliases = _collect_relative_import_name_aliases(self.east_doc)
         for stmt in body:
             kind = stmt.get("kind")
             if kind == "ClassDef":
                 cls_name = _safe_ident(stmt.get("name"), "Class_")
                 self.class_names.add(cls_name)
+                base_any = stmt.get("base")
+                base_safe = _safe_ident(base_any, "") if isinstance(base_any, str) else ""
+                if base_safe in {"IntEnum", "IntFlag", "IntEnum_", "IntFlag_"}:
+                    self.intflag_classes.add(cls_name)
                 # Collect field types
                 fields: dict[str, str] = {}
                 cls_body = stmt.get("body")
@@ -850,6 +948,10 @@ class DartNativeEmitter:
                             rt = sub.get("return_type")
                             if isinstance(rt, str) and rt.strip() != "":
                                 self._function_return_types[cls_name + "." + fn_name] = rt.strip()
+                            # Track class method names for conflict detection
+                            if cls_name not in self._class_method_names:
+                                self._class_method_names[cls_name] = set()
+                            self._class_method_names[cls_name].add(fn_name)
                 field_types_any = stmt.get("field_types")
                 if isinstance(field_types_any, dict):
                     for fk, fv in field_types_any.items():
@@ -903,6 +1005,11 @@ class DartNativeEmitter:
                     resolved = resolve_import_binding_doc(module_name, symbol, "symbol")
                     if resolved.get("resolved_binding_kind") == "module":
                         self.imported_modules.add(_safe_ident(alias, "mod"))
+        # Compute conflicts: top-level function names that are also class method names
+        all_method_names: set[str] = set()
+        for methods in self._class_method_names.values():
+            all_method_names.update(methods)
+        self._toplevel_fn_conflicts = self.function_names & all_method_names
 
     def _render_name_expr(self, expr_any: dict[str, Any]) -> str:
         ident = _safe_ident(expr_any.get("id"), "value")
@@ -957,6 +1064,11 @@ class DartNativeEmitter:
                     dart_import_lines.append("import '" + imp_path + "' as " + alias_txt + ";")
                     imported_module_paths[mod_canon] = alias_txt
                     self.imported_modules.add(alias_txt)
+                    # Auto-import os_path when os is imported (for os.path.* usage)
+                    if mod_canon == "pytra.std.os" and "pytra.std.os_path" not in imported_module_paths:
+                        os_path_imp = _module_id_to_import_path("pytra.std.os_path", ".dart", rt_prefix)
+                        dart_import_lines.append("import '" + os_path_imp + "' as os_path;")
+                        imported_module_paths["pytra.std.os_path"] = "os_path"
             elif stmt_kind == "ImportFrom":
                 mod = stmt.get("module")
                 if not isinstance(mod, str):
@@ -996,6 +1108,11 @@ class DartNativeEmitter:
                         dart_import_lines.append("import '" + imp_path + "' as " + alias_txt + ";")
                         imported_module_paths[mod_canon] = alias_txt
                         self.imported_modules.add(alias_txt)
+                        # Auto-import os_path when os is imported (for os.path.* usage)
+                        if mod_canon == "pytra.std.os" and "pytra.std.os_path" not in imported_module_paths:
+                            os_path_imp = _module_id_to_import_path("pytra.std.os_path", ".dart", rt_prefix)
+                            dart_import_lines.append("import '" + os_path_imp + "' as os_path;")
+                            imported_module_paths["pytra.std.os_path"] = "os_path"
                     else:
                         # Symbol import (e.g., from pytra.std.time import perf_counter)
                         if mod_canon not in imported_module_paths:
@@ -1006,11 +1123,13 @@ class DartNativeEmitter:
                             imported_module_paths[mod_canon] = mod_alias
                         mod_alias = imported_module_paths[mod_canon]
                         runtime_sym_kind = resolved.get("runtime_symbol_kind", "")
+                        # Use original symbol name (sym) for module access, alias_txt for local name
+                        sym_safe = _safe_ident(sym, sym)
                         if runtime_sym_kind == "class":
                             # Class constructor: use name alias (module.Class) instead of var
-                            self.relative_import_name_aliases[alias_txt] = mod_alias + "." + alias_txt
+                            self.relative_import_name_aliases[alias_txt] = mod_alias + "." + sym_safe
                         else:
-                            alias_lines.append("var " + alias_txt + " = " + mod_alias + "." + alias_txt + ";")
+                            alias_lines.append("var " + alias_txt + " = " + mod_alias + "." + sym_safe + ";")
         # If this module has @extern delegation, add the __native import (§4/§5.1)
         if self._has_extern_delegation and self._module_id != "":
             native_path = _module_id_to_native_import_path(self._module_id, ".dart", rt_prefix)
@@ -1037,8 +1156,12 @@ class DartNativeEmitter:
             self._emit_function_def(stmt)
             return
         if kind == "Return":
-            val = self._render_expr(stmt.get("value"))
-            self._emit_line("return " + val + ";")
+            value_node = stmt.get("value")
+            if value_node is None:
+                self._emit_line("return;")
+            else:
+                val = self._render_expr(value_node)
+                self._emit_line("return " + val + ";")
             return
         if kind == "AnnAssign":
             # §4: extern() variable → __native delegation (detect via meta.extern_var_v1)
@@ -1046,12 +1169,7 @@ class DartNativeEmitter:
                 target_node = stmt.get("target")
                 if isinstance(target_node, dict) and target_node.get("kind") == "Name":
                     var_name = _safe_ident(target_node.get("id"), "value")
-                    # Use extern_var_v1.symbol if available, else fall back to var_name
-                    meta_stmt = stmt.get("meta")
-                    ev1 = meta_stmt.get("extern_var_v1") if isinstance(meta_stmt, dict) else None
-                    sym_name = ev1.get("symbol", "") if isinstance(ev1, dict) else ""
-                    if sym_name == "":
-                        sym_name = var_name
+                    sym_name = self._extern_var_symbol(stmt, var_name)
                     decl_type_any = stmt.get("decl_type")
                     decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
                     if decl_type == "":
@@ -1103,6 +1221,15 @@ class DartNativeEmitter:
                 self._emit_line(target + " = " + value + ";")
             return
         if kind == "Assign":
+            # §4: extern() variable → __native delegation (Assign without type annotation)
+            if self._is_extern_var(stmt):
+                self._has_extern_delegation = True
+                target_any_ev = stmt.get("target")
+                if isinstance(target_any_ev, dict) and target_any_ev.get("kind") == "Name":
+                    var_name = _safe_ident(target_any_ev.get("id"), "value")
+                    sym_name = self._extern_var_symbol(stmt, var_name)
+                    self._emit_line("final dynamic " + var_name + " = __native." + sym_name + ";")
+                    return
             target_any = stmt.get("target")
             if isinstance(target_any, dict):
                 td2: dict[str, Any] = target_any
@@ -1122,8 +1249,11 @@ class DartNativeEmitter:
                         decl_type = self._infer_decl_type_from_expr(stmt.get("value"))
                     if decl_type != "":
                         self._current_type_map()[target_name] = decl_type
-                    if len(self._local_var_stack) > 0 and target_name not in self._current_local_vars():
-                        self._current_local_vars().add(target_name)
+                    is_module_level = len(self._local_var_stack) == 0
+                    already_declared = not is_module_level and target_name in self._current_local_vars()
+                    if not already_declared:
+                        if not is_module_level:
+                            self._current_local_vars().add(target_name)
                         dart_t_raw = self._dart_type(decl_type) if decl_type != "" else "var"
                         dart_t = "var" if (dart_t_raw.startswith("List<") or dart_t_raw.startswith("Map<") or dart_t_raw.startswith("Set<")) else dart_t_raw
                         self._emit_line(dart_t + " " + target + " = " + value + ";")
@@ -1148,8 +1278,11 @@ class DartNativeEmitter:
                         decl_type = self._infer_decl_type_from_expr(stmt.get("value"))
                     if decl_type != "":
                         self._current_type_map()[target_name] = decl_type
-                    if len(self._local_var_stack) > 0 and target_name not in self._current_local_vars():
-                        self._current_local_vars().add(target_name)
+                    is_module_level = len(self._local_var_stack) == 0
+                    already_declared = not is_module_level and target_name in self._current_local_vars()
+                    if not already_declared:
+                        if not is_module_level:
+                            self._current_local_vars().add(target_name)
                         dart_t_raw = self._dart_type(decl_type) if decl_type != "" else "var"
                         dart_t = "var" if (dart_t_raw.startswith("List<") or dart_t_raw.startswith("Map<") or dart_t_raw.startswith("Set<")) else dart_t_raw
                         self._emit_line(dart_t + " " + target + " = " + value + ";")
@@ -1193,7 +1326,11 @@ class DartNativeEmitter:
                 fn_any = exc_any.get("func")
                 if isinstance(fn_any, dict) and fn_any.get("kind") == "Name":
                     fn_name = _safe_ident(fn_any.get("id"), "")
-                    if fn_name in {"RuntimeError", "ValueError", "TypeError", "Exception", "AssertionError"}:
+                    if fn_name in {"RuntimeError", "ValueError", "TypeError", "Exception", "AssertionError",
+                                   "IndexError", "KeyError", "AttributeError", "NotImplementedError",
+                                   "StopIteration", "OverflowError", "ZeroDivisionError",
+                                   "FileNotFoundError", "OSError", "IOError", "PermissionError",
+                                   "ImportError", "NameError", "RecursionError"}:
                         args_any = exc_any.get("args")
                         args = args_any if isinstance(args_any, list) else []
                         if len(args) > 0:
@@ -1278,6 +1415,12 @@ class DartNativeEmitter:
             return
         raise RuntimeError("lang=dart unsupported stmt kind: " + str(kind))
 
+    def _fn_emit_name(self, name: str) -> str:
+        """Return the Dart name for a top-level function, avoiding class method conflicts."""
+        if name in self._toplevel_fn_conflicts:
+            return "_pytra_top_" + name
+        return name
+
     def _emit_function_def(self, stmt: dict[str, Any]) -> None:
         name = _safe_ident(stmt.get("name"), "fn")
         arg_order_any = stmt.get("arg_order")
@@ -1298,7 +1441,9 @@ class DartNativeEmitter:
             param_parts.append(at + " " + a_safe)
         params = ", ".join(param_parts)
         ret_type = self._dart_return_type(stmt)
-        self._emit_line(ret_type + " " + name + "(" + params + ") {")
+        # Rename top-level functions that conflict with class method names
+        emit_name = self._fn_emit_name(name) if self.current_class_name == "" else name
+        self._emit_line(ret_type + " " + emit_name + "(" + params + ") {")
         self.indent += 1
         self._push_function_context(stmt, arg_names, args)
         self._emit_block(stmt.get("body"))
@@ -1376,7 +1521,13 @@ class DartNativeEmitter:
     def _emit_class_def(self, stmt: dict[str, Any]) -> None:
         cls_name = _safe_ident(stmt.get("name"), "Class_")
         base_any = stmt.get("base")
-        base_name = _safe_ident(base_any, "") if isinstance(base_any, str) else ""
+        base_name_raw = _safe_ident(base_any, "") if isinstance(base_any, str) else ""
+        base_name = self.relative_import_name_aliases.get(base_name_raw, base_name_raw) if base_name_raw != "" else ""
+        is_dataclass = bool(stmt.get("dataclass"))
+        # Enum base classes are Python-specific markers; skip extends in Dart
+        _ENUM_BASE_CLASSES = {"Enum_", "IntEnum", "IntFlag", "IntEnum_", "IntFlag_"}
+        if base_name in _ENUM_BASE_CLASSES:
+            base_name = ""
         if base_name != "":
             self._emit_line("class " + cls_name + " extends " + base_name + " {")
         else:
@@ -1387,6 +1538,8 @@ class DartNativeEmitter:
         # Collect fields for dataclass or from AnnAssign
         fields: list[str] = []
         field_defaults: dict[str, str] = {}
+        static_fields: set[str] = set()
+        late_fields: set[str] = set()  # non-dataclass fields declared as `late`
         for sub in body:
             if sub.get("kind") == "AnnAssign":
                 target_any = sub.get("target")
@@ -1395,11 +1548,38 @@ class DartNativeEmitter:
                     fields.append(field_name)
                     ft = field_types.get(field_name, "")
                     dart_ft = self._dart_type(ft) if ft != "" else "dynamic"
-                    self._emit_line(dart_ft + " " + field_name + ";")
-                    # Collect default value
+                    # Non-dataclass class-level AnnAssign → static (with value) or late (no value)
                     value_node = sub.get("value")
+                    if not is_dataclass and isinstance(value_node, dict):
+                        static_fields.add(field_name)
+                        default_val = self._render_expr(value_node)
+                        self._emit_line("static " + dart_ft + " " + field_name + " = " + default_val + ";")
+                        # Don't add to instance fields list
+                        fields.pop()
+                    elif not is_dataclass:
+                        # Non-dataclass annotation without value → late instance field (not ctor param)
+                        self._emit_line("late " + dart_ft + " " + field_name + ";")
+                        fields.pop()
+                        late_fields.add(field_name)
+                    else:
+                        self._emit_line(dart_ft + " " + field_name + ";")
+                    # Collect default value for constructor
                     if isinstance(value_node, dict):
                         field_defaults[field_name] = self._render_expr(value_node)
+            elif sub.get("kind") == "Assign" and not is_dataclass:
+                # Class-level Assign (e.g. X = 0,) → static field
+                t = sub.get("target")
+                if not isinstance(t, dict):
+                    # fallback: targets list
+                    targets_any = sub.get("targets")
+                    if isinstance(targets_any, list) and len(targets_any) == 1:
+                        t = targets_any[0]
+                if isinstance(t, dict) and t.get("kind") == "Name":
+                    field_name = _safe_ident(t.get("id"), "field")
+                    value_node = sub.get("value")
+                    val_str = self._render_expr(value_node) if isinstance(value_node, dict) else "null"
+                    static_fields.add(field_name)
+                    self._emit_line("static dynamic " + field_name + " = " + val_str + ";")
         # Scan __init__ for self.xxx = ... assignments to declare fields
         has_init = False
         for sub in body:
@@ -1426,7 +1606,7 @@ class DartNativeEmitter:
                         if not isinstance(owner, dict) or _safe_ident(owner.get("id"), "") not in {"self", "self_"}:
                             continue
                         attr_name = _safe_ident(t_any.get("attr"), "field")
-                        if attr_name not in fields:
+                        if attr_name not in fields and attr_name not in late_fields and attr_name not in static_fields:
                             fields.append(attr_name)
                             self._emit_line("dynamic " + attr_name + ";")
         for sub in body:
@@ -1437,6 +1617,8 @@ class DartNativeEmitter:
             required_params: list[str] = []
             optional_params: list[str] = []
             for f in fields:
+                if f in static_fields:
+                    continue  # skip static fields from constructor
                 if f in field_defaults:
                     optional_params.append("this." + f + " = " + field_defaults[f])
                 else:
@@ -1453,13 +1635,16 @@ class DartNativeEmitter:
 
     def _emit_class_method(self, cls_name: str, base_name: str, stmt: dict[str, Any]) -> None:
         method_name = _safe_ident(stmt.get("name"), "method")
+        decorators_any = stmt.get("decorators")
+        decorators = decorators_any if isinstance(decorators_any, list) else []
+        is_static = "staticmethod" in decorators
         arg_order_any = stmt.get("arg_order")
         arg_order = arg_order_any if isinstance(arg_order_any, list) else []
         args: list[str] = []
         raw_args: list[str] = []
         for i_idx, arg in enumerate(arg_order):
             arg_name = _safe_ident(arg, "arg")
-            if i_idx == 0 and (arg_name == "self_" or arg_name == "self"):
+            if not is_static and i_idx == 0 and (arg_name == "self_" or arg_name == "self"):
                 continue
             args.append(arg_name)
             raw_args.append(arg if isinstance(arg, str) else arg_name)
@@ -1472,6 +1657,7 @@ class DartNativeEmitter:
             at = self._dart_arg_type(stmt, a_raw)
             param_parts.append(at + " " + a_safe)
         params = ", ".join(param_parts)
+        static_prefix = "static " if is_static else ""
         if method_name == "__init__":
             self._emit_line(cls_name + "(" + params + ") {")
             self.indent += 1
@@ -1487,7 +1673,21 @@ class DartNativeEmitter:
         if method_name == "__str__":
             method_name = "toString"
         ret_type = self._dart_return_type(stmt)
-        self._emit_line(ret_type + " " + method_name + "(" + params + ") {")
+        is_property = "property" in decorators
+        if is_property:
+            # @property → Dart getter
+            self._emit_line(ret_type + " get " + method_name + " {")
+            self.indent += 1
+            self._push_function_context(stmt, args, arg_order[1:] if len(arg_order) > 0 else arg_order)
+            self._emit_block(stmt.get("body"))
+            self._pop_function_context()
+            self.indent -= 1
+            self._emit_line("}")
+            self._emit_line("")
+            self.current_class_name = prev_class
+            self.current_class_base_name = prev_base
+            return
+        self._emit_line(static_prefix + ret_type + " " + method_name + "(" + params + ") {")
         self.indent += 1
         self._push_function_context(stmt, args, arg_order[1:] if len(arg_order) > 0 else arg_order)
         self._emit_block(stmt.get("body"))
@@ -1602,7 +1802,12 @@ class DartNativeEmitter:
             if not isinstance(iter_plan, dict):
                 raise RuntimeError("lang=dart unsupported forcore runtime shape")
             id_node: dict[str, Any] = iter_plan
-            iter_expr = self._render_expr(id_node.get("iter_expr"))
+            iter_expr_node = id_node.get("iter_expr")
+            iter_expr = self._render_expr(iter_expr_node)
+            # Dart String is not Iterable; convert to list of chars
+            iter_type = self._lookup_expr_type(iter_expr_node)
+            if iter_type == "str":
+                iter_expr = iter_expr + ".split('')"
             tuple_target = isinstance(target_plan, dict) and target_plan.get("kind") == "TupleTarget"
             if tuple_target and isinstance(target_plan, dict):
                 iter_name = self._next_tmp_name("__it")
@@ -1743,6 +1948,9 @@ class DartNativeEmitter:
             op = _binop_symbol(op_raw)
             if op_raw == "Mult" and (self._is_sequence_expr(left_node) or self._is_sequence_expr(right_node)):
                 return "pytraRepeatSeq(" + left + ", " + right + ")"
+            # List + List → use spread to avoid Dart type mismatch (List<int> + List<dynamic>)
+            if op_raw == "Add" and (self._is_list_expr(left_node) or self._is_list_expr(right_node)):
+                return "[..." + left + ", ..." + right + "]"
             return "(" + left + " " + op + " " + right + ")"
         if kind == "UnaryOp":
             operand = self._render_expr(ed.get("operand"))
@@ -1761,13 +1969,26 @@ class DartNativeEmitter:
             comps = ed.get("comparators")
             if not isinstance(ops, list) or not isinstance(comps, list) or len(ops) == 0 or len(comps) == 0:
                 return "false"
-            left = self._render_expr(ed.get("left"))
-            right = self._render_expr(comps[0])
+            left_node = ed.get("left")
+            right_node = comps[0]
+            left = self._render_expr(left_node)
+            right = self._render_expr(right_node)
             op0 = str(ops[0])
             if op0 == "In":
                 return "pytraContains(" + right + ", " + left + ")"
             if op0 == "NotIn":
                 return "(!pytraContains(" + right + ", " + left + "))"
+            if op0 == "Is":
+                return "(" + left + " == " + right + ")"
+            if op0 == "IsNot":
+                return "(" + left + " != " + right + ")"
+            # String relational comparison: use compareTo() since Dart String lacks <, <=, >, >=
+            if op0 in {"Lt", "LtE", "Gt", "GtE"}:
+                left_t = self._lookup_expr_type(left_node)
+                right_t = self._lookup_expr_type(right_node)
+                if left_t == "str" or right_t == "str":
+                    sym = _cmp_symbol(op0)
+                    return "(" + left + ".compareTo(" + right + ") " + sym + " 0)"
             return "(" + left + " " + _cmp_symbol(op0) + " " + right + ")"
         if kind == "BoolOp":
             values_any = ed.get("values")
@@ -1775,10 +1996,24 @@ class DartNativeEmitter:
             if len(values) == 0:
                 return "false"
             op = str(ed.get("op"))
+            # If any operand is non-bool, Python or/and returns the value itself.
+            # Use pytraOr/pytraAnd runtime helpers that implement Python semantics.
+            def _is_bool_type(n: dict) -> bool:
+                rt = n.get("resolved_type", "")
+                return rt in {"bool", ""}
+            any_nonbool = any(not _is_bool_type(v) for v in values if isinstance(v, dict))
+            if any_nonbool:
+                fn = "pytraAnd" if op == "And" else "pytraOr"
+                # Fold pairwise: pytraOr(a, pytraOr(b, c))
+                rendered = [self._render_expr(v) for v in values]
+                result = rendered[0]
+                for r in rendered[1:]:
+                    result = fn + "(" + result + ", " + r + ")"
+                return result
             delim = " && " if op == "And" else " || "
             out: list[str] = []
             for v in values:
-                out.append(self._render_expr(v))
+                out.append(self._render_cond_expr(v))
             return "(" + delim.join(out) + ")"
         if kind == "Call":
             return self._render_call(expr_any)
@@ -1788,13 +2023,22 @@ class DartNativeEmitter:
             if len(args) == 0 and isinstance(args_any, dict):
                 nested_args_any = args_any.get("args")
                 args = nested_args_any if isinstance(nested_args_any, list) else []
-            names: list[str] = []
+            required_params: list[str] = []
+            optional_params: list[str] = []
             for arg_any in args:
                 if not isinstance(arg_any, dict):
                     continue
-                names.append(_safe_ident(arg_any.get("arg"), "arg"))
+                nm = _safe_ident(arg_any.get("arg"), "arg")
+                default_node = arg_any.get("default")
+                if isinstance(default_node, dict):
+                    optional_params.append(nm + " = " + self._render_expr(default_node))
+                else:
+                    required_params.append(nm)
+            all_params = required_params
+            if optional_params:
+                all_params = required_params + ["[" + ", ".join(optional_params) + "]"]
             body = self._render_expr(ed.get("body"))
-            return "(" + ", ".join(names) + ") => " + body
+            return "(" + ", ".join(all_params) + ") => " + body
         if kind == "List":
             elems_any = ed.get("elements")
             elems = elems_any if isinstance(elems_any, list) else []
@@ -1857,9 +2101,7 @@ class DartNativeEmitter:
             owner = self._render_expr(ed.get("value"))
             index_node = ed.get("slice")
             owner_node = ed.get("value")
-            owner_type = ""
-            if isinstance(owner_node, dict) and isinstance(owner_node.get("resolved_type"), str):
-                owner_type = owner_node.get("resolved_type") or ""
+            owner_type = self._lookup_expr_type(owner_node) if isinstance(owner_node, dict) else ""
             if isinstance(index_node, dict) and index_node.get("kind") == "Slice":
                 lower_node = index_node.get("lower")
                 upper_node = index_node.get("upper")
@@ -1892,25 +2134,35 @@ class DartNativeEmitter:
                 return owner + "[" + index + "]"
             return owner + "[(" + index + ") < 0 ? " + owner + ".length + (" + index + ") : (" + index + ")]"
         if kind == "Attribute":
-            owner = self._render_expr(ed.get("value"))
-            attr = _safe_ident(ed.get("attr"), "field")
+            attr_raw = ed.get("attr") if isinstance(ed.get("attr"), str) else ""
+            # type(x).__name__ → x.runtimeType.toString()
+            owner_node = ed.get("value")
+            if attr_raw == "__name__" and isinstance(owner_node, dict) and owner_node.get("kind") == "Call":
+                fn = owner_node.get("func")
+                if isinstance(fn, dict) and fn.get("kind") == "Name" and fn.get("id") == "type":
+                    args_any = owner_node.get("args")
+                    args = args_any if isinstance(args_any, list) else []
+                    if len(args) == 1:
+                        return "(" + self._render_expr(args[0]) + ").runtimeType.toString()"
+            owner = self._render_expr(owner_node)
+            attr = _safe_ident(attr_raw, "field")
             return owner + "." + attr
         if kind == "IsInstance":
             value = self._render_expr(ed.get("value"))
             expected_any = ed.get("expected_type_id")
             if isinstance(expected_any, dict) and expected_any.get("kind") == "Name":
                 expected = _safe_ident(expected_any.get("id"), "object")
-                if expected in {"int", "int64"}:
+                if expected in {"int", "int64", "PYTRA_TID_INT"}:
                     return "(" + value + " is int)"
-                if expected in {"float", "float64"}:
+                if expected in {"float", "float64", "PYTRA_TID_FLOAT"}:
                     return "(" + value + " is double)"
-                if expected in {"str", "string"}:
+                if expected in {"str", "string", "PYTRA_TID_STR"}:
                     return "(" + value + " is String)"
-                if expected in {"bool"}:
+                if expected in {"bool", "PYTRA_TID_BOOL"}:
                     return "(" + value + " is bool)"
-                if expected in {"list"}:
+                if expected in {"list", "PYTRA_TID_LIST"}:
                     return "(" + value + " is List)"
-                if expected in {"dict"}:
+                if expected in {"dict", "PYTRA_TID_DICT"}:
                     return "(" + value + " is Map)"
                 if expected in {"set_"}:
                     return "(" + value + " is Set)"
@@ -1938,7 +2190,9 @@ class DartNativeEmitter:
                 if item_kind == "Constant" and isinstance(item_d.get("value"), str):
                     parts.append(self._render_expr(item_d))
                 elif item_kind == "FormattedValue":
-                    parts.append("(" + self._render_expr(item_d.get("value")) + ").toString()")
+                    fmt_spec = item_d.get("format_spec")
+                    val_expr = self._render_expr(item_d.get("value"))
+                    parts.append(self._render_format_spec(val_expr, fmt_spec))
                 else:
                     parts.append("(" + self._render_expr(item_d) + ").toString()")
             return "(" + " + ".join(parts) + ")"
@@ -2014,7 +2268,7 @@ class DartNativeEmitter:
                 if len(rendered_args) == 0:
                     return "false"
                 return "pytraTruthy(" + rendered_args[0] + ")"
-            if raw_fn_name == "str":
+            if raw_fn_name == "str" or raw_fn_name == "py_to_string":
                 if len(rendered_args) == 0:
                     return "''"
                 return "(" + rendered_args[0] + ").toString()"
@@ -2040,6 +2294,10 @@ class DartNativeEmitter:
                 if len(rendered_args) == 0:
                     return "0"
                 return "(" + rendered_args[0] + ").abs()"
+            if raw_fn_name == "sum":
+                if len(rendered_args) == 0:
+                    return "0"
+                return "((" + rendered_args[0] + ").fold<num>(0, (a, b) => a + (b as num)))"
             if raw_fn_name == "enumerate":
                 if len(rendered_args) == 0:
                     return "[]"
@@ -2062,6 +2320,30 @@ class DartNativeEmitter:
                 if len(rendered_args) == 2:
                     return "List.generate((" + rendered_args[1] + ") - (" + rendered_args[0] + "), (i) => i + (" + rendered_args[0] + "))"
                 return "List.generate(((" + rendered_args[1] + ") - (" + rendered_args[0] + ")) ~/ (" + rendered_args[2] + "), (i) => (" + rendered_args[0] + ") + i * (" + rendered_args[2] + "))"
+            if raw_fn_name == "set" or raw_fn_name == "set_":
+                if len(rendered_args) == 0:
+                    return "<dynamic>{}"
+                return "Set<dynamic>.from(" + rendered_args[0] + ")"
+            if raw_fn_name == "list":
+                if len(rendered_args) == 0:
+                    return "[]"
+                return "List<dynamic>.from(" + rendered_args[0] + ")"
+            if raw_fn_name == "dict":
+                if len(rendered_args) == 0:
+                    return "{}"
+                return "Map<dynamic, dynamic>.from(" + rendered_args[0] + ")"
+            if raw_fn_name == "tuple":
+                if len(rendered_args) == 0:
+                    return "[]"
+                return "List<dynamic>.from(" + rendered_args[0] + ")"
+            if raw_fn_name == "chr":
+                if len(rendered_args) == 0:
+                    return "''"
+                return "String.fromCharCode(" + rendered_args[0] + ")"
+            if raw_fn_name == "ord":
+                if len(rendered_args) == 0:
+                    return "0"
+                return "(" + rendered_args[0] + ").codeUnitAt(0)"
             if raw_fn_name == "bytearray":
                 if len(rendered_args) == 0:
                     return "<int>[]"
@@ -2071,7 +2353,10 @@ class DartNativeEmitter:
                     return "<int>[]"
                 return "pytraBytes(" + rendered_args[0] + ")"
             if fn_name in self.class_names:
-                return fn_name + "(" + ", ".join(rendered_args) + ")"
+                return fn_name + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
+            # Use alias if calling a top-level function that conflicts with a class method name
+            if fn_name in self._toplevel_fn_conflicts and fn_name in self.function_names:
+                return "_pytra_top_" + fn_name + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
             rendered_name = self._render_name_expr(func_any)
             return rendered_name + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
         if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
@@ -2087,6 +2372,14 @@ class DartNativeEmitter:
                             return "/* super().__init__() */"
                         if self.current_class_base_name != "":
                             return "super." + attr + "(" + ", ".join(rendered_args) + ")"
+            # os.path.func(args) → os_path.func(args)
+            if isinstance(owner_node, dict) and owner_node.get("kind") == "Attribute":
+                sub_owner = owner_node.get("value")
+                sub_attr = owner_node.get("attr")
+                if (isinstance(sub_owner, dict) and sub_owner.get("kind") == "Name"
+                        and _safe_ident(sub_owner.get("id"), "") == "os"
+                        and sub_attr == "path"):
+                    return "os_path." + attr + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
             owner = self._render_expr(owner_node)
             owner_type = self._lookup_expr_type(owner_node)
             if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
@@ -2105,12 +2398,12 @@ class DartNativeEmitter:
                 "isdigit",
                 "isalpha",
                 "isalnum",
+                "isspace",
                 "strip",
                 "lstrip",
                 "rstrip",
                 "startswith",
                 "endswith",
-                "join",
                 "find",
                 "rfind",
                 "replace",
@@ -2125,6 +2418,8 @@ class DartNativeEmitter:
                     return "pytraStrIsalpha(" + owner + ")"
                 if attr == "isalnum":
                     return "pytraStrIsalnum(" + owner + ")"
+                if attr == "isspace":
+                    return "pytraStrIsspace(" + owner + ")"
                 if attr == "strip":
                     return owner + ".trim()"
                 if attr == "lstrip":
@@ -2165,6 +2460,12 @@ class DartNativeEmitter:
                 return owner + ".insert(" + rendered_args[0] + ", " + rendered_args[1] + ")"
             if attr == "remove" and len(rendered_args) == 1:
                 return owner + ".remove(" + rendered_args[0] + ")"
+            if attr == "discard" and len(rendered_args) == 1:
+                return owner + ".remove(" + rendered_args[0] + ")"
+            if attr == "add" and len(rendered_args) == 1:
+                return owner + ".add(" + rendered_args[0] + ")"
+            if attr == "index" and len(rendered_args) >= 1:
+                return owner + ".indexOf(" + rendered_args[0] + ")"
             if attr == "sort":
                 return owner + ".sort()"
             if attr == "reverse":
@@ -2181,7 +2482,7 @@ class DartNativeEmitter:
             if attr == "values":
                 return owner + ".values.toList()"
             if attr == "items":
-                return owner + ".entries.map((e) => [e.key, e.value]).toList()"
+                return "((" + owner + ") as Map).entries.map((e) => [e.key, e.value]).toList()"
             if attr == "update" and len(rendered_args) == 1:
                 return owner + ".addAll(" + rendered_args[0] + ")"
             return owner + "." + attr + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
@@ -2235,11 +2536,27 @@ class DartNativeEmitter:
                 + insert_stmt + " } return __out; })()"
             )
         # General iterable comprehension
-        loop_var = _safe_ident(td.get("id"), "__lc_i") if td.get("kind") == "Name" else "__lc_i"
         iter_expr = self._render_expr(iter_any)
+        # String iteration: wrap with .split('') for Dart
+        iter_type = self._lookup_expr_type(iter_any)
+        if iter_type == "str" or (isinstance(iter_any, dict) and iter_any.get("resolved_type") == "str"):
+            iter_expr = iter_expr + ".split('')"
         insert_stmt = "__out.add(" + elt + ");"
         if cond_expr != "":
             insert_stmt = "if (" + cond_expr + ") { " + insert_stmt + " }"
+        if td.get("kind") == "Tuple":
+            # Tuple unpacking: for wi, xi in zip(...) → for (var __lc_i in ...) { var wi = __lc_i[0]; var xi = __lc_i[1]; ... }
+            elems_any = td.get("elements")
+            elems = elems_any if isinstance(elems_any, list) else []
+            unpack = " ".join(
+                "var " + _safe_ident(e.get("id"), "__lc_e" + str(i)) + " = __lc_i[" + str(i) + "];"
+                for i, e in enumerate(elems) if isinstance(e, dict) and e.get("kind") == "Name"
+            )
+            return (
+                "(() { var __out = []; for (var __lc_i in " + iter_expr + ") { "
+                + unpack + " " + insert_stmt + " } return __out; })()"
+            )
+        loop_var = _safe_ident(td.get("id"), "__lc_i")
         return (
             "(() { var __out = []; for (var " + loop_var + " in " + iter_expr + ") { "
             + insert_stmt + " } return __out; })()"

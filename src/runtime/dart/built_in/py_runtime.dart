@@ -18,6 +18,10 @@ void pytraPrint(List<dynamic> args) {
   print(args.map(pytraPrintRepr).join(' '));
 }
 
+// --- Python or/and value-select semantics ---
+dynamic pytraOr(dynamic a, dynamic b) => pytraTruthy(a) ? a : b;
+dynamic pytraAnd(dynamic a, dynamic b) => pytraTruthy(a) ? b : a;
+
 // --- truthiness ---
 bool pytraTruthy(dynamic v) {
   if (v == null) return false;
@@ -72,6 +76,15 @@ bool pytraStrIsalpha(String s) {
   for (var i = 0; i < s.length; i++) {
     var c = s.codeUnitAt(i);
     if (!((c >= 65 && c <= 90) || (c >= 97 && c <= 122))) return false;
+  }
+  return true;
+}
+
+bool pytraStrIsspace(String s) {
+  if (s.isEmpty) return false;
+  for (var i = 0; i < s.length; i++) {
+    var c = s.codeUnitAt(i);
+    if (!(c == 32 || c == 9 || c == 10 || c == 13 || c == 11 || c == 12)) return false;
   }
   return true;
 }
