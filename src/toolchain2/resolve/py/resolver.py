@@ -459,7 +459,7 @@ def _resolve_simple_call(expr: dict[str, JsonVal], func: dict[str, JsonVal], ctx
         return _resolve_imported_call(expr, func, name, imp, ctx)
 
     # Module-local function?
-    local_func: FuncSig | None = ctx.module_functions.get(name)
+    local_func: FuncSig | None = ctx.lookup_function(name)
     if local_func is not None:
         t: str = local_func.return_type
         expr["resolved_type"] = t
@@ -1325,6 +1325,7 @@ def _resolve_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
         vt = _resolve_expr(value, ctx)
 
     # Resolve target(s) and add decl_type
+    # Assign target Name nodes get resolved_type = "unknown" (they're declarations)
     targets = stmt.get("targets")
     if isinstance(targets, list):
         for t in targets:
@@ -1333,7 +1334,7 @@ def _resolve_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
                     name_val = t.get("id")
                     if isinstance(name_val, str):
                         ctx.scope.define(name_val, vt)
-                        t["resolved_type"] = vt
+                        t["resolved_type"] = "unknown"
                 elif t.get("kind") == "Tuple":
                     _resolve_expr(t, ctx)
                     # Define tuple element variables
@@ -1355,7 +1356,7 @@ def _resolve_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
                 name_val2 = target.get("id")
                 if isinstance(name_val2, str):
                     ctx.scope.define(name_val2, vt)
-                    target["resolved_type"] = vt
+                    target["resolved_type"] = "unknown"
             else:
                 _resolve_expr(target, ctx)
 
@@ -1467,6 +1468,26 @@ def _resolve_for(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
         elem_type = it[4:-1]
     elif it == "str":
         elem_type = "str"
+    elif it.startswith("dict[") and it.endswith("]"):
+        # Iterating over dict gives keys
+        targs: list[str] = extract_type_args(it)
+        if len(targs) >= 1:
+            elem_type = targs[0]
+
+    # Add iteration metadata
+    stmt["target_type"] = elem_type
+    iter_mode: str = "static_fastpath"
+    if it == "unknown":
+        iter_mode = "dynamic"
+    stmt["iter_mode"] = iter_mode
+    stmt["iter_source_type"] = it
+    stmt["iter_element_type"] = elem_type
+
+    # Add iterable traits to iter expression
+    if isinstance(iter_expr, dict):
+        iter_expr["iterable_trait"] = "yes"
+        iter_expr["iter_protocol"] = "static_range"
+        iter_expr["iter_element_type"] = elem_type
 
     # Define loop variable
     if isinstance(target, dict) and target.get("kind") == "Name":
@@ -1515,8 +1536,9 @@ def _convert_for_to_forrange(
         if isinstance(a, dict):
             _resolve_expr(a, ctx)
 
-    # Extract start/stop/step based on arg count
-    source_span = iter_call.get("source_span", {})
+    # Use the range() function name span for synthesized constants
+    range_func = iter_call.get("func")
+    source_span = range_func.get("source_span", {}) if isinstance(range_func, dict) else iter_call.get("source_span", {})
 
     if len(args) == 1:
         start_node: dict[str, JsonVal] = {

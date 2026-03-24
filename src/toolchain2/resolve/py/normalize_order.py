@@ -155,7 +155,7 @@ _ANNASSIGN_FIELDS: list[str] = [
 # AugAssign
 _AUGASSIGN_FIELDS: list[str] = [
     "kind", "source_span", "target", "op", "value",
-    "decl_type",
+    "declare", "decl_type",
 ]
 
 # Import resolution section
@@ -197,6 +197,9 @@ _KIND_FIELDS: dict[str, list[str]] = {
     "ListComp": _LISTCOMP_FIELDS,
     "FunctionDef": _FUNCDEF_FIELDS,
     "ClassDef": _CLASSDEF_FIELDS,
+    "For": ["kind", "source_span", "target", "target_type",
+            "iter_mode", "iter_source_type", "iter_element_type",
+            "iter", "body", "orelse"],
     "ForRange": _FORRANGE_FIELDS,
     "Assign": _ASSIGN_FIELDS,
     "AnnAssign": _ANNASSIGN_FIELDS,
