@@ -610,37 +610,46 @@ def _resolve_imported_call(
 
     func["resolved_type"] = "unknown"
 
-    # Runtime binding
+    # Determine return type from stdlib registry if available
+    ret: str = "unknown"
+    stdlib_func: FuncSig | None = ctx.registry.lookup_stdlib_function(module_id, export_name)
+    if stdlib_func is not None:
+        ret = stdlib_func.return_type
+
     runtime_module: str = ctx.canonical_module_id(module_id)
-    # Qualify with short module name: "math.sqrt" for stdlib
-    # pytra.std.math → "math", pytra.utils.assertions → keep unqualified
-    short_mod: str = module_id
-    if short_mod.startswith("pytra.std."):
-        short_mod = short_mod[len("pytra.std."):]
-    elif short_mod.startswith("pytra."):
-        # pytra.utils.*, pytra.built_in.* → unqualified
-        short_mod = ""
-    if short_mod != "" and "." not in short_mod:
-        qualified_call: str = short_mod + "." + export_name
-    else:
-        qualified_call = export_name
-    expr["resolved_runtime_call"] = qualified_call
-    expr["resolved_runtime_source"] = "import_symbol"
-    expr["runtime_module_id"] = runtime_module
-    expr["runtime_symbol"] = export_name
 
-    # Adapter kind
-    adapter: str = ctx.lookup_adapter_kind(runtime_module, export_name)
-    if adapter == "":
-        grp: str = ctx.lookup_runtime_module_group(runtime_module)
-        if grp == "built_in":
-            adapter = "builtin"
+    # Only annotate with runtime call info if the symbol exists in the runtime index
+    sym_doc: dict[str, JsonVal] = ctx.lookup_runtime_symbol_doc(runtime_module, export_name)
+    has_runtime_entry: bool = len(sym_doc) > 0
+
+    if has_runtime_entry:
+        # Qualify with short module name for stdlib
+        short_mod: str = module_id
+        if short_mod.startswith("pytra.std."):
+            short_mod = short_mod[len("pytra.std."):]
+        elif short_mod.startswith("pytra."):
+            short_mod = ""
+        if short_mod != "" and "." not in short_mod:
+            qualified_call: str = short_mod + "." + export_name
         else:
-            adapter = "extern_delegate"
-    expr["runtime_call_adapter_kind"] = adapter
+            qualified_call = export_name
+        expr["resolved_runtime_call"] = qualified_call
+        expr["resolved_runtime_source"] = "import_symbol"
+        expr["runtime_module_id"] = runtime_module
+        expr["runtime_symbol"] = export_name
 
-    expr["resolved_type"] = "unknown"
-    return "unknown"
+        # Adapter kind
+        adapter: str = ctx.lookup_adapter_kind(runtime_module, export_name)
+        if adapter == "":
+            grp: str = ctx.lookup_runtime_module_group(runtime_module)
+            if grp == "built_in":
+                adapter = "builtin"
+            else:
+                adapter = "extern_delegate"
+        expr["runtime_call_adapter_kind"] = adapter
+
+    expr["resolved_type"] = ret
+    return ret
 
 
 def _resolve_method_call(
