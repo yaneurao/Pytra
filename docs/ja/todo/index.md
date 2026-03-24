@@ -71,18 +71,21 @@ P0-PARSE-S5 の詳細:
 
 入力:
 - ユーザーコード: `test/fixture/east1/py/*.py.east1`, `test/sample/east1/py/*.py.east1`
-- built-in 宣言: `test/builtin/east1/py/builtins.py.east1`, `test/builtin/east1/py/containers.py.east1`
-- stdlib: `src/pytra/std/*.py`（→ parse して EAST1 にしてからシグネチャ参照）
+- built-in 宣言 EAST1: `test/builtin/east1/py/builtins.py.east1`, `test/builtin/east1/py/containers.py.east1`
+- stdlib 宣言 EAST1: `test/stdlib/east1/py/*.py.east1`
 
 正解: `test/fixture/east2/`, `test/sample/east2/`
 
 仕様:
 - 入力仕様: `docs/ja/spec/spec-east1.md`
 - 出力仕様: `docs/ja/spec/spec-east2.md`
-- built-in 関数仕様: `docs/ja/spec/spec-builtin-functions.md`
+- built-in 関数仕様: `docs/ja/spec/spec-builtin-functions.md`（特に §5 py_ 変換テーブル、§10 v2 extern）
 - コーディング規約: `docs/ja/plans/plan-pipeline-redesign.md` §5
 
-注: S1〜S3 は以前「暫定完了」（3 フィールド書き換えだけ）としていたが、EAST1 から型情報を除去したため本格的な再実装が必要。
+重要: built-in / stdlib の EAST1 には `meta.extern_v2: {module, symbol, tag}` が付与されている。
+resolve は **このメタデータから直接** `runtime_module_id` / `runtime_symbol` / `semantic_tag` を取得する。
+ハードコードテーブル（`_BUILTIN_SEMANTIC_TAGS` 等）は不要。`builtin_registry.py` の 4 テーブルを除去し、
+EAST1 の `meta.extern_v2` を正本にすること。
 
 実装すべきこと:
 - 型注釈の正規化（`int`→`int64`, `float`→`float64`, `bytes`→`list[uint8]` 等）
@@ -90,13 +93,14 @@ P0-PARSE-S5 の詳細:
 - `borrow_kind` の判定（`readonly_ref` / `value`）
 - `casts` の挿入（数値昇格 `int64`→`float64` 等）
 - built-in → `py_*` ノード変換（`len(x)` → `py_len(x)` 等。spec-builtin-functions §5.1 参照）
-- `semantic_tag` / `runtime_module_id` / `runtime_symbol` の付与
-- `runtime_call` / `resolved_runtime_call` の付与
+- `semantic_tag` / `runtime_module_id` / `runtime_symbol` の付与 — **`meta.extern_v2` から取得**
+- `runtime_call` / `resolved_runtime_call` の付与 — **`meta.extern_v2` から取得**
 - `arg_usage` の判定（`readonly` / `reassigned`）
 - `range()` → `ForRange` / `RangeExpr` の変換
 - `lowered_kind: "BuiltinCall"` の付与
 - `schema_version: 1` / `meta.dispatch_mode` の付与
-- cross-module 型解決（built-in / stdlib の EAST1 からシグネチャ取得）
+- cross-module 型解決（built-in / stdlib の EAST1 からシグネチャ + `meta.extern_v2` を取得）
+- `*args: T` → `args: list[T]` の varargs 変換
 
 1. [ ] [ID: P0-RESOLVE-S1] strip 済み EAST1 を入力にして、fixture 132 件の .east2 が golden と一致する
 2. [ ] [ID: P0-RESOLVE-S2] sample 18 件の .east2 が golden と一致する
