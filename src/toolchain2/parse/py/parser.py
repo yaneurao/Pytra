@@ -327,13 +327,38 @@ def _tokenize_expr(text: str) -> list[Token]:
             tokens.append(Token("STR", text[start:i], start, i))
             continue
 
-        # Identifiers / keywords
+        # Identifiers / keywords / string prefixes (r"...", b"...", f"...")
         if ch == "_" or (ch >= "a" and ch <= "z") or (ch >= "A" and ch <= "Z"):
             start = i
             i += 1
             while i < n and (text[i] == "_" or (text[i] >= "a" and text[i] <= "z") or (text[i] >= "A" and text[i] <= "Z") or (text[i] >= "0" and text[i] <= "9")):
                 i += 1
-            tokens.append(Token("NAME", text[start:i], start, i))
+            word = text[start:i]
+            # Check for string prefix: r"...", b"...", f"...", rb"...", br"..."
+            if i < n and (text[i] == '"' or text[i] == "'") and word in ("r", "b", "f", "rb", "br", "rf", "fr", "R", "B", "F"):
+                # Parse as string with prefix
+                quote = text[i]
+                if i + 2 < n and text[i + 1] == quote and text[i + 2] == quote:
+                    i += 3
+                    while i < n:
+                        if text[i] == "\\" and i + 1 < n:
+                            i += 2
+                            continue
+                        if text[i] == quote and i + 2 < n and text[i + 1] == quote and text[i + 2] == quote:
+                            i += 3
+                            break
+                        i += 1
+                else:
+                    i += 1
+                    while i < n and text[i] != quote:
+                        if text[i] == "\\":
+                            i += 1
+                        i += 1
+                    if i < n:
+                        i += 1
+                tokens.append(Token("STR", text[start:i], start, i))
+                continue
+            tokens.append(Token("NAME", word, start, i))
             continue
 
         # Two-char operators
