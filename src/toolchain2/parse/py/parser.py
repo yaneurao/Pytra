@@ -28,7 +28,7 @@ from toolchain2.parse.py.nodes import (
     # Expressions
     ExprBase, Name, Constant, BinOp, UnaryOp, BoolOp, Compare,
     Call, Attribute, Subscript, SliceExpr, IfExp, ListExpr, TupleExpr,
-    DictExpr, ListComp, LambdaExpr, Expr, expr_to_jv,
+    DictExpr, ListComp, LambdaExpr, LambdaArg, Expr, expr_to_jv,
     # Statements
     Import, ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Raise, Pass, Try, ExceptHandler,
     If, For, While, FunctionDef, ClassDef, Stmt,
@@ -396,33 +396,25 @@ class ExprParser:
         tok = self.advance()  # consume 'lambda'
         start = tok.start
         # Parse parameter list until ':'
-        params: list[str] = []
+        lambda_args: list[LambdaArg] = []
         while self.peek().value != ":" and self.peek().kind != "EOF":
             if self.peek().kind == "NAME":
                 pname = self.advance().value
-                params.append(pname)
+                default_expr: Optional[Expr] = None
+                if self.peek().value == "=":
+                    self.advance()
+                    # Parse default value (stop at , or :)
+                    default_expr = self._parse_comp_iter()
+                lambda_args.append(LambdaArg(name=pname, default_expr=default_expr))
             elif self.peek().value == ",":
                 self.advance()
-            elif self.peek().value == "=":
-                # default value — skip until , or :
-                self.advance()
-                # Consume default value expression (stop at , or :)
-                depth = 0
-                while self.peek().kind != "EOF":
-                    if self.peek().value in (",", ":") and depth == 0:
-                        break
-                    if self.peek().value in ("(", "[", "{"):
-                        depth += 1
-                    elif self.peek().value in (")", "]", "}"):
-                        depth -= 1
-                    self.advance()
             else:
                 break
         self.expect("OP", ":")
         body = self._parse_ternary()
         end = self._child_local_end(body)
         base = self._base(start, end)
-        return LambdaExpr(base=base, args=params, body=body, return_type="unknown")
+        return LambdaExpr(base=base, args=lambda_args, body=body, return_type="unknown")
 
     def _parse_ternary(self) -> Expr:
         """a if cond else b"""

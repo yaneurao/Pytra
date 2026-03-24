@@ -317,15 +317,26 @@ class ListComp:
         return d
 
 @dataclass
+@dataclass
+class LambdaArg:
+    name: str
+    default_expr: Optional[Expr] = None
+    def to_jv(self) -> dict[str, JsonVal]:
+        d: dict[str, JsonVal] = {"kind": "arg", "arg": self.name, "annotation": None}
+        if self.default_expr is not None:
+            d["default"] = expr_to_jv(self.default_expr)
+        return d
+
+@dataclass
 class LambdaExpr:
     base: ExprBase
-    args: list[str]
+    args: list[LambdaArg]
     body: Expr
     return_type: str
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "Lambda"}
         d.update(_expr_base_jv(self.base))
-        d["args"] = [{"kind": "arg", "arg": a, "annotation": None} for a in self.args]
+        d["args"] = [a.to_jv() for a in self.args]
         d["body"] = expr_to_jv(self.body)
         d["return_type"] = self.return_type
         return d
@@ -466,10 +477,10 @@ class Return:
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": K.RETURN, "source_span": self.source_span.to_jv(),
                                   "value": expr_to_jv(self.value)}
-        if self.leading_comments is not None:
-            d["leading_comments"] = list(self.leading_comments)
         if self.leading_trivia is not None:
             d["leading_trivia"] = [t.to_jv() for t in self.leading_trivia]
+        if self.leading_comments is not None:
+            d["leading_comments"] = list(self.leading_comments)
         return d
 
 @dataclass
