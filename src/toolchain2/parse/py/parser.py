@@ -1893,10 +1893,9 @@ def _parse_class_def(
         field_types=field_types,
         class_storage_hint=_infer_class_storage_hint(is_dataclass, base_name, field_types, body_stmts),
     )
-    # ClassDef: trivia/comments がある場合のみ出力
-    if len(comments) > 0 or len(trivia) > 0:
-        cd.leading_comments = list(comments)
-        cd.leading_trivia = list(trivia)
+    # ClassDef: leading を出力 (空でも最初のクラスは出力)
+    cd.leading_comments = list(comments)
+    cd.leading_trivia = list(trivia)
 
     return cd, end_ln
 
