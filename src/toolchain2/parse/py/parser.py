@@ -718,6 +718,8 @@ class ExprParser:
                 if self.peek().value != ",":
                     break
                 self.advance()  # skip comma
+                if self.peek().value == ")":
+                    break  # trailing comma
         self.expect("OP", ")")
         end_tok = self.tokens[self.pos - 1]
         start = self._child_local_start(func)
@@ -1595,8 +1597,13 @@ def _parse_function_def(
     body_stmts = _parse_block_lines(ctx, block_lines, name_types, fn_name, start_hint=start_ln)
 
 
-    # Extract docstring
+    # Extract docstring and remove from body
     docstring = _extract_docstring(block_lines)
+    if docstring is not None and len(body_stmts) > 0 and isinstance(body_stmts[0], ExprStmt):
+        # First statement is the docstring ExprStmt — remove it
+        first_val = body_stmts[0].value
+        if isinstance(first_val, Constant) and isinstance(first_val.value, str):
+            body_stmts = body_stmts[1:]
 
     # Compute end span: 最終非空行の絶対行番号と行末位置
     end_lineno = start_ln + 1
@@ -1985,7 +1992,7 @@ def _parse_block_lines(
         if s_clean.startswith("return "):
             expr_text = s_clean[7:].strip()
             expr_col = _find_expr_col(ctx, expr_text, abs_ln, indent + 7)
-            expr = _parse_expr_text(ctx, expr_text, abs_ln, expr_col, name_types)
+            expr = _parse_tuple_or_expr(ctx, expr_text, abs_ln, expr_col, name_types)
             span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
             ret_stmt = Return(source_span=span, value=expr)
             if len(pending_comments) > 0:
@@ -2389,6 +2396,31 @@ def _make_name_expr(name: str, line: int, col: int, ctx: ParseContext) -> Name:
     base = ExprBase(source_span=span, repr_text=name)
     name_node = Name(base=base, id=name)
     return name_node
+
+
+def _parse_tuple_or_expr(ctx: ParseContext, text: str, line: int, col: int, name_types: dict[str, str]) -> Expr:
+    """カンマ区切りの式をパース。複数要素ならタプル、単一ならそのまま。"""
+    tokens = _tokenize_expr(text)
+    source_line_text = ""
+    if line >= 1 and line <= len(ctx.lines):
+        source_line_text = ctx.lines[line - 1]
+    parser = ExprParser(
+        tokens=tokens, pos=0, source_line=line, line_col_offset=col,
+        source_text=text, source_line_text=source_line_text,
+        name_types=name_types, ctx=ctx,
+    )
+    first = parser.parse_expr()
+    if parser.peek().value == ",":
+        elements: list[Expr] = [first]
+        while parser.peek().value == ",":
+            parser.advance()
+            if parser.peek().kind == "EOF":
+                break
+            elements.append(parser.parse_expr())
+        if len(elements) > 1:
+            span = make_span(line, col, line, col + len(text))
+            return TupleExpr(base=ExprBase(source_span=span, repr_text=text), elements=elements)
+    return first
 
 
 def _parse_assign_value(ctx: ParseContext, value_text: str, line: int, col_hint: int, name_types: dict[str, str]) -> Expr:

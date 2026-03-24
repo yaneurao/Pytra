@@ -294,7 +294,7 @@
           "declare": true
         },
         {
-          "kind": "ForRange",
+          "kind": "For",
           "source_span": {
             "lineno": 12,
             "col": 0,
@@ -314,49 +314,50 @@
             "repr": "y",
             "id": "y"
           },
-          "start": {
-            "kind": "Constant",
+          "iter": {
+            "kind": "Call",
             "source_span": {
               "lineno": 12,
               "col": 13,
               "end_lineno": 12,
-              "end_col": 18
+              "end_col": 21
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "0",
-            "value": 0
-          },
-          "stop": {
-            "kind": "Name",
-            "source_span": {
-              "lineno": 12,
-              "col": 19,
-              "end_lineno": 12,
-              "end_col": 20
+            "repr": "range(h)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 12,
+                "col": 13,
+                "end_lineno": 12,
+                "end_col": 18
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "range",
+              "id": "range"
             },
-            "casts": [],
-            "borrow_kind": "value",
-            "repr": "h",
-            "id": "h"
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 12,
+                  "col": 19,
+                  "end_lineno": 12,
+                  "end_col": 20
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "h",
+                "id": "h"
+              }
+            ],
+            "keywords": []
           },
-          "step": {
-            "kind": "Constant",
-            "source_span": {
-              "lineno": 12,
-              "col": 13,
-              "end_lineno": 12,
-              "end_col": 18
-            },
-            "casts": [],
-            "borrow_kind": "value",
-            "repr": "1",
-            "value": 1
-          },
-          "range_mode": "ascending",
           "body": [
             {
-              "kind": "ForRange",
+              "kind": "For",
               "source_span": {
                 "lineno": 13,
                 "col": 0,
@@ -376,46 +377,47 @@
                 "repr": "x",
                 "id": "x"
               },
-              "start": {
-                "kind": "Constant",
+              "iter": {
+                "kind": "Call",
                 "source_span": {
                   "lineno": 13,
                   "col": 17,
                   "end_lineno": 13,
-                  "end_col": 22
+                  "end_col": 25
                 },
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "0",
-                "value": 0
-              },
-              "stop": {
-                "kind": "Name",
-                "source_span": {
-                  "lineno": 13,
-                  "col": 23,
-                  "end_lineno": 13,
-                  "end_col": 24
+                "repr": "range(w)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 13,
+                    "col": 17,
+                    "end_lineno": 13,
+                    "end_col": 22
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "range",
+                  "id": "range"
                 },
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "w",
-                "id": "w"
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 13,
+                      "col": 23,
+                      "end_lineno": 13,
+                      "end_col": 24
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "w",
+                    "id": "w"
+                  }
+                ],
+                "keywords": []
               },
-              "step": {
-                "kind": "Constant",
-                "source_span": {
-                  "lineno": 13,
-                  "col": 17,
-                  "end_lineno": 13,
-                  "end_col": 22
-                },
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "1",
-                "value": 1
-              },
-              "range_mode": "ascending",
               "body": [
                 {
                   "kind": "Assign",
@@ -572,7 +574,7 @@
                   "declare": true
                 },
                 {
-                  "kind": "ForRange",
+                  "kind": "For",
                   "source_span": {
                     "lineno": 15,
                     "col": 0,
@@ -592,46 +594,47 @@
                     "repr": "yy",
                     "id": "yy"
                   },
-                  "start": {
-                    "kind": "Constant",
+                  "iter": {
+                    "kind": "Call",
                     "source_span": {
                       "lineno": 15,
                       "col": 22,
                       "end_lineno": 15,
-                      "end_col": 27
+                      "end_col": 34
                     },
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "0",
-                    "value": 0
-                  },
-                  "stop": {
-                    "kind": "Name",
-                    "source_span": {
-                      "lineno": 15,
-                      "col": 28,
-                      "end_lineno": 15,
-                      "end_col": 33
+                    "repr": "range(scale)",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 15,
+                        "col": 22,
+                        "end_lineno": 15,
+                        "end_col": 27
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "range",
+                      "id": "range"
                     },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "scale",
-                    "id": "scale"
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 15,
+                          "col": 28,
+                          "end_lineno": 15,
+                          "end_col": 33
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "scale",
+                        "id": "scale"
+                      }
+                    ],
+                    "keywords": []
                   },
-                  "step": {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 15,
-                      "col": 22,
-                      "end_lineno": 15,
-                      "end_col": 27
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "1",
-                    "value": 1
-                  },
-                  "range_mode": "ascending",
                   "body": [
                     {
                       "kind": "Assign",
@@ -800,7 +803,7 @@
                       "declare": true
                     },
                     {
-                      "kind": "ForRange",
+                      "kind": "For",
                       "source_span": {
                         "lineno": 17,
                         "col": 0,
@@ -820,46 +823,47 @@
                         "repr": "xx",
                         "id": "xx"
                       },
-                      "start": {
-                        "kind": "Constant",
+                      "iter": {
+                        "kind": "Call",
                         "source_span": {
                           "lineno": 17,
                           "col": 26,
                           "end_lineno": 17,
-                          "end_col": 31
+                          "end_col": 38
                         },
                         "casts": [],
                         "borrow_kind": "value",
-                        "repr": "0",
-                        "value": 0
-                      },
-                      "stop": {
-                        "kind": "Name",
-                        "source_span": {
-                          "lineno": 17,
-                          "col": 32,
-                          "end_lineno": 17,
-                          "end_col": 37
+                        "repr": "range(scale)",
+                        "func": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 17,
+                            "col": 26,
+                            "end_lineno": 17,
+                            "end_col": 31
+                          },
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "range",
+                          "id": "range"
                         },
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "scale",
-                        "id": "scale"
+                        "args": [
+                          {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 17,
+                              "col": 32,
+                              "end_lineno": 17,
+                              "end_col": 37
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "scale",
+                            "id": "scale"
+                          }
+                        ],
+                        "keywords": []
                       },
-                      "step": {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 17,
-                          "col": 26,
-                          "end_lineno": 17,
-                          "end_col": 31
-                        },
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "1",
-                        "value": 1
-                      },
-                      "range_mode": "ascending",
                       "body": [
                         {
                           "kind": "Assign",
@@ -1382,9 +1386,9 @@
                   "kind": "Name",
                   "source_span": {
                     "lineno": 31,
-                    "col": 39,
+                    "col": 46,
                     "end_lineno": 31,
-                    "end_col": 40
+                    "end_col": 47
                   },
                   "casts": [],
                   "borrow_kind": "value",
@@ -1392,7 +1396,7 @@
                   "id": "_"
                 },
                 "iter": {
-                  "kind": "RangeExpr",
+                  "kind": "Call",
                   "source_span": {
                     "lineno": 31,
                     "col": 51,
@@ -1402,46 +1406,35 @@
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "range(cell_h)",
-                  "start": {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 31,
-                      "col": 28,
-                      "end_lineno": 31,
-                      "end_col": 28
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "0",
-                    "value": 0
-                  },
-                  "stop": {
+                  "func": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 31,
-                      "col": 57,
+                      "col": 51,
                       "end_lineno": 31,
-                      "end_col": 63
+                      "end_col": 56
                     },
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "cell_h",
-                    "id": "cell_h"
+                    "repr": "range",
+                    "id": "range"
                   },
-                  "step": {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 31,
-                      "col": 28,
-                      "end_lineno": 31,
-                      "end_col": 28
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "1",
-                    "value": 1
-                  },
-                  "range_mode": "ascending"
+                  "args": [
+                    {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 31,
+                        "col": 57,
+                        "end_lineno": 31,
+                        "end_col": 63
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "cell_h",
+                      "id": "cell_h"
+                    }
+                  ],
+                  "keywords": []
                 },
                 "ifs": [],
                 "is_async": false
@@ -1529,14 +1522,14 @@
           "declare": true
         },
         {
-          "kind": "Assign",
+          "kind": "Expr",
           "source_span": {
             "lineno": 33,
             "col": 4,
             "end_lineno": 33,
             "end_col": 18
           },
-          "target": {
+          "value": {
             "kind": "Subscript",
             "source_span": {
               "lineno": 33,
@@ -1598,21 +1591,7 @@
               "repr": "1",
               "value": 1
             }
-          },
-          "value": {
-            "kind": "Constant",
-            "source_span": {
-              "lineno": 33,
-              "col": 17,
-              "end_lineno": 33,
-              "end_col": 18
-            },
-            "casts": [],
-            "borrow_kind": "value",
-            "repr": "0",
-            "value": 0
-          },
-          "declare": true
+          }
         },
         {
           "kind": "AnnAssign",
@@ -1921,9 +1900,9 @@
           "kind": "While",
           "source_span": {
             "lineno": 39,
-            "col": 0,
-            "end_lineno": 68,
-            "end_col": 0
+            "col": 4,
+            "end_lineno": 67,
+            "end_col": 17
           },
           "test": {
             "kind": "Name",
@@ -2078,12 +2057,12 @@
               "declare": true
             },
             {
-              "kind": "ForRange",
+              "kind": "For",
               "source_span": {
                 "lineno": 42,
                 "col": 0,
-                "end_lineno": 55,
-                "end_col": 0
+                "end_lineno": 54,
+                "end_col": 57
               },
               "target": {
                 "kind": "Name",
@@ -2098,46 +2077,47 @@
                 "repr": "k",
                 "id": "k"
               },
-              "start": {
-                "kind": "Constant",
+              "iter": {
+                "kind": "Call",
                 "source_span": {
                   "lineno": 42,
                   "col": 17,
                   "end_lineno": 42,
-                  "end_col": 22
+                  "end_col": 25
                 },
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "0",
-                "value": 0
-              },
-              "stop": {
-                "kind": "Constant",
-                "source_span": {
-                  "lineno": 42,
-                  "col": 23,
-                  "end_lineno": 42,
-                  "end_col": 24
+                "repr": "range(4)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 42,
+                    "col": 17,
+                    "end_lineno": 42,
+                    "end_col": 22
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "range",
+                  "id": "range"
                 },
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "4",
-                "value": 4
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 42,
+                      "col": 23,
+                      "end_lineno": 42,
+                      "end_col": 24
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "4",
+                    "value": 4
+                  }
+                ],
+                "keywords": []
               },
-              "step": {
-                "kind": "Constant",
-                "source_span": {
-                  "lineno": 42,
-                  "col": 17,
-                  "end_lineno": 42,
-                  "end_col": 22
-                },
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "1",
-                "value": 1
-              },
-              "range_mode": "ascending",
               "body": [
                 {
                   "kind": "Assign",
@@ -2697,8 +2677,8 @@
                       "source_span": {
                         "lineno": 47,
                         "col": 16,
-                        "end_lineno": 54,
-                        "end_col": 57
+                        "end_lineno": 49,
+                        "end_col": 30
                       },
                       "test": {
                         "kind": "Compare",
@@ -2893,8 +2873,8 @@
                           "source_span": {
                             "lineno": 49,
                             "col": 16,
-                            "end_lineno": 54,
-                            "end_col": 57
+                            "end_lineno": 49,
+                            "end_col": 30
                           },
                           "test": {
                             "kind": "Compare",
@@ -3102,8 +3082,8 @@
                               "source_span": {
                                 "lineno": 51,
                                 "col": 16,
-                                "end_lineno": 54,
-                                "end_col": 57
+                                "end_lineno": 51,
+                                "end_col": 29
                               },
                               "test": {
                                 "kind": "Compare",
@@ -3452,8 +3432,8 @@
               "source_span": {
                 "lineno": 56,
                 "col": 8,
-                "end_lineno": 64,
-                "end_col": 0
+                "end_lineno": 63,
+                "end_col": 34
               },
               "test": {
                 "kind": "Compare",
@@ -3938,17 +3918,17 @@
                     "repr": "sel",
                     "id": "sel"
                   },
-                  "declare": true
+                  "declare": false
                 },
                 {
-                  "kind": "Assign",
+                  "kind": "Expr",
                   "source_span": {
                     "lineno": 61,
                     "col": 12,
                     "end_lineno": 61,
                     "end_col": 28
                   },
-                  "target": {
+                  "value": {
                     "kind": "Subscript",
                     "source_span": {
                       "lineno": 61,
@@ -4010,31 +3990,17 @@
                       "repr": "wx",
                       "id": "wx"
                     }
-                  },
-                  "value": {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 61,
-                      "col": 27,
-                      "end_lineno": 61,
-                      "end_col": 28
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "0",
-                    "value": 0
-                  },
-                  "declare": true
+                  }
                 },
                 {
-                  "kind": "Assign",
+                  "kind": "Expr",
                   "source_span": {
                     "lineno": 62,
                     "col": 12,
                     "end_lineno": 62,
                     "end_col": 28
                   },
-                  "target": {
+                  "value": {
                     "kind": "Subscript",
                     "source_span": {
                       "lineno": 62,
@@ -4096,21 +4062,7 @@
                       "repr": "nx",
                       "id": "nx"
                     }
-                  },
-                  "value": {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 62,
-                      "col": 27,
-                      "end_lineno": 62,
-                      "end_col": 28
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "0",
-                    "value": 0
-                  },
-                  "declare": true
+                  }
                 },
                 {
                   "kind": "Expr",
@@ -4453,13 +4405,7 @@
               "declare": false
             }
           ],
-          "orelse": [],
-          "leading_trivia": [
-            {
-              "kind": "blank",
-              "count": 1
-            }
-          ]
+          "orelse": []
         },
         {
           "kind": "Expr",
