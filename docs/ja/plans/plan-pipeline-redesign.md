@@ -215,7 +215,7 @@ test/
     east3-opt/                       ← optimize の期待出力
       optional_syntax.east3
     emit/                            ← emit parity の正解 stdout（全言語共通）
-      optional_syntax.stdout
+      optional_syntax.txt
 ```
 
 #### sample 系（大きい・18件・重い end-to-end）
@@ -247,7 +247,7 @@ test/fixture/source/py/*.py      → parse    → test/fixture/east1/py/*.py.eas
 test/fixture/east1/py/*.py.east1 → resolve  → test/fixture/east2/*.east2
 test/fixture/east2/*.east2       → compile  → test/fixture/east3/*.east3
 test/fixture/east3/*.east3       → optimize → test/fixture/east3-opt/*.east3
-test/fixture/east3-opt/*.east3   → emit     → compile → run → test/fixture/emit/*.stdout と一致
+test/fixture/east3-opt/*.east3   → emit     → compile → run → test/fixture/emit/*.txt と一致
 ```
 
 sample 系:
@@ -266,7 +266,7 @@ test/sample/east3-opt/*.east3    → emit     → compile → run → sample/gol
 - emit は golden file テスト（テキスト一致）ではなく parity テスト（実行結果一致）
   - emit の生成コードはフォーマット変更で頻繁に変わるため、テキスト一致は脆い
 - emit parity の正解 stdout は全言語共通（言語別サブディレクトリなし、CRLF/LF は比較時に正規化）
-- fixture の emit 正解は `test/fixture/emit/*.stdout`、sample は `sample/golden/manifest.json`
+- fixture の emit 正解は `test/fixture/emit/*.txt`、sample は `sample/golden/manifest.json`
 - `source/py/` は将来 `source/rb/` 等に対応可能
 
 ## 4. 除去されるもの
