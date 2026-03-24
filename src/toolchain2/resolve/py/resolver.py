@@ -976,8 +976,16 @@ def _resolve_subscript(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     vt: str = "unknown"
     if isinstance(value, dict):
         vt = _resolve_expr(value, ctx)
+    is_slice: bool = False
     if isinstance(slice_node, dict):
         _resolve_expr(slice_node, ctx)
+        if slice_node.get("kind") == "Slice":
+            is_slice = True
+
+    # Slice subscript: list[T][a:b] → list[T], str[a:b] → str
+    if is_slice:
+        expr["resolved_type"] = vt
+        return vt
 
     # list[T][i] → T
     if vt.startswith("list[") and vt.endswith("]"):
