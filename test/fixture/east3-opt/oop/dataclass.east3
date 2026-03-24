@@ -1,0 +1,1011 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/oop/dataclass.py",
+  "body": [
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 6,
+        "col_offset": 0,
+        "end_lineno": 6,
+        "end_col_offset": 51
+      },
+      "module": "pytra.utils.assertions",
+      "names": [
+        {
+          "name": "py_assert_stdout",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 11,
+        "col_offset": 0,
+        "end_lineno": 18,
+        "end_col_offset": 0
+      },
+      "name": "Point99",
+      "original_name": "Point99",
+      "base": null,
+      "dataclass": true,
+      "field_types": {
+        "x": "int64",
+        "y": "int64"
+      },
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 12,
+            "col_offset": 4,
+            "end_lineno": 12,
+            "end_col_offset": 10
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 12,
+              "col_offset": 4,
+              "end_lineno": 12,
+              "end_col_offset": 5
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "x",
+            "id": "x",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int64"
+            }
+          },
+          "annotation": "int64",
+          "declare": true,
+          "decl_type": "int64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 13,
+            "col_offset": 4,
+            "end_lineno": 13,
+            "end_col_offset": 15
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 13,
+              "col_offset": 4,
+              "end_lineno": 13,
+              "end_col_offset": 5
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "y",
+            "id": "y",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int64"
+            }
+          },
+          "annotation": "int64",
+          "declare": true,
+          "decl_type": "int64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 13,
+              "col_offset": 13,
+              "end_lineno": 13,
+              "end_col_offset": 15
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "10",
+            "value": 10
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "int64"
+          }
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 15,
+            "col_offset": 4,
+            "end_lineno": 16,
+            "end_col_offset": 30
+          },
+          "name": "total",
+          "original_name": "total",
+          "arg_types": {
+            "self": "Point99"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "int64",
+          "arg_usage": {
+            "self": "readonly"
+          },
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 16,
+                "col_offset": 8,
+                "end_lineno": 16,
+                "end_col_offset": 30
+              },
+              "value": {
+                "kind": "BinOp",
+                "source_span": {
+                  "lineno": 16,
+                  "col_offset": 15,
+                  "end_lineno": 16,
+                  "end_col_offset": 30
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "self.x + self.y",
+                "left": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 16,
+                    "col_offset": 15,
+                    "end_lineno": 16,
+                    "end_col_offset": 21
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "self.x",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 16,
+                      "col_offset": 15,
+                      "end_lineno": 16,
+                      "end_col_offset": 19
+                    },
+                    "resolved_type": "Point99",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "self",
+                    "id": "self"
+                  },
+                  "attr": "x"
+                },
+                "op": "Add",
+                "right": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 16,
+                    "col_offset": 24,
+                    "end_lineno": 16,
+                    "end_col_offset": 30
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "self.y",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 16,
+                      "col_offset": 24,
+                      "end_lineno": 16,
+                      "end_col_offset": 28
+                    },
+                    "resolved_type": "Point99",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "self",
+                    "id": "self"
+                  },
+                  "attr": "y"
+                },
+                "normalized_expr_version": "east3_expr_v1",
+                "normalized_expr": {
+                  "kind": "BinOp",
+                  "source_span": {
+                    "lineno": 16,
+                    "col_offset": 15,
+                    "end_lineno": 16,
+                    "end_col_offset": 30
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "self.x + self.y",
+                  "left": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 16,
+                      "col_offset": 15,
+                      "end_lineno": 16,
+                      "end_col_offset": 21
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "self.x",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 16,
+                        "col_offset": 15,
+                        "end_lineno": 16,
+                        "end_col_offset": 19
+                      },
+                      "resolved_type": "Point99",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "self",
+                      "id": "self"
+                    },
+                    "attr": "x"
+                  },
+                  "op": "Add",
+                  "right": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 16,
+                      "col_offset": 24,
+                      "end_lineno": 16,
+                      "end_col_offset": 30
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "self.y",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 16,
+                        "col_offset": 24,
+                        "end_lineno": 16,
+                        "end_col_offset": 28
+                      },
+                      "resolved_type": "Point99",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "self",
+                      "id": "self"
+                    },
+                    "attr": "y"
+                  }
+                }
+              },
+              "meta": {
+                "lifetime_node_id": "n0",
+                "lifetime_defs": [],
+                "lifetime_uses": [
+                  "self"
+                ],
+                "lifetime_live_in": [
+                  "self"
+                ],
+                "lifetime_live_out": [],
+                "lifetime_last_use_vars": [
+                  "self"
+                ]
+              }
+            }
+          ],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": [],
+          "returns": "int64",
+          "mutates_self": false,
+          "meta": {
+            "lifetime_analysis": {
+              "schema_version": "east3_lifetime_v1",
+              "status": "ok",
+              "reason": "",
+              "entry_node": "n0",
+              "order": [
+                "n0"
+              ],
+              "cfg": [
+                {
+                  "id": "n0",
+                  "kind": "Return",
+                  "defs": [],
+                  "uses": [
+                    "self"
+                  ],
+                  "succ": []
+                }
+              ],
+              "def_use": {
+                "defs": {},
+                "uses": {
+                  "self": [
+                    "n0"
+                  ]
+                }
+              },
+              "variables": {
+                "self": {
+                  "def_nodes": [],
+                  "use_nodes": [
+                    "n0"
+                  ],
+                  "live_in_nodes": [
+                    "n0"
+                  ],
+                  "live_out_nodes": [],
+                  "last_use_nodes": [
+                    "n0"
+                  ],
+                  "lifetime_class": "escape_or_unknown"
+                }
+              },
+              "arg_order": [
+                "self"
+              ],
+              "arg_escape": [
+                true
+              ],
+              "has_dynamic_name_access": false
+            }
+          }
+        }
+      ],
+      "class_storage_hint": "ref",
+      "leading_comments": [
+        "This file contains test/implementation code for `test/fixtures/dataclass.py`.",
+        "Reader-facing comments are added to make roles easier to understand.",
+        "When modifying this file, always verify consistency with existing specs and test results."
+      ],
+      "leading_trivia": [
+        {
+          "kind": "comment",
+          "text": "This file contains test/implementation code for `test/fixtures/dataclass.py`."
+        },
+        {
+          "kind": "comment",
+          "text": "Reader-facing comments are added to make roles easier to understand."
+        },
+        {
+          "kind": "comment",
+          "text": "When modifying this file, always verify consistency with existing specs and test results."
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 19,
+        "col_offset": 0,
+        "end_lineno": 21,
+        "end_col_offset": 20
+      },
+      "name": "_case_main",
+      "original_name": "_case_main",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 20,
+            "col_offset": 4,
+            "end_lineno": 20,
+            "end_col_offset": 27
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 20,
+              "col_offset": 4,
+              "end_lineno": 20,
+              "end_col_offset": 5
+            },
+            "resolved_type": "Point99",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "p",
+            "id": "p",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "Point99"
+            }
+          },
+          "annotation": "Point99",
+          "declare": true,
+          "decl_type": "Point99",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "Point99"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "Point99"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 20,
+              "col_offset": 17,
+              "end_lineno": 20,
+              "end_col_offset": 27
+            },
+            "resolved_type": "Point99",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "Point99(3)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 20,
+                "col_offset": 17,
+                "end_lineno": 20,
+                "end_col_offset": 24
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "Point99",
+              "id": "Point99"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 20,
+                  "col_offset": 25,
+                  "end_lineno": 20,
+                  "end_col_offset": 26
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "3",
+                "value": 3
+              }
+            ],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "Point99"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "Point99"
+          },
+          "meta": {
+            "lifetime_node_id": "n1",
+            "lifetime_defs": [
+              "p"
+            ],
+            "lifetime_uses": [
+              "Point99"
+            ],
+            "lifetime_live_in": [
+              "Point99",
+              "print"
+            ],
+            "lifetime_live_out": [
+              "p",
+              "print"
+            ],
+            "lifetime_last_use_vars": [
+              "Point99"
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 21,
+            "col_offset": 4,
+            "end_lineno": 21,
+            "end_col_offset": 20
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 21,
+              "col_offset": 4,
+              "end_lineno": 21,
+              "end_col_offset": 20
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(p.total())",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 21,
+                "col_offset": 4,
+                "end_lineno": 21,
+                "end_col_offset": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 21,
+                  "col_offset": 10,
+                  "end_lineno": 21,
+                  "end_col_offset": 19
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "p.total()",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 21,
+                    "col_offset": 10,
+                    "end_lineno": 21,
+                    "end_col_offset": 17
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "p.total",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 21,
+                      "col_offset": 10,
+                      "end_lineno": 21,
+                      "end_col_offset": 11
+                    },
+                    "resolved_type": "Point99",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "p",
+                    "id": "p"
+                  },
+                  "attr": "total"
+                },
+                "args": [],
+                "keywords": [],
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int64"
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n0",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "p",
+              "print"
+            ],
+            "lifetime_live_in": [
+              "p",
+              "print"
+            ],
+            "lifetime_live_out": [],
+            "lifetime_last_use_vars": [
+              "p",
+              "print"
+            ]
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "None",
+      "meta": {
+        "lifetime_analysis": {
+          "schema_version": "east3_lifetime_v1",
+          "status": "ok",
+          "reason": "",
+          "entry_node": "n1",
+          "order": [
+            "n0",
+            "n1"
+          ],
+          "cfg": [
+            {
+              "id": "n0",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "p",
+                "print"
+              ],
+              "succ": []
+            },
+            {
+              "id": "n1",
+              "kind": "AnnAssign",
+              "defs": [
+                "p"
+              ],
+              "uses": [
+                "Point99"
+              ],
+              "succ": [
+                "n0"
+              ]
+            }
+          ],
+          "def_use": {
+            "defs": {
+              "p": [
+                "n1"
+              ]
+            },
+            "uses": {
+              "Point99": [
+                "n1"
+              ],
+              "p": [
+                "n0"
+              ],
+              "print": [
+                "n0"
+              ]
+            }
+          },
+          "variables": {
+            "Point99": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n1"
+              ],
+              "live_in_nodes": [
+                "n1"
+              ],
+              "live_out_nodes": [],
+              "last_use_nodes": [
+                "n1"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "p": {
+              "def_nodes": [
+                "n1"
+              ],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0"
+              ],
+              "live_out_nodes": [
+                "n1"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "print": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1"
+              ],
+              "live_out_nodes": [
+                "n1"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            }
+          },
+          "arg_order": [],
+          "arg_escape": [],
+          "has_dynamic_name_access": false
+        }
+      }
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 24,
+        "col_offset": 4,
+        "end_lineno": 24,
+        "end_col_offset": 47
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 24,
+          "col_offset": 4,
+          "end_lineno": 24,
+          "end_col_offset": 47
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "print(py_assert_stdout(['13'], _case_main))",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 24,
+            "col_offset": 4,
+            "end_lineno": 24,
+            "end_col_offset": 9
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "print",
+          "id": "print"
+        },
+        "args": [
+          {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 24,
+              "col_offset": 10,
+              "end_lineno": 24,
+              "end_col_offset": 46
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "py_assert_stdout(['13'], _case_main)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 24,
+                "col_offset": 10,
+                "end_lineno": 24,
+                "end_col_offset": 26
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "py_assert_stdout",
+              "id": "py_assert_stdout"
+            },
+            "args": [
+              {
+                "kind": "List",
+                "source_span": {
+                  "lineno": 24,
+                  "col_offset": 27,
+                  "end_lineno": 24,
+                  "end_col_offset": 33
+                },
+                "resolved_type": "list[str]",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "['13']",
+                "elements": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 24,
+                      "col_offset": 28,
+                      "end_lineno": 24,
+                      "end_col_offset": 32
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "'13'",
+                    "value": "13"
+                  }
+                ]
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 24,
+                  "col_offset": 35,
+                  "end_lineno": 24,
+                  "end_col_offset": 45
+                },
+                "resolved_type": "callable[[],None]",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "_case_main",
+                "id": "_case_main"
+              }
+            ],
+            "keywords": [],
+            "resolved_runtime_call": "py_assert_stdout",
+            "resolved_runtime_source": "import_symbol",
+            "runtime_module_id": "pytra.utils.assertions",
+            "runtime_symbol": "py_assert_stdout",
+            "runtime_call_adapter_kind": "extern_delegate",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "DynamicType",
+              "category": "dynamic",
+              "mirror": "unknown",
+              "dynamic_name": "unknown"
+            }
+          }
+        ],
+        "keywords": [],
+        "lowered_kind": "BuiltinCall",
+        "builtin_name": "print",
+        "runtime_call": "py_print",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_symbol": "py_print",
+        "runtime_call_adapter_kind": "builtin",
+        "semantic_tag": "core.print",
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_stdout",
+          "local_name": "py_assert_stdout",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/oop/dataclass.py",
+          "source_line": 6,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_stdout",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_stdout",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_stdout"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/oop/dataclass.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_stdout",
+          "local_name": "py_assert_stdout"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_stdout",
+        "local_name": "py_assert_stdout",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/oop/dataclass.py",
+        "source_line": 6
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/oop/dataclass.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_stdout",
+        "local_name": "py_assert_stdout"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "py_assert_stdout": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_stdout"
+      }
+    },
+    "dispatch_mode": "native",
+    "lifetime_schema_version": "east3_lifetime_v1"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

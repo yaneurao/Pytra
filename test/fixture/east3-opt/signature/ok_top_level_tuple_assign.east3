@@ -1,0 +1,596 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/signature/ok_top_level_tuple_assign.py",
+  "body": [
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 4,
+        "col_offset": 0,
+        "end_lineno": 8,
+        "end_col_offset": 15
+      },
+      "name": "run_tuple_assign",
+      "original_name": "run_tuple_assign",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 5,
+            "col_offset": 4,
+            "end_lineno": 5,
+            "end_col_offset": 14
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 5,
+              "col_offset": 4,
+              "end_lineno": 5,
+              "end_col_offset": 5
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "a",
+            "id": "a",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int64"
+            }
+          },
+          "annotation": "int64",
+          "declare": true,
+          "decl_type": "int64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 5,
+              "col_offset": 13,
+              "end_lineno": 5,
+              "end_col_offset": 14
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "1",
+            "value": 1
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "int64"
+          },
+          "meta": {
+            "lifetime_node_id": "n3",
+            "lifetime_defs": [
+              "a"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "print"
+            ],
+            "lifetime_live_out": [
+              "a",
+              "print"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 6,
+            "col_offset": 4,
+            "end_lineno": 6,
+            "end_col_offset": 14
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 6,
+              "col_offset": 4,
+              "end_lineno": 6,
+              "end_col_offset": 5
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "b",
+            "id": "b",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int64"
+            }
+          },
+          "annotation": "int64",
+          "declare": true,
+          "decl_type": "int64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 6,
+              "col_offset": 13,
+              "end_lineno": 6,
+              "end_col_offset": 14
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "2",
+            "value": 2
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "int64"
+          },
+          "meta": {
+            "lifetime_node_id": "n2",
+            "lifetime_defs": [
+              "b"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "a",
+              "print"
+            ],
+            "lifetime_live_out": [
+              "a",
+              "b",
+              "print"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Swap",
+          "source_span": {
+            "lineno": 7,
+            "col_offset": 4,
+            "end_lineno": 7,
+            "end_col_offset": 15
+          },
+          "left": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 7,
+              "col_offset": 4,
+              "end_lineno": 7,
+              "end_col_offset": 5
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "a",
+            "id": "a"
+          },
+          "right": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 7,
+              "col_offset": 7,
+              "end_lineno": 7,
+              "end_col_offset": 8
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "b",
+            "id": "b"
+          },
+          "meta": {
+            "lifetime_node_id": "n1",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "a",
+              "b"
+            ],
+            "lifetime_live_in": [
+              "a",
+              "b",
+              "print"
+            ],
+            "lifetime_live_out": [
+              "a",
+              "b",
+              "print"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 8,
+            "col_offset": 4,
+            "end_lineno": 8,
+            "end_col_offset": 15
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 8,
+              "col_offset": 4,
+              "end_lineno": 8,
+              "end_col_offset": 15
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(a, b)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 8,
+                "col_offset": 4,
+                "end_lineno": 8,
+                "end_col_offset": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 8,
+                  "col_offset": 10,
+                  "end_lineno": 8,
+                  "end_col_offset": 11
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "a",
+                "id": "a"
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 8,
+                  "col_offset": 13,
+                  "end_lineno": 8,
+                  "end_col_offset": 14
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "b",
+                "id": "b"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n0",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "a",
+              "b",
+              "print"
+            ],
+            "lifetime_live_in": [
+              "a",
+              "b",
+              "print"
+            ],
+            "lifetime_live_out": [],
+            "lifetime_last_use_vars": [
+              "a",
+              "b",
+              "print"
+            ]
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [
+        "self_hosted parser: top-level tuple parallel assignment."
+      ],
+      "leading_trivia": [
+        {
+          "kind": "comment",
+          "text": "self_hosted parser: top-level tuple parallel assignment."
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ],
+      "returns": "None",
+      "meta": {
+        "lifetime_analysis": {
+          "schema_version": "east3_lifetime_v1",
+          "status": "ok",
+          "reason": "",
+          "entry_node": "n3",
+          "order": [
+            "n0",
+            "n1",
+            "n2",
+            "n3"
+          ],
+          "cfg": [
+            {
+              "id": "n0",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "a",
+                "b",
+                "print"
+              ],
+              "succ": []
+            },
+            {
+              "id": "n1",
+              "kind": "Swap",
+              "defs": [],
+              "uses": [
+                "a",
+                "b"
+              ],
+              "succ": [
+                "n0"
+              ]
+            },
+            {
+              "id": "n2",
+              "kind": "AnnAssign",
+              "defs": [
+                "b"
+              ],
+              "uses": [],
+              "succ": [
+                "n1"
+              ]
+            },
+            {
+              "id": "n3",
+              "kind": "AnnAssign",
+              "defs": [
+                "a"
+              ],
+              "uses": [],
+              "succ": [
+                "n2"
+              ]
+            }
+          ],
+          "def_use": {
+            "defs": {
+              "a": [
+                "n3"
+              ],
+              "b": [
+                "n2"
+              ]
+            },
+            "uses": {
+              "a": [
+                "n0",
+                "n1"
+              ],
+              "b": [
+                "n0",
+                "n1"
+              ],
+              "print": [
+                "n0"
+              ]
+            }
+          },
+          "variables": {
+            "a": {
+              "def_nodes": [
+                "n3"
+              ],
+              "use_nodes": [
+                "n0",
+                "n1"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "b": {
+              "def_nodes": [
+                "n2"
+              ],
+              "use_nodes": [
+                "n0",
+                "n1"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "print": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2",
+                "n3"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            }
+          },
+          "arg_order": [],
+          "arg_escape": [],
+          "has_dynamic_name_access": false
+        }
+      }
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 12,
+        "col_offset": 4,
+        "end_lineno": 12,
+        "end_col_offset": 22
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 12,
+          "col_offset": 4,
+          "end_lineno": 12,
+          "end_col_offset": 22
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "run_tuple_assign()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 12,
+            "col_offset": 4,
+            "end_lineno": 12,
+            "end_col_offset": 20
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "run_tuple_assign",
+          "id": "run_tuple_assign"
+        },
+        "args": [],
+        "keywords": [],
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/signature/ok_top_level_tuple_assign.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": []
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/signature/ok_top_level_tuple_assign.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {},
+    "dispatch_mode": "native",
+    "lifetime_schema_version": "east3_lifetime_v1"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

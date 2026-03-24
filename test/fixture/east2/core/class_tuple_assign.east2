@@ -1,0 +1,329 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/core/class_tuple_assign.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 4,
+        "end_col": 0
+      },
+      "name": "Holder",
+      "original_name": "Holder",
+      "base": null,
+      "dataclass": false,
+      "field_types": {},
+      "body": [
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 2,
+            "col": 4,
+            "end_lineno": 2,
+            "end_col": 10
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 2,
+              "col": 4,
+              "end_lineno": 2,
+              "end_col": 5
+            },
+            "resolved_type": "tuple[int64]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "X",
+            "id": "X"
+          },
+          "value": {
+            "kind": "Tuple",
+            "source_span": {
+              "lineno": 2,
+              "col": 8,
+              "end_lineno": 2,
+              "end_col": 10
+            },
+            "resolved_type": "tuple[int64]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "0,",
+            "elements": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 2,
+                  "col": 8,
+                  "end_lineno": 2,
+                  "end_col": 9
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "0",
+                "value": 0
+              }
+            ]
+          },
+          "declare": true,
+          "decl_type": "tuple[int64]",
+          "declare_init": true
+        }
+      ],
+      "class_storage_hint": "value",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 5,
+        "col": 0,
+        "end_lineno": 6,
+        "end_col": 27
+      },
+      "name": "__pytra_main",
+      "original_name": "main",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 6,
+            "col": 4,
+            "end_lineno": 6,
+            "end_col": 27
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 6,
+              "col": 4,
+              "end_lineno": 6,
+              "end_col": 27
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(Holder.X[0] == 0)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 6,
+                "col": 4,
+                "end_lineno": 6,
+                "end_col": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 10,
+                  "end_lineno": 6,
+                  "end_col": 26
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "Holder.X[0] == 0",
+                "left": {
+                  "kind": "Subscript",
+                  "source_span": {
+                    "lineno": 6,
+                    "col": 10,
+                    "end_lineno": 6,
+                    "end_col": 21
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "Holder.X[0]",
+                  "value": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 6,
+                      "col": 10,
+                      "end_lineno": 6,
+                      "end_col": 18
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "Holder.X",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 6,
+                        "col": 10,
+                        "end_lineno": 6,
+                        "end_col": 16
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "Holder",
+                      "id": "Holder"
+                    },
+                    "attr": "X"
+                  },
+                  "slice": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 6,
+                      "col": 19,
+                      "end_lineno": 6,
+                      "end_col": 20
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "0",
+                    "value": 0
+                  }
+                },
+                "ops": [
+                  "Eq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 6,
+                      "col": 25,
+                      "end_lineno": 6,
+                      "end_col": 26
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "0",
+                    "value": 0
+                  }
+                ]
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 10,
+        "col": 4,
+        "end_lineno": 10,
+        "end_col": 10
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 10,
+          "col": 4,
+          "end_lineno": 10,
+          "end_col": 10
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "main()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 10,
+            "col": 4,
+            "end_lineno": 10,
+            "end_col": 8
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "main",
+          "id": "main"
+        },
+        "args": [],
+        "keywords": []
+      }
+    }
+  ],
+  "renamed_symbols": {
+    "main": "__pytra_main"
+  },
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/core/class_tuple_assign.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": []
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/core/class_tuple_assign.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {},
+    "dispatch_mode": "native"
+  },
+  "east_stage": 2,
+  "schema_version": 1
+}

@@ -1,0 +1,1215 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/strings/for_over_string.py",
+  "body": [
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 1,
+        "col_offset": 0,
+        "end_lineno": 6,
+        "end_col_offset": 16
+      },
+      "name": "count_vowels",
+      "original_name": "count_vowels",
+      "arg_types": {
+        "s": "str"
+      },
+      "arg_order": [
+        "s"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "s": 0
+      },
+      "return_type": "int64",
+      "arg_usage": {
+        "s": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 2,
+            "col_offset": 4,
+            "end_lineno": 2,
+            "end_col_offset": 18
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 2,
+              "col_offset": 4,
+              "end_lineno": 2,
+              "end_col_offset": 9
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "count",
+            "id": "count",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int64"
+            }
+          },
+          "annotation": "int64",
+          "declare": true,
+          "decl_type": "int64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 2,
+              "col_offset": 17,
+              "end_lineno": 2,
+              "end_col_offset": 18
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "0",
+            "value": 0
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "int64"
+          },
+          "meta": {
+            "lifetime_node_id": "n4",
+            "lifetime_defs": [
+              "count"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "s"
+            ],
+            "lifetime_live_out": [
+              "count",
+              "s"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "ForCore",
+          "iter_mode": "runtime_protocol",
+          "iter_plan": {
+            "kind": "RuntimeIterForPlan",
+            "iter_expr": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 3,
+                "col_offset": 14,
+                "end_lineno": 3,
+                "end_col_offset": 15
+              },
+              "resolved_type": "str",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "s",
+              "id": "s",
+              "iterable_trait": "yes",
+              "iter_protocol": "static_range",
+              "iter_element_type": "str"
+            },
+            "dispatch_mode": "native",
+            "init_op": "ObjIterInit",
+            "next_op": "ObjIterNext"
+          },
+          "target_plan": {
+            "kind": "NameTarget",
+            "id": "ch",
+            "target_type": "str"
+          },
+          "body": [
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 4,
+                "col_offset": 8,
+                "end_lineno": 5,
+                "end_col_offset": 22
+              },
+              "test": {
+                "kind": "BoolOp",
+                "source_span": {
+                  "lineno": 4,
+                  "col_offset": 11,
+                  "end_lineno": 4,
+                  "end_col_offset": 72
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "ch == \"a\" or ch == \"e\" or ch == \"i\" or ch == \"o\" or ch == \"u\"",
+                "op": "Or",
+                "values": [
+                  {
+                    "kind": "Compare",
+                    "source_span": {
+                      "lineno": 4,
+                      "col_offset": 11,
+                      "end_lineno": 4,
+                      "end_col_offset": 20
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "ch == \"a\"",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 4,
+                        "col_offset": 11,
+                        "end_lineno": 4,
+                        "end_col_offset": 13
+                      },
+                      "resolved_type": "str",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "ch",
+                      "id": "ch"
+                    },
+                    "ops": [
+                      "Eq"
+                    ],
+                    "comparators": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 4,
+                          "col_offset": 17,
+                          "end_lineno": 4,
+                          "end_col_offset": 20
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"a\"",
+                        "value": "a"
+                      }
+                    ],
+                    "normalized_expr_version": "east3_expr_v1",
+                    "normalized_expr": {
+                      "kind": "Compare",
+                      "source_span": {
+                        "lineno": 4,
+                        "col_offset": 11,
+                        "end_lineno": 4,
+                        "end_col_offset": 20
+                      },
+                      "resolved_type": "bool",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "ch == \"a\"",
+                      "left": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 4,
+                          "col_offset": 11,
+                          "end_lineno": 4,
+                          "end_col_offset": 13
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "ch",
+                        "id": "ch"
+                      },
+                      "ops": [
+                        "Eq"
+                      ],
+                      "comparators": [
+                        {
+                          "kind": "Constant",
+                          "source_span": {
+                            "lineno": 4,
+                            "col_offset": 17,
+                            "end_lineno": 4,
+                            "end_col_offset": 20
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "\"a\"",
+                          "value": "a"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "Compare",
+                    "source_span": {
+                      "lineno": 4,
+                      "col_offset": 24,
+                      "end_lineno": 4,
+                      "end_col_offset": 33
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "ch == \"e\"",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 4,
+                        "col_offset": 24,
+                        "end_lineno": 4,
+                        "end_col_offset": 26
+                      },
+                      "resolved_type": "str",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "ch",
+                      "id": "ch"
+                    },
+                    "ops": [
+                      "Eq"
+                    ],
+                    "comparators": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 4,
+                          "col_offset": 30,
+                          "end_lineno": 4,
+                          "end_col_offset": 33
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"e\"",
+                        "value": "e"
+                      }
+                    ],
+                    "normalized_expr_version": "east3_expr_v1",
+                    "normalized_expr": {
+                      "kind": "Compare",
+                      "source_span": {
+                        "lineno": 4,
+                        "col_offset": 24,
+                        "end_lineno": 4,
+                        "end_col_offset": 33
+                      },
+                      "resolved_type": "bool",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "ch == \"e\"",
+                      "left": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 4,
+                          "col_offset": 24,
+                          "end_lineno": 4,
+                          "end_col_offset": 26
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "ch",
+                        "id": "ch"
+                      },
+                      "ops": [
+                        "Eq"
+                      ],
+                      "comparators": [
+                        {
+                          "kind": "Constant",
+                          "source_span": {
+                            "lineno": 4,
+                            "col_offset": 30,
+                            "end_lineno": 4,
+                            "end_col_offset": 33
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "\"e\"",
+                          "value": "e"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "Compare",
+                    "source_span": {
+                      "lineno": 4,
+                      "col_offset": 37,
+                      "end_lineno": 4,
+                      "end_col_offset": 46
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "ch == \"i\"",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 4,
+                        "col_offset": 37,
+                        "end_lineno": 4,
+                        "end_col_offset": 39
+                      },
+                      "resolved_type": "str",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "ch",
+                      "id": "ch"
+                    },
+                    "ops": [
+                      "Eq"
+                    ],
+                    "comparators": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 4,
+                          "col_offset": 43,
+                          "end_lineno": 4,
+                          "end_col_offset": 46
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"i\"",
+                        "value": "i"
+                      }
+                    ],
+                    "normalized_expr_version": "east3_expr_v1",
+                    "normalized_expr": {
+                      "kind": "Compare",
+                      "source_span": {
+                        "lineno": 4,
+                        "col_offset": 37,
+                        "end_lineno": 4,
+                        "end_col_offset": 46
+                      },
+                      "resolved_type": "bool",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "ch == \"i\"",
+                      "left": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 4,
+                          "col_offset": 37,
+                          "end_lineno": 4,
+                          "end_col_offset": 39
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "ch",
+                        "id": "ch"
+                      },
+                      "ops": [
+                        "Eq"
+                      ],
+                      "comparators": [
+                        {
+                          "kind": "Constant",
+                          "source_span": {
+                            "lineno": 4,
+                            "col_offset": 43,
+                            "end_lineno": 4,
+                            "end_col_offset": 46
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "\"i\"",
+                          "value": "i"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "Compare",
+                    "source_span": {
+                      "lineno": 4,
+                      "col_offset": 50,
+                      "end_lineno": 4,
+                      "end_col_offset": 59
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "ch == \"o\"",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 4,
+                        "col_offset": 50,
+                        "end_lineno": 4,
+                        "end_col_offset": 52
+                      },
+                      "resolved_type": "str",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "ch",
+                      "id": "ch"
+                    },
+                    "ops": [
+                      "Eq"
+                    ],
+                    "comparators": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 4,
+                          "col_offset": 56,
+                          "end_lineno": 4,
+                          "end_col_offset": 59
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"o\"",
+                        "value": "o"
+                      }
+                    ],
+                    "normalized_expr_version": "east3_expr_v1",
+                    "normalized_expr": {
+                      "kind": "Compare",
+                      "source_span": {
+                        "lineno": 4,
+                        "col_offset": 50,
+                        "end_lineno": 4,
+                        "end_col_offset": 59
+                      },
+                      "resolved_type": "bool",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "ch == \"o\"",
+                      "left": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 4,
+                          "col_offset": 50,
+                          "end_lineno": 4,
+                          "end_col_offset": 52
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "ch",
+                        "id": "ch"
+                      },
+                      "ops": [
+                        "Eq"
+                      ],
+                      "comparators": [
+                        {
+                          "kind": "Constant",
+                          "source_span": {
+                            "lineno": 4,
+                            "col_offset": 56,
+                            "end_lineno": 4,
+                            "end_col_offset": 59
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "\"o\"",
+                          "value": "o"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "kind": "Compare",
+                    "source_span": {
+                      "lineno": 4,
+                      "col_offset": 63,
+                      "end_lineno": 4,
+                      "end_col_offset": 72
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "ch == \"u\"",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 4,
+                        "col_offset": 63,
+                        "end_lineno": 4,
+                        "end_col_offset": 65
+                      },
+                      "resolved_type": "str",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "ch",
+                      "id": "ch"
+                    },
+                    "ops": [
+                      "Eq"
+                    ],
+                    "comparators": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 4,
+                          "col_offset": 69,
+                          "end_lineno": 4,
+                          "end_col_offset": 72
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"u\"",
+                        "value": "u"
+                      }
+                    ],
+                    "normalized_expr_version": "east3_expr_v1",
+                    "normalized_expr": {
+                      "kind": "Compare",
+                      "source_span": {
+                        "lineno": 4,
+                        "col_offset": 63,
+                        "end_lineno": 4,
+                        "end_col_offset": 72
+                      },
+                      "resolved_type": "bool",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "ch == \"u\"",
+                      "left": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 4,
+                          "col_offset": 63,
+                          "end_lineno": 4,
+                          "end_col_offset": 65
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "ch",
+                        "id": "ch"
+                      },
+                      "ops": [
+                        "Eq"
+                      ],
+                      "comparators": [
+                        {
+                          "kind": "Constant",
+                          "source_span": {
+                            "lineno": 4,
+                            "col_offset": 69,
+                            "end_lineno": 4,
+                            "end_col_offset": 72
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "\"u\"",
+                          "value": "u"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "body": [
+                {
+                  "kind": "AugAssign",
+                  "source_span": {
+                    "lineno": 5,
+                    "col_offset": 12,
+                    "end_lineno": 5,
+                    "end_col_offset": 22
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 5,
+                      "col_offset": 12,
+                      "end_lineno": 5,
+                      "end_col_offset": 17
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "count",
+                    "id": "count"
+                  },
+                  "op": "Add",
+                  "declare": false,
+                  "decl_type": "int64",
+                  "value": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 5,
+                      "col_offset": 21,
+                      "end_lineno": 5,
+                      "end_col_offset": 22
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "1",
+                    "value": 1
+                  },
+                  "type_expr_summary_v1": {
+                    "schema_version": 1,
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "int64"
+                  },
+                  "meta": {
+                    "lifetime_node_id": "n3",
+                    "lifetime_defs": [
+                      "count"
+                    ],
+                    "lifetime_uses": [
+                      "count"
+                    ],
+                    "lifetime_live_in": [
+                      "count",
+                      "s"
+                    ],
+                    "lifetime_live_out": [
+                      "count",
+                      "s"
+                    ],
+                    "lifetime_last_use_vars": []
+                  }
+                }
+              ],
+              "orelse": [],
+              "meta": {
+                "lifetime_node_id": "n2",
+                "lifetime_defs": [],
+                "lifetime_uses": [
+                  "ch"
+                ],
+                "lifetime_live_in": [
+                  "ch",
+                  "count",
+                  "s"
+                ],
+                "lifetime_live_out": [
+                  "count",
+                  "s"
+                ],
+                "lifetime_last_use_vars": [
+                  "ch"
+                ]
+              }
+            }
+          ],
+          "orelse": [],
+          "source_span": {
+            "lineno": 3,
+            "col_offset": 0,
+            "end_lineno": 5,
+            "end_col_offset": 22
+          },
+          "meta": {
+            "lifetime_node_id": "n1",
+            "lifetime_defs": [
+              "ch"
+            ],
+            "lifetime_uses": [
+              "s"
+            ],
+            "lifetime_live_in": [
+              "count",
+              "s"
+            ],
+            "lifetime_live_out": [
+              "ch",
+              "count",
+              "s"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 6,
+            "col_offset": 4,
+            "end_lineno": 6,
+            "end_col_offset": 16
+          },
+          "value": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 6,
+              "col_offset": 11,
+              "end_lineno": 6,
+              "end_col_offset": 16
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "count",
+            "id": "count"
+          },
+          "meta": {
+            "lifetime_node_id": "n0",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "count"
+            ],
+            "lifetime_live_in": [
+              "count"
+            ],
+            "lifetime_live_out": [],
+            "lifetime_last_use_vars": [
+              "count"
+            ]
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "s": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "int64"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "int64",
+      "meta": {
+        "lifetime_analysis": {
+          "schema_version": "east3_lifetime_v1",
+          "status": "ok",
+          "reason": "",
+          "entry_node": "n4",
+          "order": [
+            "n0",
+            "n1",
+            "n2",
+            "n3",
+            "n4"
+          ],
+          "cfg": [
+            {
+              "id": "n0",
+              "kind": "Return",
+              "defs": [],
+              "uses": [
+                "count"
+              ],
+              "succ": []
+            },
+            {
+              "id": "n1",
+              "kind": "ForCore",
+              "defs": [
+                "ch"
+              ],
+              "uses": [
+                "s"
+              ],
+              "succ": [
+                "n0",
+                "n2"
+              ]
+            },
+            {
+              "id": "n2",
+              "kind": "If",
+              "defs": [],
+              "uses": [
+                "ch"
+              ],
+              "succ": [
+                "n1",
+                "n3"
+              ]
+            },
+            {
+              "id": "n3",
+              "kind": "AugAssign",
+              "defs": [
+                "count"
+              ],
+              "uses": [
+                "count"
+              ],
+              "succ": [
+                "n1"
+              ]
+            },
+            {
+              "id": "n4",
+              "kind": "AnnAssign",
+              "defs": [
+                "count"
+              ],
+              "uses": [],
+              "succ": [
+                "n1"
+              ]
+            }
+          ],
+          "def_use": {
+            "defs": {
+              "ch": [
+                "n1"
+              ],
+              "count": [
+                "n3",
+                "n4"
+              ]
+            },
+            "uses": {
+              "ch": [
+                "n2"
+              ],
+              "count": [
+                "n0",
+                "n3"
+              ],
+              "s": [
+                "n1"
+              ]
+            }
+          },
+          "variables": {
+            "ch": {
+              "def_nodes": [
+                "n1"
+              ],
+              "use_nodes": [
+                "n2"
+              ],
+              "live_in_nodes": [
+                "n2"
+              ],
+              "live_out_nodes": [
+                "n1"
+              ],
+              "last_use_nodes": [
+                "n2"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "count": {
+              "def_nodes": [
+                "n3",
+                "n4"
+              ],
+              "use_nodes": [
+                "n0",
+                "n3"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2",
+                "n3"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "escape_or_unknown"
+            },
+            "s": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n1"
+              ],
+              "live_in_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4"
+              ],
+              "last_use_nodes": [],
+              "lifetime_class": "escape_or_unknown"
+            }
+          },
+          "arg_order": [
+            "s"
+          ],
+          "arg_escape": [
+            true
+          ],
+          "has_dynamic_name_access": false
+        }
+      }
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 9,
+        "col_offset": 4,
+        "end_lineno": 9,
+        "end_col_offset": 38
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 9,
+          "col_offset": 4,
+          "end_lineno": 9,
+          "end_col_offset": 38
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "print(count_vowels(\"hello world\"))",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 9,
+            "col_offset": 4,
+            "end_lineno": 9,
+            "end_col_offset": 9
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "print",
+          "id": "print"
+        },
+        "args": [
+          {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 9,
+              "col_offset": 10,
+              "end_lineno": 9,
+              "end_col_offset": 37
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "count_vowels(\"hello world\")",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 9,
+                "col_offset": 10,
+                "end_lineno": 9,
+                "end_col_offset": 22
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "count_vowels",
+              "id": "count_vowels"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 9,
+                  "col_offset": 23,
+                  "end_lineno": 9,
+                  "end_col_offset": 36
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"hello world\"",
+                "value": "hello world"
+              }
+            ],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "int64"
+            }
+          }
+        ],
+        "keywords": [],
+        "lowered_kind": "BuiltinCall",
+        "builtin_name": "print",
+        "runtime_call": "py_print",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_symbol": "py_print",
+        "runtime_call_adapter_kind": "builtin",
+        "semantic_tag": "core.print",
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    },
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 10,
+        "col_offset": 4,
+        "end_lineno": 10,
+        "end_col_offset": 32
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 10,
+          "col_offset": 4,
+          "end_lineno": 10,
+          "end_col_offset": 32
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "print(count_vowels(\"aeiou\"))",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 10,
+            "col_offset": 4,
+            "end_lineno": 10,
+            "end_col_offset": 9
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "print",
+          "id": "print"
+        },
+        "args": [
+          {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 10,
+              "col_offset": 10,
+              "end_lineno": 10,
+              "end_col_offset": 31
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "count_vowels(\"aeiou\")",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 10,
+                "col_offset": 10,
+                "end_lineno": 10,
+                "end_col_offset": 22
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "count_vowels",
+              "id": "count_vowels"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 10,
+                  "col_offset": 23,
+                  "end_lineno": 10,
+                  "end_col_offset": 30
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"aeiou\"",
+                "value": "aeiou"
+              }
+            ],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "int64"
+            }
+          }
+        ],
+        "keywords": [],
+        "lowered_kind": "BuiltinCall",
+        "builtin_name": "print",
+        "runtime_call": "py_print",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_symbol": "py_print",
+        "runtime_call_adapter_kind": "builtin",
+        "semantic_tag": "core.print",
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/strings/for_over_string.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": []
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/strings/for_over_string.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {},
+    "dispatch_mode": "native",
+    "lifetime_schema_version": "east3_lifetime_v1"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

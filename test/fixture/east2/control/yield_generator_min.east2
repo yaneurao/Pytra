@@ -1,0 +1,605 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/control/yield_generator_min.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 5,
+        "end_col": 14
+      },
+      "name": "gen",
+      "original_name": "gen",
+      "arg_types": {
+        "n": "int64"
+      },
+      "arg_order": [
+        "n"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "n": 0
+      },
+      "return_type": "list[int64]",
+      "arg_usage": {
+        "n": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 2,
+            "col": 4,
+            "end_lineno": 2,
+            "end_col": 14
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 2,
+              "col": 4,
+              "end_lineno": 2,
+              "end_col": 5
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "i",
+            "id": "i",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int64"
+            }
+          },
+          "annotation": "int64",
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 2,
+              "col": 13,
+              "end_lineno": 2,
+              "end_col": 14
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "0",
+            "value": 0
+          },
+          "declare": true,
+          "decl_type": "int64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          }
+        },
+        {
+          "kind": "While",
+          "source_span": {
+            "lineno": 3,
+            "col": 0,
+            "end_lineno": 5,
+            "end_col": 14
+          },
+          "test": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 3,
+              "col": 10,
+              "end_lineno": 3,
+              "end_col": 15
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "i < n",
+            "left": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 3,
+                "col": 10,
+                "end_lineno": 3,
+                "end_col": 11
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "i",
+              "id": "i"
+            },
+            "ops": [
+              "Lt"
+            ],
+            "comparators": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 3,
+                  "col": 14,
+                  "end_lineno": 3,
+                  "end_col": 15
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "n",
+                "id": "n"
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Yield",
+              "source_span": {
+                "lineno": 4,
+                "col": 8,
+                "end_lineno": 4,
+                "end_col": 15
+              },
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 4,
+                  "col": 9,
+                  "end_lineno": 4,
+                  "end_col": 10
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "i",
+                "id": "i"
+              }
+            },
+            {
+              "kind": "AugAssign",
+              "source_span": {
+                "lineno": 5,
+                "col": 8,
+                "end_lineno": 5,
+                "end_col": 14
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 5,
+                  "col": 8,
+                  "end_lineno": 5,
+                  "end_col": 9
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "i",
+                "id": "i"
+              },
+              "op": "Add",
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 5,
+                  "col": 13,
+                  "end_lineno": 5,
+                  "end_col": 14
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "1",
+                "value": 1
+              },
+              "declare": false,
+              "decl_type": "int64"
+            }
+          ],
+          "orelse": []
+        }
+      ],
+      "is_generator": 1,
+      "yield_value_type": "int64",
+      "arg_type_exprs": {
+        "n": {
+          "kind": "NamedType",
+          "name": "int64"
+        }
+      },
+      "return_type_expr": {
+        "kind": "GenericType",
+        "base": "list",
+        "args": [
+          {
+            "kind": "NamedType",
+            "name": "int64"
+          }
+        ]
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 8,
+        "col": 0,
+        "end_lineno": 12,
+        "end_col": 22
+      },
+      "name": "__pytra_main",
+      "original_name": "main",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 9,
+            "col": 4,
+            "end_lineno": 9,
+            "end_col": 18
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 9,
+              "col": 4,
+              "end_lineno": 9,
+              "end_col": 9
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "total",
+            "id": "total",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int64"
+            }
+          },
+          "annotation": "int64",
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 9,
+              "col": 17,
+              "end_lineno": 9,
+              "end_col": 18
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "0",
+            "value": 0
+          },
+          "declare": true,
+          "decl_type": "int64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          }
+        },
+        {
+          "kind": "For",
+          "source_span": {
+            "lineno": 10,
+            "col": 0,
+            "end_lineno": 11,
+            "end_col": 18
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 10,
+              "col": 8,
+              "end_lineno": 10,
+              "end_col": 9
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "v",
+            "id": "v"
+          },
+          "target_type": "int64",
+          "iter_mode": "static_fastpath",
+          "iter_source_type": "list[int64]",
+          "iter_element_type": "int64",
+          "iter": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 10,
+              "col": 13,
+              "end_lineno": 10,
+              "end_col": 19
+            },
+            "resolved_type": "list[int64]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "gen(5)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 10,
+                "col": 13,
+                "end_lineno": 10,
+                "end_col": 16
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "gen",
+              "id": "gen"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 10,
+                  "col": 17,
+                  "end_lineno": 10,
+                  "end_col": 18
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "5",
+                "value": 5
+              }
+            ],
+            "keywords": [],
+            "iterable_trait": "yes",
+            "iter_protocol": "static_range",
+            "iter_element_type": "int64"
+          },
+          "body": [
+            {
+              "kind": "AugAssign",
+              "source_span": {
+                "lineno": 11,
+                "col": 8,
+                "end_lineno": 11,
+                "end_col": 18
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 11,
+                  "col": 8,
+                  "end_lineno": 11,
+                  "end_col": 13
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "total",
+                "id": "total"
+              },
+              "op": "Add",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 11,
+                  "col": 17,
+                  "end_lineno": 11,
+                  "end_col": 18
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "v",
+                "id": "v"
+              },
+              "declare": false,
+              "decl_type": "int64"
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 12,
+            "col": 4,
+            "end_lineno": 12,
+            "end_col": 22
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 12,
+              "col": 4,
+              "end_lineno": 12,
+              "end_col": 22
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(total == 10)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 12,
+                "col": 4,
+                "end_lineno": 12,
+                "end_col": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 12,
+                  "col": 10,
+                  "end_lineno": 12,
+                  "end_col": 21
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "total == 10",
+                "left": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 12,
+                    "col": 10,
+                    "end_lineno": 12,
+                    "end_col": 15
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "total",
+                  "id": "total"
+                },
+                "ops": [
+                  "Eq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 12,
+                      "col": 19,
+                      "end_lineno": 12,
+                      "end_col": 21
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "10",
+                    "value": 10
+                  }
+                ]
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 16,
+        "col": 4,
+        "end_lineno": 16,
+        "end_col": 10
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 16,
+          "col": 4,
+          "end_lineno": 16,
+          "end_col": 10
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "main()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 16,
+            "col": 4,
+            "end_lineno": 16,
+            "end_col": 8
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "main",
+          "id": "main"
+        },
+        "args": [],
+        "keywords": []
+      }
+    }
+  ],
+  "renamed_symbols": {
+    "main": "__pytra_main"
+  },
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/control/yield_generator_min.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": []
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/control/yield_generator_min.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {},
+    "dispatch_mode": "native"
+  },
+  "east_stage": 2,
+  "schema_version": 1
+}

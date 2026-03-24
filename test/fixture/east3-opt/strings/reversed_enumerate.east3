@@ -1,0 +1,2434 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/strings/reversed_enumerate.py",
+  "body": [
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 4,
+        "col_offset": 0,
+        "end_lineno": 4,
+        "end_col_offset": 62
+      },
+      "module": "pytra.utils.assertions",
+      "names": [
+        {
+          "name": "py_assert_all",
+          "asname": null
+        },
+        {
+          "name": "py_assert_eq",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 5,
+        "col_offset": 0,
+        "end_lineno": 16,
+        "end_col_offset": 42
+      },
+      "name": "run_reversed_enumerate",
+      "original_name": "run_reversed_enumerate",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "bool",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 6,
+            "col_offset": 4,
+            "end_lineno": 6,
+            "end_col_offset": 33
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 6,
+              "col_offset": 4,
+              "end_lineno": 6,
+              "end_col_offset": 10
+            },
+            "resolved_type": "list[int64]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "values",
+            "id": "values",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "int64"
+                }
+              ]
+            }
+          },
+          "annotation": "list[int64]",
+          "declare": true,
+          "decl_type": "list[int64]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "int64"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "int64"
+              }
+            ]
+          },
+          "value": {
+            "kind": "List",
+            "source_span": {
+              "lineno": 6,
+              "col_offset": 24,
+              "end_lineno": 6,
+              "end_col_offset": 33
+            },
+            "resolved_type": "list[int64]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "[3, 1, 4]",
+            "elements": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 6,
+                  "col_offset": 25,
+                  "end_lineno": 6,
+                  "end_col_offset": 26
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "3",
+                "value": 3
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 6,
+                  "col_offset": 28,
+                  "end_lineno": 6,
+                  "end_col_offset": 29
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "1",
+                "value": 1
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 6,
+                  "col_offset": 31,
+                  "end_lineno": 6,
+                  "end_col_offset": 32
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "4",
+                "value": 4
+              }
+            ]
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "GenericType",
+            "category": "static",
+            "mirror": "list[int64]"
+          },
+          "meta": {
+            "lifetime_node_id": "n14",
+            "lifetime_defs": [
+              "values"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "py_assert_all",
+              "py_assert_eq",
+              "reversed"
+            ],
+            "lifetime_live_out": [
+              "py_assert_all",
+              "py_assert_eq",
+              "reversed",
+              "values"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 7,
+            "col_offset": 4,
+            "end_lineno": 7,
+            "end_col_offset": 16
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 7,
+              "col_offset": 4,
+              "end_lineno": 7,
+              "end_col_offset": 7
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "acc",
+            "id": "acc",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int64"
+            }
+          },
+          "annotation": "int64",
+          "declare": true,
+          "decl_type": "int64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 7,
+              "col_offset": 15,
+              "end_lineno": 7,
+              "end_col_offset": 16
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "0",
+            "value": 0
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "int64"
+          },
+          "meta": {
+            "lifetime_node_id": "n13",
+            "lifetime_defs": [
+              "acc"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "py_assert_all",
+              "py_assert_eq",
+              "reversed",
+              "values"
+            ],
+            "lifetime_live_out": [
+              "acc",
+              "py_assert_all",
+              "py_assert_eq",
+              "reversed",
+              "values"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Assign",
+          "target": {
+            "kind": "Name",
+            "id": "__enum_idx_1",
+            "resolved_type": "int64"
+          },
+          "value": {
+            "kind": "Constant",
+            "value": 0,
+            "resolved_type": "int64"
+          },
+          "decl_type": "int64",
+          "declare": true,
+          "meta": {
+            "lifetime_node_id": "n12",
+            "lifetime_defs": [
+              "__enum_idx_1"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "acc",
+              "py_assert_all",
+              "py_assert_eq",
+              "reversed",
+              "values"
+            ],
+            "lifetime_live_out": [
+              "__enum_idx_1",
+              "acc",
+              "py_assert_all",
+              "py_assert_eq",
+              "reversed",
+              "values"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "VarDecl",
+          "name": "v",
+          "type": "int64",
+          "hoisted": true,
+          "meta": {
+            "lifetime_node_id": "n11",
+            "lifetime_defs": [],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "__enum_idx_1",
+              "acc",
+              "py_assert_all",
+              "py_assert_eq",
+              "reversed",
+              "values"
+            ],
+            "lifetime_live_out": [
+              "__enum_idx_1",
+              "acc",
+              "py_assert_all",
+              "py_assert_eq",
+              "reversed",
+              "values"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "ForCore",
+          "iter_mode": "runtime_protocol",
+          "iter_plan": {
+            "kind": "RuntimeIterForPlan",
+            "iter_expr": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 8,
+                "col_offset": 26,
+                "end_lineno": 8,
+                "end_col_offset": 32
+              },
+              "resolved_type": "list[int64]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "values",
+              "id": "values"
+            },
+            "dispatch_mode": "native",
+            "init_op": "ObjIterInit",
+            "next_op": "ObjIterNext"
+          },
+          "target_plan": {
+            "kind": "NameTarget",
+            "id": "v",
+            "target_type": "int64"
+          },
+          "body": [
+            {
+              "kind": "Assign",
+              "target": {
+                "kind": "Name",
+                "id": "i",
+                "resolved_type": "int64"
+              },
+              "value": {
+                "kind": "Name",
+                "id": "__enum_idx_1",
+                "resolved_type": "int64"
+              },
+              "decl_type": "int64",
+              "declare": true,
+              "meta": {
+                "lifetime_node_id": "n10",
+                "lifetime_defs": [
+                  "i"
+                ],
+                "lifetime_uses": [
+                  "__enum_idx_1"
+                ],
+                "lifetime_live_in": [
+                  "__enum_idx_1",
+                  "acc",
+                  "py_assert_all",
+                  "py_assert_eq",
+                  "reversed",
+                  "v",
+                  "values"
+                ],
+                "lifetime_live_out": [
+                  "__enum_idx_1",
+                  "acc",
+                  "i",
+                  "py_assert_all",
+                  "py_assert_eq",
+                  "reversed",
+                  "v",
+                  "values"
+                ],
+                "lifetime_last_use_vars": []
+              }
+            },
+            {
+              "kind": "AugAssign",
+              "source_span": {
+                "lineno": 9,
+                "col_offset": 8,
+                "end_lineno": 9,
+                "end_col_offset": 20
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 9,
+                  "col_offset": 8,
+                  "end_lineno": 9,
+                  "end_col_offset": 11
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "acc",
+                "id": "acc"
+              },
+              "op": "Add",
+              "declare": false,
+              "decl_type": "int64",
+              "value": {
+                "kind": "BinOp",
+                "source_span": {
+                  "lineno": 9,
+                  "col_offset": 15,
+                  "end_lineno": 9,
+                  "end_col_offset": 20
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "i * v",
+                "left": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 9,
+                    "col_offset": 15,
+                    "end_lineno": 9,
+                    "end_col_offset": 16
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "i",
+                  "id": "i"
+                },
+                "op": "Mult",
+                "right": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 9,
+                    "col_offset": 19,
+                    "end_lineno": 9,
+                    "end_col_offset": 20
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "v",
+                  "id": "v"
+                },
+                "normalized_expr_version": "east3_expr_v1",
+                "normalized_expr": {
+                  "kind": "BinOp",
+                  "source_span": {
+                    "lineno": 9,
+                    "col_offset": 15,
+                    "end_lineno": 9,
+                    "end_col_offset": 20
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "i * v",
+                  "left": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 9,
+                      "col_offset": 15,
+                      "end_lineno": 9,
+                      "end_col_offset": 16
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "i",
+                    "id": "i"
+                  },
+                  "op": "Mult",
+                  "right": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 9,
+                      "col_offset": 19,
+                      "end_lineno": 9,
+                      "end_col_offset": 20
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "v",
+                    "id": "v"
+                  }
+                }
+              },
+              "type_expr_summary_v1": {
+                "schema_version": 1,
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "int64"
+              },
+              "meta": {
+                "lifetime_node_id": "n9",
+                "lifetime_defs": [
+                  "acc"
+                ],
+                "lifetime_uses": [
+                  "acc",
+                  "i",
+                  "v"
+                ],
+                "lifetime_live_in": [
+                  "__enum_idx_1",
+                  "acc",
+                  "i",
+                  "py_assert_all",
+                  "py_assert_eq",
+                  "reversed",
+                  "v",
+                  "values"
+                ],
+                "lifetime_live_out": [
+                  "__enum_idx_1",
+                  "acc",
+                  "py_assert_all",
+                  "py_assert_eq",
+                  "reversed",
+                  "values"
+                ],
+                "lifetime_last_use_vars": [
+                  "i",
+                  "v"
+                ]
+              }
+            },
+            {
+              "kind": "AugAssign",
+              "target": {
+                "kind": "Name",
+                "id": "__enum_idx_1",
+                "resolved_type": "int64"
+              },
+              "op": "Add",
+              "value": {
+                "kind": "Constant",
+                "value": 1,
+                "resolved_type": "int64"
+              },
+              "meta": {
+                "lifetime_node_id": "n8",
+                "lifetime_defs": [
+                  "__enum_idx_1"
+                ],
+                "lifetime_uses": [
+                  "__enum_idx_1"
+                ],
+                "lifetime_live_in": [
+                  "__enum_idx_1",
+                  "acc",
+                  "py_assert_all",
+                  "py_assert_eq",
+                  "reversed",
+                  "values"
+                ],
+                "lifetime_live_out": [
+                  "__enum_idx_1",
+                  "acc",
+                  "py_assert_all",
+                  "py_assert_eq",
+                  "reversed",
+                  "values"
+                ],
+                "lifetime_last_use_vars": []
+              }
+            }
+          ],
+          "orelse": [],
+          "meta": {
+            "lifetime_node_id": "n7",
+            "lifetime_defs": [
+              "v"
+            ],
+            "lifetime_uses": [
+              "values"
+            ],
+            "lifetime_live_in": [
+              "__enum_idx_1",
+              "acc",
+              "py_assert_all",
+              "py_assert_eq",
+              "reversed",
+              "values"
+            ],
+            "lifetime_live_out": [
+              "__enum_idx_1",
+              "acc",
+              "py_assert_all",
+              "py_assert_eq",
+              "reversed",
+              "v",
+              "values"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 10,
+            "col_offset": 4,
+            "end_lineno": 10,
+            "end_col_offset": 23
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 10,
+              "col_offset": 4,
+              "end_lineno": 10,
+              "end_col_offset": 7
+            },
+            "resolved_type": "list[int64]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "rev",
+            "id": "rev",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "int64"
+                }
+              ]
+            }
+          },
+          "annotation": "list[int64]",
+          "declare": true,
+          "decl_type": "list[int64]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "int64"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "int64"
+              }
+            ]
+          },
+          "value": {
+            "kind": "List",
+            "source_span": {
+              "lineno": 10,
+              "col_offset": 21,
+              "end_lineno": 10,
+              "end_col_offset": 23
+            },
+            "resolved_type": "list[int64]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "[]",
+            "elements": []
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "GenericType",
+            "category": "static",
+            "mirror": "list[int64]"
+          },
+          "cpp_empty_init_shorthand_v1": {
+            "version": "1",
+            "target_type": "list[int64]",
+            "rhs_kind": "List"
+          },
+          "meta": {
+            "lifetime_node_id": "n6",
+            "lifetime_defs": [
+              "rev"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "acc",
+              "py_assert_all",
+              "py_assert_eq",
+              "reversed",
+              "values"
+            ],
+            "lifetime_live_out": [
+              "acc",
+              "py_assert_all",
+              "py_assert_eq",
+              "rev",
+              "reversed",
+              "values"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "ForCore",
+          "iter_mode": "runtime_protocol",
+          "iter_plan": {
+            "kind": "RuntimeIterForPlan",
+            "iter_expr": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 11,
+                "col_offset": 13,
+                "end_lineno": 11,
+                "end_col_offset": 29
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "reversed(values)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 11,
+                  "col_offset": 13,
+                  "end_lineno": 11,
+                  "end_col_offset": 21
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "reversed",
+                "id": "reversed"
+              },
+              "args": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 11,
+                    "col_offset": 22,
+                    "end_lineno": 11,
+                    "end_col_offset": 28
+                  },
+                  "resolved_type": "list[int64]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "values",
+                  "id": "values"
+                }
+              ],
+              "keywords": [],
+              "lowered_kind": "BuiltinCall",
+              "builtin_name": "reversed",
+              "runtime_call": "py_reversed",
+              "runtime_module_id": "pytra.built_in.iter_ops",
+              "runtime_symbol": "reversed",
+              "runtime_call_adapter_kind": "builtin",
+              "semantic_tag": "iter.reversed",
+              "iterable_trait": "unknown",
+              "iter_protocol": "static_range",
+              "iter_element_type": "unknown",
+              "type_expr_summary_v1": {
+                "schema_version": 1,
+                "kind": "DynamicType",
+                "category": "dynamic",
+                "mirror": "unknown",
+                "dynamic_name": "unknown"
+              }
+            },
+            "dispatch_mode": "native",
+            "init_op": "ObjIterInit",
+            "next_op": "ObjIterNext"
+          },
+          "target_plan": {
+            "kind": "NameTarget",
+            "id": "v"
+          },
+          "body": [
+            {
+              "kind": "Expr",
+              "source_span": {
+                "lineno": 12,
+                "col_offset": 8,
+                "end_lineno": 12,
+                "end_col_offset": 21
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 12,
+                  "col_offset": 8,
+                  "end_lineno": 12,
+                  "end_col_offset": 21
+                },
+                "resolved_type": "None",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "rev.append(v)",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 12,
+                    "col_offset": 8,
+                    "end_lineno": 12,
+                    "end_col_offset": 18
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "rev.append",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 12,
+                      "col_offset": 8,
+                      "end_lineno": 12,
+                      "end_col_offset": 11
+                    },
+                    "resolved_type": "list[int64]",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "rev",
+                    "id": "rev"
+                  },
+                  "attr": "append"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 12,
+                      "col_offset": 19,
+                      "end_lineno": 12,
+                      "end_col_offset": 20
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "v",
+                    "id": "v"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "append",
+                "runtime_call": "list.append",
+                "runtime_module_id": "pytra.core.list",
+                "runtime_symbol": "list.append",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "stdlib.method.append",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 12,
+                    "col_offset": 8,
+                    "end_lineno": 12,
+                    "end_col_offset": 11
+                  },
+                  "resolved_type": "list[int64]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "rev",
+                  "id": "rev"
+                },
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
+                }
+              },
+              "meta": {
+                "lifetime_node_id": "n5",
+                "lifetime_defs": [],
+                "lifetime_uses": [
+                  "rev",
+                  "v"
+                ],
+                "lifetime_live_in": [
+                  "acc",
+                  "py_assert_all",
+                  "py_assert_eq",
+                  "rev",
+                  "reversed",
+                  "v",
+                  "values"
+                ],
+                "lifetime_live_out": [
+                  "acc",
+                  "py_assert_all",
+                  "py_assert_eq",
+                  "rev",
+                  "reversed",
+                  "values"
+                ],
+                "lifetime_last_use_vars": [
+                  "v"
+                ]
+              }
+            }
+          ],
+          "orelse": [],
+          "source_span": {
+            "lineno": 11,
+            "col_offset": 0,
+            "end_lineno": 12,
+            "end_col_offset": 21
+          },
+          "meta": {
+            "lifetime_node_id": "n4",
+            "lifetime_defs": [
+              "v"
+            ],
+            "lifetime_uses": [
+              "reversed",
+              "values"
+            ],
+            "lifetime_live_in": [
+              "acc",
+              "py_assert_all",
+              "py_assert_eq",
+              "rev",
+              "reversed",
+              "values"
+            ],
+            "lifetime_live_out": [
+              "acc",
+              "py_assert_all",
+              "py_assert_eq",
+              "rev",
+              "reversed",
+              "v",
+              "values"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 13,
+            "col_offset": 4,
+            "end_lineno": 13,
+            "end_col_offset": 27
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 13,
+              "col_offset": 4,
+              "end_lineno": 13,
+              "end_col_offset": 10
+            },
+            "resolved_type": "list[bool]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks",
+            "id": "checks",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "bool"
+                }
+              ]
+            }
+          },
+          "annotation": "list[bool]",
+          "declare": true,
+          "decl_type": "list[bool]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "bool"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "bool"
+              }
+            ]
+          },
+          "value": {
+            "kind": "List",
+            "source_span": {
+              "lineno": 13,
+              "col_offset": 25,
+              "end_lineno": 13,
+              "end_col_offset": 27
+            },
+            "resolved_type": "list[bool]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "[]",
+            "elements": []
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "GenericType",
+            "category": "static",
+            "mirror": "list[bool]"
+          },
+          "cpp_empty_init_shorthand_v1": {
+            "version": "1",
+            "target_type": "list[bool]",
+            "rhs_kind": "List"
+          },
+          "meta": {
+            "lifetime_node_id": "n3",
+            "lifetime_defs": [
+              "checks"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "acc",
+              "py_assert_all",
+              "py_assert_eq",
+              "rev"
+            ],
+            "lifetime_live_out": [
+              "acc",
+              "checks",
+              "py_assert_all",
+              "py_assert_eq",
+              "rev"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 14,
+            "col_offset": 4,
+            "end_lineno": 14,
+            "end_col_offset": 46
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 14,
+              "col_offset": 4,
+              "end_lineno": 14,
+              "end_col_offset": 46
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq(acc, 9, \"acc\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 14,
+                "col_offset": 4,
+                "end_lineno": 14,
+                "end_col_offset": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 14,
+                  "col_offset": 4,
+                  "end_lineno": 14,
+                  "end_col_offset": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 14,
+                  "col_offset": 18,
+                  "end_lineno": 14,
+                  "end_col_offset": 45
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(acc, 9, \"acc\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 14,
+                    "col_offset": 18,
+                    "end_lineno": 14,
+                    "end_col_offset": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 14,
+                      "col_offset": 31,
+                      "end_lineno": 14,
+                      "end_col_offset": 34
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "acc",
+                    "id": "acc"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 14,
+                      "col_offset": 36,
+                      "end_lineno": 14,
+                      "end_col_offset": 37
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "9",
+                    "value": 9
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 14,
+                      "col_offset": 39,
+                      "end_lineno": 14,
+                      "end_col_offset": 44
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"acc\"",
+                    "value": "acc"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "DynamicType",
+                  "category": "dynamic",
+                  "mirror": "unknown",
+                  "dynamic_name": "unknown"
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 14,
+                "col_offset": 4,
+                "end_lineno": 14,
+                "end_col_offset": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "checks",
+              "id": "checks"
+            },
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n2",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "acc",
+              "checks",
+              "py_assert_eq"
+            ],
+            "lifetime_live_in": [
+              "acc",
+              "checks",
+              "py_assert_all",
+              "py_assert_eq",
+              "rev"
+            ],
+            "lifetime_live_out": [
+              "checks",
+              "py_assert_all",
+              "py_assert_eq",
+              "rev"
+            ],
+            "lifetime_last_use_vars": [
+              "acc"
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 15,
+            "col_offset": 4,
+            "end_lineno": 15,
+            "end_col_offset": 59
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 15,
+              "col_offset": 4,
+              "end_lineno": 15,
+              "end_col_offset": 59
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq(rev, [4, 1, 3], \"reversed\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 15,
+                "col_offset": 4,
+                "end_lineno": 15,
+                "end_col_offset": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 15,
+                  "col_offset": 4,
+                  "end_lineno": 15,
+                  "end_col_offset": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 15,
+                  "col_offset": 18,
+                  "end_lineno": 15,
+                  "end_col_offset": 58
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(rev, [4, 1, 3], \"reversed\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 15,
+                    "col_offset": 18,
+                    "end_lineno": 15,
+                    "end_col_offset": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 15,
+                      "col_offset": 31,
+                      "end_lineno": 15,
+                      "end_col_offset": 34
+                    },
+                    "resolved_type": "list[int64]",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "rev",
+                    "id": "rev"
+                  },
+                  {
+                    "kind": "List",
+                    "source_span": {
+                      "lineno": 15,
+                      "col_offset": 36,
+                      "end_lineno": 15,
+                      "end_col_offset": 45
+                    },
+                    "resolved_type": "list[int64]",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "[4, 1, 3]",
+                    "elements": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 15,
+                          "col_offset": 37,
+                          "end_lineno": 15,
+                          "end_col_offset": 38
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "4",
+                        "value": 4
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 15,
+                          "col_offset": 40,
+                          "end_lineno": 15,
+                          "end_col_offset": 41
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "1",
+                        "value": 1
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 15,
+                          "col_offset": 43,
+                          "end_lineno": 15,
+                          "end_col_offset": 44
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "3",
+                        "value": 3
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 15,
+                      "col_offset": 47,
+                      "end_lineno": 15,
+                      "end_col_offset": 57
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"reversed\"",
+                    "value": "reversed"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "DynamicType",
+                  "category": "dynamic",
+                  "mirror": "unknown",
+                  "dynamic_name": "unknown"
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 15,
+                "col_offset": 4,
+                "end_lineno": 15,
+                "end_col_offset": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "checks",
+              "id": "checks"
+            },
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n1",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "checks",
+              "py_assert_eq",
+              "rev"
+            ],
+            "lifetime_live_in": [
+              "checks",
+              "py_assert_all",
+              "py_assert_eq",
+              "rev"
+            ],
+            "lifetime_live_out": [
+              "checks",
+              "py_assert_all"
+            ],
+            "lifetime_last_use_vars": [
+              "py_assert_eq",
+              "rev"
+            ]
+          }
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 16,
+            "col_offset": 4,
+            "end_lineno": 16,
+            "end_col_offset": 42
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 16,
+              "col_offset": 11,
+              "end_lineno": 16,
+              "end_col_offset": 42
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "py_assert_all(checks, \"case39\")",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 16,
+                "col_offset": 11,
+                "end_lineno": 16,
+                "end_col_offset": 24
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "py_assert_all",
+              "id": "py_assert_all"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 16,
+                  "col_offset": 25,
+                  "end_lineno": 16,
+                  "end_col_offset": 31
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 16,
+                  "col_offset": 33,
+                  "end_lineno": 16,
+                  "end_col_offset": 41
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"case39\"",
+                "value": "case39"
+              }
+            ],
+            "keywords": [],
+            "resolved_runtime_call": "py_assert_all",
+            "resolved_runtime_source": "import_symbol",
+            "runtime_module_id": "pytra.utils.assertions",
+            "runtime_symbol": "py_assert_all",
+            "runtime_call_adapter_kind": "extern_delegate",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "DynamicType",
+              "category": "dynamic",
+              "mirror": "unknown",
+              "dynamic_name": "unknown"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n0",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "checks",
+              "py_assert_all"
+            ],
+            "lifetime_live_in": [
+              "checks",
+              "py_assert_all"
+            ],
+            "lifetime_live_out": [],
+            "lifetime_last_use_vars": [
+              "checks",
+              "py_assert_all"
+            ]
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "bool"
+      },
+      "leading_comments": [
+        "This file contains test/implementation code for `test/fixtures/reversed_enumerate.py`."
+      ],
+      "leading_trivia": [
+        {
+          "kind": "comment",
+          "text": "This file contains test/implementation code for `test/fixtures/reversed_enumerate.py`."
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ],
+      "returns": "bool",
+      "meta": {
+        "lifetime_analysis": {
+          "schema_version": "east3_lifetime_v1",
+          "status": "ok",
+          "reason": "",
+          "entry_node": "n14",
+          "order": [
+            "n0",
+            "n1",
+            "n2",
+            "n3",
+            "n4",
+            "n5",
+            "n6",
+            "n7",
+            "n8",
+            "n9",
+            "n10",
+            "n11",
+            "n12",
+            "n13",
+            "n14"
+          ],
+          "cfg": [
+            {
+              "id": "n0",
+              "kind": "Return",
+              "defs": [],
+              "uses": [
+                "checks",
+                "py_assert_all"
+              ],
+              "succ": []
+            },
+            {
+              "id": "n1",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "checks",
+                "py_assert_eq",
+                "rev"
+              ],
+              "succ": [
+                "n0"
+              ]
+            },
+            {
+              "id": "n2",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "acc",
+                "checks",
+                "py_assert_eq"
+              ],
+              "succ": [
+                "n1"
+              ]
+            },
+            {
+              "id": "n3",
+              "kind": "AnnAssign",
+              "defs": [
+                "checks"
+              ],
+              "uses": [],
+              "succ": [
+                "n2"
+              ]
+            },
+            {
+              "id": "n4",
+              "kind": "ForCore",
+              "defs": [
+                "v"
+              ],
+              "uses": [
+                "reversed",
+                "values"
+              ],
+              "succ": [
+                "n3",
+                "n5"
+              ]
+            },
+            {
+              "id": "n5",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "rev",
+                "v"
+              ],
+              "succ": [
+                "n4"
+              ]
+            },
+            {
+              "id": "n6",
+              "kind": "AnnAssign",
+              "defs": [
+                "rev"
+              ],
+              "uses": [],
+              "succ": [
+                "n4"
+              ]
+            },
+            {
+              "id": "n7",
+              "kind": "ForCore",
+              "defs": [
+                "v"
+              ],
+              "uses": [
+                "values"
+              ],
+              "succ": [
+                "n10",
+                "n6"
+              ]
+            },
+            {
+              "id": "n8",
+              "kind": "AugAssign",
+              "defs": [
+                "__enum_idx_1"
+              ],
+              "uses": [
+                "__enum_idx_1"
+              ],
+              "succ": [
+                "n7"
+              ]
+            },
+            {
+              "id": "n9",
+              "kind": "AugAssign",
+              "defs": [
+                "acc"
+              ],
+              "uses": [
+                "acc",
+                "i",
+                "v"
+              ],
+              "succ": [
+                "n8"
+              ]
+            },
+            {
+              "id": "n10",
+              "kind": "Assign",
+              "defs": [
+                "i"
+              ],
+              "uses": [
+                "__enum_idx_1"
+              ],
+              "succ": [
+                "n9"
+              ]
+            },
+            {
+              "id": "n11",
+              "kind": "VarDecl",
+              "defs": [],
+              "uses": [],
+              "succ": [
+                "n7"
+              ]
+            },
+            {
+              "id": "n12",
+              "kind": "Assign",
+              "defs": [
+                "__enum_idx_1"
+              ],
+              "uses": [],
+              "succ": [
+                "n11"
+              ]
+            },
+            {
+              "id": "n13",
+              "kind": "AnnAssign",
+              "defs": [
+                "acc"
+              ],
+              "uses": [],
+              "succ": [
+                "n12"
+              ]
+            },
+            {
+              "id": "n14",
+              "kind": "AnnAssign",
+              "defs": [
+                "values"
+              ],
+              "uses": [],
+              "succ": [
+                "n13"
+              ]
+            }
+          ],
+          "def_use": {
+            "defs": {
+              "__enum_idx_1": [
+                "n12",
+                "n8"
+              ],
+              "acc": [
+                "n13",
+                "n9"
+              ],
+              "checks": [
+                "n3"
+              ],
+              "i": [
+                "n10"
+              ],
+              "rev": [
+                "n6"
+              ],
+              "v": [
+                "n4",
+                "n7"
+              ],
+              "values": [
+                "n14"
+              ]
+            },
+            "uses": {
+              "__enum_idx_1": [
+                "n10",
+                "n8"
+              ],
+              "acc": [
+                "n2",
+                "n9"
+              ],
+              "checks": [
+                "n0",
+                "n1",
+                "n2"
+              ],
+              "i": [
+                "n9"
+              ],
+              "py_assert_all": [
+                "n0"
+              ],
+              "py_assert_eq": [
+                "n1",
+                "n2"
+              ],
+              "rev": [
+                "n1",
+                "n5"
+              ],
+              "reversed": [
+                "n4"
+              ],
+              "v": [
+                "n5",
+                "n9"
+              ],
+              "values": [
+                "n4",
+                "n7"
+              ]
+            }
+          },
+          "variables": {
+            "__enum_idx_1": {
+              "def_nodes": [
+                "n12",
+                "n8"
+              ],
+              "use_nodes": [
+                "n10",
+                "n8"
+              ],
+              "live_in_nodes": [
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11"
+              ],
+              "live_out_nodes": [
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12"
+              ],
+              "last_use_nodes": [],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "acc": {
+              "def_nodes": [
+                "n13",
+                "n9"
+              ],
+              "use_nodes": [
+                "n2",
+                "n9"
+              ],
+              "live_in_nodes": [
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12"
+              ],
+              "live_out_nodes": [
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13"
+              ],
+              "last_use_nodes": [
+                "n2"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "checks": {
+              "def_nodes": [
+                "n3"
+              ],
+              "use_nodes": [
+                "n0",
+                "n1",
+                "n2"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "escape_or_unknown"
+            },
+            "i": {
+              "def_nodes": [
+                "n10"
+              ],
+              "use_nodes": [
+                "n9"
+              ],
+              "live_in_nodes": [
+                "n9"
+              ],
+              "live_out_nodes": [
+                "n10"
+              ],
+              "last_use_nodes": [
+                "n9"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "py_assert_all": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "escape_or_unknown"
+            },
+            "py_assert_eq": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n1",
+                "n2"
+              ],
+              "live_in_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14"
+              ],
+              "live_out_nodes": [
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14"
+              ],
+              "last_use_nodes": [
+                "n1"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "rev": {
+              "def_nodes": [
+                "n6"
+              ],
+              "use_nodes": [
+                "n1",
+                "n5"
+              ],
+              "live_in_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5"
+              ],
+              "live_out_nodes": [
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6"
+              ],
+              "last_use_nodes": [
+                "n1"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "reversed": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n4"
+              ],
+              "live_in_nodes": [
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14"
+              ],
+              "live_out_nodes": [
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14"
+              ],
+              "last_use_nodes": [],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "v": {
+              "def_nodes": [
+                "n4",
+                "n7"
+              ],
+              "use_nodes": [
+                "n5",
+                "n9"
+              ],
+              "live_in_nodes": [
+                "n5",
+                "n9",
+                "n10"
+              ],
+              "live_out_nodes": [
+                "n4",
+                "n7",
+                "n10"
+              ],
+              "last_use_nodes": [
+                "n5",
+                "n9"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "values": {
+              "def_nodes": [
+                "n14"
+              ],
+              "use_nodes": [
+                "n4",
+                "n7"
+              ],
+              "live_in_nodes": [
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13"
+              ],
+              "live_out_nodes": [
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14"
+              ],
+              "last_use_nodes": [],
+              "lifetime_class": "local_non_escape_candidate"
+            }
+          },
+          "arg_order": [],
+          "arg_escape": [],
+          "has_dynamic_name_access": false
+        }
+      }
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 20,
+        "col_offset": 4,
+        "end_lineno": 20,
+        "end_col_offset": 35
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 20,
+          "col_offset": 4,
+          "end_lineno": 20,
+          "end_col_offset": 35
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "print(run_reversed_enumerate())",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 20,
+            "col_offset": 4,
+            "end_lineno": 20,
+            "end_col_offset": 9
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "print",
+          "id": "print"
+        },
+        "args": [
+          {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 20,
+              "col_offset": 10,
+              "end_lineno": 20,
+              "end_col_offset": 34
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "run_reversed_enumerate()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 20,
+                "col_offset": 10,
+                "end_lineno": 20,
+                "end_col_offset": 32
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "run_reversed_enumerate",
+              "id": "run_reversed_enumerate"
+            },
+            "args": [],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "bool"
+            }
+          }
+        ],
+        "keywords": [],
+        "lowered_kind": "BuiltinCall",
+        "builtin_name": "print",
+        "runtime_call": "py_print",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_symbol": "py_print",
+        "runtime_call_adapter_kind": "builtin",
+        "semantic_tag": "core.print",
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_all",
+          "local_name": "py_assert_all",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/strings/reversed_enumerate.py",
+          "source_line": 4,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_all",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_all",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_all"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_eq",
+          "local_name": "py_assert_eq",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/strings/reversed_enumerate.py",
+          "source_line": 4,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_eq",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_eq",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_eq"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/strings/reversed_enumerate.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        },
+        {
+          "module_id": "pytra.built_in.iter_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.iter_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/strings/reversed_enumerate.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.iter_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.iter_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_all",
+          "local_name": "py_assert_all"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_eq",
+          "local_name": "py_assert_eq"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_all",
+        "local_name": "py_assert_all",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/strings/reversed_enumerate.py",
+        "source_line": 4
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_eq",
+        "local_name": "py_assert_eq",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/strings/reversed_enumerate.py",
+        "source_line": 4
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/strings/reversed_enumerate.py",
+        "source_line": 0
+      },
+      {
+        "module_id": "pytra.built_in.iter_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.iter_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/strings/reversed_enumerate.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_all",
+        "local_name": "py_assert_all"
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_eq",
+        "local_name": "py_assert_eq"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "py_assert_all": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_all"
+      },
+      "py_assert_eq": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_eq"
+      }
+    },
+    "dispatch_mode": "native",
+    "lifetime_schema_version": "east3_lifetime_v1"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

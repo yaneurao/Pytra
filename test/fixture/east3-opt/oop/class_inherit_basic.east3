@@ -1,0 +1,766 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/oop/class_inherit_basic.py",
+  "body": [
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 1,
+        "col_offset": 0,
+        "end_lineno": 4,
+        "end_col_offset": 0
+      },
+      "name": "Base",
+      "original_name": "Base",
+      "base": null,
+      "dataclass": false,
+      "field_types": {},
+      "body": [
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 2,
+            "col_offset": 4,
+            "end_lineno": 3,
+            "end_col_offset": 21
+          },
+          "name": "speak",
+          "original_name": "speak",
+          "arg_types": {
+            "self": "Base"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "str",
+          "arg_usage": {
+            "self": "readonly"
+          },
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 3,
+                "col_offset": 8,
+                "end_lineno": 3,
+                "end_col_offset": 21
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 3,
+                  "col_offset": 15,
+                  "end_lineno": 3,
+                  "end_col_offset": 21
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"base\"",
+                "value": "base"
+              },
+              "meta": {
+                "lifetime_node_id": "n0",
+                "lifetime_defs": [],
+                "lifetime_uses": [],
+                "lifetime_live_in": [],
+                "lifetime_live_out": [],
+                "lifetime_last_use_vars": []
+              }
+            }
+          ],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": [],
+          "returns": "str",
+          "mutates_self": false,
+          "meta": {
+            "lifetime_analysis": {
+              "schema_version": "east3_lifetime_v1",
+              "status": "ok",
+              "reason": "",
+              "entry_node": "n0",
+              "order": [
+                "n0"
+              ],
+              "cfg": [
+                {
+                  "id": "n0",
+                  "kind": "Return",
+                  "defs": [],
+                  "uses": [],
+                  "succ": []
+                }
+              ],
+              "def_use": {
+                "defs": {},
+                "uses": {}
+              },
+              "variables": {
+                "self": {
+                  "def_nodes": [],
+                  "use_nodes": [],
+                  "live_in_nodes": [],
+                  "live_out_nodes": [],
+                  "last_use_nodes": [],
+                  "lifetime_class": "escape_or_unknown"
+                }
+              },
+              "arg_order": [
+                "self"
+              ],
+              "arg_escape": [
+                true
+              ],
+              "has_dynamic_name_access": false
+            }
+          }
+        }
+      ],
+      "class_storage_hint": "value",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 5,
+        "col_offset": 0,
+        "end_lineno": 8,
+        "end_col_offset": 0
+      },
+      "name": "Child",
+      "original_name": "Child",
+      "base": "Base",
+      "dataclass": false,
+      "field_types": {},
+      "body": [
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 6,
+            "col_offset": 4,
+            "end_lineno": 7,
+            "end_col_offset": 22
+          },
+          "name": "speak",
+          "original_name": "speak",
+          "arg_types": {
+            "self": "Child"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "str",
+          "arg_usage": {
+            "self": "readonly"
+          },
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 7,
+                "col_offset": 8,
+                "end_lineno": 7,
+                "end_col_offset": 22
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 7,
+                  "col_offset": 15,
+                  "end_lineno": 7,
+                  "end_col_offset": 22
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"child\"",
+                "value": "child"
+              },
+              "meta": {
+                "lifetime_node_id": "n0",
+                "lifetime_defs": [],
+                "lifetime_uses": [],
+                "lifetime_live_in": [],
+                "lifetime_live_out": [],
+                "lifetime_last_use_vars": []
+              }
+            }
+          ],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": [],
+          "returns": "str",
+          "mutates_self": false,
+          "meta": {
+            "lifetime_analysis": {
+              "schema_version": "east3_lifetime_v1",
+              "status": "ok",
+              "reason": "",
+              "entry_node": "n0",
+              "order": [
+                "n0"
+              ],
+              "cfg": [
+                {
+                  "id": "n0",
+                  "kind": "Return",
+                  "defs": [],
+                  "uses": [],
+                  "succ": []
+                }
+              ],
+              "def_use": {
+                "defs": {},
+                "uses": {}
+              },
+              "variables": {
+                "self": {
+                  "def_nodes": [],
+                  "use_nodes": [],
+                  "live_in_nodes": [],
+                  "live_out_nodes": [],
+                  "last_use_nodes": [],
+                  "lifetime_class": "escape_or_unknown"
+                }
+              },
+              "arg_order": [
+                "self"
+              ],
+              "arg_escape": [
+                true
+              ],
+              "has_dynamic_name_access": false
+            }
+          }
+        }
+      ],
+      "class_storage_hint": "ref"
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 10,
+        "col_offset": 4,
+        "end_lineno": 10,
+        "end_col_offset": 20
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 10,
+          "col_offset": 4,
+          "end_lineno": 10,
+          "end_col_offset": 5
+        },
+        "resolved_type": "Base",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "b",
+        "id": "b",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "Base"
+        }
+      },
+      "annotation": "Base",
+      "declare": true,
+      "decl_type": "Base",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "Base"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "Base"
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 10,
+          "col_offset": 14,
+          "end_lineno": 10,
+          "end_col_offset": 20
+        },
+        "resolved_type": "Base",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "Base()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 10,
+            "col_offset": 14,
+            "end_lineno": 10,
+            "end_col_offset": 18
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "Base",
+          "id": "Base"
+        },
+        "args": [],
+        "keywords": [],
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "Base"
+        }
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "Base"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 11,
+        "col_offset": 4,
+        "end_lineno": 11,
+        "end_col_offset": 22
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 11,
+          "col_offset": 4,
+          "end_lineno": 11,
+          "end_col_offset": 5
+        },
+        "resolved_type": "Child",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "c",
+        "id": "c",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "Child"
+        }
+      },
+      "annotation": "Child",
+      "declare": true,
+      "decl_type": "Child",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "Child"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "Child"
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 11,
+          "col_offset": 15,
+          "end_lineno": 11,
+          "end_col_offset": 22
+        },
+        "resolved_type": "Child",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "Child()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 11,
+            "col_offset": 15,
+            "end_lineno": 11,
+            "end_col_offset": 20
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "Child",
+          "id": "Child"
+        },
+        "args": [],
+        "keywords": [],
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "Child"
+        }
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "Child"
+      }
+    },
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 12,
+        "col_offset": 4,
+        "end_lineno": 12,
+        "end_col_offset": 20
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 12,
+          "col_offset": 4,
+          "end_lineno": 12,
+          "end_col_offset": 20
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "print(b.speak())",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 12,
+            "col_offset": 4,
+            "end_lineno": 12,
+            "end_col_offset": 9
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "print",
+          "id": "print"
+        },
+        "args": [
+          {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 12,
+              "col_offset": 10,
+              "end_lineno": 12,
+              "end_col_offset": 19
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "b.speak()",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 12,
+                "col_offset": 10,
+                "end_lineno": 12,
+                "end_col_offset": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "b.speak",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 12,
+                  "col_offset": 10,
+                  "end_lineno": 12,
+                  "end_col_offset": 11
+                },
+                "resolved_type": "Base",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "b",
+                "id": "b"
+              },
+              "attr": "speak"
+            },
+            "args": [],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "str"
+            }
+          }
+        ],
+        "keywords": [],
+        "lowered_kind": "BuiltinCall",
+        "builtin_name": "print",
+        "runtime_call": "py_print",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_symbol": "py_print",
+        "runtime_call_adapter_kind": "builtin",
+        "semantic_tag": "core.print",
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    },
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 13,
+        "col_offset": 4,
+        "end_lineno": 13,
+        "end_col_offset": 20
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 13,
+          "col_offset": 4,
+          "end_lineno": 13,
+          "end_col_offset": 20
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "print(c.speak())",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 13,
+            "col_offset": 4,
+            "end_lineno": 13,
+            "end_col_offset": 9
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "print",
+          "id": "print"
+        },
+        "args": [
+          {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 13,
+              "col_offset": 10,
+              "end_lineno": 13,
+              "end_col_offset": 19
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "c.speak()",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 13,
+                "col_offset": 10,
+                "end_lineno": 13,
+                "end_col_offset": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "c.speak",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 13,
+                  "col_offset": 10,
+                  "end_lineno": 13,
+                  "end_col_offset": 11
+                },
+                "resolved_type": "Child",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "c",
+                "id": "c"
+              },
+              "attr": "speak"
+            },
+            "args": [],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "str"
+            }
+          }
+        ],
+        "keywords": [],
+        "lowered_kind": "BuiltinCall",
+        "builtin_name": "print",
+        "runtime_call": "py_print",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_symbol": "py_print",
+        "runtime_call_adapter_kind": "builtin",
+        "semantic_tag": "core.print",
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    },
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 14,
+        "col_offset": 4,
+        "end_lineno": 14,
+        "end_col_offset": 30
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 14,
+          "col_offset": 4,
+          "end_lineno": 14,
+          "end_col_offset": 30
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "print(isinstance(c, Base))",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 14,
+            "col_offset": 4,
+            "end_lineno": 14,
+            "end_col_offset": 9
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "print",
+          "id": "print"
+        },
+        "args": [
+          {
+            "kind": "IsInstance",
+            "resolved_type": "bool",
+            "borrow_kind": "value",
+            "casts": [],
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 14,
+                "col_offset": 21,
+                "end_lineno": 14,
+                "end_col_offset": 22
+              },
+              "resolved_type": "Child",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "c",
+              "id": "c"
+            },
+            "expected_type_id": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 14,
+                "col_offset": 24,
+                "end_lineno": 14,
+                "end_col_offset": 28
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "Base",
+              "id": "Base"
+            },
+            "source_span": {
+              "lineno": 14,
+              "col_offset": 10,
+              "end_lineno": 14,
+              "end_col_offset": 29
+            },
+            "repr": "isinstance(c, Base)",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "Child"
+            },
+            "narrowing_lane_v1": {
+              "schema_version": 1,
+              "source_category": "static",
+              "source_type": {
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "Child"
+              }
+            }
+          }
+        ],
+        "keywords": [],
+        "lowered_kind": "BuiltinCall",
+        "builtin_name": "print",
+        "runtime_call": "py_print",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_symbol": "py_print",
+        "runtime_call_adapter_kind": "builtin",
+        "semantic_tag": "core.print",
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/oop/class_inherit_basic.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": []
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/oop/class_inherit_basic.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {},
+    "dispatch_mode": "native",
+    "lifetime_schema_version": "east3_lifetime_v1"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

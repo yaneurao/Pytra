@@ -1,0 +1,1882 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/typing/list_bool_index.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 3,
+        "col": 0,
+        "end_lineno": 3,
+        "end_col": 62
+      },
+      "module": "pytra.utils.assertions",
+      "names": [
+        {
+          "name": "py_assert_all",
+          "asname": null
+        },
+        {
+          "name": "py_assert_eq",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 6,
+        "col": 0,
+        "end_lineno": 9,
+        "end_col": 23
+      },
+      "name": "invert_flag",
+      "original_name": "invert_flag",
+      "arg_types": {
+        "flags": "list[bool]",
+        "index": "int64"
+      },
+      "arg_order": [
+        "flags",
+        "index"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "flags": 0,
+        "index": 1
+      },
+      "return_type": "bool",
+      "arg_usage": {
+        "flags": "readonly",
+        "index": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 7,
+            "col": 4,
+            "end_lineno": 7,
+            "end_col": 26
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 7,
+              "col": 4,
+              "end_lineno": 7,
+              "end_col": 11
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "current",
+            "id": "current"
+          },
+          "value": {
+            "kind": "Subscript",
+            "source_span": {
+              "lineno": 7,
+              "col": 14,
+              "end_lineno": 7,
+              "end_col": 26
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "flags[index]",
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 7,
+                "col": 14,
+                "end_lineno": 7,
+                "end_col": 19
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "flags",
+              "id": "flags"
+            },
+            "slice": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 7,
+                "col": 20,
+                "end_lineno": 7,
+                "end_col": 25
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "index",
+              "id": "index"
+            }
+          },
+          "declare": true,
+          "decl_type": "bool",
+          "declare_init": true
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 8,
+            "col": 4,
+            "end_lineno": 8,
+            "end_col": 30
+          },
+          "target": {
+            "kind": "Subscript",
+            "source_span": {
+              "lineno": 8,
+              "col": 4,
+              "end_lineno": 8,
+              "end_col": 16
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "flags[index]",
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 8,
+                "col": 4,
+                "end_lineno": 8,
+                "end_col": 9
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "flags",
+              "id": "flags"
+            },
+            "slice": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 8,
+                "col": 10,
+                "end_lineno": 8,
+                "end_col": 15
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "index",
+              "id": "index"
+            }
+          },
+          "value": {
+            "kind": "UnaryOp",
+            "source_span": {
+              "lineno": 8,
+              "col": 19,
+              "end_lineno": 8,
+              "end_col": 30
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "not current",
+            "op": "Not",
+            "operand": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 8,
+                "col": 23,
+                "end_lineno": 8,
+                "end_col": 30
+              },
+              "resolved_type": "bool",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "current",
+              "id": "current"
+            }
+          },
+          "declare": true,
+          "decl_type": "bool",
+          "declare_init": true
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 9,
+            "col": 4,
+            "end_lineno": 9,
+            "end_col": 23
+          },
+          "value": {
+            "kind": "Subscript",
+            "source_span": {
+              "lineno": 9,
+              "col": 11,
+              "end_lineno": 9,
+              "end_col": 23
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "flags[index]",
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 9,
+                "col": 11,
+                "end_lineno": 9,
+                "end_col": 16
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "flags",
+              "id": "flags"
+            },
+            "slice": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 9,
+                "col": 17,
+                "end_lineno": 9,
+                "end_col": 22
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "index",
+              "id": "index"
+            }
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "flags": {
+          "kind": "GenericType",
+          "base": "list",
+          "args": [
+            {
+              "kind": "NamedType",
+              "name": "bool"
+            }
+          ]
+        },
+        "index": {
+          "kind": "NamedType",
+          "name": "int64"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "bool"
+      },
+      "leading_comments": [
+        "This file contains test/implementation code for `test/fixtures/typing/list_bool_index.py`."
+      ],
+      "leading_trivia": [
+        {
+          "kind": "comment",
+          "text": "This file contains test/implementation code for `test/fixtures/typing/list_bool_index.py`."
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 12,
+        "col": 0,
+        "end_lineno": 21,
+        "end_col": 51
+      },
+      "name": "run_list_bool_index",
+      "original_name": "run_list_bool_index",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "bool",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 13,
+            "col": 4,
+            "end_lineno": 13,
+            "end_col": 43
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 13,
+              "col": 4,
+              "end_lineno": 13,
+              "end_col": 9
+            },
+            "resolved_type": "list[bool]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "flags",
+            "id": "flags",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "bool"
+                }
+              ]
+            }
+          },
+          "annotation": "list[bool]",
+          "value": {
+            "kind": "List",
+            "source_span": {
+              "lineno": 13,
+              "col": 24,
+              "end_lineno": 13,
+              "end_col": 43
+            },
+            "resolved_type": "list[bool]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "[True, False, True]",
+            "elements": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 25,
+                  "end_lineno": 13,
+                  "end_col": 29
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "True",
+                "value": true
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 31,
+                  "end_lineno": 13,
+                  "end_col": 36
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "False",
+                "value": false
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 38,
+                  "end_lineno": 13,
+                  "end_col": 42
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "True",
+                "value": true
+              }
+            ]
+          },
+          "declare": true,
+          "decl_type": "list[bool]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "bool"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "bool"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 14,
+            "col": 4,
+            "end_lineno": 14,
+            "end_col": 27
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 14,
+              "col": 4,
+              "end_lineno": 14,
+              "end_col": 10
+            },
+            "resolved_type": "list[bool]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks",
+            "id": "checks",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "bool"
+                }
+              ]
+            }
+          },
+          "annotation": "list[bool]",
+          "value": {
+            "kind": "List",
+            "source_span": {
+              "lineno": 14,
+              "col": 25,
+              "end_lineno": 14,
+              "end_col": 27
+            },
+            "resolved_type": "list[unknown]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "[]",
+            "elements": []
+          },
+          "declare": true,
+          "decl_type": "list[bool]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "bool"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "bool"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 15,
+            "col": 4,
+            "end_lineno": 15,
+            "end_col": 68
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 15,
+              "col": 4,
+              "end_lineno": 15,
+              "end_col": 68
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq(flags[0], True, \"initial read true\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 15,
+                "col": 4,
+                "end_lineno": 15,
+                "end_col": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 4,
+                  "end_lineno": 15,
+                  "end_col": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 18,
+                  "end_lineno": 15,
+                  "end_col": 67
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(flags[0], True, \"initial read true\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 15,
+                    "col": 18,
+                    "end_lineno": 15,
+                    "end_col": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Subscript",
+                    "source_span": {
+                      "lineno": 15,
+                      "col": 31,
+                      "end_lineno": 15,
+                      "end_col": 39
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "flags[0]",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 15,
+                        "col": 31,
+                        "end_lineno": 15,
+                        "end_col": 36
+                      },
+                      "resolved_type": "list[bool]",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "flags",
+                      "id": "flags"
+                    },
+                    "slice": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 15,
+                        "col": 37,
+                        "end_lineno": 15,
+                        "end_col": 38
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "0",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 15,
+                      "col": 41,
+                      "end_lineno": 15,
+                      "end_col": 45
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "True",
+                    "value": true
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 15,
+                      "col": 47,
+                      "end_lineno": 15,
+                      "end_col": 66
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"initial read true\"",
+                    "value": "initial read true"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 15,
+                "col": 4,
+                "end_lineno": 15,
+                "end_col": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "checks",
+              "id": "checks"
+            }
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 16,
+            "col": 4,
+            "end_lineno": 16,
+            "end_col": 70
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 16,
+              "col": 4,
+              "end_lineno": 16,
+              "end_col": 70
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq(flags[1], False, \"initial read false\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 16,
+                "col": 4,
+                "end_lineno": 16,
+                "end_col": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 16,
+                  "col": 4,
+                  "end_lineno": 16,
+                  "end_col": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 16,
+                  "col": 18,
+                  "end_lineno": 16,
+                  "end_col": 69
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(flags[1], False, \"initial read false\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 16,
+                    "col": 18,
+                    "end_lineno": 16,
+                    "end_col": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Subscript",
+                    "source_span": {
+                      "lineno": 16,
+                      "col": 31,
+                      "end_lineno": 16,
+                      "end_col": 39
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "flags[1]",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 16,
+                        "col": 31,
+                        "end_lineno": 16,
+                        "end_col": 36
+                      },
+                      "resolved_type": "list[bool]",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "flags",
+                      "id": "flags"
+                    },
+                    "slice": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 16,
+                        "col": 37,
+                        "end_lineno": 16,
+                        "end_col": 38
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "1",
+                      "value": 1
+                    }
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 16,
+                      "col": 41,
+                      "end_lineno": 16,
+                      "end_col": 46
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "False",
+                    "value": false
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 16,
+                      "col": 48,
+                      "end_lineno": 16,
+                      "end_col": 68
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"initial read false\"",
+                    "value": "initial read false"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 16,
+                "col": 4,
+                "end_lineno": 16,
+                "end_col": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "checks",
+              "id": "checks"
+            }
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 17,
+            "col": 4,
+            "end_lineno": 17,
+            "end_col": 76
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 17,
+              "col": 4,
+              "end_lineno": 17,
+              "end_col": 76
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq(invert_flag(flags, 0), False, \"write false\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 17,
+                "col": 4,
+                "end_lineno": 17,
+                "end_col": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 17,
+                  "col": 4,
+                  "end_lineno": 17,
+                  "end_col": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 17,
+                  "col": 18,
+                  "end_lineno": 17,
+                  "end_col": 75
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(invert_flag(flags, 0), False, \"write false\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 17,
+                    "col": 18,
+                    "end_lineno": 17,
+                    "end_col": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 17,
+                      "col": 31,
+                      "end_lineno": 17,
+                      "end_col": 52
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "invert_flag(flags, 0)",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 17,
+                        "col": 31,
+                        "end_lineno": 17,
+                        "end_col": 42
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "invert_flag",
+                      "id": "invert_flag"
+                    },
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 17,
+                          "col": 43,
+                          "end_lineno": 17,
+                          "end_col": 48
+                        },
+                        "resolved_type": "list[bool]",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "flags",
+                        "id": "flags"
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 17,
+                          "col": 50,
+                          "end_lineno": 17,
+                          "end_col": 51
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "0",
+                        "value": 0
+                      }
+                    ],
+                    "keywords": []
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 17,
+                      "col": 54,
+                      "end_lineno": 17,
+                      "end_col": 59
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "False",
+                    "value": false
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 17,
+                      "col": 61,
+                      "end_lineno": 17,
+                      "end_col": 74
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"write false\"",
+                    "value": "write false"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 17,
+                "col": 4,
+                "end_lineno": 17,
+                "end_col": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "checks",
+              "id": "checks"
+            }
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 18,
+            "col": 4,
+            "end_lineno": 18,
+            "end_col": 64
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 18,
+              "col": 4,
+              "end_lineno": 18,
+              "end_col": 64
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq(flags[0], False, \"reread false\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 18,
+                "col": 4,
+                "end_lineno": 18,
+                "end_col": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 18,
+                  "col": 4,
+                  "end_lineno": 18,
+                  "end_col": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 18,
+                  "col": 18,
+                  "end_lineno": 18,
+                  "end_col": 63
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(flags[0], False, \"reread false\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 18,
+                    "col": 18,
+                    "end_lineno": 18,
+                    "end_col": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Subscript",
+                    "source_span": {
+                      "lineno": 18,
+                      "col": 31,
+                      "end_lineno": 18,
+                      "end_col": 39
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "flags[0]",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 18,
+                        "col": 31,
+                        "end_lineno": 18,
+                        "end_col": 36
+                      },
+                      "resolved_type": "list[bool]",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "flags",
+                      "id": "flags"
+                    },
+                    "slice": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 18,
+                        "col": 37,
+                        "end_lineno": 18,
+                        "end_col": 38
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "0",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 18,
+                      "col": 41,
+                      "end_lineno": 18,
+                      "end_col": 46
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "False",
+                    "value": false
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 18,
+                      "col": 48,
+                      "end_lineno": 18,
+                      "end_col": 62
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"reread false\"",
+                    "value": "reread false"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 18,
+                "col": 4,
+                "end_lineno": 18,
+                "end_col": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "checks",
+              "id": "checks"
+            }
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 19,
+            "col": 4,
+            "end_lineno": 19,
+            "end_col": 74
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 19,
+              "col": 4,
+              "end_lineno": 19,
+              "end_col": 74
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq(invert_flag(flags, 1), True, \"write true\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 19,
+                "col": 4,
+                "end_lineno": 19,
+                "end_col": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 19,
+                  "col": 4,
+                  "end_lineno": 19,
+                  "end_col": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 19,
+                  "col": 18,
+                  "end_lineno": 19,
+                  "end_col": 73
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(invert_flag(flags, 1), True, \"write true\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 19,
+                    "col": 18,
+                    "end_lineno": 19,
+                    "end_col": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 19,
+                      "col": 31,
+                      "end_lineno": 19,
+                      "end_col": 52
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "invert_flag(flags, 1)",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 19,
+                        "col": 31,
+                        "end_lineno": 19,
+                        "end_col": 42
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "invert_flag",
+                      "id": "invert_flag"
+                    },
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 19,
+                          "col": 43,
+                          "end_lineno": 19,
+                          "end_col": 48
+                        },
+                        "resolved_type": "list[bool]",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "flags",
+                        "id": "flags"
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 19,
+                          "col": 50,
+                          "end_lineno": 19,
+                          "end_col": 51
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "1",
+                        "value": 1
+                      }
+                    ],
+                    "keywords": []
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 19,
+                      "col": 54,
+                      "end_lineno": 19,
+                      "end_col": 58
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "True",
+                    "value": true
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 19,
+                      "col": 60,
+                      "end_lineno": 19,
+                      "end_col": 72
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"write true\"",
+                    "value": "write true"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 19,
+                "col": 4,
+                "end_lineno": 19,
+                "end_col": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "checks",
+              "id": "checks"
+            }
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 20,
+            "col": 4,
+            "end_lineno": 20,
+            "end_col": 62
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 20,
+              "col": 4,
+              "end_lineno": 20,
+              "end_col": 62
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq(flags[1], True, \"reread true\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 20,
+                "col": 4,
+                "end_lineno": 20,
+                "end_col": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 20,
+                  "col": 4,
+                  "end_lineno": 20,
+                  "end_col": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 20,
+                  "col": 18,
+                  "end_lineno": 20,
+                  "end_col": 61
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(flags[1], True, \"reread true\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 20,
+                    "col": 18,
+                    "end_lineno": 20,
+                    "end_col": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Subscript",
+                    "source_span": {
+                      "lineno": 20,
+                      "col": 31,
+                      "end_lineno": 20,
+                      "end_col": 39
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "flags[1]",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 20,
+                        "col": 31,
+                        "end_lineno": 20,
+                        "end_col": 36
+                      },
+                      "resolved_type": "list[bool]",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "flags",
+                      "id": "flags"
+                    },
+                    "slice": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 20,
+                        "col": 37,
+                        "end_lineno": 20,
+                        "end_col": 38
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "1",
+                      "value": 1
+                    }
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 20,
+                      "col": 41,
+                      "end_lineno": 20,
+                      "end_col": 45
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "True",
+                    "value": true
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 20,
+                      "col": 47,
+                      "end_lineno": 20,
+                      "end_col": 60
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"reread true\"",
+                    "value": "reread true"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 20,
+                "col": 4,
+                "end_lineno": 20,
+                "end_col": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "checks",
+              "id": "checks"
+            }
+          }
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 21,
+            "col": 4,
+            "end_lineno": 21,
+            "end_col": 51
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 21,
+              "col": 11,
+              "end_lineno": 21,
+              "end_col": 51
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "py_assert_all(checks, \"list_bool_index\")",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 21,
+                "col": 11,
+                "end_lineno": 21,
+                "end_col": 24
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "py_assert_all",
+              "id": "py_assert_all"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 21,
+                  "col": 25,
+                  "end_lineno": 21,
+                  "end_col": 31
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 21,
+                  "col": 33,
+                  "end_lineno": 21,
+                  "end_col": 50
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"list_bool_index\"",
+                "value": "list_bool_index"
+              }
+            ],
+            "keywords": [],
+            "resolved_runtime_call": "py_assert_all",
+            "resolved_runtime_source": "import_symbol",
+            "runtime_module_id": "pytra.utils.assertions",
+            "runtime_symbol": "py_assert_all",
+            "runtime_call_adapter_kind": "extern_delegate"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "bool"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 25,
+        "col": 4,
+        "end_lineno": 25,
+        "end_col": 32
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 25,
+          "col": 4,
+          "end_lineno": 25,
+          "end_col": 32
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "print(run_list_bool_index())",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 25,
+            "col": 4,
+            "end_lineno": 25,
+            "end_col": 9
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "print",
+          "id": "print"
+        },
+        "args": [
+          {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 25,
+              "col": 10,
+              "end_lineno": 25,
+              "end_col": 31
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "run_list_bool_index()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 25,
+                "col": 10,
+                "end_lineno": 25,
+                "end_col": 29
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "run_list_bool_index",
+              "id": "run_list_bool_index"
+            },
+            "args": [],
+            "keywords": []
+          }
+        ],
+        "keywords": [],
+        "lowered_kind": "BuiltinCall",
+        "builtin_name": "print",
+        "runtime_call": "py_print",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_symbol": "py_print",
+        "runtime_call_adapter_kind": "builtin",
+        "semantic_tag": "core.print"
+      }
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_all",
+          "local_name": "py_assert_all",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/typing/list_bool_index.py",
+          "source_line": 3,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_all",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_all",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_all"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_eq",
+          "local_name": "py_assert_eq",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/typing/list_bool_index.py",
+          "source_line": 3,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_eq",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_eq",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_eq"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/typing/list_bool_index.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_all",
+          "local_name": "py_assert_all"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_eq",
+          "local_name": "py_assert_eq"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_all",
+        "local_name": "py_assert_all",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/typing/list_bool_index.py",
+        "source_line": 3
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_eq",
+        "local_name": "py_assert_eq",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/typing/list_bool_index.py",
+        "source_line": 3
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/typing/list_bool_index.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_all",
+        "local_name": "py_assert_all"
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_eq",
+        "local_name": "py_assert_eq"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "py_assert_all": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_all"
+      },
+      "py_assert_eq": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_eq"
+      }
+    }
+  },
+  "east_stage": 1
+}

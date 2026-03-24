@@ -1,0 +1,767 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/core/pass_through_comment.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 84
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col": 0,
+          "end_lineno": 1,
+          "end_col": 84
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"Minimal case for Pytra comment passthrough (`# Pytra::cpp` / `# Pytra::pass`).\"\"\"",
+        "value": "Minimal case for Pytra comment passthrough (`# Pytra::cpp` / `# Pytra::pass`)."
+      }
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 3,
+        "col": 0,
+        "end_lineno": 3,
+        "end_col": 49
+      },
+      "module": "pytra.utils.assertions",
+      "names": [
+        {
+          "name": "py_assert_true",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 6,
+        "col": 0,
+        "end_lineno": 9,
+        "end_col": 16
+      },
+      "name": "line_injection",
+      "original_name": "line_injection",
+      "arg_types": {
+        "x": "int64"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "int64",
+      "arg_usage": {
+        "x": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 9,
+            "col": 4,
+            "end_lineno": 9,
+            "end_col": 16
+          },
+          "value": {
+            "kind": "BinOp",
+            "source_span": {
+              "lineno": 9,
+              "col": 11,
+              "end_lineno": 9,
+              "end_col": 16
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "x + 1",
+            "left": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 9,
+                "col": 11,
+                "end_lineno": 9,
+                "end_col": 12
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "x",
+              "id": "x"
+            },
+            "op": "Add",
+            "right": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 9,
+                "col": 15,
+                "end_lineno": 9,
+                "end_col": 16
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "1",
+              "value": 1
+            }
+          },
+          "leading_trivia": [
+            {
+              "kind": "comment",
+              "text": "Pytra::cpp int injected = x;"
+            },
+            {
+              "kind": "comment",
+              "text": "Pytra::cpp injected += 1;"
+            }
+          ],
+          "leading_comments": [
+            "Pytra::cpp int injected = x;",
+            "Pytra::cpp injected += 1;"
+          ]
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "x": {
+          "kind": "NamedType",
+          "name": "int64"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "int64"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 12,
+        "col": 0,
+        "end_lineno": 17,
+        "end_col": 16
+      },
+      "name": "block_injection",
+      "original_name": "block_injection",
+      "arg_types": {
+        "x": "int64"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "int64",
+      "arg_usage": {
+        "x": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 17,
+            "col": 4,
+            "end_lineno": 17,
+            "end_col": 16
+          },
+          "value": {
+            "kind": "BinOp",
+            "source_span": {
+              "lineno": 17,
+              "col": 11,
+              "end_lineno": 17,
+              "end_col": 16
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "x + 1",
+            "left": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 17,
+                "col": 11,
+                "end_lineno": 17,
+                "end_col": 12
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "x",
+              "id": "x"
+            },
+            "op": "Add",
+            "right": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 17,
+                "col": 15,
+                "end_lineno": 17,
+                "end_col": 16
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "1",
+              "value": 1
+            }
+          },
+          "leading_trivia": [
+            {
+              "kind": "comment",
+              "text": "Pytra::pass begin"
+            },
+            {
+              "kind": "comment",
+              "text": "int temp = x;"
+            },
+            {
+              "kind": "comment",
+              "text": "temp += 1;"
+            },
+            {
+              "kind": "comment",
+              "text": "Pytra::pass end"
+            }
+          ],
+          "leading_comments": [
+            "Pytra::pass begin",
+            "int temp = x;",
+            "temp += 1;",
+            "Pytra::pass end"
+          ]
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "x": {
+          "kind": "NamedType",
+          "name": "int64"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "int64"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 20,
+        "col": 0,
+        "end_lineno": 23,
+        "end_col": 46
+      },
+      "name": "__pytra_main",
+      "original_name": "main",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 21,
+            "col": 4,
+            "end_lineno": 21,
+            "end_col": 65
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 21,
+              "col": 4,
+              "end_lineno": 21,
+              "end_col": 6
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ok",
+            "id": "ok",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "bool"
+            }
+          },
+          "annotation": "bool",
+          "value": {
+            "kind": "BoolOp",
+            "source_span": {
+              "lineno": 21,
+              "col": 15,
+              "end_lineno": 21,
+              "end_col": 65
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "line_injection(2) == 3 and block_injection(2) == 3",
+            "op": "And",
+            "values": [
+              {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 21,
+                  "col": 15,
+                  "end_lineno": 21,
+                  "end_col": 37
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "line_injection(2) == 3",
+                "left": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 21,
+                    "col": 15,
+                    "end_lineno": 21,
+                    "end_col": 32
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "line_injection(2)",
+                  "func": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 21,
+                      "col": 15,
+                      "end_lineno": 21,
+                      "end_col": 29
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "line_injection",
+                    "id": "line_injection"
+                  },
+                  "args": [
+                    {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 21,
+                        "col": 30,
+                        "end_lineno": 21,
+                        "end_col": 31
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "2",
+                      "value": 2
+                    }
+                  ],
+                  "keywords": []
+                },
+                "ops": [
+                  "Eq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 21,
+                      "col": 36,
+                      "end_lineno": 21,
+                      "end_col": 37
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "3",
+                    "value": 3
+                  }
+                ]
+              },
+              {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 21,
+                  "col": 42,
+                  "end_lineno": 21,
+                  "end_col": 65
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "block_injection(2) == 3",
+                "left": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 21,
+                    "col": 42,
+                    "end_lineno": 21,
+                    "end_col": 60
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "block_injection(2)",
+                  "func": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 21,
+                      "col": 42,
+                      "end_lineno": 21,
+                      "end_col": 57
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "block_injection",
+                    "id": "block_injection"
+                  },
+                  "args": [
+                    {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 21,
+                        "col": 58,
+                        "end_lineno": 21,
+                        "end_col": 59
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "2",
+                      "value": 2
+                    }
+                  ],
+                  "keywords": []
+                },
+                "ops": [
+                  "Eq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 21,
+                      "col": 64,
+                      "end_lineno": 21,
+                      "end_col": 65
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "3",
+                    "value": 3
+                  }
+                ]
+              }
+            ]
+          },
+          "declare": true,
+          "decl_type": "bool",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "bool"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "bool"
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 22,
+            "col": 4,
+            "end_lineno": 22,
+            "end_col": 13
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 22,
+              "col": 4,
+              "end_lineno": 22,
+              "end_col": 13
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(ok)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 22,
+                "col": 4,
+                "end_lineno": 22,
+                "end_col": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 22,
+                  "col": 10,
+                  "end_lineno": 22,
+                  "end_col": 12
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "ok",
+                "id": "ok"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print"
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 23,
+            "col": 4,
+            "end_lineno": 23,
+            "end_col": 46
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 23,
+              "col": 4,
+              "end_lineno": 23,
+              "end_col": 46
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "py_assert_true(ok, \"pass_through_comment\")",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 23,
+                "col": 4,
+                "end_lineno": 23,
+                "end_col": 18
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "py_assert_true",
+              "id": "py_assert_true"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 23,
+                  "col": 19,
+                  "end_lineno": 23,
+                  "end_col": 21
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "ok",
+                "id": "ok"
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 23,
+                  "col": 23,
+                  "end_lineno": 23,
+                  "end_col": 45
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"pass_through_comment\"",
+                "value": "pass_through_comment"
+              }
+            ],
+            "keywords": [],
+            "resolved_runtime_call": "py_assert_true",
+            "resolved_runtime_source": "import_symbol",
+            "runtime_module_id": "pytra.utils.assertions",
+            "runtime_symbol": "py_assert_true",
+            "runtime_call_adapter_kind": "extern_delegate"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 27,
+        "col": 4,
+        "end_lineno": 27,
+        "end_col": 10
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 27,
+          "col": 4,
+          "end_lineno": 27,
+          "end_col": 10
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "main()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 27,
+            "col": 4,
+            "end_lineno": 27,
+            "end_col": 8
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "main",
+          "id": "main"
+        },
+        "args": [],
+        "keywords": []
+      }
+    }
+  ],
+  "renamed_symbols": {
+    "main": "__pytra_main"
+  },
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_true",
+          "local_name": "py_assert_true",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/core/pass_through_comment.py",
+          "source_line": 3,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_true",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_true",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_true"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/core/pass_through_comment.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_true",
+          "local_name": "py_assert_true"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_true",
+        "local_name": "py_assert_true",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/core/pass_through_comment.py",
+        "source_line": 3
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/core/pass_through_comment.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_true",
+        "local_name": "py_assert_true"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "py_assert_true": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_true"
+      }
+    }
+  },
+  "east_stage": 1
+}

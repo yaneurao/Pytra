@@ -1,0 +1,1912 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/stdlib/pathlib_extended.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 2,
+        "col": 0,
+        "end_lineno": 2,
+        "end_col": 62
+      },
+      "module": "pytra.utils.assertions",
+      "names": [
+        {
+          "name": "py_assert_all",
+          "asname": null
+        },
+        {
+          "name": "py_assert_eq",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 3,
+        "col": 0,
+        "end_lineno": 3,
+        "end_col": 24
+      },
+      "module": "pathlib",
+      "names": [
+        {
+          "name": "Path",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 6,
+        "col": 0,
+        "end_lineno": 19,
+        "end_col": 52
+      },
+      "name": "run_pathlib_extended",
+      "original_name": "run_pathlib_extended",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "bool",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 7,
+            "col": 4,
+            "end_lineno": 7,
+            "end_col": 52
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 7,
+              "col": 4,
+              "end_lineno": 7,
+              "end_col": 8
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "root",
+            "id": "root"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 7,
+              "col": 11,
+              "end_lineno": 7,
+              "end_col": 52
+            },
+            "resolved_type": "Path",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "Path(\"work/transpile/obj/pathlib_case32\")",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 7,
+                "col": 11,
+                "end_lineno": 7,
+                "end_col": 15
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "Path",
+              "id": "Path"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 7,
+                  "col": 16,
+                  "end_lineno": 7,
+                  "end_col": 51
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"work/transpile/obj/pathlib_case32\"",
+                "value": "work/transpile/obj/pathlib_case32"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "Path",
+            "runtime_call": "Path",
+            "runtime_module_id": "pytra.std.pathlib",
+            "runtime_symbol": "Path",
+            "runtime_call_adapter_kind": "extern_delegate",
+            "semantic_tag": "stdlib.symbol.Path"
+          },
+          "declare": true,
+          "decl_type": "Path",
+          "declare_init": true
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 8,
+            "col": 4,
+            "end_lineno": 8,
+            "end_col": 43
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 8,
+              "col": 4,
+              "end_lineno": 8,
+              "end_col": 43
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "root.mkdir(parents=True, exist_ok=True)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 8,
+                "col": 4,
+                "end_lineno": 8,
+                "end_col": 14
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "root.mkdir",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 8,
+                  "col": 4,
+                  "end_lineno": 8,
+                  "end_col": 8
+                },
+                "resolved_type": "Path",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "root",
+                "id": "root"
+              },
+              "attr": "mkdir"
+            },
+            "args": [],
+            "keywords": [
+              {
+                "arg": "parents",
+                "value": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 8,
+                    "col": 23,
+                    "end_lineno": 8,
+                    "end_col": 27
+                  },
+                  "resolved_type": "bool",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "True",
+                  "value": true
+                }
+              },
+              {
+                "arg": "exist_ok",
+                "value": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 8,
+                    "col": 38,
+                    "end_lineno": 8,
+                    "end_col": 42
+                  },
+                  "resolved_type": "bool",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "True",
+                  "value": true
+                }
+              }
+            ],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "mkdir",
+            "runtime_call": "std::filesystem::create_directories",
+            "runtime_module_id": "pytra.std.pathlib",
+            "runtime_symbol": "Path.mkdir",
+            "runtime_call_adapter_kind": "extern_delegate",
+            "semantic_tag": "stdlib.method.mkdir",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 8,
+                "col": 4,
+                "end_lineno": 8,
+                "end_col": 8
+              },
+              "resolved_type": "Path",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "root",
+              "id": "root"
+            }
+          }
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 10,
+            "col": 4,
+            "end_lineno": 10,
+            "end_col": 31
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 10,
+              "col": 4,
+              "end_lineno": 10,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "child",
+            "id": "child"
+          },
+          "value": {
+            "kind": "BinOp",
+            "source_span": {
+              "lineno": 10,
+              "col": 12,
+              "end_lineno": 10,
+              "end_col": 31
+            },
+            "resolved_type": "Path",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "root / \"values.txt\"",
+            "left": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 10,
+                "col": 12,
+                "end_lineno": 10,
+                "end_col": 16
+              },
+              "resolved_type": "Path",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "root",
+              "id": "root"
+            },
+            "op": "Div",
+            "right": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 10,
+                "col": 19,
+                "end_lineno": 10,
+                "end_col": 31
+              },
+              "resolved_type": "str",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"values.txt\"",
+              "value": "values.txt"
+            }
+          },
+          "declare": true,
+          "decl_type": "Path",
+          "declare_init": true,
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 11,
+            "col": 4,
+            "end_lineno": 11,
+            "end_col": 26
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 11,
+              "col": 4,
+              "end_lineno": 11,
+              "end_col": 26
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "child.write_text(\"42\")",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 11,
+                "col": 4,
+                "end_lineno": 11,
+                "end_col": 20
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "child.write_text",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 11,
+                  "col": 4,
+                  "end_lineno": 11,
+                  "end_col": 9
+                },
+                "resolved_type": "Path",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "child",
+                "id": "child"
+              },
+              "attr": "write_text"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 11,
+                  "col": 21,
+                  "end_lineno": 11,
+                  "end_col": 25
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"42\"",
+                "value": "42"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "write_text",
+            "runtime_call": "py_write_text",
+            "runtime_module_id": "pytra.std.pathlib",
+            "runtime_symbol": "Path.write_text",
+            "runtime_call_adapter_kind": "extern_delegate",
+            "semantic_tag": "stdlib.method.write_text",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 11,
+                "col": 4,
+                "end_lineno": 11,
+                "end_col": 9
+              },
+              "resolved_type": "Path",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "child",
+              "id": "child"
+            }
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 13,
+            "col": 4,
+            "end_lineno": 13,
+            "end_col": 27
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 13,
+              "col": 4,
+              "end_lineno": 13,
+              "end_col": 10
+            },
+            "resolved_type": "list[bool]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks",
+            "id": "checks",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "bool"
+                }
+              ]
+            }
+          },
+          "annotation": "list[bool]",
+          "value": {
+            "kind": "List",
+            "source_span": {
+              "lineno": 13,
+              "col": 25,
+              "end_lineno": 13,
+              "end_col": 27
+            },
+            "resolved_type": "list[unknown]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "[]",
+            "elements": []
+          },
+          "declare": true,
+          "decl_type": "list[bool]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "bool"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "bool"
+              }
+            ]
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 14,
+            "col": 4,
+            "end_lineno": 14,
+            "end_col": 63
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 14,
+              "col": 4,
+              "end_lineno": 14,
+              "end_col": 63
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq(child.exists(), True, \"exists\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 14,
+                "col": 4,
+                "end_lineno": 14,
+                "end_col": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 14,
+                  "col": 4,
+                  "end_lineno": 14,
+                  "end_col": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 14,
+                  "col": 18,
+                  "end_lineno": 14,
+                  "end_col": 62
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(child.exists(), True, \"exists\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 14,
+                    "col": 18,
+                    "end_lineno": 14,
+                    "end_col": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 14,
+                      "col": 31,
+                      "end_lineno": 14,
+                      "end_col": 45
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "child.exists()",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 14,
+                        "col": 31,
+                        "end_lineno": 14,
+                        "end_col": 43
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "child.exists",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 14,
+                          "col": 31,
+                          "end_lineno": 14,
+                          "end_col": 36
+                        },
+                        "resolved_type": "Path",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "child",
+                        "id": "child"
+                      },
+                      "attr": "exists"
+                    },
+                    "args": [],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "builtin_name": "exists",
+                    "runtime_call": "std::filesystem::exists",
+                    "runtime_module_id": "pytra.std.pathlib",
+                    "runtime_symbol": "Path.exists",
+                    "runtime_call_adapter_kind": "extern_delegate",
+                    "semantic_tag": "stdlib.method.exists",
+                    "runtime_owner": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 14,
+                        "col": 31,
+                        "end_lineno": 14,
+                        "end_col": 36
+                      },
+                      "resolved_type": "Path",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "child",
+                      "id": "child"
+                    }
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 14,
+                      "col": 47,
+                      "end_lineno": 14,
+                      "end_col": 51
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "True",
+                    "value": true
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 14,
+                      "col": 53,
+                      "end_lineno": 14,
+                      "end_col": 61
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"exists\"",
+                    "value": "exists"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 14,
+                "col": 4,
+                "end_lineno": 14,
+                "end_col": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "checks",
+              "id": "checks"
+            }
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 15,
+            "col": 4,
+            "end_lineno": 15,
+            "end_col": 65
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 15,
+              "col": 4,
+              "end_lineno": 15,
+              "end_col": 65
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq(child.name, \"values.txt\", \"name\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 15,
+                "col": 4,
+                "end_lineno": 15,
+                "end_col": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 4,
+                  "end_lineno": 15,
+                  "end_col": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 18,
+                  "end_lineno": 15,
+                  "end_col": 64
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(child.name, \"values.txt\", \"name\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 15,
+                    "col": 18,
+                    "end_lineno": 15,
+                    "end_col": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 15,
+                      "col": 31,
+                      "end_lineno": 15,
+                      "end_col": 41
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "child.name",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 15,
+                        "col": 31,
+                        "end_lineno": 15,
+                        "end_col": 36
+                      },
+                      "resolved_type": "Path",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "child",
+                      "id": "child"
+                    },
+                    "attr": "name",
+                    "lowered_kind": "BuiltinAttr",
+                    "runtime_call": "path_name",
+                    "runtime_module_id": "pytra.std.pathlib",
+                    "runtime_symbol": "Path.name",
+                    "runtime_call_adapter_kind": "extern_delegate",
+                    "semantic_tag": "stdlib.method.name",
+                    "runtime_owner": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 15,
+                        "col": 31,
+                        "end_lineno": 15,
+                        "end_col": 36
+                      },
+                      "resolved_type": "Path",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "child",
+                      "id": "child"
+                    }
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 15,
+                      "col": 43,
+                      "end_lineno": 15,
+                      "end_col": 55
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"values.txt\"",
+                    "value": "values.txt"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 15,
+                      "col": 57,
+                      "end_lineno": 15,
+                      "end_col": 63
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"name\"",
+                    "value": "name"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 15,
+                "col": 4,
+                "end_lineno": 15,
+                "end_col": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "checks",
+              "id": "checks"
+            }
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 16,
+            "col": 4,
+            "end_lineno": 16,
+            "end_col": 61
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 16,
+              "col": 4,
+              "end_lineno": 16,
+              "end_col": 61
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq(child.stem, \"values\", \"stem\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 16,
+                "col": 4,
+                "end_lineno": 16,
+                "end_col": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 16,
+                  "col": 4,
+                  "end_lineno": 16,
+                  "end_col": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 16,
+                  "col": 18,
+                  "end_lineno": 16,
+                  "end_col": 60
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(child.stem, \"values\", \"stem\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 16,
+                    "col": 18,
+                    "end_lineno": 16,
+                    "end_col": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 16,
+                      "col": 31,
+                      "end_lineno": 16,
+                      "end_col": 41
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "child.stem",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 16,
+                        "col": 31,
+                        "end_lineno": 16,
+                        "end_col": 36
+                      },
+                      "resolved_type": "Path",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "child",
+                      "id": "child"
+                    },
+                    "attr": "stem",
+                    "lowered_kind": "BuiltinAttr",
+                    "runtime_call": "path_stem",
+                    "runtime_module_id": "pytra.std.pathlib",
+                    "runtime_symbol": "Path.stem",
+                    "runtime_call_adapter_kind": "extern_delegate",
+                    "semantic_tag": "stdlib.method.stem",
+                    "runtime_owner": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 16,
+                        "col": 31,
+                        "end_lineno": 16,
+                        "end_col": 36
+                      },
+                      "resolved_type": "Path",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "child",
+                      "id": "child"
+                    }
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 16,
+                      "col": 43,
+                      "end_lineno": 16,
+                      "end_col": 51
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"values\"",
+                    "value": "values"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 16,
+                      "col": 53,
+                      "end_lineno": 16,
+                      "end_col": 59
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"stem\"",
+                    "value": "stem"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 16,
+                "col": 4,
+                "end_lineno": 16,
+                "end_col": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "checks",
+              "id": "checks"
+            }
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 17,
+            "col": 4,
+            "end_lineno": 17,
+            "end_col": 99
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 17,
+              "col": 4,
+              "end_lineno": 17,
+              "end_col": 99
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq((child.parent / \"values.txt\").exists(), True, \"parent_join_exists\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 17,
+                "col": 4,
+                "end_lineno": 17,
+                "end_col": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 17,
+                  "col": 4,
+                  "end_lineno": 17,
+                  "end_col": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 17,
+                  "col": 18,
+                  "end_lineno": 17,
+                  "end_col": 98
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq((child.parent / \"values.txt\").exists(), True, \"parent_join_exists\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 17,
+                    "col": 18,
+                    "end_lineno": 17,
+                    "end_col": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 17,
+                      "col": 31,
+                      "end_lineno": 17,
+                      "end_col": 69
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "(child.parent / \"values.txt\").exists()",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 17,
+                        "col": 31,
+                        "end_lineno": 17,
+                        "end_col": 67
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "(child.parent / \"values.txt\").exists",
+                      "value": {
+                        "kind": "BinOp",
+                        "source_span": {
+                          "lineno": 17,
+                          "col": 31,
+                          "end_lineno": 17,
+                          "end_col": 60
+                        },
+                        "resolved_type": "Path",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "(child.parent / \"values.txt\")",
+                        "left": {
+                          "kind": "Attribute",
+                          "source_span": {
+                            "lineno": 17,
+                            "col": 32,
+                            "end_lineno": 17,
+                            "end_col": 44
+                          },
+                          "resolved_type": "Path",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "child.parent",
+                          "value": {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 17,
+                              "col": 32,
+                              "end_lineno": 17,
+                              "end_col": 37
+                            },
+                            "resolved_type": "Path",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "child",
+                            "id": "child"
+                          },
+                          "attr": "parent",
+                          "lowered_kind": "BuiltinAttr",
+                          "runtime_call": "path_parent",
+                          "runtime_module_id": "pytra.std.pathlib",
+                          "runtime_symbol": "Path.parent",
+                          "runtime_call_adapter_kind": "extern_delegate",
+                          "semantic_tag": "stdlib.method.parent",
+                          "runtime_owner": {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 17,
+                              "col": 32,
+                              "end_lineno": 17,
+                              "end_col": 37
+                            },
+                            "resolved_type": "Path",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "child",
+                            "id": "child"
+                          }
+                        },
+                        "op": "Div",
+                        "right": {
+                          "kind": "Constant",
+                          "source_span": {
+                            "lineno": 17,
+                            "col": 47,
+                            "end_lineno": 17,
+                            "end_col": 59
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "\"values.txt\"",
+                          "value": "values.txt"
+                        }
+                      },
+                      "attr": "exists"
+                    },
+                    "args": [],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "builtin_name": "exists",
+                    "runtime_call": "std::filesystem::exists",
+                    "runtime_module_id": "pytra.std.pathlib",
+                    "runtime_symbol": "Path.exists",
+                    "runtime_call_adapter_kind": "extern_delegate",
+                    "semantic_tag": "stdlib.method.exists",
+                    "runtime_owner": {
+                      "kind": "BinOp",
+                      "source_span": {
+                        "lineno": 17,
+                        "col": 31,
+                        "end_lineno": 17,
+                        "end_col": 60
+                      },
+                      "resolved_type": "Path",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "(child.parent / \"values.txt\")",
+                      "left": {
+                        "kind": "Attribute",
+                        "source_span": {
+                          "lineno": 17,
+                          "col": 32,
+                          "end_lineno": 17,
+                          "end_col": 44
+                        },
+                        "resolved_type": "Path",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "child.parent",
+                        "value": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 17,
+                            "col": 32,
+                            "end_lineno": 17,
+                            "end_col": 37
+                          },
+                          "resolved_type": "Path",
+                          "casts": [],
+                          "borrow_kind": "readonly_ref",
+                          "repr": "child",
+                          "id": "child"
+                        },
+                        "attr": "parent",
+                        "lowered_kind": "BuiltinAttr",
+                        "runtime_call": "path_parent",
+                        "runtime_module_id": "pytra.std.pathlib",
+                        "runtime_symbol": "Path.parent",
+                        "runtime_call_adapter_kind": "extern_delegate",
+                        "semantic_tag": "stdlib.method.parent",
+                        "runtime_owner": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 17,
+                            "col": 32,
+                            "end_lineno": 17,
+                            "end_col": 37
+                          },
+                          "resolved_type": "Path",
+                          "casts": [],
+                          "borrow_kind": "readonly_ref",
+                          "repr": "child",
+                          "id": "child"
+                        }
+                      },
+                      "op": "Div",
+                      "right": {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 17,
+                          "col": 47,
+                          "end_lineno": 17,
+                          "end_col": 59
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"values.txt\"",
+                        "value": "values.txt"
+                      }
+                    }
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 17,
+                      "col": 71,
+                      "end_lineno": 17,
+                      "end_col": 75
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "True",
+                    "value": true
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 17,
+                      "col": 77,
+                      "end_lineno": 17,
+                      "end_col": 97
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"parent_join_exists\"",
+                    "value": "parent_join_exists"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 17,
+                "col": 4,
+                "end_lineno": 17,
+                "end_col": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "checks",
+              "id": "checks"
+            }
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 18,
+            "col": 4,
+            "end_lineno": 18,
+            "end_col": 69
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 18,
+              "col": 4,
+              "end_lineno": 18,
+              "end_col": 69
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq(child.read_text(), \"42\", \"read_text\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 18,
+                "col": 4,
+                "end_lineno": 18,
+                "end_col": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 18,
+                  "col": 4,
+                  "end_lineno": 18,
+                  "end_col": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 18,
+                  "col": 18,
+                  "end_lineno": 18,
+                  "end_col": 68
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(child.read_text(), \"42\", \"read_text\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 18,
+                    "col": 18,
+                    "end_lineno": 18,
+                    "end_col": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 18,
+                      "col": 31,
+                      "end_lineno": 18,
+                      "end_col": 48
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "child.read_text()",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 18,
+                        "col": 31,
+                        "end_lineno": 18,
+                        "end_col": 46
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "child.read_text",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 18,
+                          "col": 31,
+                          "end_lineno": 18,
+                          "end_col": 36
+                        },
+                        "resolved_type": "Path",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "child",
+                        "id": "child"
+                      },
+                      "attr": "read_text"
+                    },
+                    "args": [],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "builtin_name": "read_text",
+                    "runtime_call": "py_read_text",
+                    "runtime_module_id": "pytra.std.pathlib",
+                    "runtime_symbol": "Path.read_text",
+                    "runtime_call_adapter_kind": "extern_delegate",
+                    "semantic_tag": "stdlib.method.read_text",
+                    "runtime_owner": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 18,
+                        "col": 31,
+                        "end_lineno": 18,
+                        "end_col": 36
+                      },
+                      "resolved_type": "Path",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "child",
+                      "id": "child"
+                    }
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 18,
+                      "col": 50,
+                      "end_lineno": 18,
+                      "end_col": 54
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"42\"",
+                    "value": "42"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 18,
+                      "col": 56,
+                      "end_lineno": 18,
+                      "end_col": 67
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"read_text\"",
+                    "value": "read_text"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 18,
+                "col": 4,
+                "end_lineno": 18,
+                "end_col": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "checks",
+              "id": "checks"
+            }
+          }
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 19,
+            "col": 4,
+            "end_lineno": 19,
+            "end_col": 52
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 19,
+              "col": 11,
+              "end_lineno": 19,
+              "end_col": 52
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "py_assert_all(checks, \"pathlib_extended\")",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 19,
+                "col": 11,
+                "end_lineno": 19,
+                "end_col": 24
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "py_assert_all",
+              "id": "py_assert_all"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 19,
+                  "col": 25,
+                  "end_lineno": 19,
+                  "end_col": 31
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 19,
+                  "col": 33,
+                  "end_lineno": 19,
+                  "end_col": 51
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"pathlib_extended\"",
+                "value": "pathlib_extended"
+              }
+            ],
+            "keywords": [],
+            "resolved_runtime_call": "py_assert_all",
+            "resolved_runtime_source": "import_symbol",
+            "runtime_module_id": "pytra.utils.assertions",
+            "runtime_symbol": "py_assert_all",
+            "runtime_call_adapter_kind": "extern_delegate"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "bool"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 22,
+        "col": 4,
+        "end_lineno": 22,
+        "end_col": 33
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 22,
+          "col": 4,
+          "end_lineno": 22,
+          "end_col": 33
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "print(run_pathlib_extended())",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 22,
+            "col": 4,
+            "end_lineno": 22,
+            "end_col": 9
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "print",
+          "id": "print"
+        },
+        "args": [
+          {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 22,
+              "col": 10,
+              "end_lineno": 22,
+              "end_col": 32
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "run_pathlib_extended()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 22,
+                "col": 10,
+                "end_lineno": 22,
+                "end_col": 30
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "run_pathlib_extended",
+              "id": "run_pathlib_extended"
+            },
+            "args": [],
+            "keywords": []
+          }
+        ],
+        "keywords": [],
+        "lowered_kind": "BuiltinCall",
+        "builtin_name": "print",
+        "runtime_call": "py_print",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_symbol": "py_print",
+        "runtime_call_adapter_kind": "builtin",
+        "semantic_tag": "core.print"
+      }
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_all",
+          "local_name": "py_assert_all",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/stdlib/pathlib_extended.py",
+          "source_line": 2,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_all",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_all",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_all"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_eq",
+          "local_name": "py_assert_eq",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/stdlib/pathlib_extended.py",
+          "source_line": 2,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_eq",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_eq",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_eq"
+        },
+        {
+          "module_id": "pathlib",
+          "export_name": "Path",
+          "local_name": "Path",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/stdlib/pathlib_extended.py",
+          "source_line": 3,
+          "host_only": true,
+          "source_module_id": "pathlib",
+          "source_export_name": "Path",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.std.pathlib",
+          "runtime_group": "std",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "Path",
+          "runtime_symbol_kind": "class",
+          "runtime_symbol_dispatch": "ctor",
+          "runtime_semantic_tag": "stdlib.symbol.Path"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/stdlib/pathlib_extended.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_all",
+          "local_name": "py_assert_all"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_eq",
+          "local_name": "py_assert_eq"
+        },
+        {
+          "module_id": "pathlib",
+          "symbol": "Path",
+          "local_name": "Path"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_all",
+        "local_name": "py_assert_all",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/stdlib/pathlib_extended.py",
+        "source_line": 2
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_eq",
+        "local_name": "py_assert_eq",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/stdlib/pathlib_extended.py",
+        "source_line": 2
+      },
+      {
+        "module_id": "pathlib",
+        "export_name": "Path",
+        "local_name": "Path",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/stdlib/pathlib_extended.py",
+        "source_line": 3,
+        "host_only": true
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/stdlib/pathlib_extended.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_all",
+        "local_name": "py_assert_all"
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_eq",
+        "local_name": "py_assert_eq"
+      },
+      {
+        "module_id": "pathlib",
+        "symbol": "Path",
+        "local_name": "Path"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "py_assert_all": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_all"
+      },
+      "py_assert_eq": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_eq"
+      },
+      "Path": {
+        "module": "pathlib",
+        "name": "Path"
+      }
+    },
+    "dispatch_mode": "native"
+  },
+  "east_stage": 2,
+  "schema_version": 1
+}

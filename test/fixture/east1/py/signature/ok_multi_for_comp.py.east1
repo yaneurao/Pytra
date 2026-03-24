@@ -1,0 +1,503 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/signature/ok_multi_for_comp.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 7,
+        "end_col": 15
+      },
+      "name": "run_multi_for_comp",
+      "original_name": "run_multi_for_comp",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 5,
+            "col": 4,
+            "end_lineno": 5,
+            "end_col": 41
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 5,
+              "col": 4,
+              "end_lineno": 5,
+              "end_col": 8
+            },
+            "resolved_type": "list[list[int64]]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "rows",
+            "id": "rows",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "GenericType",
+                  "base": "list",
+                  "args": [
+                    {
+                      "kind": "NamedType",
+                      "name": "int64"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "annotation": "list[list[int64]]",
+          "value": {
+            "kind": "List",
+            "source_span": {
+              "lineno": 5,
+              "col": 28,
+              "end_lineno": 5,
+              "end_col": 41
+            },
+            "resolved_type": "list[list[int64]]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "[[1, 2], [3]]",
+            "elements": [
+              {
+                "kind": "List",
+                "source_span": {
+                  "lineno": 5,
+                  "col": 29,
+                  "end_lineno": 5,
+                  "end_col": 35
+                },
+                "resolved_type": "list[int64]",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "[1, 2]",
+                "elements": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 5,
+                      "col": 30,
+                      "end_lineno": 5,
+                      "end_col": 31
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "1",
+                    "value": 1
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 5,
+                      "col": 33,
+                      "end_lineno": 5,
+                      "end_col": 34
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "2",
+                    "value": 2
+                  }
+                ]
+              },
+              {
+                "kind": "List",
+                "source_span": {
+                  "lineno": 5,
+                  "col": 37,
+                  "end_lineno": 5,
+                  "end_col": 40
+                },
+                "resolved_type": "list[int64]",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "[3]",
+                "elements": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 5,
+                      "col": 38,
+                      "end_lineno": 5,
+                      "end_col": 39
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "3",
+                    "value": 3
+                  }
+                ]
+              }
+            ]
+          },
+          "declare": true,
+          "decl_type": "list[list[int64]]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "GenericType",
+                "base": "list",
+                "args": [
+                  {
+                    "kind": "NamedType",
+                    "name": "int64"
+                  }
+                ]
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "GenericType",
+                "base": "list",
+                "args": [
+                  {
+                    "kind": "NamedType",
+                    "name": "int64"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 6,
+            "col": 4,
+            "end_lineno": 6,
+            "end_col": 54
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 6,
+              "col": 4,
+              "end_lineno": 6,
+              "end_col": 8
+            },
+            "resolved_type": "list[int64]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "flat",
+            "id": "flat",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "int64"
+                }
+              ]
+            }
+          },
+          "annotation": "list[int64]",
+          "value": {
+            "kind": "ListComp",
+            "source_span": {
+              "lineno": 6,
+              "col": 22,
+              "end_lineno": 6,
+              "end_col": 54
+            },
+            "resolved_type": "list[int64]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "[x for row in rows for x in row]",
+            "elt": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 6,
+                "col": 23,
+                "end_lineno": 6,
+                "end_col": 24
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "x",
+              "id": "x"
+            },
+            "generators": [
+              {
+                "target": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 6,
+                    "col": 29,
+                    "end_lineno": 6,
+                    "end_col": 32
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "row",
+                  "id": "row"
+                },
+                "iter": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 6,
+                    "col": 36,
+                    "end_lineno": 6,
+                    "end_col": 40
+                  },
+                  "resolved_type": "list[list[int64]]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "rows",
+                  "id": "rows"
+                },
+                "ifs": [],
+                "is_async": false
+              },
+              {
+                "target": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 6,
+                    "col": 23,
+                    "end_lineno": 6,
+                    "end_col": 24
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "x",
+                  "id": "x"
+                },
+                "iter": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 6,
+                    "col": 29,
+                    "end_lineno": 6,
+                    "end_col": 32
+                  },
+                  "resolved_type": "list[int64]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "row",
+                  "id": "row"
+                },
+                "ifs": [],
+                "is_async": false
+              }
+            ]
+          },
+          "declare": true,
+          "decl_type": "list[int64]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "int64"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "int64"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 7,
+            "col": 4,
+            "end_lineno": 7,
+            "end_col": 15
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 7,
+              "col": 4,
+              "end_lineno": 7,
+              "end_col": 15
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(flat)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 7,
+                "col": 4,
+                "end_lineno": 7,
+                "end_col": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 7,
+                  "col": 10,
+                  "end_lineno": 7,
+                  "end_col": 14
+                },
+                "resolved_type": "list[int64]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "flat",
+                "id": "flat"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [
+        "self_hosted parser: list comprehension with multiple for clauses."
+      ],
+      "leading_trivia": [
+        {
+          "kind": "comment",
+          "text": "self_hosted parser: list comprehension with multiple for clauses."
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 11,
+        "col": 4,
+        "end_lineno": 11,
+        "end_col": 24
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 11,
+          "col": 4,
+          "end_lineno": 11,
+          "end_col": 24
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "run_multi_for_comp()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 11,
+            "col": 4,
+            "end_lineno": 11,
+            "end_col": 22
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "run_multi_for_comp",
+          "id": "run_multi_for_comp"
+        },
+        "args": [],
+        "keywords": []
+      }
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/signature/ok_multi_for_comp.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": []
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/signature/ok_multi_for_comp.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {}
+  },
+  "east_stage": 1
+}

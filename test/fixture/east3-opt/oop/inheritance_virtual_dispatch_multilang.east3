@@ -1,0 +1,1902 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/oop/inheritance_virtual_dispatch_multilang.py",
+  "body": [
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 3,
+        "col_offset": 0,
+        "end_lineno": 3,
+        "end_col_offset": 51
+      },
+      "module": "pytra.utils.assertions",
+      "names": [
+        {
+          "name": "py_assert_stdout",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 6,
+        "col_offset": 0,
+        "end_lineno": 10,
+        "end_col_offset": 0
+      },
+      "name": "Animal",
+      "original_name": "Animal",
+      "base": null,
+      "dataclass": false,
+      "field_types": {},
+      "body": [
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 7,
+            "col_offset": 4,
+            "end_lineno": 8,
+            "end_col_offset": 23
+          },
+          "name": "speak",
+          "original_name": "speak",
+          "arg_types": {
+            "self": "Animal"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "str",
+          "arg_usage": {
+            "self": "readonly"
+          },
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 8,
+                "col_offset": 8,
+                "end_lineno": 8,
+                "end_col_offset": 23
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 8,
+                  "col_offset": 15,
+                  "end_lineno": 8,
+                  "end_col_offset": 23
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"animal\"",
+                "value": "animal"
+              },
+              "meta": {
+                "lifetime_node_id": "n0",
+                "lifetime_defs": [],
+                "lifetime_uses": [],
+                "lifetime_live_in": [],
+                "lifetime_live_out": [],
+                "lifetime_last_use_vars": []
+              }
+            }
+          ],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": [],
+          "returns": "str",
+          "mutates_self": false,
+          "meta": {
+            "lifetime_analysis": {
+              "schema_version": "east3_lifetime_v1",
+              "status": "ok",
+              "reason": "",
+              "entry_node": "n0",
+              "order": [
+                "n0"
+              ],
+              "cfg": [
+                {
+                  "id": "n0",
+                  "kind": "Return",
+                  "defs": [],
+                  "uses": [],
+                  "succ": []
+                }
+              ],
+              "def_use": {
+                "defs": {},
+                "uses": {}
+              },
+              "variables": {
+                "self": {
+                  "def_nodes": [],
+                  "use_nodes": [],
+                  "live_in_nodes": [],
+                  "live_out_nodes": [],
+                  "last_use_nodes": [],
+                  "lifetime_class": "escape_or_unknown"
+                }
+              },
+              "arg_order": [
+                "self"
+              ],
+              "arg_escape": [
+                true
+              ],
+              "has_dynamic_name_access": false
+            }
+          }
+        }
+      ],
+      "class_storage_hint": "value",
+      "leading_comments": [
+        "This file contains test/implementation code for `test/fixtures/oop/inheritance_virtual_dispatch_multilang.py`."
+      ],
+      "leading_trivia": [
+        {
+          "kind": "comment",
+          "text": "This file contains test/implementation code for `test/fixtures/oop/inheritance_virtual_dispatch_multilang.py`."
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 11,
+        "col_offset": 0,
+        "end_lineno": 15,
+        "end_col_offset": 0
+      },
+      "name": "Dog",
+      "original_name": "Dog",
+      "base": "Animal",
+      "dataclass": false,
+      "field_types": {},
+      "body": [
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 12,
+            "col_offset": 4,
+            "end_lineno": 13,
+            "end_col_offset": 20
+          },
+          "name": "speak",
+          "original_name": "speak",
+          "arg_types": {
+            "self": "Dog"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "str",
+          "arg_usage": {
+            "self": "readonly"
+          },
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 13,
+                "col_offset": 8,
+                "end_lineno": 13,
+                "end_col_offset": 20
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 13,
+                  "col_offset": 15,
+                  "end_lineno": 13,
+                  "end_col_offset": 20
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"dog\"",
+                "value": "dog"
+              },
+              "meta": {
+                "lifetime_node_id": "n0",
+                "lifetime_defs": [],
+                "lifetime_uses": [],
+                "lifetime_live_in": [],
+                "lifetime_live_out": [],
+                "lifetime_last_use_vars": []
+              }
+            }
+          ],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": [],
+          "returns": "str",
+          "mutates_self": false,
+          "meta": {
+            "lifetime_analysis": {
+              "schema_version": "east3_lifetime_v1",
+              "status": "ok",
+              "reason": "",
+              "entry_node": "n0",
+              "order": [
+                "n0"
+              ],
+              "cfg": [
+                {
+                  "id": "n0",
+                  "kind": "Return",
+                  "defs": [],
+                  "uses": [],
+                  "succ": []
+                }
+              ],
+              "def_use": {
+                "defs": {},
+                "uses": {}
+              },
+              "variables": {
+                "self": {
+                  "def_nodes": [],
+                  "use_nodes": [],
+                  "live_in_nodes": [],
+                  "live_out_nodes": [],
+                  "last_use_nodes": [],
+                  "lifetime_class": "escape_or_unknown"
+                }
+              },
+              "arg_order": [
+                "self"
+              ],
+              "arg_escape": [
+                true
+              ],
+              "has_dynamic_name_access": false
+            }
+          }
+        }
+      ],
+      "class_storage_hint": "ref"
+    },
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 16,
+        "col_offset": 0,
+        "end_lineno": 20,
+        "end_col_offset": 0
+      },
+      "name": "LoudDog",
+      "original_name": "LoudDog",
+      "base": "Dog",
+      "dataclass": false,
+      "field_types": {},
+      "body": [
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 17,
+            "col_offset": 4,
+            "end_lineno": 18,
+            "end_col_offset": 40
+          },
+          "name": "speak",
+          "original_name": "speak",
+          "arg_types": {
+            "self": "LoudDog"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "str",
+          "arg_usage": {
+            "self": "readonly"
+          },
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 18,
+                "col_offset": 8,
+                "end_lineno": 18,
+                "end_col_offset": 40
+              },
+              "value": {
+                "kind": "BinOp",
+                "source_span": {
+                  "lineno": 18,
+                  "col_offset": 15,
+                  "end_lineno": 18,
+                  "end_col_offset": 40
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"loud-\" + super().speak()",
+                "left": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 18,
+                    "col_offset": 15,
+                    "end_lineno": 18,
+                    "end_col_offset": 22
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"loud-\"",
+                  "value": "loud-"
+                },
+                "op": "Add",
+                "right": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 18,
+                    "col_offset": 25,
+                    "end_lineno": 18,
+                    "end_col_offset": 40
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "super().speak()",
+                  "func": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 18,
+                      "col_offset": 25,
+                      "end_lineno": 18,
+                      "end_col_offset": 38
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "super().speak",
+                    "value": {
+                      "kind": "Call",
+                      "source_span": {
+                        "lineno": 18,
+                        "col_offset": 25,
+                        "end_lineno": 18,
+                        "end_col_offset": 32
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "super()",
+                      "func": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 18,
+                          "col_offset": 25,
+                          "end_lineno": 18,
+                          "end_col_offset": 30
+                        },
+                        "resolved_type": "unknown",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "super",
+                        "id": "super"
+                      },
+                      "args": [],
+                      "keywords": [],
+                      "type_expr_summary_v1": {
+                        "schema_version": 1,
+                        "kind": "DynamicType",
+                        "category": "dynamic",
+                        "mirror": "unknown",
+                        "dynamic_name": "unknown"
+                      }
+                    },
+                    "attr": "speak"
+                  },
+                  "args": [],
+                  "keywords": [],
+                  "type_expr_summary_v1": {
+                    "schema_version": 1,
+                    "kind": "DynamicType",
+                    "category": "dynamic",
+                    "mirror": "unknown",
+                    "dynamic_name": "unknown"
+                  }
+                },
+                "normalized_expr_version": "east3_expr_v1",
+                "normalized_expr": {
+                  "kind": "BinOp",
+                  "source_span": {
+                    "lineno": 18,
+                    "col_offset": 15,
+                    "end_lineno": 18,
+                    "end_col_offset": 40
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"loud-\" + super().speak()",
+                  "left": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 18,
+                      "col_offset": 15,
+                      "end_lineno": 18,
+                      "end_col_offset": 22
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"loud-\"",
+                    "value": "loud-"
+                  },
+                  "op": "Add",
+                  "right": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 18,
+                      "col_offset": 25,
+                      "end_lineno": 18,
+                      "end_col_offset": 40
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "super().speak()",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 18,
+                        "col_offset": 25,
+                        "end_lineno": 18,
+                        "end_col_offset": 38
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "super().speak",
+                      "value": {
+                        "kind": "Call",
+                        "source_span": {
+                          "lineno": 18,
+                          "col_offset": 25,
+                          "end_lineno": 18,
+                          "end_col_offset": 32
+                        },
+                        "resolved_type": "unknown",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "super()",
+                        "func": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 18,
+                            "col_offset": 25,
+                            "end_lineno": 18,
+                            "end_col_offset": 30
+                          },
+                          "resolved_type": "unknown",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "super",
+                          "id": "super"
+                        },
+                        "args": [],
+                        "keywords": [],
+                        "type_expr_summary_v1": {
+                          "schema_version": 1,
+                          "kind": "DynamicType",
+                          "category": "dynamic",
+                          "mirror": "unknown",
+                          "dynamic_name": "unknown"
+                        }
+                      },
+                      "attr": "speak"
+                    },
+                    "args": [],
+                    "keywords": [],
+                    "type_expr_summary_v1": {
+                      "schema_version": 1,
+                      "kind": "DynamicType",
+                      "category": "dynamic",
+                      "mirror": "unknown",
+                      "dynamic_name": "unknown"
+                    }
+                  }
+                }
+              },
+              "meta": {
+                "lifetime_node_id": "n0",
+                "lifetime_defs": [],
+                "lifetime_uses": [
+                  "super"
+                ],
+                "lifetime_live_in": [
+                  "super"
+                ],
+                "lifetime_live_out": [],
+                "lifetime_last_use_vars": [
+                  "super"
+                ]
+              }
+            }
+          ],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": [],
+          "returns": "str",
+          "mutates_self": false,
+          "meta": {
+            "lifetime_analysis": {
+              "schema_version": "east3_lifetime_v1",
+              "status": "ok",
+              "reason": "",
+              "entry_node": "n0",
+              "order": [
+                "n0"
+              ],
+              "cfg": [
+                {
+                  "id": "n0",
+                  "kind": "Return",
+                  "defs": [],
+                  "uses": [
+                    "super"
+                  ],
+                  "succ": []
+                }
+              ],
+              "def_use": {
+                "defs": {},
+                "uses": {
+                  "super": [
+                    "n0"
+                  ]
+                }
+              },
+              "variables": {
+                "self": {
+                  "def_nodes": [],
+                  "use_nodes": [],
+                  "live_in_nodes": [],
+                  "live_out_nodes": [],
+                  "last_use_nodes": [],
+                  "lifetime_class": "escape_or_unknown"
+                },
+                "super": {
+                  "def_nodes": [],
+                  "use_nodes": [
+                    "n0"
+                  ],
+                  "live_in_nodes": [
+                    "n0"
+                  ],
+                  "live_out_nodes": [],
+                  "last_use_nodes": [
+                    "n0"
+                  ],
+                  "lifetime_class": "escape_or_unknown"
+                }
+              },
+              "arg_order": [
+                "self"
+              ],
+              "arg_escape": [
+                true
+              ],
+              "has_dynamic_name_access": false
+            }
+          }
+        }
+      ],
+      "class_storage_hint": "ref"
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 21,
+        "col_offset": 0,
+        "end_lineno": 22,
+        "end_col_offset": 20
+      },
+      "name": "call_via_animal",
+      "original_name": "call_via_animal",
+      "arg_types": {
+        "a": "Animal"
+      },
+      "arg_order": [
+        "a"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "a": 0
+      },
+      "return_type": "str",
+      "arg_usage": {
+        "a": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 22,
+            "col_offset": 4,
+            "end_lineno": 22,
+            "end_col_offset": 20
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 22,
+              "col_offset": 11,
+              "end_lineno": 22,
+              "end_col_offset": 20
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "a.speak()",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 22,
+                "col_offset": 11,
+                "end_lineno": 22,
+                "end_col_offset": 18
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "a.speak",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 22,
+                  "col_offset": 11,
+                  "end_lineno": 22,
+                  "end_col_offset": 12
+                },
+                "resolved_type": "Animal",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "a",
+                "id": "a"
+              },
+              "attr": "speak"
+            },
+            "args": [],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "str"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n0",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "a"
+            ],
+            "lifetime_live_in": [
+              "a"
+            ],
+            "lifetime_live_out": [],
+            "lifetime_last_use_vars": [
+              "a"
+            ]
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "a": {
+          "kind": "NamedType",
+          "name": "Animal"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "str",
+      "meta": {
+        "lifetime_analysis": {
+          "schema_version": "east3_lifetime_v1",
+          "status": "ok",
+          "reason": "",
+          "entry_node": "n0",
+          "order": [
+            "n0"
+          ],
+          "cfg": [
+            {
+              "id": "n0",
+              "kind": "Return",
+              "defs": [],
+              "uses": [
+                "a"
+              ],
+              "succ": []
+            }
+          ],
+          "def_use": {
+            "defs": {},
+            "uses": {
+              "a": [
+                "n0"
+              ]
+            }
+          },
+          "variables": {
+            "a": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0"
+              ],
+              "live_out_nodes": [],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "escape_or_unknown"
+            }
+          },
+          "arg_order": [
+            "a"
+          ],
+          "arg_escape": [
+            true
+          ],
+          "has_dynamic_name_access": false
+        }
+      }
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 25,
+        "col_offset": 0,
+        "end_lineno": 26,
+        "end_col_offset": 20
+      },
+      "name": "call_via_dog",
+      "original_name": "call_via_dog",
+      "arg_types": {
+        "d": "Dog"
+      },
+      "arg_order": [
+        "d"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "d": 0
+      },
+      "return_type": "str",
+      "arg_usage": {
+        "d": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 26,
+            "col_offset": 4,
+            "end_lineno": 26,
+            "end_col_offset": 20
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 26,
+              "col_offset": 11,
+              "end_lineno": 26,
+              "end_col_offset": 20
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "d.speak()",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 26,
+                "col_offset": 11,
+                "end_lineno": 26,
+                "end_col_offset": 18
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "d.speak",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 26,
+                  "col_offset": 11,
+                  "end_lineno": 26,
+                  "end_col_offset": 12
+                },
+                "resolved_type": "Dog",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "d",
+                "id": "d"
+              },
+              "attr": "speak"
+            },
+            "args": [],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "str"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n0",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "d"
+            ],
+            "lifetime_live_in": [
+              "d"
+            ],
+            "lifetime_live_out": [],
+            "lifetime_last_use_vars": [
+              "d"
+            ]
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "d": {
+          "kind": "NamedType",
+          "name": "Dog"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "str",
+      "meta": {
+        "lifetime_analysis": {
+          "schema_version": "east3_lifetime_v1",
+          "status": "ok",
+          "reason": "",
+          "entry_node": "n0",
+          "order": [
+            "n0"
+          ],
+          "cfg": [
+            {
+              "id": "n0",
+              "kind": "Return",
+              "defs": [],
+              "uses": [
+                "d"
+              ],
+              "succ": []
+            }
+          ],
+          "def_use": {
+            "defs": {},
+            "uses": {
+              "d": [
+                "n0"
+              ]
+            }
+          },
+          "variables": {
+            "d": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0"
+              ],
+              "live_out_nodes": [],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "escape_or_unknown"
+            }
+          },
+          "arg_order": [
+            "d"
+          ],
+          "arg_escape": [
+            true
+          ],
+          "has_dynamic_name_access": false
+        }
+      }
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 29,
+        "col_offset": 0,
+        "end_lineno": 33,
+        "end_col_offset": 26
+      },
+      "name": "_case_main",
+      "original_name": "_case_main",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 30,
+            "col_offset": 4,
+            "end_lineno": 30,
+            "end_col_offset": 25
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 30,
+              "col_offset": 4,
+              "end_lineno": 30,
+              "end_col_offset": 5
+            },
+            "resolved_type": "Animal",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "a",
+            "id": "a",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "Animal"
+            }
+          },
+          "annotation": "Animal",
+          "declare": true,
+          "decl_type": "Animal",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "Animal"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "Animal"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 30,
+              "col_offset": 16,
+              "end_lineno": 30,
+              "end_col_offset": 25
+            },
+            "resolved_type": "LoudDog",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "LoudDog()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 30,
+                "col_offset": 16,
+                "end_lineno": 30,
+                "end_col_offset": 23
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "LoudDog",
+              "id": "LoudDog"
+            },
+            "args": [],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "LoudDog"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "Animal"
+          },
+          "meta": {
+            "lifetime_node_id": "n3",
+            "lifetime_defs": [
+              "a"
+            ],
+            "lifetime_uses": [
+              "LoudDog"
+            ],
+            "lifetime_live_in": [
+              "LoudDog",
+              "call_via_animal",
+              "call_via_dog",
+              "print"
+            ],
+            "lifetime_live_out": [
+              "LoudDog",
+              "a",
+              "call_via_animal",
+              "call_via_dog",
+              "print"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 31,
+            "col_offset": 4,
+            "end_lineno": 31,
+            "end_col_offset": 22
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 31,
+              "col_offset": 4,
+              "end_lineno": 31,
+              "end_col_offset": 5
+            },
+            "resolved_type": "Dog",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "d",
+            "id": "d",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "Dog"
+            }
+          },
+          "annotation": "Dog",
+          "declare": true,
+          "decl_type": "Dog",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "Dog"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "Dog"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 31,
+              "col_offset": 13,
+              "end_lineno": 31,
+              "end_col_offset": 22
+            },
+            "resolved_type": "LoudDog",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "LoudDog()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 31,
+                "col_offset": 13,
+                "end_lineno": 31,
+                "end_col_offset": 20
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "LoudDog",
+              "id": "LoudDog"
+            },
+            "args": [],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "LoudDog"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "Dog"
+          },
+          "meta": {
+            "lifetime_node_id": "n2",
+            "lifetime_defs": [
+              "d"
+            ],
+            "lifetime_uses": [
+              "LoudDog"
+            ],
+            "lifetime_live_in": [
+              "LoudDog",
+              "a",
+              "call_via_animal",
+              "call_via_dog",
+              "print"
+            ],
+            "lifetime_live_out": [
+              "a",
+              "call_via_animal",
+              "call_via_dog",
+              "d",
+              "print"
+            ],
+            "lifetime_last_use_vars": [
+              "LoudDog"
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 32,
+            "col_offset": 4,
+            "end_lineno": 32,
+            "end_col_offset": 29
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 32,
+              "col_offset": 4,
+              "end_lineno": 32,
+              "end_col_offset": 29
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(call_via_animal(a))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 32,
+                "col_offset": 4,
+                "end_lineno": 32,
+                "end_col_offset": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 32,
+                  "col_offset": 10,
+                  "end_lineno": 32,
+                  "end_col_offset": 28
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "call_via_animal(a)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 32,
+                    "col_offset": 10,
+                    "end_lineno": 32,
+                    "end_col_offset": 25
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "call_via_animal",
+                  "id": "call_via_animal"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 32,
+                      "col_offset": 26,
+                      "end_lineno": 32,
+                      "end_col_offset": 27
+                    },
+                    "resolved_type": "Animal",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "a",
+                    "id": "a"
+                  }
+                ],
+                "keywords": [],
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "str"
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n1",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "a",
+              "call_via_animal",
+              "print"
+            ],
+            "lifetime_live_in": [
+              "a",
+              "call_via_animal",
+              "call_via_dog",
+              "d",
+              "print"
+            ],
+            "lifetime_live_out": [
+              "call_via_dog",
+              "d",
+              "print"
+            ],
+            "lifetime_last_use_vars": [
+              "a",
+              "call_via_animal"
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 33,
+            "col_offset": 4,
+            "end_lineno": 33,
+            "end_col_offset": 26
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 33,
+              "col_offset": 4,
+              "end_lineno": 33,
+              "end_col_offset": 26
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(call_via_dog(d))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 33,
+                "col_offset": 4,
+                "end_lineno": 33,
+                "end_col_offset": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 33,
+                  "col_offset": 10,
+                  "end_lineno": 33,
+                  "end_col_offset": 25
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "call_via_dog(d)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 33,
+                    "col_offset": 10,
+                    "end_lineno": 33,
+                    "end_col_offset": 22
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "call_via_dog",
+                  "id": "call_via_dog"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 33,
+                      "col_offset": 23,
+                      "end_lineno": 33,
+                      "end_col_offset": 24
+                    },
+                    "resolved_type": "Dog",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "d",
+                    "id": "d"
+                  }
+                ],
+                "keywords": [],
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "str"
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n0",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "call_via_dog",
+              "d",
+              "print"
+            ],
+            "lifetime_live_in": [
+              "call_via_dog",
+              "d",
+              "print"
+            ],
+            "lifetime_live_out": [],
+            "lifetime_last_use_vars": [
+              "call_via_dog",
+              "d",
+              "print"
+            ]
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "None",
+      "meta": {
+        "lifetime_analysis": {
+          "schema_version": "east3_lifetime_v1",
+          "status": "ok",
+          "reason": "",
+          "entry_node": "n3",
+          "order": [
+            "n0",
+            "n1",
+            "n2",
+            "n3"
+          ],
+          "cfg": [
+            {
+              "id": "n0",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "call_via_dog",
+                "d",
+                "print"
+              ],
+              "succ": []
+            },
+            {
+              "id": "n1",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "a",
+                "call_via_animal",
+                "print"
+              ],
+              "succ": [
+                "n0"
+              ]
+            },
+            {
+              "id": "n2",
+              "kind": "AnnAssign",
+              "defs": [
+                "d"
+              ],
+              "uses": [
+                "LoudDog"
+              ],
+              "succ": [
+                "n1"
+              ]
+            },
+            {
+              "id": "n3",
+              "kind": "AnnAssign",
+              "defs": [
+                "a"
+              ],
+              "uses": [
+                "LoudDog"
+              ],
+              "succ": [
+                "n2"
+              ]
+            }
+          ],
+          "def_use": {
+            "defs": {
+              "a": [
+                "n3"
+              ],
+              "d": [
+                "n2"
+              ]
+            },
+            "uses": {
+              "LoudDog": [
+                "n2",
+                "n3"
+              ],
+              "a": [
+                "n1"
+              ],
+              "call_via_animal": [
+                "n1"
+              ],
+              "call_via_dog": [
+                "n0"
+              ],
+              "d": [
+                "n0"
+              ],
+              "print": [
+                "n0",
+                "n1"
+              ]
+            }
+          },
+          "variables": {
+            "LoudDog": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n2",
+                "n3"
+              ],
+              "live_in_nodes": [
+                "n2",
+                "n3"
+              ],
+              "live_out_nodes": [
+                "n3"
+              ],
+              "last_use_nodes": [
+                "n2"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "a": {
+              "def_nodes": [
+                "n3"
+              ],
+              "use_nodes": [
+                "n1"
+              ],
+              "live_in_nodes": [
+                "n1",
+                "n2"
+              ],
+              "live_out_nodes": [
+                "n2",
+                "n3"
+              ],
+              "last_use_nodes": [
+                "n1"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "call_via_animal": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n1"
+              ],
+              "live_in_nodes": [
+                "n1",
+                "n2",
+                "n3"
+              ],
+              "live_out_nodes": [
+                "n2",
+                "n3"
+              ],
+              "last_use_nodes": [
+                "n1"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "call_via_dog": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2",
+                "n3"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "d": {
+              "def_nodes": [
+                "n2"
+              ],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "print": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n0",
+                "n1"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2",
+                "n3"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            }
+          },
+          "arg_order": [],
+          "arg_escape": [],
+          "has_dynamic_name_access": false
+        }
+      }
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 37,
+        "col_offset": 4,
+        "end_lineno": 37,
+        "end_col_offset": 65
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 37,
+          "col_offset": 4,
+          "end_lineno": 37,
+          "end_col_offset": 65
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "print(py_assert_stdout([\"loud-dog\", \"loud-dog\"], _case_main))",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 37,
+            "col_offset": 4,
+            "end_lineno": 37,
+            "end_col_offset": 9
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "print",
+          "id": "print"
+        },
+        "args": [
+          {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 37,
+              "col_offset": 10,
+              "end_lineno": 37,
+              "end_col_offset": 64
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "py_assert_stdout([\"loud-dog\", \"loud-dog\"], _case_main)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 37,
+                "col_offset": 10,
+                "end_lineno": 37,
+                "end_col_offset": 26
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "py_assert_stdout",
+              "id": "py_assert_stdout"
+            },
+            "args": [
+              {
+                "kind": "List",
+                "source_span": {
+                  "lineno": 37,
+                  "col_offset": 27,
+                  "end_lineno": 37,
+                  "end_col_offset": 51
+                },
+                "resolved_type": "list[str]",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "[\"loud-dog\", \"loud-dog\"]",
+                "elements": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 37,
+                      "col_offset": 28,
+                      "end_lineno": 37,
+                      "end_col_offset": 38
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"loud-dog\"",
+                    "value": "loud-dog"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 37,
+                      "col_offset": 40,
+                      "end_lineno": 37,
+                      "end_col_offset": 50
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"loud-dog\"",
+                    "value": "loud-dog"
+                  }
+                ]
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 37,
+                  "col_offset": 53,
+                  "end_lineno": 37,
+                  "end_col_offset": 63
+                },
+                "resolved_type": "callable[[],None]",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "_case_main",
+                "id": "_case_main"
+              }
+            ],
+            "keywords": [],
+            "resolved_runtime_call": "py_assert_stdout",
+            "resolved_runtime_source": "import_symbol",
+            "runtime_module_id": "pytra.utils.assertions",
+            "runtime_symbol": "py_assert_stdout",
+            "runtime_call_adapter_kind": "extern_delegate",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "DynamicType",
+              "category": "dynamic",
+              "mirror": "unknown",
+              "dynamic_name": "unknown"
+            }
+          }
+        ],
+        "keywords": [],
+        "lowered_kind": "BuiltinCall",
+        "builtin_name": "print",
+        "runtime_call": "py_print",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_symbol": "py_print",
+        "runtime_call_adapter_kind": "builtin",
+        "semantic_tag": "core.print",
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_stdout",
+          "local_name": "py_assert_stdout",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/oop/inheritance_virtual_dispatch_multilang.py",
+          "source_line": 3,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_stdout",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_stdout",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_stdout"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/oop/inheritance_virtual_dispatch_multilang.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_stdout",
+          "local_name": "py_assert_stdout"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_stdout",
+        "local_name": "py_assert_stdout",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/oop/inheritance_virtual_dispatch_multilang.py",
+        "source_line": 3
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/oop/inheritance_virtual_dispatch_multilang.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_stdout",
+        "local_name": "py_assert_stdout"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "py_assert_stdout": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_stdout"
+      }
+    },
+    "dispatch_mode": "native",
+    "lifetime_schema_version": "east3_lifetime_v1"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

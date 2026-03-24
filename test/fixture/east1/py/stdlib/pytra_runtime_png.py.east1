@@ -1,0 +1,1297 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/stdlib/pytra_runtime_png.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Import",
+      "source_span": {
+        "lineno": 3,
+        "col": 0,
+        "end_lineno": 3,
+        "end_col": 29
+      },
+      "names": [
+        {
+          "name": "pytra.utils.png",
+          "asname": "png"
+        }
+      ]
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 4,
+        "end_col": 78
+      },
+      "module": "pytra.utils.assertions",
+      "names": [
+        {
+          "name": "py_assert_all",
+          "asname": null
+        },
+        {
+          "name": "py_assert_eq",
+          "asname": null
+        },
+        {
+          "name": "py_assert_true",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 7,
+        "col": 0,
+        "end_lineno": 19,
+        "end_col": 61
+      },
+      "name": "run_case",
+      "original_name": "run_case",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 8,
+            "col": 4,
+            "end_lineno": 8,
+            "end_col": 49
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 8,
+              "col": 4,
+              "end_lineno": 8,
+              "end_col": 12
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "out_path",
+            "id": "out_path"
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 8,
+              "col": 15,
+              "end_lineno": 8,
+              "end_col": 49
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"out/import_pytra_runtime_png.png\"",
+            "value": "out/import_pytra_runtime_png.png"
+          },
+          "declare": true,
+          "decl_type": "str",
+          "declare_init": true
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 9,
+            "col": 4,
+            "end_lineno": 14,
+            "end_col": 6
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 9,
+              "col": 4,
+              "end_lineno": 9,
+              "end_col": 10
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "pixels",
+            "id": "pixels"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 9,
+              "col": 13,
+              "end_lineno": 9,
+              "end_col": 75
+            },
+            "resolved_type": "bytearray",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "bytearray([ 255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 255, ])",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 9,
+                "col": 13,
+                "end_lineno": 9,
+                "end_col": 22
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [
+              {
+                "kind": "List",
+                "source_span": {
+                  "lineno": 9,
+                  "col": 23,
+                  "end_lineno": 9,
+                  "end_col": 74
+                },
+                "resolved_type": "list[int64]",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "[ 255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 255, ]",
+                "elements": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 25,
+                      "end_lineno": 9,
+                      "end_col": 28
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "255",
+                    "value": 255
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 30,
+                      "end_lineno": 9,
+                      "end_col": 31
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "0",
+                    "value": 0
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 33,
+                      "end_lineno": 9,
+                      "end_col": 34
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "0",
+                    "value": 0
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 36,
+                      "end_lineno": 9,
+                      "end_col": 37
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "0",
+                    "value": 0
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 39,
+                      "end_lineno": 9,
+                      "end_col": 42
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "255",
+                    "value": 255
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 44,
+                      "end_lineno": 9,
+                      "end_col": 45
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "0",
+                    "value": 0
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 47,
+                      "end_lineno": 9,
+                      "end_col": 48
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "0",
+                    "value": 0
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 50,
+                      "end_lineno": 9,
+                      "end_col": 51
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "0",
+                    "value": 0
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 53,
+                      "end_lineno": 9,
+                      "end_col": 56
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "255",
+                    "value": 255
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 58,
+                      "end_lineno": 9,
+                      "end_col": 61
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "255",
+                    "value": 255
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 63,
+                      "end_lineno": 9,
+                      "end_col": 66
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "255",
+                    "value": 255
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 68,
+                      "end_lineno": 9,
+                      "end_col": 71
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "255",
+                    "value": 255
+                  }
+                ]
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "bytearray",
+            "runtime_call": "bytearray_ctor",
+            "runtime_module_id": "pytra.core.py_runtime",
+            "runtime_symbol": "bytearray",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "ctor.bytearray"
+          },
+          "declare": true,
+          "decl_type": "bytearray",
+          "declare_init": true
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 15,
+            "col": 4,
+            "end_lineno": 15,
+            "end_col": 45
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 15,
+              "col": 4,
+              "end_lineno": 15,
+              "end_col": 45
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "png.write_rgb_png(out_path, 2, 2, pixels)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 15,
+                "col": 4,
+                "end_lineno": 15,
+                "end_col": 21
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "png.write_rgb_png",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 4,
+                  "end_lineno": 15,
+                  "end_col": 7
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "png",
+                "id": "png"
+              },
+              "attr": "write_rgb_png"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 22,
+                  "end_lineno": 15,
+                  "end_col": 30
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "out_path",
+                "id": "out_path"
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 32,
+                  "end_lineno": 15,
+                  "end_col": 33
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "2",
+                "value": 2
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 35,
+                  "end_lineno": 15,
+                  "end_col": 36
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "2",
+                "value": 2
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 38,
+                  "end_lineno": 15,
+                  "end_col": 44
+                },
+                "resolved_type": "bytearray",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "pixels",
+                "id": "pixels"
+              }
+            ],
+            "keywords": [],
+            "resolved_runtime_call": "write_rgb_png",
+            "resolved_runtime_source": "module_attr",
+            "runtime_module_id": "pytra.utils.png",
+            "runtime_symbol": "write_rgb_png",
+            "runtime_call_adapter_kind": "extern_delegate",
+            "semantic_tag": "stdlib.method.write_rgb_png"
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 16,
+            "col": 4,
+            "end_lineno": 16,
+            "end_col": 28
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 16,
+              "col": 4,
+              "end_lineno": 16,
+              "end_col": 11
+            },
+            "resolved_type": "list[bool]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "results",
+            "id": "results",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "bool"
+                }
+              ]
+            }
+          },
+          "annotation": "list[bool]",
+          "value": {
+            "kind": "List",
+            "source_span": {
+              "lineno": 16,
+              "col": 26,
+              "end_lineno": 16,
+              "end_col": 28
+            },
+            "resolved_type": "list[unknown]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "[]",
+            "elements": []
+          },
+          "declare": true,
+          "decl_type": "list[bool]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "bool"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "bool"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 17,
+            "col": 4,
+            "end_lineno": 17,
+            "end_col": 66
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 17,
+              "col": 4,
+              "end_lineno": 17,
+              "end_col": 66
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "results.append(py_assert_eq(len(pixels), 12, \"pixels length\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 17,
+                "col": 4,
+                "end_lineno": 17,
+                "end_col": 18
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "results.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 17,
+                  "col": 4,
+                  "end_lineno": 17,
+                  "end_col": 11
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "results",
+                "id": "results"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 17,
+                  "col": 19,
+                  "end_lineno": 17,
+                  "end_col": 65
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(len(pixels), 12, \"pixels length\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 17,
+                    "col": 19,
+                    "end_lineno": 17,
+                    "end_col": 31
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 17,
+                      "col": 32,
+                      "end_lineno": 17,
+                      "end_col": 43
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "len(pixels)",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 17,
+                        "col": 32,
+                        "end_lineno": 17,
+                        "end_col": 35
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "len",
+                      "id": "len"
+                    },
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 17,
+                          "col": 36,
+                          "end_lineno": 17,
+                          "end_col": 42
+                        },
+                        "resolved_type": "bytearray",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "pixels",
+                        "id": "pixels"
+                      }
+                    ],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "builtin_name": "len",
+                    "runtime_call": "py_len",
+                    "runtime_module_id": "pytra.core.py_runtime",
+                    "runtime_symbol": "len",
+                    "runtime_call_adapter_kind": "builtin",
+                    "semantic_tag": "core.len"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 17,
+                      "col": 45,
+                      "end_lineno": 17,
+                      "end_col": 47
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "12",
+                    "value": 12
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 17,
+                      "col": 49,
+                      "end_lineno": 17,
+                      "end_col": 64
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"pixels length\"",
+                    "value": "pixels length"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 17,
+                "col": 4,
+                "end_lineno": 17,
+                "end_col": 11
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "results",
+              "id": "results"
+            }
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 18,
+            "col": 4,
+            "end_lineno": 18,
+            "end_col": 60
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 18,
+              "col": 4,
+              "end_lineno": 18,
+              "end_col": 60
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "results.append(py_assert_true(True, \"png call reached\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 18,
+                "col": 4,
+                "end_lineno": 18,
+                "end_col": 18
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "results.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 18,
+                  "col": 4,
+                  "end_lineno": 18,
+                  "end_col": 11
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "results",
+                "id": "results"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 18,
+                  "col": 19,
+                  "end_lineno": 18,
+                  "end_col": 59
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_true(True, \"png call reached\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 18,
+                    "col": 19,
+                    "end_lineno": 18,
+                    "end_col": 33
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_true",
+                  "id": "py_assert_true"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 18,
+                      "col": 34,
+                      "end_lineno": 18,
+                      "end_col": 38
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "True",
+                    "value": true
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 18,
+                      "col": 40,
+                      "end_lineno": 18,
+                      "end_col": 58
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"png call reached\"",
+                    "value": "png call reached"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_true",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_true",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 18,
+                "col": 4,
+                "end_lineno": 18,
+                "end_col": 11
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "results",
+              "id": "results"
+            }
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 19,
+            "col": 4,
+            "end_lineno": 19,
+            "end_col": 61
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 19,
+              "col": 4,
+              "end_lineno": 19,
+              "end_col": 61
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(py_assert_all(results, \"import pytra runtime png\"))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 19,
+                "col": 4,
+                "end_lineno": 19,
+                "end_col": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 19,
+                  "col": 10,
+                  "end_lineno": 19,
+                  "end_col": 60
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_all(results, \"import pytra runtime png\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 19,
+                    "col": 10,
+                    "end_lineno": 19,
+                    "end_col": 23
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_all",
+                  "id": "py_assert_all"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 19,
+                      "col": 24,
+                      "end_lineno": 19,
+                      "end_col": 31
+                    },
+                    "resolved_type": "list[bool]",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "results",
+                    "id": "results"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 19,
+                      "col": 33,
+                      "end_lineno": 19,
+                      "end_col": 59
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"import pytra runtime png\"",
+                    "value": "import pytra runtime png"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_all",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_all",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 22,
+        "col": 0,
+        "end_lineno": 23,
+        "end_col": 14
+      },
+      "name": "_case_main",
+      "original_name": "_case_main",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 23,
+            "col": 4,
+            "end_lineno": 23,
+            "end_col": 14
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 23,
+              "col": 4,
+              "end_lineno": 23,
+              "end_col": 14
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "run_case()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 23,
+                "col": 4,
+                "end_lineno": 23,
+                "end_col": 12
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "run_case",
+              "id": "run_case"
+            },
+            "args": [],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 27,
+        "col": 4,
+        "end_lineno": 27,
+        "end_col": 16
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 27,
+          "col": 4,
+          "end_lineno": 27,
+          "end_col": 16
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "_case_main()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 27,
+            "col": 4,
+            "end_lineno": 27,
+            "end_col": 14
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "_case_main",
+          "id": "_case_main"
+        },
+        "args": [],
+        "keywords": []
+      }
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.utils.png",
+          "export_name": "",
+          "local_name": "png",
+          "binding_kind": "module",
+          "source_file": "test/fixture/source/py/stdlib/pytra_runtime_png.py",
+          "source_line": 3,
+          "source_module_id": "pytra.utils.png",
+          "source_binding_kind": "module",
+          "runtime_module_id": "pytra.utils.png",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "module"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_all",
+          "local_name": "py_assert_all",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/stdlib/pytra_runtime_png.py",
+          "source_line": 4,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_all",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_all",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_all"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_eq",
+          "local_name": "py_assert_eq",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/stdlib/pytra_runtime_png.py",
+          "source_line": 4,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_eq",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_eq",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_eq"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_true",
+          "local_name": "py_assert_true",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/stdlib/pytra_runtime_png.py",
+          "source_line": 4,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_true",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_true",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_true"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/stdlib/pytra_runtime_png.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        },
+        {
+          "module_id": "pytra.built_in.sequence",
+          "export_name": "",
+          "local_name": "pytra.built_in.sequence",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/stdlib/pytra_runtime_png.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.sequence",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.sequence",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_all",
+          "local_name": "py_assert_all"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_eq",
+          "local_name": "py_assert_eq"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_true",
+          "local_name": "py_assert_true"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.utils.png",
+        "export_name": "",
+        "local_name": "png",
+        "binding_kind": "module",
+        "source_file": "test/fixture/source/py/stdlib/pytra_runtime_png.py",
+        "source_line": 3
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_all",
+        "local_name": "py_assert_all",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/stdlib/pytra_runtime_png.py",
+        "source_line": 4
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_eq",
+        "local_name": "py_assert_eq",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/stdlib/pytra_runtime_png.py",
+        "source_line": 4
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_true",
+        "local_name": "py_assert_true",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/stdlib/pytra_runtime_png.py",
+        "source_line": 4
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/stdlib/pytra_runtime_png.py",
+        "source_line": 0
+      },
+      {
+        "module_id": "pytra.built_in.sequence",
+        "export_name": "",
+        "local_name": "pytra.built_in.sequence",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/stdlib/pytra_runtime_png.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_all",
+        "local_name": "py_assert_all"
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_eq",
+        "local_name": "py_assert_eq"
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_true",
+        "local_name": "py_assert_true"
+      }
+    ],
+    "import_modules": {
+      "png": "pytra.utils.png"
+    },
+    "import_symbols": {
+      "py_assert_all": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_all"
+      },
+      "py_assert_eq": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_eq"
+      },
+      "py_assert_true": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_true"
+      }
+    }
+  },
+  "east_stage": 1
+}

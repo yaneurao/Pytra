@@ -1,0 +1,524 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/core/class_body_pass.py",
+  "body": [
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 1,
+        "col_offset": 0,
+        "end_lineno": 4,
+        "end_col_offset": 0
+      },
+      "name": "Marker",
+      "original_name": "Marker",
+      "base": null,
+      "dataclass": false,
+      "field_types": {},
+      "body": [
+        {
+          "kind": "Pass",
+          "source_span": {
+            "lineno": 2,
+            "col_offset": 0,
+            "end_lineno": 2,
+            "end_col_offset": 8
+          }
+        }
+      ],
+      "class_storage_hint": "value",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 5,
+        "col_offset": 0,
+        "end_lineno": 7,
+        "end_col_offset": 24
+      },
+      "name": "__pytra_main",
+      "original_name": "main",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 6,
+            "col_offset": 4,
+            "end_lineno": 6,
+            "end_col_offset": 24
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 6,
+              "col_offset": 4,
+              "end_lineno": 6,
+              "end_col_offset": 5
+            },
+            "resolved_type": "Marker",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "m",
+            "id": "m",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "Marker"
+            }
+          },
+          "annotation": "Marker",
+          "declare": true,
+          "decl_type": "Marker",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "Marker"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "Marker"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 6,
+              "col_offset": 16,
+              "end_lineno": 6,
+              "end_col_offset": 24
+            },
+            "resolved_type": "Marker",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "Marker()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 6,
+                "col_offset": 16,
+                "end_lineno": 6,
+                "end_col_offset": 22
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "Marker",
+              "id": "Marker"
+            },
+            "args": [],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "Marker"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "Marker"
+          },
+          "meta": {
+            "lifetime_node_id": "n1",
+            "lifetime_defs": [
+              "m"
+            ],
+            "lifetime_uses": [
+              "Marker"
+            ],
+            "lifetime_live_in": [
+              "Marker",
+              "print"
+            ],
+            "lifetime_live_out": [
+              "m",
+              "print"
+            ],
+            "lifetime_last_use_vars": [
+              "Marker"
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 7,
+            "col_offset": 4,
+            "end_lineno": 7,
+            "end_col_offset": 24
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 7,
+              "col_offset": 4,
+              "end_lineno": 7,
+              "end_col_offset": 24
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(m is not None)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 7,
+                "col_offset": 4,
+                "end_lineno": 7,
+                "end_col_offset": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 7,
+                  "col_offset": 10,
+                  "end_lineno": 7,
+                  "end_col_offset": 23
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "m is not None",
+                "left": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 7,
+                    "col_offset": 10,
+                    "end_lineno": 7,
+                    "end_col_offset": 11
+                  },
+                  "resolved_type": "Marker",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "m",
+                  "id": "m"
+                },
+                "ops": [
+                  "IsNot"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 7,
+                      "col_offset": 19,
+                      "end_lineno": 7,
+                      "end_col_offset": 23
+                    },
+                    "resolved_type": "None",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "None",
+                    "value": null
+                  }
+                ],
+                "normalized_expr_version": "east3_expr_v1",
+                "normalized_expr": {
+                  "kind": "Compare",
+                  "source_span": {
+                    "lineno": 7,
+                    "col_offset": 10,
+                    "end_lineno": 7,
+                    "end_col_offset": 23
+                  },
+                  "resolved_type": "bool",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "m is not None",
+                  "left": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 7,
+                      "col_offset": 10,
+                      "end_lineno": 7,
+                      "end_col_offset": 11
+                    },
+                    "resolved_type": "Marker",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "m",
+                    "id": "m"
+                  },
+                  "ops": [
+                    "IsNot"
+                  ],
+                  "comparators": [
+                    {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 7,
+                        "col_offset": 19,
+                        "end_lineno": 7,
+                        "end_col_offset": 23
+                      },
+                      "resolved_type": "None",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "None",
+                      "value": null
+                    }
+                  ]
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "discard_result": true,
+          "meta": {
+            "lifetime_node_id": "n0",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "m",
+              "print"
+            ],
+            "lifetime_live_in": [
+              "m",
+              "print"
+            ],
+            "lifetime_live_out": [],
+            "lifetime_last_use_vars": [
+              "m",
+              "print"
+            ]
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "None",
+      "meta": {
+        "lifetime_analysis": {
+          "schema_version": "east3_lifetime_v1",
+          "status": "ok",
+          "reason": "",
+          "entry_node": "n1",
+          "order": [
+            "n0",
+            "n1"
+          ],
+          "cfg": [
+            {
+              "id": "n0",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "m",
+                "print"
+              ],
+              "succ": []
+            },
+            {
+              "id": "n1",
+              "kind": "AnnAssign",
+              "defs": [
+                "m"
+              ],
+              "uses": [
+                "Marker"
+              ],
+              "succ": [
+                "n0"
+              ]
+            }
+          ],
+          "def_use": {
+            "defs": {
+              "m": [
+                "n1"
+              ]
+            },
+            "uses": {
+              "Marker": [
+                "n1"
+              ],
+              "m": [
+                "n0"
+              ],
+              "print": [
+                "n0"
+              ]
+            }
+          },
+          "variables": {
+            "Marker": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n1"
+              ],
+              "live_in_nodes": [
+                "n1"
+              ],
+              "live_out_nodes": [],
+              "last_use_nodes": [
+                "n1"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "m": {
+              "def_nodes": [
+                "n1"
+              ],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0"
+              ],
+              "live_out_nodes": [
+                "n1"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "print": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1"
+              ],
+              "live_out_nodes": [
+                "n1"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            }
+          },
+          "arg_order": [],
+          "arg_escape": [],
+          "has_dynamic_name_access": false
+        }
+      }
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 11,
+        "col_offset": 4,
+        "end_lineno": 11,
+        "end_col_offset": 10
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 11,
+          "col_offset": 4,
+          "end_lineno": 11,
+          "end_col_offset": 10
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "main()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 11,
+            "col_offset": 4,
+            "end_lineno": 11,
+            "end_col_offset": 8
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "main",
+          "id": "main"
+        },
+        "args": [],
+        "keywords": [],
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    }
+  ],
+  "renamed_symbols": {
+    "main": "__pytra_main"
+  },
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/core/class_body_pass.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": []
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/core/class_body_pass.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {},
+    "dispatch_mode": "native",
+    "lifetime_schema_version": "east3_lifetime_v1"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

@@ -1,0 +1,642 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/imports/import_time_from.py",
+  "body": [
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 3,
+        "col_offset": 0,
+        "end_lineno": 3,
+        "end_col_offset": 29
+      },
+      "module": "time",
+      "names": [
+        {
+          "name": "perf_counter",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 5,
+        "col_offset": 0,
+        "end_lineno": 5,
+        "end_col_offset": 49
+      },
+      "module": "pytra.utils.assertions",
+      "names": [
+        {
+          "name": "py_assert_true",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 8,
+        "col_offset": 0,
+        "end_lineno": 11,
+        "end_col_offset": 72
+      },
+      "name": "run_case",
+      "original_name": "run_case",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 9,
+            "col_offset": 4,
+            "end_lineno": 9,
+            "end_col_offset": 33
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 9,
+              "col_offset": 4,
+              "end_lineno": 9,
+              "end_col_offset": 9
+            },
+            "resolved_type": "float64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "start",
+            "id": "start",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "float64"
+            }
+          },
+          "annotation": "float64",
+          "declare": true,
+          "decl_type": "float64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "float64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "float64"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 9,
+              "col_offset": 19,
+              "end_lineno": 9,
+              "end_col_offset": 33
+            },
+            "resolved_type": "float64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "perf_counter()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 9,
+                "col_offset": 19,
+                "end_lineno": 9,
+                "end_col_offset": 31
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "perf_counter",
+              "id": "perf_counter"
+            },
+            "args": [],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "perf_counter",
+            "runtime_call": "perf_counter",
+            "runtime_module_id": "pytra.std.time",
+            "runtime_symbol": "perf_counter",
+            "runtime_call_adapter_kind": "extern_delegate",
+            "semantic_tag": "stdlib.fn.perf_counter",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "float64"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "float64"
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 10,
+            "col_offset": 4,
+            "end_lineno": 10,
+            "end_col_offset": 31
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 10,
+              "col_offset": 4,
+              "end_lineno": 10,
+              "end_col_offset": 7
+            },
+            "resolved_type": "float64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "end",
+            "id": "end",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "float64"
+            }
+          },
+          "annotation": "float64",
+          "declare": true,
+          "decl_type": "float64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "float64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "float64"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 10,
+              "col_offset": 17,
+              "end_lineno": 10,
+              "end_col_offset": 31
+            },
+            "resolved_type": "float64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "perf_counter()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 10,
+                "col_offset": 17,
+                "end_lineno": 10,
+                "end_col_offset": 29
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "perf_counter",
+              "id": "perf_counter"
+            },
+            "args": [],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "perf_counter",
+            "runtime_call": "perf_counter",
+            "runtime_module_id": "pytra.std.time",
+            "runtime_symbol": "perf_counter",
+            "runtime_call_adapter_kind": "extern_delegate",
+            "semantic_tag": "stdlib.fn.perf_counter",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "float64"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "float64"
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 11,
+            "col_offset": 4,
+            "end_lineno": 11,
+            "end_col_offset": 72
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 11,
+              "col_offset": 4,
+              "end_lineno": 11,
+              "end_col_offset": 72
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(py_assert_true(end >= start, \"from time import perf_counter\"))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 11,
+                "col_offset": 4,
+                "end_lineno": 11,
+                "end_col_offset": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 11,
+                  "col_offset": 10,
+                  "end_lineno": 11,
+                  "end_col_offset": 71
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_true(end >= start, \"from time import perf_counter\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 11,
+                    "col_offset": 10,
+                    "end_lineno": 11,
+                    "end_col_offset": 24
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_true",
+                  "id": "py_assert_true"
+                },
+                "args": [
+                  {
+                    "kind": "Compare",
+                    "source_span": {
+                      "lineno": 11,
+                      "col_offset": 25,
+                      "end_lineno": 11,
+                      "end_col_offset": 37
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "end >= start",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 11,
+                        "col_offset": 25,
+                        "end_lineno": 11,
+                        "end_col_offset": 28
+                      },
+                      "resolved_type": "float64",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "end",
+                      "id": "end"
+                    },
+                    "ops": [
+                      "GtE"
+                    ],
+                    "comparators": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 11,
+                          "col_offset": 32,
+                          "end_lineno": 11,
+                          "end_col_offset": 37
+                        },
+                        "resolved_type": "float64",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "start",
+                        "id": "start"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 11,
+                      "col_offset": 39,
+                      "end_lineno": 11,
+                      "end_col_offset": 70
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"from time import perf_counter\"",
+                    "value": "from time import perf_counter"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_true",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_true",
+                "runtime_call_adapter_kind": "extern_delegate",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "DynamicType",
+                  "category": "dynamic",
+                  "mirror": "unknown",
+                  "dynamic_name": "unknown"
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "None"
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 14,
+        "col_offset": 0,
+        "end_lineno": 15,
+        "end_col_offset": 14
+      },
+      "name": "_case_main",
+      "original_name": "_case_main",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 15,
+            "col_offset": 4,
+            "end_lineno": 15,
+            "end_col_offset": 14
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 15,
+              "col_offset": 4,
+              "end_lineno": 15,
+              "end_col_offset": 14
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "run_case()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 15,
+                "col_offset": 4,
+                "end_lineno": 15,
+                "end_col_offset": 12
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "run_case",
+              "id": "run_case"
+            },
+            "args": [],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "None"
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 19,
+        "col_offset": 4,
+        "end_lineno": 19,
+        "end_col_offset": 16
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 19,
+          "col_offset": 4,
+          "end_lineno": 19,
+          "end_col_offset": 16
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "_case_main()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 19,
+            "col_offset": 4,
+            "end_lineno": 19,
+            "end_col_offset": 14
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "_case_main",
+          "id": "_case_main"
+        },
+        "args": [],
+        "keywords": [],
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "time",
+          "export_name": "perf_counter",
+          "local_name": "perf_counter",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/imports/import_time_from.py",
+          "source_line": 3,
+          "host_only": true,
+          "source_module_id": "time",
+          "source_export_name": "perf_counter",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.std.time",
+          "runtime_group": "std",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "perf_counter",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.perf_counter"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_true",
+          "local_name": "py_assert_true",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/imports/import_time_from.py",
+          "source_line": 5,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_true",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_true",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_true"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/imports/import_time_from.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "time",
+          "symbol": "perf_counter",
+          "local_name": "perf_counter"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_true",
+          "local_name": "py_assert_true"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "time",
+        "export_name": "perf_counter",
+        "local_name": "perf_counter",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/imports/import_time_from.py",
+        "source_line": 3,
+        "host_only": true
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_true",
+        "local_name": "py_assert_true",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/imports/import_time_from.py",
+        "source_line": 5
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/imports/import_time_from.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "time",
+        "symbol": "perf_counter",
+        "local_name": "perf_counter"
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_true",
+        "local_name": "py_assert_true"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "perf_counter": {
+        "module": "time",
+        "name": "perf_counter"
+      },
+      "py_assert_true": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_true"
+      }
+    },
+    "dispatch_mode": "native"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

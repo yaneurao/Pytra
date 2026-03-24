@@ -1,0 +1,1240 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/typing/type_alias_pep695.py",
+  "body": [
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 1,
+        "col_offset": 0,
+        "end_lineno": 1,
+        "end_col_offset": 78
+      },
+      "module": "pytra.utils.assertions",
+      "names": [
+        {
+          "name": "py_assert_all",
+          "asname": null
+        },
+        {
+          "name": "py_assert_eq",
+          "asname": null
+        },
+        {
+          "name": "py_assert_true",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "TypeAlias",
+      "source_span": {
+        "lineno": 3,
+        "col_offset": 0,
+        "end_lineno": 3,
+        "end_col_offset": 25
+      },
+      "name": "Scalar",
+      "type_expr": "int64|float64"
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 6,
+        "col_offset": 0,
+        "end_lineno": 9,
+        "end_col_offset": 12
+      },
+      "name": "add_scalars",
+      "original_name": "add_scalars",
+      "arg_types": {
+        "a": "Scalar",
+        "b": "Scalar"
+      },
+      "arg_order": [
+        "a",
+        "b"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "a": 0,
+        "b": 1
+      },
+      "return_type": "int64",
+      "arg_usage": {
+        "a": "readonly",
+        "b": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 7,
+            "col_offset": 4,
+            "end_lineno": 8,
+            "end_col_offset": 20
+          },
+          "test": {
+            "kind": "BoolOp",
+            "source_span": {
+              "lineno": 7,
+              "col_offset": 7,
+              "end_lineno": 7,
+              "end_col_offset": 48
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "isinstance(a, int) and isinstance(b, int)",
+            "op": "And",
+            "values": [
+              {
+                "kind": "IsInstance",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 7,
+                    "col_offset": 18,
+                    "end_lineno": 7,
+                    "end_col_offset": 19
+                  },
+                  "resolved_type": "Scalar",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "a",
+                  "id": "a"
+                },
+                "expected_type_id": {
+                  "kind": "Name",
+                  "id": "PYTRA_TID_INT",
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "PYTRA_TID_INT",
+                  "source_span": {
+                    "lineno": 7,
+                    "col_offset": 21,
+                    "end_lineno": 7,
+                    "end_col_offset": 24
+                  }
+                },
+                "source_span": {
+                  "lineno": 7,
+                  "col_offset": 7,
+                  "end_lineno": 7,
+                  "end_col_offset": 25
+                },
+                "repr": "isinstance(a, int)",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "Scalar"
+                },
+                "narrowing_lane_v1": {
+                  "schema_version": 1,
+                  "source_category": "static",
+                  "source_type": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "Scalar"
+                  }
+                }
+              },
+              {
+                "kind": "IsInstance",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 7,
+                    "col_offset": 41,
+                    "end_lineno": 7,
+                    "end_col_offset": 42
+                  },
+                  "resolved_type": "Scalar",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "b",
+                  "id": "b"
+                },
+                "expected_type_id": {
+                  "kind": "Name",
+                  "id": "PYTRA_TID_INT",
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "PYTRA_TID_INT",
+                  "source_span": {
+                    "lineno": 7,
+                    "col_offset": 44,
+                    "end_lineno": 7,
+                    "end_col_offset": 47
+                  }
+                },
+                "source_span": {
+                  "lineno": 7,
+                  "col_offset": 30,
+                  "end_lineno": 7,
+                  "end_col_offset": 48
+                },
+                "repr": "isinstance(b, int)",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "Scalar"
+                },
+                "narrowing_lane_v1": {
+                  "schema_version": 1,
+                  "source_category": "static",
+                  "source_type": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "Scalar"
+                  }
+                }
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 8,
+                "col_offset": 8,
+                "end_lineno": 8,
+                "end_col_offset": 20
+              },
+              "value": {
+                "kind": "BinOp",
+                "source_span": {
+                  "lineno": 8,
+                  "col_offset": 15,
+                  "end_lineno": 8,
+                  "end_col_offset": 20
+                },
+                "resolved_type": "Scalar",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "a + b",
+                "left": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 8,
+                    "col_offset": 15,
+                    "end_lineno": 8,
+                    "end_col_offset": 16
+                  },
+                  "resolved_type": "Scalar",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "a",
+                  "id": "a"
+                },
+                "op": "Add",
+                "right": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 8,
+                    "col_offset": 19,
+                    "end_lineno": 8,
+                    "end_col_offset": 20
+                  },
+                  "resolved_type": "Scalar",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "b",
+                  "id": "b"
+                }
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 9,
+            "col_offset": 4,
+            "end_lineno": 9,
+            "end_col_offset": 12
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 9,
+              "col_offset": 11,
+              "end_lineno": 9,
+              "end_col_offset": 12
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "0",
+            "value": 0
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "a": {
+          "kind": "NamedType",
+          "name": "Scalar"
+        },
+        "b": {
+          "kind": "NamedType",
+          "name": "Scalar"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "int64"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "int64"
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 12,
+        "col_offset": 0,
+        "end_lineno": 13,
+        "end_col_offset": 12
+      },
+      "name": "identity_scalar",
+      "original_name": "identity_scalar",
+      "arg_types": {
+        "v": "Scalar"
+      },
+      "arg_order": [
+        "v"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "v": 0
+      },
+      "return_type": "Scalar",
+      "arg_usage": {
+        "v": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 13,
+            "col_offset": 4,
+            "end_lineno": 13,
+            "end_col_offset": 12
+          },
+          "value": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 13,
+              "col_offset": 11,
+              "end_lineno": 13,
+              "end_col_offset": 12
+            },
+            "resolved_type": "Scalar",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "v",
+            "id": "v"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "v": {
+          "kind": "NamedType",
+          "name": "Scalar"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "Scalar"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "Scalar"
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 16,
+        "col_offset": 0,
+        "end_lineno": 20,
+        "end_col_offset": 53
+      },
+      "name": "run_type_alias_pep695",
+      "original_name": "run_type_alias_pep695",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "bool",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 17,
+            "col_offset": 4,
+            "end_lineno": 17,
+            "end_col_offset": 27
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 17,
+              "col_offset": 4,
+              "end_lineno": 17,
+              "end_col_offset": 10
+            },
+            "resolved_type": "list[bool]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks",
+            "id": "checks",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "bool"
+                }
+              ]
+            }
+          },
+          "annotation": "list[bool]",
+          "declare": true,
+          "decl_type": "list[bool]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "bool"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "bool"
+              }
+            ]
+          },
+          "value": {
+            "kind": "List",
+            "source_span": {
+              "lineno": 17,
+              "col_offset": 25,
+              "end_lineno": 17,
+              "end_col_offset": 27
+            },
+            "resolved_type": "list[bool]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "[]",
+            "elements": []
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "GenericType",
+            "category": "static",
+            "mirror": "list[bool]"
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 18,
+            "col_offset": 4,
+            "end_lineno": 18,
+            "end_col_offset": 64
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 18,
+              "col_offset": 4,
+              "end_lineno": 18,
+              "end_col_offset": 64
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq(add_scalars(1, 2), 3, \"int+int\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 18,
+                "col_offset": 4,
+                "end_lineno": 18,
+                "end_col_offset": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 18,
+                  "col_offset": 4,
+                  "end_lineno": 18,
+                  "end_col_offset": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 18,
+                  "col_offset": 18,
+                  "end_lineno": 18,
+                  "end_col_offset": 63
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(add_scalars(1, 2), 3, \"int+int\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 18,
+                    "col_offset": 18,
+                    "end_lineno": 18,
+                    "end_col_offset": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 18,
+                      "col_offset": 31,
+                      "end_lineno": 18,
+                      "end_col_offset": 48
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "add_scalars(1, 2)",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 18,
+                        "col_offset": 31,
+                        "end_lineno": 18,
+                        "end_col_offset": 42
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "add_scalars",
+                      "id": "add_scalars"
+                    },
+                    "args": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 18,
+                          "col_offset": 43,
+                          "end_lineno": 18,
+                          "end_col_offset": 44
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "1",
+                        "value": 1
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 18,
+                          "col_offset": 46,
+                          "end_lineno": 18,
+                          "end_col_offset": 47
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "2",
+                        "value": 2
+                      }
+                    ],
+                    "keywords": [],
+                    "type_expr_summary_v1": {
+                      "schema_version": 1,
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "int64"
+                    }
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 18,
+                      "col_offset": 50,
+                      "end_lineno": 18,
+                      "end_col_offset": 51
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "3",
+                    "value": 3
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 18,
+                      "col_offset": 53,
+                      "end_lineno": 18,
+                      "end_col_offset": 62
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"int+int\"",
+                    "value": "int+int"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "DynamicType",
+                  "category": "dynamic",
+                  "mirror": "unknown",
+                  "dynamic_name": "unknown"
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 18,
+                "col_offset": 4,
+                "end_lineno": 18,
+                "end_col_offset": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "checks",
+              "id": "checks"
+            },
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 19,
+            "col_offset": 4,
+            "end_lineno": 19,
+            "end_col_offset": 66
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 19,
+              "col_offset": 4,
+              "end_lineno": 19,
+              "end_col_offset": 66
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq(add_scalars(3, 4), 7, \"int+int 2\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 19,
+                "col_offset": 4,
+                "end_lineno": 19,
+                "end_col_offset": 17
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 19,
+                  "col_offset": 4,
+                  "end_lineno": 19,
+                  "end_col_offset": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 19,
+                  "col_offset": 18,
+                  "end_lineno": 19,
+                  "end_col_offset": 65
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(add_scalars(3, 4), 7, \"int+int 2\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 19,
+                    "col_offset": 18,
+                    "end_lineno": 19,
+                    "end_col_offset": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 19,
+                      "col_offset": 31,
+                      "end_lineno": 19,
+                      "end_col_offset": 48
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "add_scalars(3, 4)",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 19,
+                        "col_offset": 31,
+                        "end_lineno": 19,
+                        "end_col_offset": 42
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "add_scalars",
+                      "id": "add_scalars"
+                    },
+                    "args": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 19,
+                          "col_offset": 43,
+                          "end_lineno": 19,
+                          "end_col_offset": 44
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "3",
+                        "value": 3
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 19,
+                          "col_offset": 46,
+                          "end_lineno": 19,
+                          "end_col_offset": 47
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "4",
+                        "value": 4
+                      }
+                    ],
+                    "keywords": [],
+                    "type_expr_summary_v1": {
+                      "schema_version": 1,
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "int64"
+                    }
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 19,
+                      "col_offset": 50,
+                      "end_lineno": 19,
+                      "end_col_offset": 51
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "7",
+                    "value": 7
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 19,
+                      "col_offset": 53,
+                      "end_lineno": 19,
+                      "end_col_offset": 64
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"int+int 2\"",
+                    "value": "int+int 2"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "DynamicType",
+                  "category": "dynamic",
+                  "mirror": "unknown",
+                  "dynamic_name": "unknown"
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 19,
+                "col_offset": 4,
+                "end_lineno": 19,
+                "end_col_offset": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "checks",
+              "id": "checks"
+            },
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          }
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 20,
+            "col_offset": 4,
+            "end_lineno": 20,
+            "end_col_offset": 53
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 20,
+              "col_offset": 11,
+              "end_lineno": 20,
+              "end_col_offset": 53
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "py_assert_all(checks, \"type_alias_pep695\")",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 20,
+                "col_offset": 11,
+                "end_lineno": 20,
+                "end_col_offset": 24
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "py_assert_all",
+              "id": "py_assert_all"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 20,
+                  "col_offset": 25,
+                  "end_lineno": 20,
+                  "end_col_offset": 31
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 20,
+                  "col_offset": 33,
+                  "end_lineno": 20,
+                  "end_col_offset": 52
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"type_alias_pep695\"",
+                "value": "type_alias_pep695"
+              }
+            ],
+            "keywords": [],
+            "resolved_runtime_call": "py_assert_all",
+            "resolved_runtime_source": "import_symbol",
+            "runtime_module_id": "pytra.utils.assertions",
+            "runtime_symbol": "py_assert_all",
+            "runtime_call_adapter_kind": "extern_delegate",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "DynamicType",
+              "category": "dynamic",
+              "mirror": "unknown",
+              "dynamic_name": "unknown"
+            }
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "bool"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "bool"
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 24,
+        "col_offset": 4,
+        "end_lineno": 24,
+        "end_col_offset": 34
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 24,
+          "col_offset": 4,
+          "end_lineno": 24,
+          "end_col_offset": 34
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "print(run_type_alias_pep695())",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 24,
+            "col_offset": 4,
+            "end_lineno": 24,
+            "end_col_offset": 9
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "print",
+          "id": "print"
+        },
+        "args": [
+          {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 24,
+              "col_offset": 10,
+              "end_lineno": 24,
+              "end_col_offset": 33
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "run_type_alias_pep695()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 24,
+                "col_offset": 10,
+                "end_lineno": 24,
+                "end_col_offset": 31
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "run_type_alias_pep695",
+              "id": "run_type_alias_pep695"
+            },
+            "args": [],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "bool"
+            }
+          }
+        ],
+        "keywords": [],
+        "lowered_kind": "BuiltinCall",
+        "builtin_name": "print",
+        "runtime_call": "py_print",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_symbol": "py_print",
+        "runtime_call_adapter_kind": "builtin",
+        "semantic_tag": "core.print",
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_all",
+          "local_name": "py_assert_all",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/typing/type_alias_pep695.py",
+          "source_line": 1,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_all",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_all",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_all"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_eq",
+          "local_name": "py_assert_eq",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/typing/type_alias_pep695.py",
+          "source_line": 1,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_eq",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_eq",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_eq"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_true",
+          "local_name": "py_assert_true",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/typing/type_alias_pep695.py",
+          "source_line": 1,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_true",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_true",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_true"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/typing/type_alias_pep695.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_all",
+          "local_name": "py_assert_all"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_eq",
+          "local_name": "py_assert_eq"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_true",
+          "local_name": "py_assert_true"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_all",
+        "local_name": "py_assert_all",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/typing/type_alias_pep695.py",
+        "source_line": 1
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_eq",
+        "local_name": "py_assert_eq",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/typing/type_alias_pep695.py",
+        "source_line": 1
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_true",
+        "local_name": "py_assert_true",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/typing/type_alias_pep695.py",
+        "source_line": 1
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/typing/type_alias_pep695.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_all",
+        "local_name": "py_assert_all"
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_eq",
+        "local_name": "py_assert_eq"
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_true",
+        "local_name": "py_assert_true"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "py_assert_all": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_all"
+      },
+      "py_assert_eq": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_eq"
+      },
+      "py_assert_true": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_true"
+      }
+    },
+    "dispatch_mode": "native"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

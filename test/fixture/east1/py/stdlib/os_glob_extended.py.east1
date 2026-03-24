@@ -1,0 +1,1416 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/stdlib/os_glob_extended.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 30
+      },
+      "module": "pytra.std",
+      "names": [
+        {
+          "name": "glob",
+          "asname": null
+        },
+        {
+          "name": "os",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 15,
+        "end_col": 13
+      },
+      "name": "run_case",
+      "original_name": "run_case",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 5,
+            "col": 4,
+            "end_lineno": 5,
+            "end_col": 46
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 5,
+              "col": 4,
+              "end_lineno": 5,
+              "end_col": 10
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "joined",
+            "id": "joined"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 5,
+              "col": 13,
+              "end_lineno": 5,
+              "end_col": 46
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "os.path.join(\"alpha\", \"beta.txt\")",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 5,
+                "col": 13,
+                "end_lineno": 5,
+                "end_col": 25
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "os.path.join",
+              "value": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 5,
+                  "col": 13,
+                  "end_lineno": 5,
+                  "end_col": 20
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "os.path",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 5,
+                    "col": 13,
+                    "end_lineno": 5,
+                    "end_col": 15
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "os",
+                  "id": "os"
+                },
+                "attr": "path"
+              },
+              "attr": "join"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 5,
+                  "col": 26,
+                  "end_lineno": 5,
+                  "end_col": 33
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"alpha\"",
+                "value": "alpha"
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 5,
+                  "col": 35,
+                  "end_lineno": 5,
+                  "end_col": 45
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"beta.txt\"",
+                "value": "beta.txt"
+              }
+            ],
+            "keywords": []
+          },
+          "declare": true,
+          "decl_type": "unknown",
+          "declare_init": true
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 6,
+            "col": 4,
+            "end_lineno": 6,
+            "end_col": 40
+          },
+          "target": {
+            "kind": "Tuple",
+            "source_span": {
+              "lineno": 6,
+              "col": 4,
+              "end_lineno": 6,
+              "end_col": 13
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "root, ext",
+            "elements": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 4,
+                  "end_lineno": 6,
+                  "end_col": 8
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "root",
+                "id": "root"
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 10,
+                  "end_lineno": 6,
+                  "end_col": 13
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "ext",
+                "id": "ext"
+              }
+            ]
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 6,
+              "col": 16,
+              "end_lineno": 6,
+              "end_col": 40
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "os.path.splitext(joined)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 6,
+                "col": 16,
+                "end_lineno": 6,
+                "end_col": 32
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "os.path.splitext",
+              "value": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 16,
+                  "end_lineno": 6,
+                  "end_col": 23
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "os.path",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 6,
+                    "col": 16,
+                    "end_lineno": 6,
+                    "end_col": 18
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "os",
+                  "id": "os"
+                },
+                "attr": "path"
+              },
+              "attr": "splitext"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 33,
+                  "end_lineno": 6,
+                  "end_col": 39
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "joined",
+                "id": "joined"
+              }
+            ],
+            "keywords": []
+          },
+          "declare": false,
+          "decl_type": null
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 7,
+            "col": 4,
+            "end_lineno": 7,
+            "end_col": 13
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 7,
+              "col": 4,
+              "end_lineno": 7,
+              "end_col": 6
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ok",
+            "id": "ok"
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 7,
+              "col": 9,
+              "end_lineno": 7,
+              "end_col": 13
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "True",
+            "value": true
+          },
+          "declare": true,
+          "decl_type": "bool",
+          "declare_init": true
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 8,
+            "col": 4,
+            "end_lineno": 8,
+            "end_col": 56
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 8,
+              "col": 4,
+              "end_lineno": 8,
+              "end_col": 6
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "ok",
+            "id": "ok"
+          },
+          "value": {
+            "kind": "BoolOp",
+            "source_span": {
+              "lineno": 8,
+              "col": 9,
+              "end_lineno": 8,
+              "end_col": 56
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ok and (os.path.basename(joined) == \"beta.txt\")",
+            "op": "And",
+            "values": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 8,
+                  "col": 9,
+                  "end_lineno": 8,
+                  "end_col": 11
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "ok",
+                "id": "ok"
+              },
+              {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 8,
+                  "col": 16,
+                  "end_lineno": 8,
+                  "end_col": 56
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "(os.path.basename(joined) == \"beta.txt\")",
+                "left": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 8,
+                    "col": 17,
+                    "end_lineno": 8,
+                    "end_col": 41
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "os.path.basename(joined)",
+                  "func": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 8,
+                      "col": 17,
+                      "end_lineno": 8,
+                      "end_col": 33
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "os.path.basename",
+                    "value": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 8,
+                        "col": 17,
+                        "end_lineno": 8,
+                        "end_col": 24
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "os.path",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 8,
+                          "col": 17,
+                          "end_lineno": 8,
+                          "end_col": 19
+                        },
+                        "resolved_type": "unknown",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "os",
+                        "id": "os"
+                      },
+                      "attr": "path"
+                    },
+                    "attr": "basename"
+                  },
+                  "args": [
+                    {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 8,
+                        "col": 34,
+                        "end_lineno": 8,
+                        "end_col": 40
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "joined",
+                      "id": "joined"
+                    }
+                  ],
+                  "keywords": []
+                },
+                "ops": [
+                  "Eq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 8,
+                      "col": 45,
+                      "end_lineno": 8,
+                      "end_col": 55
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"beta.txt\"",
+                    "value": "beta.txt"
+                  }
+                ]
+              }
+            ]
+          },
+          "declare": true,
+          "decl_type": "bool",
+          "declare_init": true
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 9,
+            "col": 4,
+            "end_lineno": 9,
+            "end_col": 38
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 9,
+              "col": 4,
+              "end_lineno": 9,
+              "end_col": 6
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "ok",
+            "id": "ok"
+          },
+          "value": {
+            "kind": "BoolOp",
+            "source_span": {
+              "lineno": 9,
+              "col": 9,
+              "end_lineno": 9,
+              "end_col": 38
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ok and (root == \"alpha/beta\")",
+            "op": "And",
+            "values": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 9,
+                  "col": 9,
+                  "end_lineno": 9,
+                  "end_col": 11
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "ok",
+                "id": "ok"
+              },
+              {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 9,
+                  "col": 16,
+                  "end_lineno": 9,
+                  "end_col": 38
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "(root == \"alpha/beta\")",
+                "left": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 9,
+                    "col": 17,
+                    "end_lineno": 9,
+                    "end_col": 21
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "root",
+                  "id": "root"
+                },
+                "ops": [
+                  "Eq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 25,
+                      "end_lineno": 9,
+                      "end_col": 37
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"alpha/beta\"",
+                    "value": "alpha/beta"
+                  }
+                ]
+              }
+            ]
+          },
+          "declare": true,
+          "decl_type": "bool",
+          "declare_init": true
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 10,
+            "col": 4,
+            "end_lineno": 10,
+            "end_col": 31
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 10,
+              "col": 4,
+              "end_lineno": 10,
+              "end_col": 6
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "ok",
+            "id": "ok"
+          },
+          "value": {
+            "kind": "BoolOp",
+            "source_span": {
+              "lineno": 10,
+              "col": 9,
+              "end_lineno": 10,
+              "end_col": 31
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ok and (ext == \".txt\")",
+            "op": "And",
+            "values": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 10,
+                  "col": 9,
+                  "end_lineno": 10,
+                  "end_col": 11
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "ok",
+                "id": "ok"
+              },
+              {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 10,
+                  "col": 16,
+                  "end_lineno": 10,
+                  "end_col": 31
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "(ext == \".txt\")",
+                "left": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 10,
+                    "col": 17,
+                    "end_lineno": 10,
+                    "end_col": 20
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "ext",
+                  "id": "ext"
+                },
+                "ops": [
+                  "Eq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 10,
+                      "col": 24,
+                      "end_lineno": 10,
+                      "end_col": 30
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\".txt\"",
+                    "value": ".txt"
+                  }
+                ]
+              }
+            ]
+          },
+          "declare": true,
+          "decl_type": "bool",
+          "declare_init": true
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 11,
+            "col": 4,
+            "end_lineno": 11,
+            "end_col": 52
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 11,
+              "col": 4,
+              "end_lineno": 11,
+              "end_col": 6
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "ok",
+            "id": "ok"
+          },
+          "value": {
+            "kind": "BoolOp",
+            "source_span": {
+              "lineno": 11,
+              "col": 9,
+              "end_lineno": 11,
+              "end_col": 52
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ok and (os.path.dirname(joined) == \"alpha\")",
+            "op": "And",
+            "values": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 11,
+                  "col": 9,
+                  "end_lineno": 11,
+                  "end_col": 11
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "ok",
+                "id": "ok"
+              },
+              {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 11,
+                  "col": 16,
+                  "end_lineno": 11,
+                  "end_col": 52
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "(os.path.dirname(joined) == \"alpha\")",
+                "left": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 11,
+                    "col": 17,
+                    "end_lineno": 11,
+                    "end_col": 40
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "os.path.dirname(joined)",
+                  "func": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 11,
+                      "col": 17,
+                      "end_lineno": 11,
+                      "end_col": 32
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "os.path.dirname",
+                    "value": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 11,
+                        "col": 17,
+                        "end_lineno": 11,
+                        "end_col": 24
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "os.path",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 11,
+                          "col": 17,
+                          "end_lineno": 11,
+                          "end_col": 19
+                        },
+                        "resolved_type": "unknown",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "os",
+                        "id": "os"
+                      },
+                      "attr": "path"
+                    },
+                    "attr": "dirname"
+                  },
+                  "args": [
+                    {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 11,
+                        "col": 33,
+                        "end_lineno": 11,
+                        "end_col": 39
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "joined",
+                      "id": "joined"
+                    }
+                  ],
+                  "keywords": []
+                },
+                "ops": [
+                  "Eq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 11,
+                      "col": 44,
+                      "end_lineno": 11,
+                      "end_col": 51
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"alpha\"",
+                    "value": "alpha"
+                  }
+                ]
+              }
+            ]
+          },
+          "declare": true,
+          "decl_type": "bool",
+          "declare_init": true
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 13,
+            "col": 4,
+            "end_lineno": 13,
+            "end_col": 35
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 13,
+              "col": 4,
+              "end_lineno": 13,
+              "end_col": 6
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "ok",
+            "id": "ok"
+          },
+          "value": {
+            "kind": "BoolOp",
+            "source_span": {
+              "lineno": 13,
+              "col": 9,
+              "end_lineno": 13,
+              "end_col": 35
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ok and os.path.exists(\".\")",
+            "op": "And",
+            "values": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 9,
+                  "end_lineno": 13,
+                  "end_col": 11
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "ok",
+                "id": "ok"
+              },
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 16,
+                  "end_lineno": 13,
+                  "end_col": 35
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "os.path.exists(\".\")",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 13,
+                    "col": 16,
+                    "end_lineno": 13,
+                    "end_col": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "os.path.exists",
+                  "value": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 13,
+                      "col": 16,
+                      "end_lineno": 13,
+                      "end_col": 23
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "os.path",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 13,
+                        "col": 16,
+                        "end_lineno": 13,
+                        "end_col": 18
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "os",
+                      "id": "os"
+                    },
+                    "attr": "path"
+                  },
+                  "attr": "exists"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 13,
+                      "col": 31,
+                      "end_lineno": 13,
+                      "end_col": 34
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\".\"",
+                    "value": "."
+                  }
+                ],
+                "keywords": []
+              }
+            ]
+          },
+          "declare": true,
+          "decl_type": "bool",
+          "declare_init": true,
+          "leading_trivia": [
+            {
+              "kind": "comment",
+              "text": "Use a guaranteed existing relative path to avoid dependency on runtime cwd."
+            }
+          ],
+          "leading_comments": [
+            "Use a guaranteed existing relative path to avoid dependency on runtime cwd."
+          ]
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 14,
+            "col": 4,
+            "end_lineno": 14,
+            "end_col": 45
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 14,
+              "col": 4,
+              "end_lineno": 14,
+              "end_col": 6
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "ok",
+            "id": "ok"
+          },
+          "value": {
+            "kind": "BoolOp",
+            "source_span": {
+              "lineno": 14,
+              "col": 9,
+              "end_lineno": 14,
+              "end_col": 45
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ok and (len(glob.glob(\"*.cpp\")) > 0)",
+            "op": "And",
+            "values": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 14,
+                  "col": 9,
+                  "end_lineno": 14,
+                  "end_col": 11
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "ok",
+                "id": "ok"
+              },
+              {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 14,
+                  "col": 16,
+                  "end_lineno": 14,
+                  "end_col": 45
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "(len(glob.glob(\"*.cpp\")) > 0)",
+                "left": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 14,
+                    "col": 17,
+                    "end_lineno": 14,
+                    "end_col": 40
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "len(glob.glob(\"*.cpp\"))",
+                  "func": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 14,
+                      "col": 17,
+                      "end_lineno": 14,
+                      "end_col": 20
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "len",
+                    "id": "len"
+                  },
+                  "args": [
+                    {
+                      "kind": "Call",
+                      "source_span": {
+                        "lineno": 14,
+                        "col": 21,
+                        "end_lineno": 14,
+                        "end_col": 39
+                      },
+                      "resolved_type": "list[str]",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "glob.glob(\"*.cpp\")",
+                      "func": {
+                        "kind": "Attribute",
+                        "source_span": {
+                          "lineno": 14,
+                          "col": 21,
+                          "end_lineno": 14,
+                          "end_col": 30
+                        },
+                        "resolved_type": "unknown",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "glob.glob",
+                        "value": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 14,
+                            "col": 21,
+                            "end_lineno": 14,
+                            "end_col": 25
+                          },
+                          "resolved_type": "unknown",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "glob",
+                          "id": "glob"
+                        },
+                        "attr": "glob"
+                      },
+                      "args": [
+                        {
+                          "kind": "Constant",
+                          "source_span": {
+                            "lineno": 14,
+                            "col": 31,
+                            "end_lineno": 14,
+                            "end_col": 38
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "\"*.cpp\"",
+                          "value": "*.cpp"
+                        }
+                      ],
+                      "keywords": []
+                    }
+                  ],
+                  "keywords": [],
+                  "lowered_kind": "BuiltinCall",
+                  "builtin_name": "len",
+                  "runtime_call": "py_len",
+                  "runtime_module_id": "pytra.core.py_runtime",
+                  "runtime_symbol": "len",
+                  "runtime_call_adapter_kind": "builtin",
+                  "semantic_tag": "core.len"
+                },
+                "ops": [
+                  "Gt"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 14,
+                      "col": 43,
+                      "end_lineno": 14,
+                      "end_col": 44
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "0",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "declare": true,
+          "decl_type": "bool",
+          "declare_init": true
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 15,
+            "col": 4,
+            "end_lineno": 15,
+            "end_col": 13
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 15,
+              "col": 4,
+              "end_lineno": 15,
+              "end_col": 13
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(ok)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 15,
+                "col": 4,
+                "end_lineno": 15,
+                "end_col": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 10,
+                  "end_lineno": 15,
+                  "end_col": 12
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "ok",
+                "id": "ok"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 19,
+        "col": 4,
+        "end_lineno": 19,
+        "end_col": 14
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 19,
+          "col": 4,
+          "end_lineno": 19,
+          "end_col": 14
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "run_case()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 19,
+            "col": 4,
+            "end_lineno": 19,
+            "end_col": 12
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "run_case",
+          "id": "run_case"
+        },
+        "args": [],
+        "keywords": []
+      }
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.std",
+          "export_name": "glob",
+          "local_name": "glob",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/stdlib/os_glob_extended.py",
+          "source_line": 1,
+          "source_module_id": "pytra.std",
+          "source_export_name": "glob",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.std.glob",
+          "runtime_group": "std",
+          "resolved_binding_kind": "module"
+        },
+        {
+          "module_id": "pytra.std",
+          "export_name": "os",
+          "local_name": "os",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/stdlib/os_glob_extended.py",
+          "source_line": 1,
+          "source_module_id": "pytra.std",
+          "source_export_name": "os",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.std.os",
+          "runtime_group": "std",
+          "resolved_binding_kind": "module"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/stdlib/os_glob_extended.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        },
+        {
+          "module_id": "pytra.built_in.sequence",
+          "export_name": "",
+          "local_name": "pytra.built_in.sequence",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/stdlib/os_glob_extended.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.sequence",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.sequence",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std",
+          "symbol": "glob",
+          "local_name": "glob"
+        },
+        {
+          "module_id": "pytra.std",
+          "symbol": "os",
+          "local_name": "os"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.std",
+        "export_name": "glob",
+        "local_name": "glob",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/stdlib/os_glob_extended.py",
+        "source_line": 1
+      },
+      {
+        "module_id": "pytra.std",
+        "export_name": "os",
+        "local_name": "os",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/stdlib/os_glob_extended.py",
+        "source_line": 1
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/stdlib/os_glob_extended.py",
+        "source_line": 0
+      },
+      {
+        "module_id": "pytra.built_in.sequence",
+        "export_name": "",
+        "local_name": "pytra.built_in.sequence",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/stdlib/os_glob_extended.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std",
+        "symbol": "glob",
+        "local_name": "glob"
+      },
+      {
+        "module_id": "pytra.std",
+        "symbol": "os",
+        "local_name": "os"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "glob": {
+        "module": "pytra.std",
+        "name": "glob"
+      },
+      "os": {
+        "module": "pytra.std",
+        "name": "os"
+      }
+    }
+  },
+  "east_stage": 1
+}

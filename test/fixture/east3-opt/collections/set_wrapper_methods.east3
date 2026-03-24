@@ -1,0 +1,1500 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/collections/set_wrapper_methods.py",
+  "body": [
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 1,
+        "col_offset": 0,
+        "end_lineno": 10,
+        "end_col_offset": 43
+      },
+      "name": "run_case",
+      "original_name": "run_case",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 2,
+            "col_offset": 4,
+            "end_lineno": 2,
+            "end_col_offset": 24
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 2,
+              "col_offset": 4,
+              "end_lineno": 2,
+              "end_col_offset": 5
+            },
+            "resolved_type": "set[int64]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "s",
+            "id": "s",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "set",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "int64"
+                }
+              ]
+            }
+          },
+          "annotation": "set[int64]",
+          "declare": true,
+          "decl_type": "set[int64]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "set",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "int64"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "set",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "int64"
+              }
+            ]
+          },
+          "value": {
+            "kind": "Set",
+            "source_span": {
+              "lineno": 2,
+              "col_offset": 18,
+              "end_lineno": 2,
+              "end_col_offset": 24
+            },
+            "resolved_type": "set[int64]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "{1, 2}",
+            "elements": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 2,
+                  "col_offset": 19,
+                  "end_lineno": 2,
+                  "end_col_offset": 20
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "1",
+                "value": 1
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 2,
+                  "col_offset": 22,
+                  "end_lineno": 2,
+                  "end_col_offset": 23
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "2",
+                "value": 2
+              }
+            ]
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "GenericType",
+            "category": "static",
+            "mirror": "set[int64]"
+          },
+          "meta": {
+            "lifetime_node_id": "n6",
+            "lifetime_defs": [
+              "s"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "len",
+              "print"
+            ],
+            "lifetime_live_out": [
+              "len",
+              "print",
+              "s"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 3,
+            "col_offset": 4,
+            "end_lineno": 3,
+            "end_col_offset": 16
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 3,
+              "col_offset": 4,
+              "end_lineno": 3,
+              "end_col_offset": 16
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "s.discard(3)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 3,
+                "col_offset": 4,
+                "end_lineno": 3,
+                "end_col_offset": 13
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "s.discard",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 3,
+                  "col_offset": 4,
+                  "end_lineno": 3,
+                  "end_col_offset": 5
+                },
+                "resolved_type": "set[int64]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "s",
+                "id": "s"
+              },
+              "attr": "discard"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 3,
+                  "col_offset": 14,
+                  "end_lineno": 3,
+                  "end_col_offset": 15
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "3",
+                "value": 3
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "discard",
+            "runtime_call": "set.discard",
+            "runtime_module_id": "pytra.core.set",
+            "runtime_symbol": "set.discard",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.discard",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 3,
+                "col_offset": 4,
+                "end_lineno": 3,
+                "end_col_offset": 5
+              },
+              "resolved_type": "set[int64]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "s",
+              "id": "s"
+            },
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n5",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "s"
+            ],
+            "lifetime_live_in": [
+              "len",
+              "print",
+              "s"
+            ],
+            "lifetime_live_out": [
+              "len",
+              "print",
+              "s"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 4,
+            "col_offset": 4,
+            "end_lineno": 4,
+            "end_col_offset": 15
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 4,
+              "col_offset": 4,
+              "end_lineno": 4,
+              "end_col_offset": 15
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "s.remove(1)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 4,
+                "col_offset": 4,
+                "end_lineno": 4,
+                "end_col_offset": 12
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "s.remove",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 4,
+                  "col_offset": 4,
+                  "end_lineno": 4,
+                  "end_col_offset": 5
+                },
+                "resolved_type": "set[int64]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "s",
+                "id": "s"
+              },
+              "attr": "remove"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 4,
+                  "col_offset": 13,
+                  "end_lineno": 4,
+                  "end_col_offset": 14
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "1",
+                "value": 1
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "remove",
+            "runtime_call": "set.remove",
+            "runtime_module_id": "pytra.core.set",
+            "runtime_symbol": "set.remove",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.remove",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 4,
+                "col_offset": 4,
+                "end_lineno": 4,
+                "end_col_offset": 5
+              },
+              "resolved_type": "set[int64]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "s",
+              "id": "s"
+            },
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n4",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "s"
+            ],
+            "lifetime_live_in": [
+              "len",
+              "print",
+              "s"
+            ],
+            "lifetime_live_out": [
+              "len",
+              "print",
+              "s"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 6,
+            "col_offset": 4,
+            "end_lineno": 6,
+            "end_col_offset": 31
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 6,
+              "col_offset": 4,
+              "end_lineno": 6,
+              "end_col_offset": 11
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ok_size",
+            "id": "ok_size",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "bool"
+            }
+          },
+          "annotation": "bool",
+          "declare": true,
+          "decl_type": "bool",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "bool"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "bool"
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
+          "value": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 6,
+              "col_offset": 20,
+              "end_lineno": 6,
+              "end_col_offset": 31
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "len(s) == 1",
+            "left": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 6,
+                "col_offset": 20,
+                "end_lineno": 6,
+                "end_col_offset": 26
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "len(s)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 6,
+                  "col_offset": 20,
+                  "end_lineno": 6,
+                  "end_col_offset": 23
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "len",
+                "id": "len"
+              },
+              "args": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 6,
+                    "col_offset": 24,
+                    "end_lineno": 6,
+                    "end_col_offset": 25
+                  },
+                  "resolved_type": "set[int64]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "s",
+                  "id": "s"
+                }
+              ],
+              "keywords": [],
+              "lowered_kind": "BuiltinCall",
+              "builtin_name": "len",
+              "runtime_call": "py_len",
+              "runtime_module_id": "pytra.core.py_runtime",
+              "runtime_symbol": "len",
+              "runtime_call_adapter_kind": "builtin",
+              "semantic_tag": "core.len",
+              "type_expr_summary_v1": {
+                "schema_version": 1,
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "int64"
+              }
+            },
+            "ops": [
+              "Eq"
+            ],
+            "comparators": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 6,
+                  "col_offset": 30,
+                  "end_lineno": 6,
+                  "end_col_offset": 31
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "1",
+                "value": 1
+              }
+            ],
+            "normalized_expr_version": "east3_expr_v1",
+            "normalized_expr": {
+              "kind": "Compare",
+              "source_span": {
+                "lineno": 6,
+                "col_offset": 20,
+                "end_lineno": 6,
+                "end_col_offset": 31
+              },
+              "resolved_type": "bool",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "len(s) == 1",
+              "left": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 6,
+                  "col_offset": 20,
+                  "end_lineno": 6,
+                  "end_col_offset": 26
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "len(s)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 6,
+                    "col_offset": 20,
+                    "end_lineno": 6,
+                    "end_col_offset": 23
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "len",
+                  "id": "len"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 6,
+                      "col_offset": 24,
+                      "end_lineno": 6,
+                      "end_col_offset": 25
+                    },
+                    "resolved_type": "set[int64]",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "s",
+                    "id": "s"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "len",
+                "runtime_call": "py_len",
+                "runtime_module_id": "pytra.core.py_runtime",
+                "runtime_symbol": "len",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "core.len",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int64"
+                }
+              },
+              "ops": [
+                "Eq"
+              ],
+              "comparators": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 6,
+                    "col_offset": 30,
+                    "end_lineno": 6,
+                    "end_col_offset": 31
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "1",
+                  "value": 1
+                }
+              ]
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "bool"
+          },
+          "meta": {
+            "lifetime_node_id": "n3",
+            "lifetime_defs": [
+              "ok_size"
+            ],
+            "lifetime_uses": [
+              "len",
+              "s"
+            ],
+            "lifetime_live_in": [
+              "len",
+              "print",
+              "s"
+            ],
+            "lifetime_live_out": [
+              "ok_size",
+              "print",
+              "s"
+            ],
+            "lifetime_last_use_vars": [
+              "len"
+            ]
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 7,
+            "col_offset": 4,
+            "end_lineno": 7,
+            "end_col_offset": 27
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 7,
+              "col_offset": 4,
+              "end_lineno": 7,
+              "end_col_offset": 12
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ok_has_2",
+            "id": "ok_has_2",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "bool"
+            }
+          },
+          "annotation": "bool",
+          "declare": true,
+          "decl_type": "bool",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "bool"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "bool"
+          },
+          "value": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 7,
+              "col_offset": 21,
+              "end_lineno": 7,
+              "end_col_offset": 27
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "2 in s",
+            "left": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 7,
+                "col_offset": 21,
+                "end_lineno": 7,
+                "end_col_offset": 22
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "2",
+              "value": 2
+            },
+            "ops": [
+              "In"
+            ],
+            "comparators": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 7,
+                  "col_offset": 26,
+                  "end_lineno": 7,
+                  "end_col_offset": 27
+                },
+                "resolved_type": "set[int64]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "s",
+                "id": "s"
+              }
+            ],
+            "normalized_expr_version": "east3_expr_v1",
+            "normalized_expr": {
+              "kind": "Compare",
+              "source_span": {
+                "lineno": 7,
+                "col_offset": 21,
+                "end_lineno": 7,
+                "end_col_offset": 27
+              },
+              "resolved_type": "bool",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "2 in s",
+              "left": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 7,
+                  "col_offset": 21,
+                  "end_lineno": 7,
+                  "end_col_offset": 22
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "2",
+                "value": 2
+              },
+              "ops": [
+                "In"
+              ],
+              "comparators": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 7,
+                    "col_offset": 26,
+                    "end_lineno": 7,
+                    "end_col_offset": 27
+                  },
+                  "resolved_type": "set[int64]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "s",
+                  "id": "s"
+                }
+              ]
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "bool"
+          },
+          "meta": {
+            "lifetime_node_id": "n2",
+            "lifetime_defs": [
+              "ok_has_2"
+            ],
+            "lifetime_uses": [
+              "s"
+            ],
+            "lifetime_live_in": [
+              "ok_size",
+              "print",
+              "s"
+            ],
+            "lifetime_live_out": [
+              "ok_has_2",
+              "ok_size",
+              "print",
+              "s"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 8,
+            "col_offset": 4,
+            "end_lineno": 8,
+            "end_col_offset": 32
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 8,
+              "col_offset": 4,
+              "end_lineno": 8,
+              "end_col_offset": 11
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ok_no_1",
+            "id": "ok_no_1",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "bool"
+            }
+          },
+          "annotation": "bool",
+          "declare": true,
+          "decl_type": "bool",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "bool"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "bool"
+          },
+          "value": {
+            "kind": "UnaryOp",
+            "source_span": {
+              "lineno": 8,
+              "col_offset": 20,
+              "end_lineno": 8,
+              "end_col_offset": 32
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "not (1 in s)",
+            "op": "Not",
+            "operand": {
+              "kind": "Compare",
+              "source_span": {
+                "lineno": 8,
+                "col_offset": 24,
+                "end_lineno": 8,
+                "end_col_offset": 32
+              },
+              "resolved_type": "bool",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "(1 in s)",
+              "left": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 8,
+                  "col_offset": 25,
+                  "end_lineno": 8,
+                  "end_col_offset": 26
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "1",
+                "value": 1
+              },
+              "ops": [
+                "In"
+              ],
+              "comparators": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 8,
+                    "col_offset": 30,
+                    "end_lineno": 8,
+                    "end_col_offset": 31
+                  },
+                  "resolved_type": "set[int64]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "s",
+                  "id": "s"
+                }
+              ],
+              "normalized_expr_version": "east3_expr_v1",
+              "normalized_expr": {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 8,
+                  "col_offset": 24,
+                  "end_lineno": 8,
+                  "end_col_offset": 32
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "(1 in s)",
+                "left": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 8,
+                    "col_offset": 25,
+                    "end_lineno": 8,
+                    "end_col_offset": 26
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "1",
+                  "value": 1
+                },
+                "ops": [
+                  "In"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 8,
+                      "col_offset": 30,
+                      "end_lineno": 8,
+                      "end_col_offset": 31
+                    },
+                    "resolved_type": "set[int64]",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "s",
+                    "id": "s"
+                  }
+                ]
+              }
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "bool"
+          },
+          "meta": {
+            "lifetime_node_id": "n1",
+            "lifetime_defs": [
+              "ok_no_1"
+            ],
+            "lifetime_uses": [
+              "s"
+            ],
+            "lifetime_live_in": [
+              "ok_has_2",
+              "ok_size",
+              "print",
+              "s"
+            ],
+            "lifetime_live_out": [
+              "ok_has_2",
+              "ok_no_1",
+              "ok_size",
+              "print"
+            ],
+            "lifetime_last_use_vars": [
+              "s"
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 10,
+            "col_offset": 4,
+            "end_lineno": 10,
+            "end_col_offset": 43
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 10,
+              "col_offset": 4,
+              "end_lineno": 10,
+              "end_col_offset": 43
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(ok_size and ok_has_2 and ok_no_1)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 10,
+                "col_offset": 4,
+                "end_lineno": 10,
+                "end_col_offset": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "BoolOp",
+                "source_span": {
+                  "lineno": 10,
+                  "col_offset": 10,
+                  "end_lineno": 10,
+                  "end_col_offset": 42
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "ok_size and ok_has_2 and ok_no_1",
+                "op": "And",
+                "values": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 10,
+                      "col_offset": 10,
+                      "end_lineno": 10,
+                      "end_col_offset": 17
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "ok_size",
+                    "id": "ok_size"
+                  },
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 10,
+                      "col_offset": 22,
+                      "end_lineno": 10,
+                      "end_col_offset": 30
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "ok_has_2",
+                    "id": "ok_has_2"
+                  },
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 10,
+                      "col_offset": 35,
+                      "end_lineno": 10,
+                      "end_col_offset": 42
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "ok_no_1",
+                    "id": "ok_no_1"
+                  }
+                ]
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
+          "meta": {
+            "lifetime_node_id": "n0",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "ok_has_2",
+              "ok_no_1",
+              "ok_size",
+              "print"
+            ],
+            "lifetime_live_in": [
+              "ok_has_2",
+              "ok_no_1",
+              "ok_size",
+              "print"
+            ],
+            "lifetime_live_out": [],
+            "lifetime_last_use_vars": [
+              "ok_has_2",
+              "ok_no_1",
+              "ok_size",
+              "print"
+            ]
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "None",
+      "meta": {
+        "lifetime_analysis": {
+          "schema_version": "east3_lifetime_v1",
+          "status": "ok",
+          "reason": "",
+          "entry_node": "n6",
+          "order": [
+            "n0",
+            "n1",
+            "n2",
+            "n3",
+            "n4",
+            "n5",
+            "n6"
+          ],
+          "cfg": [
+            {
+              "id": "n0",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "ok_has_2",
+                "ok_no_1",
+                "ok_size",
+                "print"
+              ],
+              "succ": []
+            },
+            {
+              "id": "n1",
+              "kind": "AnnAssign",
+              "defs": [
+                "ok_no_1"
+              ],
+              "uses": [
+                "s"
+              ],
+              "succ": [
+                "n0"
+              ]
+            },
+            {
+              "id": "n2",
+              "kind": "AnnAssign",
+              "defs": [
+                "ok_has_2"
+              ],
+              "uses": [
+                "s"
+              ],
+              "succ": [
+                "n1"
+              ]
+            },
+            {
+              "id": "n3",
+              "kind": "AnnAssign",
+              "defs": [
+                "ok_size"
+              ],
+              "uses": [
+                "len",
+                "s"
+              ],
+              "succ": [
+                "n2"
+              ]
+            },
+            {
+              "id": "n4",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "s"
+              ],
+              "succ": [
+                "n3"
+              ]
+            },
+            {
+              "id": "n5",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "s"
+              ],
+              "succ": [
+                "n4"
+              ]
+            },
+            {
+              "id": "n6",
+              "kind": "AnnAssign",
+              "defs": [
+                "s"
+              ],
+              "uses": [],
+              "succ": [
+                "n5"
+              ]
+            }
+          ],
+          "def_use": {
+            "defs": {
+              "ok_has_2": [
+                "n2"
+              ],
+              "ok_no_1": [
+                "n1"
+              ],
+              "ok_size": [
+                "n3"
+              ],
+              "s": [
+                "n6"
+              ]
+            },
+            "uses": {
+              "len": [
+                "n3"
+              ],
+              "ok_has_2": [
+                "n0"
+              ],
+              "ok_no_1": [
+                "n0"
+              ],
+              "ok_size": [
+                "n0"
+              ],
+              "print": [
+                "n0"
+              ],
+              "s": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5"
+              ]
+            }
+          },
+          "variables": {
+            "len": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n3"
+              ],
+              "live_in_nodes": [
+                "n3",
+                "n4",
+                "n5",
+                "n6"
+              ],
+              "live_out_nodes": [
+                "n4",
+                "n5",
+                "n6"
+              ],
+              "last_use_nodes": [
+                "n3"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "ok_has_2": {
+              "def_nodes": [
+                "n2"
+              ],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "ok_no_1": {
+              "def_nodes": [
+                "n1"
+              ],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0"
+              ],
+              "live_out_nodes": [
+                "n1"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "ok_size": {
+              "def_nodes": [
+                "n3"
+              ],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "print": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "s": {
+              "def_nodes": [
+                "n6"
+              ],
+              "use_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5"
+              ],
+              "live_in_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5"
+              ],
+              "live_out_nodes": [
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6"
+              ],
+              "last_use_nodes": [
+                "n1"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            }
+          },
+          "arg_order": [],
+          "arg_escape": [],
+          "has_dynamic_name_access": false
+        }
+      }
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 14,
+        "col_offset": 4,
+        "end_lineno": 14,
+        "end_col_offset": 14
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 14,
+          "col_offset": 4,
+          "end_lineno": 14,
+          "end_col_offset": 14
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "run_case()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 14,
+            "col_offset": 4,
+            "end_lineno": 14,
+            "end_col_offset": 12
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "run_case",
+          "id": "run_case"
+        },
+        "args": [],
+        "keywords": [],
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/collections/set_wrapper_methods.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        },
+        {
+          "module_id": "pytra.built_in.sequence",
+          "export_name": "",
+          "local_name": "pytra.built_in.sequence",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/collections/set_wrapper_methods.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.sequence",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.sequence",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": []
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/collections/set_wrapper_methods.py",
+        "source_line": 0
+      },
+      {
+        "module_id": "pytra.built_in.sequence",
+        "export_name": "",
+        "local_name": "pytra.built_in.sequence",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/collections/set_wrapper_methods.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {},
+    "dispatch_mode": "native",
+    "lifetime_schema_version": "east3_lifetime_v1"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

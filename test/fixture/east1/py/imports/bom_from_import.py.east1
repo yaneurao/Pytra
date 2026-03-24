@@ -1,0 +1,308 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/imports/bom_from_import.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 31
+      },
+      "module": "pytra.std.math",
+      "names": [
+        {
+          "name": "sqrt",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 5,
+        "end_col": 27
+      },
+      "name": "__pytra_main",
+      "original_name": "main",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 5,
+            "col": 4,
+            "end_lineno": 5,
+            "end_col": 27
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 5,
+              "col": 4,
+              "end_lineno": 5,
+              "end_col": 27
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(sqrt(9.0) == 3.0)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 5,
+                "col": 4,
+                "end_lineno": 5,
+                "end_col": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 5,
+                  "col": 10,
+                  "end_lineno": 5,
+                  "end_col": 26
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "sqrt(9.0) == 3.0",
+                "left": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 5,
+                    "col": 10,
+                    "end_lineno": 5,
+                    "end_col": 19
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "sqrt(9.0)",
+                  "func": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 5,
+                      "col": 10,
+                      "end_lineno": 5,
+                      "end_col": 14
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "sqrt",
+                    "id": "sqrt"
+                  },
+                  "args": [
+                    {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 5,
+                        "col": 15,
+                        "end_lineno": 5,
+                        "end_col": 18
+                      },
+                      "resolved_type": "float64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "9.0",
+                      "value": 9.0
+                    }
+                  ],
+                  "keywords": [],
+                  "resolved_runtime_call": "math.sqrt",
+                  "resolved_runtime_source": "import_symbol",
+                  "runtime_module_id": "pytra.std.math",
+                  "runtime_symbol": "sqrt",
+                  "runtime_call_adapter_kind": "math.float_args"
+                },
+                "ops": [
+                  "Eq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 5,
+                      "col": 23,
+                      "end_lineno": 5,
+                      "end_col": 26
+                    },
+                    "resolved_type": "float64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "3.0",
+                    "value": 3.0
+                  }
+                ]
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 9,
+        "col": 4,
+        "end_lineno": 9,
+        "end_col": 10
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 9,
+          "col": 4,
+          "end_lineno": 9,
+          "end_col": 10
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "main()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 9,
+            "col": 4,
+            "end_lineno": 9,
+            "end_col": 8
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "main",
+          "id": "main"
+        },
+        "args": [],
+        "keywords": []
+      }
+    }
+  ],
+  "renamed_symbols": {
+    "main": "__pytra_main"
+  },
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.std.math",
+          "export_name": "sqrt",
+          "local_name": "sqrt",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/imports/bom_from_import.py",
+          "source_line": 1,
+          "source_module_id": "pytra.std.math",
+          "source_export_name": "sqrt",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.std.math",
+          "runtime_group": "std",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "sqrt",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.sqrt",
+          "runtime_call_adapter_kind": "math.float_args"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/imports/bom_from_import.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std.math",
+          "symbol": "sqrt",
+          "local_name": "sqrt"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.std.math",
+        "export_name": "sqrt",
+        "local_name": "sqrt",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/imports/bom_from_import.py",
+        "source_line": 1
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/imports/bom_from_import.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std.math",
+        "symbol": "sqrt",
+        "local_name": "sqrt"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "sqrt": {
+        "module": "pytra.std.math",
+        "name": "sqrt"
+      }
+    }
+  },
+  "east_stage": 1
+}

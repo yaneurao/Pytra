@@ -1,0 +1,326 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/imports/type_ignore_from_import.py",
+  "body": [
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 4,
+        "col_offset": 0,
+        "end_lineno": 5,
+        "end_col_offset": 25
+      },
+      "name": "takes_cb",
+      "original_name": "takes_cb",
+      "arg_types": {
+        "cb": "Callable"
+      },
+      "arg_order": [
+        "cb"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "cb": 0
+      },
+      "return_type": "bool",
+      "arg_usage": {
+        "cb": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 5,
+            "col_offset": 4,
+            "end_lineno": 5,
+            "end_col_offset": 25
+          },
+          "value": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 5,
+              "col_offset": 11,
+              "end_lineno": 5,
+              "end_col_offset": 25
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "cb is not None",
+            "left": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 5,
+                "col_offset": 11,
+                "end_lineno": 5,
+                "end_col_offset": 13
+              },
+              "resolved_type": "Callable",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "cb",
+              "id": "cb"
+            },
+            "ops": [
+              "IsNot"
+            ],
+            "comparators": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 5,
+                  "col_offset": 21,
+                  "end_lineno": 5,
+                  "end_col_offset": 25
+                },
+                "resolved_type": "None",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "None",
+                "value": null
+              }
+            ]
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "cb": {
+          "kind": "NamedType",
+          "name": "Callable"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "bool"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "bool"
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 8,
+        "col_offset": 0,
+        "end_lineno": 9,
+        "end_col_offset": 25
+      },
+      "name": "__pytra_main",
+      "original_name": "main",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 9,
+            "col_offset": 4,
+            "end_lineno": 9,
+            "end_col_offset": 25
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 9,
+              "col_offset": 4,
+              "end_lineno": 9,
+              "end_col_offset": 25
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(takes_cb(main))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 9,
+                "col_offset": 4,
+                "end_lineno": 9,
+                "end_col_offset": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 9,
+                  "col_offset": 10,
+                  "end_lineno": 9,
+                  "end_col_offset": 24
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "takes_cb(main)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 9,
+                    "col_offset": 10,
+                    "end_lineno": 9,
+                    "end_col_offset": 18
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "takes_cb",
+                  "id": "takes_cb"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 9,
+                      "col_offset": 19,
+                      "end_lineno": 9,
+                      "end_col_offset": 23
+                    },
+                    "resolved_type": "callable[[],None]",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "main",
+                    "id": "main"
+                  }
+                ],
+                "keywords": [],
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "bool"
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "discard_result": true
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "None"
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 13,
+        "col_offset": 4,
+        "end_lineno": 13,
+        "end_col_offset": 10
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 13,
+          "col_offset": 4,
+          "end_lineno": 13,
+          "end_col_offset": 10
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "main()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 13,
+            "col_offset": 4,
+            "end_lineno": 13,
+            "end_col_offset": 8
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "main",
+          "id": "main"
+        },
+        "args": [],
+        "keywords": [],
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    }
+  ],
+  "renamed_symbols": {
+    "main": "__pytra_main"
+  },
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/imports/type_ignore_from_import.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": []
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/imports/type_ignore_from_import.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {},
+    "dispatch_mode": "native"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

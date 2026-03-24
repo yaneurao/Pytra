@@ -1,0 +1,273 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/signature/ok_kwonly.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 3,
+        "col": 0,
+        "end_lineno": 4,
+        "end_col": 16
+      },
+      "name": "add",
+      "original_name": "add",
+      "arg_types": {
+        "a": "int64",
+        "b": "int64"
+      },
+      "arg_order": [
+        "a",
+        "b"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "a": 0,
+        "b": 1
+      },
+      "return_type": "int64",
+      "arg_usage": {
+        "a": "readonly",
+        "b": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 4,
+            "col": 4,
+            "end_lineno": 4,
+            "end_col": 16
+          },
+          "value": {
+            "kind": "BinOp",
+            "source_span": {
+              "lineno": 4,
+              "col": 11,
+              "end_lineno": 4,
+              "end_col": 16
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "a + b",
+            "left": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 4,
+                "col": 11,
+                "end_lineno": 4,
+                "end_col": 12
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "a",
+              "id": "a"
+            },
+            "op": "Add",
+            "right": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 4,
+                "col": 15,
+                "end_lineno": 4,
+                "end_col": 16
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "b",
+              "id": "b"
+            }
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "a": {
+          "kind": "NamedType",
+          "name": "int64"
+        },
+        "b": {
+          "kind": "NamedType",
+          "name": "int64"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "int64"
+      },
+      "leading_comments": [
+        "self_hosted parser signature test: keyword-only marker `*` is accepted."
+      ],
+      "leading_trivia": [
+        {
+          "kind": "comment",
+          "text": "self_hosted parser signature test: keyword-only marker `*` is accepted."
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 7,
+        "col": 4,
+        "end_lineno": 7,
+        "end_col": 22
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 7,
+          "col": 4,
+          "end_lineno": 7,
+          "end_col": 22
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "print(add(2, b=3))",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 7,
+            "col": 4,
+            "end_lineno": 7,
+            "end_col": 9
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "print",
+          "id": "print"
+        },
+        "args": [
+          {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 7,
+              "col": 10,
+              "end_lineno": 7,
+              "end_col": 21
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "add(2, b=3)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 7,
+                "col": 10,
+                "end_lineno": 7,
+                "end_col": 13
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "add",
+              "id": "add"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 7,
+                  "col": 14,
+                  "end_lineno": 7,
+                  "end_col": 15
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "2",
+                "value": 2
+              }
+            ],
+            "keywords": [
+              {
+                "arg": "b",
+                "value": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 7,
+                    "col": 19,
+                    "end_lineno": 7,
+                    "end_col": 20
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "3",
+                  "value": 3
+                }
+              }
+            ]
+          }
+        ],
+        "keywords": [],
+        "lowered_kind": "BuiltinCall",
+        "builtin_name": "print",
+        "runtime_call": "py_print",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_symbol": "py_print",
+        "runtime_call_adapter_kind": "builtin",
+        "semantic_tag": "core.print"
+      }
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/signature/ok_kwonly.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": []
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/signature/ok_kwonly.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {},
+    "dispatch_mode": "native"
+  },
+  "east_stage": 2,
+  "schema_version": 1
+}

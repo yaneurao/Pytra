@@ -1,0 +1,1040 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/stdlib/pytra_std_import_math.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 3,
+        "col": 0,
+        "end_lineno": 3,
+        "end_col": 62
+      },
+      "module": "pytra.utils.assertions",
+      "names": [
+        {
+          "name": "py_assert_all",
+          "asname": null
+        },
+        {
+          "name": "py_assert_eq",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 4,
+        "end_col": 47
+      },
+      "module": "pytra.std.math",
+      "names": [
+        {
+          "name": "floor",
+          "asname": null
+        },
+        {
+          "name": "sqrt",
+          "asname": "msqrt"
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 7,
+        "col": 0,
+        "end_lineno": 11,
+        "end_col": 66
+      },
+      "name": "run_case",
+      "original_name": "run_case",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 8,
+            "col": 4,
+            "end_lineno": 8,
+            "end_col": 28
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 8,
+              "col": 4,
+              "end_lineno": 8,
+              "end_col": 11
+            },
+            "resolved_type": "list[bool]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "results",
+            "id": "results",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "bool"
+                }
+              ]
+            }
+          },
+          "annotation": "list[bool]",
+          "value": {
+            "kind": "List",
+            "source_span": {
+              "lineno": 8,
+              "col": 26,
+              "end_lineno": 8,
+              "end_col": 28
+            },
+            "resolved_type": "list[unknown]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "[]",
+            "elements": []
+          },
+          "declare": true,
+          "decl_type": "list[bool]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "bool"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "bool"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 9,
+            "col": 4,
+            "end_lineno": 9,
+            "end_col": 97
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 9,
+              "col": 4,
+              "end_lineno": 9,
+              "end_col": 97
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "results.append(py_assert_eq(int(msqrt(81.0)), 9, \"from pytra.std.math import sqrt as msqrt\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 9,
+                "col": 4,
+                "end_lineno": 9,
+                "end_col": 18
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "results.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 9,
+                  "col": 4,
+                  "end_lineno": 9,
+                  "end_col": 11
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "results",
+                "id": "results"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 9,
+                  "col": 19,
+                  "end_lineno": 9,
+                  "end_col": 96
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(int(msqrt(81.0)), 9, \"from pytra.std.math import sqrt as msqrt\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 9,
+                    "col": 19,
+                    "end_lineno": 9,
+                    "end_col": 31
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 32,
+                      "end_lineno": 9,
+                      "end_col": 48
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "int(msqrt(81.0))",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 9,
+                        "col": 32,
+                        "end_lineno": 9,
+                        "end_col": 35
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "int",
+                      "id": "int"
+                    },
+                    "args": [
+                      {
+                        "kind": "Call",
+                        "source_span": {
+                          "lineno": 9,
+                          "col": 36,
+                          "end_lineno": 9,
+                          "end_col": 47
+                        },
+                        "resolved_type": "unknown",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "msqrt(81.0)",
+                        "func": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 9,
+                            "col": 36,
+                            "end_lineno": 9,
+                            "end_col": 41
+                          },
+                          "resolved_type": "unknown",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "msqrt",
+                          "id": "msqrt"
+                        },
+                        "args": [
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 9,
+                              "col": 42,
+                              "end_lineno": 9,
+                              "end_col": 46
+                            },
+                            "resolved_type": "float64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "81.0",
+                            "value": 81.0
+                          }
+                        ],
+                        "keywords": [],
+                        "resolved_runtime_call": "math.sqrt",
+                        "resolved_runtime_source": "import_symbol",
+                        "runtime_module_id": "pytra.std.math",
+                        "runtime_symbol": "sqrt",
+                        "runtime_call_adapter_kind": "math.float_args"
+                      }
+                    ],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "builtin_name": "int",
+                    "runtime_call": "static_cast",
+                    "runtime_module_id": "pytra.core.py_runtime",
+                    "runtime_symbol": "int",
+                    "runtime_call_adapter_kind": "builtin",
+                    "semantic_tag": "cast.int"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 50,
+                      "end_lineno": 9,
+                      "end_col": 51
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "9",
+                    "value": 9
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 53,
+                      "end_lineno": 9,
+                      "end_col": 95
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"from pytra.std.math import sqrt as msqrt\"",
+                    "value": "from pytra.std.math import sqrt as msqrt"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 9,
+                "col": 4,
+                "end_lineno": 9,
+                "end_col": 11
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "results",
+              "id": "results"
+            }
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 10,
+            "col": 4,
+            "end_lineno": 10,
+            "end_col": 88
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 10,
+              "col": 4,
+              "end_lineno": 10,
+              "end_col": 88
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "results.append(py_assert_eq(int(floor(3.9)), 3, \"from pytra.std.math import floor\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 10,
+                "col": 4,
+                "end_lineno": 10,
+                "end_col": 18
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "results.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 10,
+                  "col": 4,
+                  "end_lineno": 10,
+                  "end_col": 11
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "results",
+                "id": "results"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 10,
+                  "col": 19,
+                  "end_lineno": 10,
+                  "end_col": 87
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(int(floor(3.9)), 3, \"from pytra.std.math import floor\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 10,
+                    "col": 19,
+                    "end_lineno": 10,
+                    "end_col": 31
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 10,
+                      "col": 32,
+                      "end_lineno": 10,
+                      "end_col": 47
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "int(floor(3.9))",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 10,
+                        "col": 32,
+                        "end_lineno": 10,
+                        "end_col": 35
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "int",
+                      "id": "int"
+                    },
+                    "args": [
+                      {
+                        "kind": "Call",
+                        "source_span": {
+                          "lineno": 10,
+                          "col": 36,
+                          "end_lineno": 10,
+                          "end_col": 46
+                        },
+                        "resolved_type": "unknown",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "floor(3.9)",
+                        "func": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 10,
+                            "col": 36,
+                            "end_lineno": 10,
+                            "end_col": 41
+                          },
+                          "resolved_type": "unknown",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "floor",
+                          "id": "floor"
+                        },
+                        "args": [
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 10,
+                              "col": 42,
+                              "end_lineno": 10,
+                              "end_col": 45
+                            },
+                            "resolved_type": "float64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "3.9",
+                            "value": 3.9
+                          }
+                        ],
+                        "keywords": [],
+                        "resolved_runtime_call": "math.floor",
+                        "resolved_runtime_source": "import_symbol",
+                        "runtime_module_id": "pytra.std.math",
+                        "runtime_symbol": "floor",
+                        "runtime_call_adapter_kind": "math.float_args"
+                      }
+                    ],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "builtin_name": "int",
+                    "runtime_call": "static_cast",
+                    "runtime_module_id": "pytra.core.py_runtime",
+                    "runtime_symbol": "int",
+                    "runtime_call_adapter_kind": "builtin",
+                    "semantic_tag": "cast.int"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 10,
+                      "col": 49,
+                      "end_lineno": 10,
+                      "end_col": 50
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "3",
+                    "value": 3
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 10,
+                      "col": 52,
+                      "end_lineno": 10,
+                      "end_col": 86
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"from pytra.std.math import floor\"",
+                    "value": "from pytra.std.math import floor"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "append",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 10,
+                "col": 4,
+                "end_lineno": 10,
+                "end_col": 11
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "results",
+              "id": "results"
+            }
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 11,
+            "col": 4,
+            "end_lineno": 11,
+            "end_col": 66
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 11,
+              "col": 4,
+              "end_lineno": 11,
+              "end_col": 66
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(py_assert_all(results, \"from pytra std import symbols\"))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 11,
+                "col": 4,
+                "end_lineno": 11,
+                "end_col": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 11,
+                  "col": 10,
+                  "end_lineno": 11,
+                  "end_col": 65
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_all(results, \"from pytra std import symbols\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 11,
+                    "col": 10,
+                    "end_lineno": 11,
+                    "end_col": 23
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_all",
+                  "id": "py_assert_all"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 11,
+                      "col": 24,
+                      "end_lineno": 11,
+                      "end_col": 31
+                    },
+                    "resolved_type": "list[bool]",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "results",
+                    "id": "results"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 11,
+                      "col": 33,
+                      "end_lineno": 11,
+                      "end_col": 64
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"from pytra std import symbols\"",
+                    "value": "from pytra std import symbols"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_all",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_all",
+                "runtime_call_adapter_kind": "extern_delegate"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 14,
+        "col": 0,
+        "end_lineno": 15,
+        "end_col": 14
+      },
+      "name": "_case_main",
+      "original_name": "_case_main",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 15,
+            "col": 4,
+            "end_lineno": 15,
+            "end_col": 14
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 15,
+              "col": 4,
+              "end_lineno": 15,
+              "end_col": 14
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "run_case()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 15,
+                "col": 4,
+                "end_lineno": 15,
+                "end_col": 12
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "run_case",
+              "id": "run_case"
+            },
+            "args": [],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 19,
+        "col": 4,
+        "end_lineno": 19,
+        "end_col": 16
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 19,
+          "col": 4,
+          "end_lineno": 19,
+          "end_col": 16
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "_case_main()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 19,
+            "col": 4,
+            "end_lineno": 19,
+            "end_col": 14
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "_case_main",
+          "id": "_case_main"
+        },
+        "args": [],
+        "keywords": []
+      }
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_all",
+          "local_name": "py_assert_all",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/stdlib/pytra_std_import_math.py",
+          "source_line": 3,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_all",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_all",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_all"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_eq",
+          "local_name": "py_assert_eq",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/stdlib/pytra_std_import_math.py",
+          "source_line": 3,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_eq",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_eq",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_eq"
+        },
+        {
+          "module_id": "pytra.std.math",
+          "export_name": "floor",
+          "local_name": "floor",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/stdlib/pytra_std_import_math.py",
+          "source_line": 4,
+          "source_module_id": "pytra.std.math",
+          "source_export_name": "floor",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.std.math",
+          "runtime_group": "std",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "floor",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.floor",
+          "runtime_call_adapter_kind": "math.float_args"
+        },
+        {
+          "module_id": "pytra.std.math",
+          "export_name": "sqrt",
+          "local_name": "msqrt",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/stdlib/pytra_std_import_math.py",
+          "source_line": 4,
+          "source_module_id": "pytra.std.math",
+          "source_export_name": "sqrt",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.std.math",
+          "runtime_group": "std",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "sqrt",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.sqrt",
+          "runtime_call_adapter_kind": "math.float_args"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/stdlib/pytra_std_import_math.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        },
+        {
+          "module_id": "pytra.built_in.scalar_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.scalar_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/stdlib/pytra_std_import_math.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.scalar_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.scalar_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_all",
+          "local_name": "py_assert_all"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_eq",
+          "local_name": "py_assert_eq"
+        },
+        {
+          "module_id": "pytra.std.math",
+          "symbol": "floor",
+          "local_name": "floor"
+        },
+        {
+          "module_id": "pytra.std.math",
+          "symbol": "sqrt",
+          "local_name": "msqrt"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_all",
+        "local_name": "py_assert_all",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/stdlib/pytra_std_import_math.py",
+        "source_line": 3
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_eq",
+        "local_name": "py_assert_eq",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/stdlib/pytra_std_import_math.py",
+        "source_line": 3
+      },
+      {
+        "module_id": "pytra.std.math",
+        "export_name": "floor",
+        "local_name": "floor",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/stdlib/pytra_std_import_math.py",
+        "source_line": 4
+      },
+      {
+        "module_id": "pytra.std.math",
+        "export_name": "sqrt",
+        "local_name": "msqrt",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/stdlib/pytra_std_import_math.py",
+        "source_line": 4
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/stdlib/pytra_std_import_math.py",
+        "source_line": 0
+      },
+      {
+        "module_id": "pytra.built_in.scalar_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.scalar_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/stdlib/pytra_std_import_math.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_all",
+        "local_name": "py_assert_all"
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_eq",
+        "local_name": "py_assert_eq"
+      },
+      {
+        "module_id": "pytra.std.math",
+        "symbol": "floor",
+        "local_name": "floor"
+      },
+      {
+        "module_id": "pytra.std.math",
+        "symbol": "sqrt",
+        "local_name": "msqrt"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "py_assert_all": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_all"
+      },
+      "py_assert_eq": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_eq"
+      },
+      "floor": {
+        "module": "pytra.std.math",
+        "name": "floor"
+      },
+      "msqrt": {
+        "module": "pytra.std.math",
+        "name": "sqrt"
+      }
+    },
+    "dispatch_mode": "native"
+  },
+  "east_stage": 2,
+  "schema_version": 1
+}

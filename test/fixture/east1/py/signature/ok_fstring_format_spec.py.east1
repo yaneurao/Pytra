@@ -1,0 +1,369 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/signature/ok_fstring_format_spec.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 2,
+        "end_col": 65
+      },
+      "name": "fmt",
+      "original_name": "fmt",
+      "arg_types": {
+        "step": "int64",
+        "num_steps": "int64",
+        "loss": "float64"
+      },
+      "arg_order": [
+        "step",
+        "num_steps",
+        "loss"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "step": 0,
+        "num_steps": 1,
+        "loss": 2
+      },
+      "return_type": "str",
+      "arg_usage": {
+        "step": "readonly",
+        "num_steps": "readonly",
+        "loss": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 2,
+            "col": 4,
+            "end_lineno": 2,
+            "end_col": 65
+          },
+          "value": {
+            "kind": "JoinedStr",
+            "source_span": {
+              "lineno": 2,
+              "col": 11,
+              "end_lineno": 2,
+              "end_col": 65
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "f\"step {step+1:4d} / {num_steps:4d} | loss {loss:.4f}\"",
+            "values": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 2,
+                  "col": 11,
+                  "end_lineno": 2,
+                  "end_col": 65
+                },
+                "resolved_type": "str",
+                "repr": "step ",
+                "value": "step "
+              },
+              {
+                "kind": "FormattedValue",
+                "value": {
+                  "kind": "BinOp",
+                  "source_span": {
+                    "lineno": 2,
+                    "col": 17,
+                    "end_lineno": 2,
+                    "end_col": 23
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "step+1",
+                  "left": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 2,
+                      "col": 17,
+                      "end_lineno": 2,
+                      "end_col": 21
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "step",
+                    "id": "step"
+                  },
+                  "op": "Add",
+                  "right": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 2,
+                      "col": 22,
+                      "end_lineno": 2,
+                      "end_col": 23
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "1",
+                    "value": 1
+                  }
+                },
+                "format_spec": "4d"
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 2,
+                  "col": 11,
+                  "end_lineno": 2,
+                  "end_col": 65
+                },
+                "resolved_type": "str",
+                "repr": " / ",
+                "value": " / "
+              },
+              {
+                "kind": "FormattedValue",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 2,
+                    "col": 31,
+                    "end_lineno": 2,
+                    "end_col": 40
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "num_steps",
+                  "id": "num_steps"
+                },
+                "format_spec": "4d"
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 2,
+                  "col": 11,
+                  "end_lineno": 2,
+                  "end_col": 65
+                },
+                "resolved_type": "str",
+                "repr": " | loss ",
+                "value": " | loss "
+              },
+              {
+                "kind": "FormattedValue",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 2,
+                    "col": 53,
+                    "end_lineno": 2,
+                    "end_col": 57
+                  },
+                  "resolved_type": "float64",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "loss",
+                  "id": "loss"
+                },
+                "format_spec": ".4f"
+              }
+            ]
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "step": {
+          "kind": "NamedType",
+          "name": "int64"
+        },
+        "num_steps": {
+          "kind": "NamedType",
+          "name": "int64"
+        },
+        "loss": {
+          "kind": "NamedType",
+          "name": "float64"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 6,
+        "col": 4,
+        "end_lineno": 6,
+        "end_col": 30
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 6,
+          "col": 4,
+          "end_lineno": 6,
+          "end_col": 30
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "print(fmt(0, 100, 2.3456))",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 6,
+            "col": 4,
+            "end_lineno": 6,
+            "end_col": 9
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "print",
+          "id": "print"
+        },
+        "args": [
+          {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 6,
+              "col": 10,
+              "end_lineno": 6,
+              "end_col": 29
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "fmt(0, 100, 2.3456)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 6,
+                "col": 10,
+                "end_lineno": 6,
+                "end_col": 13
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "fmt",
+              "id": "fmt"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 14,
+                  "end_lineno": 6,
+                  "end_col": 15
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "0",
+                "value": 0
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 17,
+                  "end_lineno": 6,
+                  "end_col": 20
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "100",
+                "value": 100
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 22,
+                  "end_lineno": 6,
+                  "end_col": 28
+                },
+                "resolved_type": "float64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "2.3456",
+                "value": 2.3456
+              }
+            ],
+            "keywords": []
+          }
+        ],
+        "keywords": [],
+        "lowered_kind": "BuiltinCall",
+        "builtin_name": "print",
+        "runtime_call": "py_print",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_symbol": "py_print",
+        "runtime_call_adapter_kind": "builtin",
+        "semantic_tag": "core.print"
+      }
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/signature/ok_fstring_format_spec.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": []
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/signature/ok_fstring_format_spec.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {}
+  },
+  "east_stage": 1
+}

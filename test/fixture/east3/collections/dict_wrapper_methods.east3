@@ -1,0 +1,1215 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/collections/dict_wrapper_methods.py",
+  "body": [
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 1,
+        "col_offset": 0,
+        "end_lineno": 13,
+        "end_col_offset": 62
+      },
+      "name": "run_case",
+      "original_name": "run_case",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 2,
+            "col_offset": 4,
+            "end_lineno": 2,
+            "end_col_offset": 40
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 2,
+              "col_offset": 4,
+              "end_lineno": 2,
+              "end_col_offset": 5
+            },
+            "resolved_type": "dict[str,int64]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "d",
+            "id": "d",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "dict",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "str"
+                },
+                {
+                  "kind": "NamedType",
+                  "name": "int64"
+                }
+              ]
+            }
+          },
+          "annotation": "dict[str,int64]",
+          "declare": true,
+          "decl_type": "dict[str,int64]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "dict",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "str"
+              },
+              {
+                "kind": "NamedType",
+                "name": "int64"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "dict",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "str"
+              },
+              {
+                "kind": "NamedType",
+                "name": "int64"
+              }
+            ]
+          },
+          "value": {
+            "kind": "Dict",
+            "source_span": {
+              "lineno": 2,
+              "col_offset": 24,
+              "end_lineno": 2,
+              "end_col_offset": 40
+            },
+            "resolved_type": "dict[str,int64]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "{\"a\": 1, \"b\": 2}",
+            "entries": [
+              {
+                "key": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 2,
+                    "col_offset": 25,
+                    "end_lineno": 2,
+                    "end_col_offset": 28
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"a\"",
+                  "value": "a"
+                },
+                "value": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 2,
+                    "col_offset": 30,
+                    "end_lineno": 2,
+                    "end_col_offset": 31
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "1",
+                  "value": 1
+                }
+              },
+              {
+                "key": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 2,
+                    "col_offset": 33,
+                    "end_lineno": 2,
+                    "end_col_offset": 36
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"b\"",
+                  "value": "b"
+                },
+                "value": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 2,
+                    "col_offset": 38,
+                    "end_lineno": 2,
+                    "end_col_offset": 39
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "2",
+                  "value": 2
+                }
+              }
+            ]
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "GenericType",
+            "category": "static",
+            "mirror": "dict[str,int64]"
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 4,
+            "col_offset": 4,
+            "end_lineno": 4,
+            "end_col_offset": 47
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 4,
+              "col_offset": 4,
+              "end_lineno": 4,
+              "end_col_offset": 18
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ok_get_default",
+            "id": "ok_get_default",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "bool"
+            }
+          },
+          "annotation": "bool",
+          "declare": true,
+          "decl_type": "bool",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "bool"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "bool"
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
+          "value": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 4,
+              "col_offset": 27,
+              "end_lineno": 4,
+              "end_col_offset": 47
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "d.get(\"x\", 99) == 99",
+            "left": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 4,
+                "col_offset": 27,
+                "end_lineno": 4,
+                "end_col_offset": 41
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "d.get(\"x\", 99)",
+              "func": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 4,
+                  "col_offset": 27,
+                  "end_lineno": 4,
+                  "end_col_offset": 32
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "d.get",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 4,
+                    "col_offset": 27,
+                    "end_lineno": 4,
+                    "end_col_offset": 28
+                  },
+                  "resolved_type": "dict[str,int64]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "d",
+                  "id": "d"
+                },
+                "attr": "get"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 4,
+                    "col_offset": 33,
+                    "end_lineno": 4,
+                    "end_col_offset": 36
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"x\"",
+                  "value": "x"
+                },
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 4,
+                    "col_offset": 38,
+                    "end_lineno": 4,
+                    "end_col_offset": 40
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "99",
+                  "value": 99
+                }
+              ],
+              "keywords": [],
+              "semantic_tag": "container.dict.get",
+              "lowered_kind": "BuiltinCall",
+              "builtin_name": "get",
+              "runtime_call": "dict.get",
+              "runtime_module_id": "pytra.core.dict",
+              "runtime_symbol": "dict.get",
+              "runtime_call_adapter_kind": "builtin",
+              "runtime_owner": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 4,
+                  "col_offset": 27,
+                  "end_lineno": 4,
+                  "end_col_offset": 28
+                },
+                "resolved_type": "dict[str,int64]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "d",
+                "id": "d"
+              },
+              "yields_dynamic": true,
+              "type_expr_summary_v1": {
+                "schema_version": 1,
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "int64"
+              }
+            },
+            "ops": [
+              "Eq"
+            ],
+            "comparators": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 4,
+                  "col_offset": 45,
+                  "end_lineno": 4,
+                  "end_col_offset": 47
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "99",
+                "value": 99
+              }
+            ]
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "bool"
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 5,
+            "col_offset": 4,
+            "end_lineno": 5,
+            "end_col_offset": 43
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 5,
+              "col_offset": 4,
+              "end_lineno": 5,
+              "end_col_offset": 16
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ok_get_exist",
+            "id": "ok_get_exist",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "bool"
+            }
+          },
+          "annotation": "bool",
+          "declare": true,
+          "decl_type": "bool",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "bool"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "bool"
+          },
+          "value": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 5,
+              "col_offset": 25,
+              "end_lineno": 5,
+              "end_col_offset": 43
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "d.get(\"a\", 0) == 1",
+            "left": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 5,
+                "col_offset": 25,
+                "end_lineno": 5,
+                "end_col_offset": 38
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "d.get(\"a\", 0)",
+              "func": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 5,
+                  "col_offset": 25,
+                  "end_lineno": 5,
+                  "end_col_offset": 30
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "d.get",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 5,
+                    "col_offset": 25,
+                    "end_lineno": 5,
+                    "end_col_offset": 26
+                  },
+                  "resolved_type": "dict[str,int64]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "d",
+                  "id": "d"
+                },
+                "attr": "get"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 5,
+                    "col_offset": 31,
+                    "end_lineno": 5,
+                    "end_col_offset": 34
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"a\"",
+                  "value": "a"
+                },
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 5,
+                    "col_offset": 36,
+                    "end_lineno": 5,
+                    "end_col_offset": 37
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "0",
+                  "value": 0
+                }
+              ],
+              "keywords": [],
+              "semantic_tag": "container.dict.get",
+              "lowered_kind": "BuiltinCall",
+              "builtin_name": "get",
+              "runtime_call": "dict.get",
+              "runtime_module_id": "pytra.core.dict",
+              "runtime_symbol": "dict.get",
+              "runtime_call_adapter_kind": "builtin",
+              "runtime_owner": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 5,
+                  "col_offset": 25,
+                  "end_lineno": 5,
+                  "end_col_offset": 26
+                },
+                "resolved_type": "dict[str,int64]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "d",
+                "id": "d"
+              },
+              "yields_dynamic": true,
+              "type_expr_summary_v1": {
+                "schema_version": 1,
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "int64"
+              }
+            },
+            "ops": [
+              "Eq"
+            ],
+            "comparators": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 5,
+                  "col_offset": 42,
+                  "end_lineno": 5,
+                  "end_col_offset": 43
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "1",
+                "value": 1
+              }
+            ]
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "bool"
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 7,
+            "col_offset": 4,
+            "end_lineno": 7,
+            "end_col_offset": 28
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 7,
+              "col_offset": 4,
+              "end_lineno": 7,
+              "end_col_offset": 6
+            },
+            "resolved_type": "list[str]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ks",
+            "id": "ks",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "str"
+                }
+              ]
+            }
+          },
+          "annotation": "list[str]",
+          "declare": true,
+          "decl_type": "list[str]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "str"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "str"
+              }
+            ]
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 7,
+              "col_offset": 20,
+              "end_lineno": 7,
+              "end_col_offset": 28
+            },
+            "resolved_type": "list[str]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "d.keys()",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 7,
+                "col_offset": 20,
+                "end_lineno": 7,
+                "end_col_offset": 26
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "d.keys",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 7,
+                  "col_offset": 20,
+                  "end_lineno": 7,
+                  "end_col_offset": 21
+                },
+                "resolved_type": "dict[str,int64]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "d",
+                "id": "d"
+              },
+              "attr": "keys"
+            },
+            "args": [],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "keys",
+            "runtime_call": "dict.keys",
+            "runtime_module_id": "pytra.core.dict",
+            "runtime_symbol": "dict.keys",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.keys",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 7,
+                "col_offset": 20,
+                "end_lineno": 7,
+                "end_col_offset": 21
+              },
+              "resolved_type": "dict[str,int64]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "d",
+              "id": "d"
+            },
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "GenericType",
+              "category": "static",
+              "mirror": "list[str]"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "GenericType",
+            "category": "static",
+            "mirror": "list[str]"
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 8,
+            "col_offset": 4,
+            "end_lineno": 8,
+            "end_col_offset": 30
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 8,
+              "col_offset": 4,
+              "end_lineno": 8,
+              "end_col_offset": 6
+            },
+            "resolved_type": "list[int64]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "vs",
+            "id": "vs",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "int64"
+                }
+              ]
+            }
+          },
+          "annotation": "list[int64]",
+          "declare": true,
+          "decl_type": "list[int64]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "int64"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "int64"
+              }
+            ]
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 8,
+              "col_offset": 20,
+              "end_lineno": 8,
+              "end_col_offset": 30
+            },
+            "resolved_type": "list[int64]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "d.values()",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 8,
+                "col_offset": 20,
+                "end_lineno": 8,
+                "end_col_offset": 28
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "d.values",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 8,
+                  "col_offset": 20,
+                  "end_lineno": 8,
+                  "end_col_offset": 21
+                },
+                "resolved_type": "dict[str,int64]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "d",
+                "id": "d"
+              },
+              "attr": "values"
+            },
+            "args": [],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "values",
+            "runtime_call": "dict.values",
+            "runtime_module_id": "pytra.core.dict",
+            "runtime_symbol": "dict.values",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.values",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 8,
+                "col_offset": 20,
+                "end_lineno": 8,
+                "end_col_offset": 21
+              },
+              "resolved_type": "dict[str,int64]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "d",
+              "id": "d"
+            },
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "GenericType",
+              "category": "static",
+              "mirror": "list[int64]"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "GenericType",
+            "category": "static",
+            "mirror": "list[int64]"
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 10,
+            "col_offset": 4,
+            "end_lineno": 10,
+            "end_col_offset": 27
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 10,
+              "col_offset": 4,
+              "end_lineno": 10,
+              "end_col_offset": 9
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "has_a",
+            "id": "has_a",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "bool"
+            }
+          },
+          "annotation": "bool",
+          "declare": true,
+          "decl_type": "bool",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "bool"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "bool"
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
+          "value": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 10,
+              "col_offset": 18,
+              "end_lineno": 10,
+              "end_col_offset": 27
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"a\" in ks",
+            "left": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 10,
+                "col_offset": 18,
+                "end_lineno": 10,
+                "end_col_offset": 21
+              },
+              "resolved_type": "str",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"a\"",
+              "value": "a"
+            },
+            "ops": [
+              "In"
+            ],
+            "comparators": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 10,
+                  "col_offset": 25,
+                  "end_lineno": 10,
+                  "end_col_offset": 27
+                },
+                "resolved_type": "list[str]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "ks",
+                "id": "ks"
+              }
+            ]
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "bool"
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 11,
+            "col_offset": 4,
+            "end_lineno": 11,
+            "end_col_offset": 25
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 11,
+              "col_offset": 4,
+              "end_lineno": 11,
+              "end_col_offset": 9
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "has_2",
+            "id": "has_2",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "bool"
+            }
+          },
+          "annotation": "bool",
+          "declare": true,
+          "decl_type": "bool",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "bool"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "bool"
+          },
+          "value": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 11,
+              "col_offset": 18,
+              "end_lineno": 11,
+              "end_col_offset": 25
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "2 in vs",
+            "left": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 11,
+                "col_offset": 18,
+                "end_lineno": 11,
+                "end_col_offset": 19
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "2",
+              "value": 2
+            },
+            "ops": [
+              "In"
+            ],
+            "comparators": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 11,
+                  "col_offset": 23,
+                  "end_lineno": 11,
+                  "end_col_offset": 25
+                },
+                "resolved_type": "list[int64]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "vs",
+                "id": "vs"
+              }
+            ]
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "bool"
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 13,
+            "col_offset": 4,
+            "end_lineno": 13,
+            "end_col_offset": 62
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 13,
+              "col_offset": 4,
+              "end_lineno": 13,
+              "end_col_offset": 62
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(ok_get_default and ok_get_exist and has_a and has_2)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 13,
+                "col_offset": 4,
+                "end_lineno": 13,
+                "end_col_offset": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "BoolOp",
+                "source_span": {
+                  "lineno": 13,
+                  "col_offset": 10,
+                  "end_lineno": 13,
+                  "end_col_offset": 61
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "ok_get_default and ok_get_exist and has_a and has_2",
+                "op": "And",
+                "values": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 13,
+                      "col_offset": 10,
+                      "end_lineno": 13,
+                      "end_col_offset": 24
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "ok_get_default",
+                    "id": "ok_get_default"
+                  },
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 13,
+                      "col_offset": 29,
+                      "end_lineno": 13,
+                      "end_col_offset": 41
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "ok_get_exist",
+                    "id": "ok_get_exist"
+                  },
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 13,
+                      "col_offset": 46,
+                      "end_lineno": 13,
+                      "end_col_offset": 51
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "has_a",
+                    "id": "has_a"
+                  },
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 13,
+                      "col_offset": 56,
+                      "end_lineno": 13,
+                      "end_col_offset": 61
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "has_2",
+                    "id": "has_2"
+                  }
+                ]
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "None"
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 17,
+        "col_offset": 4,
+        "end_lineno": 17,
+        "end_col_offset": 14
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 17,
+          "col_offset": 4,
+          "end_lineno": 17,
+          "end_col_offset": 14
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "run_case()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 17,
+            "col_offset": 4,
+            "end_lineno": 17,
+            "end_col_offset": 12
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "run_case",
+          "id": "run_case"
+        },
+        "args": [],
+        "keywords": [],
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/collections/dict_wrapper_methods.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": []
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/collections/dict_wrapper_methods.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {},
+    "dispatch_mode": "native"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

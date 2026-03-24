@@ -1,0 +1,800 @@
+{
+  "kind": "Module",
+  "source_path": "test/fixture/source/py/stdlib/math_path_runtime_ir.py",
+  "body": [
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 1,
+        "col_offset": 0,
+        "end_lineno": 1,
+        "end_col_offset": 24
+      },
+      "module": "pathlib",
+      "names": [
+        {
+          "name": "Path",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "Import",
+      "source_span": {
+        "lineno": 2,
+        "col_offset": 0,
+        "end_lineno": 2,
+        "end_col_offset": 11
+      },
+      "names": [
+        {
+          "name": "math",
+          "asname": null
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 5,
+        "col_offset": 0,
+        "end_lineno": 12,
+        "end_col_offset": 12
+      },
+      "name": "run",
+      "original_name": "run",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "float64",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 6,
+            "col_offset": 4,
+            "end_lineno": 6,
+            "end_col_offset": 25
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 6,
+              "col_offset": 4,
+              "end_lineno": 6,
+              "end_col_offset": 5
+            },
+            "resolved_type": "Path",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "p",
+            "id": "p"
+          },
+          "declare": true,
+          "decl_type": "Path",
+          "declare_init": true,
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 6,
+              "col_offset": 8,
+              "end_lineno": 6,
+              "end_col_offset": 25
+            },
+            "resolved_type": "Path",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "Path(\"tmp/a.txt\")",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 6,
+                "col_offset": 8,
+                "end_lineno": 6,
+                "end_col_offset": 12
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "Path",
+              "id": "Path"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 6,
+                  "col_offset": 13,
+                  "end_lineno": 6,
+                  "end_col_offset": 24
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"tmp/a.txt\"",
+                "value": "tmp/a.txt"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "Path",
+            "runtime_call": "Path",
+            "runtime_module_id": "pytra.std.pathlib",
+            "runtime_symbol": "Path",
+            "runtime_call_adapter_kind": "extern_delegate",
+            "semantic_tag": "stdlib.symbol.Path",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "Path"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "Path"
+          }
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 7,
+            "col_offset": 4,
+            "end_lineno": 7,
+            "end_col_offset": 16
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 7,
+              "col_offset": 4,
+              "end_lineno": 7,
+              "end_col_offset": 5
+            },
+            "resolved_type": "Path",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "q",
+            "id": "q"
+          },
+          "declare": true,
+          "decl_type": "Path",
+          "declare_init": true,
+          "value": {
+            "kind": "Attribute",
+            "source_span": {
+              "lineno": 7,
+              "col_offset": 8,
+              "end_lineno": 7,
+              "end_col_offset": 16
+            },
+            "resolved_type": "Path",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "p.parent",
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 7,
+                "col_offset": 8,
+                "end_lineno": 7,
+                "end_col_offset": 9
+              },
+              "resolved_type": "Path",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "p",
+              "id": "p"
+            },
+            "attr": "parent",
+            "lowered_kind": "BuiltinAttr",
+            "runtime_call": "path_parent",
+            "runtime_module_id": "pytra.std.pathlib",
+            "runtime_symbol": "Path.parent",
+            "runtime_call_adapter_kind": "extern_delegate",
+            "semantic_tag": "stdlib.method.parent",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 7,
+                "col_offset": 8,
+                "end_lineno": 7,
+                "end_col_offset": 9
+              },
+              "resolved_type": "Path",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "p",
+              "id": "p"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "Path"
+          }
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 8,
+            "col_offset": 4,
+            "end_lineno": 8,
+            "end_col_offset": 14
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 8,
+              "col_offset": 4,
+              "end_lineno": 8,
+              "end_col_offset": 5
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "n",
+            "id": "n"
+          },
+          "declare": true,
+          "decl_type": "str",
+          "declare_init": true,
+          "value": {
+            "kind": "Attribute",
+            "source_span": {
+              "lineno": 8,
+              "col_offset": 8,
+              "end_lineno": 8,
+              "end_col_offset": 14
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "p.name",
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 8,
+                "col_offset": 8,
+                "end_lineno": 8,
+                "end_col_offset": 9
+              },
+              "resolved_type": "Path",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "p",
+              "id": "p"
+            },
+            "attr": "name",
+            "lowered_kind": "BuiltinAttr",
+            "runtime_call": "path_name",
+            "runtime_module_id": "pytra.std.pathlib",
+            "runtime_symbol": "Path.name",
+            "runtime_call_adapter_kind": "extern_delegate",
+            "semantic_tag": "stdlib.method.name",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 8,
+                "col_offset": 8,
+                "end_lineno": 8,
+                "end_col_offset": 9
+              },
+              "resolved_type": "Path",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "p",
+              "id": "p"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "str"
+          }
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 9,
+            "col_offset": 4,
+            "end_lineno": 9,
+            "end_col_offset": 14
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 9,
+              "col_offset": 4,
+              "end_lineno": 9,
+              "end_col_offset": 5
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "s",
+            "id": "s"
+          },
+          "declare": true,
+          "decl_type": "str",
+          "declare_init": true,
+          "value": {
+            "kind": "Attribute",
+            "source_span": {
+              "lineno": 9,
+              "col_offset": 8,
+              "end_lineno": 9,
+              "end_col_offset": 14
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "p.stem",
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 9,
+                "col_offset": 8,
+                "end_lineno": 9,
+                "end_col_offset": 9
+              },
+              "resolved_type": "Path",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "p",
+              "id": "p"
+            },
+            "attr": "stem",
+            "lowered_kind": "BuiltinAttr",
+            "runtime_call": "path_stem",
+            "runtime_module_id": "pytra.std.pathlib",
+            "runtime_symbol": "Path.stem",
+            "runtime_call_adapter_kind": "extern_delegate",
+            "semantic_tag": "stdlib.method.stem",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 9,
+                "col_offset": 8,
+                "end_lineno": 9,
+                "end_col_offset": 9
+              },
+              "resolved_type": "Path",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "p",
+              "id": "p"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "str"
+          }
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 10,
+            "col_offset": 4,
+            "end_lineno": 10,
+            "end_col_offset": 25
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 10,
+              "col_offset": 4,
+              "end_lineno": 10,
+              "end_col_offset": 5
+            },
+            "resolved_type": "float64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "x",
+            "id": "x"
+          },
+          "declare": true,
+          "decl_type": "float64",
+          "declare_init": true,
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 10,
+              "col_offset": 8,
+              "end_lineno": 10,
+              "end_col_offset": 25
+            },
+            "resolved_type": "float64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "math.sin(math.pi)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 10,
+                "col_offset": 8,
+                "end_lineno": 10,
+                "end_col_offset": 16
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "math.sin",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 10,
+                  "col_offset": 8,
+                  "end_lineno": 10,
+                  "end_col_offset": 12
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "math",
+                "id": "math"
+              },
+              "attr": "sin"
+            },
+            "args": [
+              {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 10,
+                  "col_offset": 17,
+                  "end_lineno": 10,
+                  "end_col_offset": 24
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "math.pi",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 10,
+                    "col_offset": 17,
+                    "end_lineno": 10,
+                    "end_col_offset": 21
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "math",
+                  "id": "math"
+                },
+                "attr": "pi"
+              }
+            ],
+            "keywords": [],
+            "resolved_runtime_call": "math.sin",
+            "resolved_runtime_source": "module_attr",
+            "runtime_module_id": "math",
+            "runtime_symbol": "sin",
+            "runtime_call_adapter_kind": "math.float_args",
+            "semantic_tag": "stdlib.method.sin",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "float64"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "float64"
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 11,
+            "col_offset": 4,
+            "end_lineno": 11,
+            "end_col_offset": 21
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 11,
+              "col_offset": 4,
+              "end_lineno": 11,
+              "end_col_offset": 21
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(q, n, s, x)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 11,
+                "col_offset": 4,
+                "end_lineno": 11,
+                "end_col_offset": 9
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 11,
+                  "col_offset": 10,
+                  "end_lineno": 11,
+                  "end_col_offset": 11
+                },
+                "resolved_type": "Path",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "q",
+                "id": "q"
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 11,
+                  "col_offset": 13,
+                  "end_lineno": 11,
+                  "end_col_offset": 14
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "n",
+                "id": "n"
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 11,
+                  "col_offset": 16,
+                  "end_lineno": 11,
+                  "end_col_offset": 17
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "s",
+                "id": "s"
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 11,
+                  "col_offset": 19,
+                  "end_lineno": 11,
+                  "end_col_offset": 20
+                },
+                "resolved_type": "float64",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "x",
+                "id": "x"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          }
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 12,
+            "col_offset": 4,
+            "end_lineno": 12,
+            "end_col_offset": 12
+          },
+          "value": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 12,
+              "col_offset": 11,
+              "end_lineno": 12,
+              "end_col_offset": 12
+            },
+            "resolved_type": "float64",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "x",
+            "id": "x"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "float64"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "float64"
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 16,
+        "col_offset": 4,
+        "end_lineno": 16,
+        "end_col_offset": 9
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 16,
+          "col_offset": 4,
+          "end_lineno": 16,
+          "end_col_offset": 9
+        },
+        "resolved_type": "float64",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "run()",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 16,
+            "col_offset": 4,
+            "end_lineno": 16,
+            "end_col_offset": 7
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "run",
+          "id": "run"
+        },
+        "args": [],
+        "keywords": [],
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "float64"
+        }
+      },
+      "discard_result": true
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pathlib",
+          "export_name": "Path",
+          "local_name": "Path",
+          "binding_kind": "symbol",
+          "source_file": "test/fixture/source/py/stdlib/math_path_runtime_ir.py",
+          "source_line": 1,
+          "host_only": true,
+          "source_module_id": "pathlib",
+          "source_export_name": "Path",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.std.pathlib",
+          "runtime_group": "std",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "Path",
+          "runtime_symbol_kind": "class",
+          "runtime_symbol_dispatch": "ctor",
+          "runtime_semantic_tag": "stdlib.symbol.Path"
+        },
+        {
+          "module_id": "math",
+          "export_name": "",
+          "local_name": "math",
+          "binding_kind": "module",
+          "source_file": "test/fixture/source/py/stdlib/math_path_runtime_ir.py",
+          "source_line": 2,
+          "host_only": true,
+          "source_module_id": "math",
+          "source_binding_kind": "module",
+          "runtime_module_id": "pytra.std.math",
+          "runtime_group": "std",
+          "resolved_binding_kind": "module"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/stdlib/math_path_runtime_ir.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pathlib",
+          "symbol": "Path",
+          "local_name": "Path"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pathlib",
+        "export_name": "Path",
+        "local_name": "Path",
+        "binding_kind": "symbol",
+        "source_file": "test/fixture/source/py/stdlib/math_path_runtime_ir.py",
+        "source_line": 1,
+        "host_only": true
+      },
+      {
+        "module_id": "math",
+        "export_name": "",
+        "local_name": "math",
+        "binding_kind": "module",
+        "source_file": "test/fixture/source/py/stdlib/math_path_runtime_ir.py",
+        "source_line": 2,
+        "host_only": true
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/stdlib/math_path_runtime_ir.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pathlib",
+        "symbol": "Path",
+        "local_name": "Path"
+      }
+    ],
+    "import_modules": {
+      "math": "math"
+    },
+    "import_symbols": {
+      "Path": {
+        "module": "pathlib",
+        "name": "Path"
+      }
+    },
+    "dispatch_mode": "native"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}
