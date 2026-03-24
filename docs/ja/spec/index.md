@@ -18,6 +18,7 @@
 - 言語プロファイル仕様: [言語プロファイル仕様](./spec-language-profile.md)
 - フォルダ責務マップ仕様: [フォルダ責務マップ仕様](./spec-folder.md)
 - EAST 統合仕様（現行正本）: [EAST仕様（統合）](./spec-east.md)
+- EAST1 仕様（parse 出力契約）: [EAST1 仕様](./spec-east1.md)
 - EAST2 仕様（resolve 出力契約）: [EAST2 仕様](./spec-east2.md)
 - EAST 三段構成の責務: [EAST 段階構成](./spec-east.md#east-stages)
 - EAST3 最適化層仕様: [EAST3 Optimizer 仕様](./spec-east3-optimizer.md)
