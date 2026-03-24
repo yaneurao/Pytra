@@ -5,7 +5,8 @@ from __future__ import annotations
 from pytra.std.json import JsonVal
 
 from toolchain2.optimize.optimizer import East3OptimizerPass, PassContext, PassResult, make_pass_result
-from toolchain2.optimize.utils import const_int_node, const_int_value, deep_copy_json
+from toolchain2.common.jv import deep_copy_json
+from toolchain2.common.nodes import const_int_node, const_int_value
 
 
 _EXPR_V1 = "east3_expr_v1"

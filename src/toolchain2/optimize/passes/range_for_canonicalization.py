@@ -5,7 +5,7 @@ from __future__ import annotations
 from pytra.std.json import JsonVal
 
 from toolchain2.optimize.optimizer import East3OptimizerPass, PassContext, PassResult, make_pass_result
-from toolchain2.optimize.utils import const_int_node
+from toolchain2.common.nodes import const_int_node
 
 
 def _is_range_runtime_call(expr: dict[str, JsonVal]) -> bool:

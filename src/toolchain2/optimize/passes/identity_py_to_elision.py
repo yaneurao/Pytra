@@ -5,7 +5,7 @@ from __future__ import annotations
 from pytra.std.json import JsonVal
 
 from toolchain2.optimize.optimizer import East3OptimizerPass, PassContext, PassResult, make_pass_result
-from toolchain2.optimize.utils import normalize_type_name, is_any_like_type
+from toolchain2.common.types import normalize_type_name, is_any_like_type
 
 
 _RUNTIME_CALL_TARGETS: dict[str, str] = {

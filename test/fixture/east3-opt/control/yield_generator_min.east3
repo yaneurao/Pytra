@@ -251,7 +251,7 @@
                   "value": {
                     "kind": "Name",
                     "id": "__yield_values",
-                    "resolved_type": "list[object]"
+                    "resolved_type": "list[int64]"
                   },
                   "attr": "append"
                 },

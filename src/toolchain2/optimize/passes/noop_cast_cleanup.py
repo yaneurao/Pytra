@@ -5,7 +5,7 @@ from __future__ import annotations
 from pytra.std.json import JsonVal
 
 from toolchain2.optimize.optimizer import East3OptimizerPass, PassContext, PassResult, make_pass_result
-from toolchain2.optimize.utils import normalize_type_name
+from toolchain2.common.types import normalize_type_name
 
 
 def _is_noop_cast(cast_entry: dict[str, JsonVal]) -> bool:

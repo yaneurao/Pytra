@@ -5,7 +5,7 @@ from __future__ import annotations
 from pytra.std.json import JsonVal
 
 from toolchain2.optimize.optimizer import East3OptimizerPass, PassContext, PassResult, make_pass_result
-from toolchain2.optimize.utils import normalize_type_name, split_generic_types
+from toolchain2.common.types import normalize_type_name, split_generic_types
 
 
 def _list_element_type(type_name: str) -> str:

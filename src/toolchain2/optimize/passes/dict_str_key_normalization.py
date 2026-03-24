@@ -5,7 +5,7 @@ from __future__ import annotations
 from pytra.std.json import JsonVal
 
 from toolchain2.optimize.optimizer import East3OptimizerPass, PassContext, PassResult, make_pass_result
-from toolchain2.optimize.utils import normalize_type_name
+from toolchain2.common.types import normalize_type_name
 
 
 def _dict_key_type(owner_type: JsonVal) -> str:
