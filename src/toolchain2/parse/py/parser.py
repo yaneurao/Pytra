@@ -880,6 +880,9 @@ class ExprParser:
                     call.runtime_module_id = "pytra.core.list"
                     call.runtime_symbol = "list." + method_name
                     call.runtime_call_adapter_kind = "builtin"
+                    # list.pop は container.list.pop
+                    if method_name == "pop":
+                        call.semantic_tag = "container.list.pop"
                 elif owner_base == "dict":
                     call.runtime_call = "dict." + method_name
                     call.runtime_module_id = "pytra.core.dict"
