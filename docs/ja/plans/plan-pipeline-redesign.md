@@ -393,6 +393,14 @@ diff test/east1/py/01_mandelbrot.py.east1 work/tmp/01_mandelbrot.py.east1
 - 全4段 × 18 sample = 72 golden file の生成を確認。冪等性も検証済み。
 - emit 段の golden file 生成は現時点では対応しない（S5 時に追加）。
 
+### 2026-03-24: [ID: P0-PIPELINE-V2-S1] 自前パーサー初期実装
+
+- `toolchain2/parse/py/` に toolchain/ 非依存の自前パーサーを実装開始。
+- nodes.py: EAST1 dataclass ノード定義 (Any/object 禁止、JsonVal ベース)。
+- parser.py: 行ベースパーサー (regex 不使用)。式パーサー (precedence climbing) + 文パーサー。
+- 17_monte_carlo_pi.py で Module 構造の正しい生成を確認。golden file との差分残 ~15%。
+- 残課題: source_span 精度、expr repr 切り出し、制御構文スパン計算。
+
 ## 7. 未決事項
 
 - `--from=python` 以外の frontend が現実的に必要になる時期

@@ -455,7 +455,7 @@ class ExprParser:
             resolved_type=resolved_type,
             casts=[],
             borrow_kind=borrow_kind,
-            repr_text=self._repr(start, end),
+            repr_text=self.source_text[start:end],
         )
 
     # --- Precedence climbing ---
@@ -874,12 +874,12 @@ class ExprParser:
             self.advance()
             # Look up type from context
             resolved = self.name_types.get(tok.value, "unknown")
+            # RHS reference: readonly_ref, no type_expr
+            # (LHS targets are created separately via _make_name_expr)
             borrow = "readonly_ref" if resolved != "unknown" else "value"
-            # For declared variables that are being targeted (lhs), borrow_kind is "value"
             base = self._base(tok.start, tok.end, resolved, borrow)
             name = Name(base=base, id=tok.value)
-            if resolved != "unknown":
-                name.type_expr = _make_type_expr(resolved, self.ctx)
+            # RHS names do NOT get type_expr (only LHS declaration targets do)
             return name
 
         # Parenthesized expression or tuple

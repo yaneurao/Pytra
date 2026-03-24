@@ -535,11 +535,11 @@ class AnnAssign:
             "source_span": self.source_span.to_jv(),
             "target": expr_to_jv(self.target),
             "annotation": self.annotation,
-            "annotation_type_expr": self.annotation_type_expr.to_jv(),
             "value": expr_to_jv(self.value) if self.value is not None else None,
-            "decl_type": self.decl_type,
-            "decl_type_expr": self.decl_type_expr.to_jv(),
             "declare": self.declare,
+            "decl_type": self.decl_type,
+            "annotation_type_expr": self.annotation_type_expr.to_jv(),
+            "decl_type_expr": self.decl_type_expr.to_jv(),
         }
         if self.leading_trivia is not None:
             d["leading_trivia"] = [t.to_jv() for t in self.leading_trivia]
@@ -879,8 +879,8 @@ class Module:
             "source_path": self.source_path,
             "source_span": self.source_span.to_jv(),
             "body": [stmt_to_jv(s) for s in self.body],
-            "east_stage": self.east_stage,
             "main_guard_body": [stmt_to_jv(s) for s in self.main_guard_body],
-            "meta": dict(self.meta),
             "renamed_symbols": dict(self.renamed_symbols),
+            "meta": dict(self.meta),
+            "east_stage": self.east_stage,
         }
