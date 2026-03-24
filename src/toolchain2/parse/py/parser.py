@@ -1475,7 +1475,7 @@ def _parse_module_body(
     pending_comments: list[str] = []
     leading_file_trivia_done = False
     pending_dataclass = False
-    after_last_import = False  # import 直後の空行を蓄積しないためのフラグ
+    skip_next_blanks = False  # import/def/class 直後の空行を蓄積しないためのフラグ
 
     while ln_no < total:
         ln = lines[ln_no]
@@ -1485,7 +1485,7 @@ def _parse_module_body(
         # Blank line
         if s == "":
             # ファイル冒頭コメントが既に蓄積 + import 直後でない場合のみ蓄積
-            if (len(pending_comments) > 0 or leading_file_trivia_done) and not after_last_import:
+            if (len(pending_comments) > 0 or leading_file_trivia_done) and not skip_next_blanks:
                 pending_trivia.append(TriviaBlank(count=1))
             ln_no += 1
             continue
@@ -1545,7 +1545,7 @@ def _parse_module_body(
             # Skip typing / __future__ / dataclasses imports
             if mod == "typing" or mod == "__future__" or mod == "dataclasses":
                 ln_no += 1
-                after_last_import = True
+                skip_next_blanks = True
                 continue
             span = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
             stmt = ImportFrom(source_span=span, module=mod, names=aliases, level=0)
@@ -1572,11 +1572,11 @@ def _parse_module_body(
                 })
             ln_no += 1
             # import 後の空行は trivia に蓄積しない
-            after_last_import = True
+            skip_next_blanks = True
             continue
 
         # 非import文に到達
-        after_last_import = False
+        skip_next_blanks = False
 
         # Main guard: if __name__ == "__main__":
         if _parse_main_guard(s_clean):
@@ -1605,6 +1605,7 @@ def _parse_module_body(
             body_items.append(fn_stmt)
             pending_trivia = []
             pending_comments = []
+            skip_next_blanks = True
             continue
 
         # Class def
@@ -1615,6 +1616,7 @@ def _parse_module_body(
             body_items.append(cls_stmt)
             pending_trivia = []
             pending_comments = []
+            skip_next_blanks = True
             continue
 
         # Skip other top-level statements for now
