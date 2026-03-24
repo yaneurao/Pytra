@@ -1599,18 +1599,13 @@ def _resolve_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
             else:
                 _resolve_expr(target, ctx)
 
-    # Add decl_type only for declarations (declare=true)
+    # Add decl_type for declarations (declare=true)
     declare_val = stmt.get("declare")
     if declare_val is True:
         if vt != "unknown":
             stmt["decl_type"] = vt
         if isinstance(value, dict):
             stmt["declare_init"] = True
-    elif declare_val is False:
-        # Re-assignment: decl_type should be null if present
-        if "decl_type" in stmt:
-            pass  # preserve existing
-        # Don't add decl_type for non-declarations
 
 
 def _resolve_ann_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
@@ -1657,7 +1652,15 @@ def _resolve_aug_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     if isinstance(value, dict):
         _resolve_expr(value, ctx)
 
-    if tt != "unknown":
+    # Set decl_type for Name targets, null for Attribute targets (self.x)
+    tgt_kind: str = ""
+    if isinstance(target, dict):
+        tk_v = target.get("kind")
+        tgt_kind = str(tk_v) if isinstance(tk_v, str) else ""
+    if tgt_kind == "Attribute":
+        # self.x: decl_type = null
+        stmt["decl_type"] = None
+    elif tt != "unknown":
         stmt["decl_type"] = tt
 
 
