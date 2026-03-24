@@ -21,13 +21,14 @@ parse:     .py → .py.east1          言語固有の構文解析（モジュー
 resolve:   *.py.east1 → *.east2    型解決 + 正規化（全モジュール一括・依存順）
 compile:   *.east2 → *.east3       core lowering（言語非依存）
 optimize:  *.east3 → *.east3       whole-program 最適化
-emit:      *.east3 → *.cpp 等      target コード生成（写像のみ）
+link:      *.east3 → manifest.json + linked east3 群    multi-module 結合
+emit:      manifest.json → *.cpp 等    target コード生成（写像のみ）
 ```
 
 通常使用は `-build` で一括実行:
 
 ```
-pytra-cli2 -build --target=cpp a.py   （parse→resolve→compile→optimize→emit を一気通貫）
+pytra-cli2 -build --target=cpp a.py   （parse→resolve→compile→optimize→link→emit を一気通貫）
 ```
 
 ### 2.2 各段の責務
@@ -291,7 +292,8 @@ test/fixture/source/py/*.py      → parse    → test/fixture/east1/py/*.py.eas
 test/fixture/east1/py/*.py.east1 → resolve  → test/fixture/east2/*.east2
 test/fixture/east2/*.east2       → compile  → test/fixture/east3/*.east3
 test/fixture/east3/*.east3       → optimize → test/fixture/east3-opt/*.east3
-test/fixture/east3-opt/*.east3   → emit     → compile → run → test/fixture/emit/*.txt と一致
+test/fixture/east3-opt/*.east3   → link     → test/fixture/linked/ (manifest.json + linked east3)
+test/fixture/linked/             → emit     → compile → run → test/fixture/emit/*.txt と一致
 ```
 
 sample 系:
@@ -300,7 +302,8 @@ sample/py/*.py                   → parse    → test/sample/east1/py/*.py.east
 test/sample/east1/py/*.py.east1  → resolve  → test/sample/east2/*.east2
 test/sample/east2/*.east2        → compile  → test/sample/east3/*.east3
 test/sample/east3/*.east3        → optimize → test/sample/east3-opt/*.east3
-test/sample/east3-opt/*.east3    → emit     → compile → run → sample/golden/manifest.json と一致
+test/sample/east3-opt/*.east3    → link     → test/sample/linked/ (manifest.json + linked east3)
+test/sample/linked/              → emit     → compile → run → sample/golden/manifest.json と一致
 ```
 
 #### stdlib 系（pytra.std.* のパイプライン golden）

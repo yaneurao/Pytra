@@ -141,9 +141,28 @@ EAST1 の `meta.extern_v2` を正本にすること。
 2. [x] [ID: P0-OPTIMIZE-S2] sample 18 件の .east3 が golden と一致する — 完了
 3. [x] [ID: P0-OPTIMIZE-S3] `pytra-cli2 -optimize` を実装する — 完了
 
-### P0-EMIT: east3 → target（暫定: 現行 toolchain/emit/ を利用）
+### P0-LINK: east3-opt → linked（manifest + linked east3 群）
+
+作業ディレクトリ: `toolchain2/link/`
+入力: `test/fixture/east3-opt/*.east3`, `test/sample/east3-opt/*.east3`
+正解: `test/fixture/linked/`, `test/sample/linked/`
+
+責務:
+- multi-module 結合（import graph 解決、依存 module の EAST3 収集）
+- `manifest.json` 生成（entry module、module 一覧、出力パス）
+- runtime module の EAST3 追加（`built_in/io_ops`, `std/time`, `utils/png` 等）
+- type_id テーブル生成（`type_id_resolved_v1`）
+- `linked_program_v1` metadata 付与
+- `pytra-cli2 -link` コマンド実装
+
+1. [ ] [ID: P0-LINK-S1] linker を実装し、fixture の linked output が golden と一致する
+2. [ ] [ID: P0-LINK-S2] sample 18 件の linked output が golden と一致する
+3. [ ] [ID: P0-LINK-S3] `pytra-cli2 -link` を実装する
+
+### P0-EMIT: linked → target（暫定: 現行 toolchain/emit/ を利用）
 
 `pytra-cli2 -emit` は暫定で現行 `toolchain/emit/` を呼ぶ。
+入力は link 段の出力（`manifest.json` + linked east3 群）。
 `toolchain2/` の新規 emitter は P1-EMIT で実装する。
 
 1. [ ] [ID: P0-EMIT-S1] `pytra-cli2 -emit --target=cpp` を暫定実装（現行 toolchain/emit/ への橋渡し）

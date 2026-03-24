@@ -30,6 +30,11 @@ Pytra は Python のサブセットを複数のターゲット言語に変換す
        │  .east3（最適化済み IR）
        ▼
   ┌─────────┐
+  │  link    │  multi-module 結合
+  └────┬─────┘
+       │  manifest.json + linked east3 群
+       ▼
+  ┌─────────┐
   │  emit    │  target コード生成
   └────┬─────┘
        │
@@ -108,6 +113,21 @@ EAST3 に対して言語非依存の最適化パスを適用します。
 
 最適化は任意であり、スキップしても正しいコードが生成されます。
 
+### link（multi-module 結合）
+
+```
+入力: *.east3（最適化済み）
+出力: manifest.json + linked east3 群
+```
+
+複数モジュールの EAST3 を結合し、emit に必要な情報をまとめます。
+
+- **import graph 解決**: ユーザーコードが依存する全モジュールを収集します。
+- **runtime module 追加**: `built_in/io_ops`, `std/time`, `utils/png` 等の runtime EAST3 を追加します。
+- **manifest.json 生成**: entry module、module 一覧、出力パスを記述するマニフェストを生成します。
+- **type_id テーブル生成**: クラス継承の型判定用テーブルを確定します。
+- **linked_program_v1 metadata**: whole-program 情報を各 module の meta に付与します。
+
 ### emit（コード生成）
 
 ```
@@ -151,7 +171,8 @@ pytra-cli2 -parse input.py -o input.py.east1
 pytra-cli2 -resolve input.py.east1 -o input.east2
 pytra-cli2 -compile input.east2 -o input.east3
 pytra-cli2 -optimize input.east3 -o input.east3
-pytra-cli2 -emit --target=cpp input.east3 -o output.cpp
+pytra-cli2 -link input.east3 -o out/
+pytra-cli2 -emit --target=cpp out/manifest.json -o out/emit/
 ```
 
 ## 対応言語
