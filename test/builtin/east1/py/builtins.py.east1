@@ -1,0 +1,985 @@
+{
+  "kind": "Module",
+  "source_path": "src/include/py/pytra/built_in/builtins.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 2,
+        "col": 0,
+        "end_lineno": 2,
+        "end_col": 25
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 2,
+          "col": 0,
+          "end_lineno": 2,
+          "end_col": 25
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"Python built-in 関数の宣言。",
+        "value": "Python built-in 関数の"
+      }
+    },
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 8,
+        "col": 0,
+        "end_lineno": 8,
+        "end_col": 3
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 8,
+          "col": 0,
+          "end_lineno": 8,
+          "end_col": 3
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"",
+        "value": ""
+      }
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 10,
+        "col": 0,
+        "end_lineno": 10,
+        "end_col": 28
+      },
+      "module": "pytra.std",
+      "names": [
+        {
+          "name": "extern",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 11,
+        "col": 0,
+        "end_lineno": 11,
+        "end_col": 39
+      },
+      "module": "pytra.std.template",
+      "names": [
+        {
+          "name": "template",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 12,
+        "col": 0,
+        "end_lineno": 12,
+        "end_col": 27
+      },
+      "module": "pytra.types",
+      "names": [
+        {
+          "name": "Obj",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 22,
+        "col": 0,
+        "end_lineno": 22,
+        "end_col": 0
+      },
+      "name": "len",
+      "original_name": "len",
+      "arg_types": {
+        "x": "Obj"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "int",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [
+        "---------------------------------------------------------------------------",
+        "§3.1 dunder 委譲型",
+        "resolve は引数の具象型に該当の dunder があるか型チェックし、",
+        "py_len 等のノードに変換する。",
+        "---------------------------------------------------------------------------"
+      ],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "---------------------------------------------------------------------------"
+        },
+        {
+          "kind": "comment",
+          "text": "§3.1 dunder 委譲型"
+        },
+        {
+          "kind": "comment",
+          "text": "resolve は引数の具象型に該当の dunder があるか型チェックし、"
+        },
+        {
+          "kind": "comment",
+          "text": "py_len 等のノードに変換する。"
+        },
+        {
+          "kind": "comment",
+          "text": "---------------------------------------------------------------------------"
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 25,
+        "col": 0,
+        "end_lineno": 25,
+        "end_col": 0
+      },
+      "name": "str",
+      "original_name": "str",
+      "arg_types": {
+        "x": "Obj"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "str",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 28,
+        "col": 0,
+        "end_lineno": 28,
+        "end_col": 0
+      },
+      "name": "bool",
+      "original_name": "bool",
+      "arg_types": {
+        "x": "Obj"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "bool",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 31,
+        "col": 0,
+        "end_lineno": 31,
+        "end_col": 0
+      },
+      "name": "int",
+      "original_name": "int",
+      "arg_types": {
+        "x": "Obj"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "int",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 34,
+        "col": 0,
+        "end_lineno": 34,
+        "end_col": 0
+      },
+      "name": "float",
+      "original_name": "float",
+      "arg_types": {
+        "x": "Obj"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "float",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 37,
+        "col": 0,
+        "end_lineno": 37,
+        "end_col": 0
+      },
+      "name": "repr",
+      "original_name": "repr",
+      "arg_types": {
+        "x": "Obj"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "str",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 46,
+        "col": 0,
+        "end_lineno": 46,
+        "end_col": 0
+      },
+      "name": "print",
+      "original_name": "print",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "vararg_name": "args",
+      "vararg_type": "Obj",
+      "leading_comments": [
+        "---------------------------------------------------------------------------",
+        "§3.2 スタンドアロン型",
+        "各言語の runtime が実装する関数。",
+        "---------------------------------------------------------------------------"
+      ],
+      "leading_trivia": [
+        {
+          "kind": "comment",
+          "text": "---------------------------------------------------------------------------"
+        },
+        {
+          "kind": "comment",
+          "text": "§3.2 スタンドアロン型"
+        },
+        {
+          "kind": "comment",
+          "text": "各言語の runtime が実装する関数。"
+        },
+        {
+          "kind": "comment",
+          "text": "---------------------------------------------------------------------------"
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 49,
+        "col": 0,
+        "end_lineno": 49,
+        "end_col": 0
+      },
+      "name": "isinstance",
+      "original_name": "isinstance",
+      "arg_types": {
+        "x": "Obj",
+        "t": "type"
+      },
+      "arg_order": [
+        "x",
+        "t"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0,
+        "t": 1
+      },
+      "return_type": "bool",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 52,
+        "col": 0,
+        "end_lineno": 52,
+        "end_col": 0
+      },
+      "name": "issubclass",
+      "original_name": "issubclass",
+      "arg_types": {
+        "cls": "type",
+        "parent": "type"
+      },
+      "arg_order": [
+        "cls",
+        "parent"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "cls": 0,
+        "parent": 1
+      },
+      "return_type": "bool",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 55,
+        "col": 0,
+        "end_lineno": 55,
+        "end_col": 0
+      },
+      "name": "round",
+      "original_name": "round",
+      "arg_types": {
+        "x": "float",
+        "ndigits": "int"
+      },
+      "arg_order": [
+        "x",
+        "ndigits"
+      ],
+      "arg_defaults": {
+        "ndigits": {
+          "kind": "Constant",
+          "source_span": {
+            "lineno": 55,
+            "col": 35,
+            "end_lineno": 55,
+            "end_col": 36
+          },
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "0",
+          "value": 0
+        }
+      },
+      "arg_index": {
+        "x": 0,
+        "ndigits": 1
+      },
+      "return_type": "int",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 58,
+        "col": 0,
+        "end_lineno": 58,
+        "end_col": 0
+      },
+      "name": "abs",
+      "original_name": "abs",
+      "arg_types": {
+        "x": "int"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "int",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 61,
+        "col": 0,
+        "end_lineno": 61,
+        "end_col": 0
+      },
+      "name": "ord",
+      "original_name": "ord",
+      "arg_types": {
+        "c": "str"
+      },
+      "arg_order": [
+        "c"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "c": 0
+      },
+      "return_type": "int",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 64,
+        "col": 0,
+        "end_lineno": 64,
+        "end_col": 0
+      },
+      "name": "chr",
+      "original_name": "chr",
+      "arg_types": {
+        "i": "int"
+      },
+      "arg_order": [
+        "i"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "i": 0
+      },
+      "return_type": "str",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 74,
+        "col": 0,
+        "end_lineno": 74,
+        "end_col": 0
+      },
+      "name": "min",
+      "original_name": "min",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "T",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "vararg_name": "args",
+      "vararg_type": "T",
+      "leading_comments": [
+        "---------------------------------------------------------------------------",
+        "§3.3 ジェネリック型",
+        "resolve が callsite の具象型から T を解決する。",
+        "---------------------------------------------------------------------------"
+      ],
+      "leading_trivia": [
+        {
+          "kind": "comment",
+          "text": "---------------------------------------------------------------------------"
+        },
+        {
+          "kind": "comment",
+          "text": "§3.3 ジェネリック型"
+        },
+        {
+          "kind": "comment",
+          "text": "resolve が callsite の具象型から T を解決する。"
+        },
+        {
+          "kind": "comment",
+          "text": "---------------------------------------------------------------------------"
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 78,
+        "col": 0,
+        "end_lineno": 78,
+        "end_col": 0
+      },
+      "name": "max",
+      "original_name": "max",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "T",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "vararg_name": "args",
+      "vararg_type": "T",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 82,
+        "col": 0,
+        "end_lineno": 82,
+        "end_col": 0
+      },
+      "name": "sorted",
+      "original_name": "sorted",
+      "arg_types": {
+        "x": "list[T]"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "list[T]",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 86,
+        "col": 0,
+        "end_lineno": 86,
+        "end_col": 0
+      },
+      "name": "reversed",
+      "original_name": "reversed",
+      "arg_types": {
+        "x": "list[T]"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "list[T]",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 90,
+        "col": 0,
+        "end_lineno": 90,
+        "end_col": 0
+      },
+      "name": "enumerate",
+      "original_name": "enumerate",
+      "arg_types": {
+        "x": "list[T]",
+        "start": "int"
+      },
+      "arg_order": [
+        "x",
+        "start"
+      ],
+      "arg_defaults": {
+        "start": {
+          "kind": "Constant",
+          "source_span": {
+            "lineno": 90,
+            "col": 39,
+            "end_lineno": 90,
+            "end_col": 40
+          },
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "0",
+          "value": 0
+        }
+      },
+      "arg_index": {
+        "x": 0,
+        "start": 1
+      },
+      "return_type": "list[tuple[int, T]]",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 94,
+        "col": 0,
+        "end_lineno": 94,
+        "end_col": 0
+      },
+      "name": "zip",
+      "original_name": "zip",
+      "arg_types": {
+        "a": "list[T]",
+        "b": "list[U]"
+      },
+      "arg_order": [
+        "a",
+        "b"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "a": 0,
+        "b": 1
+      },
+      "return_type": "list[tuple[T, U]]",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 102,
+        "col": 0,
+        "end_lineno": 102,
+        "end_col": 0
+      },
+      "name": "range",
+      "original_name": "range",
+      "arg_types": {
+        "stop": "int"
+      },
+      "arg_order": [
+        "stop"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "stop": 0
+      },
+      "return_type": "list[int]",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [
+        "---------------------------------------------------------------------------",
+        "§3.4 range（resolve で ForRange / RangeExpr に変換）",
+        "---------------------------------------------------------------------------"
+      ],
+      "leading_trivia": [
+        {
+          "kind": "comment",
+          "text": "---------------------------------------------------------------------------"
+        },
+        {
+          "kind": "comment",
+          "text": "§3.4 range（resolve で ForRange / RangeExpr に変換）"
+        },
+        {
+          "kind": "comment",
+          "text": "---------------------------------------------------------------------------"
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 105,
+        "col": 0,
+        "end_lineno": 105,
+        "end_col": 0
+      },
+      "name": "range",
+      "original_name": "range",
+      "arg_types": {
+        "start": "int",
+        "stop": "int"
+      },
+      "arg_order": [
+        "start",
+        "stop"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "start": 0,
+        "stop": 1
+      },
+      "return_type": "list[int]",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 108,
+        "col": 0,
+        "end_lineno": 108,
+        "end_col": 0
+      },
+      "name": "range",
+      "original_name": "range",
+      "arg_types": {
+        "start": "int",
+        "stop": "int",
+        "step": "int"
+      },
+      "arg_order": [
+        "start",
+        "stop",
+        "step"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "start": 0,
+        "stop": 1,
+        "step": 2
+      },
+      "return_type": "list[int]",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [
+        {
+          "module_id": "pytra.std",
+          "export_name": "extern",
+          "local_name": "extern",
+          "binding_kind": "symbol",
+          "source_file": "src/include/py/pytra/built_in/builtins.py",
+          "source_line": 10
+        },
+        {
+          "module_id": "pytra.std.template",
+          "export_name": "template",
+          "local_name": "template",
+          "binding_kind": "symbol",
+          "source_file": "src/include/py/pytra/built_in/builtins.py",
+          "source_line": 11
+        },
+        {
+          "module_id": "pytra.types",
+          "export_name": "Obj",
+          "local_name": "Obj",
+          "binding_kind": "symbol",
+          "source_file": "src/include/py/pytra/built_in/builtins.py",
+          "source_line": 12
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std",
+          "symbol": "extern",
+          "local_name": "extern"
+        },
+        {
+          "module_id": "pytra.std.template",
+          "symbol": "template",
+          "local_name": "template"
+        },
+        {
+          "module_id": "pytra.types",
+          "symbol": "Obj",
+          "local_name": "Obj"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.std",
+        "export_name": "extern",
+        "local_name": "extern",
+        "binding_kind": "symbol",
+        "source_file": "src/include/py/pytra/built_in/builtins.py",
+        "source_line": 10
+      },
+      {
+        "module_id": "pytra.std.template",
+        "export_name": "template",
+        "local_name": "template",
+        "binding_kind": "symbol",
+        "source_file": "src/include/py/pytra/built_in/builtins.py",
+        "source_line": 11
+      },
+      {
+        "module_id": "pytra.types",
+        "export_name": "Obj",
+        "local_name": "Obj",
+        "binding_kind": "symbol",
+        "source_file": "src/include/py/pytra/built_in/builtins.py",
+        "source_line": 12
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std",
+        "symbol": "extern",
+        "local_name": "extern"
+      },
+      {
+        "module_id": "pytra.std.template",
+        "symbol": "template",
+        "local_name": "template"
+      },
+      {
+        "module_id": "pytra.types",
+        "symbol": "Obj",
+        "local_name": "Obj"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "extern": {
+        "module": "pytra.std",
+        "name": "extern"
+      },
+      "template": {
+        "module": "pytra.std.template",
+        "name": "template"
+      },
+      "Obj": {
+        "module": "pytra.types",
+        "name": "Obj"
+      }
+    }
+  },
+  "east_stage": 1
+}

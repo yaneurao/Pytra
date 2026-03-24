@@ -483,6 +483,71 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
             return None
         return Match(text, [name, rhs])
 
+    # ^([A-Za-z_][A-Za-z0-9_.]*)\s*:\s*([^=]+?)\s*=\s*(.+)$
+    # dotted ann_assign: self.x: int = 5
+    if pattern == r"^([A-Za-z_][A-Za-z0-9_.]*)\s*:\s*([^=]+?)\s*=\s*(.+)$":
+        c = text.find(":")
+        if c <= 0:
+            return None
+        target: str = text[:c].strip()
+        # target must be identifier with optional dots
+        if not _is_dotted_ident(target):
+            return None
+        rhs: str = text[c + 1 :]
+        eq: int = rhs.find("=")
+        if eq < 0:
+            return None
+        ann: str = rhs[:eq].strip()
+        expr: str = rhs[eq + 1 :].strip()
+        if ann == "" or expr == "":
+            return None
+        return Match(text, [target, ann, expr])
+
+    # ^([A-Za-z_][A-Za-z0-9_.]*(?:\[[^\]]*\])?)\s*=\s*(.+)$
+    # simple assign with optional subscript: x = 1, self.x = 1, xs[0] = 1
+    if pattern == r"^([A-Za-z_][A-Za-z0-9_.]*(?:\[[^\]]*\])?)\s*=\s*(.+)$":
+        eq: int = text.find("=")
+        if eq < 0:
+            return None
+        # Check it's not ==, !=, <=, >=
+        if eq > 0 and text[eq - 1 : eq] in ("!", "<", ">", "+", "-", "*", "/", "%", "&", "|", "^"):
+            return None
+        if eq + 1 < len(text) and text[eq + 1 : eq + 2] == "=":
+            return None
+        left: str = text[:eq].strip()
+        right: str = text[eq + 1 :].strip()
+        if right == "":
+            return None
+        # Validate left: dotted ident with optional [...]
+        base_left = left
+        if "[" in left and left.endswith("]"):
+            base_left = left[: left.index("[")]
+        if not _is_dotted_ident(base_left):
+            return None
+        return Match(text, [left, right])
+
+    # ^([A-Za-z_][A-Za-z0-9_]*(?:\s*,\s*[A-Za-z_][A-Za-z0-9_]*)+)\s*=\s*(.+)$
+    # tuple unpack: a, b = expr
+    if pattern == r"^([A-Za-z_][A-Za-z0-9_]*(?:\s*,\s*[A-Za-z_][A-Za-z0-9_]*)+)\s*=\s*(.+)$":
+        eq: int = text.find("=")
+        if eq < 0:
+            return None
+        if eq > 0 and text[eq - 1 : eq] in ("!", "<", ">", "+", "-", "*", "/", "%", "&", "|", "^"):
+            return None
+        if eq + 1 < len(text) and text[eq + 1 : eq + 2] == "=":
+            return None
+        left: str = text[:eq].strip()
+        right: str = text[eq + 1 :].strip()
+        if right == "" or "," not in left:
+            return None
+        parts: list[str] = left.split(",")
+        for p in parts:
+            if not _is_ident(p.strip()):
+                return None
+        if len(parts) < 2:
+            return None
+        return Match(text, [left, right])
+
     raise ValueError(f"unsupported regex pattern in pytra.std.re: {pattern}")
 
 

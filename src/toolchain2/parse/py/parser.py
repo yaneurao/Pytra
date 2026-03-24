@@ -121,8 +121,15 @@ def _parse_from_import(s: str) -> tuple[str, str]:
 
 
 def _parse_def_header(s: str) -> tuple[str, str, str]:
-    """'def NAME(ARGS) -> RET:' をパース。(name, args, ret)。失敗は ("", "", "")。"""
-    m = re.match(r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*(?:->\s*(.+)\s*)?:\s*$", s)
+    """'def NAME(ARGS) -> RET:' をパース。(name, args, ret)。失敗は ("", "", "")。
+    ワンライナー 'def NAME(ARGS) -> RET: ...' にも対応。"""
+    # Strip inline body (e.g., ": ..." or ": pass")
+    clean = s
+    if ": ..." in clean:
+        clean = clean[:clean.index(": ...") + 1]
+    elif ": pass" in clean:
+        clean = clean[:clean.index(": pass") + 1]
+    m = re.match(r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*(?:->\s*(.+)\s*)?:\s*$", clean)
     if m is None:
         return "", "", ""
     return re.strip_group(m, 1), re.strip_group(m, 2), re.strip_group(m, 3)
@@ -876,6 +883,14 @@ class ExprParser:
         if tok.value == "{":
             return self._parse_dict_or_set()
 
+        # Ellipsis literal: ...
+        if tok.value == "." and self.pos + 2 < len(self.tokens) and self.tokens[self.pos + 1].value == "." and self.tokens[self.pos + 2].value == ".":
+            self.advance()  # first .
+            self.advance()  # second .
+            self.advance()  # third .
+            base = self._base(tok.start, self.tokens[self.pos - 1].end)
+            return Constant(base=base, value=True)  # Ellipsis → placeholder constant
+
         raise ValueError("unexpected token in expression: " + tok.value + " at pos " + str(tok.start))
 
     def _parse_list_or_listcomp(self) -> Expr:
@@ -1589,12 +1604,19 @@ def _parse_function_def(
                 arg_defaults[pname] = expr_to_jv(default_expr)
             idx += 1
 
+    # Check for one-liner: def name(args) -> ret: ...
+    is_stub = header.rstrip().endswith(": ...") or header.rstrip().endswith(": pass")
+
     # Collect body
-    block_lines, end_ln = _collect_block(lines, merge_ln + 1, header_indent)
+    if is_stub:
+        block_lines: list[str] = []
+        end_ln = merge_ln + 1
+    else:
+        block_lines, end_ln = _collect_block(lines, merge_ln + 1, header_indent)
 
     # Parse body with arg types in scope
     name_types: dict[str, str] = dict(arg_types)
-    body_stmts = _parse_block_lines(ctx, block_lines, name_types, fn_name, start_hint=start_ln)
+    body_stmts: list[Stmt] = _parse_block_lines(ctx, block_lines, name_types, fn_name, start_hint=start_ln) if len(block_lines) > 0 else []
 
 
     # Extract docstring and remove from body

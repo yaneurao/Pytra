@@ -1,0 +1,2102 @@
+{
+  "kind": "Module",
+  "source_path": "src/include/py/pytra/built_in/containers.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 2,
+        "col": 0,
+        "end_lineno": 2,
+        "end_col": 26
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 2,
+          "col": 0,
+          "end_lineno": 2,
+          "end_col": 26
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"コンテナ型の dunder + メソッド宣言。",
+        "value": "コンテナ型の dunder + メソッド"
+      }
+    },
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 10,
+        "col": 0,
+        "end_lineno": 10,
+        "end_col": 3
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 10,
+          "col": 0,
+          "end_lineno": 10,
+          "end_col": 3
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"",
+        "value": ""
+      }
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 12,
+        "col": 0,
+        "end_lineno": 12,
+        "end_col": 39
+      },
+      "module": "pytra.std.template",
+      "names": [
+        {
+          "name": "template",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 22,
+        "col": 0,
+        "end_lineno": 29,
+        "end_col": 0
+      },
+      "name": "Iterable",
+      "original_name": "Iterable",
+      "base": null,
+      "dataclass": false,
+      "field_types": {},
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 23,
+            "col": 4,
+            "end_lineno": 23,
+            "end_col": 7
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 23,
+              "col": 4,
+              "end_lineno": 23,
+              "end_col": 7
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "...",
+            "value": true
+          }
+        }
+      ],
+      "leading_comments": [
+        "---------------------------------------------------------------------------",
+        "Iterable[T] — for ループの __iter__ 戻り値型",
+        "resolve は Iterable[T] の T を要素型として解決する。",
+        "Iterator[T]（__next__ 付き）は将来追加予定。",
+        "---------------------------------------------------------------------------"
+      ],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "---------------------------------------------------------------------------"
+        },
+        {
+          "kind": "comment",
+          "text": "Iterable[T] — for ループの __iter__ 戻り値型"
+        },
+        {
+          "kind": "comment",
+          "text": "resolve は Iterable[T] の T を要素型として解決する。"
+        },
+        {
+          "kind": "comment",
+          "text": "Iterator[T]（__next__ 付き）は将来追加予定。"
+        },
+        {
+          "kind": "comment",
+          "text": "---------------------------------------------------------------------------"
+        }
+      ]
+    },
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 31,
+        "col": 0,
+        "end_lineno": 52,
+        "end_col": 0
+      },
+      "name": "list",
+      "original_name": "list",
+      "base": null,
+      "dataclass": false,
+      "field_types": {},
+      "body": [
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 32,
+            "col": 4,
+            "end_lineno": 32,
+            "end_col": 0
+          },
+          "name": "__len__",
+          "original_name": "__len__",
+          "arg_types": {
+            "self": "list"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "int",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 33,
+            "col": 4,
+            "end_lineno": 33,
+            "end_col": 0
+          },
+          "name": "__str__",
+          "original_name": "__str__",
+          "arg_types": {
+            "self": "list"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "str",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 34,
+            "col": 4,
+            "end_lineno": 34,
+            "end_col": 0
+          },
+          "name": "__bool__",
+          "original_name": "__bool__",
+          "arg_types": {
+            "self": "list"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "bool",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 35,
+            "col": 4,
+            "end_lineno": 35,
+            "end_col": 0
+          },
+          "name": "__iter__",
+          "original_name": "__iter__",
+          "arg_types": {
+            "self": "list"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "Iterable[T]",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 36,
+            "col": 4,
+            "end_lineno": 36,
+            "end_col": 0
+          },
+          "name": "append",
+          "original_name": "append",
+          "arg_types": {
+            "self": "list",
+            "x": "T"
+          },
+          "arg_order": [
+            "self",
+            "x"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "x": 1
+          },
+          "return_type": "None",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 37,
+            "col": 4,
+            "end_lineno": 37,
+            "end_col": 0
+          },
+          "name": "extend",
+          "original_name": "extend",
+          "arg_types": {
+            "self": "list",
+            "x": "list[T]"
+          },
+          "arg_order": [
+            "self",
+            "x"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "x": 1
+          },
+          "return_type": "None",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 38,
+            "col": 4,
+            "end_lineno": 38,
+            "end_col": 0
+          },
+          "name": "pop",
+          "original_name": "pop",
+          "arg_types": {
+            "self": "list",
+            "index": "int"
+          },
+          "arg_order": [
+            "self",
+            "index"
+          ],
+          "arg_defaults": {
+            "index": {
+              "kind": "UnaryOp",
+              "source_span": {
+                "lineno": 38,
+                "col": 31,
+                "end_lineno": 38,
+                "end_col": 33
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "-1",
+              "op": "USub",
+              "operand": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 38,
+                  "col": 32,
+                  "end_lineno": 38,
+                  "end_col": 33
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "1",
+                "value": 1
+              }
+            }
+          },
+          "arg_index": {
+            "self": 0,
+            "index": 1
+          },
+          "return_type": "T",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 39,
+            "col": 4,
+            "end_lineno": 39,
+            "end_col": 0
+          },
+          "name": "insert",
+          "original_name": "insert",
+          "arg_types": {
+            "self": "list",
+            "index": "int",
+            "x": "T"
+          },
+          "arg_order": [
+            "self",
+            "index",
+            "x"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "index": 1,
+            "x": 2
+          },
+          "return_type": "None",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 40,
+            "col": 4,
+            "end_lineno": 40,
+            "end_col": 0
+          },
+          "name": "remove",
+          "original_name": "remove",
+          "arg_types": {
+            "self": "list",
+            "x": "T"
+          },
+          "arg_order": [
+            "self",
+            "x"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "x": 1
+          },
+          "return_type": "None",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 41,
+            "col": 4,
+            "end_lineno": 41,
+            "end_col": 0
+          },
+          "name": "clear",
+          "original_name": "clear",
+          "arg_types": {
+            "self": "list"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "None",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 42,
+            "col": 4,
+            "end_lineno": 42,
+            "end_col": 0
+          },
+          "name": "reverse",
+          "original_name": "reverse",
+          "arg_types": {
+            "self": "list"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "None",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 43,
+            "col": 4,
+            "end_lineno": 43,
+            "end_col": 0
+          },
+          "name": "sort",
+          "original_name": "sort",
+          "arg_types": {
+            "self": "list"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "None",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 44,
+            "col": 4,
+            "end_lineno": 44,
+            "end_col": 0
+          },
+          "name": "copy",
+          "original_name": "copy",
+          "arg_types": {
+            "self": "list"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "list[T]",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 45,
+            "col": 4,
+            "end_lineno": 45,
+            "end_col": 0
+          },
+          "name": "index",
+          "original_name": "index",
+          "arg_types": {
+            "self": "list",
+            "x": "T"
+          },
+          "arg_order": [
+            "self",
+            "x"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "x": 1
+          },
+          "return_type": "int",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 46,
+            "col": 4,
+            "end_lineno": 46,
+            "end_col": 0
+          },
+          "name": "count",
+          "original_name": "count",
+          "arg_types": {
+            "self": "list",
+            "x": "T"
+          },
+          "arg_order": [
+            "self",
+            "x"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "x": 1
+          },
+          "return_type": "int",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        }
+      ]
+    },
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 53,
+        "col": 0,
+        "end_lineno": 83,
+        "end_col": 0
+      },
+      "name": "str",
+      "original_name": "str",
+      "base": null,
+      "dataclass": false,
+      "field_types": {},
+      "body": [
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 54,
+            "col": 4,
+            "end_lineno": 54,
+            "end_col": 0
+          },
+          "name": "__len__",
+          "original_name": "__len__",
+          "arg_types": {
+            "self": "str"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "int",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 55,
+            "col": 4,
+            "end_lineno": 55,
+            "end_col": 0
+          },
+          "name": "__str__",
+          "original_name": "__str__",
+          "arg_types": {
+            "self": "str"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "str",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 56,
+            "col": 4,
+            "end_lineno": 56,
+            "end_col": 0
+          },
+          "name": "__bool__",
+          "original_name": "__bool__",
+          "arg_types": {
+            "self": "str"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "bool",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 57,
+            "col": 4,
+            "end_lineno": 57,
+            "end_col": 0
+          },
+          "name": "__int__",
+          "original_name": "__int__",
+          "arg_types": {
+            "self": "str"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "int",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 58,
+            "col": 4,
+            "end_lineno": 58,
+            "end_col": 0
+          },
+          "name": "__float__",
+          "original_name": "__float__",
+          "arg_types": {
+            "self": "str"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "float",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 59,
+            "col": 4,
+            "end_lineno": 59,
+            "end_col": 0
+          },
+          "name": "upper",
+          "original_name": "upper",
+          "arg_types": {
+            "self": "str"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "str",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 60,
+            "col": 4,
+            "end_lineno": 60,
+            "end_col": 0
+          },
+          "name": "lower",
+          "original_name": "lower",
+          "arg_types": {
+            "self": "str"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "str",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 61,
+            "col": 4,
+            "end_lineno": 61,
+            "end_col": 0
+          },
+          "name": "strip",
+          "original_name": "strip",
+          "arg_types": {
+            "self": "str"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "str",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 62,
+            "col": 4,
+            "end_lineno": 62,
+            "end_col": 0
+          },
+          "name": "lstrip",
+          "original_name": "lstrip",
+          "arg_types": {
+            "self": "str"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "str",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 63,
+            "col": 4,
+            "end_lineno": 63,
+            "end_col": 0
+          },
+          "name": "rstrip",
+          "original_name": "rstrip",
+          "arg_types": {
+            "self": "str"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "str",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 64,
+            "col": 4,
+            "end_lineno": 64,
+            "end_col": 0
+          },
+          "name": "split",
+          "original_name": "split",
+          "arg_types": {
+            "self": "str",
+            "sep": "str"
+          },
+          "arg_order": [
+            "self",
+            "sep"
+          ],
+          "arg_defaults": {
+            "sep": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 64,
+                "col": 31,
+                "end_lineno": 64,
+                "end_col": 34
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\" \"",
+              "value": " "
+            }
+          },
+          "arg_index": {
+            "self": 0,
+            "sep": 1
+          },
+          "return_type": "list[str]",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 65,
+            "col": 4,
+            "end_lineno": 65,
+            "end_col": 0
+          },
+          "name": "join",
+          "original_name": "join",
+          "arg_types": {
+            "self": "str",
+            "parts": "list[str]"
+          },
+          "arg_order": [
+            "self",
+            "parts"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "parts": 1
+          },
+          "return_type": "str",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 66,
+            "col": 4,
+            "end_lineno": 66,
+            "end_col": 0
+          },
+          "name": "startswith",
+          "original_name": "startswith",
+          "arg_types": {
+            "self": "str",
+            "prefix": "str"
+          },
+          "arg_order": [
+            "self",
+            "prefix"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "prefix": 1
+          },
+          "return_type": "bool",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 67,
+            "col": 4,
+            "end_lineno": 67,
+            "end_col": 0
+          },
+          "name": "endswith",
+          "original_name": "endswith",
+          "arg_types": {
+            "self": "str",
+            "suffix": "str"
+          },
+          "arg_order": [
+            "self",
+            "suffix"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "suffix": 1
+          },
+          "return_type": "bool",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 68,
+            "col": 4,
+            "end_lineno": 68,
+            "end_col": 0
+          },
+          "name": "find",
+          "original_name": "find",
+          "arg_types": {
+            "self": "str",
+            "sub": "str"
+          },
+          "arg_order": [
+            "self",
+            "sub"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "sub": 1
+          },
+          "return_type": "int",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 69,
+            "col": 4,
+            "end_lineno": 69,
+            "end_col": 0
+          },
+          "name": "rfind",
+          "original_name": "rfind",
+          "arg_types": {
+            "self": "str",
+            "sub": "str"
+          },
+          "arg_order": [
+            "self",
+            "sub"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "sub": 1
+          },
+          "return_type": "int",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 70,
+            "col": 4,
+            "end_lineno": 70,
+            "end_col": 0
+          },
+          "name": "replace",
+          "original_name": "replace",
+          "arg_types": {
+            "self": "str",
+            "old": "str",
+            "new": "str"
+          },
+          "arg_order": [
+            "self",
+            "old",
+            "new"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "old": 1,
+            "new": 2
+          },
+          "return_type": "str",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 71,
+            "col": 4,
+            "end_lineno": 71,
+            "end_col": 0
+          },
+          "name": "isdigit",
+          "original_name": "isdigit",
+          "arg_types": {
+            "self": "str"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "bool",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 72,
+            "col": 4,
+            "end_lineno": 72,
+            "end_col": 0
+          },
+          "name": "isalpha",
+          "original_name": "isalpha",
+          "arg_types": {
+            "self": "str"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "bool",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 73,
+            "col": 4,
+            "end_lineno": 73,
+            "end_col": 0
+          },
+          "name": "isalnum",
+          "original_name": "isalnum",
+          "arg_types": {
+            "self": "str"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "bool",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 74,
+            "col": 4,
+            "end_lineno": 74,
+            "end_col": 0
+          },
+          "name": "isupper",
+          "original_name": "isupper",
+          "arg_types": {
+            "self": "str"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "bool",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 75,
+            "col": 4,
+            "end_lineno": 75,
+            "end_col": 0
+          },
+          "name": "islower",
+          "original_name": "islower",
+          "arg_types": {
+            "self": "str"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "bool",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 76,
+            "col": 4,
+            "end_lineno": 76,
+            "end_col": 0
+          },
+          "name": "zfill",
+          "original_name": "zfill",
+          "arg_types": {
+            "self": "str",
+            "width": "int"
+          },
+          "arg_order": [
+            "self",
+            "width"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "width": 1
+          },
+          "return_type": "str",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 77,
+            "col": 4,
+            "end_lineno": 77,
+            "end_col": 0
+          },
+          "name": "count",
+          "original_name": "count",
+          "arg_types": {
+            "self": "str",
+            "sub": "str"
+          },
+          "arg_order": [
+            "self",
+            "sub"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "sub": 1
+          },
+          "return_type": "int",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        }
+      ]
+    },
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 85,
+        "col": 0,
+        "end_lineno": 102,
+        "end_col": 0
+      },
+      "name": "dict",
+      "original_name": "dict",
+      "base": null,
+      "dataclass": false,
+      "field_types": {},
+      "body": [
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 86,
+            "col": 4,
+            "end_lineno": 86,
+            "end_col": 0
+          },
+          "name": "__len__",
+          "original_name": "__len__",
+          "arg_types": {
+            "self": "dict"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "int",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 87,
+            "col": 4,
+            "end_lineno": 87,
+            "end_col": 0
+          },
+          "name": "__str__",
+          "original_name": "__str__",
+          "arg_types": {
+            "self": "dict"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "str",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 88,
+            "col": 4,
+            "end_lineno": 88,
+            "end_col": 0
+          },
+          "name": "__bool__",
+          "original_name": "__bool__",
+          "arg_types": {
+            "self": "dict"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "bool",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 89,
+            "col": 4,
+            "end_lineno": 89,
+            "end_col": 0
+          },
+          "name": "keys",
+          "original_name": "keys",
+          "arg_types": {
+            "self": "dict"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "list[K]",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 90,
+            "col": 4,
+            "end_lineno": 90,
+            "end_col": 0
+          },
+          "name": "values",
+          "original_name": "values",
+          "arg_types": {
+            "self": "dict"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "list[V]",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 91,
+            "col": 4,
+            "end_lineno": 91,
+            "end_col": 0
+          },
+          "name": "items",
+          "original_name": "items",
+          "arg_types": {
+            "self": "dict"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "list[tuple[K, V]]",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 92,
+            "col": 4,
+            "end_lineno": 92,
+            "end_col": 0
+          },
+          "name": "get",
+          "original_name": "get",
+          "arg_types": {
+            "self": "dict",
+            "key": "K",
+            "default": "V"
+          },
+          "arg_order": [
+            "self",
+            "key",
+            "default"
+          ],
+          "arg_defaults": {
+            "default": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 92,
+                "col": 39,
+                "end_lineno": 92,
+                "end_col": 43
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "None",
+              "value": null
+            }
+          },
+          "arg_index": {
+            "self": 0,
+            "key": 1,
+            "default": 2
+          },
+          "return_type": "V",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 93,
+            "col": 4,
+            "end_lineno": 93,
+            "end_col": 0
+          },
+          "name": "pop",
+          "original_name": "pop",
+          "arg_types": {
+            "self": "dict",
+            "key": "K"
+          },
+          "arg_order": [
+            "self",
+            "key"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "key": 1
+          },
+          "return_type": "V",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 94,
+            "col": 4,
+            "end_lineno": 94,
+            "end_col": 0
+          },
+          "name": "setdefault",
+          "original_name": "setdefault",
+          "arg_types": {
+            "self": "dict",
+            "key": "K",
+            "default": "V"
+          },
+          "arg_order": [
+            "self",
+            "key",
+            "default"
+          ],
+          "arg_defaults": {
+            "default": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 94,
+                "col": 46,
+                "end_lineno": 94,
+                "end_col": 50
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "None",
+              "value": null
+            }
+          },
+          "arg_index": {
+            "self": 0,
+            "key": 1,
+            "default": 2
+          },
+          "return_type": "V",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 95,
+            "col": 4,
+            "end_lineno": 95,
+            "end_col": 0
+          },
+          "name": "clear",
+          "original_name": "clear",
+          "arg_types": {
+            "self": "dict"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "None",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 96,
+            "col": 4,
+            "end_lineno": 96,
+            "end_col": 0
+          },
+          "name": "update",
+          "original_name": "update",
+          "arg_types": {
+            "self": "dict",
+            "other": "dict[K, V]"
+          },
+          "arg_order": [
+            "self",
+            "other"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "other": 1
+          },
+          "return_type": "None",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        }
+      ]
+    },
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 104,
+        "col": 0,
+        "end_lineno": 117,
+        "end_col": 0
+      },
+      "name": "set",
+      "original_name": "set",
+      "base": null,
+      "dataclass": false,
+      "field_types": {},
+      "body": [
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 105,
+            "col": 4,
+            "end_lineno": 105,
+            "end_col": 0
+          },
+          "name": "__len__",
+          "original_name": "__len__",
+          "arg_types": {
+            "self": "set"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "int",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 106,
+            "col": 4,
+            "end_lineno": 106,
+            "end_col": 0
+          },
+          "name": "__str__",
+          "original_name": "__str__",
+          "arg_types": {
+            "self": "set"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "str",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 107,
+            "col": 4,
+            "end_lineno": 107,
+            "end_col": 0
+          },
+          "name": "__bool__",
+          "original_name": "__bool__",
+          "arg_types": {
+            "self": "set"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "bool",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 108,
+            "col": 4,
+            "end_lineno": 108,
+            "end_col": 0
+          },
+          "name": "add",
+          "original_name": "add",
+          "arg_types": {
+            "self": "set",
+            "x": "T"
+          },
+          "arg_order": [
+            "self",
+            "x"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "x": 1
+          },
+          "return_type": "None",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 109,
+            "col": 4,
+            "end_lineno": 109,
+            "end_col": 0
+          },
+          "name": "discard",
+          "original_name": "discard",
+          "arg_types": {
+            "self": "set",
+            "x": "T"
+          },
+          "arg_order": [
+            "self",
+            "x"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "x": 1
+          },
+          "return_type": "None",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 110,
+            "col": 4,
+            "end_lineno": 110,
+            "end_col": 0
+          },
+          "name": "remove",
+          "original_name": "remove",
+          "arg_types": {
+            "self": "set",
+            "x": "T"
+          },
+          "arg_order": [
+            "self",
+            "x"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "x": 1
+          },
+          "return_type": "None",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 111,
+            "col": 4,
+            "end_lineno": 111,
+            "end_col": 0
+          },
+          "name": "clear",
+          "original_name": "clear",
+          "arg_types": {
+            "self": "set"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "None",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        }
+      ]
+    },
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 118,
+        "col": 0,
+        "end_lineno": 121,
+        "end_col": 0
+      },
+      "name": "tuple",
+      "original_name": "tuple",
+      "base": null,
+      "dataclass": false,
+      "field_types": {},
+      "body": [
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 119,
+            "col": 4,
+            "end_lineno": 119,
+            "end_col": 0
+          },
+          "name": "__len__",
+          "original_name": "__len__",
+          "arg_types": {
+            "self": "tuple"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "int",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 120,
+            "col": 4,
+            "end_lineno": 120,
+            "end_col": 0
+          },
+          "name": "__str__",
+          "original_name": "__str__",
+          "arg_types": {
+            "self": "tuple"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "str",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 121,
+            "col": 4,
+            "end_lineno": 121,
+            "end_col": 0
+          },
+          "name": "__bool__",
+          "original_name": "__bool__",
+          "arg_types": {
+            "self": "tuple"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "bool",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        }
+      ]
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [
+        {
+          "module_id": "pytra.std.template",
+          "export_name": "template",
+          "local_name": "template",
+          "binding_kind": "symbol",
+          "source_file": "src/include/py/pytra/built_in/containers.py",
+          "source_line": 12
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std.template",
+          "symbol": "template",
+          "local_name": "template"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.std.template",
+        "export_name": "template",
+        "local_name": "template",
+        "binding_kind": "symbol",
+        "source_file": "src/include/py/pytra/built_in/containers.py",
+        "source_line": 12
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std.template",
+        "symbol": "template",
+        "local_name": "template"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "template": {
+        "module": "pytra.std.template",
+        "name": "template"
+      }
+    }
+  },
+  "east_stage": 1
+}
