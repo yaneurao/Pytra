@@ -184,6 +184,20 @@ def _parse_main_guard(s: str) -> bool:
     return m is not None
 
 
+def _infer_range_mode(step: Expr) -> str:
+    """ForRange の range_mode を step から推論する (golden 準拠)。
+
+    Constant(1) → ascending, Constant(-1) → descending, それ以外 → dynamic。
+    UnaryOp(USub, Constant(1)) は Constant(-1) ではないので dynamic になる。
+    """
+    if isinstance(step, Constant) and isinstance(step.value, int):
+        if step.value == 1:
+            return "ascending"
+        if step.value == -1:
+            return "descending"
+    return "dynamic"
+
+
 def _parse_range_call(s: str) -> Optional[str]:
     """'range(ARGS)' をパース。ARGS 部分を返す。range でなければ None。"""
     s = s.strip()
@@ -705,20 +719,23 @@ class ExprParser:
 
     def _annotate_call(self, call: Call, func_name: str) -> None:
         """組み込み関数呼び出しにセマンティック情報を付与する。"""
+        # Golden 準拠: print は pytra.built_in.io_ops、他は pytra.core.py_runtime
+        # (runtime_call, module_id, runtime_symbol, semantic_tag)
+        _DEFAULT_RT_MOD = "pytra.core.py_runtime"
         builtin_map: dict[str, tuple[str, str, str, str]] = {
             "print": ("py_print", "pytra.built_in.io_ops", "py_print", "core.print"),
-            "len": ("py_len", "pytra.built_in.sequence", "py_len", "core.len"),
-            "abs": ("py_abs", "pytra.built_in.numeric_ops", "py_abs", "core.abs"),
-            "min": ("py_min", "pytra.built_in.numeric_ops", "py_min", "core.min"),
-            "max": ("py_max", "pytra.built_in.numeric_ops", "py_max", "core.max"),
-            "int": ("py_int", "pytra.built_in.scalar_ops", "py_int", "core.int"),
-            "float": ("py_float", "pytra.built_in.scalar_ops", "py_float", "core.float"),
-            "str": ("py_str", "pytra.built_in.scalar_ops", "py_str", "core.str"),
-            "bool": ("py_bool", "pytra.built_in.scalar_ops", "py_bool", "core.bool"),
-            "ord": ("py_ord", "pytra.built_in.scalar_ops", "py_ord", "core.ord"),
-            "chr": ("py_chr", "pytra.built_in.scalar_ops", "py_chr", "core.chr"),
-            "isinstance": ("py_isinstance", "pytra.built_in.predicates", "py_isinstance", "core.isinstance"),
-            "range": ("py_range", "pytra.built_in.iter_ops", "py_range", "core.range"),
+            "len": ("py_len", _DEFAULT_RT_MOD, "len", "core.len"),
+            "abs": ("py_abs", _DEFAULT_RT_MOD, "abs", "core.abs"),
+            "min": ("py_min", _DEFAULT_RT_MOD, "min", "core.min"),
+            "max": ("py_max", _DEFAULT_RT_MOD, "max", "core.max"),
+            "int": ("py_to_string", _DEFAULT_RT_MOD, "int", "cast.int"),
+            "float": ("py_to_string", _DEFAULT_RT_MOD, "float", "cast.float"),
+            "str": ("py_to_string", _DEFAULT_RT_MOD, "str", "cast.str"),
+            "bool": ("py_to_string", _DEFAULT_RT_MOD, "bool", "cast.bool"),
+            "ord": ("py_ord", _DEFAULT_RT_MOD, "ord", "core.ord"),
+            "chr": ("py_chr", _DEFAULT_RT_MOD, "chr", "core.chr"),
+            "isinstance": ("py_isinstance", _DEFAULT_RT_MOD, "isinstance", "core.isinstance"),
+            "range": ("py_range", _DEFAULT_RT_MOD, "range", "core.range"),
         }
         if func_name in builtin_map:
             rt_call, rt_mod, rt_sym, sem_tag = builtin_map[func_name]
@@ -1997,7 +2014,7 @@ def _parse_for_stmt(
             step=step_expr,
             body=body_stmts,
             orelse=[],
-            range_mode="ascending",
+            range_mode=_infer_range_mode(step_expr),
         )
         if len(trivia) > 0:
             fr.leading_trivia = list(trivia)
