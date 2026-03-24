@@ -100,20 +100,42 @@ def chr(i: int) -> str:
     pass  # runtime 実装
 ```
 
-### 3.3 ジェネリック型（型パラメータが必要）
+### 3.3 ジェネリック型（`@template` を使用）
+
+既存の `@template` デコレータで型パラメータを宣言する。resolve は callsite の具象型から `T` を解決する（例: `min(a, b)` で `a: int64, b: int64` なら `T = int64`、戻り値 `int64`）。
+
+linker が implicit instantiation を行い、EAST3 には具象化済みの関数が含まれる。emitter はジェネリクスがある言語では `min[T]` で出し、ない言語では `min_int64` 等の具象関数として出す。
 
 ```python
-def min(a: T, b: T) -> T: ...
+@template("T")
+@extern
+def min(a: T, b: T) -> T:
+    pass
 
-def max(a: T, b: T) -> T: ...
+@template("T")
+@extern
+def max(a: T, b: T) -> T:
+    pass
 
-def sorted(x: list[T]) -> list[T]: ...
+@template("T")
+@extern
+def sorted(x: list[T]) -> list[T]:
+    pass
 
-def reversed(x: list[T]) -> list[T]: ...
+@template("T")
+@extern
+def reversed(x: list[T]) -> list[T]:
+    pass
 
-def enumerate(x: list[T], start: int = 0) -> list[tuple[int, T]]: ...
+@template("T")
+@extern
+def enumerate(x: list[T], start: int = 0) -> list[tuple[int, T]]:
+    pass
 
-def zip(a: list[T], b: list[U]) -> list[tuple[T, U]]: ...
+@template("T", "U")
+@extern
+def zip(a: list[T], b: list[U]) -> list[tuple[T, U]]:
+    pass
 ```
 
 ### 3.4 range（特殊: resolve で ForRange に変換）
