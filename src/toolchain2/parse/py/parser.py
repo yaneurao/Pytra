@@ -825,10 +825,25 @@ class ExprParser:
             call.runtime_symbol = rt_sym
             call.runtime_call_adapter_kind = "builtin"
             call.semantic_tag = sem_tag
-            # Register implicit builtin module
-            # pytra.core.py_runtime は implicit_builtin に登録しない (golden 準拠)
-            if rt_mod != _DEFAULT_RT_MOD:
-                self.ctx.implicit_builtin_modules[rt_mod] = True
+            # Register implicit builtin module from semantic_tag
+            _SEM_TAG_TO_BUILTIN: dict[str, str] = {
+                "core.print": "pytra.built_in.io_ops",
+                "core.len": "pytra.built_in.sequence",
+                "core.abs": "pytra.built_in.numeric_ops",
+                "core.min": "pytra.built_in.numeric_ops",
+                "core.max": "pytra.built_in.numeric_ops",
+                "cast.str": "pytra.built_in.scalar_ops",
+                "cast.int": "pytra.built_in.scalar_ops",
+                "cast.float": "pytra.built_in.scalar_ops",
+                "cast.bool": "pytra.built_in.scalar_ops",
+                "core.ord": "pytra.built_in.scalar_ops",
+                "core.chr": "pytra.built_in.scalar_ops",
+                "core.isinstance": "pytra.built_in.predicates",
+                "core.range": "pytra.built_in.sequence",
+            }
+            builtin_mod = _SEM_TAG_TO_BUILTIN.get(sem_tag, "")
+            if builtin_mod != "":
+                self.ctx.implicit_builtin_modules[builtin_mod] = True
         # Import symbol calls (e.g., perf_counter, Path, py_assert_stdout)
         if func_name in self.ctx.import_symbols and call.builtin_name is None:
             sym_info = self.ctx.import_symbols[func_name]
@@ -846,34 +861,39 @@ class ExprParser:
                 elif mod_id == "pathlib":
                     call.semantic_tag = "stdlib.symbol.Path"
         # Method call: obj.method(...) → semantic_tag, runtime_owner
+        # 組み込み型 (list, dict, str, set, Path) のメソッドのみアノテーション
         if isinstance(call.func, Attribute):
             attr = call.func
             method_name = attr.attr
             owner_type = _get_resolved_type(attr.value)
-            # semantic_tag: stdlib.method.<name>
-            call.semantic_tag = "stdlib.method." + method_name
-            call.lowered_kind = "BuiltinCall"
-            call.builtin_name = method_name
-            # runtime owner
-            call.runtime_owner = attr.value
-            # runtime info based on owner type
             owner_base = owner_type.split("[")[0] if "[" in owner_type else owner_type
-            if owner_base == "list":
-                call.runtime_call = "list." + method_name
-                call.runtime_module_id = "pytra.core.list"
-                call.runtime_symbol = "list." + method_name
-                call.runtime_call_adapter_kind = "builtin"
-            elif owner_base == "dict":
-                call.runtime_call = "dict." + method_name
-                call.runtime_module_id = "pytra.core.dict"
-                call.runtime_symbol = "dict." + method_name
-                call.runtime_call_adapter_kind = "builtin"
-                call.semantic_tag = "container.dict." + method_name
-            elif owner_base == "str":
-                call.runtime_call = "str." + method_name
-                call.runtime_module_id = "pytra.core.str"
-                call.runtime_symbol = "str." + method_name
-                call.runtime_call_adapter_kind = "builtin"
+            _BUILTIN_OWNER_TYPES = {"list", "dict", "str", "set", "Path", "bytearray", "bytes", "deque"}
+            if owner_base in _BUILTIN_OWNER_TYPES:
+                call.semantic_tag = "stdlib.method." + method_name
+                call.lowered_kind = "BuiltinCall"
+                call.builtin_name = method_name
+                call.runtime_owner = attr.value
+                if owner_base == "list":
+                    call.runtime_call = "list." + method_name
+                    call.runtime_module_id = "pytra.core.list"
+                    call.runtime_symbol = "list." + method_name
+                    call.runtime_call_adapter_kind = "builtin"
+                elif owner_base == "dict":
+                    call.runtime_call = "dict." + method_name
+                    call.runtime_module_id = "pytra.core.dict"
+                    call.runtime_symbol = "dict." + method_name
+                    call.runtime_call_adapter_kind = "builtin"
+                    call.semantic_tag = "container.dict." + method_name
+                elif owner_base == "str":
+                    call.runtime_call = "str." + method_name
+                    call.runtime_module_id = "pytra.core.str"
+                    call.runtime_symbol = "str." + method_name
+                    call.runtime_call_adapter_kind = "builtin"
+                elif owner_base == "set":
+                    call.runtime_call = "set." + method_name
+                    call.runtime_module_id = "pytra.core.set"
+                    call.runtime_symbol = "set." + method_name
+                    call.runtime_call_adapter_kind = "builtin"
 
     def _parse_primary(self) -> Expr:
         """基本式: リテラル、名前、括弧、リスト、タプル、辞書。"""
