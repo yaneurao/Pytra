@@ -20,6 +20,13 @@ def extern_class(*, module: str, symbol: str, tag: str):
     return deco
 
 
+def extern_method(*, module: str, symbol: str, tag: str):
+    """外部メソッド宣言。クラス内メソッドの decorator として使う。"""
+    def deco(fn):
+        return fn
+    return deco
+
+
 def abi(*, args=None, ret="default"):
     def deco(fn):
         return fn
