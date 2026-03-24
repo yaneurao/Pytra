@@ -19,6 +19,7 @@ from toolchain2.link.type_id import build_type_id_table
 from toolchain2.link.call_graph import build_call_graph
 from toolchain2.link.dependencies import build_all_resolved_dependencies
 from toolchain2.link.import_maps import collect_import_maps
+from toolchain2.link.normalize_runtime_calls import normalize_runtime_calls
 
 
 # ---------------------------------------------------------------------------
@@ -246,6 +247,9 @@ def link_modules(
         doc = deep_copy_json(module.east_doc)
         if not isinstance(doc, dict):
             continue
+
+        # Normalize runtime_call values for emitter compatibility
+        normalize_runtime_calls(doc)
 
         meta = _ensure_meta(doc)
         linked_meta: dict[str, JsonVal] = {
