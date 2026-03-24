@@ -645,9 +645,8 @@ class ExprParser:
                 end_tok = self.tokens[self.pos - 1]
                 base = self._base(self._child_local_start(expr), end_tok.end)
                 sub = Subscript(base=base, value=expr, slice_expr=index)
-                # Slice の場合、lower/upper/lowered_kind を Subscript に直接設定
+                # Slice の場合、lower/upper を Subscript に直接設定 (lowered_kind は resolve の責務)
                 if isinstance(index, SliceExpr):
-                    sub.lowered_kind = "SliceAccess"
                     sub.lower = index.lower
                     sub.upper = index.upper
                 expr = sub
@@ -1566,7 +1565,7 @@ def _parse_class_def(
         body=body_stmts,
         dataclass_flag=is_dataclass,
         field_types=field_types,
-        class_storage_hint="value",
+        class_storage_hint="ref" if (base_name is not None and base_name != "") else "value",
     )
     # ClassDef: 最初の body item は常に出力、2番目以降は trivia がある場合のみ
     if force_leading or len(comments) > 0 or len(trivia) > 0:
