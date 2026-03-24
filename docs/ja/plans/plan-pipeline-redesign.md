@@ -461,12 +461,14 @@ diff test/east1/py/01_mandelbrot.py.east1 work/tmp/01_mandelbrot.py.east1
 
 ### 2026-03-24: [ID: P0-PARSE-S1] fixture golden 一致 進捗
 
-- fixture 132件中: exact_match=14, parse_err=5, diff=113
+- fixture 132件中: exact_match=35, parse_err=3, diff=94
 - 完了した修正: キー順序、trivia/leading_comments、main リネーム、ClassDef 構造、
   ForRange target/span、numeric promotion casts、listcomp/slice/decorator 構文対応、
-  set リテラル、論理行マージ、import symbol runtime 情報。
-- pytra.std.re / pytra.std.json を使用 (§5.2 準拠)。
-- parse_err 残 5件: lambda, generator expression, *args, f-string format, re.sub 引数。
+  set リテラル、論理行マージ、import symbol runtime 情報、OOP self パラメータ、
+  method call semantic_tag/runtime_owner、container 要素型推論、tuple/dict 型推論、
+  arg_defaults、Swap ノード、module-level docstring、lambda/generator/*args 構文。
+- pytra.std.re / pytra.std.json / pytra.std.pathlib を使用 (§5.2 準拠)。
+- parse_err 残 3件: f-string format spec, re.sub 引数, generator tuple target。
 - diff 残 113件: 主にセマンティクス差分 (import symbol runtime 解決の詳細、OOP 型推論)。
 
 ### 2026-03-24: [ID: P0-RESOLVE-S1/S2/S3] resolve 実装完了
