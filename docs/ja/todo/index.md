@@ -147,6 +147,11 @@ EAST1 の `meta.extern_v2` を正本にすること。
 入力: `test/fixture/east3-opt/*.east3`, `test/sample/east3-opt/*.east3`
 正解: `test/fixture/linked/`, `test/sample/linked/`
 
+仕様:
+- EAST 統合仕様: `docs/ja/spec/spec-east.md`（§17 パイプライン、§17.1 linked module meta 契約）
+- Linker 仕様: `docs/ja/spec/spec-linker.md`
+- コーディング規約: `docs/ja/plans/plan-pipeline-redesign.md` §5
+
 責務:
 - multi-module 結合（import graph 解決、依存 module の EAST3 収集）
 - `manifest.json` 生成（entry module、module 一覧、出力パス）
@@ -154,6 +159,9 @@ EAST1 の `meta.extern_v2` を正本にすること。
 - type_id テーブル生成（`type_id_resolved_v1`）
 - `linked_program_v1` metadata 付与
 - `pytra-cli2 -link` コマンド実装
+
+参考実装: 現行 `src/toolchain/link/` のコードをロジック参照元として使ってよい（import はしない）。
+理解したロジックを toolchain2 の設計（dataclass、common/、§5 規約）で書き直すこと。
 
 1. [ ] [ID: P0-LINK-S1] linker を実装し、fixture の linked output が golden と一致する
 2. [ ] [ID: P0-LINK-S2] sample 18 件の linked output が golden と一致する
