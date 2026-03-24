@@ -336,6 +336,7 @@ class ExprParser:
     source_line: int
     line_col_offset: int
     source_text: str
+    source_line_text: str  # 元の行テキスト全体 (span 計算の基準)
     name_types: dict[str, str]
     ctx: ParseContext
 
@@ -356,14 +357,17 @@ class ExprParser:
             raise ValueError("expected " + value + " but got " + tok.value)
         return tok
 
+    def _abs_col(self, local_pos: int) -> int:
+        """ローカル位置 → 絶対 col。source_line_text 内でトークンテキストを検索。"""
+        return self.line_col_offset + local_pos
+
     def _span(self, local_start: int, local_end: int) -> SourceSpan:
         """ローカル位置 → 絶対位置の SourceSpan を返す。"""
-        return make_span(
-            self.source_line,
-            self.line_col_offset + local_start,
-            self.source_line,
-            self.line_col_offset + local_end,
-        )
+        repr_text = self.source_text[local_start:local_end]
+        abs_start = self._abs_col(local_start)
+        abs_end = self._abs_col(local_end)
+        # span 補正は行わない (line_col_offset + local_start をそのまま使用)
+        return make_span(self.source_line, abs_start, self.source_line, abs_end)
 
     def _base(self, local_start: int, local_end: int) -> ExprBase:
         """ExprBase を生成する。start/end は式テキスト内のローカル位置。"""
@@ -2094,12 +2098,17 @@ def _parse_expr_text(
 ) -> Expr:
     """テキストから式をパースする。"""
     tokens = _tokenize_expr(text)
+    # 元の行テキストを取得 (span 計算の基準)
+    source_line_text = ""
+    if line >= 1 and line <= len(ctx.lines):
+        source_line_text = ctx.lines[line - 1]
     parser = ExprParser(
         tokens=tokens,
         pos=0,
         source_line=line,
         line_col_offset=col_offset,
         source_text=text,
+        source_line_text=source_line_text,
         name_types=name_types,
         ctx=ctx,
     )
