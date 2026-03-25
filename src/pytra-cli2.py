@@ -570,59 +570,34 @@ def cmd_emit(args: list[str]) -> int:
     if target == "go":
         return _emit_go(manifest_path, Path(output_dir_text))
 
-    if target != "cpp":
-        print("error: unsupported target: " + target + " (available: cpp, go)")
-        return 1
+    if target == "cpp":
+        return _emit_cpp(manifest_path, Path(output_dir_text))
 
-    try:
-        from toolchain.link import load_linked_output_bundle
-        from toolchain.link import LinkedProgramModule
-        from toolchain.emit.cpp.emitter.multifile_writer import write_multi_file_cpp
+    print("error: unsupported target: " + target + " (available: cpp, go)")
+    return 1
 
-        manifest_doc, linked_modules = load_linked_output_bundle(manifest_path)
-        entry_modules_raw = manifest_doc.get("entry_modules", [])
-        entry_modules: list[str] = []
-        if isinstance(entry_modules_raw, (list, tuple)):
-            for item in entry_modules_raw:
-                if isinstance(item, str) and item != "":
-                    entry_modules.append(item)
 
-        # Build module_east_map and find entry_path (same logic as toolchain/emit/cpp.py)
-        module_east_map: dict[str, dict[str, object]] = {}
-        entry_path = Path("")
-        entry_set = set(entry_modules)
-        for module in linked_modules:
-            if module.module_id == "":
-                continue
-            mod_path = Path(module.source_path) if module.source_path != "" else Path(module.module_id + ".py")
-            module_east_map[str(mod_path)] = module.east_doc
-            if module.is_entry and module.module_id in entry_set:
-                entry_path = mod_path
+def _emit_cpp(manifest_path: Path, output_dir: Path) -> int:
+    """C++ emit: linked output → C++ source files (toolchain2 emitter)."""
+    from toolchain.link import load_linked_output_bundle
+    from toolchain2.emit.cpp.emitter import emit_cpp_module
 
-        if str(entry_path) == "":
-            print("error: linked C++ entry module not found")
-            return 1
+    manifest_doc, linked_modules = load_linked_output_bundle(manifest_path)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-        write_multi_file_cpp(
-            entry_path,
-            module_east_map,
-            Path(output_dir_text),
-            negative_index_mode=emitter_options.get("negative_index_mode", "const_only"),
-            bounds_check_mode=emitter_options.get("bounds_check_mode", "off"),
-            floor_div_mode=emitter_options.get("floor_div_mode", "native"),
-            mod_mode=emitter_options.get("mod_mode", "native"),
-            int_width=emitter_options.get("int_width", "64"),
-            str_index_mode=emitter_options.get("str_index_mode", "native"),
-            str_slice_mode=emitter_options.get("str_slice_mode", "byte"),
-            opt_level=emitter_options.get("opt_level", "2"),
-            top_namespace="",
-            emit_main=True,
-        )
-        print("emitted: " + output_dir_text)
-        return 0
-    except Exception as e:
-        print("error: emit failed: " + str(e))
-        return 1
+    written = 0
+    for module in linked_modules:
+        code = emit_cpp_module(module.east_doc)
+        if code.strip() == "":
+            continue
+        # Use module_id for filename
+        mid = module.module_id
+        fname = mid.replace(".", "_") + ".cpp"
+        (output_dir / fname).write_text(code, encoding="utf-8")
+        written += 1
+
+    print("emitted: " + str(output_dir) + " (" + str(written) + " C++ files)")
+    return 0
 
 
 # ---------------------------------------------------------------------------
@@ -682,7 +657,6 @@ def _build_pipeline(inputs: list[str], output_dir_text: str, target: str) -> int
     from toolchain2.compile.lower import lower_east2_to_east3
     from toolchain2.optimize.optimizer import optimize_east3_document
     from toolchain2.link.linker import link_modules
-    from toolchain.emit.cpp.emitter.multifile_writer import write_multi_file_cpp
 
     # 1. Parse
     east1_docs: list[tuple[str, dict]] = []
@@ -764,27 +738,23 @@ def _build_pipeline(inputs: list[str], output_dir_text: str, target: str) -> int
         print("error: no entry module found")
         return 1
 
+    output_dir.mkdir(parents=True, exist_ok=True)
+    written = 0
     if target == "go":
         from toolchain2.emit.go.emitter import emit_go_module
-        output_dir.mkdir(parents=True, exist_ok=True)
-        written = 0
         for m in link_result.linked_modules:
             code = emit_go_module(m.east_doc)
-            if code.strip() == "":
-                continue
-            fname = m.module_id.replace(".", "_") + ".go"
-            (output_dir / fname).write_text(code, encoding="utf-8")
+            if code.strip() == "": continue
+            (output_dir / (m.module_id.replace(".", "_") + ".go")).write_text(code, encoding="utf-8")
             written += 1
-        print("build: emitted " + str(written) + " Go files to " + str(output_dir))
-    else:
-        write_multi_file_cpp(
-            entry_path, module_east_map, output_dir,
-            negative_index_mode="const_only", bounds_check_mode="off",
-            floor_div_mode="native", mod_mode="native", int_width="64",
-            str_index_mode="native", str_slice_mode="byte",
-            opt_level="2", top_namespace="", emit_main=True,
-        )
-        print("build: emitted to " + str(output_dir))
+    elif target == "cpp":
+        from toolchain2.emit.cpp.emitter import emit_cpp_module
+        for m in link_result.linked_modules:
+            code = emit_cpp_module(m.east_doc)
+            if code.strip() == "": continue
+            (output_dir / (m.module_id.replace(".", "_") + ".cpp")).write_text(code, encoding="utf-8")
+            written += 1
+    print("build: emitted " + str(written) + " " + target + " files to " + str(output_dir))
     return 0
 
 
