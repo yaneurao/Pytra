@@ -118,9 +118,9 @@ def _resolve_one(input_path: Path, output_path: Path | None, pretty: bool) -> in
         return 1
 
     # Load builtin registry
-    builtins_path = Path("test/builtin/east1/py/builtins.py.east1")
-    containers_path = Path("test/builtin/east1/py/containers.py.east1")
-    stdlib_dir = Path("test/stdlib/east1/py")
+    builtins_path = Path("test/include/builtin/east1/py/builtins.py.east1")
+    containers_path = Path("test/include/builtin/east1/py/containers.py.east1")
+    stdlib_dir = Path("test/include/stdlib/east1/py")
     registry = load_builtin_registry(builtins_path, containers_path, stdlib_dir)
 
     try:
@@ -699,9 +699,9 @@ def _build_pipeline(inputs: list[str], output_dir_text: str, target: str) -> int
     print("build: parsed " + str(len(east1_docs)) + " files")
 
     # 2. Resolve
-    builtins_path = Path("test/builtin/east1/py/builtins.py.east1")
-    containers_path = Path("test/builtin/east1/py/containers.py.east1")
-    stdlib_dir = Path("test/stdlib/east1/py")
+    builtins_path = Path("test/include/builtin/east1/py/builtins.py.east1")
+    containers_path = Path("test/include/builtin/east1/py/containers.py.east1")
+    stdlib_dir = Path("test/include/stdlib/east1/py")
     registry = load_builtin_registry(builtins_path, containers_path, stdlib_dir)
 
     east2_docs: list[tuple[str, dict]] = []
