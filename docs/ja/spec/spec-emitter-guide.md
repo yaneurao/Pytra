@@ -734,11 +734,18 @@ EAST3 パイプラインは以下を保証する。emitter はこれらを前提
 - Call ノードの `func`（関数名/属性アクセスの式ノード）の `resolved_type` は callable 型であり、`unknown` のまま残り得る。emitter は `func.resolved_type` ではなく **`Call.resolved_type`（呼び出し結果の型）** を使うこと。
 - `FunctionDef` の戻り値型は `return_type` が正本。`returns` は `return_type` からの同期コピーであり、両方が設定されている場合は `return_type` を優先する。
 
-### 12.3 unknown が残った場合
+### 12.3 `Any` / `Obj` / `unknown` の型写像
 
-`resolved_type: "unknown"` が emitter に到達した場合：
+EAST の `Any` / `Obj` / `unknown` は各言語の動的型に写像する:
 
-- emitter は `object` / `any` / `Any` 等のターゲット言語の動的型にフォールバックしてよい。
+| EAST 型 | Go | C++ | Rust | Java | C# |
+|---|---|---|---|---|---|
+| `Any` | `any` | `std::any` or `Object<void>` | `Box<dyn Any>` | `Object` | `object` |
+| `Obj` | `any` | `Object<void>` | `Box<dyn Any>` | `Object` | `object` |
+| `unknown` | `any` | `auto` | `_` (推論) | `Object` | `var` |
+
+`unknown` が emitter に到達した場合：
+- emitter は上記の動的型にフォールバックしてよい。
 - ただし、`unknown` の頻出は EAST3 型推論のバグである可能性が高い。issue として報告すべきであり、emitter 側に恒久的なワークアラウンドを追加すべきではない。
 
 ### 12.4 数値 cast の出力判定
