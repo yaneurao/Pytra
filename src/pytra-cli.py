@@ -94,6 +94,60 @@ def cmd_emit(argv: list[str]) -> int:
     return result.returncode
 
 
+def _build_go_via_toolchain2(
+    input_file: str, output_dir: str, emit_dir: str,
+    exe_name: str, do_run: bool, single_output: str,
+) -> int:
+    """Build Go target via toolchain2 pipeline (parse→resolve→compile→optimize→link→emit)."""
+    import sys as _sys
+    src_dir = _find_src_dir()
+    cli2 = src_dir + "/pytra-cli2.py"
+
+    # Use pytra-cli2 -build to generate Go source
+    build_cmd = [_python(), cli2, "-build", input_file, "--target", "go", "-o", emit_dir]
+    result = _run(build_cmd)
+    if result.returncode != 0:
+        return result.returncode
+
+    # Copy runtime
+    import shutil as _shutil
+    runtime_src = src_dir + "/runtime/go/toolchain2/pytra_runtime.go"
+    if Path(runtime_src).exists():
+        _shutil.copy(runtime_src, emit_dir + "/pytra_runtime.go")
+
+    if single_output != "":
+        entry_stem = Path(input_file).stem
+        generated = Path(emit_dir) / (entry_stem + ".go")
+        if generated.exists():
+            so_path = Path(single_output)
+            so_path.parent.mkdir(parents=True, exist_ok=True)
+            so_path.write_text(generated.read_text(encoding="utf-8"), encoding="utf-8")
+
+    if not do_run:
+        return 0
+
+    # go build + run: write go.mod, build, execute
+    import os as _os
+    go_mod_path = Path(emit_dir) / "go.mod"
+    go_mod_path.write_text("module pytra_app\n\ngo 1.22\n", encoding="utf-8")
+
+    go_files: list[str] = []
+    for f in sorted(_os.listdir(emit_dir)):
+        if f.endswith(".go"):
+            go_files.append(emit_dir + "/" + f)
+    if len(go_files) == 0:
+        _fatal("no .go files found in " + emit_dir)
+
+    go_exe = emit_dir + "/" + exe_name
+    go_build_cmd = ["go", "build", "-o", go_exe] + go_files
+    result = _run(go_build_cmd)
+    if result.returncode != 0:
+        return result.returncode
+
+    result = _run([go_exe])
+    return result.returncode
+
+
 # ---------- build ----------
 
 def cmd_build(argv: list[str]) -> int:
@@ -151,6 +205,10 @@ def cmd_build(argv: list[str]) -> int:
 
     src_dir = _find_src_dir()
     emit_dir = output_dir + "/emit"
+
+    # Go target: delegate to new toolchain2 pipeline
+    if target == "go":
+        return _build_go_via_toolchain2(input_file, output_dir, emit_dir, exe_name, do_run, single_output)
 
     # Stage 1: compile + link (writes manifest.json + east3/ into output_dir)
     link_cmd = [

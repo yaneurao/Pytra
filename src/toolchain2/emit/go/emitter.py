@@ -1495,8 +1495,8 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
     if module_id == "" and lp:
         module_id = _str(lp, "module_id")
 
-    # Skip built-in modules (provided by py_runtime.go)
-    if module_id.startswith("pytra.built_in."):
+    # Skip runtime modules (provided by pytra_runtime.go)
+    if module_id.startswith("pytra.built_in.") or module_id.startswith("pytra.std.") or module_id.startswith("pytra.utils.") or module_id.startswith("pytra.core."):
         return ""
 
     ctx = EmitContext(

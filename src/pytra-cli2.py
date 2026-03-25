@@ -663,8 +663,8 @@ def cmd_build(args: list[str]) -> int:
         print("error: at least one input .py file is required")
         return 1
 
-    if target != "cpp":
-        print("error: only --target=cpp is currently supported")
+    if target not in ("cpp", "go"):
+        print("error: unsupported target: " + target + " (available: cpp, go)")
         return 1
 
     try:
@@ -764,14 +764,27 @@ def _build_pipeline(inputs: list[str], output_dir_text: str, target: str) -> int
         print("error: no entry module found")
         return 1
 
-    write_multi_file_cpp(
-        entry_path, module_east_map, output_dir,
-        negative_index_mode="const_only", bounds_check_mode="off",
-        floor_div_mode="native", mod_mode="native", int_width="64",
-        str_index_mode="native", str_slice_mode="byte",
-        opt_level="2", top_namespace="", emit_main=True,
-    )
-    print("build: emitted to " + str(output_dir))
+    if target == "go":
+        from toolchain2.emit.go.emitter import emit_go_module
+        output_dir.mkdir(parents=True, exist_ok=True)
+        written = 0
+        for m in link_result.linked_modules:
+            code = emit_go_module(m.east_doc)
+            if code.strip() == "":
+                continue
+            fname = m.module_id.replace(".", "_") + ".go"
+            (output_dir / fname).write_text(code, encoding="utf-8")
+            written += 1
+        print("build: emitted " + str(written) + " Go files to " + str(output_dir))
+    else:
+        write_multi_file_cpp(
+            entry_path, module_east_map, output_dir,
+            negative_index_mode="const_only", bounds_check_mode="off",
+            floor_div_mode="native", mod_mode="native", int_width="64",
+            str_index_mode="native", str_slice_mode="byte",
+            opt_level="2", top_namespace="", emit_main=True,
+        )
+        print("build: emitted to " + str(output_dir))
     return 0
 
 
