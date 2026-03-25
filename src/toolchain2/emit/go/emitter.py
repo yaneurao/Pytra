@@ -32,6 +32,8 @@ class EmitContext:
     var_types: dict[str, str] = field(default_factory=dict)
     # Current function return type (for empty list literal type inference)
     current_return_type: str = ""
+    # Imported runtime symbols (need __pytra_ prefix)
+    runtime_imports: set[str] = field(default_factory=set)
     # Class info
     class_names: set[str] = field(default_factory=set)
     class_bases: dict[str, str] = field(default_factory=dict)
@@ -233,24 +235,60 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
 
 def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
-    left = _emit_expr(ctx, node.get("left"))
-    right = _emit_expr(ctx, node.get("right"))
+    left_code = _emit_expr(ctx, node.get("left"))
+    right_code = _emit_expr(ctx, node.get("right"))
     op = _str(node, "op")
     go_op = _BINOP_MAP.get(op, "+")
     rt = _str(node, "resolved_type")
 
+    # Apply casts from EAST3
+    casts = _list(node, "casts")
+    for cast in casts:
+        if not isinstance(cast, dict):
+            continue
+        on = _str(cast, "on")
+        to_type = _str(cast, "to")
+        gt = go_type(to_type)
+        if on == "left":
+            left_code = gt + "(" + left_code + ")"
+        elif on == "right":
+            right_code = gt + "(" + right_code + ")"
+
     # Integer division
     if op == "Div" and rt in ("int64", "int32", "int", "int8", "int16", "uint8"):
-        return "(" + left + " / " + right + ")"
+        return "(" + left_code + " / " + right_code + ")"
     # Floor division
     if op == "FloorDiv":
-        return "__pytra_floordiv(" + left + ", " + right + ")"
+        return "__pytra_floordiv(" + left_code + ", " + right_code + ")"
     # Power
     if op == "Pow":
         ctx.imports_needed.add("math")
-        return "math.Pow(float64(" + left + "), float64(" + right + "))"
+        return "math.Pow(float64(" + left_code + "), float64(" + right_code + "))"
 
-    return "(" + left + " " + go_op + " " + right + ")"
+    return "(" + left_code + " " + go_op + " " + right_code + ")"
+
+
+def _coerce_to_type(val_code: str, target_type: str, val_node: JsonVal) -> str:
+    """Wrap val_code with type conversion if needed for Go type safety."""
+    if not isinstance(val_node, dict):
+        return val_code
+    src_rt = _str(val_node, "resolved_type")
+    src_gt = go_type(src_rt) if src_rt != "" else ""
+    if src_gt == target_type:
+        return val_code  # No conversion needed
+    # Avoid double-wrapping if already cast
+    if val_code.startswith(target_type + "("):
+        return val_code
+    # int64 → byte, int64 → float64 etc.
+    if target_type in ("byte", "uint8") and src_gt in ("int64", "int32", "int"):
+        return "byte(" + val_code + ")"
+    if target_type == "float64" and src_gt in ("int64", "int32"):
+        return "float64(" + val_code + ")"
+    if target_type == "float32" and src_gt in ("int64", "int32"):
+        return "float32(" + val_code + ")"
+    if target_type == "int64" and src_gt in ("float64", "float32"):
+        return "int64(" + val_code + ")"
+    return val_code
 
 
 _BINOP_MAP: dict[str, str] = {
@@ -351,8 +389,21 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if isinstance(func, dict):
         func_kind = _str(func, "kind")
         if func_kind == "Attribute":
-            owner = _emit_expr(ctx, func.get("value"))
+            owner_node = func.get("value")
+            owner = _emit_expr(ctx, owner_node)
             attr = _str(func, "attr")
+            # Module function call: png.write_rgb_png → __pytra_write_rgb_png
+            owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+            owner_id = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
+            if owner_rt == "module" or owner_id in ("png", "gif", "math", "time", "random", "json", "os", "sys", "re"):
+                fn_go = "__pytra_" + _safe_go_ident(attr)
+                return fn_go + "(" + ", ".join(arg_strs) + ")"
+            # .append() on non-BuiltinCall (plain method call)
+            if attr == "append" and len(arg_strs) >= 1:
+                # If owner is bytes/bytearray or unknown bytes-like, use append_byte
+                if owner_rt in ("bytes", "bytearray", "list[uint8]", "unknown"):
+                    return owner + " = __pytra_append_byte(" + owner + ", " + arg_strs[0] + ")"
+                return owner + " = append(" + owner + ", " + arg_strs[0] + ")"
             # str methods → runtime helper functions
             if attr in _STR_METHOD_HELPERS:
                 return _STR_METHOD_HELPERS[attr] + "(" + owner + ", " + ", ".join(arg_strs) + ")" if len(arg_strs) > 0 else _STR_METHOD_HELPERS[attr] + "(" + owner + ")"
@@ -371,6 +422,9 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             # Class constructor: ClassName(...) → NewClassName(...)
             if fn_name in ctx.class_names:
                 return "New" + _safe_go_ident(fn_name) + "(" + ", ".join(arg_strs) + ")"
+            # Imported runtime function: add __pytra_ prefix
+            if fn_name in ctx.runtime_imports:
+                return "__pytra_" + _safe_go_ident(fn_name) + "(" + ", ".join(arg_strs) + ")"
             # Use _emit_name to handle main→__pytra_main etc.
             go_fn = _emit_name(ctx, func)
             return go_fn + "(" + ", ".join(arg_strs) + ")"
@@ -413,9 +467,14 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if len(arg_strs) >= 1:
             return "int64(len(" + arg_strs[0] + "))"
 
-    # Container constructors
+    # Container constructors: bytes(N)/bytearray(N) → make([]byte, N)
     if rc == "bytearray_ctor" or rc == "bytes_ctor":
         if len(arg_strs) >= 1:
+            # Check if arg is numeric (create zero-filled buffer) vs string (convert)
+            if len(args) >= 1 and isinstance(args[0], dict):
+                arg_rt = _str(args[0], "resolved_type")
+                if arg_rt in ("int64", "int32", "int", "uint8", "int8"):
+                    return "make([]byte, " + arg_strs[0] + ")"
             return "[]byte(" + arg_strs[0] + ")"
         return "[]byte{}"
 
@@ -427,8 +486,14 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         func = node.get("func")
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
+            owner_node = func.get("value")
+            owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
             if len(arg_strs) >= 1:
-                return owner + " = append(" + owner + ", " + arg_strs[0] + ")"
+                arg_code = arg_strs[0]
+                # Type coerce element if needed (e.g., int64 → byte for []byte)
+                if owner_rt == "list[uint8]" or owner_rt == "bytes" or owner_rt == "bytearray":
+                    arg_code = "byte(" + arg_code + ")"
+                return owner + " = append(" + owner + ", " + arg_code + ")"
 
     if rc == "set.add":
         func = node.get("func")
@@ -596,7 +661,15 @@ def _emit_ifexp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     test = _emit_expr(ctx, node.get("test"))
     body = _emit_expr(ctx, node.get("body"))
     orelse = _emit_expr(ctx, node.get("orelse"))
-    return "__pytra_ternary(" + test + ", " + body + ", " + orelse + ")"
+    rt = _str(node, "resolved_type")
+    if rt in ("int64", "int32", "int", "uint8"):
+        return "__pytra_ternary_int(" + test + ", " + body + ", " + orelse + ")"
+    if rt in ("float64", "float32"):
+        return "__pytra_ternary_float(" + test + ", " + body + ", " + orelse + ")"
+    if rt == "str":
+        return "__pytra_ternary_str(" + test + ", " + body + ", " + orelse + ")"
+    # Fallback: use func literal
+    return "func() " + go_type(rt) + " { if " + test + " { return " + body + " }; return " + orelse + " }()"
 
 
 def _emit_fstring(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -782,7 +855,9 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         val_code = _emit_expr(ctx, value)
         # Use typed declaration for numeric types to avoid Go's untyped int
         if gt in ("int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64",
-                  "float64", "float32"):
+                  "float64", "float32", "byte"):
+            # Wrap with type cast to ensure Go type compatibility
+            val_code = _coerce_to_type(val_code, gt, value)
             _emit(ctx, "var " + name + " " + gt + " = " + val_code)
         else:
             _emit(ctx, name + " := " + val_code)
@@ -811,6 +886,11 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 name = _str(target_node, "repr")
             gn = _safe_go_ident(name)
             if gn in ctx.var_types:
+                # Coerce value to declared type
+                declared_rt = ctx.var_types.get(gn, "")
+                if declared_rt != "":
+                    declared_gt = go_type(declared_rt)
+                    val_code = _coerce_to_type(val_code, declared_gt, value)
                 _emit(ctx, gn + " = " + val_code)
             else:
                 # Check for decl_type on the Assign node
@@ -1269,6 +1349,19 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
 
     body = _list(east3_doc, "body")
     main_guard = _list(east3_doc, "main_guard_body")
+
+    # Collect imported runtime symbols for __pytra_ prefixing
+    import_bindings = _list(meta, "import_bindings")
+    runtime_imports: set[str] = set()
+    for binding in import_bindings:
+        if not isinstance(binding, dict):
+            continue
+        mod_id = _str(binding, "module_id")
+        local = _str(binding, "local_name")
+        bk = _str(binding, "binding_kind")
+        if bk == "symbol" and mod_id.startswith("pytra.") and local != "":
+            runtime_imports.add(local)
+    ctx.runtime_imports = runtime_imports
 
     # First pass: collect class names
     for stmt in body:
