@@ -254,16 +254,36 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         elif on == "right":
             right_code = gt + "(" + right_code + ")"
 
-    # List multiplication: [0] * N → make([]T, N)
+    # List multiplication: [V] * N → make + fill if V != 0
     if op == "Mult":
         left_node = node.get("left")
         right_node = node.get("right")
+        list_node = None
+        count_code = ""
         if isinstance(left_node, dict) and _str(left_node, "kind") == "List":
+            list_node = left_node
+            count_code = right_code
+        elif isinstance(right_node, dict) and _str(right_node, "kind") == "List":
+            list_node = right_node
+            count_code = left_code
+        if list_node is not None:
             gt_list = go_type(rt)
-            return "make(" + gt_list + ", " + right_code + ")"
-        if isinstance(right_node, dict) and _str(right_node, "kind") == "List":
-            gt_list = go_type(rt)
-            return "make(" + gt_list + ", " + left_code + ")"
+            elems = _list(list_node, "elements")
+            # Check if all elements are zero → use make (zero-init)
+            all_zero = True
+            if len(elems) == 1 and isinstance(elems[0], dict):
+                v = elems[0].get("value")
+                if v != 0:
+                    all_zero = False
+            elif len(elems) != 1:
+                all_zero = False
+            if all_zero:
+                return "make(" + gt_list + ", " + count_code + ")"
+            # Non-zero fill: __pytra_repeat_int64(value, count) etc.
+            if len(elems) == 1:
+                fill_val = _emit_expr(ctx, elems[0])
+                return "__pytra_repeat_int64(" + fill_val + ", " + count_code + ")"
+            return "make(" + gt_list + ", " + count_code + ")"
 
     # Integer division
     if op == "Div" and rt in ("int64", "int32", "int", "int8", "int16", "uint8"):

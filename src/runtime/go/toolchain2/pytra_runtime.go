@@ -320,6 +320,15 @@ func __pytra_list_pop(s *[]interface{}, args ...int64) interface{} {
 	return val
 }
 
+// __pytra_repeat_int64 creates a slice filled with a value (Python's [v] * n).
+func __pytra_repeat_int64(val int64, count int64) []int64 {
+	s := make([]int64, count)
+	for i := int64(0); i < count; i++ {
+		s[i] = val
+	}
+	return s
+}
+
 // __pytra_str_to_float64 converts a string to float64.
 func __pytra_str_to_float64(s string) float64 {
 	v, _ := strconv.ParseFloat(s, 64)
