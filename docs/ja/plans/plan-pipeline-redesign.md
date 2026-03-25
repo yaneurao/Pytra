@@ -321,6 +321,7 @@ Python frontend の場合:
 - EAST の `runtime_symbol: "str.strip"` から mapping が `py_str_strip` を導出する
 - mapping の `call` フィールドにこのベース名を書く
 - ターゲット言語にネイティブの等価関数がある場合（Go の `strings.TrimSpace` 等）は、mapping で直接そちらに写像してよい。ベース名を経由する必要はない
+- ベース名がターゲット言語の予約語や標準ライブラリと衝突した場合は、末尾に `_` を付けて回避する（例: `py_str_type` → `py_str_type_`）。この回避は mapping で個別に指定する
 
 ### 3.5 共有ユーティリティ (`toolchain2/common/`)
 
