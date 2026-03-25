@@ -312,18 +312,27 @@ func __pytra_str_to_float64(s string) float64 {
 // math helpers
 // ---------------------------------------------------------------------------
 
-func __pytra_sqrt(x float64) float64  { return math.Sqrt(x) }
-func __pytra_sin(x float64) float64   { return math.Sin(x) }
-func __pytra_cos(x float64) float64   { return math.Cos(x) }
-func __pytra_tan(x float64) float64   { return math.Tan(x) }
-func __pytra_atan2(y, x float64) float64 { return math.Atan2(y, x) }
-func __pytra_floor(x float64) float64 { return math.Floor(x) }
-func __pytra_ceil(x float64) float64  { return math.Ceil(x) }
-func __pytra_pow(x, y float64) float64 { return math.Pow(x, y) }
-func __pytra_exp(x float64) float64   { return math.Exp(x) }
-func __pytra_log(x float64) float64   { return math.Log(x) }
-func __pytra_fabs(x float64) float64  { return math.Abs(x) }
-func __pytra_pi() float64             { return math.Pi }
+func _toF64(v interface{}) float64 {
+	switch t := v.(type) {
+	case float64: return t
+	case int64: return float64(t)
+	case int: return float64(t)
+	case float32: return float64(t)
+	default: return 0
+	}
+}
+func __pytra_sqrt(x interface{}) float64  { return math.Sqrt(_toF64(x)) }
+func __pytra_sin(x interface{}) float64   { return math.Sin(_toF64(x)) }
+func __pytra_cos(x interface{}) float64   { return math.Cos(_toF64(x)) }
+func __pytra_tan(x interface{}) float64   { return math.Tan(_toF64(x)) }
+func __pytra_atan2(y, x interface{}) float64 { return math.Atan2(_toF64(y), _toF64(x)) }
+func __pytra_floor(x interface{}) float64 { return math.Floor(_toF64(x)) }
+func __pytra_ceil(x interface{}) float64  { return math.Ceil(_toF64(x)) }
+func __pytra_pow(x, y interface{}) float64 { return math.Pow(_toF64(x), _toF64(y)) }
+func __pytra_exp(x interface{}) float64   { return math.Exp(_toF64(x)) }
+func __pytra_log(x interface{}) float64   { return math.Log(_toF64(x)) }
+func __pytra_fabs(x interface{}) float64  { return math.Abs(_toF64(x)) }
+func __pytra_pi() float64                 { return math.Pi }
 
 // random
 var _pytra_rng = rand.New(rand.NewSource(time.Now().UnixNano()))
