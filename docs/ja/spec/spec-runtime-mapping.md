@@ -114,8 +114,69 @@ emit をスキップするモジュール ID の prefix リスト。これらの
 
 詳細: `docs/ja/plans/plan-pipeline-redesign.md` §3.4
 
-## 7. 実装
+## 7. 暗黙型変換テーブル (`implicit_promotions`)
+
+EAST は数値型の混合演算で常に明示的な cast ノードを挿入する（spec-east2.md §2.5）。
+しかしターゲット言語によっては暗黙の型変換（implicit promotion）が行われるため、
+生成コードに不要な cast が出力される。
+
+`mapping.json` に `implicit_promotions` を定義することで、emitter が
+「この cast はターゲット言語では暗黙変換されるので出力不要」と判断できる。
+
+### 7.1 フォーマット
+
+```json
+{
+  "implicit_promotions": [
+    ["uint8", "int64"],
+    ["int8", "int64"],
+    ["int16", "int64"],
+    ["uint16", "int64"],
+    ["int32", "int64"],
+    ["uint32", "int64"],
+    ["int64", "float64"],
+    ["float32", "float64"]
+  ]
+}
+```
+
+各エントリは `[from_type, to_type]` のペア。このペアに一致する cast は emitter が出力をスキップする。
+
+### 7.2 言語別の例
+
+| 言語 | `implicit_promotions` | 備考 |
+|---|---|---|
+| C++ | 整数昇格 + float 昇格の全ペア | C++ の usual arithmetic conversion に準ずる |
+| Java | 同上（ほぼ C++ と同じ） | |
+| C# | 同上 | |
+| Go | **空** | Go は整数型間の暗黙変換なし。全 cast を出力 |
+| Rust | **空** | Rust も暗黙変換なし |
+
+### 7.3 処理の流れ
+
+1. **EAST（resolve）**: 混合演算に cast ノードを常に挿入（正確性保証）
+2. **EAST（optimize）**: cast は除去しない（言語非依存なので暗黙変換を仮定しない）
+3. **emitter**: cast ノードを見て `implicit_promotions` に一致すれば出力をスキップ
+
+`CodeEmitter` 基底クラスが `is_implicit_cast(from_type, to_type)` メソッドを提供し、
+各言語 emitter は mapping.json のテーブルを渡すだけ。
+
+```python
+class CodeEmitter:
+    def is_implicit_cast(self, from_type: str, to_type: str) -> bool:
+        return (from_type, to_type) in self.implicit_promotions
+```
+
+### 7.4 ルール
+
+- EAST は常に明示 cast を持つ。emitter が出力時にスキップするだけ
+- optimize 段で cast を除去してはならない（Go/Rust で壊れる）
+- `implicit_promotions` が空の言語は全 cast を出力する（安全側に倒す）
+- `implicit_promotions` に載っていない cast は常に出力する
+
+## 8. 実装
 
 - `toolchain2/emit/common/code_emitter.py` の `load_runtime_mapping()` が読み込む
 - `RuntimeMapping` dataclass に格納される
-- `resolve_runtime_call()` が解決に使用する
+- `resolve_runtime_call()` が runtime_call 解決に使用する
+- `is_implicit_cast()` が cast 出力判定に使用する

@@ -718,6 +718,27 @@ EAST3 パイプラインは以下を保証する。emitter はこれらを前提
 - emitter は `object` / `any` / `Any` 等のターゲット言語の動的型にフォールバックしてよい。
 - ただし、`unknown` の頻出は EAST3 型推論のバグである可能性が高い。issue として報告すべきであり、emitter 側に恒久的なワークアラウンドを追加すべきではない。
 
+### 12.4 数値 cast の出力判定
+
+EAST は数値型の混合演算で常に明示的な cast ノードを挿入する（spec-east2.md §2.5）。emitter はこの cast を出力するかどうかを `mapping.json` の `implicit_promotions` テーブルで判定する。
+
+- `implicit_promotions` に一致する cast → 出力をスキップ（ターゲット言語が暗黙変換する）
+- 一致しない cast → 明示的なキャストコードを出力
+
+```python
+# CodeEmitter 基底クラスのメソッド
+if self.is_implicit_cast(from_type, to_type):
+    return expr  # cast なしで出力
+else:
+    return cast_expr(to_type, expr)  # 明示 cast を出力
+```
+
+Go / Rust は `implicit_promotions` が空なので全 cast を出力する。C++ / Java / C# は C の integer promotion に相当するペアを定義する。
+
+**emitter が独自に cast 除去判定を書いてはならない。`mapping.json` のテーブルが正本。**
+
+正式仕様: [spec-runtime-mapping.md §7](./spec-runtime-mapping.md)
+
 ## 13. parity check の実施
 
 sample/py の全 18 ケースについて、Python 実行結果（stdout + artifact）とターゲット言語の実行結果が一致することを検証する。
