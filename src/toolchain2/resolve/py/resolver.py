@@ -337,8 +337,34 @@ def _resolve_binop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
             # Division of ints: both need promotion to float64
             casts.append({"on": "left", "from": lt, "to": "float64", "reason": "numeric_promotion"})
             casts.append({"on": "right", "from": rt, "to": "float64", "reason": "numeric_promotion"})
+        elif is_int_type(lt) and is_int_type(rt) and lt != rt:
+            # Integer size mismatch: promote smaller to larger
+            promoted: str = _promote_int_types(lt, rt)
+            if lt != promoted:
+                casts.append({"on": "left", "from": lt, "to": promoted, "reason": "numeric_promotion"})
+            if rt != promoted:
+                casts.append({"on": "right", "from": rt, "to": promoted, "reason": "numeric_promotion"})
 
     return result
+
+
+# Integer type rank for usual arithmetic conversion (C++ rules).
+# Higher rank = larger type. Unsigned outranks signed of same size.
+_INT_RANK: dict[str, int] = {
+    "int8": 1, "uint8": 2,
+    "int16": 3, "uint16": 4,
+    "int32": 5, "uint32": 6,
+    "int64": 7, "uint64": 8,
+}
+
+
+def _promote_int_types(a: str, b: str) -> str:
+    """Return the promoted type for mixed integer arithmetic (usual arithmetic conversion)."""
+    ra: int = _INT_RANK.get(a, 7)  # default to int64
+    rb: int = _INT_RANK.get(b, 7)
+    if ra >= rb:
+        return a
+    return b
 
 
 def _binop_result_type(lt: str, rt: str, op: str) -> str:
@@ -377,7 +403,8 @@ def _binop_result_type(lt: str, rt: str, op: str) -> str:
     if is_int_type(lt) and is_int_type(rt):
         if lt == rt:
             return lt  # Same int type
-        return "unknown"  # Mixed int sizes
+        # Usual arithmetic conversion: promote smaller to larger
+        return _promote_int_types(lt, rt)
 
     # Bitwise operations on ints
     if op == "BitAnd" or op == "BitOr" or op == "BitXor" or op == "LShift" or op == "RShift":

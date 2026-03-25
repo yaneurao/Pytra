@@ -145,8 +145,15 @@
                   "end_lineno": 7,
                   "end_col": 15
                 },
-                "resolved_type": "unknown",
-                "casts": [],
+                "resolved_type": "int64",
+                "casts": [
+                  {
+                    "on": "left",
+                    "from": "int8",
+                    "to": "int64",
+                    "reason": "numeric_promotion"
+                  }
+                ],
                 "borrow_kind": "value",
                 "repr": "i * 2",
                 "left": {

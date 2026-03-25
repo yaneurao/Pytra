@@ -161,7 +161,14 @@
                   "end_col_offset": 15
                 },
                 "resolved_type": "int64",
-                "casts": [],
+                "casts": [
+                  {
+                    "on": "left",
+                    "from": "int8",
+                    "to": "int64",
+                    "reason": "numeric_promotion"
+                  }
+                ],
                 "borrow_kind": "value",
                 "repr": "i * 2",
                 "left": {
@@ -203,7 +210,14 @@
                     "end_col_offset": 15
                   },
                   "resolved_type": "int64",
-                  "casts": [],
+                  "casts": [
+                    {
+                      "on": "left",
+                      "from": "int8",
+                      "to": "int64",
+                      "reason": "numeric_promotion"
+                    }
+                  ],
                   "borrow_kind": "value",
                   "repr": "i * 2",
                   "left": {
