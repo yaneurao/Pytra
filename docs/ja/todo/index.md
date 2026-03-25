@@ -19,17 +19,6 @@
 
 ## 未完了タスク
 
-### P1-CODE-EMITTER: CodeEmitter 基底クラス + runtime mapping
-
-文脈: `docs/ja/plans/plan-pipeline-redesign.md` §3.4
-必読: [docs/ja/spec/spec-emitter-guide.md](../spec/spec-emitter-guide.md)
-
-1. [x] [ID: P1-CODE-EMITTER-S1] `toolchain2/emit/common/code_emitter.py` に CodeEmitter 基底クラスを実装 — 完了
-2. [x] [ID: P1-CODE-EMITTER-S2] Go runtime mapping（`src/runtime/go/mapping.json`）を作成 — 完了
-3. [x] [ID: P1-CODE-EMITTER-S3] Go emitter を CodeEmitter 利用に切り替え、mapping.json で runtime_call 解決 — 完了
-4. [x] [ID: P1-CODE-EMITTER-S4] resolve の `py_strip` 等への変換を除去し、EAST は `str.strip` のまま持ち運ぶように修正 — 完了
-5. [x] [ID: P1-CODE-EMITTER-S5] golden 再生成 + parity 維持確認 — 完了（Go 18/18, C++ 18/18, golden 874 ok）
-
 ### P1-EMIT-CPP: C++ emitter
 
 作業ディレクトリ: `toolchain2/emit/cpp/`
