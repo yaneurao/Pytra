@@ -1,0 +1,1342 @@
+{
+  "kind": "Module",
+  "source_path": "src/pytra/std/math.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 74
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col": 0,
+          "end_lineno": 1,
+          "end_col": 74
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"pytra.std.math: extern-marked math API with Python runtime fallback.\"\"\"",
+        "value": "pytra.std.math: extern-marked math API with Python runtime fallback."
+      }
+    },
+    {
+      "kind": "Import",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 4,
+        "end_col": 11
+      },
+      "names": [
+        {
+          "name": "math",
+          "asname": null
+        }
+      ]
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 6,
+        "col": 0,
+        "end_lineno": 6,
+        "end_col": 28
+      },
+      "module": "pytra.std",
+      "names": [
+        {
+          "name": "extern",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 8,
+        "col": 0,
+        "end_lineno": 8,
+        "end_col": 27
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 8,
+          "col": 0,
+          "end_lineno": 8,
+          "end_col": 2
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "pi",
+        "id": "pi"
+      },
+      "annotation": "float",
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 8,
+          "col": 12,
+          "end_lineno": 8,
+          "end_col": 27
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "extern(math.pi)",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 8,
+            "col": 12,
+            "end_lineno": 8,
+            "end_col": 18
+          },
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "extern",
+          "id": "extern"
+        },
+        "args": [
+          {
+            "kind": "Attribute",
+            "source_span": {
+              "lineno": 8,
+              "col": 19,
+              "end_lineno": 8,
+              "end_col": 26
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "math.pi",
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 8,
+                "col": 19,
+                "end_lineno": 8,
+                "end_col": 23
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "math",
+              "id": "math"
+            },
+            "attr": "pi"
+          }
+        ],
+        "keywords": []
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 9,
+        "col": 0,
+        "end_lineno": 9,
+        "end_col": 25
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 9,
+          "col": 0,
+          "end_lineno": 9,
+          "end_col": 1
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "e",
+        "id": "e"
+      },
+      "annotation": "float",
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 9,
+          "col": 11,
+          "end_lineno": 9,
+          "end_col": 25
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "extern(math.e)",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 9,
+            "col": 11,
+            "end_lineno": 9,
+            "end_col": 17
+          },
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "extern",
+          "id": "extern"
+        },
+        "args": [
+          {
+            "kind": "Attribute",
+            "source_span": {
+              "lineno": 9,
+              "col": 18,
+              "end_lineno": 9,
+              "end_col": 24
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "math.e",
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 9,
+                "col": 18,
+                "end_lineno": 9,
+                "end_col": 22
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "math",
+              "id": "math"
+            },
+            "attr": "e"
+          }
+        ],
+        "keywords": []
+      },
+      "declare": true
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 12,
+        "col": 0,
+        "end_lineno": 13,
+        "end_col": 23
+      },
+      "name": "sqrt",
+      "original_name": "sqrt",
+      "arg_types": {
+        "x": "float"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "float",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 13,
+            "col": 4,
+            "end_lineno": 13,
+            "end_col": 23
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 13,
+              "col": 11,
+              "end_lineno": 13,
+              "end_col": 23
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "math.sqrt(x)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 13,
+                "col": 11,
+                "end_lineno": 13,
+                "end_col": 20
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "math.sqrt",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 11,
+                  "end_lineno": 13,
+                  "end_col": 15
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "math",
+                "id": "math"
+              },
+              "attr": "sqrt"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 21,
+                  "end_lineno": 13,
+                  "end_col": 22
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "x",
+                "id": "x"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 17,
+        "col": 0,
+        "end_lineno": 18,
+        "end_col": 22
+      },
+      "name": "sin",
+      "original_name": "sin",
+      "arg_types": {
+        "x": "float"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "float",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 18,
+            "col": 4,
+            "end_lineno": 18,
+            "end_col": 22
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 18,
+              "col": 11,
+              "end_lineno": 18,
+              "end_col": 22
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "math.sin(x)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 18,
+                "col": 11,
+                "end_lineno": 18,
+                "end_col": 19
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "math.sin",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 18,
+                  "col": 11,
+                  "end_lineno": 18,
+                  "end_col": 15
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "math",
+                "id": "math"
+              },
+              "attr": "sin"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 18,
+                  "col": 20,
+                  "end_lineno": 18,
+                  "end_col": 21
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "x",
+                "id": "x"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 22,
+        "col": 0,
+        "end_lineno": 23,
+        "end_col": 22
+      },
+      "name": "cos",
+      "original_name": "cos",
+      "arg_types": {
+        "x": "float"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "float",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 23,
+            "col": 4,
+            "end_lineno": 23,
+            "end_col": 22
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 23,
+              "col": 11,
+              "end_lineno": 23,
+              "end_col": 22
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "math.cos(x)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 23,
+                "col": 11,
+                "end_lineno": 23,
+                "end_col": 19
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "math.cos",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 23,
+                  "col": 11,
+                  "end_lineno": 23,
+                  "end_col": 15
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "math",
+                "id": "math"
+              },
+              "attr": "cos"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 23,
+                  "col": 20,
+                  "end_lineno": 23,
+                  "end_col": 21
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "x",
+                "id": "x"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 27,
+        "col": 0,
+        "end_lineno": 28,
+        "end_col": 22
+      },
+      "name": "tan",
+      "original_name": "tan",
+      "arg_types": {
+        "x": "float"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "float",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 28,
+            "col": 4,
+            "end_lineno": 28,
+            "end_col": 22
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 28,
+              "col": 11,
+              "end_lineno": 28,
+              "end_col": 22
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "math.tan(x)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 28,
+                "col": 11,
+                "end_lineno": 28,
+                "end_col": 19
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "math.tan",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 28,
+                  "col": 11,
+                  "end_lineno": 28,
+                  "end_col": 15
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "math",
+                "id": "math"
+              },
+              "attr": "tan"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 28,
+                  "col": 20,
+                  "end_lineno": 28,
+                  "end_col": 21
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "x",
+                "id": "x"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 32,
+        "col": 0,
+        "end_lineno": 33,
+        "end_col": 22
+      },
+      "name": "exp",
+      "original_name": "exp",
+      "arg_types": {
+        "x": "float"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "float",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 33,
+            "col": 4,
+            "end_lineno": 33,
+            "end_col": 22
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 33,
+              "col": 11,
+              "end_lineno": 33,
+              "end_col": 22
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "math.exp(x)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 33,
+                "col": 11,
+                "end_lineno": 33,
+                "end_col": 19
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "math.exp",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 33,
+                  "col": 11,
+                  "end_lineno": 33,
+                  "end_col": 15
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "math",
+                "id": "math"
+              },
+              "attr": "exp"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 33,
+                  "col": 20,
+                  "end_lineno": 33,
+                  "end_col": 21
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "x",
+                "id": "x"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 37,
+        "col": 0,
+        "end_lineno": 38,
+        "end_col": 22
+      },
+      "name": "log",
+      "original_name": "log",
+      "arg_types": {
+        "x": "float"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "float",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 38,
+            "col": 4,
+            "end_lineno": 38,
+            "end_col": 22
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 38,
+              "col": 11,
+              "end_lineno": 38,
+              "end_col": 22
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "math.log(x)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 38,
+                "col": 11,
+                "end_lineno": 38,
+                "end_col": 19
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "math.log",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 38,
+                  "col": 11,
+                  "end_lineno": 38,
+                  "end_col": 15
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "math",
+                "id": "math"
+              },
+              "attr": "log"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 38,
+                  "col": 20,
+                  "end_lineno": 38,
+                  "end_col": 21
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "x",
+                "id": "x"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 42,
+        "col": 0,
+        "end_lineno": 43,
+        "end_col": 24
+      },
+      "name": "log10",
+      "original_name": "log10",
+      "arg_types": {
+        "x": "float"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "float",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 43,
+            "col": 4,
+            "end_lineno": 43,
+            "end_col": 24
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 43,
+              "col": 11,
+              "end_lineno": 43,
+              "end_col": 24
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "math.log10(x)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 43,
+                "col": 11,
+                "end_lineno": 43,
+                "end_col": 21
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "math.log10",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 43,
+                  "col": 11,
+                  "end_lineno": 43,
+                  "end_col": 15
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "math",
+                "id": "math"
+              },
+              "attr": "log10"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 43,
+                  "col": 22,
+                  "end_lineno": 43,
+                  "end_col": 23
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "x",
+                "id": "x"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 47,
+        "col": 0,
+        "end_lineno": 48,
+        "end_col": 23
+      },
+      "name": "fabs",
+      "original_name": "fabs",
+      "arg_types": {
+        "x": "float"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "float",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 48,
+            "col": 4,
+            "end_lineno": 48,
+            "end_col": 23
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 48,
+              "col": 11,
+              "end_lineno": 48,
+              "end_col": 23
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "math.fabs(x)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 48,
+                "col": 11,
+                "end_lineno": 48,
+                "end_col": 20
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "math.fabs",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 48,
+                  "col": 11,
+                  "end_lineno": 48,
+                  "end_col": 15
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "math",
+                "id": "math"
+              },
+              "attr": "fabs"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 48,
+                  "col": 21,
+                  "end_lineno": 48,
+                  "end_col": 22
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "x",
+                "id": "x"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 52,
+        "col": 0,
+        "end_lineno": 53,
+        "end_col": 24
+      },
+      "name": "floor",
+      "original_name": "floor",
+      "arg_types": {
+        "x": "float"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "float",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 53,
+            "col": 4,
+            "end_lineno": 53,
+            "end_col": 24
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 53,
+              "col": 11,
+              "end_lineno": 53,
+              "end_col": 24
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "math.floor(x)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 53,
+                "col": 11,
+                "end_lineno": 53,
+                "end_col": 21
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "math.floor",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 53,
+                  "col": 11,
+                  "end_lineno": 53,
+                  "end_col": 15
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "math",
+                "id": "math"
+              },
+              "attr": "floor"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 53,
+                  "col": 22,
+                  "end_lineno": 53,
+                  "end_col": 23
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "x",
+                "id": "x"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 57,
+        "col": 0,
+        "end_lineno": 58,
+        "end_col": 23
+      },
+      "name": "ceil",
+      "original_name": "ceil",
+      "arg_types": {
+        "x": "float"
+      },
+      "arg_order": [
+        "x"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0
+      },
+      "return_type": "float",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 58,
+            "col": 4,
+            "end_lineno": 58,
+            "end_col": 23
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 58,
+              "col": 11,
+              "end_lineno": 58,
+              "end_col": 23
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "math.ceil(x)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 58,
+                "col": 11,
+                "end_lineno": 58,
+                "end_col": 20
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "math.ceil",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 58,
+                  "col": 11,
+                  "end_lineno": 58,
+                  "end_col": 15
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "math",
+                "id": "math"
+              },
+              "attr": "ceil"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 58,
+                  "col": 21,
+                  "end_lineno": 58,
+                  "end_col": 22
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "x",
+                "id": "x"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 62,
+        "col": 0,
+        "end_lineno": 63,
+        "end_col": 25
+      },
+      "name": "pow",
+      "original_name": "pow",
+      "arg_types": {
+        "x": "float",
+        "y": "float"
+      },
+      "arg_order": [
+        "x",
+        "y"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "x": 0,
+        "y": 1
+      },
+      "return_type": "float",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 63,
+            "col": 4,
+            "end_lineno": 63,
+            "end_col": 25
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 63,
+              "col": 11,
+              "end_lineno": 63,
+              "end_col": 25
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "math.pow(x, y)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 63,
+                "col": 11,
+                "end_lineno": 63,
+                "end_col": 19
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "math.pow",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 63,
+                  "col": 11,
+                  "end_lineno": 63,
+                  "end_col": 15
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "math",
+                "id": "math"
+              },
+              "attr": "pow"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 63,
+                  "col": 20,
+                  "end_lineno": 63,
+                  "end_col": 21
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "x",
+                "id": "x"
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 63,
+                  "col": 23,
+                  "end_lineno": 63,
+                  "end_col": 24
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "y",
+                "id": "y"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [
+        {
+          "module_id": "math",
+          "export_name": "",
+          "local_name": "math",
+          "binding_kind": "module",
+          "source_file": "src/pytra/std/math.py",
+          "source_line": 4
+        },
+        {
+          "module_id": "pytra.std",
+          "export_name": "extern",
+          "local_name": "extern",
+          "binding_kind": "symbol",
+          "source_file": "src/pytra/std/math.py",
+          "source_line": 6
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std",
+          "symbol": "extern",
+          "local_name": "extern"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "math",
+        "export_name": "",
+        "local_name": "math",
+        "binding_kind": "module",
+        "source_file": "src/pytra/std/math.py",
+        "source_line": 4
+      },
+      {
+        "module_id": "pytra.std",
+        "export_name": "extern",
+        "local_name": "extern",
+        "binding_kind": "symbol",
+        "source_file": "src/pytra/std/math.py",
+        "source_line": 6
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std",
+        "symbol": "extern",
+        "local_name": "extern"
+      }
+    ],
+    "import_modules": {
+      "math": "math"
+    },
+    "import_symbols": {
+      "extern": {
+        "module": "pytra.std",
+        "name": "extern"
+      }
+    }
+  },
+  "east_stage": 1
+}

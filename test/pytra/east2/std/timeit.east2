@@ -1,0 +1,196 @@
+{
+  "kind": "Module",
+  "source_path": "src/pytra/std/timeit.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 42
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col": 0,
+          "end_lineno": 1,
+          "end_col": 42
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"pytra.std.timeit compatibility shim.\"\"\"",
+        "value": "pytra.std.timeit compatibility shim."
+      }
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 4,
+        "end_col": 39
+      },
+      "module": "pytra.std.time",
+      "names": [
+        {
+          "name": "perf_counter",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 7,
+        "col": 0,
+        "end_lineno": 9,
+        "end_col": 25
+      },
+      "name": "default_timer",
+      "original_name": "default_timer",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "float64",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": "`timeit.default_timer` compatible entrypoint.",
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 9,
+            "col": 4,
+            "end_lineno": 9,
+            "end_col": 25
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 9,
+              "col": 11,
+              "end_lineno": 9,
+              "end_col": 25
+            },
+            "resolved_type": "float64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "perf_counter()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 9,
+                "col": 11,
+                "end_lineno": 9,
+                "end_col": 23
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "perf_counter",
+              "id": "perf_counter"
+            },
+            "args": [],
+            "keywords": [],
+            "resolved_runtime_call": "time.perf_counter",
+            "resolved_runtime_source": "import_symbol",
+            "runtime_module_id": "pytra.std.time",
+            "runtime_symbol": "perf_counter",
+            "runtime_call_adapter_kind": "extern_delegate"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "float64"
+      },
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.std.time",
+          "export_name": "perf_counter",
+          "local_name": "perf_counter",
+          "binding_kind": "symbol",
+          "source_file": "src/pytra/std/timeit.py",
+          "source_line": 4,
+          "source_module_id": "pytra.std.time",
+          "source_export_name": "perf_counter",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.std.time",
+          "runtime_group": "std",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "perf_counter",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.perf_counter"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std.time",
+          "symbol": "perf_counter",
+          "local_name": "perf_counter"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.std.time",
+        "export_name": "perf_counter",
+        "local_name": "perf_counter",
+        "binding_kind": "symbol",
+        "source_file": "src/pytra/std/timeit.py",
+        "source_line": 4
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std.time",
+        "symbol": "perf_counter",
+        "local_name": "perf_counter"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "perf_counter": {
+        "module": "pytra.std.time",
+        "name": "perf_counter"
+      }
+    },
+    "dispatch_mode": "native"
+  },
+  "east_stage": 2,
+  "schema_version": 1
+}

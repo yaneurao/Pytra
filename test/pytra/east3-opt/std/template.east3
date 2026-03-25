@@ -1,0 +1,305 @@
+{
+  "kind": "Module",
+  "source_path": "src/pytra/std/template.py",
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col_offset": 0,
+        "end_lineno": 1,
+        "end_col_offset": 56
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col_offset": 0,
+          "end_lineno": 1,
+          "end_col_offset": 56
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"Template decorator stubs for Pytra source surface.\"\"\"",
+        "value": "Template decorator stubs for Pytra source surface."
+      }
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 4,
+        "col_offset": 0,
+        "end_lineno": 8,
+        "end_col_offset": 15
+      },
+      "name": "template",
+      "original_name": "template",
+      "arg_types": {
+        "params": "list[unknown]"
+      },
+      "arg_order": [
+        "params"
+      ],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 5,
+            "col_offset": 4,
+            "end_lineno": 6,
+            "end_col_offset": 17
+          },
+          "name": "deco",
+          "original_name": "deco",
+          "arg_types": {
+            "fn": "unknown"
+          },
+          "arg_order": [
+            "fn"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "fn": 0
+          },
+          "return_type": "None",
+          "arg_usage": {
+            "fn": "readonly"
+          },
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 6,
+                "col_offset": 8,
+                "end_lineno": 6,
+                "end_col_offset": 17
+              },
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 6,
+                  "col_offset": 15,
+                  "end_lineno": 6,
+                  "end_col_offset": 17
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "fn",
+                "id": "fn"
+              }
+            }
+          ],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "arg_type_exprs": {
+            "fn": {
+              "kind": "NamedType",
+              "name": "unknown"
+            }
+          },
+          "return_type_expr": {
+            "kind": "NamedType",
+            "name": "None"
+          },
+          "leading_comments": [],
+          "leading_trivia": [],
+          "returns": "None",
+          "meta": {
+            "lifetime_node_id": "n1",
+            "lifetime_defs": [
+              "deco"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [],
+            "lifetime_live_out": [
+              "deco"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 8,
+            "col_offset": 4,
+            "end_lineno": 8,
+            "end_col_offset": 15
+          },
+          "value": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 8,
+              "col_offset": 11,
+              "end_lineno": 8,
+              "end_col_offset": 15
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "deco",
+            "id": "deco"
+          },
+          "meta": {
+            "lifetime_node_id": "n0",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "deco"
+            ],
+            "lifetime_live_in": [
+              "deco"
+            ],
+            "lifetime_live_out": [],
+            "lifetime_last_use_vars": [
+              "deco"
+            ]
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "params": {
+          "kind": "GenericType",
+          "base": "list",
+          "args": [
+            {
+              "kind": "NamedType",
+              "name": "unknown"
+            }
+          ]
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ],
+      "vararg_desugared_v1": {
+        "n_fixed": 0,
+        "elem_type": "unknown",
+        "vararg_name": "params",
+        "list_type": "list[unknown]"
+      },
+      "returns": "None",
+      "meta": {
+        "lifetime_analysis": {
+          "schema_version": "east3_lifetime_v1",
+          "status": "ok",
+          "reason": "",
+          "entry_node": "n1",
+          "order": [
+            "n0",
+            "n1"
+          ],
+          "cfg": [
+            {
+              "id": "n0",
+              "kind": "Return",
+              "defs": [],
+              "uses": [
+                "deco"
+              ],
+              "succ": []
+            },
+            {
+              "id": "n1",
+              "kind": "FunctionDef",
+              "defs": [
+                "deco"
+              ],
+              "uses": [],
+              "succ": [
+                "n0"
+              ]
+            }
+          ],
+          "def_use": {
+            "defs": {
+              "deco": [
+                "n1"
+              ]
+            },
+            "uses": {
+              "deco": [
+                "n0"
+              ]
+            }
+          },
+          "variables": {
+            "deco": {
+              "def_nodes": [
+                "n1"
+              ],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0"
+              ],
+              "live_out_nodes": [
+                "n1"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "escape_or_unknown"
+            },
+            "params": {
+              "def_nodes": [],
+              "use_nodes": [],
+              "live_in_nodes": [],
+              "live_out_nodes": [],
+              "last_use_nodes": [],
+              "lifetime_class": "escape_or_unknown"
+            }
+          },
+          "arg_order": [
+            "params"
+          ],
+          "arg_escape": [
+            true
+          ],
+          "has_dynamic_name_access": false
+        }
+      }
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [],
+      "qualified_refs": []
+    },
+    "import_bindings": [],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {},
+    "dispatch_mode": "native",
+    "lifetime_schema_version": "east3_lifetime_v1"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

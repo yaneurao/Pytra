@@ -1,0 +1,214 @@
+{
+  "kind": "Module",
+  "source_path": "src/pytra/std/time.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 74
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col": 0,
+          "end_lineno": 1,
+          "end_col": 74
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"pytra.std.time: extern-marked time API with Python runtime fallback.\"\"\"",
+        "value": "pytra.std.time: extern-marked time API with Python runtime fallback."
+      }
+    },
+    {
+      "kind": "Import",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 4,
+        "end_col": 11
+      },
+      "names": [
+        {
+          "name": "time",
+          "asname": null
+        }
+      ]
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 6,
+        "col": 0,
+        "end_lineno": 6,
+        "end_col": 28
+      },
+      "module": "pytra.std",
+      "names": [
+        {
+          "name": "extern",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 10,
+        "col": 0,
+        "end_lineno": 11,
+        "end_col": 30
+      },
+      "name": "perf_counter",
+      "original_name": "perf_counter",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "float",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 11,
+            "col": 4,
+            "end_lineno": 11,
+            "end_col": 30
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 11,
+              "col": 11,
+              "end_lineno": 11,
+              "end_col": 30
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "time.perf_counter()",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 11,
+                "col": 11,
+                "end_lineno": 11,
+                "end_col": 28
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "time.perf_counter",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 11,
+                  "col": 11,
+                  "end_lineno": 11,
+                  "end_col": 15
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "time",
+                "id": "time"
+              },
+              "attr": "perf_counter"
+            },
+            "args": [],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [
+        {
+          "module_id": "time",
+          "export_name": "",
+          "local_name": "time",
+          "binding_kind": "module",
+          "source_file": "src/pytra/std/time.py",
+          "source_line": 4
+        },
+        {
+          "module_id": "pytra.std",
+          "export_name": "extern",
+          "local_name": "extern",
+          "binding_kind": "symbol",
+          "source_file": "src/pytra/std/time.py",
+          "source_line": 6
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std",
+          "symbol": "extern",
+          "local_name": "extern"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "time",
+        "export_name": "",
+        "local_name": "time",
+        "binding_kind": "module",
+        "source_file": "src/pytra/std/time.py",
+        "source_line": 4
+      },
+      {
+        "module_id": "pytra.std",
+        "export_name": "extern",
+        "local_name": "extern",
+        "binding_kind": "symbol",
+        "source_file": "src/pytra/std/time.py",
+        "source_line": 6
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std",
+        "symbol": "extern",
+        "local_name": "extern"
+      }
+    ],
+    "import_modules": {
+      "time": "time"
+    },
+    "import_symbols": {
+      "extern": {
+        "module": "pytra.std",
+        "name": "extern"
+      }
+    }
+  },
+  "east_stage": 1
+}

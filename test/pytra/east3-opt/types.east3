@@ -1,0 +1,759 @@
+{
+  "kind": "Module",
+  "source_path": "src/pytra/types.py",
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col_offset": 0,
+        "end_lineno": 1,
+        "end_col_offset": 55
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col_offset": 0,
+          "end_lineno": 1,
+          "end_col_offset": 55
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"Pytra scalar type aliases for Pylance compatibility.",
+        "value": "Pytra scalar type aliases for Pylance compatibili"
+      }
+    },
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 5,
+        "col_offset": 0,
+        "end_lineno": 5,
+        "end_col_offset": 3
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 5,
+          "col_offset": 0,
+          "end_lineno": 5,
+          "end_col_offset": 3
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"",
+        "value": ""
+      }
+    },
+    {
+      "kind": "Assign",
+      "source_span": {
+        "lineno": 7,
+        "col_offset": 0,
+        "end_lineno": 7,
+        "end_col_offset": 10
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 7,
+          "col_offset": 0,
+          "end_lineno": 7,
+          "end_col_offset": 4
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "int8",
+        "id": "int8"
+      },
+      "declare": true,
+      "declare_init": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ],
+      "value": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 7,
+          "col_offset": 0,
+          "end_lineno": 7,
+          "end_col_offset": 3
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "int",
+        "id": "int"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "DynamicType",
+        "category": "dynamic",
+        "mirror": "unknown",
+        "dynamic_name": "unknown"
+      }
+    },
+    {
+      "kind": "Assign",
+      "source_span": {
+        "lineno": 8,
+        "col_offset": 0,
+        "end_lineno": 8,
+        "end_col_offset": 11
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 8,
+          "col_offset": 0,
+          "end_lineno": 8,
+          "end_col_offset": 5
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "uint8",
+        "id": "uint8"
+      },
+      "declare": true,
+      "declare_init": true,
+      "value": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 8,
+          "col_offset": 1,
+          "end_lineno": 8,
+          "end_col_offset": 4
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "int",
+        "id": "int"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "DynamicType",
+        "category": "dynamic",
+        "mirror": "unknown",
+        "dynamic_name": "unknown"
+      }
+    },
+    {
+      "kind": "Assign",
+      "source_span": {
+        "lineno": 9,
+        "col_offset": 0,
+        "end_lineno": 9,
+        "end_col_offset": 11
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 9,
+          "col_offset": 0,
+          "end_lineno": 9,
+          "end_col_offset": 5
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "int16",
+        "id": "int16"
+      },
+      "declare": true,
+      "declare_init": true,
+      "value": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 9,
+          "col_offset": 0,
+          "end_lineno": 9,
+          "end_col_offset": 3
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "int",
+        "id": "int"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "DynamicType",
+        "category": "dynamic",
+        "mirror": "unknown",
+        "dynamic_name": "unknown"
+      }
+    },
+    {
+      "kind": "Assign",
+      "source_span": {
+        "lineno": 10,
+        "col_offset": 0,
+        "end_lineno": 10,
+        "end_col_offset": 12
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 10,
+          "col_offset": 0,
+          "end_lineno": 10,
+          "end_col_offset": 6
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "uint16",
+        "id": "uint16"
+      },
+      "declare": true,
+      "declare_init": true,
+      "value": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 10,
+          "col_offset": 1,
+          "end_lineno": 10,
+          "end_col_offset": 4
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "int",
+        "id": "int"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "DynamicType",
+        "category": "dynamic",
+        "mirror": "unknown",
+        "dynamic_name": "unknown"
+      }
+    },
+    {
+      "kind": "Assign",
+      "source_span": {
+        "lineno": 11,
+        "col_offset": 0,
+        "end_lineno": 11,
+        "end_col_offset": 11
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 11,
+          "col_offset": 0,
+          "end_lineno": 11,
+          "end_col_offset": 5
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "int32",
+        "id": "int32"
+      },
+      "declare": true,
+      "declare_init": true,
+      "value": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 11,
+          "col_offset": 0,
+          "end_lineno": 11,
+          "end_col_offset": 3
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "int",
+        "id": "int"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "DynamicType",
+        "category": "dynamic",
+        "mirror": "unknown",
+        "dynamic_name": "unknown"
+      }
+    },
+    {
+      "kind": "Assign",
+      "source_span": {
+        "lineno": 12,
+        "col_offset": 0,
+        "end_lineno": 12,
+        "end_col_offset": 12
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 12,
+          "col_offset": 0,
+          "end_lineno": 12,
+          "end_col_offset": 6
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "uint32",
+        "id": "uint32"
+      },
+      "declare": true,
+      "declare_init": true,
+      "value": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 12,
+          "col_offset": 1,
+          "end_lineno": 12,
+          "end_col_offset": 4
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "int",
+        "id": "int"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "DynamicType",
+        "category": "dynamic",
+        "mirror": "unknown",
+        "dynamic_name": "unknown"
+      }
+    },
+    {
+      "kind": "Assign",
+      "source_span": {
+        "lineno": 13,
+        "col_offset": 0,
+        "end_lineno": 13,
+        "end_col_offset": 11
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 13,
+          "col_offset": 0,
+          "end_lineno": 13,
+          "end_col_offset": 5
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "int64",
+        "id": "int64"
+      },
+      "declare": true,
+      "declare_init": true,
+      "value": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 13,
+          "col_offset": 0,
+          "end_lineno": 13,
+          "end_col_offset": 3
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "int",
+        "id": "int"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "DynamicType",
+        "category": "dynamic",
+        "mirror": "unknown",
+        "dynamic_name": "unknown"
+      }
+    },
+    {
+      "kind": "Assign",
+      "source_span": {
+        "lineno": 14,
+        "col_offset": 0,
+        "end_lineno": 14,
+        "end_col_offset": 12
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 14,
+          "col_offset": 0,
+          "end_lineno": 14,
+          "end_col_offset": 6
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "uint64",
+        "id": "uint64"
+      },
+      "declare": true,
+      "declare_init": true,
+      "value": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 14,
+          "col_offset": 1,
+          "end_lineno": 14,
+          "end_col_offset": 4
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "int",
+        "id": "int"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "DynamicType",
+        "category": "dynamic",
+        "mirror": "unknown",
+        "dynamic_name": "unknown"
+      }
+    },
+    {
+      "kind": "Assign",
+      "source_span": {
+        "lineno": 15,
+        "col_offset": 0,
+        "end_lineno": 15,
+        "end_col_offset": 15
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 15,
+          "col_offset": 0,
+          "end_lineno": 15,
+          "end_col_offset": 7
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "float32",
+        "id": "float32"
+      },
+      "declare": true,
+      "declare_init": true,
+      "value": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 15,
+          "col_offset": 0,
+          "end_lineno": 15,
+          "end_col_offset": 5
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "float",
+        "id": "float"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "DynamicType",
+        "category": "dynamic",
+        "mirror": "unknown",
+        "dynamic_name": "unknown"
+      }
+    },
+    {
+      "kind": "Assign",
+      "source_span": {
+        "lineno": 16,
+        "col_offset": 0,
+        "end_lineno": 16,
+        "end_col_offset": 15
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 16,
+          "col_offset": 0,
+          "end_lineno": 16,
+          "end_col_offset": 7
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "float64",
+        "id": "float64"
+      },
+      "declare": true,
+      "declare_init": true,
+      "value": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 16,
+          "col_offset": 0,
+          "end_lineno": 16,
+          "end_col_offset": 5
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "float",
+        "id": "float"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "DynamicType",
+        "category": "dynamic",
+        "mirror": "unknown",
+        "dynamic_name": "unknown"
+      }
+    },
+    {
+      "kind": "Assign",
+      "source_span": {
+        "lineno": 21,
+        "col_offset": 0,
+        "end_lineno": 21,
+        "end_col_offset": 41
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 21,
+          "col_offset": 0,
+          "end_lineno": 21,
+          "end_col_offset": 3
+        },
+        "resolved_type": "tuple[unknown, unknown, unknown, unknown, unknown]",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "POD",
+        "id": "POD"
+      },
+      "declare": true,
+      "decl_type": "tuple[unknown, unknown, unknown, unknown, unknown]",
+      "declare_init": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "Type categories for built-in function declarations."
+        },
+        {
+          "kind": "comment",
+          "text": "Python runtime: POD is a tuple for isinstance(), Obj is object."
+        },
+        {
+          "kind": "comment",
+          "text": "Transpiler: recognizes these as type categories natively."
+        }
+      ],
+      "leading_comments": [
+        "Type categories for built-in function declarations.",
+        "Python runtime: POD is a tuple for isinstance(), Obj is object.",
+        "Transpiler: recognizes these as type categories natively."
+      ],
+      "value": {
+        "kind": "Tuple",
+        "source_span": {
+          "lineno": 21,
+          "col_offset": 6,
+          "end_lineno": 21,
+          "end_col_offset": 41
+        },
+        "resolved_type": "tuple[unknown, unknown, unknown, unknown, unknown]",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "(type(None), bool, int, float, str)",
+        "elements": [
+          {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 21,
+              "col_offset": 7,
+              "end_lineno": 21,
+              "end_col_offset": 17
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "type(None)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 21,
+                "col_offset": 7,
+                "end_lineno": 21,
+                "end_col_offset": 11
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "type",
+              "id": "type"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 21,
+                  "col_offset": 12,
+                  "end_lineno": 21,
+                  "end_col_offset": 16
+                },
+                "resolved_type": "None",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "None",
+                "value": null
+              }
+            ],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "DynamicType",
+              "category": "dynamic",
+              "mirror": "unknown",
+              "dynamic_name": "unknown"
+            }
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 21,
+              "col_offset": 19,
+              "end_lineno": 21,
+              "end_col_offset": 23
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "bool",
+            "id": "bool"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 21,
+              "col_offset": 25,
+              "end_lineno": 21,
+              "end_col_offset": 28
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "int",
+            "id": "int"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 21,
+              "col_offset": 30,
+              "end_lineno": 21,
+              "end_col_offset": 35
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "float",
+            "id": "float"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 21,
+              "col_offset": 37,
+              "end_lineno": 21,
+              "end_col_offset": 40
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "str",
+            "id": "str"
+          }
+        ]
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "GenericType",
+        "category": "static",
+        "mirror": "tuple[unknown,unknown,unknown,unknown,unknown]"
+      }
+    },
+    {
+      "kind": "Assign",
+      "source_span": {
+        "lineno": 22,
+        "col_offset": 0,
+        "end_lineno": 22,
+        "end_col_offset": 12
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 22,
+          "col_offset": 0,
+          "end_lineno": 22,
+          "end_col_offset": 3
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "Obj",
+        "id": "Obj"
+      },
+      "declare": true,
+      "declare_init": true,
+      "value": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 22,
+          "col_offset": 6,
+          "end_lineno": 22,
+          "end_col_offset": 12
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "object",
+        "id": "object"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "DynamicType",
+        "category": "dynamic",
+        "mirror": "unknown",
+        "dynamic_name": "unknown"
+      }
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [],
+      "qualified_refs": []
+    },
+    "import_bindings": [],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {},
+    "dispatch_mode": "native",
+    "lifetime_schema_version": "east3_lifetime_v1"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

@@ -1,0 +1,1804 @@
+{
+  "kind": "Module",
+  "source_path": "src/pytra/utils/assertions.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 2,
+        "col": 0,
+        "end_lineno": 2,
+        "end_col": 25
+      },
+      "module": "pytra.std",
+      "names": [
+        {
+          "name": "abi",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 5,
+        "col": 0,
+        "end_lineno": 9,
+        "end_col": 33
+      },
+      "name": "_eq_any",
+      "original_name": "_eq_any",
+      "arg_types": {
+        "actual": "object",
+        "expected": "object"
+      },
+      "arg_order": [
+        "actual",
+        "expected"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "actual": 0,
+        "expected": 1
+      },
+      "return_type": "bool",
+      "arg_usage": {
+        "actual": "readonly",
+        "expected": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Try",
+          "source_span": {
+            "lineno": 6,
+            "col": 4,
+            "end_lineno": 9,
+            "end_col": 33
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 7,
+                "col": 8,
+                "end_lineno": 7,
+                "end_col": 61
+              },
+              "value": {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 7,
+                  "col": 15,
+                  "end_lineno": 7,
+                  "end_col": 61
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_to_string(actual) == py_to_string(expected)",
+                "left": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 7,
+                    "col": 15,
+                    "end_lineno": 7,
+                    "end_col": 35
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_to_string(actual)",
+                  "func": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 7,
+                      "col": 15,
+                      "end_lineno": 7,
+                      "end_col": 27
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "py_to_string",
+                    "id": "py_to_string"
+                  },
+                  "args": [
+                    {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 7,
+                        "col": 28,
+                        "end_lineno": 7,
+                        "end_col": 34
+                      },
+                      "resolved_type": "object",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "actual",
+                      "id": "actual"
+                    }
+                  ],
+                  "keywords": []
+                },
+                "ops": [
+                  "Eq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 7,
+                      "col": 39,
+                      "end_lineno": 7,
+                      "end_col": 61
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "py_to_string(expected)",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 7,
+                        "col": 39,
+                        "end_lineno": 7,
+                        "end_col": 51
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "py_to_string",
+                      "id": "py_to_string"
+                    },
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 7,
+                          "col": 52,
+                          "end_lineno": 7,
+                          "end_col": 60
+                        },
+                        "resolved_type": "object",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "expected",
+                        "id": "expected"
+                      }
+                    ],
+                    "keywords": []
+                  }
+                ]
+              }
+            }
+          ],
+          "handlers": [
+            {
+              "kind": "ExceptHandler",
+              "type": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 8,
+                  "col": 11,
+                  "end_lineno": 8,
+                  "end_col": 20
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "NameError",
+                "id": "NameError"
+              },
+              "name": null,
+              "body": [
+                {
+                  "kind": "Return",
+                  "source_span": {
+                    "lineno": 9,
+                    "col": 8,
+                    "end_lineno": 9,
+                    "end_col": 33
+                  },
+                  "value": {
+                    "kind": "Compare",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 15,
+                      "end_lineno": 9,
+                      "end_col": 33
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "actual == expected",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 9,
+                        "col": 15,
+                        "end_lineno": 9,
+                        "end_col": 21
+                      },
+                      "resolved_type": "object",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "actual",
+                      "id": "actual"
+                    },
+                    "ops": [
+                      "Eq"
+                    ],
+                    "comparators": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 9,
+                          "col": 25,
+                          "end_lineno": 9,
+                          "end_col": 33
+                        },
+                        "resolved_type": "object",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "expected",
+                        "id": "expected"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "orelse": [],
+          "finalbody": []
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "actual": {
+          "kind": "DynamicType",
+          "name": "object"
+        },
+        "expected": {
+          "kind": "DynamicType",
+          "name": "object"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "bool"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 12,
+        "col": 0,
+        "end_lineno": 19,
+        "end_col": 16
+      },
+      "name": "py_assert_true",
+      "original_name": "py_assert_true",
+      "arg_types": {
+        "cond": "bool",
+        "label": "str"
+      },
+      "arg_order": [
+        "cond",
+        "label"
+      ],
+      "arg_defaults": {
+        "label": {
+          "kind": "Constant",
+          "source_span": {
+            "lineno": 12,
+            "col": 44,
+            "end_lineno": 12,
+            "end_col": 46
+          },
+          "resolved_type": "str",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "\"\"",
+          "value": ""
+        }
+      },
+      "arg_index": {
+        "cond": 0,
+        "label": 1
+      },
+      "return_type": "bool",
+      "arg_usage": {
+        "cond": "readonly",
+        "label": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 13,
+            "col": 4,
+            "end_lineno": 14,
+            "end_col": 19
+          },
+          "test": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 13,
+              "col": 7,
+              "end_lineno": 13,
+              "end_col": 11
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "cond",
+            "id": "cond"
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 14,
+                "col": 8,
+                "end_lineno": 14,
+                "end_col": 19
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 14,
+                  "col": 15,
+                  "end_lineno": 14,
+                  "end_col": 19
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "True",
+                "value": true
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 15,
+            "col": 4,
+            "end_lineno": 18,
+            "end_col": 36
+          },
+          "test": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 15,
+              "col": 7,
+              "end_lineno": 15,
+              "end_col": 18
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "label != \"\"",
+            "left": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 15,
+                "col": 7,
+                "end_lineno": 15,
+                "end_col": 12
+              },
+              "resolved_type": "str",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "label",
+              "id": "label"
+            },
+            "ops": [
+              "NotEq"
+            ],
+            "comparators": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 16,
+                  "end_lineno": 15,
+                  "end_col": 18
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"\"",
+                "value": ""
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Expr",
+              "source_span": {
+                "lineno": 16,
+                "col": 8,
+                "end_lineno": 16,
+                "end_col": 46
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 16,
+                  "col": 8,
+                  "end_lineno": 16,
+                  "end_col": 46
+                },
+                "resolved_type": "None",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "print(f\"[assert_true] {label}: False\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 16,
+                    "col": 8,
+                    "end_lineno": 16,
+                    "end_col": 13
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "print",
+                  "id": "print"
+                },
+                "args": [
+                  {
+                    "kind": "JoinedStr",
+                    "source_span": {
+                      "lineno": 16,
+                      "col": 14,
+                      "end_lineno": 16,
+                      "end_col": 45
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "f\"[assert_true] {label}: False\"",
+                    "values": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 16,
+                          "col": 14,
+                          "end_lineno": 16,
+                          "end_col": 45
+                        },
+                        "resolved_type": "str",
+                        "repr": "[assert_true] ",
+                        "value": "[assert_true] "
+                      },
+                      {
+                        "kind": "FormattedValue",
+                        "value": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 16,
+                            "col": 29,
+                            "end_lineno": 16,
+                            "end_col": 34
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "readonly_ref",
+                          "repr": "label",
+                          "id": "label"
+                        },
+                        "resolved_type": "str"
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 16,
+                          "col": 14,
+                          "end_lineno": 16,
+                          "end_col": 45
+                        },
+                        "resolved_type": "str",
+                        "repr": ": False",
+                        "value": ": False"
+                      }
+                    ],
+                    "resolved_type": "str"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "print",
+                "runtime_call": "py_print",
+                "runtime_module_id": "pytra.built_in.io_ops",
+                "runtime_symbol": "py_print",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "core.print"
+              }
+            }
+          ],
+          "orelse": [
+            {
+              "kind": "Expr",
+              "source_span": {
+                "lineno": 18,
+                "col": 8,
+                "end_lineno": 18,
+                "end_col": 36
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 18,
+                  "col": 8,
+                  "end_lineno": 18,
+                  "end_col": 36
+                },
+                "resolved_type": "None",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "print(\"[assert_true] False\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 18,
+                    "col": 8,
+                    "end_lineno": 18,
+                    "end_col": 13
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "print",
+                  "id": "print"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 18,
+                      "col": 14,
+                      "end_lineno": 18,
+                      "end_col": 35
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"[assert_true] False\"",
+                    "value": "[assert_true] False"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "print",
+                "runtime_call": "py_print",
+                "runtime_module_id": "pytra.built_in.io_ops",
+                "runtime_symbol": "py_print",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "core.print"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 19,
+            "col": 4,
+            "end_lineno": 19,
+            "end_col": 16
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 19,
+              "col": 11,
+              "end_lineno": 19,
+              "end_col": 16
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "False",
+            "value": false
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "cond": {
+          "kind": "NamedType",
+          "name": "bool"
+        },
+        "label": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "bool"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 22,
+        "col": 0,
+        "end_lineno": 30,
+        "end_col": 16
+      },
+      "name": "py_assert_eq",
+      "original_name": "py_assert_eq",
+      "arg_types": {
+        "actual": "object",
+        "expected": "object",
+        "label": "str"
+      },
+      "arg_order": [
+        "actual",
+        "expected",
+        "label"
+      ],
+      "arg_defaults": {
+        "label": {
+          "kind": "Constant",
+          "source_span": {
+            "lineno": 22,
+            "col": 64,
+            "end_lineno": 22,
+            "end_col": 66
+          },
+          "resolved_type": "str",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "\"\"",
+          "value": ""
+        }
+      },
+      "arg_index": {
+        "actual": 0,
+        "expected": 1,
+        "label": 2
+      },
+      "return_type": "bool",
+      "arg_usage": {
+        "actual": "readonly",
+        "expected": "readonly",
+        "label": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 23,
+            "col": 4,
+            "end_lineno": 23,
+            "end_col": 34
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 23,
+              "col": 4,
+              "end_lineno": 23,
+              "end_col": 6
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ok",
+            "id": "ok"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 23,
+              "col": 9,
+              "end_lineno": 23,
+              "end_col": 34
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "_eq_any(actual, expected)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 23,
+                "col": 9,
+                "end_lineno": 23,
+                "end_col": 16
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "_eq_any",
+              "id": "_eq_any"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 23,
+                  "col": 17,
+                  "end_lineno": 23,
+                  "end_col": 23
+                },
+                "resolved_type": "object",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "actual",
+                "id": "actual"
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 23,
+                  "col": 25,
+                  "end_lineno": 23,
+                  "end_col": 33
+                },
+                "resolved_type": "object",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "expected",
+                "id": "expected"
+              }
+            ],
+            "keywords": []
+          },
+          "declare": true,
+          "decl_type": "bool",
+          "declare_init": true
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 24,
+            "col": 4,
+            "end_lineno": 14,
+            "end_col": 19
+          },
+          "test": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 24,
+              "col": 7,
+              "end_lineno": 24,
+              "end_col": 9
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "ok",
+            "id": "ok"
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 14,
+                "col": 8,
+                "end_lineno": 14,
+                "end_col": 19
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 14,
+                  "col": 15,
+                  "end_lineno": 14,
+                  "end_col": 19
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "True",
+                "value": true
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 15,
+            "col": 4,
+            "end_lineno": 29,
+            "end_col": 66
+          },
+          "test": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 15,
+              "col": 7,
+              "end_lineno": 15,
+              "end_col": 18
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "label != \"\"",
+            "left": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 15,
+                "col": 7,
+                "end_lineno": 15,
+                "end_col": 12
+              },
+              "resolved_type": "str",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "label",
+              "id": "label"
+            },
+            "ops": [
+              "NotEq"
+            ],
+            "comparators": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 16,
+                  "end_lineno": 15,
+                  "end_col": 18
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"\"",
+                "value": ""
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Expr",
+              "source_span": {
+                "lineno": 27,
+                "col": 8,
+                "end_lineno": 27,
+                "end_col": 75
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 27,
+                  "col": 8,
+                  "end_lineno": 27,
+                  "end_col": 75
+                },
+                "resolved_type": "None",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "print(f\"[assert_eq] {label}: actual={actual}, expected={expected}\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 27,
+                    "col": 8,
+                    "end_lineno": 27,
+                    "end_col": 13
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "print",
+                  "id": "print"
+                },
+                "args": [
+                  {
+                    "kind": "JoinedStr",
+                    "source_span": {
+                      "lineno": 27,
+                      "col": 14,
+                      "end_lineno": 27,
+                      "end_col": 74
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "f\"[assert_eq] {label}: actual={actual}, expected={expected}\"",
+                    "values": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 27,
+                          "col": 14,
+                          "end_lineno": 27,
+                          "end_col": 74
+                        },
+                        "resolved_type": "str",
+                        "repr": "[assert_eq] ",
+                        "value": "[assert_eq] "
+                      },
+                      {
+                        "kind": "FormattedValue",
+                        "value": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 27,
+                            "col": 27,
+                            "end_lineno": 27,
+                            "end_col": 32
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "readonly_ref",
+                          "repr": "label",
+                          "id": "label"
+                        },
+                        "resolved_type": "str"
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 27,
+                          "col": 14,
+                          "end_lineno": 27,
+                          "end_col": 74
+                        },
+                        "resolved_type": "str",
+                        "repr": ": actual=",
+                        "value": ": actual="
+                      },
+                      {
+                        "kind": "FormattedValue",
+                        "value": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 27,
+                            "col": 43,
+                            "end_lineno": 27,
+                            "end_col": 49
+                          },
+                          "resolved_type": "object",
+                          "casts": [],
+                          "borrow_kind": "readonly_ref",
+                          "repr": "actual",
+                          "id": "actual"
+                        },
+                        "resolved_type": "str"
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 27,
+                          "col": 14,
+                          "end_lineno": 27,
+                          "end_col": 74
+                        },
+                        "resolved_type": "str",
+                        "repr": ", expected=",
+                        "value": ", expected="
+                      },
+                      {
+                        "kind": "FormattedValue",
+                        "value": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 27,
+                            "col": 62,
+                            "end_lineno": 27,
+                            "end_col": 70
+                          },
+                          "resolved_type": "object",
+                          "casts": [],
+                          "borrow_kind": "readonly_ref",
+                          "repr": "expected",
+                          "id": "expected"
+                        },
+                        "resolved_type": "str"
+                      }
+                    ],
+                    "resolved_type": "str"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "print",
+                "runtime_call": "py_print",
+                "runtime_module_id": "pytra.built_in.io_ops",
+                "runtime_symbol": "py_print",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "core.print"
+              }
+            }
+          ],
+          "orelse": [
+            {
+              "kind": "Expr",
+              "source_span": {
+                "lineno": 29,
+                "col": 8,
+                "end_lineno": 29,
+                "end_col": 66
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 29,
+                  "col": 8,
+                  "end_lineno": 29,
+                  "end_col": 66
+                },
+                "resolved_type": "None",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "print(f\"[assert_eq] actual={actual}, expected={expected}\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 29,
+                    "col": 8,
+                    "end_lineno": 29,
+                    "end_col": 13
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "print",
+                  "id": "print"
+                },
+                "args": [
+                  {
+                    "kind": "JoinedStr",
+                    "source_span": {
+                      "lineno": 29,
+                      "col": 14,
+                      "end_lineno": 29,
+                      "end_col": 65
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "f\"[assert_eq] actual={actual}, expected={expected}\"",
+                    "values": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 29,
+                          "col": 14,
+                          "end_lineno": 29,
+                          "end_col": 65
+                        },
+                        "resolved_type": "str",
+                        "repr": "[assert_eq] actual=",
+                        "value": "[assert_eq] actual="
+                      },
+                      {
+                        "kind": "FormattedValue",
+                        "value": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 29,
+                            "col": 34,
+                            "end_lineno": 29,
+                            "end_col": 40
+                          },
+                          "resolved_type": "object",
+                          "casts": [],
+                          "borrow_kind": "readonly_ref",
+                          "repr": "actual",
+                          "id": "actual"
+                        },
+                        "resolved_type": "str"
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 29,
+                          "col": 14,
+                          "end_lineno": 29,
+                          "end_col": 65
+                        },
+                        "resolved_type": "str",
+                        "repr": ", expected=",
+                        "value": ", expected="
+                      },
+                      {
+                        "kind": "FormattedValue",
+                        "value": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 29,
+                            "col": 53,
+                            "end_lineno": 29,
+                            "end_col": 61
+                          },
+                          "resolved_type": "object",
+                          "casts": [],
+                          "borrow_kind": "readonly_ref",
+                          "repr": "expected",
+                          "id": "expected"
+                        },
+                        "resolved_type": "str"
+                      }
+                    ],
+                    "resolved_type": "str"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "print",
+                "runtime_call": "py_print",
+                "runtime_module_id": "pytra.built_in.io_ops",
+                "runtime_symbol": "py_print",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "core.print"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 30,
+            "col": 4,
+            "end_lineno": 30,
+            "end_col": 16
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 30,
+              "col": 11,
+              "end_lineno": 30,
+              "end_col": 16
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "False",
+            "value": false
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "actual": {
+          "kind": "DynamicType",
+          "name": "object"
+        },
+        "expected": {
+          "kind": "DynamicType",
+          "name": "object"
+        },
+        "label": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "bool"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 34,
+        "col": 0,
+        "end_lineno": 42,
+        "end_col": 15
+      },
+      "name": "py_assert_all",
+      "original_name": "py_assert_all",
+      "arg_types": {
+        "results": "list[bool]",
+        "label": "str"
+      },
+      "arg_order": [
+        "results",
+        "label"
+      ],
+      "arg_defaults": {
+        "label": {
+          "kind": "Constant",
+          "source_span": {
+            "lineno": 34,
+            "col": 52,
+            "end_lineno": 34,
+            "end_col": 54
+          },
+          "resolved_type": "str",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "\"\"",
+          "value": ""
+        }
+      },
+      "arg_index": {
+        "results": 0,
+        "label": 1
+      },
+      "return_type": "bool",
+      "arg_usage": {
+        "results": "readonly",
+        "label": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "For",
+          "source_span": {
+            "lineno": 35,
+            "col": 0,
+            "end_lineno": 41,
+            "end_col": 24
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 35,
+              "col": 8,
+              "end_lineno": 35,
+              "end_col": 9
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "v",
+            "id": "v"
+          },
+          "target_type": "bool",
+          "iter_mode": "static_fastpath",
+          "iter_source_type": "list[bool]",
+          "iter_element_type": "bool",
+          "iter": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 35,
+              "col": 13,
+              "end_lineno": 35,
+              "end_col": 20
+            },
+            "resolved_type": "list[bool]",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "results",
+            "id": "results",
+            "iterable_trait": "yes",
+            "iter_protocol": "static_range",
+            "iter_element_type": "bool"
+          },
+          "body": [
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 36,
+                "col": 8,
+                "end_lineno": 41,
+                "end_col": 24
+              },
+              "test": {
+                "kind": "UnaryOp",
+                "source_span": {
+                  "lineno": 36,
+                  "col": 11,
+                  "end_lineno": 36,
+                  "end_col": 16
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "not v",
+                "op": "Not",
+                "operand": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 36,
+                    "col": 15,
+                    "end_lineno": 36,
+                    "end_col": 16
+                  },
+                  "resolved_type": "bool",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "v",
+                  "id": "v"
+                }
+              },
+              "body": [
+                {
+                  "kind": "If",
+                  "source_span": {
+                    "lineno": 37,
+                    "col": 12,
+                    "end_lineno": 40,
+                    "end_col": 43
+                  },
+                  "test": {
+                    "kind": "Compare",
+                    "source_span": {
+                      "lineno": 37,
+                      "col": 15,
+                      "end_lineno": 37,
+                      "end_col": 26
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "label != \"\"",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 37,
+                        "col": 15,
+                        "end_lineno": 37,
+                        "end_col": 20
+                      },
+                      "resolved_type": "str",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "label",
+                      "id": "label"
+                    },
+                    "ops": [
+                      "NotEq"
+                    ],
+                    "comparators": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 37,
+                          "col": 24,
+                          "end_lineno": 37,
+                          "end_col": 26
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"\"",
+                        "value": ""
+                      }
+                    ]
+                  },
+                  "body": [
+                    {
+                      "kind": "Expr",
+                      "source_span": {
+                        "lineno": 38,
+                        "col": 16,
+                        "end_lineno": 38,
+                        "end_col": 53
+                      },
+                      "value": {
+                        "kind": "Call",
+                        "source_span": {
+                          "lineno": 38,
+                          "col": 16,
+                          "end_lineno": 38,
+                          "end_col": 53
+                        },
+                        "resolved_type": "None",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "print(f\"[assert_all] {label}: False\")",
+                        "func": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 38,
+                            "col": 16,
+                            "end_lineno": 38,
+                            "end_col": 21
+                          },
+                          "resolved_type": "unknown",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "print",
+                          "id": "print"
+                        },
+                        "args": [
+                          {
+                            "kind": "JoinedStr",
+                            "source_span": {
+                              "lineno": 38,
+                              "col": 22,
+                              "end_lineno": 38,
+                              "end_col": 52
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "f\"[assert_all] {label}: False\"",
+                            "values": [
+                              {
+                                "kind": "Constant",
+                                "source_span": {
+                                  "lineno": 38,
+                                  "col": 22,
+                                  "end_lineno": 38,
+                                  "end_col": 52
+                                },
+                                "resolved_type": "str",
+                                "repr": "[assert_all] ",
+                                "value": "[assert_all] "
+                              },
+                              {
+                                "kind": "FormattedValue",
+                                "value": {
+                                  "kind": "Name",
+                                  "source_span": {
+                                    "lineno": 38,
+                                    "col": 36,
+                                    "end_lineno": 38,
+                                    "end_col": 41
+                                  },
+                                  "resolved_type": "str",
+                                  "casts": [],
+                                  "borrow_kind": "readonly_ref",
+                                  "repr": "label",
+                                  "id": "label"
+                                },
+                                "resolved_type": "str"
+                              },
+                              {
+                                "kind": "Constant",
+                                "source_span": {
+                                  "lineno": 38,
+                                  "col": 22,
+                                  "end_lineno": 38,
+                                  "end_col": 52
+                                },
+                                "resolved_type": "str",
+                                "repr": ": False",
+                                "value": ": False"
+                              }
+                            ],
+                            "resolved_type": "str"
+                          }
+                        ],
+                        "keywords": [],
+                        "lowered_kind": "BuiltinCall",
+                        "builtin_name": "print",
+                        "runtime_call": "py_print",
+                        "runtime_module_id": "pytra.built_in.io_ops",
+                        "runtime_symbol": "py_print",
+                        "runtime_call_adapter_kind": "builtin",
+                        "semantic_tag": "core.print"
+                      }
+                    }
+                  ],
+                  "orelse": [
+                    {
+                      "kind": "Expr",
+                      "source_span": {
+                        "lineno": 40,
+                        "col": 16,
+                        "end_lineno": 40,
+                        "end_col": 43
+                      },
+                      "value": {
+                        "kind": "Call",
+                        "source_span": {
+                          "lineno": 40,
+                          "col": 16,
+                          "end_lineno": 40,
+                          "end_col": 43
+                        },
+                        "resolved_type": "None",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "print(\"[assert_all] False\")",
+                        "func": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 40,
+                            "col": 16,
+                            "end_lineno": 40,
+                            "end_col": 21
+                          },
+                          "resolved_type": "unknown",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "print",
+                          "id": "print"
+                        },
+                        "args": [
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 40,
+                              "col": 22,
+                              "end_lineno": 40,
+                              "end_col": 42
+                            },
+                            "resolved_type": "str",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "\"[assert_all] False\"",
+                            "value": "[assert_all] False"
+                          }
+                        ],
+                        "keywords": [],
+                        "lowered_kind": "BuiltinCall",
+                        "builtin_name": "print",
+                        "runtime_call": "py_print",
+                        "runtime_module_id": "pytra.built_in.io_ops",
+                        "runtime_symbol": "py_print",
+                        "runtime_call_adapter_kind": "builtin",
+                        "semantic_tag": "core.print"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "kind": "Return",
+                  "source_span": {
+                    "lineno": 41,
+                    "col": 12,
+                    "end_lineno": 41,
+                    "end_col": 24
+                  },
+                  "value": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 41,
+                      "col": 19,
+                      "end_lineno": 41,
+                      "end_col": 24
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "False",
+                    "value": false
+                  }
+                }
+              ],
+              "orelse": []
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 42,
+            "col": 4,
+            "end_lineno": 42,
+            "end_col": 15
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 42,
+              "col": 11,
+              "end_lineno": 42,
+              "end_col": 15
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "True",
+            "value": true
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "results": {
+          "kind": "GenericType",
+          "base": "list",
+          "args": [
+            {
+              "kind": "NamedType",
+              "name": "bool"
+            }
+          ]
+        },
+        "label": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "bool"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 46,
+        "col": 0,
+        "end_lineno": 48,
+        "end_col": 15
+      },
+      "name": "py_assert_stdout",
+      "original_name": "py_assert_stdout",
+      "arg_types": {
+        "expected_lines": "list[str]",
+        "fn": "object"
+      },
+      "arg_order": [
+        "expected_lines",
+        "fn"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "expected_lines": 0,
+        "fn": 1
+      },
+      "return_type": "bool",
+      "arg_usage": {
+        "expected_lines": "readonly",
+        "fn": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 48,
+            "col": 4,
+            "end_lineno": 48,
+            "end_col": 15
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 48,
+              "col": 11,
+              "end_lineno": 48,
+              "end_col": 15
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "True",
+            "value": true
+          },
+          "leading_trivia": [
+            {
+              "kind": "comment",
+              "text": "self_hosted parser / runtime 互換優先: stdout capture は未実装。"
+            }
+          ],
+          "leading_comments": [
+            "self_hosted parser / runtime 互換優先: stdout capture は未実装。"
+          ]
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "expected_lines": {
+          "kind": "GenericType",
+          "base": "list",
+          "args": [
+            {
+              "kind": "NamedType",
+              "name": "str"
+            }
+          ]
+        },
+        "fn": {
+          "kind": "DynamicType",
+          "name": "object"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "bool"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.std",
+          "export_name": "abi",
+          "local_name": "abi",
+          "binding_kind": "symbol",
+          "source_file": "src/pytra/utils/assertions.py",
+          "source_line": 2,
+          "source_module_id": "pytra.std",
+          "source_export_name": "abi",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.std",
+          "runtime_group": "std",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "abi",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.abi"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/utils/assertions.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std",
+          "symbol": "abi",
+          "local_name": "abi"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.std",
+        "export_name": "abi",
+        "local_name": "abi",
+        "binding_kind": "symbol",
+        "source_file": "src/pytra/utils/assertions.py",
+        "source_line": 2
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/utils/assertions.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std",
+        "symbol": "abi",
+        "local_name": "abi"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "abi": {
+        "module": "pytra.std",
+        "name": "abi"
+      }
+    },
+    "dispatch_mode": "native"
+  },
+  "east_stage": 2,
+  "schema_version": 1
+}

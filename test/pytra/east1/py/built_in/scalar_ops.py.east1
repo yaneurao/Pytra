@@ -1,0 +1,364 @@
+{
+  "kind": "Module",
+  "source_path": "src/pytra/built_in/scalar_ops.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 44
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col": 0,
+          "end_lineno": 1,
+          "end_col": 44
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"Extern-marked scalar helper built-ins.\"\"\"",
+        "value": "Extern-marked scalar helper built-ins."
+      }
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 4,
+        "end_col": 28
+      },
+      "module": "pytra.std",
+      "names": [
+        {
+          "name": "extern",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 8,
+        "col": 0,
+        "end_lineno": 9,
+        "end_col": 23
+      },
+      "name": "py_to_int64_base",
+      "original_name": "py_to_int64_base",
+      "arg_types": {
+        "v": "str",
+        "base": "int"
+      },
+      "arg_order": [
+        "v",
+        "base"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "v": 0,
+        "base": 1
+      },
+      "return_type": "int",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 9,
+            "col": 4,
+            "end_lineno": 9,
+            "end_col": 23
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 9,
+              "col": 11,
+              "end_lineno": 9,
+              "end_col": 23
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "int(v, base)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 9,
+                "col": 11,
+                "end_lineno": 9,
+                "end_col": 14
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "int",
+              "id": "int"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 9,
+                  "col": 15,
+                  "end_lineno": 9,
+                  "end_col": 16
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "v",
+                "id": "v"
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 9,
+                  "col": 18,
+                  "end_lineno": 9,
+                  "end_col": 22
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "base",
+                "id": "base"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 13,
+        "col": 0,
+        "end_lineno": 14,
+        "end_col": 18
+      },
+      "name": "py_ord",
+      "original_name": "py_ord",
+      "arg_types": {
+        "ch": "str"
+      },
+      "arg_order": [
+        "ch"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "ch": 0
+      },
+      "return_type": "int",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 14,
+            "col": 4,
+            "end_lineno": 14,
+            "end_col": 18
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 14,
+              "col": 11,
+              "end_lineno": 14,
+              "end_col": 18
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ord(ch)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 14,
+                "col": 11,
+                "end_lineno": 14,
+                "end_col": 14
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "ord",
+              "id": "ord"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 14,
+                  "col": 15,
+                  "end_lineno": 14,
+                  "end_col": 17
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "ch",
+                "id": "ch"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 18,
+        "col": 0,
+        "end_lineno": 19,
+        "end_col": 25
+      },
+      "name": "py_chr",
+      "original_name": "py_chr",
+      "arg_types": {
+        "codepoint": "int"
+      },
+      "arg_order": [
+        "codepoint"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "codepoint": 0
+      },
+      "return_type": "str",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 19,
+            "col": 4,
+            "end_lineno": 19,
+            "end_col": 25
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 19,
+              "col": 11,
+              "end_lineno": 19,
+              "end_col": 25
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "chr(codepoint)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 19,
+                "col": 11,
+                "end_lineno": 19,
+                "end_col": 14
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "chr",
+              "id": "chr"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 19,
+                  "col": 15,
+                  "end_lineno": 19,
+                  "end_col": 24
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "codepoint",
+                "id": "codepoint"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [
+        {
+          "module_id": "pytra.std",
+          "export_name": "extern",
+          "local_name": "extern",
+          "binding_kind": "symbol",
+          "source_file": "src/pytra/built_in/scalar_ops.py",
+          "source_line": 4
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std",
+          "symbol": "extern",
+          "local_name": "extern"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.std",
+        "export_name": "extern",
+        "local_name": "extern",
+        "binding_kind": "symbol",
+        "source_file": "src/pytra/built_in/scalar_ops.py",
+        "source_line": 4
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std",
+        "symbol": "extern",
+        "local_name": "extern"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "extern": {
+        "module": "pytra.std",
+        "name": "extern"
+      }
+    }
+  },
+  "east_stage": 1
+}

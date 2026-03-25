@@ -1,0 +1,116 @@
+{
+  "kind": "Module",
+  "source_path": "src/pytra/enum.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 60
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col": 0,
+          "end_lineno": 1,
+          "end_col": 60
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"Pytra enum module — re-exports from Python standard enum.",
+        "value": "Pytra enum module — re-exports from Python standard en"
+      }
+    },
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 5,
+        "col": 0,
+        "end_lineno": 5,
+        "end_col": 3
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 5,
+          "col": 0,
+          "end_lineno": 5,
+          "end_col": 3
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"",
+        "value": ""
+      }
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 7,
+        "col": 0,
+        "end_lineno": 7,
+        "end_col": 37
+      },
+      "module": "enum",
+      "names": [
+        {
+          "name": "*",
+          "asname": null
+        }
+      ],
+      "level": 0
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [
+        {
+          "module_id": "enum",
+          "export_name": "*",
+          "local_name": "*",
+          "binding_kind": "symbol",
+          "source_file": "src/pytra/enum.py",
+          "source_line": 7
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "enum",
+          "symbol": "*",
+          "local_name": "*"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "enum",
+        "export_name": "*",
+        "local_name": "*",
+        "binding_kind": "symbol",
+        "source_file": "src/pytra/enum.py",
+        "source_line": 7
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "enum",
+        "symbol": "*",
+        "local_name": "*"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {}
+  },
+  "east_stage": 1
+}

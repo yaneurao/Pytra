@@ -1,0 +1,1480 @@
+{
+  "kind": "Module",
+  "source_path": "src/pytra/std/sys.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 72
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col": 0,
+          "end_lineno": 1,
+          "end_col": 72
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"pytra.std.sys: extern-marked sys API with Python runtime fallback.\"\"\"",
+        "value": "pytra.std.sys: extern-marked sys API with Python runtime fallback."
+      }
+    },
+    {
+      "kind": "Import",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 4,
+        "end_col": 10
+      },
+      "names": [
+        {
+          "name": "sys",
+          "asname": null
+        }
+      ]
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 6,
+        "col": 0,
+        "end_lineno": 6,
+        "end_col": 28
+      },
+      "module": "pytra.std",
+      "names": [
+        {
+          "name": "extern",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 8,
+        "col": 0,
+        "end_lineno": 8,
+        "end_col": 34
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 8,
+          "col": 0,
+          "end_lineno": 8,
+          "end_col": 4
+        },
+        "resolved_type": "list[str]",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "argv",
+        "id": "argv",
+        "type_expr": {
+          "kind": "GenericType",
+          "base": "list",
+          "args": [
+            {
+              "kind": "NamedType",
+              "name": "str"
+            }
+          ]
+        }
+      },
+      "annotation": "list[str]",
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 8,
+          "col": 18,
+          "end_lineno": 8,
+          "end_col": 34
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "extern(sys.argv)",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 8,
+            "col": 18,
+            "end_lineno": 8,
+            "end_col": 24
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "extern",
+          "id": "extern"
+        },
+        "args": [
+          {
+            "kind": "Attribute",
+            "source_span": {
+              "lineno": 8,
+              "col": 25,
+              "end_lineno": 8,
+              "end_col": 33
+            },
+            "resolved_type": "list[str]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "sys.argv",
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 8,
+                "col": 25,
+                "end_lineno": 8,
+                "end_col": 28
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "sys",
+              "id": "sys"
+            },
+            "attr": "argv"
+          }
+        ],
+        "keywords": [],
+        "resolved_runtime_call": "extern",
+        "resolved_runtime_source": "import_symbol",
+        "runtime_module_id": "pytra.std",
+        "runtime_symbol": "extern",
+        "runtime_call_adapter_kind": "extern_delegate"
+      },
+      "declare": true,
+      "decl_type": "list[str]",
+      "annotation_type_expr": {
+        "kind": "GenericType",
+        "base": "list",
+        "args": [
+          {
+            "kind": "NamedType",
+            "name": "str"
+          }
+        ]
+      },
+      "decl_type_expr": {
+        "kind": "GenericType",
+        "base": "list",
+        "args": [
+          {
+            "kind": "NamedType",
+            "name": "str"
+          }
+        ]
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 9,
+        "col": 0,
+        "end_lineno": 9,
+        "end_col": 34
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 9,
+          "col": 0,
+          "end_lineno": 9,
+          "end_col": 4
+        },
+        "resolved_type": "list[str]",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "path",
+        "id": "path",
+        "type_expr": {
+          "kind": "GenericType",
+          "base": "list",
+          "args": [
+            {
+              "kind": "NamedType",
+              "name": "str"
+            }
+          ]
+        }
+      },
+      "annotation": "list[str]",
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 9,
+          "col": 18,
+          "end_lineno": 9,
+          "end_col": 34
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "extern(sys.path)",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 9,
+            "col": 18,
+            "end_lineno": 9,
+            "end_col": 24
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "extern",
+          "id": "extern"
+        },
+        "args": [
+          {
+            "kind": "Attribute",
+            "source_span": {
+              "lineno": 9,
+              "col": 25,
+              "end_lineno": 9,
+              "end_col": 33
+            },
+            "resolved_type": "list[str]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "sys.path",
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 9,
+                "col": 25,
+                "end_lineno": 9,
+                "end_col": 28
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "sys",
+              "id": "sys"
+            },
+            "attr": "path"
+          }
+        ],
+        "keywords": [],
+        "resolved_runtime_call": "extern",
+        "resolved_runtime_source": "import_symbol",
+        "runtime_module_id": "pytra.std",
+        "runtime_symbol": "extern",
+        "runtime_call_adapter_kind": "extern_delegate"
+      },
+      "declare": true,
+      "decl_type": "list[str]",
+      "annotation_type_expr": {
+        "kind": "GenericType",
+        "base": "list",
+        "args": [
+          {
+            "kind": "NamedType",
+            "name": "str"
+          }
+        ]
+      },
+      "decl_type_expr": {
+        "kind": "GenericType",
+        "base": "list",
+        "args": [
+          {
+            "kind": "NamedType",
+            "name": "str"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Assign",
+      "source_span": {
+        "lineno": 10,
+        "col": 0,
+        "end_lineno": 10,
+        "end_col": 27
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 10,
+          "col": 0,
+          "end_lineno": 10,
+          "end_col": 6
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "stderr",
+        "id": "stderr"
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 10,
+          "col": 9,
+          "end_lineno": 10,
+          "end_col": 27
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "extern(sys.stderr)",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 10,
+            "col": 9,
+            "end_lineno": 10,
+            "end_col": 15
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "extern",
+          "id": "extern"
+        },
+        "args": [
+          {
+            "kind": "Attribute",
+            "source_span": {
+              "lineno": 10,
+              "col": 16,
+              "end_lineno": 10,
+              "end_col": 26
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "sys.stderr",
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 10,
+                "col": 16,
+                "end_lineno": 10,
+                "end_col": 19
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "sys",
+              "id": "sys"
+            },
+            "attr": "stderr"
+          }
+        ],
+        "keywords": [],
+        "resolved_runtime_call": "extern",
+        "resolved_runtime_source": "import_symbol",
+        "runtime_module_id": "pytra.std",
+        "runtime_symbol": "extern",
+        "runtime_call_adapter_kind": "extern_delegate"
+      },
+      "declare": true,
+      "declare_init": true
+    },
+    {
+      "kind": "Assign",
+      "source_span": {
+        "lineno": 11,
+        "col": 0,
+        "end_lineno": 11,
+        "end_col": 27
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 11,
+          "col": 0,
+          "end_lineno": 11,
+          "end_col": 6
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "stdout",
+        "id": "stdout"
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 11,
+          "col": 9,
+          "end_lineno": 11,
+          "end_col": 27
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "extern(sys.stdout)",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 11,
+            "col": 9,
+            "end_lineno": 11,
+            "end_col": 15
+          },
+          "resolved_type": "unknown",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "extern",
+          "id": "extern"
+        },
+        "args": [
+          {
+            "kind": "Attribute",
+            "source_span": {
+              "lineno": 11,
+              "col": 16,
+              "end_lineno": 11,
+              "end_col": 26
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "sys.stdout",
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 11,
+                "col": 16,
+                "end_lineno": 11,
+                "end_col": 19
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "sys",
+              "id": "sys"
+            },
+            "attr": "stdout"
+          }
+        ],
+        "keywords": [],
+        "resolved_runtime_call": "extern",
+        "resolved_runtime_source": "import_symbol",
+        "runtime_module_id": "pytra.std",
+        "runtime_symbol": "extern",
+        "runtime_call_adapter_kind": "extern_delegate"
+      },
+      "declare": true,
+      "declare_init": true
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 15,
+        "col": 0,
+        "end_lineno": 16,
+        "end_col": 18
+      },
+      "name": "exit",
+      "original_name": "exit",
+      "arg_types": {
+        "code": "int64"
+      },
+      "arg_order": [
+        "code"
+      ],
+      "arg_defaults": {
+        "code": {
+          "kind": "Constant",
+          "source_span": {
+            "lineno": 15,
+            "col": 21,
+            "end_lineno": 15,
+            "end_col": 22
+          },
+          "resolved_type": "int64",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "0",
+          "value": 0
+        }
+      },
+      "arg_index": {
+        "code": 0
+      },
+      "return_type": "None",
+      "arg_usage": {
+        "code": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 16,
+            "col": 4,
+            "end_lineno": 16,
+            "end_col": 18
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 16,
+              "col": 4,
+              "end_lineno": 16,
+              "end_col": 18
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "sys.exit(code)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 16,
+                "col": 4,
+                "end_lineno": 16,
+                "end_col": 12
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "sys.exit",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 16,
+                  "col": 4,
+                  "end_lineno": 16,
+                  "end_col": 7
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "sys",
+                "id": "sys"
+              },
+              "attr": "exit"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 16,
+                  "col": 13,
+                  "end_lineno": 16,
+                  "end_col": 17
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "code",
+                "id": "code"
+              }
+            ],
+            "keywords": [],
+            "resolved_runtime_call": "sys.exit",
+            "resolved_runtime_source": "module_attr",
+            "runtime_module_id": "sys",
+            "runtime_symbol": "exit",
+            "semantic_tag": "stdlib.fn.exit"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "code": {
+          "kind": "NamedType",
+          "name": "int64"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 20,
+        "col": 0,
+        "end_lineno": 23,
+        "end_col": 22
+      },
+      "name": "set_argv",
+      "original_name": "set_argv",
+      "arg_types": {
+        "values": "list[str]"
+      },
+      "arg_order": [
+        "values"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "values": 0
+      },
+      "return_type": "None",
+      "arg_usage": {
+        "values": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 21,
+            "col": 4,
+            "end_lineno": 21,
+            "end_col": 16
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 21,
+              "col": 4,
+              "end_lineno": 21,
+              "end_col": 16
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "argv.clear()",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 21,
+                "col": 4,
+                "end_lineno": 21,
+                "end_col": 14
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "argv.clear",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 21,
+                  "col": 4,
+                  "end_lineno": 21,
+                  "end_col": 8
+                },
+                "resolved_type": "list[str]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "argv",
+                "id": "argv"
+              },
+              "attr": "clear"
+            },
+            "args": [],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "clear",
+            "runtime_call": "list.clear",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.clear",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.clear",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 21,
+                "col": 4,
+                "end_lineno": 21,
+                "end_col": 8
+              },
+              "resolved_type": "list[str]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "argv",
+              "id": "argv"
+            }
+          }
+        },
+        {
+          "kind": "For",
+          "source_span": {
+            "lineno": 22,
+            "col": 0,
+            "end_lineno": 23,
+            "end_col": 22
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 22,
+              "col": 8,
+              "end_lineno": 22,
+              "end_col": 9
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "v",
+            "id": "v"
+          },
+          "target_type": "str",
+          "iter_mode": "static_fastpath",
+          "iter_source_type": "list[str]",
+          "iter_element_type": "str",
+          "iter": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 22,
+              "col": 13,
+              "end_lineno": 22,
+              "end_col": 19
+            },
+            "resolved_type": "list[str]",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "values",
+            "id": "values",
+            "iterable_trait": "yes",
+            "iter_protocol": "static_range",
+            "iter_element_type": "str"
+          },
+          "body": [
+            {
+              "kind": "Expr",
+              "source_span": {
+                "lineno": 23,
+                "col": 8,
+                "end_lineno": 23,
+                "end_col": 22
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 23,
+                  "col": 8,
+                  "end_lineno": 23,
+                  "end_col": 22
+                },
+                "resolved_type": "None",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "argv.append(v)",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 23,
+                    "col": 8,
+                    "end_lineno": 23,
+                    "end_col": 19
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "argv.append",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 23,
+                      "col": 8,
+                      "end_lineno": 23,
+                      "end_col": 12
+                    },
+                    "resolved_type": "list[str]",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "argv",
+                    "id": "argv"
+                  },
+                  "attr": "append"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 23,
+                      "col": 20,
+                      "end_lineno": 23,
+                      "end_col": 21
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "v",
+                    "id": "v"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "append",
+                "runtime_call": "list.append",
+                "runtime_module_id": "pytra.core.list",
+                "runtime_symbol": "list.append",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "stdlib.method.append",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 23,
+                    "col": 8,
+                    "end_lineno": 23,
+                    "end_col": 12
+                  },
+                  "resolved_type": "list[str]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "argv",
+                  "id": "argv"
+                }
+              }
+            }
+          ],
+          "orelse": []
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "values": {
+          "kind": "GenericType",
+          "base": "list",
+          "args": [
+            {
+              "kind": "NamedType",
+              "name": "str"
+            }
+          ]
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 27,
+        "col": 0,
+        "end_lineno": 30,
+        "end_col": 22
+      },
+      "name": "set_path",
+      "original_name": "set_path",
+      "arg_types": {
+        "values": "list[str]"
+      },
+      "arg_order": [
+        "values"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "values": 0
+      },
+      "return_type": "None",
+      "arg_usage": {
+        "values": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 28,
+            "col": 4,
+            "end_lineno": 28,
+            "end_col": 16
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 28,
+              "col": 4,
+              "end_lineno": 28,
+              "end_col": 16
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "path.clear()",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 28,
+                "col": 4,
+                "end_lineno": 28,
+                "end_col": 14
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "path.clear",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 28,
+                  "col": 4,
+                  "end_lineno": 28,
+                  "end_col": 8
+                },
+                "resolved_type": "list[str]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "path",
+                "id": "path"
+              },
+              "attr": "clear"
+            },
+            "args": [],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "clear",
+            "runtime_call": "list.clear",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.clear",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.clear",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 28,
+                "col": 4,
+                "end_lineno": 28,
+                "end_col": 8
+              },
+              "resolved_type": "list[str]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "path",
+              "id": "path"
+            }
+          }
+        },
+        {
+          "kind": "For",
+          "source_span": {
+            "lineno": 22,
+            "col": 0,
+            "end_lineno": 30,
+            "end_col": 22
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 22,
+              "col": 8,
+              "end_lineno": 22,
+              "end_col": 9
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "v",
+            "id": "v"
+          },
+          "target_type": "str",
+          "iter_mode": "static_fastpath",
+          "iter_source_type": "list[str]",
+          "iter_element_type": "str",
+          "iter": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 22,
+              "col": 13,
+              "end_lineno": 22,
+              "end_col": 19
+            },
+            "resolved_type": "list[str]",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "values",
+            "id": "values",
+            "iterable_trait": "yes",
+            "iter_protocol": "static_range",
+            "iter_element_type": "str"
+          },
+          "body": [
+            {
+              "kind": "Expr",
+              "source_span": {
+                "lineno": 30,
+                "col": 8,
+                "end_lineno": 30,
+                "end_col": 22
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 30,
+                  "col": 8,
+                  "end_lineno": 30,
+                  "end_col": 22
+                },
+                "resolved_type": "None",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "path.append(v)",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 30,
+                    "col": 8,
+                    "end_lineno": 30,
+                    "end_col": 19
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "path.append",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 30,
+                      "col": 8,
+                      "end_lineno": 30,
+                      "end_col": 12
+                    },
+                    "resolved_type": "list[str]",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "path",
+                    "id": "path"
+                  },
+                  "attr": "append"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 30,
+                      "col": 20,
+                      "end_lineno": 30,
+                      "end_col": 21
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "v",
+                    "id": "v"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "append",
+                "runtime_call": "list.append",
+                "runtime_module_id": "pytra.core.list",
+                "runtime_symbol": "list.append",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "stdlib.method.append",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 30,
+                    "col": 8,
+                    "end_lineno": 30,
+                    "end_col": 12
+                  },
+                  "resolved_type": "list[str]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "path",
+                  "id": "path"
+                }
+              }
+            }
+          ],
+          "orelse": []
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "values": {
+          "kind": "GenericType",
+          "base": "list",
+          "args": [
+            {
+              "kind": "NamedType",
+              "name": "str"
+            }
+          ]
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 34,
+        "col": 0,
+        "end_lineno": 35,
+        "end_col": 26
+      },
+      "name": "write_stderr",
+      "original_name": "write_stderr",
+      "arg_types": {
+        "text": "str"
+      },
+      "arg_order": [
+        "text"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "text": 0
+      },
+      "return_type": "None",
+      "arg_usage": {
+        "text": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 35,
+            "col": 4,
+            "end_lineno": 35,
+            "end_col": 26
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 35,
+              "col": 4,
+              "end_lineno": 35,
+              "end_col": 26
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "sys.stderr.write(text)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 35,
+                "col": 4,
+                "end_lineno": 35,
+                "end_col": 20
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "sys.stderr.write",
+              "value": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 35,
+                  "col": 4,
+                  "end_lineno": 35,
+                  "end_col": 14
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "sys.stderr",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 35,
+                    "col": 4,
+                    "end_lineno": 35,
+                    "end_col": 7
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "sys",
+                  "id": "sys"
+                },
+                "attr": "stderr"
+              },
+              "attr": "write"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 35,
+                  "col": 21,
+                  "end_lineno": 35,
+                  "end_col": 25
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "text",
+                "id": "text"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "text": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 39,
+        "col": 0,
+        "end_lineno": 40,
+        "end_col": 26
+      },
+      "name": "write_stdout",
+      "original_name": "write_stdout",
+      "arg_types": {
+        "text": "str"
+      },
+      "arg_order": [
+        "text"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "text": 0
+      },
+      "return_type": "None",
+      "arg_usage": {
+        "text": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 40,
+            "col": 4,
+            "end_lineno": 40,
+            "end_col": 26
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 40,
+              "col": 4,
+              "end_lineno": 40,
+              "end_col": 26
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "sys.stdout.write(text)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 40,
+                "col": 4,
+                "end_lineno": 40,
+                "end_col": 20
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "sys.stdout.write",
+              "value": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 40,
+                  "col": 4,
+                  "end_lineno": 40,
+                  "end_col": 14
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "sys.stdout",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 40,
+                    "col": 4,
+                    "end_lineno": 40,
+                    "end_col": 7
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "sys",
+                  "id": "sys"
+                },
+                "attr": "stdout"
+              },
+              "attr": "write"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 40,
+                  "col": 21,
+                  "end_lineno": 40,
+                  "end_col": 25
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "text",
+                "id": "text"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "text": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "sys",
+          "export_name": "",
+          "local_name": "sys",
+          "binding_kind": "module",
+          "source_file": "src/pytra/std/sys.py",
+          "source_line": 4,
+          "source_module_id": "sys",
+          "source_export_name": "",
+          "source_binding_kind": "module",
+          "runtime_module_id": "pytra.std.sys",
+          "runtime_group": "std",
+          "resolved_binding_kind": "module",
+          "host_only": true
+        },
+        {
+          "module_id": "pytra.std",
+          "export_name": "extern",
+          "local_name": "extern",
+          "binding_kind": "symbol",
+          "source_file": "src/pytra/std/sys.py",
+          "source_line": 6,
+          "source_module_id": "pytra.std",
+          "source_export_name": "extern",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.std",
+          "runtime_group": "std",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "extern",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.extern"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std",
+          "symbol": "extern",
+          "local_name": "extern"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "sys",
+        "export_name": "",
+        "local_name": "sys",
+        "binding_kind": "module",
+        "source_file": "src/pytra/std/sys.py",
+        "source_line": 4,
+        "host_only": true
+      },
+      {
+        "module_id": "pytra.std",
+        "export_name": "extern",
+        "local_name": "extern",
+        "binding_kind": "symbol",
+        "source_file": "src/pytra/std/sys.py",
+        "source_line": 6
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std",
+        "symbol": "extern",
+        "local_name": "extern"
+      }
+    ],
+    "import_modules": {
+      "sys": "sys"
+    },
+    "import_symbols": {
+      "extern": {
+        "module": "pytra.std",
+        "name": "extern"
+      }
+    },
+    "dispatch_mode": "native"
+  },
+  "east_stage": 2,
+  "schema_version": 1
+}

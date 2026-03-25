@@ -1,0 +1,614 @@
+{
+  "kind": "Module",
+  "source_path": "src/pytra/std/os.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 73
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col": 0,
+          "end_lineno": 1,
+          "end_col": 73
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"pytra.std.os: extern-marked os subset with Python runtime fallback.\"\"\"",
+        "value": "pytra.std.os: extern-marked os subset with Python runtime fallback."
+      }
+    },
+    {
+      "kind": "Import",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 4,
+        "end_col": 9
+      },
+      "names": [
+        {
+          "name": "os",
+          "asname": null
+        }
+      ]
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 6,
+        "col": 0,
+        "end_lineno": 6,
+        "end_col": 28
+      },
+      "module": "pytra.std",
+      "names": [
+        {
+          "name": "extern",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 7,
+        "col": 0,
+        "end_lineno": 7,
+        "end_col": 37
+      },
+      "module": "pytra.std",
+      "names": [
+        {
+          "name": "os_path",
+          "asname": "path"
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 11,
+        "col": 0,
+        "end_lineno": 12,
+        "end_col": 22
+      },
+      "name": "getcwd",
+      "original_name": "getcwd",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "str",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 12,
+            "col": 4,
+            "end_lineno": 12,
+            "end_col": 22
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 12,
+              "col": 11,
+              "end_lineno": 12,
+              "end_col": 22
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "os.getcwd()",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 12,
+                "col": 11,
+                "end_lineno": 12,
+                "end_col": 20
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "os.getcwd",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 12,
+                  "col": 11,
+                  "end_lineno": 12,
+                  "end_col": 13
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "os",
+                "id": "os"
+              },
+              "attr": "getcwd"
+            },
+            "args": [],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 16,
+        "col": 0,
+        "end_lineno": 19,
+        "end_col": 15
+      },
+      "name": "mkdir",
+      "original_name": "mkdir",
+      "arg_types": {
+        "p": "str",
+        "exist_ok": "bool"
+      },
+      "arg_order": [
+        "p",
+        "exist_ok"
+      ],
+      "arg_defaults": {
+        "exist_ok": {
+          "kind": "Constant",
+          "source_span": {
+            "lineno": 16,
+            "col": 35,
+            "end_lineno": 16,
+            "end_col": 40
+          },
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "False",
+          "value": false
+        }
+      },
+      "arg_index": {
+        "p": 0,
+        "exist_ok": 1
+      },
+      "return_type": "None",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 17,
+            "col": 4,
+            "end_lineno": 18,
+            "end_col": 14
+          },
+          "test": {
+            "kind": "BoolOp",
+            "source_span": {
+              "lineno": 17,
+              "col": 7,
+              "end_lineno": 17,
+              "end_col": 34
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "exist_ok and path.exists(p)",
+            "op": "And",
+            "values": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 17,
+                  "col": 7,
+                  "end_lineno": 17,
+                  "end_col": 15
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "exist_ok",
+                "id": "exist_ok"
+              },
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 17,
+                  "col": 20,
+                  "end_lineno": 17,
+                  "end_col": 34
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "path.exists(p)",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 17,
+                    "col": 20,
+                    "end_lineno": 17,
+                    "end_col": 31
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "path.exists",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 17,
+                      "col": 20,
+                      "end_lineno": 17,
+                      "end_col": 24
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "path",
+                    "id": "path"
+                  },
+                  "attr": "exists"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 17,
+                      "col": 32,
+                      "end_lineno": 17,
+                      "end_col": 33
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "p",
+                    "id": "p"
+                  }
+                ],
+                "keywords": []
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Expr",
+              "source_span": {
+                "lineno": 18,
+                "col": 8,
+                "end_lineno": 18,
+                "end_col": 14
+              },
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 18,
+                  "col": 8,
+                  "end_lineno": 18,
+                  "end_col": 14
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "return",
+                "id": "return"
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 19,
+            "col": 4,
+            "end_lineno": 19,
+            "end_col": 15
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 19,
+              "col": 4,
+              "end_lineno": 19,
+              "end_col": 15
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "os.mkdir(p)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 19,
+                "col": 4,
+                "end_lineno": 19,
+                "end_col": 12
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "os.mkdir",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 19,
+                  "col": 4,
+                  "end_lineno": 19,
+                  "end_col": 6
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "os",
+                "id": "os"
+              },
+              "attr": "mkdir"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 19,
+                  "col": 13,
+                  "end_lineno": 19,
+                  "end_col": 14
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "p",
+                "id": "p"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 23,
+        "col": 0,
+        "end_lineno": 24,
+        "end_col": 37
+      },
+      "name": "makedirs",
+      "original_name": "makedirs",
+      "arg_types": {
+        "p": "str",
+        "exist_ok": "bool"
+      },
+      "arg_order": [
+        "p",
+        "exist_ok"
+      ],
+      "arg_defaults": {
+        "exist_ok": {
+          "kind": "Constant",
+          "source_span": {
+            "lineno": 23,
+            "col": 38,
+            "end_lineno": 23,
+            "end_col": 43
+          },
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "False",
+          "value": false
+        }
+      },
+      "arg_index": {
+        "p": 0,
+        "exist_ok": 1
+      },
+      "return_type": "None",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 24,
+            "col": 4,
+            "end_lineno": 24,
+            "end_col": 37
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 24,
+              "col": 4,
+              "end_lineno": 24,
+              "end_col": 37
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "os.makedirs(p, exist_ok=exist_ok)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 24,
+                "col": 4,
+                "end_lineno": 24,
+                "end_col": 15
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "os.makedirs",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 24,
+                  "col": 4,
+                  "end_lineno": 24,
+                  "end_col": 6
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "os",
+                "id": "os"
+              },
+              "attr": "makedirs"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 24,
+                  "col": 16,
+                  "end_lineno": 24,
+                  "end_col": 17
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "p",
+                "id": "p"
+              }
+            ],
+            "keywords": [
+              {
+                "arg": "exist_ok",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 24,
+                    "col": 28,
+                    "end_lineno": 24,
+                    "end_col": 36
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "exist_ok",
+                  "id": "exist_ok"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [
+        {
+          "module_id": "os",
+          "export_name": "",
+          "local_name": "os",
+          "binding_kind": "module",
+          "source_file": "src/pytra/std/os.py",
+          "source_line": 4
+        },
+        {
+          "module_id": "pytra.std",
+          "export_name": "extern",
+          "local_name": "extern",
+          "binding_kind": "symbol",
+          "source_file": "src/pytra/std/os.py",
+          "source_line": 6
+        },
+        {
+          "module_id": "pytra.std",
+          "export_name": "os_path",
+          "local_name": "path",
+          "binding_kind": "symbol",
+          "source_file": "src/pytra/std/os.py",
+          "source_line": 7
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std",
+          "symbol": "extern",
+          "local_name": "extern"
+        },
+        {
+          "module_id": "pytra.std",
+          "symbol": "os_path",
+          "local_name": "path"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "os",
+        "export_name": "",
+        "local_name": "os",
+        "binding_kind": "module",
+        "source_file": "src/pytra/std/os.py",
+        "source_line": 4
+      },
+      {
+        "module_id": "pytra.std",
+        "export_name": "extern",
+        "local_name": "extern",
+        "binding_kind": "symbol",
+        "source_file": "src/pytra/std/os.py",
+        "source_line": 6
+      },
+      {
+        "module_id": "pytra.std",
+        "export_name": "os_path",
+        "local_name": "path",
+        "binding_kind": "symbol",
+        "source_file": "src/pytra/std/os.py",
+        "source_line": 7
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std",
+        "symbol": "extern",
+        "local_name": "extern"
+      },
+      {
+        "module_id": "pytra.std",
+        "symbol": "os_path",
+        "local_name": "path"
+      }
+    ],
+    "import_modules": {
+      "os": "os"
+    },
+    "import_symbols": {
+      "extern": {
+        "module": "pytra.std",
+        "name": "extern"
+      },
+      "path": {
+        "module": "pytra.std",
+        "name": "os_path"
+      }
+    }
+  },
+  "east_stage": 1
+}

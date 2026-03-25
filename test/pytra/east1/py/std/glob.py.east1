@@ -1,0 +1,234 @@
+{
+  "kind": "Module",
+  "source_path": "src/pytra/std/glob.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 77
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col": 0,
+          "end_lineno": 1,
+          "end_col": 77
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"pytra.std.glob: extern-marked glob subset with Python runtime fallback.\"\"\"",
+        "value": "pytra.std.glob: extern-marked glob subset with Python runtime fallback."
+      }
+    },
+    {
+      "kind": "Import",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 4,
+        "end_col": 24
+      },
+      "names": [
+        {
+          "name": "glob",
+          "asname": "_glob_mod"
+        }
+      ]
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 6,
+        "col": 0,
+        "end_lineno": 6,
+        "end_col": 28
+      },
+      "module": "pytra.std",
+      "names": [
+        {
+          "name": "extern",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 10,
+        "col": 0,
+        "end_lineno": 11,
+        "end_col": 34
+      },
+      "name": "glob",
+      "original_name": "glob",
+      "arg_types": {
+        "pattern": "str"
+      },
+      "arg_order": [
+        "pattern"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "pattern": 0
+      },
+      "return_type": "list[str]",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 11,
+            "col": 4,
+            "end_lineno": 11,
+            "end_col": 34
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 11,
+              "col": 11,
+              "end_lineno": 11,
+              "end_col": 34
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "_glob_mod.glob(pattern)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 11,
+                "col": 11,
+                "end_lineno": 11,
+                "end_col": 25
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "_glob_mod.glob",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 11,
+                  "col": 11,
+                  "end_lineno": 11,
+                  "end_col": 20
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "_glob_mod",
+                "id": "_glob_mod"
+              },
+              "attr": "glob"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 11,
+                  "col": 26,
+                  "end_lineno": 11,
+                  "end_col": 33
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "pattern",
+                "id": "pattern"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [
+        {
+          "module_id": "glob",
+          "export_name": "",
+          "local_name": "_glob_mod",
+          "binding_kind": "module",
+          "source_file": "src/pytra/std/glob.py",
+          "source_line": 4
+        },
+        {
+          "module_id": "pytra.std",
+          "export_name": "extern",
+          "local_name": "extern",
+          "binding_kind": "symbol",
+          "source_file": "src/pytra/std/glob.py",
+          "source_line": 6
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std",
+          "symbol": "extern",
+          "local_name": "extern"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "glob",
+        "export_name": "",
+        "local_name": "_glob_mod",
+        "binding_kind": "module",
+        "source_file": "src/pytra/std/glob.py",
+        "source_line": 4
+      },
+      {
+        "module_id": "pytra.std",
+        "export_name": "extern",
+        "local_name": "extern",
+        "binding_kind": "symbol",
+        "source_file": "src/pytra/std/glob.py",
+        "source_line": 6
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std",
+        "symbol": "extern",
+        "local_name": "extern"
+      }
+    ],
+    "import_modules": {
+      "_glob_mod": "glob"
+    },
+    "import_symbols": {
+      "extern": {
+        "module": "pytra.std",
+        "name": "extern"
+      }
+    }
+  },
+  "east_stage": 1
+}

@@ -1,0 +1,156 @@
+{
+  "kind": "Module",
+  "source_path": "src/pytra/std/template.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 56
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col": 0,
+          "end_lineno": 1,
+          "end_col": 56
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"Template decorator stubs for Pytra source surface.\"\"\"",
+        "value": "Template decorator stubs for Pytra source surface."
+      }
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 8,
+        "end_col": 15
+      },
+      "name": "template",
+      "original_name": "template",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 5,
+            "col": 4,
+            "end_lineno": 6,
+            "end_col": 17
+          },
+          "name": "deco",
+          "original_name": "deco",
+          "arg_types": {
+            "fn": "unknown"
+          },
+          "arg_order": [
+            "fn"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "fn": 0
+          },
+          "return_type": "None",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 6,
+                "col": 8,
+                "end_lineno": 6,
+                "end_col": 17
+              },
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 15,
+                  "end_lineno": 6,
+                  "end_col": 17
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "fn",
+                "id": "fn"
+              }
+            }
+          ],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "leading_comments": [],
+          "leading_trivia": []
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 8,
+            "col": 4,
+            "end_lineno": 8,
+            "end_col": 15
+          },
+          "value": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 8,
+              "col": 11,
+              "end_lineno": 8,
+              "end_col": 15
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "deco",
+            "id": "deco"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "vararg_name": "params",
+      "vararg_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [],
+      "qualified_refs": []
+    },
+    "import_bindings": [],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {}
+  },
+  "east_stage": 1
+}
