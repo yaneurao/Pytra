@@ -10,6 +10,29 @@
 - import パス解決、@extern 委譲、runtime コピーは `loader.py` の共通関数に委譲する。
 - emitter 固有のロジックは「EAST3 ノード → ターゲット言語の構文」の変換のみに限定する。
 
+### 1.1 emitter の禁止事項
+
+emitter は EAST3 を忠実にレンダリングする。以下は禁止:
+
+| 禁止事項 | 理由 | 正しい対処 |
+|---|---|---|
+| **cast を追加する** | EAST に必要な cast がないのは resolve のバグ | resolve を修正する |
+| **変数の型を変更する** | EAST の `resolved_type` が正本 | resolve を修正する |
+| **for-range のループ変数の型を変更する** | EAST の型情報が正本 | resolve を修正する |
+| **mapping にない名前変換をハードコードする** | `mapping.json` が正本 | mapping.json に追加する |
+| **型推論を再実装する** | §12.1 参照 | EAST の型推論を修正する |
+
+emitter が許可されるのは:
+
+| 許可事項 | 説明 |
+|---|---|
+| EAST ノードをターゲット言語の構文にレンダリングする | emitter の本務 |
+| `mapping.json` の `calls` に従って名前を写像する | §7 参照 |
+| `mapping.json` の `implicit_promotions` に従って cast 出力をスキップする | §12.4 参照。出力を省略するだけで、追加はしない |
+| 特殊マーカー（`__CAST__` 等）を言語固有の構文に展開する | §5 参照 |
+
+**EAST の情報が不足している場合は、emitter にワークアラウンドを書くのではなく、EAST（resolve/compile/optimize）を修正すること。**
+
 ### runtime_call_adapter_kind
 
 Call ノードの `runtime_call_adapter_kind` は、runtime 関数の呼び出し規約を示す。EAST3 が `runtime_module_id` の所属グループから自動導出する。
