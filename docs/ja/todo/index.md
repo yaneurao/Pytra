@@ -22,6 +22,16 @@
 
 1. [ ] [ID: P0-REGEN-S2] golden 更新後に emit parity テスト（Python 実行結果との一致）を自動実行し、end-to-end の正しさを検証する — Go parity で代替検証済み、C++ は P1-EMIT-CPP 後
 
+### P0-INCLUDE-REORG: test/include/ のフォルダ構成を他と統一
+
+文脈: [docs/ja/plans/p0-include-reorg.md](../plans/p0-include-reorg.md)
+
+1. [ ] [ID: P0-INCLUDE-REORG-S1] `test/include/builtin/east1/py/` → `test/include/east1/py/built_in/` に移動
+2. [ ] [ID: P0-INCLUDE-REORG-S2] `test/include/stdlib/east1/py/` → `test/include/east1/py/std/` に移動
+3. [ ] [ID: P0-INCLUDE-REORG-S3] `pytra-cli2.py` / `regenerate_golden.py` / resolve のパス参照を更新
+4. [ ] [ID: P0-INCLUDE-REORG-S4] 旧 `test/include/builtin/` と `test/include/stdlib/` を削除
+5. [ ] [ID: P0-INCLUDE-REORG-S5] fixture 132 + sample 18 の parity 維持を確認
+
 ### P0-TEST-REORG: test/ ディレクトリ再編 + pytra 実装本体の golden 生成 — 完了
 
 文脈: [docs/ja/plans/p0-test-reorg.md](../plans/p0-test-reorg.md)
