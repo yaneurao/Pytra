@@ -1849,6 +1849,7 @@ def _resolve_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
                                 elem_name = elem.get("id")
                                 if isinstance(elem_name, str):
                                     et: str = tup_types[idx_t] if idx_t < len(tup_types) else "unknown"
+                                    elem["resolved_type"] = et
                                     ctx.scope.define(elem_name, et)
                 else:
                     _resolve_expr(t, ctx)
@@ -1865,6 +1866,18 @@ def _resolve_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
                     else:
                         target["resolved_type"] = "unknown"
                     ctx.scope.define(name_val2, vt)
+            elif target.get("kind") == "Tuple":
+                _resolve_expr(target, ctx)
+                elems2 = target.get("elements")
+                if isinstance(elems2, list):
+                    tup_types2: list[str] = extract_type_args(vt) if vt.startswith("tuple[") else []
+                    for idx_t2, elem2 in enumerate(elems2):
+                        if isinstance(elem2, dict) and elem2.get("kind") == "Name":
+                            elem_name2 = elem2.get("id")
+                            if isinstance(elem_name2, str):
+                                et2: str = tup_types2[idx_t2] if idx_t2 < len(tup_types2) else "unknown"
+                                elem2["resolved_type"] = et2
+                                ctx.scope.define(elem_name2, et2)
             else:
                 _resolve_expr(target, ctx)
 

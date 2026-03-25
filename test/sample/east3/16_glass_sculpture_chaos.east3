@@ -9118,9 +9118,9 @@
                   "end_lineno": 130,
                   "end_col_offset": 47
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "float64",
                 "casts": [],
-                "borrow_kind": "value",
+                "borrow_kind": "readonly_ref",
                 "repr": "fwd_z",
                 "id": "fwd_z"
               },
@@ -9146,7 +9146,7 @@
                   "end_lineno": 130,
                   "end_col_offset": 60
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "float64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "-fwd_x",
@@ -9159,9 +9159,9 @@
                     "end_lineno": 130,
                     "end_col_offset": 60
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "float64",
                   "casts": [],
-                  "borrow_kind": "value",
+                  "borrow_kind": "readonly_ref",
                   "repr": "fwd_x",
                   "id": "fwd_x"
                 }
@@ -9292,7 +9292,7 @@
                   "end_lineno": 131,
                   "end_col_offset": 67
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "float64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "right_y * fwd_z - right_z * fwd_y",
@@ -9304,7 +9304,7 @@
                     "end_lineno": 131,
                     "end_col_offset": 49
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "float64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "right_y * fwd_z",
@@ -9316,9 +9316,9 @@
                       "end_lineno": 131,
                       "end_col_offset": 41
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "right_y",
                     "id": "right_y"
                   },
@@ -9331,9 +9331,9 @@
                       "end_lineno": 131,
                       "end_col_offset": 49
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "fwd_z",
                     "id": "fwd_z"
                   }
@@ -9347,7 +9347,7 @@
                     "end_lineno": 131,
                     "end_col_offset": 67
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "float64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "right_z * fwd_y",
@@ -9359,9 +9359,9 @@
                       "end_lineno": 131,
                       "end_col_offset": 59
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "right_z",
                     "id": "right_z"
                   },
@@ -9374,9 +9374,9 @@
                       "end_lineno": 131,
                       "end_col_offset": 67
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "fwd_y",
                     "id": "fwd_y"
                   }
@@ -9390,7 +9390,7 @@
                   "end_lineno": 131,
                   "end_col_offset": 102
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "float64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "right_z * fwd_x - right_x * fwd_z",
@@ -9402,7 +9402,7 @@
                     "end_lineno": 131,
                     "end_col_offset": 84
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "float64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "right_z * fwd_x",
@@ -9414,9 +9414,9 @@
                       "end_lineno": 131,
                       "end_col_offset": 76
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "right_z",
                     "id": "right_z"
                   },
@@ -9429,9 +9429,9 @@
                       "end_lineno": 131,
                       "end_col_offset": 84
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "fwd_x",
                     "id": "fwd_x"
                   }
@@ -9445,7 +9445,7 @@
                     "end_lineno": 131,
                     "end_col_offset": 102
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "float64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "right_x * fwd_z",
@@ -9457,9 +9457,9 @@
                       "end_lineno": 131,
                       "end_col_offset": 94
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "right_x",
                     "id": "right_x"
                   },
@@ -9472,9 +9472,9 @@
                       "end_lineno": 131,
                       "end_col_offset": 102
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "fwd_z",
                     "id": "fwd_z"
                   }
@@ -9488,7 +9488,7 @@
                   "end_lineno": 131,
                   "end_col_offset": 137
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "float64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "right_x * fwd_y - right_y * fwd_x",
@@ -9500,7 +9500,7 @@
                     "end_lineno": 131,
                     "end_col_offset": 119
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "float64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "right_x * fwd_y",
@@ -9512,9 +9512,9 @@
                       "end_lineno": 131,
                       "end_col_offset": 111
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "right_x",
                     "id": "right_x"
                   },
@@ -9527,9 +9527,9 @@
                       "end_lineno": 131,
                       "end_col_offset": 119
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "fwd_y",
                     "id": "fwd_y"
                   }
@@ -9543,7 +9543,7 @@
                     "end_lineno": 131,
                     "end_col_offset": 137
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "float64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "right_y * fwd_x",
@@ -9555,9 +9555,9 @@
                       "end_lineno": 131,
                       "end_col_offset": 129
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "right_y",
                     "id": "right_y"
                   },
@@ -9570,9 +9570,9 @@
                       "end_lineno": 131,
                       "end_col_offset": 137
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
-                    "borrow_kind": "value",
+                    "borrow_kind": "readonly_ref",
                     "repr": "fwd_x",
                     "id": "fwd_x"
                   }
@@ -12687,9 +12687,9 @@
                         "end_lineno": 161,
                         "end_col_offset": 22
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "float64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "fwd_x",
                       "id": "fwd_x"
                     },
@@ -12768,9 +12768,9 @@
                               "end_lineno": 161,
                               "end_col_offset": 44
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "right_x",
                             "id": "right_x"
                           }
@@ -12811,9 +12811,9 @@
                               "end_lineno": 161,
                               "end_col_offset": 56
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "up_x",
                             "id": "up_x"
                           }
@@ -12873,9 +12873,9 @@
                         "end_lineno": 162,
                         "end_col_offset": 22
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "float64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "fwd_y",
                       "id": "fwd_y"
                     },
@@ -12954,9 +12954,9 @@
                               "end_lineno": 162,
                               "end_col_offset": 44
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "right_y",
                             "id": "right_y"
                           }
@@ -12997,9 +12997,9 @@
                               "end_lineno": 162,
                               "end_col_offset": 56
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "up_y",
                             "id": "up_y"
                           }
@@ -13059,9 +13059,9 @@
                         "end_lineno": 163,
                         "end_col_offset": 22
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "float64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "fwd_z",
                       "id": "fwd_z"
                     },
@@ -13140,9 +13140,9 @@
                               "end_lineno": 163,
                               "end_col_offset": 44
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "right_z",
                             "id": "right_z"
                           }
@@ -13183,9 +13183,9 @@
                               "end_lineno": 163,
                               "end_col_offset": 56
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "up_z",
                             "id": "up_z"
                           }
@@ -13631,9 +13631,9 @@
                         "end_lineno": 174,
                         "end_col_offset": 17
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "float64",
                       "casts": [],
-                      "borrow_kind": "value",
+                      "borrow_kind": "readonly_ref",
                       "repr": "dy",
                       "id": "dy"
                     },
@@ -13774,9 +13774,9 @@
                             "end_lineno": 175,
                             "end_col_offset": 40
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "float64",
                           "casts": [],
-                          "borrow_kind": "value",
+                          "borrow_kind": "readonly_ref",
                           "repr": "dy",
                           "id": "dy"
                         }
@@ -14118,9 +14118,9 @@
                           "end_lineno": 180,
                           "end_col_offset": 57
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "float64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "dx",
                         "id": "dx"
                       },
@@ -14132,9 +14132,9 @@
                           "end_lineno": 180,
                           "end_col_offset": 61
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "float64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "dy",
                         "id": "dy"
                       },
@@ -14146,9 +14146,9 @@
                           "end_lineno": 180,
                           "end_col_offset": 65
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "float64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "dz",
                         "id": "dz"
                       },
@@ -14538,9 +14538,9 @@
                           "end_lineno": 184,
                           "end_col_offset": 57
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "float64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "dx",
                         "id": "dx"
                       },
@@ -14552,9 +14552,9 @@
                           "end_lineno": 184,
                           "end_col_offset": 61
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "float64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "dy",
                         "id": "dy"
                       },
@@ -14566,9 +14566,9 @@
                           "end_lineno": 184,
                           "end_col_offset": 65
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "float64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "dz",
                         "id": "dz"
                       },
@@ -14958,9 +14958,9 @@
                           "end_lineno": 188,
                           "end_col_offset": 57
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "float64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "dx",
                         "id": "dx"
                       },
@@ -14972,9 +14972,9 @@
                           "end_lineno": 188,
                           "end_col_offset": 61
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "float64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "dy",
                         "id": "dy"
                       },
@@ -14986,9 +14986,9 @@
                           "end_lineno": 188,
                           "end_col_offset": 65
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "float64",
                         "casts": [],
-                        "borrow_kind": "value",
+                        "borrow_kind": "readonly_ref",
                         "repr": "dz",
                         "id": "dz"
                       },
@@ -15333,7 +15333,7 @@
                 {
                   "kind": "VarDecl",
                   "name": "ndotl",
-                  "type": "unknown",
+                  "type": "float64",
                   "hoisted": true
                 },
                 {
@@ -15433,9 +15433,9 @@
                               "end_lineno": 194,
                               "end_col_offset": 38
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "dx",
                             "id": "dx"
                           },
@@ -15447,9 +15447,9 @@
                               "end_lineno": 194,
                               "end_col_offset": 42
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "dy",
                             "id": "dy"
                           },
@@ -15461,9 +15461,9 @@
                               "end_lineno": 194,
                               "end_col_offset": 46
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "dz",
                             "id": "dz"
                           },
@@ -15709,9 +15709,9 @@
                                   "end_lineno": 196,
                                   "end_col_offset": 40
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "dx",
                                 "id": "dx"
                               }
@@ -15812,9 +15812,9 @@
                                   "end_lineno": 197,
                                   "end_col_offset": 40
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "dz",
                                 "id": "dz"
                               }
@@ -17127,13 +17127,14 @@
                               "end_lineno": 209,
                               "end_col_offset": 21
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "ndotl",
                             "id": "ndotl"
                           },
                           "declare": true,
+                          "decl_type": "float64",
                           "declare_init": true,
                           "value": {
                             "kind": "Call",
@@ -17143,7 +17144,7 @@
                               "end_lineno": 209,
                               "end_col_offset": 37
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "max(ldy, 0.0)",
@@ -17170,9 +17171,9 @@
                                   "end_lineno": 209,
                                   "end_col_offset": 31
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "ldy",
                                 "id": "ldy"
                               },
@@ -17201,19 +17202,17 @@
                             "semantic_tag": "math.max",
                             "type_expr_summary_v1": {
                               "schema_version": 1,
-                              "kind": "DynamicType",
-                              "category": "dynamic",
-                              "mirror": "unknown",
-                              "dynamic_name": "unknown"
+                              "kind": "NamedType",
+                              "category": "static",
+                              "mirror": "float64"
                             },
                             "yields_dynamic": true
                           },
                           "type_expr_summary_v1": {
                             "schema_version": 1,
-                            "kind": "DynamicType",
-                            "category": "dynamic",
-                            "mirror": "unknown",
-                            "dynamic_name": "unknown"
+                            "kind": "NamedType",
+                            "category": "static",
+                            "mirror": "float64"
                           },
                           "is_reassign": true
                         },
@@ -17649,9 +17648,9 @@
                                   "end_lineno": 212,
                                   "end_col_offset": 54
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "ndotl",
                                 "id": "ndotl"
                               }
@@ -17807,9 +17806,9 @@
                                   "end_lineno": 213,
                                   "end_col_offset": 54
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "ndotl",
                                 "id": "ndotl"
                               }
@@ -17965,9 +17964,9 @@
                                   "end_lineno": 214,
                                   "end_col_offset": 54
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "ndotl",
                                 "id": "ndotl"
                               }
@@ -18923,9 +18922,9 @@
                                   "end_lineno": 235,
                                   "end_col_offset": 40
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "dx",
                                 "id": "dx"
                               }
@@ -19026,9 +19025,9 @@
                                   "end_lineno": 236,
                                   "end_col_offset": 40
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "dy",
                                 "id": "dy"
                               }
@@ -19128,9 +19127,9 @@
                                   "end_lineno": 237,
                                   "end_col_offset": 40
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "dz",
                                 "id": "dz"
                               }
@@ -19514,9 +19513,9 @@
                                   "end_lineno": 241,
                                   "end_col_offset": 42
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "dx",
                                 "id": "dx"
                               },
@@ -19528,9 +19527,9 @@
                                   "end_lineno": 241,
                                   "end_col_offset": 46
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "dy",
                                 "id": "dy"
                               },
@@ -19542,9 +19541,9 @@
                                   "end_lineno": 241,
                                   "end_col_offset": 50
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "dz",
                                 "id": "dz"
                               },
@@ -19556,9 +19555,9 @@
                                   "end_lineno": 241,
                                   "end_col_offset": 54
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "nx",
                                 "id": "nx"
                               },
@@ -19570,9 +19569,9 @@
                                   "end_lineno": 241,
                                   "end_col_offset": 58
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "ny",
                                 "id": "ny"
                               },
@@ -19584,9 +19583,9 @@
                                   "end_lineno": 241,
                                   "end_col_offset": 62
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "nz",
                                 "id": "nz"
                               }
@@ -19716,9 +19715,9 @@
                                   "end_lineno": 242,
                                   "end_col_offset": 42
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "dx",
                                 "id": "dx"
                               },
@@ -19730,9 +19729,9 @@
                                   "end_lineno": 242,
                                   "end_col_offset": 46
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "dy",
                                 "id": "dy"
                               },
@@ -19744,9 +19743,9 @@
                                   "end_lineno": 242,
                                   "end_col_offset": 50
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "dz",
                                 "id": "dz"
                               },
@@ -19758,9 +19757,9 @@
                                   "end_lineno": 242,
                                   "end_col_offset": 54
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "nx",
                                 "id": "nx"
                               },
@@ -19772,9 +19771,9 @@
                                   "end_lineno": 242,
                                   "end_col_offset": 58
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "ny",
                                 "id": "ny"
                               },
@@ -19786,9 +19785,9 @@
                                   "end_lineno": 242,
                                   "end_col_offset": 62
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "nz",
                                 "id": "nz"
                               },
@@ -19960,9 +19959,9 @@
                                   "end_lineno": 243,
                                   "end_col_offset": 42
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "rdx",
                                 "id": "rdx"
                               },
@@ -19974,9 +19973,9 @@
                                   "end_lineno": 243,
                                   "end_col_offset": 47
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "rdy",
                                 "id": "rdy"
                               },
@@ -19988,9 +19987,9 @@
                                   "end_lineno": 243,
                                   "end_col_offset": 52
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "rdz",
                                 "id": "rdz"
                               },
@@ -20134,9 +20133,9 @@
                                   "end_lineno": 244,
                                   "end_col_offset": 42
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "tdx",
                                 "id": "tdx"
                               },
@@ -20148,9 +20147,9 @@
                                   "end_lineno": 244,
                                   "end_col_offset": 47
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "tdy",
                                 "id": "tdy"
                               },
@@ -20162,9 +20161,9 @@
                                   "end_lineno": 244,
                                   "end_col_offset": 52
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "tdz",
                                 "id": "tdz"
                               },
@@ -20310,13 +20309,14 @@
                               "end_lineno": 245,
                               "end_col_offset": 20
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "cosi",
                             "id": "cosi"
                           },
                           "declare": true,
+                          "decl_type": "float64",
                           "declare_init": true,
                           "value": {
                             "kind": "Call",
@@ -20326,7 +20326,7 @@
                               "end_lineno": 245,
                               "end_col_offset": 63
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "max(-(dx * nx + dy * ny + dz * nz), 0.0)",
@@ -20353,7 +20353,7 @@
                                   "end_lineno": 245,
                                   "end_col_offset": 57
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "-(dx * nx + dy * ny + dz * nz)",
@@ -20366,7 +20366,7 @@
                                     "end_lineno": 245,
                                     "end_col_offset": 57
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "(dx * nx + dy * ny + dz * nz)",
@@ -20378,7 +20378,7 @@
                                       "end_lineno": 245,
                                       "end_col_offset": 46
                                     },
-                                    "resolved_type": "unknown",
+                                    "resolved_type": "float64",
                                     "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "dx * nx + dy * ny",
@@ -20390,7 +20390,7 @@
                                         "end_lineno": 245,
                                         "end_col_offset": 36
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "float64",
                                       "casts": [],
                                       "borrow_kind": "value",
                                       "repr": "dx * nx",
@@ -20402,9 +20402,9 @@
                                           "end_lineno": 245,
                                           "end_col_offset": 31
                                         },
-                                        "resolved_type": "unknown",
+                                        "resolved_type": "float64",
                                         "casts": [],
-                                        "borrow_kind": "value",
+                                        "borrow_kind": "readonly_ref",
                                         "repr": "dx",
                                         "id": "dx"
                                       },
@@ -20417,9 +20417,9 @@
                                           "end_lineno": 245,
                                           "end_col_offset": 36
                                         },
-                                        "resolved_type": "unknown",
+                                        "resolved_type": "float64",
                                         "casts": [],
-                                        "borrow_kind": "value",
+                                        "borrow_kind": "readonly_ref",
                                         "repr": "nx",
                                         "id": "nx"
                                       }
@@ -20433,7 +20433,7 @@
                                         "end_lineno": 245,
                                         "end_col_offset": 46
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "float64",
                                       "casts": [],
                                       "borrow_kind": "value",
                                       "repr": "dy * ny",
@@ -20445,9 +20445,9 @@
                                           "end_lineno": 245,
                                           "end_col_offset": 41
                                         },
-                                        "resolved_type": "unknown",
+                                        "resolved_type": "float64",
                                         "casts": [],
-                                        "borrow_kind": "value",
+                                        "borrow_kind": "readonly_ref",
                                         "repr": "dy",
                                         "id": "dy"
                                       },
@@ -20460,9 +20460,9 @@
                                           "end_lineno": 245,
                                           "end_col_offset": 46
                                         },
-                                        "resolved_type": "unknown",
+                                        "resolved_type": "float64",
                                         "casts": [],
-                                        "borrow_kind": "value",
+                                        "borrow_kind": "readonly_ref",
                                         "repr": "ny",
                                         "id": "ny"
                                       }
@@ -20477,7 +20477,7 @@
                                       "end_lineno": 245,
                                       "end_col_offset": 56
                                     },
-                                    "resolved_type": "unknown",
+                                    "resolved_type": "float64",
                                     "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "dz * nz",
@@ -20489,9 +20489,9 @@
                                         "end_lineno": 245,
                                         "end_col_offset": 51
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "float64",
                                       "casts": [],
-                                      "borrow_kind": "value",
+                                      "borrow_kind": "readonly_ref",
                                       "repr": "dz",
                                       "id": "dz"
                                     },
@@ -20504,9 +20504,9 @@
                                         "end_lineno": 245,
                                         "end_col_offset": 56
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "float64",
                                       "casts": [],
-                                      "borrow_kind": "value",
+                                      "borrow_kind": "readonly_ref",
                                       "repr": "nz",
                                       "id": "nz"
                                     }
@@ -20538,19 +20538,17 @@
                             "semantic_tag": "math.max",
                             "type_expr_summary_v1": {
                               "schema_version": 1,
-                              "kind": "DynamicType",
-                              "category": "dynamic",
-                              "mirror": "unknown",
-                              "dynamic_name": "unknown"
+                              "kind": "NamedType",
+                              "category": "static",
+                              "mirror": "float64"
                             },
                             "yields_dynamic": true
                           },
                           "type_expr_summary_v1": {
                             "schema_version": 1,
-                            "kind": "DynamicType",
-                            "category": "dynamic",
-                            "mirror": "unknown",
-                            "dynamic_name": "unknown"
+                            "kind": "NamedType",
+                            "category": "static",
+                            "mirror": "float64"
                           }
                         },
                         {
@@ -20613,9 +20611,9 @@
                                   "end_lineno": 246,
                                   "end_col_offset": 33
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "cosi",
                                 "id": "cosi"
                               },
@@ -20706,9 +20704,9 @@
                                   "end_lineno": 247,
                                   "end_col_offset": 22
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "tr",
                                 "id": "tr"
                               },
@@ -20777,9 +20775,9 @@
                                   "end_lineno": 247,
                                   "end_col_offset": 40
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "sr",
                                 "id": "sr"
                               },
@@ -20864,9 +20862,9 @@
                                   "end_lineno": 248,
                                   "end_col_offset": 22
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "tg",
                                 "id": "tg"
                               },
@@ -20935,9 +20933,9 @@
                                   "end_lineno": 248,
                                   "end_col_offset": 40
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "sg",
                                 "id": "sg"
                               },
@@ -21022,9 +21020,9 @@
                                   "end_lineno": 249,
                                   "end_col_offset": 22
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "tb",
                                 "id": "tb"
                               },
@@ -21093,9 +21091,9 @@
                                   "end_lineno": 249,
                                   "end_col_offset": 40
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "sb",
                                 "id": "sb"
                               },
@@ -21533,13 +21531,14 @@
                               "end_lineno": 255,
                               "end_col_offset": 21
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "ndotl",
                             "id": "ndotl"
                           },
                           "declare": true,
+                          "decl_type": "float64",
                           "declare_init": true,
                           "value": {
                             "kind": "Call",
@@ -21549,7 +21548,7 @@
                               "end_lineno": 255,
                               "end_col_offset": 64
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "max(nx * ldx + ny * ldy + nz * ldz, 0.0)",
@@ -21576,7 +21575,7 @@
                                   "end_lineno": 255,
                                   "end_col_offset": 58
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "nx * ldx + ny * ldy + nz * ldz",
@@ -21588,7 +21587,7 @@
                                     "end_lineno": 255,
                                     "end_col_offset": 47
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "nx * ldx + ny * ldy",
@@ -21600,7 +21599,7 @@
                                       "end_lineno": 255,
                                       "end_col_offset": 36
                                     },
-                                    "resolved_type": "unknown",
+                                    "resolved_type": "float64",
                                     "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "nx * ldx",
@@ -21612,9 +21611,9 @@
                                         "end_lineno": 255,
                                         "end_col_offset": 30
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "float64",
                                       "casts": [],
-                                      "borrow_kind": "value",
+                                      "borrow_kind": "readonly_ref",
                                       "repr": "nx",
                                       "id": "nx"
                                     },
@@ -21627,9 +21626,9 @@
                                         "end_lineno": 255,
                                         "end_col_offset": 36
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "float64",
                                       "casts": [],
-                                      "borrow_kind": "value",
+                                      "borrow_kind": "readonly_ref",
                                       "repr": "ldx",
                                       "id": "ldx"
                                     }
@@ -21643,7 +21642,7 @@
                                       "end_lineno": 255,
                                       "end_col_offset": 47
                                     },
-                                    "resolved_type": "unknown",
+                                    "resolved_type": "float64",
                                     "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "ny * ldy",
@@ -21655,9 +21654,9 @@
                                         "end_lineno": 255,
                                         "end_col_offset": 41
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "float64",
                                       "casts": [],
-                                      "borrow_kind": "value",
+                                      "borrow_kind": "readonly_ref",
                                       "repr": "ny",
                                       "id": "ny"
                                     },
@@ -21670,9 +21669,9 @@
                                         "end_lineno": 255,
                                         "end_col_offset": 47
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "float64",
                                       "casts": [],
-                                      "borrow_kind": "value",
+                                      "borrow_kind": "readonly_ref",
                                       "repr": "ldy",
                                       "id": "ldy"
                                     }
@@ -21687,7 +21686,7 @@
                                     "end_lineno": 255,
                                     "end_col_offset": 58
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "nz * ldz",
@@ -21699,9 +21698,9 @@
                                       "end_lineno": 255,
                                       "end_col_offset": 52
                                     },
-                                    "resolved_type": "unknown",
+                                    "resolved_type": "float64",
                                     "casts": [],
-                                    "borrow_kind": "value",
+                                    "borrow_kind": "readonly_ref",
                                     "repr": "nz",
                                     "id": "nz"
                                   },
@@ -21714,9 +21713,9 @@
                                       "end_lineno": 255,
                                       "end_col_offset": 58
                                     },
-                                    "resolved_type": "unknown",
+                                    "resolved_type": "float64",
                                     "casts": [],
-                                    "borrow_kind": "value",
+                                    "borrow_kind": "readonly_ref",
                                     "repr": "ldz",
                                     "id": "ldz"
                                   }
@@ -21747,19 +21746,17 @@
                             "semantic_tag": "math.max",
                             "type_expr_summary_v1": {
                               "schema_version": 1,
-                              "kind": "DynamicType",
-                              "category": "dynamic",
-                              "mirror": "unknown",
-                              "dynamic_name": "unknown"
+                              "kind": "NamedType",
+                              "category": "static",
+                              "mirror": "float64"
                             },
                             "yields_dynamic": true
                           },
                           "type_expr_summary_v1": {
                             "schema_version": 1,
-                            "kind": "DynamicType",
-                            "category": "dynamic",
-                            "mirror": "unknown",
-                            "dynamic_name": "unknown"
+                            "kind": "NamedType",
+                            "category": "static",
+                            "mirror": "float64"
                           },
                           "is_reassign": true
                         },
@@ -21805,7 +21802,7 @@
                                   "end_lineno": 256,
                                   "end_col_offset": 50
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "ldx - dx",
@@ -21817,9 +21814,9 @@
                                     "end_lineno": 256,
                                     "end_col_offset": 45
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
-                                  "borrow_kind": "value",
+                                  "borrow_kind": "readonly_ref",
                                   "repr": "ldx",
                                   "id": "ldx"
                                 },
@@ -21832,9 +21829,9 @@
                                     "end_lineno": 256,
                                     "end_col_offset": 50
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
-                                  "borrow_kind": "value",
+                                  "borrow_kind": "readonly_ref",
                                   "repr": "dx",
                                   "id": "dx"
                                 }
@@ -21847,7 +21844,7 @@
                                   "end_lineno": 256,
                                   "end_col_offset": 60
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "ldy - dy",
@@ -21859,9 +21856,9 @@
                                     "end_lineno": 256,
                                     "end_col_offset": 55
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
-                                  "borrow_kind": "value",
+                                  "borrow_kind": "readonly_ref",
                                   "repr": "ldy",
                                   "id": "ldy"
                                 },
@@ -21874,9 +21871,9 @@
                                     "end_lineno": 256,
                                     "end_col_offset": 60
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
-                                  "borrow_kind": "value",
+                                  "borrow_kind": "readonly_ref",
                                   "repr": "dy",
                                   "id": "dy"
                                 }
@@ -21889,7 +21886,7 @@
                                   "end_lineno": 256,
                                   "end_col_offset": 70
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "ldz - dz",
@@ -21901,9 +21898,9 @@
                                     "end_lineno": 256,
                                     "end_col_offset": 65
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
-                                  "borrow_kind": "value",
+                                  "borrow_kind": "readonly_ref",
                                   "repr": "ldz",
                                   "id": "ldz"
                                 },
@@ -21916,9 +21913,9 @@
                                     "end_lineno": 256,
                                     "end_col_offset": 70
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
-                                  "borrow_kind": "value",
+                                  "borrow_kind": "readonly_ref",
                                   "repr": "dz",
                                   "id": "dz"
                                 }
@@ -22023,13 +22020,14 @@
                               "end_lineno": 257,
                               "end_col_offset": 21
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "ndoth",
                             "id": "ndoth"
                           },
                           "declare": true,
+                          "decl_type": "float64",
                           "declare_init": true,
                           "value": {
                             "kind": "Call",
@@ -22039,7 +22037,7 @@
                               "end_lineno": 257,
                               "end_col_offset": 64
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "max(nx * hvx + ny * hvy + nz * hvz, 0.0)",
@@ -22066,7 +22064,7 @@
                                   "end_lineno": 257,
                                   "end_col_offset": 58
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "nx * hvx + ny * hvy + nz * hvz",
@@ -22078,7 +22076,7 @@
                                     "end_lineno": 257,
                                     "end_col_offset": 47
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "nx * hvx + ny * hvy",
@@ -22090,7 +22088,7 @@
                                       "end_lineno": 257,
                                       "end_col_offset": 36
                                     },
-                                    "resolved_type": "unknown",
+                                    "resolved_type": "float64",
                                     "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "nx * hvx",
@@ -22102,9 +22100,9 @@
                                         "end_lineno": 257,
                                         "end_col_offset": 30
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "float64",
                                       "casts": [],
-                                      "borrow_kind": "value",
+                                      "borrow_kind": "readonly_ref",
                                       "repr": "nx",
                                       "id": "nx"
                                     },
@@ -22117,9 +22115,9 @@
                                         "end_lineno": 257,
                                         "end_col_offset": 36
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "float64",
                                       "casts": [],
-                                      "borrow_kind": "value",
+                                      "borrow_kind": "readonly_ref",
                                       "repr": "hvx",
                                       "id": "hvx"
                                     }
@@ -22133,7 +22131,7 @@
                                       "end_lineno": 257,
                                       "end_col_offset": 47
                                     },
-                                    "resolved_type": "unknown",
+                                    "resolved_type": "float64",
                                     "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "ny * hvy",
@@ -22145,9 +22143,9 @@
                                         "end_lineno": 257,
                                         "end_col_offset": 41
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "float64",
                                       "casts": [],
-                                      "borrow_kind": "value",
+                                      "borrow_kind": "readonly_ref",
                                       "repr": "ny",
                                       "id": "ny"
                                     },
@@ -22160,9 +22158,9 @@
                                         "end_lineno": 257,
                                         "end_col_offset": 47
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "float64",
                                       "casts": [],
-                                      "borrow_kind": "value",
+                                      "borrow_kind": "readonly_ref",
                                       "repr": "hvy",
                                       "id": "hvy"
                                     }
@@ -22177,7 +22175,7 @@
                                     "end_lineno": 257,
                                     "end_col_offset": 58
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "nz * hvz",
@@ -22189,9 +22187,9 @@
                                       "end_lineno": 257,
                                       "end_col_offset": 52
                                     },
-                                    "resolved_type": "unknown",
+                                    "resolved_type": "float64",
                                     "casts": [],
-                                    "borrow_kind": "value",
+                                    "borrow_kind": "readonly_ref",
                                     "repr": "nz",
                                     "id": "nz"
                                   },
@@ -22204,9 +22202,9 @@
                                       "end_lineno": 257,
                                       "end_col_offset": 58
                                     },
-                                    "resolved_type": "unknown",
+                                    "resolved_type": "float64",
                                     "casts": [],
-                                    "borrow_kind": "value",
+                                    "borrow_kind": "readonly_ref",
                                     "repr": "hvz",
                                     "id": "hvz"
                                   }
@@ -22237,19 +22235,17 @@
                             "semantic_tag": "math.max",
                             "type_expr_summary_v1": {
                               "schema_version": 1,
-                              "kind": "DynamicType",
-                              "category": "dynamic",
-                              "mirror": "unknown",
-                              "dynamic_name": "unknown"
+                              "kind": "NamedType",
+                              "category": "static",
+                              "mirror": "float64"
                             },
                             "yields_dynamic": true
                           },
                           "type_expr_summary_v1": {
                             "schema_version": 1,
-                            "kind": "DynamicType",
-                            "category": "dynamic",
-                            "mirror": "unknown",
-                            "dynamic_name": "unknown"
+                            "kind": "NamedType",
+                            "category": "static",
+                            "mirror": "float64"
                           }
                         },
                         {
@@ -22268,13 +22264,14 @@
                               "end_lineno": 258,
                               "end_col_offset": 20
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "spec",
                             "id": "spec"
                           },
                           "declare": true,
+                          "decl_type": "float64",
                           "declare_init": true,
                           "value": {
                             "kind": "BinOp",
@@ -22284,7 +22281,7 @@
                               "end_lineno": 258,
                               "end_col_offset": 36
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "ndoth * ndoth",
@@ -22296,9 +22293,9 @@
                                 "end_lineno": 258,
                                 "end_col_offset": 28
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "float64",
                               "casts": [],
-                              "borrow_kind": "value",
+                              "borrow_kind": "readonly_ref",
                               "repr": "ndoth",
                               "id": "ndoth"
                             },
@@ -22311,19 +22308,18 @@
                                 "end_lineno": 258,
                                 "end_col_offset": 36
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "float64",
                               "casts": [],
-                              "borrow_kind": "value",
+                              "borrow_kind": "readonly_ref",
                               "repr": "ndoth",
                               "id": "ndoth"
                             }
                           },
                           "type_expr_summary_v1": {
                             "schema_version": 1,
-                            "kind": "DynamicType",
-                            "category": "dynamic",
-                            "mirror": "unknown",
-                            "dynamic_name": "unknown"
+                            "kind": "NamedType",
+                            "category": "static",
+                            "mirror": "float64"
                           }
                         },
                         {
@@ -22342,13 +22338,14 @@
                               "end_lineno": 259,
                               "end_col_offset": 20
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "spec",
                             "id": "spec"
                           },
                           "declare": true,
+                          "decl_type": "float64",
                           "declare_init": true,
                           "value": {
                             "kind": "BinOp",
@@ -22358,7 +22355,7 @@
                               "end_lineno": 259,
                               "end_col_offset": 34
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "spec * spec",
@@ -22370,9 +22367,9 @@
                                 "end_lineno": 259,
                                 "end_col_offset": 27
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "float64",
                               "casts": [],
-                              "borrow_kind": "value",
+                              "borrow_kind": "readonly_ref",
                               "repr": "spec",
                               "id": "spec"
                             },
@@ -22385,19 +22382,18 @@
                                 "end_lineno": 259,
                                 "end_col_offset": 34
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "float64",
                               "casts": [],
-                              "borrow_kind": "value",
+                              "borrow_kind": "readonly_ref",
                               "repr": "spec",
                               "id": "spec"
                             }
                           },
                           "type_expr_summary_v1": {
                             "schema_version": 1,
-                            "kind": "DynamicType",
-                            "category": "dynamic",
-                            "mirror": "unknown",
-                            "dynamic_name": "unknown"
+                            "kind": "NamedType",
+                            "category": "static",
+                            "mirror": "float64"
                           }
                         },
                         {
@@ -22416,13 +22412,14 @@
                               "end_lineno": 260,
                               "end_col_offset": 20
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "spec",
                             "id": "spec"
                           },
                           "declare": true,
+                          "decl_type": "float64",
                           "declare_init": true,
                           "value": {
                             "kind": "BinOp",
@@ -22432,7 +22429,7 @@
                               "end_lineno": 260,
                               "end_col_offset": 34
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "spec * spec",
@@ -22444,9 +22441,9 @@
                                 "end_lineno": 260,
                                 "end_col_offset": 27
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "float64",
                               "casts": [],
-                              "borrow_kind": "value",
+                              "borrow_kind": "readonly_ref",
                               "repr": "spec",
                               "id": "spec"
                             },
@@ -22459,19 +22456,18 @@
                                 "end_lineno": 260,
                                 "end_col_offset": 34
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "float64",
                               "casts": [],
-                              "borrow_kind": "value",
+                              "borrow_kind": "readonly_ref",
                               "repr": "spec",
                               "id": "spec"
                             }
                           },
                           "type_expr_summary_v1": {
                             "schema_version": 1,
-                            "kind": "DynamicType",
-                            "category": "dynamic",
-                            "mirror": "unknown",
-                            "dynamic_name": "unknown"
+                            "kind": "NamedType",
+                            "category": "static",
+                            "mirror": "float64"
                           }
                         },
                         {
@@ -22490,13 +22486,14 @@
                               "end_lineno": 261,
                               "end_col_offset": 20
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
-                            "borrow_kind": "value",
+                            "borrow_kind": "readonly_ref",
                             "repr": "spec",
                             "id": "spec"
                           },
                           "declare": true,
+                          "decl_type": "float64",
                           "declare_init": true,
                           "value": {
                             "kind": "BinOp",
@@ -22506,7 +22503,7 @@
                               "end_lineno": 261,
                               "end_col_offset": 34
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "spec * spec",
@@ -22518,9 +22515,9 @@
                                 "end_lineno": 261,
                                 "end_col_offset": 27
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "float64",
                               "casts": [],
-                              "borrow_kind": "value",
+                              "borrow_kind": "readonly_ref",
                               "repr": "spec",
                               "id": "spec"
                             },
@@ -22533,19 +22530,18 @@
                                 "end_lineno": 261,
                                 "end_col_offset": 34
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "float64",
                               "casts": [],
-                              "borrow_kind": "value",
+                              "borrow_kind": "readonly_ref",
                               "repr": "spec",
                               "id": "spec"
                             }
                           },
                           "type_expr_summary_v1": {
                             "schema_version": 1,
-                            "kind": "DynamicType",
-                            "category": "dynamic",
-                            "mirror": "unknown",
-                            "dynamic_name": "unknown"
+                            "kind": "NamedType",
+                            "category": "static",
+                            "mirror": "float64"
                           }
                         },
                         {
@@ -22875,9 +22871,9 @@
                                     "end_lineno": 263,
                                     "end_col_offset": 33
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
-                                  "borrow_kind": "value",
+                                  "borrow_kind": "readonly_ref",
                                   "repr": "ndotl",
                                   "id": "ndotl"
                                 }
@@ -22918,9 +22914,9 @@
                                     "end_lineno": 263,
                                     "end_col_offset": 47
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
-                                  "borrow_kind": "value",
+                                  "borrow_kind": "readonly_ref",
                                   "repr": "spec",
                                   "id": "spec"
                                 }
@@ -23061,9 +23057,9 @@
                                     "end_lineno": 264,
                                     "end_col_offset": 33
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
-                                  "borrow_kind": "value",
+                                  "borrow_kind": "readonly_ref",
                                   "repr": "ndotl",
                                   "id": "ndotl"
                                 }
@@ -23104,9 +23100,9 @@
                                     "end_lineno": 264,
                                     "end_col_offset": 47
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
-                                  "borrow_kind": "value",
+                                  "borrow_kind": "readonly_ref",
                                   "repr": "spec",
                                   "id": "spec"
                                 }
@@ -23247,9 +23243,9 @@
                                     "end_lineno": 265,
                                     "end_col_offset": 33
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
-                                  "borrow_kind": "value",
+                                  "borrow_kind": "readonly_ref",
                                   "repr": "ndotl",
                                   "id": "ndotl"
                                 }
@@ -23290,9 +23286,9 @@
                                     "end_lineno": 265,
                                     "end_col_offset": 47
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
-                                  "borrow_kind": "value",
+                                  "borrow_kind": "readonly_ref",
                                   "repr": "spec",
                                   "id": "spec"
                                 }
