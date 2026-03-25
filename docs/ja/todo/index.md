@@ -27,7 +27,7 @@
 1. [x] [ID: P1-EMIT-CPP-S1] C++ emitter を `toolchain2/emit/cpp/` に新規実装し、fixture parity が通る — fixture 132/132, sample 18/18 emit 成功
 2. [x] [ID: P1-EMIT-CPP-S2] sample 18 件の parity テストが通る — emit 18/18 成功（compile/run は C++ runtime 整備後）
 3. [x] [ID: P1-EMIT-CPP-S3] `pytra-cli2 -emit --target=cpp` を toolchain2 emitter に切り替える — 完了
-4. [ ] [ID: P1-EMIT-CPP-S4] `toolchain/` への依存をゼロにし、`toolchain/` を除去する
+4. [x] [ID: P1-EMIT-CPP-S4] `toolchain/` への依存をゼロにし、`toolchain/` を除去する — pytra-cli2.py から toolchain/ import ゼロ達成
 
 ### P2-SELFHOST: toolchain2 自身の変換テスト
 

@@ -485,9 +485,9 @@ def _emit_go(manifest_path: Path, output_dir: Path) -> int:
     """Go emit: linked output → Go source files."""
     from toolchain2.link.linker import link_modules as _lm
     from toolchain2.emit.go.emitter import emit_go_module
-    from toolchain.link import load_linked_output_bundle
+    from toolchain2.link.manifest_loader import load_linked_output
 
-    manifest_doc, linked_modules = load_linked_output_bundle(manifest_path)
+    manifest_doc, linked_modules = load_linked_output(manifest_path)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     written = 0
@@ -579,10 +579,10 @@ def cmd_emit(args: list[str]) -> int:
 
 def _emit_cpp(manifest_path: Path, output_dir: Path) -> int:
     """C++ emit: linked output → C++ source files (toolchain2 emitter)."""
-    from toolchain.link import load_linked_output_bundle
+    from toolchain2.link.manifest_loader import load_linked_output
     from toolchain2.emit.cpp.emitter import emit_cpp_module
 
-    manifest_doc, linked_modules = load_linked_output_bundle(manifest_path)
+    manifest_doc, linked_modules = load_linked_output(manifest_path)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     written = 0
