@@ -32,7 +32,7 @@ from toolchain2.parse.py.nodes import (
     LambdaExpr, LambdaArg, Starred, Expr, expr_to_jv,
     # Statements
     Import, ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Yield, Raise, Pass, Try, ExceptHandler,
-    If, For, While, FunctionDef, ClassDef, TypeAlias, Stmt,
+    If, For, While, With, FunctionDef, ClassDef, TypeAlias, Stmt,
     # Module
     Module,
 )
@@ -2144,6 +2144,14 @@ def _parse_block_lines(
             pending_comments = []
             continue
 
+        # with ...:
+        if s_clean.startswith("with "):
+            with_stmt, i = _parse_with_stmt(ctx, block_lines, i, base_indent, name_types, pending_trivia, pending_comments)
+            stmts.append(with_stmt)
+            pending_trivia = []
+            pending_comments = []
+            continue
+
         # def ...: (nested function / class method)
         fn_name_block = _parse_def_name(s_clean)
         if fn_name_block != "":
@@ -2526,6 +2534,81 @@ def _try_parse_tuple_assign(s: str) -> tuple[str, str]:
     return (lhs, rhs)
 
 
+def _bracket_depth(text: str) -> int:
+    """Count net bracket depth, ignoring characters inside string literals and comments."""
+    depth: int = 0
+    in_str: str = ""  # "" or quote char
+    i: int = 0
+    n: int = len(text)
+    while i < n:
+        ch = text[i]
+        if in_str != "":
+            if ch == "\\" and i + 1 < n:
+                i += 2  # skip escaped char
+                continue
+            if ch == in_str:
+                in_str = ""
+            i += 1
+            continue
+        if ch == "#":
+            break  # rest is comment
+        if ch == '"' or ch == "'":
+            # Check for triple quote
+            if i + 2 < n and text[i+1] == ch and text[i+2] == ch:
+                # Triple-quoted string: skip to closing triple
+                close = ch * 3
+                end = text.find(close, i + 3)
+                if end >= 0:
+                    i = end + 3
+                else:
+                    i = n  # unclosed triple in this line
+                continue
+            in_str = ch
+            i += 1
+            continue
+        if ch in ("(", "[", "{"):
+            depth += 1
+        elif ch in (")", "]", "}"):
+            depth -= 1
+        i += 1
+    return depth
+
+
+def _join_continuation(lines: list[str], start: int, total: int) -> tuple[str, int]:
+    """Join lines when brackets are unclosed.
+
+    Returns (joined_line, next_index).
+    """
+    line = lines[start]
+    depth = _bracket_depth(line)
+    if depth <= 0:
+        # Backslash continuation
+        stripped = line.rstrip()
+        if stripped.endswith("\\"):
+            idx = start + 1
+            parts = [stripped[:-1]]
+            while idx < total:
+                nxt = lines[idx]
+                idx += 1
+                ns = nxt.rstrip()
+                if ns.endswith("\\"):
+                    parts.append(ns[:-1])
+                else:
+                    parts.append(ns)
+                    break
+            return " ".join(parts), idx
+        return line, start + 1
+    # Unclosed brackets: join until balanced
+    idx = start + 1
+    parts = [line.rstrip()]
+    while idx < total and depth > 0:
+        nxt = lines[idx]
+        parts.append(nxt.rstrip())
+        depth += _bracket_depth(nxt)
+        idx += 1
+    return " ".join(parts), idx
+
+
 def _split_tuple_targets(text: str) -> list[str]:
     """Split tuple target text by comma, respecting brackets.
 
@@ -2715,6 +2798,49 @@ def _parse_while_stmt(
 
     span = make_span(abs_ln, indent, end_ln, end_col)
     return While(source_span=span, test=test, body=body_stmts, orelse=[]), end_i
+
+
+def _parse_with_stmt(
+    ctx: ParseContext,
+    block_lines: list[str],
+    start_i: int,
+    parent_indent: int,
+    name_types: dict[str, str],
+    trivia: list[TriviaNode],
+    comments: list[str],
+) -> tuple[With, int]:
+    """with 文をパースする。with EXPR as VAR:"""
+    ln = block_lines[start_i]
+    s = _strip_inline_comment(ln.strip())
+    indent = len(ln) - len(ln.lstrip(" "))
+    abs_ln = _find_abs_line(ctx.lines, ln, 0)
+
+    # Parse: with EXPR as VAR:
+    inner = s[5:].rstrip(":").strip()  # strip "with " prefix and trailing ":"
+    var_name: str = ""
+    ctx_text: str = inner
+    if " as " in inner:
+        parts = inner.rsplit(" as ", 1)
+        ctx_text = parts[0].strip()
+        var_name = parts[1].strip()
+
+    context_expr = _parse_expr_text(ctx, ctx_text, abs_ln, _find_expr_col(ctx, ctx_text, abs_ln, indent + 5), name_types)
+
+    sub_lines, end_i = _collect_sub_block(block_lines, start_i + 1, indent)
+    body_stmts = _parse_block_lines(ctx, sub_lines, name_types, "with")
+
+    end_ln = abs_ln
+    end_col = indent + len(s)
+    if len(sub_lines) > 0:
+        for bl in reversed(sub_lines):
+            if bl.strip() != "":
+                end_ln = _find_abs_line(ctx.lines, bl, 0)
+                end_col = len(bl.rstrip())
+                break
+
+    span = make_span(abs_ln, indent, end_ln, end_col)
+    with_node = With(source_span=span, context_expr=context_expr, var_name=var_name, body=body_stmts)
+    return with_node, end_i
 
 
 def _parse_if_stmt(

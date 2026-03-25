@@ -7439,130 +7439,167 @@
           }
         },
         {
-          "kind": "Expr",
+          "kind": "With",
           "source_span": {
             "lineno": 123,
             "col": 4,
-            "end_lineno": 123,
-            "end_col": 31
-          },
-          "value": {
-            "kind": "Name",
-            "source_span": {
-              "lineno": 123,
-              "col": 4,
-              "end_lineno": 123,
-              "end_col": 8
-            },
-            "resolved_type": "unknown",
-            "casts": [],
-            "borrow_kind": "value",
-            "repr": "with",
-            "id": "with"
-          },
-          "leading_trivia": [
-            {
-              "kind": "blank",
-              "count": 1
-            }
-          ]
-        },
-        {
-          "kind": "Expr",
-          "source_span": {
-            "lineno": 124,
-            "col": 8,
             "end_lineno": 124,
             "end_col": 27
           },
-          "value": {
+          "context_expr": {
             "kind": "Call",
             "source_span": {
-              "lineno": 124,
-              "col": 8,
-              "end_lineno": 124,
-              "end_col": 27
+              "lineno": 123,
+              "col": 9,
+              "end_lineno": 123,
+              "end_col": 25
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "f.write(bytes(png))",
+            "repr": "open(path, \"wb\")",
             "func": {
-              "kind": "Attribute",
+              "kind": "Name",
+              "source_span": {
+                "lineno": 123,
+                "col": 9,
+                "end_lineno": 123,
+                "end_col": 13
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "open",
+              "id": "open"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 123,
+                  "col": 14,
+                  "end_lineno": 123,
+                  "end_col": 18
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "path",
+                "id": "path"
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 123,
+                  "col": 20,
+                  "end_lineno": 123,
+                  "end_col": 24
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"wb\"",
+                "value": "wb"
+              }
+            ],
+            "keywords": []
+          },
+          "var_name": "f",
+          "body": [
+            {
+              "kind": "Expr",
               "source_span": {
                 "lineno": 124,
                 "col": 8,
                 "end_lineno": 124,
-                "end_col": 15
+                "end_col": 27
               },
-              "resolved_type": "unknown",
-              "casts": [],
-              "borrow_kind": "value",
-              "repr": "f.write",
               "value": {
-                "kind": "Name",
+                "kind": "Call",
                 "source_span": {
                   "lineno": 124,
                   "col": 8,
                   "end_lineno": 124,
-                  "end_col": 9
+                  "end_col": 27
                 },
                 "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "f",
-                "id": "f"
-              },
-              "attr": "write"
-            },
-            "args": [
-              {
-                "kind": "Call",
-                "source_span": {
-                  "lineno": 124,
-                  "col": 16,
-                  "end_lineno": 124,
-                  "end_col": 26
-                },
-                "resolved_type": "bytes",
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "bytes(png)",
+                "repr": "f.write(bytes(png))",
                 "func": {
-                  "kind": "Name",
+                  "kind": "Attribute",
                   "source_span": {
                     "lineno": 124,
-                    "col": 16,
+                    "col": 8,
                     "end_lineno": 124,
-                    "end_col": 21
+                    "end_col": 15
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "bytes",
-                  "id": "bytes"
-                },
-                "args": [
-                  {
+                  "repr": "f.write",
+                  "value": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 124,
-                      "col": 22,
+                      "col": 8,
                       "end_lineno": 124,
-                      "end_col": 25
+                      "end_col": 9
                     },
-                    "resolved_type": "bytearray",
+                    "resolved_type": "unknown",
                     "casts": [],
-                    "borrow_kind": "readonly_ref",
-                    "repr": "png",
-                    "id": "png"
+                    "borrow_kind": "value",
+                    "repr": "f",
+                    "id": "f"
+                  },
+                  "attr": "write"
+                },
+                "args": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 124,
+                      "col": 16,
+                      "end_lineno": 124,
+                      "end_col": 26
+                    },
+                    "resolved_type": "bytes",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "bytes(png)",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 124,
+                        "col": 16,
+                        "end_lineno": 124,
+                        "end_col": 21
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "bytes",
+                      "id": "bytes"
+                    },
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 124,
+                          "col": 22,
+                          "end_lineno": 124,
+                          "end_col": 25
+                        },
+                        "resolved_type": "bytearray",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "png",
+                        "id": "png"
+                      }
+                    ],
+                    "keywords": []
                   }
                 ],
                 "keywords": []
               }
-            ],
-            "keywords": []
-          }
+            }
+          ]
         }
       ],
       "is_generator": 0,

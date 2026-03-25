@@ -41,6 +41,8 @@ class EmitContext:
     runtime_imports: set[str] = field(default_factory=set)
     # Runtime mapping (from mapping.json)
     mapping: RuntimeMapping = field(default_factory=RuntimeMapping)
+    # Import alias → module_id map (for module.attr call resolution)
+    import_alias_modules: dict[str, str] = field(default_factory=dict)
     # Class info
     class_names: set[str] = field(default_factory=set)
     class_bases: dict[str, str] = field(default_factory=dict)
@@ -439,12 +441,19 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             owner_node = func.get("value")
             owner = _emit_expr(ctx, owner_node)
             attr = _str(func, "attr")
-            # Module function call: png.write_rgb_png → py_write_rgb_png
+            # Module function call: math.sqrt → py_sqrt, png.write_rgb_png → write_rgb_png
             owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
             owner_id = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
-            if owner_rt == "module" or owner_id in ("png", "gif", "math", "time", "random", "json", "os", "sys", "re"):
-                fn_go = "py_" + _safe_go_ident(attr)
-                return fn_go + "(" + ", ".join(arg_strs) + ")"
+            if owner_rt == "module" or owner_id in ctx.import_alias_modules:
+                # Check if the module is skipped (native runtime) → add prefix
+                # If not skipped (transpiled) → use bare name
+                mod_id = ctx.import_alias_modules.get(owner_id, "")
+                # mod_id might be parent (pytra.std) → check with submodule name too
+                full_mod = mod_id + "." + owner_id if mod_id != "" else ""
+                if should_skip_module(mod_id, ctx.mapping) or should_skip_module(full_mod, ctx.mapping):
+                    return ctx.mapping.builtin_prefix + _safe_go_ident(attr) + "(" + ", ".join(arg_strs) + ")"
+                else:
+                    return _safe_go_ident(attr) + "(" + ", ".join(arg_strs) + ")"
             # .append() on non-BuiltinCall (plain method call)
             if attr == "append" and len(arg_strs) >= 1:
                 # If owner is bytes/bytearray or unknown bytes-like, use append_byte
@@ -535,12 +544,18 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
     # Container constructors: bytes(N)/bytearray(N) → make([]byte, N)
     if rc == "bytearray_ctor" or rc == "bytes_ctor":
+        if len(args) >= 1 and isinstance(args[0], dict):
+            a0_kind = _str(args[0], "kind")
+            a0_rt = _str(args[0], "resolved_type")
+            if a0_kind == "List":
+                # bytearray([1,2,3]) → []byte{byte(1),byte(2),byte(3)}
+                elems = _list(args[0], "elements")
+                parts = ["byte(" + _emit_expr(ctx, e) + ")" for e in elems]
+                return "[]byte{" + ", ".join(parts) + "}"
+            if a0_rt in ("int64", "int32", "int", "uint8", "int8"):
+                return "make([]byte, " + arg_strs[0] + ")"
+            return "[]byte(" + arg_strs[0] + ")"
         if len(arg_strs) >= 1:
-            # Check if arg is numeric (create zero-filled buffer) vs string (convert)
-            if len(args) >= 1 and isinstance(args[0], dict):
-                arg_rt = _str(args[0], "resolved_type")
-                if arg_rt in ("int64", "int32", "int", "uint8", "int8"):
-                    return "make([]byte, " + arg_strs[0] + ")"
             return "[]byte(" + arg_strs[0] + ")"
         return "[]byte{}"
 
@@ -1015,6 +1030,8 @@ def _emit_stmt(ctx: EmitContext, node: JsonVal) -> None:
         _emit_var_decl(ctx, node)
     elif kind == "Swap":
         _emit_swap(ctx, node)
+    elif kind == "With":
+        _emit_with(ctx, node)
     elif kind == "Try":
         _emit_try(ctx, node)
     elif kind == "Raise":
@@ -1560,6 +1577,53 @@ def _emit_swap(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     _emit(ctx, left + ", " + right + " = " + right + ", " + left)
 
 
+def _emit_with(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
+    """Emit a with statement.
+
+    Pattern: with open(path, "wb") as f: f.write(data)
+    → os.WriteFile(path, data, 0644)
+    """
+    ctx.imports_needed.add("os")
+    context_expr = node.get("context_expr")
+    var_name = _str(node, "var_name")
+    body = _list(node, "body")
+
+    # Detect: with open(path, mode) as f: f.write(data)
+    is_open = False
+    open_path = ""
+    if isinstance(context_expr, dict):
+        func = context_expr.get("func")
+        if isinstance(func, dict) and _str(func, "id") == "open":
+            args = _list(context_expr, "args")
+            if len(args) >= 1:
+                is_open = True
+                open_path = _emit_expr(ctx, args[0])
+
+    if is_open and len(body) == 1:
+        # Single body statement: f.write(data) → os.WriteFile(path, data, 0644)
+        stmt = body[0]
+        if isinstance(stmt, dict) and _str(stmt, "kind") == "Expr":
+            value = stmt.get("value")
+            if isinstance(value, dict) and _str(value, "kind") == "Call":
+                call_func = value.get("func")
+                if isinstance(call_func, dict) and _str(call_func, "attr") == "write":
+                    call_args = _list(value, "args")
+                    if len(call_args) >= 1:
+                        data_expr = _emit_expr(ctx, call_args[0])
+                        # bytes(x) → x (already []byte)
+                        if data_expr.startswith("[]byte(") and data_expr.endswith(")"):
+                            data_expr = data_expr[7:-1]
+                        _emit(ctx, "os.WriteFile(" + open_path + ", " + data_expr + ", 0644)")
+                        return
+
+    # Fallback: emit body inline with comment
+    _emit(ctx, "// with " + var_name + " {")
+    ctx.indent_level += 1
+    _emit_body(ctx, body)
+    ctx.indent_level -= 1
+    _emit(ctx, "// }")
+
+
 def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     _emit(ctx, "func() {")
     ctx.indent_level += 1
@@ -1664,8 +1728,15 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
         local = _str(binding, "local_name")
         bk = _str(binding, "binding_kind")
         if bk == "symbol" and mod_id.startswith("pytra.") and local != "":
-            runtime_imports.add(local)
+            # Check if this symbol's actual module is skipped (native runtime)
+            # mod_id might be parent (pytra.std) with local being submodule name (math)
+            full_mod = mod_id + "." + local
+            if should_skip_module(mod_id, mapping) or should_skip_module(full_mod, mapping):
+                runtime_imports.add(local)
     ctx.runtime_imports = runtime_imports
+
+    # Build import alias → module_id map for module.attr call resolution
+    ctx.import_alias_modules = build_import_alias_map(meta)
 
     # First pass: collect class names
     for stmt in body:

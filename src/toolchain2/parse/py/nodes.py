@@ -662,6 +662,18 @@ class While:
                 "orelse": [stmt_to_jv(s) for s in self.orelse]}
 
 @dataclass
+class With:
+    source_span: SourceSpan
+    context_expr: Expr   # the expression after 'with' (e.g., open(path, "wb"))
+    var_name: str        # the 'as' variable name (e.g., "f")
+    body: list[Stmt]
+    def to_jv(self) -> dict[str, JsonVal]:
+        return {"kind": "With", "source_span": self.source_span.to_jv(),
+                "context_expr": expr_to_jv(self.context_expr),
+                "var_name": self.var_name,
+                "body": [stmt_to_jv(s) for s in self.body]}
+
+@dataclass
 class FunctionDef:
     source_span: SourceSpan
     name: str
@@ -746,7 +758,7 @@ class TypeAlias:
 
 Stmt = Union[
     Import, ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Yield, Raise, Pass,
-    If, For, While, Try, FunctionDef, ClassDef, TypeAlias,
+    If, For, While, With, Try, FunctionDef, ClassDef, TypeAlias,
 ]
 
 def stmt_to_jv(s: Stmt) -> dict[str, JsonVal]:

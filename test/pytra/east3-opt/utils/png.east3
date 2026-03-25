@@ -10879,7 +10879,7 @@
             "mirror": "bytearray"
           },
           "meta": {
-            "lifetime_node_id": "n30",
+            "lifetime_node_id": "n29",
             "lifetime_defs": [
               "raw"
             ],
@@ -10893,15 +10893,12 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "int",
               "len",
               "pixels",
               "str",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "ValueError",
@@ -10910,16 +10907,13 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "int",
               "len",
               "pixels",
               "raw",
               "str",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -11072,7 +11066,7 @@
                 }
               },
               "meta": {
-                "lifetime_node_id": "n29",
+                "lifetime_node_id": "n28",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "b",
@@ -11087,16 +11081,13 @@
                   "_zlib_deflate_store",
                   "b",
                   "bytearray",
-                  "bytes",
-                  "f",
                   "height",
                   "int",
                   "len",
                   "pixels",
                   "raw",
                   "str",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "ValueError",
@@ -11105,16 +11096,13 @@
                   "_png_u32be",
                   "_zlib_deflate_store",
                   "bytearray",
-                  "bytes",
-                  "f",
                   "height",
                   "int",
                   "len",
                   "pixels",
                   "raw",
                   "str",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": [
                   "b"
@@ -11130,7 +11118,7 @@
             "end_col_offset": 26
           },
           "meta": {
-            "lifetime_node_id": "n28",
+            "lifetime_node_id": "n27",
             "lifetime_defs": [
               "b"
             ],
@@ -11144,16 +11132,13 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "int",
               "len",
               "pixels",
               "raw",
               "str",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "ValueError",
@@ -11163,16 +11148,13 @@
               "_zlib_deflate_store",
               "b",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "int",
               "len",
               "pixels",
               "raw",
               "str",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -11393,7 +11375,7 @@
             "mirror": "int64"
           },
           "meta": {
-            "lifetime_node_id": "n27",
+            "lifetime_node_id": "n26",
             "lifetime_defs": [
               "expected"
             ],
@@ -11408,14 +11390,11 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "len",
               "raw",
               "str",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "ValueError",
@@ -11424,15 +11403,12 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
               "expected",
-              "f",
               "height",
               "len",
               "raw",
               "str",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -12419,7 +12395,7 @@
               },
               "cause": null,
               "meta": {
-                "lifetime_node_id": "n26",
+                "lifetime_node_id": "n25",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "ValueError",
@@ -12435,15 +12411,12 @@
                   "_png_u32be",
                   "_zlib_deflate_store",
                   "bytearray",
-                  "bytes",
                   "expected",
-                  "f",
                   "height",
                   "len",
                   "raw",
                   "str",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "_chunk",
@@ -12451,12 +12424,9 @@
                   "_png_u32be",
                   "_zlib_deflate_store",
                   "bytearray",
-                  "bytes",
-                  "f",
                   "height",
                   "raw",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": [
                   "ValueError",
@@ -12469,7 +12439,7 @@
           ],
           "orelse": [],
           "meta": {
-            "lifetime_node_id": "n25",
+            "lifetime_node_id": "n24",
             "lifetime_defs": [],
             "lifetime_uses": [
               "expected",
@@ -12483,15 +12453,12 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
               "expected",
-              "f",
               "height",
               "len",
               "raw",
               "str",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "ValueError",
@@ -12500,15 +12467,12 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
               "expected",
-              "f",
               "height",
               "len",
               "raw",
               "str",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -12592,7 +12556,7 @@
             "mirror": "bytearray"
           },
           "meta": {
-            "lifetime_node_id": "n24",
+            "lifetime_node_id": "n23",
             "lifetime_defs": [
               "scanlines"
             ],
@@ -12605,12 +12569,9 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "raw",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_chunk",
@@ -12618,13 +12579,10 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "raw",
               "scanlines",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -12746,7 +12704,7 @@
             "mirror": "int64"
           },
           "meta": {
-            "lifetime_node_id": "n23",
+            "lifetime_node_id": "n22",
             "lifetime_defs": [
               "row_bytes"
             ],
@@ -12759,13 +12717,10 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "raw",
               "scanlines",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_chunk",
@@ -12773,14 +12728,11 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "raw",
               "row_bytes",
               "scanlines",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -12831,7 +12783,7 @@
             "mirror": "int64"
           },
           "meta": {
-            "lifetime_node_id": "n22",
+            "lifetime_node_id": "n21",
             "lifetime_defs": [
               "y"
             ],
@@ -12842,14 +12794,11 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "raw",
               "row_bytes",
               "scanlines",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_chunk",
@@ -12857,14 +12806,11 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "raw",
               "row_bytes",
               "scanlines",
               "width",
-              "with",
               "y"
             ],
             "lifetime_last_use_vars": []
@@ -13046,7 +12992,7 @@
                 }
               },
               "meta": {
-                "lifetime_node_id": "n21",
+                "lifetime_node_id": "n20",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "scanlines"
@@ -13057,14 +13003,11 @@
                   "_png_u32be",
                   "_zlib_deflate_store",
                   "bytearray",
-                  "bytes",
-                  "f",
                   "height",
                   "raw",
                   "row_bytes",
                   "scanlines",
                   "width",
-                  "with",
                   "y"
                 ],
                 "lifetime_live_out": [
@@ -13073,14 +13016,11 @@
                   "_png_u32be",
                   "_zlib_deflate_store",
                   "bytearray",
-                  "bytes",
-                  "f",
                   "height",
                   "raw",
                   "row_bytes",
                   "scanlines",
                   "width",
-                  "with",
                   "y"
                 ],
                 "lifetime_last_use_vars": []
@@ -13203,7 +13143,7 @@
                 "mirror": "int64"
               },
               "meta": {
-                "lifetime_node_id": "n20",
+                "lifetime_node_id": "n19",
                 "lifetime_defs": [
                   "start"
                 ],
@@ -13217,14 +13157,11 @@
                   "_png_u32be",
                   "_zlib_deflate_store",
                   "bytearray",
-                  "bytes",
-                  "f",
                   "height",
                   "raw",
                   "row_bytes",
                   "scanlines",
                   "width",
-                  "with",
                   "y"
                 ],
                 "lifetime_live_out": [
@@ -13233,15 +13170,12 @@
                   "_png_u32be",
                   "_zlib_deflate_store",
                   "bytearray",
-                  "bytes",
-                  "f",
                   "height",
                   "raw",
                   "row_bytes",
                   "scanlines",
                   "start",
                   "width",
-                  "with",
                   "y"
                 ],
                 "lifetime_last_use_vars": []
@@ -13364,7 +13298,7 @@
                 "mirror": "int64"
               },
               "meta": {
-                "lifetime_node_id": "n19",
+                "lifetime_node_id": "n18",
                 "lifetime_defs": [
                   "end"
                 ],
@@ -13378,15 +13312,12 @@
                   "_png_u32be",
                   "_zlib_deflate_store",
                   "bytearray",
-                  "bytes",
-                  "f",
                   "height",
                   "raw",
                   "row_bytes",
                   "scanlines",
                   "start",
                   "width",
-                  "with",
                   "y"
                 ],
                 "lifetime_live_out": [
@@ -13395,16 +13326,13 @@
                   "_png_u32be",
                   "_zlib_deflate_store",
                   "bytearray",
-                  "bytes",
                   "end",
-                  "f",
                   "height",
                   "raw",
                   "row_bytes",
                   "scanlines",
                   "start",
                   "width",
-                  "with",
                   "y"
                 ],
                 "lifetime_last_use_vars": []
@@ -13456,7 +13384,7 @@
                 "mirror": "int64"
               },
               "meta": {
-                "lifetime_node_id": "n18",
+                "lifetime_node_id": "n17",
                 "lifetime_defs": [
                   "i"
                 ],
@@ -13469,16 +13397,13 @@
                   "_png_u32be",
                   "_zlib_deflate_store",
                   "bytearray",
-                  "bytes",
                   "end",
-                  "f",
                   "height",
                   "raw",
                   "row_bytes",
                   "scanlines",
                   "start",
                   "width",
-                  "with",
                   "y"
                 ],
                 "lifetime_live_out": [
@@ -13487,16 +13412,13 @@
                   "_png_u32be",
                   "_zlib_deflate_store",
                   "bytearray",
-                  "bytes",
                   "end",
-                  "f",
                   "height",
                   "i",
                   "raw",
                   "row_bytes",
                   "scanlines",
                   "width",
-                  "with",
                   "y"
                 ],
                 "lifetime_last_use_vars": [
@@ -13707,7 +13629,7 @@
                     }
                   },
                   "meta": {
-                    "lifetime_node_id": "n17",
+                    "lifetime_node_id": "n16",
                     "lifetime_defs": [],
                     "lifetime_uses": [
                       "i",
@@ -13720,16 +13642,13 @@
                       "_png_u32be",
                       "_zlib_deflate_store",
                       "bytearray",
-                      "bytes",
                       "end",
-                      "f",
                       "height",
                       "i",
                       "raw",
                       "row_bytes",
                       "scanlines",
                       "width",
-                      "with",
                       "y"
                     ],
                     "lifetime_live_out": [
@@ -13738,16 +13657,13 @@
                       "_png_u32be",
                       "_zlib_deflate_store",
                       "bytearray",
-                      "bytes",
                       "end",
-                      "f",
                       "height",
                       "i",
                       "raw",
                       "row_bytes",
                       "scanlines",
                       "width",
-                      "with",
                       "y"
                     ],
                     "lifetime_last_use_vars": []
@@ -13799,7 +13715,7 @@
                     "mirror": "int64"
                   },
                   "meta": {
-                    "lifetime_node_id": "n16",
+                    "lifetime_node_id": "n15",
                     "lifetime_defs": [
                       "i"
                     ],
@@ -13812,16 +13728,13 @@
                       "_png_u32be",
                       "_zlib_deflate_store",
                       "bytearray",
-                      "bytes",
                       "end",
-                      "f",
                       "height",
                       "i",
                       "raw",
                       "row_bytes",
                       "scanlines",
                       "width",
-                      "with",
                       "y"
                     ],
                     "lifetime_live_out": [
@@ -13830,16 +13743,13 @@
                       "_png_u32be",
                       "_zlib_deflate_store",
                       "bytearray",
-                      "bytes",
                       "end",
-                      "f",
                       "height",
                       "i",
                       "raw",
                       "row_bytes",
                       "scanlines",
                       "width",
-                      "with",
                       "y"
                     ],
                     "lifetime_last_use_vars": []
@@ -13848,7 +13758,7 @@
               ],
               "orelse": [],
               "meta": {
-                "lifetime_node_id": "n15",
+                "lifetime_node_id": "n14",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "end",
@@ -13860,16 +13770,13 @@
                   "_png_u32be",
                   "_zlib_deflate_store",
                   "bytearray",
-                  "bytes",
                   "end",
-                  "f",
                   "height",
                   "i",
                   "raw",
                   "row_bytes",
                   "scanlines",
                   "width",
-                  "with",
                   "y"
                 ],
                 "lifetime_live_out": [
@@ -13878,16 +13785,13 @@
                   "_png_u32be",
                   "_zlib_deflate_store",
                   "bytearray",
-                  "bytes",
                   "end",
-                  "f",
                   "height",
                   "i",
                   "raw",
                   "row_bytes",
                   "scanlines",
                   "width",
-                  "with",
                   "y"
                 ],
                 "lifetime_last_use_vars": []
@@ -13939,7 +13843,7 @@
                 "mirror": "int64"
               },
               "meta": {
-                "lifetime_node_id": "n14",
+                "lifetime_node_id": "n13",
                 "lifetime_defs": [
                   "y"
                 ],
@@ -13952,14 +13856,11 @@
                   "_png_u32be",
                   "_zlib_deflate_store",
                   "bytearray",
-                  "bytes",
-                  "f",
                   "height",
                   "raw",
                   "row_bytes",
                   "scanlines",
                   "width",
-                  "with",
                   "y"
                 ],
                 "lifetime_live_out": [
@@ -13968,14 +13869,11 @@
                   "_png_u32be",
                   "_zlib_deflate_store",
                   "bytearray",
-                  "bytes",
-                  "f",
                   "height",
                   "raw",
                   "row_bytes",
                   "scanlines",
                   "width",
-                  "with",
                   "y"
                 ],
                 "lifetime_last_use_vars": []
@@ -13984,7 +13882,7 @@
           ],
           "orelse": [],
           "meta": {
-            "lifetime_node_id": "n13",
+            "lifetime_node_id": "n12",
             "lifetime_defs": [],
             "lifetime_uses": [
               "height",
@@ -13996,14 +13894,11 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "raw",
               "row_bytes",
               "scanlines",
               "width",
-              "with",
               "y"
             ],
             "lifetime_live_out": [
@@ -14012,14 +13907,11 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "raw",
               "row_bytes",
               "scanlines",
               "width",
-              "with",
               "y"
             ],
             "lifetime_last_use_vars": []
@@ -14104,7 +13996,7 @@
             "mirror": "bytearray"
           },
           "meta": {
-            "lifetime_node_id": "n12",
+            "lifetime_node_id": "n11",
             "lifetime_defs": [
               "ihdr"
             ],
@@ -14117,12 +14009,9 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "scanlines",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_chunk",
@@ -14130,13 +14019,10 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "ihdr",
               "scanlines",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -14250,7 +14136,7 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n11",
+            "lifetime_node_id": "n10",
             "lifetime_defs": [],
             "lifetime_uses": [
               "_png_append",
@@ -14264,13 +14150,10 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "ihdr",
               "scanlines",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_chunk",
@@ -14278,12 +14161,9 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "ihdr",
-              "scanlines",
-              "with"
+              "scanlines"
             ],
             "lifetime_last_use_vars": [
               "width"
@@ -14399,7 +14279,7 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n10",
+            "lifetime_node_id": "n9",
             "lifetime_defs": [],
             "lifetime_uses": [
               "_png_append",
@@ -14413,23 +14293,17 @@
               "_png_u32be",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "height",
               "ihdr",
-              "scanlines",
-              "with"
+              "scanlines"
             ],
             "lifetime_live_out": [
               "_chunk",
               "_png_append",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "ihdr",
-              "scanlines",
-              "with"
+              "scanlines"
             ],
             "lifetime_last_use_vars": [
               "_png_u32be",
@@ -14617,7 +14491,7 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n9",
+            "lifetime_node_id": "n8",
             "lifetime_defs": [],
             "lifetime_uses": [
               "_png_append",
@@ -14629,22 +14503,16 @@
               "_png_append",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "ihdr",
-              "scanlines",
-              "with"
+              "scanlines"
             ],
             "lifetime_live_out": [
               "_chunk",
               "_png_append",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "ihdr",
-              "scanlines",
-              "with"
+              "scanlines"
             ],
             "lifetime_last_use_vars": []
           }
@@ -14731,7 +14599,7 @@
             "mirror": "bytearray"
           },
           "meta": {
-            "lifetime_node_id": "n8",
+            "lifetime_node_id": "n7",
             "lifetime_defs": [
               "idat"
             ],
@@ -14744,21 +14612,15 @@
               "_png_append",
               "_zlib_deflate_store",
               "bytearray",
-              "bytes",
-              "f",
               "ihdr",
-              "scanlines",
-              "with"
+              "scanlines"
             ],
             "lifetime_live_out": [
               "_chunk",
               "_png_append",
               "bytearray",
-              "bytes",
-              "f",
               "idat",
-              "ihdr",
-              "with"
+              "ihdr"
             ],
             "lifetime_last_use_vars": [
               "_zlib_deflate_store",
@@ -14851,7 +14713,7 @@
             "mirror": "bytearray"
           },
           "meta": {
-            "lifetime_node_id": "n7",
+            "lifetime_node_id": "n6",
             "lifetime_defs": [
               "png"
             ],
@@ -14862,22 +14724,16 @@
               "_chunk",
               "_png_append",
               "bytearray",
-              "bytes",
-              "f",
               "idat",
-              "ihdr",
-              "with"
+              "ihdr"
             ],
             "lifetime_live_out": [
               "_chunk",
               "_png_append",
               "bytearray",
-              "bytes",
-              "f",
               "idat",
               "ihdr",
-              "png",
-              "with"
+              "png"
             ],
             "lifetime_last_use_vars": []
           }
@@ -15104,7 +14960,7 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n6",
+            "lifetime_node_id": "n5",
             "lifetime_defs": [],
             "lifetime_uses": [
               "_png_append",
@@ -15115,23 +14971,17 @@
               "_chunk",
               "_png_append",
               "bytearray",
-              "bytes",
-              "f",
               "idat",
               "ihdr",
-              "png",
-              "with"
+              "png"
             ],
             "lifetime_live_out": [
               "_chunk",
               "_png_append",
               "bytearray",
-              "bytes",
-              "f",
               "idat",
               "ihdr",
-              "png",
-              "with"
+              "png"
             ],
             "lifetime_last_use_vars": []
           }
@@ -15352,7 +15202,7 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n5",
+            "lifetime_node_id": "n4",
             "lifetime_defs": [],
             "lifetime_uses": [
               "_chunk",
@@ -15365,22 +15215,16 @@
               "_chunk",
               "_png_append",
               "bytearray",
-              "bytes",
-              "f",
               "idat",
               "ihdr",
-              "png",
-              "with"
+              "png"
             ],
             "lifetime_live_out": [
               "_chunk",
               "_png_append",
               "bytearray",
-              "bytes",
-              "f",
               "idat",
-              "png",
-              "with"
+              "png"
             ],
             "lifetime_last_use_vars": [
               "ihdr"
@@ -15603,7 +15447,7 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n4",
+            "lifetime_node_id": "n3",
             "lifetime_defs": [],
             "lifetime_uses": [
               "_chunk",
@@ -15616,20 +15460,14 @@
               "_chunk",
               "_png_append",
               "bytearray",
-              "bytes",
-              "f",
               "idat",
-              "png",
-              "with"
+              "png"
             ],
             "lifetime_live_out": [
               "_chunk",
               "_png_append",
               "bytearray",
-              "bytes",
-              "f",
-              "png",
-              "with"
+              "png"
             ],
             "lifetime_last_use_vars": [
               "idat"
@@ -15715,7 +15553,7 @@
             "mirror": "bytearray"
           },
           "meta": {
-            "lifetime_node_id": "n3",
+            "lifetime_node_id": "n2",
             "lifetime_defs": [
               "iend_data"
             ],
@@ -15726,20 +15564,14 @@
               "_chunk",
               "_png_append",
               "bytearray",
-              "bytes",
-              "f",
-              "png",
-              "with"
+              "png"
             ],
             "lifetime_live_out": [
               "_chunk",
               "_png_append",
               "bytearray",
-              "bytes",
-              "f",
               "iend_data",
-              "png",
-              "with"
+              "png"
             ],
             "lifetime_last_use_vars": []
           }
@@ -15960,217 +15792,214 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n2",
-            "lifetime_defs": [],
-            "lifetime_uses": [
-              "_chunk",
-              "_png_append",
-              "bytearray",
-              "iend_data",
-              "png"
-            ],
-            "lifetime_live_in": [
-              "_chunk",
-              "_png_append",
-              "bytearray",
-              "bytes",
-              "f",
-              "iend_data",
-              "png",
-              "with"
-            ],
-            "lifetime_live_out": [
-              "bytes",
-              "f",
-              "png",
-              "with"
-            ],
-            "lifetime_last_use_vars": [
-              "_chunk",
-              "_png_append",
-              "bytearray",
-              "iend_data"
-            ]
-          }
-        },
-        {
-          "kind": "Expr",
-          "source_span": {
-            "lineno": 123,
-            "col_offset": 4,
-            "end_lineno": 123,
-            "end_col_offset": 31
-          },
-          "value": {
-            "kind": "Name",
-            "source_span": {
-              "lineno": 123,
-              "col_offset": 4,
-              "end_lineno": 123,
-              "end_col_offset": 8
-            },
-            "resolved_type": "unknown",
-            "casts": [],
-            "borrow_kind": "value",
-            "repr": "with",
-            "id": "with"
-          },
-          "leading_trivia": [
-            {
-              "kind": "blank",
-              "count": 1
-            }
-          ],
-          "meta": {
             "lifetime_node_id": "n1",
             "lifetime_defs": [],
             "lifetime_uses": [
-              "with"
-            ],
-            "lifetime_live_in": [
-              "bytes",
-              "f",
-              "png",
-              "with"
-            ],
-            "lifetime_live_out": [
-              "bytes",
-              "f",
+              "_chunk",
+              "_png_append",
+              "bytearray",
+              "iend_data",
               "png"
             ],
+            "lifetime_live_in": [
+              "_chunk",
+              "_png_append",
+              "bytearray",
+              "iend_data",
+              "png"
+            ],
+            "lifetime_live_out": [],
             "lifetime_last_use_vars": [
-              "with"
+              "_chunk",
+              "_png_append",
+              "bytearray",
+              "iend_data",
+              "png"
             ]
           }
         },
         {
-          "kind": "Expr",
+          "kind": "With",
           "source_span": {
-            "lineno": 124,
-            "col_offset": 8,
+            "lineno": 123,
+            "col_offset": 4,
             "end_lineno": 124,
             "end_col_offset": 27
           },
-          "value": {
+          "context_expr": {
             "kind": "Call",
             "source_span": {
-              "lineno": 124,
-              "col_offset": 8,
-              "end_lineno": 124,
-              "end_col_offset": 27
+              "lineno": 123,
+              "col_offset": 9,
+              "end_lineno": 123,
+              "end_col_offset": 25
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "f.write(bytes(png))",
+            "repr": "open(path, \"wb\")",
             "func": {
-              "kind": "Attribute",
+              "kind": "Name",
+              "source_span": {
+                "lineno": 123,
+                "col_offset": 9,
+                "end_lineno": 123,
+                "end_col_offset": 13
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "open",
+              "id": "open"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 123,
+                  "col_offset": 14,
+                  "end_lineno": 123,
+                  "end_col_offset": 18
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "path",
+                "id": "path"
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 123,
+                  "col_offset": 20,
+                  "end_lineno": 123,
+                  "end_col_offset": 24
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"wb\"",
+                "value": "wb"
+              }
+            ],
+            "keywords": []
+          },
+          "var_name": "f",
+          "body": [
+            {
+              "kind": "Expr",
               "source_span": {
                 "lineno": 124,
                 "col_offset": 8,
                 "end_lineno": 124,
-                "end_col_offset": 15
+                "end_col_offset": 27
               },
-              "resolved_type": "unknown",
-              "casts": [],
-              "borrow_kind": "value",
-              "repr": "f.write",
               "value": {
-                "kind": "Name",
+                "kind": "Call",
                 "source_span": {
                   "lineno": 124,
                   "col_offset": 8,
                   "end_lineno": 124,
-                  "end_col_offset": 9
+                  "end_col_offset": 27
                 },
                 "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "f",
-                "id": "f"
-              },
-              "attr": "write"
-            },
-            "args": [
-              {
-                "kind": "Call",
-                "source_span": {
-                  "lineno": 124,
-                  "col_offset": 16,
-                  "end_lineno": 124,
-                  "end_col_offset": 26
-                },
-                "resolved_type": "bytes",
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "bytes(png)",
+                "repr": "f.write(bytes(png))",
                 "func": {
-                  "kind": "Name",
+                  "kind": "Attribute",
                   "source_span": {
                     "lineno": 124,
-                    "col_offset": 16,
+                    "col_offset": 8,
                     "end_lineno": 124,
-                    "end_col_offset": 21
+                    "end_col_offset": 15
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "bytes",
-                  "id": "bytes"
-                },
-                "args": [
-                  {
+                  "repr": "f.write",
+                  "value": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 124,
-                      "col_offset": 22,
+                      "col_offset": 8,
                       "end_lineno": 124,
-                      "end_col_offset": 25
+                      "end_col_offset": 9
                     },
-                    "resolved_type": "bytearray",
+                    "resolved_type": "unknown",
                     "casts": [],
-                    "borrow_kind": "readonly_ref",
-                    "repr": "png",
-                    "id": "png"
+                    "borrow_kind": "value",
+                    "repr": "f",
+                    "id": "f"
+                  },
+                  "attr": "write"
+                },
+                "args": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 124,
+                      "col_offset": 16,
+                      "end_lineno": 124,
+                      "end_col_offset": 26
+                    },
+                    "resolved_type": "bytes",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "bytes(png)",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 124,
+                        "col_offset": 16,
+                        "end_lineno": 124,
+                        "end_col_offset": 21
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "bytes",
+                      "id": "bytes"
+                    },
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 124,
+                          "col_offset": 22,
+                          "end_lineno": 124,
+                          "end_col_offset": 25
+                        },
+                        "resolved_type": "bytearray",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "png",
+                        "id": "png"
+                      }
+                    ],
+                    "keywords": [],
+                    "type_expr_summary_v1": {
+                      "schema_version": 1,
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "bytes"
+                    }
                   }
                 ],
                 "keywords": [],
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "NamedType",
-                  "category": "static",
-                  "mirror": "bytes"
+                  "kind": "DynamicType",
+                  "category": "dynamic",
+                  "mirror": "unknown",
+                  "dynamic_name": "unknown"
                 }
               }
-            ],
-            "keywords": [],
-            "type_expr_summary_v1": {
-              "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
             }
-          },
+          ],
           "meta": {
             "lifetime_node_id": "n0",
             "lifetime_defs": [],
-            "lifetime_uses": [
-              "bytes",
-              "f",
-              "png"
-            ],
-            "lifetime_live_in": [
-              "bytes",
-              "f",
-              "png"
-            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [],
             "lifetime_live_out": [],
-            "lifetime_last_use_vars": [
-              "bytes",
-              "f",
-              "png"
-            ]
+            "lifetime_last_use_vars": []
           }
         }
       ],
@@ -16206,7 +16035,7 @@
           "schema_version": "east3_lifetime_v1",
           "status": "ok",
           "reason": "",
-          "entry_node": "n30",
+          "entry_node": "n29",
           "order": [
             "n0",
             "n1",
@@ -16237,34 +16066,18 @@
             "n26",
             "n27",
             "n28",
-            "n29",
-            "n30"
+            "n29"
           ],
           "cfg": [
             {
               "id": "n0",
-              "kind": "Expr",
+              "kind": "With",
               "defs": [],
-              "uses": [
-                "bytes",
-                "f",
-                "png"
-              ],
+              "uses": [],
               "succ": []
             },
             {
               "id": "n1",
-              "kind": "Expr",
-              "defs": [],
-              "uses": [
-                "with"
-              ],
-              "succ": [
-                "n0"
-              ]
-            },
-            {
-              "id": "n2",
               "kind": "Expr",
               "defs": [],
               "uses": [
@@ -16275,17 +16088,32 @@
                 "png"
               ],
               "succ": [
-                "n1"
+                "n0"
               ]
             },
             {
-              "id": "n3",
+              "id": "n2",
               "kind": "AnnAssign",
               "defs": [
                 "iend_data"
               ],
               "uses": [
                 "bytearray"
+              ],
+              "succ": [
+                "n1"
+              ]
+            },
+            {
+              "id": "n3",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "_chunk",
+                "_png_append",
+                "bytearray",
+                "idat",
+                "png"
               ],
               "succ": [
                 "n2"
@@ -16299,7 +16127,7 @@
                 "_chunk",
                 "_png_append",
                 "bytearray",
-                "idat",
+                "ihdr",
                 "png"
               ],
               "succ": [
@@ -16311,10 +16139,8 @@
               "kind": "Expr",
               "defs": [],
               "uses": [
-                "_chunk",
                 "_png_append",
                 "bytearray",
-                "ihdr",
                 "png"
               ],
               "succ": [
@@ -16323,19 +16149,6 @@
             },
             {
               "id": "n6",
-              "kind": "Expr",
-              "defs": [],
-              "uses": [
-                "_png_append",
-                "bytearray",
-                "png"
-              ],
-              "succ": [
-                "n5"
-              ]
-            },
-            {
-              "id": "n7",
               "kind": "AnnAssign",
               "defs": [
                 "png"
@@ -16344,11 +16157,11 @@
                 "bytearray"
               ],
               "succ": [
-                "n6"
+                "n5"
               ]
             },
             {
-              "id": "n8",
+              "id": "n7",
               "kind": "Assign",
               "defs": [
                 "idat"
@@ -16356,6 +16169,19 @@
               "uses": [
                 "_zlib_deflate_store",
                 "scanlines"
+              ],
+              "succ": [
+                "n6"
+              ]
+            },
+            {
+              "id": "n8",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "_png_append",
+                "bytearray",
+                "ihdr"
               ],
               "succ": [
                 "n7"
@@ -16367,7 +16193,8 @@
               "defs": [],
               "uses": [
                 "_png_append",
-                "bytearray",
+                "_png_u32be",
+                "height",
                 "ihdr"
               ],
               "succ": [
@@ -16381,8 +16208,8 @@
               "uses": [
                 "_png_append",
                 "_png_u32be",
-                "height",
-                "ihdr"
+                "ihdr",
+                "width"
               ],
               "succ": [
                 "n9"
@@ -16390,20 +16217,6 @@
             },
             {
               "id": "n11",
-              "kind": "Expr",
-              "defs": [],
-              "uses": [
-                "_png_append",
-                "_png_u32be",
-                "ihdr",
-                "width"
-              ],
-              "succ": [
-                "n10"
-              ]
-            },
-            {
-              "id": "n12",
               "kind": "AnnAssign",
               "defs": [
                 "ihdr"
@@ -16412,11 +16225,11 @@
                 "bytearray"
               ],
               "succ": [
-                "n11"
+                "n10"
               ]
             },
             {
-              "id": "n13",
+              "id": "n12",
               "kind": "While",
               "defs": [],
               "uses": [
@@ -16424,12 +16237,12 @@
                 "y"
               ],
               "succ": [
-                "n12",
-                "n21"
+                "n11",
+                "n20"
               ]
             },
             {
-              "id": "n14",
+              "id": "n13",
               "kind": "AugAssign",
               "defs": [
                 "y"
@@ -16438,11 +16251,11 @@
                 "y"
               ],
               "succ": [
-                "n13"
+                "n12"
               ]
             },
             {
-              "id": "n15",
+              "id": "n14",
               "kind": "While",
               "defs": [],
               "uses": [
@@ -16450,12 +16263,12 @@
                 "i"
               ],
               "succ": [
-                "n14",
-                "n17"
+                "n13",
+                "n16"
               ]
             },
             {
-              "id": "n16",
+              "id": "n15",
               "kind": "AugAssign",
               "defs": [
                 "i"
@@ -16464,11 +16277,11 @@
                 "i"
               ],
               "succ": [
-                "n15"
+                "n14"
               ]
             },
             {
-              "id": "n17",
+              "id": "n16",
               "kind": "Expr",
               "defs": [],
               "uses": [
@@ -16477,11 +16290,11 @@
                 "scanlines"
               ],
               "succ": [
-                "n16"
+                "n15"
               ]
             },
             {
-              "id": "n18",
+              "id": "n17",
               "kind": "Assign",
               "defs": [
                 "i"
@@ -16490,11 +16303,11 @@
                 "start"
               ],
               "succ": [
-                "n15"
+                "n14"
               ]
             },
             {
-              "id": "n19",
+              "id": "n18",
               "kind": "Assign",
               "defs": [
                 "end"
@@ -16504,11 +16317,11 @@
                 "start"
               ],
               "succ": [
-                "n18"
+                "n17"
               ]
             },
             {
-              "id": "n20",
+              "id": "n19",
               "kind": "Assign",
               "defs": [
                 "start"
@@ -16518,33 +16331,33 @@
                 "y"
               ],
               "succ": [
-                "n19"
+                "n18"
               ]
             },
             {
-              "id": "n21",
+              "id": "n20",
               "kind": "Expr",
               "defs": [],
               "uses": [
                 "scanlines"
               ],
               "succ": [
-                "n20"
+                "n19"
               ]
             },
             {
-              "id": "n22",
+              "id": "n21",
               "kind": "Assign",
               "defs": [
                 "y"
               ],
               "uses": [],
               "succ": [
-                "n13"
+                "n12"
               ]
             },
             {
-              "id": "n23",
+              "id": "n22",
               "kind": "Assign",
               "defs": [
                 "row_bytes"
@@ -16553,11 +16366,11 @@
                 "width"
               ],
               "succ": [
-                "n22"
+                "n21"
               ]
             },
             {
-              "id": "n24",
+              "id": "n23",
               "kind": "AnnAssign",
               "defs": [
                 "scanlines"
@@ -16566,11 +16379,11 @@
                 "bytearray"
               ],
               "succ": [
-                "n23"
+                "n22"
               ]
             },
             {
-              "id": "n25",
+              "id": "n24",
               "kind": "If",
               "defs": [],
               "uses": [
@@ -16579,12 +16392,12 @@
                 "raw"
               ],
               "succ": [
-                "n24",
-                "n26"
+                "n23",
+                "n25"
               ]
             },
             {
-              "id": "n26",
+              "id": "n25",
               "kind": "Raise",
               "defs": [],
               "uses": [
@@ -16595,11 +16408,11 @@
                 "str"
               ],
               "succ": [
-                "n24"
+                "n23"
               ]
             },
             {
-              "id": "n27",
+              "id": "n26",
               "kind": "Assign",
               "defs": [
                 "expected"
@@ -16609,11 +16422,11 @@
                 "width"
               ],
               "succ": [
-                "n25"
+                "n24"
               ]
             },
             {
-              "id": "n28",
+              "id": "n27",
               "kind": "ForCore",
               "defs": [
                 "b"
@@ -16622,12 +16435,12 @@
                 "pixels"
               ],
               "succ": [
-                "n27",
-                "n29"
+                "n26",
+                "n28"
               ]
             },
             {
-              "id": "n29",
+              "id": "n28",
               "kind": "Expr",
               "defs": [],
               "uses": [
@@ -16636,11 +16449,11 @@
                 "raw"
               ],
               "succ": [
-                "n28"
+                "n27"
               ]
             },
             {
-              "id": "n30",
+              "id": "n29",
               "kind": "AnnAssign",
               "defs": [
                 "raw"
@@ -16649,180 +16462,170 @@
                 "bytearray"
               ],
               "succ": [
-                "n28"
+                "n27"
               ]
             }
           ],
           "def_use": {
             "defs": {
               "b": [
-                "n28"
-              ],
-              "end": [
-                "n19"
-              ],
-              "expected": [
                 "n27"
               ],
-              "i": [
-                "n16",
+              "end": [
                 "n18"
               ],
-              "idat": [
-                "n8"
-              ],
-              "iend_data": [
-                "n3"
-              ],
-              "ihdr": [
-                "n12"
-              ],
-              "png": [
-                "n7"
-              ],
-              "raw": [
-                "n30"
-              ],
-              "row_bytes": [
-                "n23"
-              ],
-              "scanlines": [
-                "n24"
-              ],
-              "start": [
-                "n20"
-              ],
-              "y": [
-                "n14",
-                "n22"
-              ]
-            },
-            "uses": {
-              "ValueError": [
-                "n26"
-              ],
-              "_chunk": [
-                "n2",
-                "n4",
-                "n5"
-              ],
-              "_png_append": [
-                "n10",
-                "n11",
-                "n2",
-                "n4",
-                "n5",
-                "n6",
-                "n9"
-              ],
-              "_png_u32be": [
-                "n10",
-                "n11"
-              ],
-              "_zlib_deflate_store": [
-                "n8"
-              ],
-              "b": [
-                "n29"
-              ],
-              "bytearray": [
-                "n12",
-                "n2",
-                "n24",
-                "n3",
-                "n30",
-                "n4",
-                "n5",
-                "n6",
-                "n7",
-                "n9"
-              ],
-              "bytes": [
-                "n0"
-              ],
-              "end": [
-                "n15"
-              ],
               "expected": [
-                "n25",
                 "n26"
-              ],
-              "f": [
-                "n0"
-              ],
-              "height": [
-                "n10",
-                "n13",
-                "n27"
               ],
               "i": [
                 "n15",
-                "n16",
                 "n17"
               ],
               "idat": [
-                "n4"
+                "n7"
               ],
               "iend_data": [
                 "n2"
               ],
               "ihdr": [
-                "n10",
-                "n11",
-                "n5",
-                "n9"
-              ],
-              "int": [
-                "n29"
-              ],
-              "len": [
-                "n25",
-                "n26"
-              ],
-              "pixels": [
-                "n28"
+                "n11"
               ],
               "png": [
-                "n0",
-                "n2",
-                "n4",
-                "n5",
                 "n6"
               ],
               "raw": [
-                "n17",
-                "n25",
-                "n26",
                 "n29"
               ],
               "row_bytes": [
-                "n19",
-                "n20"
+                "n22"
               ],
               "scanlines": [
-                "n17",
-                "n21",
-                "n8"
+                "n23"
               ],
               "start": [
-                "n18",
                 "n19"
-              ],
-              "str": [
-                "n26"
-              ],
-              "width": [
-                "n11",
-                "n23",
-                "n27"
-              ],
-              "with": [
-                "n1"
               ],
               "y": [
                 "n13",
+                "n21"
+              ]
+            },
+            "uses": {
+              "ValueError": [
+                "n25"
+              ],
+              "_chunk": [
+                "n1",
+                "n3",
+                "n4"
+              ],
+              "_png_append": [
+                "n1",
+                "n10",
+                "n3",
+                "n4",
+                "n5",
+                "n8",
+                "n9"
+              ],
+              "_png_u32be": [
+                "n10",
+                "n9"
+              ],
+              "_zlib_deflate_store": [
+                "n7"
+              ],
+              "b": [
+                "n28"
+              ],
+              "bytearray": [
+                "n1",
+                "n11",
+                "n2",
+                "n23",
+                "n29",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n8"
+              ],
+              "end": [
+                "n14"
+              ],
+              "expected": [
+                "n24",
+                "n25"
+              ],
+              "height": [
+                "n12",
+                "n26",
+                "n9"
+              ],
+              "i": [
                 "n14",
-                "n20"
+                "n15",
+                "n16"
+              ],
+              "idat": [
+                "n3"
+              ],
+              "iend_data": [
+                "n1"
+              ],
+              "ihdr": [
+                "n10",
+                "n4",
+                "n8",
+                "n9"
+              ],
+              "int": [
+                "n28"
+              ],
+              "len": [
+                "n24",
+                "n25"
+              ],
+              "pixels": [
+                "n27"
+              ],
+              "png": [
+                "n1",
+                "n3",
+                "n4",
+                "n5"
+              ],
+              "raw": [
+                "n16",
+                "n24",
+                "n25",
+                "n28"
+              ],
+              "row_bytes": [
+                "n18",
+                "n19"
+              ],
+              "scanlines": [
+                "n16",
+                "n20",
+                "n7"
+              ],
+              "start": [
+                "n17",
+                "n18"
+              ],
+              "str": [
+                "n25"
+              ],
+              "width": [
+                "n10",
+                "n22",
+                "n26"
+              ],
+              "y": [
+                "n12",
+                "n13",
+                "n19"
               ]
             }
           },
@@ -16830,36 +16633,37 @@
             "ValueError": {
               "def_nodes": [],
               "use_nodes": [
-                "n26"
+                "n25"
               ],
               "live_in_nodes": [
+                "n24",
                 "n25",
                 "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "live_out_nodes": [
-                "n25",
+                "n24",
+                "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "last_use_nodes": [
-                "n26"
+                "n25"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
             "_chunk": {
               "def_nodes": [],
               "use_nodes": [
-                "n2",
-                "n4",
-                "n5"
+                "n1",
+                "n3",
+                "n4"
               ],
               "live_in_nodes": [
+                "n1",
                 "n2",
                 "n3",
                 "n4",
@@ -16887,10 +16691,10 @@
                 "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "live_out_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -16917,26 +16721,26 @@
                 "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "last_use_nodes": [
-                "n2"
+                "n1"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
             "_png_append": {
               "def_nodes": [],
               "use_nodes": [
+                "n1",
                 "n10",
-                "n11",
-                "n2",
+                "n3",
                 "n4",
                 "n5",
-                "n6",
+                "n8",
                 "n9"
               ],
               "live_in_nodes": [
+                "n1",
                 "n2",
                 "n3",
                 "n4",
@@ -16964,10 +16768,10 @@
                 "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "live_out_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -16994,11 +16798,10 @@
                 "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "last_use_nodes": [
-                "n2"
+                "n1"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
@@ -17006,9 +16809,10 @@
               "def_nodes": [],
               "use_nodes": [
                 "n10",
-                "n11"
+                "n9"
               ],
               "live_in_nodes": [
+                "n9",
                 "n10",
                 "n11",
                 "n12",
@@ -17028,10 +16832,10 @@
                 "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "live_out_nodes": [
+                "n10",
                 "n11",
                 "n12",
                 "n13",
@@ -17050,20 +16854,20 @@
                 "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "last_use_nodes": [
-                "n10"
+                "n9"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
             "_zlib_deflate_store": {
               "def_nodes": [],
               "use_nodes": [
-                "n8"
+                "n7"
               ],
               "live_in_nodes": [
+                "n7",
                 "n8",
                 "n9",
                 "n10",
@@ -17085,10 +16889,10 @@
                 "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "live_out_nodes": [
+                "n8",
                 "n9",
                 "n10",
                 "n11",
@@ -17109,119 +16913,46 @@
                 "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "last_use_nodes": [
-                "n8"
+                "n7"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
             "b": {
               "def_nodes": [
-                "n28"
+                "n27"
               ],
               "use_nodes": [
-                "n29"
-              ],
-              "live_in_nodes": [
-                "n29"
-              ],
-              "live_out_nodes": [
                 "n28"
               ],
+              "live_in_nodes": [
+                "n28"
+              ],
+              "live_out_nodes": [
+                "n27"
+              ],
               "last_use_nodes": [
-                "n29"
+                "n28"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
             "bytearray": {
               "def_nodes": [],
               "use_nodes": [
-                "n12",
+                "n1",
+                "n11",
                 "n2",
-                "n24",
+                "n23",
+                "n29",
                 "n3",
-                "n30",
                 "n4",
                 "n5",
                 "n6",
-                "n7",
-                "n9"
+                "n8"
               ],
               "live_in_nodes": [
-                "n2",
-                "n3",
-                "n4",
-                "n5",
-                "n6",
-                "n7",
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12",
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24",
-                "n25",
-                "n26",
-                "n27",
-                "n28",
-                "n29",
-                "n30"
-              ],
-              "live_out_nodes": [
-                "n3",
-                "n4",
-                "n5",
-                "n6",
-                "n7",
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12",
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24",
-                "n25",
-                "n26",
-                "n27",
-                "n28",
-                "n29",
-                "n30"
-              ],
-              "last_use_nodes": [
-                "n2"
-              ],
-              "lifetime_class": "local_non_escape_candidate"
-            },
-            "bytes": {
-              "def_nodes": [],
-              "use_nodes": [
-                "n0"
-              ],
-              "live_in_nodes": [
-                "n0",
                 "n1",
                 "n2",
                 "n3",
@@ -17250,11 +16981,9 @@
                 "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "live_out_nodes": [
-                "n1",
                 "n2",
                 "n3",
                 "n4",
@@ -17282,141 +17011,66 @@
                 "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "last_use_nodes": [
-                "n0"
+                "n1"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
             "end": {
               "def_nodes": [
-                "n19"
+                "n18"
               ],
               "use_nodes": [
-                "n15"
+                "n14"
               ],
               "live_in_nodes": [
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "live_out_nodes": [
+                "n14",
                 "n15",
                 "n16",
                 "n17",
                 "n18"
-              ],
-              "live_out_nodes": [
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
             },
             "expected": {
               "def_nodes": [
-                "n27"
+                "n26"
               ],
               "use_nodes": [
-                "n25",
-                "n26"
+                "n24",
+                "n25"
               ],
               "live_in_nodes": [
-                "n25",
-                "n26"
+                "n24",
+                "n25"
               ],
               "live_out_nodes": [
-                "n25",
-                "n27"
-              ],
-              "last_use_nodes": [
+                "n24",
                 "n26"
               ],
-              "lifetime_class": "local_non_escape_candidate"
-            },
-            "f": {
-              "def_nodes": [],
-              "use_nodes": [
-                "n0"
-              ],
-              "live_in_nodes": [
-                "n0",
-                "n1",
-                "n2",
-                "n3",
-                "n4",
-                "n5",
-                "n6",
-                "n7",
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12",
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24",
-                "n25",
-                "n26",
-                "n27",
-                "n28",
-                "n29",
-                "n30"
-              ],
-              "live_out_nodes": [
-                "n1",
-                "n2",
-                "n3",
-                "n4",
-                "n5",
-                "n6",
-                "n7",
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12",
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24",
-                "n25",
-                "n26",
-                "n27",
-                "n28",
-                "n29",
-                "n30"
-              ],
               "last_use_nodes": [
-                "n0"
+                "n25"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
             "height": {
               "def_nodes": [],
               "use_nodes": [
-                "n10",
-                "n13",
-                "n27"
+                "n12",
+                "n26",
+                "n9"
               ],
               "live_in_nodes": [
+                "n9",
                 "n10",
                 "n11",
                 "n12",
@@ -17436,10 +17090,10 @@
                 "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "live_out_nodes": [
+                "n10",
                 "n11",
                 "n12",
                 "n13",
@@ -17458,91 +17112,99 @@
                 "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "last_use_nodes": [
-                "n10"
+                "n9"
               ],
               "lifetime_class": "escape_or_unknown"
             },
             "i": {
               "def_nodes": [
-                "n16",
-                "n18"
+                "n15",
+                "n17"
               ],
               "use_nodes": [
+                "n14",
                 "n15",
-                "n16",
-                "n17"
+                "n16"
               ],
               "live_in_nodes": [
+                "n14",
+                "n15",
+                "n16"
+              ],
+              "live_out_nodes": [
+                "n14",
                 "n15",
                 "n16",
                 "n17"
-              ],
-              "live_out_nodes": [
-                "n15",
-                "n16",
-                "n17",
-                "n18"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
             },
             "idat": {
               "def_nodes": [
-                "n8"
+                "n7"
               ],
               "use_nodes": [
-                "n4"
+                "n3"
               ],
               "live_in_nodes": [
+                "n3",
+                "n4",
+                "n5",
+                "n6"
+              ],
+              "live_out_nodes": [
                 "n4",
                 "n5",
                 "n6",
                 "n7"
               ],
-              "live_out_nodes": [
-                "n5",
-                "n6",
-                "n7",
-                "n8"
-              ],
               "last_use_nodes": [
-                "n4"
+                "n3"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
             "iend_data": {
               "def_nodes": [
-                "n3"
+                "n2"
               ],
               "use_nodes": [
-                "n2"
+                "n1"
               ],
               "live_in_nodes": [
-                "n2"
+                "n1"
               ],
               "live_out_nodes": [
-                "n3"
+                "n2"
               ],
               "last_use_nodes": [
-                "n2"
+                "n1"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
             "ihdr": {
               "def_nodes": [
-                "n12"
+                "n11"
               ],
               "use_nodes": [
                 "n10",
-                "n11",
-                "n5",
+                "n4",
+                "n8",
                 "n9"
               ],
               "live_in_nodes": [
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10"
+              ],
+              "live_out_nodes": [
                 "n5",
                 "n6",
                 "n7",
@@ -17551,34 +17213,25 @@
                 "n10",
                 "n11"
               ],
-              "live_out_nodes": [
-                "n6",
-                "n7",
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12"
-              ],
               "last_use_nodes": [
-                "n5"
+                "n4"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
             "int": {
               "def_nodes": [],
               "use_nodes": [
-                "n29"
+                "n28"
               ],
               "live_in_nodes": [
+                "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "live_out_nodes": [
+                "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -17586,26 +17239,26 @@
             "len": {
               "def_nodes": [],
               "use_nodes": [
-                "n25",
-                "n26"
+                "n24",
+                "n25"
               ],
               "live_in_nodes": [
+                "n24",
                 "n25",
                 "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "live_out_nodes": [
-                "n25",
+                "n24",
+                "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "last_use_nodes": [
-                "n26"
+                "n25"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
@@ -17620,66 +17273,81 @@
             "pixels": {
               "def_nodes": [],
               "use_nodes": [
-                "n28"
+                "n27"
               ],
               "live_in_nodes": [
+                "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "live_out_nodes": [
+                "n27",
                 "n28",
-                "n29",
-                "n30"
+                "n29"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
             },
             "png": {
               "def_nodes": [
-                "n7"
+                "n6"
               ],
               "use_nodes": [
-                "n0",
-                "n2",
+                "n1",
+                "n3",
                 "n4",
-                "n5",
-                "n6"
+                "n5"
               ],
               "live_in_nodes": [
-                "n0",
                 "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5"
+              ],
+              "live_out_nodes": [
                 "n2",
                 "n3",
                 "n4",
                 "n5",
                 "n6"
               ],
-              "live_out_nodes": [
-                "n1",
-                "n2",
-                "n3",
-                "n4",
-                "n5",
-                "n6",
-                "n7"
-              ],
               "last_use_nodes": [
-                "n0"
+                "n1"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
             "raw": {
               "def_nodes": [
-                "n30"
+                "n29"
               ],
               "use_nodes": [
-                "n17",
+                "n16",
+                "n24",
                 "n25",
-                "n26",
-                "n29"
+                "n28"
               ],
               "live_in_nodes": [
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28"
+              ],
+              "live_out_nodes": [
+                "n12",
                 "n13",
                 "n14",
                 "n15",
@@ -17697,301 +17365,20 @@
                 "n27",
                 "n28",
                 "n29"
-              ],
-              "live_out_nodes": [
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24",
-                "n25",
-                "n26",
-                "n27",
-                "n28",
-                "n29",
-                "n30"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
             },
             "row_bytes": {
               "def_nodes": [
-                "n23"
-              ],
-              "use_nodes": [
-                "n19",
-                "n20"
-              ],
-              "live_in_nodes": [
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
                 "n22"
-              ],
-              "live_out_nodes": [
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23"
-              ],
-              "last_use_nodes": [],
-              "lifetime_class": "local_non_escape_candidate"
-            },
-            "scanlines": {
-              "def_nodes": [
-                "n24"
-              ],
-              "use_nodes": [
-                "n17",
-                "n21",
-                "n8"
-              ],
-              "live_in_nodes": [
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12",
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23"
-              ],
-              "live_out_nodes": [
-                "n9",
-                "n10",
-                "n11",
-                "n12",
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24"
-              ],
-              "last_use_nodes": [
-                "n8"
-              ],
-              "lifetime_class": "local_non_escape_candidate"
-            },
-            "start": {
-              "def_nodes": [
-                "n20"
               ],
               "use_nodes": [
                 "n18",
                 "n19"
               ],
               "live_in_nodes": [
-                "n18",
-                "n19"
-              ],
-              "live_out_nodes": [
-                "n19",
-                "n20"
-              ],
-              "last_use_nodes": [
-                "n18"
-              ],
-              "lifetime_class": "local_non_escape_candidate"
-            },
-            "str": {
-              "def_nodes": [],
-              "use_nodes": [
-                "n26"
-              ],
-              "live_in_nodes": [
-                "n25",
-                "n26",
-                "n27",
-                "n28",
-                "n29",
-                "n30"
-              ],
-              "live_out_nodes": [
-                "n25",
-                "n27",
-                "n28",
-                "n29",
-                "n30"
-              ],
-              "last_use_nodes": [
-                "n26"
-              ],
-              "lifetime_class": "local_non_escape_candidate"
-            },
-            "width": {
-              "def_nodes": [],
-              "use_nodes": [
-                "n11",
-                "n23",
-                "n27"
-              ],
-              "live_in_nodes": [
-                "n11",
                 "n12",
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24",
-                "n25",
-                "n26",
-                "n27",
-                "n28",
-                "n29",
-                "n30"
-              ],
-              "live_out_nodes": [
-                "n12",
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24",
-                "n25",
-                "n26",
-                "n27",
-                "n28",
-                "n29",
-                "n30"
-              ],
-              "last_use_nodes": [
-                "n11"
-              ],
-              "lifetime_class": "escape_or_unknown"
-            },
-            "with": {
-              "def_nodes": [],
-              "use_nodes": [
-                "n1"
-              ],
-              "live_in_nodes": [
-                "n1",
-                "n2",
-                "n3",
-                "n4",
-                "n5",
-                "n6",
-                "n7",
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12",
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24",
-                "n25",
-                "n26",
-                "n27",
-                "n28",
-                "n29",
-                "n30"
-              ],
-              "live_out_nodes": [
-                "n2",
-                "n3",
-                "n4",
-                "n5",
-                "n6",
-                "n7",
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12",
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24",
-                "n25",
-                "n26",
-                "n27",
-                "n28",
-                "n29",
-                "n30"
-              ],
-              "last_use_nodes": [
-                "n1"
-              ],
-              "lifetime_class": "local_non_escape_candidate"
-            },
-            "y": {
-              "def_nodes": [
-                "n14",
-                "n22"
-              ],
-              "use_nodes": [
-                "n13",
-                "n14",
-                "n20"
-              ],
-              "live_in_nodes": [
                 "n13",
                 "n14",
                 "n15",
@@ -18003,6 +17390,7 @@
                 "n21"
               ],
               "live_out_nodes": [
+                "n12",
                 "n13",
                 "n14",
                 "n15",
@@ -18013,6 +17401,193 @@
                 "n20",
                 "n21",
                 "n22"
+              ],
+              "last_use_nodes": [],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "scanlines": {
+              "def_nodes": [
+                "n23"
+              ],
+              "use_nodes": [
+                "n16",
+                "n20",
+                "n7"
+              ],
+              "live_in_nodes": [
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22"
+              ],
+              "live_out_nodes": [
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23"
+              ],
+              "last_use_nodes": [
+                "n7"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "start": {
+              "def_nodes": [
+                "n19"
+              ],
+              "use_nodes": [
+                "n17",
+                "n18"
+              ],
+              "live_in_nodes": [
+                "n17",
+                "n18"
+              ],
+              "live_out_nodes": [
+                "n18",
+                "n19"
+              ],
+              "last_use_nodes": [
+                "n17"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "str": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n25"
+              ],
+              "live_in_nodes": [
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29"
+              ],
+              "live_out_nodes": [
+                "n24",
+                "n26",
+                "n27",
+                "n28",
+                "n29"
+              ],
+              "last_use_nodes": [
+                "n25"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "width": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n10",
+                "n22",
+                "n26"
+              ],
+              "live_in_nodes": [
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29"
+              ],
+              "live_out_nodes": [
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29"
+              ],
+              "last_use_nodes": [
+                "n10"
+              ],
+              "lifetime_class": "escape_or_unknown"
+            },
+            "y": {
+              "def_nodes": [
+                "n13",
+                "n21"
+              ],
+              "use_nodes": [
+                "n12",
+                "n13",
+                "n19"
+              ],
+              "live_in_nodes": [
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20"
+              ],
+              "live_out_nodes": [
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"

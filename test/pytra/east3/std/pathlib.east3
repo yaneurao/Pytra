@@ -6073,86 +6073,159 @@
           "docstring": null,
           "body": [
             {
-              "kind": "Expr",
+              "kind": "With",
               "source_span": {
                 "lineno": 108,
                 "col_offset": 8,
-                "end_lineno": 108,
-                "end_col_offset": 60
-              },
-              "value": {
-                "kind": "Name",
-                "source_span": {
-                  "lineno": 108,
-                  "col_offset": 8,
-                  "end_lineno": 108,
-                  "end_col_offset": 12
-                },
-                "resolved_type": "unknown",
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "with",
-                "id": "with"
-              }
-            },
-            {
-              "kind": "Return",
-              "source_span": {
-                "lineno": 109,
-                "col_offset": 12,
                 "end_lineno": 109,
                 "end_col_offset": 27
               },
-              "value": {
+              "context_expr": {
                 "kind": "Call",
                 "source_span": {
-                  "lineno": 109,
-                  "col_offset": 19,
-                  "end_lineno": 109,
-                  "end_col_offset": 27
+                  "lineno": 108,
+                  "col_offset": 13,
+                  "end_lineno": 108,
+                  "end_col_offset": 54
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "f.read()",
+                "repr": "open(self._value, \"r\", encoding=encoding)",
                 "func": {
-                  "kind": "Attribute",
+                  "kind": "Name",
                   "source_span": {
-                    "lineno": 109,
-                    "col_offset": 19,
-                    "end_lineno": 109,
-                    "end_col_offset": 25
+                    "lineno": 108,
+                    "col_offset": 13,
+                    "end_lineno": 108,
+                    "end_col_offset": 17
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "f.read",
+                  "repr": "open",
+                  "id": "open"
+                },
+                "args": [
+                  {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 108,
+                      "col_offset": 18,
+                      "end_lineno": 108,
+                      "end_col_offset": 29
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "self._value",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 108,
+                        "col_offset": 18,
+                        "end_lineno": 108,
+                        "end_col_offset": 22
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "self",
+                      "id": "self"
+                    },
+                    "attr": "_value"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 108,
+                      "col_offset": 31,
+                      "end_lineno": 108,
+                      "end_col_offset": 34
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"r\"",
+                    "value": "r"
+                  }
+                ],
+                "keywords": [
+                  {
+                    "arg": "encoding",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 108,
+                        "col_offset": 45,
+                        "end_lineno": 108,
+                        "end_col_offset": 53
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "encoding",
+                      "id": "encoding"
+                    }
+                  }
+                ]
+              },
+              "var_name": "f",
+              "body": [
+                {
+                  "kind": "Return",
+                  "source_span": {
+                    "lineno": 109,
+                    "col_offset": 12,
+                    "end_lineno": 109,
+                    "end_col_offset": 27
+                  },
                   "value": {
-                    "kind": "Name",
+                    "kind": "Call",
                     "source_span": {
                       "lineno": 109,
                       "col_offset": 19,
                       "end_lineno": 109,
-                      "end_col_offset": 20
+                      "end_col_offset": 27
                     },
                     "resolved_type": "unknown",
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "f",
-                    "id": "f"
-                  },
-                  "attr": "read"
-                },
-                "args": [],
-                "keywords": [],
-                "type_expr_summary_v1": {
-                  "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
+                    "repr": "f.read()",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 109,
+                        "col_offset": 19,
+                        "end_lineno": 109,
+                        "end_col_offset": 25
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "f.read",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 109,
+                          "col_offset": 19,
+                          "end_lineno": 109,
+                          "end_col_offset": 20
+                        },
+                        "resolved_type": "unknown",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "f",
+                        "id": "f"
+                      },
+                      "attr": "read"
+                    },
+                    "args": [],
+                    "keywords": [],
+                    "type_expr_summary_v1": {
+                      "schema_version": 1,
+                      "kind": "DynamicType",
+                      "category": "dynamic",
+                      "mirror": "unknown",
+                      "dynamic_name": "unknown"
+                    }
+                  }
                 }
-              }
+              ]
             }
           ],
           "is_generator": 0,
@@ -6212,101 +6285,174 @@
           "docstring": null,
           "body": [
             {
-              "kind": "Expr",
+              "kind": "With",
               "source_span": {
                 "lineno": 112,
                 "col_offset": 8,
-                "end_lineno": 112,
-                "end_col_offset": 60
-              },
-              "value": {
-                "kind": "Name",
-                "source_span": {
-                  "lineno": 112,
-                  "col_offset": 8,
-                  "end_lineno": 112,
-                  "end_col_offset": 12
-                },
-                "resolved_type": "unknown",
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "with",
-                "id": "with"
-              }
-            },
-            {
-              "kind": "Return",
-              "source_span": {
-                "lineno": 113,
-                "col_offset": 12,
                 "end_lineno": 113,
                 "end_col_offset": 32
               },
-              "value": {
+              "context_expr": {
                 "kind": "Call",
                 "source_span": {
-                  "lineno": 113,
-                  "col_offset": 19,
-                  "end_lineno": 113,
-                  "end_col_offset": 32
+                  "lineno": 112,
+                  "col_offset": 13,
+                  "end_lineno": 112,
+                  "end_col_offset": 54
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "f.write(text)",
+                "repr": "open(self._value, \"w\", encoding=encoding)",
                 "func": {
-                  "kind": "Attribute",
+                  "kind": "Name",
                   "source_span": {
-                    "lineno": 113,
-                    "col_offset": 19,
-                    "end_lineno": 113,
-                    "end_col_offset": 26
+                    "lineno": 112,
+                    "col_offset": 13,
+                    "end_lineno": 112,
+                    "end_col_offset": 17
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "f.write",
+                  "repr": "open",
+                  "id": "open"
+                },
+                "args": [
+                  {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 112,
+                      "col_offset": 18,
+                      "end_lineno": 112,
+                      "end_col_offset": 29
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "self._value",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 112,
+                        "col_offset": 18,
+                        "end_lineno": 112,
+                        "end_col_offset": 22
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "self",
+                      "id": "self"
+                    },
+                    "attr": "_value"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 112,
+                      "col_offset": 31,
+                      "end_lineno": 112,
+                      "end_col_offset": 34
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"w\"",
+                    "value": "w"
+                  }
+                ],
+                "keywords": [
+                  {
+                    "arg": "encoding",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 112,
+                        "col_offset": 45,
+                        "end_lineno": 112,
+                        "end_col_offset": 53
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "encoding",
+                      "id": "encoding"
+                    }
+                  }
+                ]
+              },
+              "var_name": "f",
+              "body": [
+                {
+                  "kind": "Return",
+                  "source_span": {
+                    "lineno": 113,
+                    "col_offset": 12,
+                    "end_lineno": 113,
+                    "end_col_offset": 32
+                  },
                   "value": {
-                    "kind": "Name",
+                    "kind": "Call",
                     "source_span": {
                       "lineno": 113,
                       "col_offset": 19,
                       "end_lineno": 113,
-                      "end_col_offset": 20
+                      "end_col_offset": 32
                     },
                     "resolved_type": "unknown",
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "f",
-                    "id": "f"
-                  },
-                  "attr": "write"
-                },
-                "args": [
-                  {
-                    "kind": "Name",
-                    "source_span": {
-                      "lineno": 113,
-                      "col_offset": 27,
-                      "end_lineno": 113,
-                      "end_col_offset": 31
+                    "repr": "f.write(text)",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 113,
+                        "col_offset": 19,
+                        "end_lineno": 113,
+                        "end_col_offset": 26
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "f.write",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 113,
+                          "col_offset": 19,
+                          "end_lineno": 113,
+                          "end_col_offset": 20
+                        },
+                        "resolved_type": "unknown",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "f",
+                        "id": "f"
+                      },
+                      "attr": "write"
                     },
-                    "resolved_type": "str",
-                    "casts": [],
-                    "borrow_kind": "readonly_ref",
-                    "repr": "text",
-                    "id": "text"
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 113,
+                          "col_offset": 27,
+                          "end_lineno": 113,
+                          "end_col_offset": 31
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "text",
+                        "id": "text"
+                      }
+                    ],
+                    "keywords": [],
+                    "type_expr_summary_v1": {
+                      "schema_version": 1,
+                      "kind": "DynamicType",
+                      "category": "dynamic",
+                      "mirror": "unknown",
+                      "dynamic_name": "unknown"
+                    }
                   }
-                ],
-                "keywords": [],
-                "type_expr_summary_v1": {
-                  "schema_version": 1,
-                  "kind": "DynamicType",
-                  "category": "dynamic",
-                  "mirror": "unknown",
-                  "dynamic_name": "unknown"
                 }
-              }
+              ]
             }
           ],
           "is_generator": 0,

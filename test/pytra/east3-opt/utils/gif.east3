@@ -9087,7 +9087,7 @@
               },
               "cause": null,
               "meta": {
-                "lifetime_node_id": "n51",
+                "lifetime_node_id": "n50",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "ValueError"
@@ -9100,15 +9100,13 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "frames",
                   "height",
                   "int",
                   "len",
                   "loop",
                   "palette",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "ValueError",
@@ -9118,15 +9116,13 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "frames",
                   "height",
                   "int",
                   "len",
                   "loop",
                   "palette",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -9168,7 +9164,7 @@
             }
           ],
           "meta": {
-            "lifetime_node_id": "n50",
+            "lifetime_node_id": "n49",
             "lifetime_defs": [],
             "lifetime_uses": [
               "len",
@@ -9182,15 +9178,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frames",
               "height",
               "int",
               "len",
               "loop",
               "palette",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "ValueError",
@@ -9200,15 +9194,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frames",
               "height",
               "int",
               "len",
               "loop",
               "palette",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -9294,7 +9286,7 @@
             "rhs_kind": "List"
           },
           "meta": {
-            "lifetime_node_id": "n49",
+            "lifetime_node_id": "n48",
             "lifetime_defs": [
               "frame_lists"
             ],
@@ -9307,15 +9299,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frames",
               "height",
               "int",
               "len",
               "loop",
               "palette",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "ValueError",
@@ -9325,7 +9315,6 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "frames",
               "height",
@@ -9333,8 +9322,7 @@
               "len",
               "loop",
               "palette",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -9343,56 +9331,6 @@
           "kind": "VarDecl",
           "name": "fr_buf",
           "type": "bytearray",
-          "hoisted": true,
-          "meta": {
-            "lifetime_node_id": "n48",
-            "lifetime_defs": [],
-            "lifetime_uses": [],
-            "lifetime_live_in": [
-              "ValueError",
-              "_gif_append",
-              "_gif_u16le",
-              "_lzw_encode",
-              "bytearray",
-              "bytes",
-              "delay_cs",
-              "f",
-              "frame_lists",
-              "frames",
-              "height",
-              "int",
-              "len",
-              "loop",
-              "palette",
-              "width",
-              "with"
-            ],
-            "lifetime_live_out": [
-              "ValueError",
-              "_gif_append",
-              "_gif_u16le",
-              "_lzw_encode",
-              "bytearray",
-              "bytes",
-              "delay_cs",
-              "f",
-              "frame_lists",
-              "frames",
-              "height",
-              "int",
-              "len",
-              "loop",
-              "palette",
-              "width",
-              "with"
-            ],
-            "lifetime_last_use_vars": []
-          }
-        },
-        {
-          "kind": "VarDecl",
-          "name": "v",
-          "type": "unknown",
           "hoisted": true,
           "meta": {
             "lifetime_node_id": "n47",
@@ -9406,7 +9344,6 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "frames",
               "height",
@@ -9414,8 +9351,7 @@
               "len",
               "loop",
               "palette",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "ValueError",
@@ -9425,7 +9361,6 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "frames",
               "height",
@@ -9433,8 +9368,53 @@
               "len",
               "loop",
               "palette",
-              "width",
-              "with"
+              "width"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "VarDecl",
+          "name": "v",
+          "type": "unknown",
+          "hoisted": true,
+          "meta": {
+            "lifetime_node_id": "n46",
+            "lifetime_defs": [],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "ValueError",
+              "_gif_append",
+              "_gif_u16le",
+              "_lzw_encode",
+              "bytearray",
+              "bytes",
+              "delay_cs",
+              "frame_lists",
+              "frames",
+              "height",
+              "int",
+              "len",
+              "loop",
+              "palette",
+              "width"
+            ],
+            "lifetime_live_out": [
+              "ValueError",
+              "_gif_append",
+              "_gif_u16le",
+              "_lzw_encode",
+              "bytearray",
+              "bytes",
+              "delay_cs",
+              "frame_lists",
+              "frames",
+              "height",
+              "int",
+              "len",
+              "loop",
+              "palette",
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -9551,7 +9531,7 @@
               },
               "is_reassign": true,
               "meta": {
-                "lifetime_node_id": "n46",
+                "lifetime_node_id": "n45",
                 "lifetime_defs": [
                   "fr_buf"
                 ],
@@ -9566,7 +9546,6 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr",
                   "frame_lists",
                   "frames",
@@ -9575,8 +9554,7 @@
                   "len",
                   "loop",
                   "palette",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "ValueError",
@@ -9586,7 +9564,6 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr",
                   "fr_buf",
                   "frame_lists",
@@ -9596,8 +9573,7 @@
                   "len",
                   "loop",
                   "palette",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -9750,7 +9726,7 @@
                     }
                   },
                   "meta": {
-                    "lifetime_node_id": "n45",
+                    "lifetime_node_id": "n44",
                     "lifetime_defs": [],
                     "lifetime_uses": [
                       "fr_buf",
@@ -9765,7 +9741,6 @@
                       "bytearray",
                       "bytes",
                       "delay_cs",
-                      "f",
                       "fr",
                       "fr_buf",
                       "frame_lists",
@@ -9776,8 +9751,7 @@
                       "loop",
                       "palette",
                       "v",
-                      "width",
-                      "with"
+                      "width"
                     ],
                     "lifetime_live_out": [
                       "ValueError",
@@ -9787,7 +9761,6 @@
                       "bytearray",
                       "bytes",
                       "delay_cs",
-                      "f",
                       "fr",
                       "fr_buf",
                       "frame_lists",
@@ -9797,8 +9770,7 @@
                       "len",
                       "loop",
                       "palette",
-                      "width",
-                      "with"
+                      "width"
                     ],
                     "lifetime_last_use_vars": [
                       "v"
@@ -9814,7 +9786,7 @@
                 "end_col_offset": 33
               },
               "meta": {
-                "lifetime_node_id": "n44",
+                "lifetime_node_id": "n43",
                 "lifetime_defs": [
                   "v"
                 ],
@@ -9829,7 +9801,6 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr",
                   "fr_buf",
                   "frame_lists",
@@ -9839,8 +9810,7 @@
                   "len",
                   "loop",
                   "palette",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "ValueError",
@@ -9850,7 +9820,6 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr",
                   "fr_buf",
                   "frame_lists",
@@ -9861,8 +9830,7 @@
                   "loop",
                   "palette",
                   "v",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -10221,7 +10189,7 @@
                   },
                   "cause": null,
                   "meta": {
-                    "lifetime_node_id": "n43",
+                    "lifetime_node_id": "n42",
                     "lifetime_defs": [],
                     "lifetime_uses": [
                       "ValueError"
@@ -10234,7 +10202,6 @@
                       "bytearray",
                       "bytes",
                       "delay_cs",
-                      "f",
                       "fr_buf",
                       "frame_lists",
                       "frames",
@@ -10243,8 +10210,7 @@
                       "len",
                       "loop",
                       "palette",
-                      "width",
-                      "with"
+                      "width"
                     ],
                     "lifetime_live_out": [
                       "ValueError",
@@ -10254,7 +10220,6 @@
                       "bytearray",
                       "bytes",
                       "delay_cs",
-                      "f",
                       "fr_buf",
                       "frame_lists",
                       "frames",
@@ -10263,8 +10228,7 @@
                       "len",
                       "loop",
                       "palette",
-                      "width",
-                      "with"
+                      "width"
                     ],
                     "lifetime_last_use_vars": []
                   }
@@ -10272,7 +10236,7 @@
               ],
               "orelse": [],
               "meta": {
-                "lifetime_node_id": "n42",
+                "lifetime_node_id": "n41",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "fr_buf",
@@ -10288,7 +10252,6 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "frames",
@@ -10297,8 +10260,7 @@
                   "len",
                   "loop",
                   "palette",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "ValueError",
@@ -10308,7 +10270,6 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "frames",
@@ -10317,8 +10278,7 @@
                   "len",
                   "loop",
                   "palette",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -10417,7 +10377,7 @@
                 }
               },
               "meta": {
-                "lifetime_node_id": "n41",
+                "lifetime_node_id": "n40",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "fr_buf",
@@ -10431,7 +10391,6 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "frames",
@@ -10440,8 +10399,7 @@
                   "len",
                   "loop",
                   "palette",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "ValueError",
@@ -10451,7 +10409,6 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "frame_lists",
                   "frames",
                   "height",
@@ -10459,8 +10416,7 @@
                   "len",
                   "loop",
                   "palette",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": [
                   "fr_buf"
@@ -10476,7 +10432,7 @@
             "end_col_offset": 34
           },
           "meta": {
-            "lifetime_node_id": "n40",
+            "lifetime_node_id": "n39",
             "lifetime_defs": [
               "fr"
             ],
@@ -10491,7 +10447,6 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "frames",
               "height",
@@ -10499,8 +10454,7 @@
               "len",
               "loop",
               "palette",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "ValueError",
@@ -10510,7 +10464,6 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "fr",
               "frame_lists",
               "frames",
@@ -10519,8 +10472,7 @@
               "len",
               "loop",
               "palette",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -10604,7 +10556,7 @@
             "mirror": "bytearray"
           },
           "meta": {
-            "lifetime_node_id": "n39",
+            "lifetime_node_id": "n38",
             "lifetime_defs": [
               "palette_buf"
             ],
@@ -10618,15 +10570,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "int",
               "len",
               "loop",
               "palette",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_gif_append",
@@ -10635,7 +10585,6 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "int",
@@ -10643,8 +10592,7 @@
               "loop",
               "palette",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -10797,7 +10745,7 @@
                 }
               },
               "meta": {
-                "lifetime_node_id": "n38",
+                "lifetime_node_id": "n37",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "int",
@@ -10811,7 +10759,6 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "frame_lists",
                   "height",
                   "int",
@@ -10820,8 +10767,7 @@
                   "palette",
                   "palette_buf",
                   "v",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "_gif_append",
@@ -10830,7 +10776,6 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "frame_lists",
                   "height",
                   "int",
@@ -10838,8 +10783,7 @@
                   "loop",
                   "palette",
                   "palette_buf",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": [
                   "v"
@@ -10855,7 +10799,7 @@
             "end_col_offset": 34
           },
           "meta": {
-            "lifetime_node_id": "n37",
+            "lifetime_node_id": "n36",
             "lifetime_defs": [
               "v"
             ],
@@ -10869,7 +10813,6 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "int",
@@ -10877,8 +10820,7 @@
               "loop",
               "palette",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_gif_append",
@@ -10887,7 +10829,6 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "int",
@@ -10896,8 +10837,7 @@
               "palette",
               "palette_buf",
               "v",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -10981,7 +10921,7 @@
             "mirror": "bytearray"
           },
           "meta": {
-            "lifetime_node_id": "n36",
+            "lifetime_node_id": "n35",
             "lifetime_defs": [
               "out"
             ],
@@ -10995,14 +10935,12 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_gif_append",
@@ -11011,15 +10949,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -11218,7 +11154,7 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n35",
+            "lifetime_node_id": "n34",
             "lifetime_defs": [],
             "lifetime_uses": [
               "_gif_append",
@@ -11232,15 +11168,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_gif_append",
@@ -11249,15 +11183,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -11371,7 +11303,7 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n34",
+            "lifetime_node_id": "n33",
             "lifetime_defs": [],
             "lifetime_uses": [
               "_gif_append",
@@ -11386,15 +11318,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_gif_append",
@@ -11403,15 +11333,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -11525,7 +11453,7 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n33",
+            "lifetime_node_id": "n32",
             "lifetime_defs": [],
             "lifetime_uses": [
               "_gif_append",
@@ -11540,15 +11468,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_gif_append",
@@ -11557,15 +11483,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -11644,7 +11568,7 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n32",
+            "lifetime_node_id": "n31",
             "lifetime_defs": [],
             "lifetime_uses": [
               "out"
@@ -11656,15 +11580,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_gif_append",
@@ -11673,15 +11595,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -11760,7 +11680,7 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n31",
+            "lifetime_node_id": "n30",
             "lifetime_defs": [],
             "lifetime_uses": [
               "out"
@@ -11772,15 +11692,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_gif_append",
@@ -11789,15 +11707,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -11876,7 +11792,7 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n30",
+            "lifetime_node_id": "n29",
             "lifetime_defs": [],
             "lifetime_uses": [
               "out"
@@ -11888,15 +11804,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_gif_append",
@@ -11905,15 +11819,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -11991,7 +11903,7 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n29",
+            "lifetime_node_id": "n28",
             "lifetime_defs": [],
             "lifetime_uses": [
               "_gif_append",
@@ -12005,15 +11917,13 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
               "palette_buf",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_gif_append",
@@ -12022,14 +11932,12 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": [
               "palette_buf"
@@ -12376,7 +12284,7 @@
             }
           ],
           "meta": {
-            "lifetime_node_id": "n28",
+            "lifetime_node_id": "n27",
             "lifetime_defs": [],
             "lifetime_uses": [
               "_gif_append",
@@ -12390,14 +12298,12 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_gif_append",
@@ -12406,14 +12312,12 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -12527,7 +12431,7 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n27",
+            "lifetime_node_id": "n26",
             "lifetime_defs": [],
             "lifetime_uses": [
               "_gif_append",
@@ -12542,14 +12446,12 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "loop",
               "out",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_gif_append",
@@ -12558,13 +12460,11 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "out",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": [
               "loop"
@@ -12645,7 +12545,7 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n26",
+            "lifetime_node_id": "n25",
             "lifetime_defs": [],
             "lifetime_uses": [
               "out"
@@ -12657,13 +12557,11 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "out",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_gif_append",
@@ -12672,13 +12570,11 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "out",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -12881,7 +12777,7 @@
                 }
               },
               "meta": {
-                "lifetime_node_id": "n25",
+                "lifetime_node_id": "n24",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "_gif_append",
@@ -12895,14 +12791,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "_gif_append",
@@ -12911,14 +12805,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -13032,7 +12924,7 @@
                 }
               },
               "meta": {
-                "lifetime_node_id": "n24",
+                "lifetime_node_id": "n23",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "_gif_append",
@@ -13047,14 +12939,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "_gif_append",
@@ -13063,14 +12953,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -13213,7 +13101,7 @@
                 }
               },
               "meta": {
-                "lifetime_node_id": "n23",
+                "lifetime_node_id": "n22",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "_gif_append",
@@ -13227,14 +13115,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "_gif_append",
@@ -13243,14 +13129,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -13335,7 +13219,7 @@
                 }
               ],
               "meta": {
-                "lifetime_node_id": "n22",
+                "lifetime_node_id": "n21",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "out"
@@ -13347,14 +13231,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "_gif_append",
@@ -13363,14 +13245,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -13484,7 +13364,7 @@
                 }
               },
               "meta": {
-                "lifetime_node_id": "n21",
+                "lifetime_node_id": "n20",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "_gif_append",
@@ -13498,14 +13378,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "_gif_append",
@@ -13514,14 +13392,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -13635,7 +13511,7 @@
                 }
               },
               "meta": {
-                "lifetime_node_id": "n20",
+                "lifetime_node_id": "n19",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "_gif_append",
@@ -13649,14 +13525,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "_gif_append",
@@ -13665,14 +13539,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -13786,7 +13658,7 @@
                 }
               },
               "meta": {
-                "lifetime_node_id": "n19",
+                "lifetime_node_id": "n18",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "_gif_append",
@@ -13801,14 +13673,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "_gif_append",
@@ -13817,14 +13687,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -13938,7 +13806,7 @@
                 }
               },
               "meta": {
-                "lifetime_node_id": "n18",
+                "lifetime_node_id": "n17",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "_gif_append",
@@ -13953,14 +13821,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "_gif_append",
@@ -13969,14 +13835,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -14055,7 +13919,7 @@
                 }
               },
               "meta": {
-                "lifetime_node_id": "n17",
+                "lifetime_node_id": "n16",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "out"
@@ -14067,14 +13931,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "_gif_append",
@@ -14083,14 +13945,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -14169,7 +14029,7 @@
                 }
               },
               "meta": {
-                "lifetime_node_id": "n16",
+                "lifetime_node_id": "n15",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "out"
@@ -14181,14 +14041,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "_gif_append",
@@ -14197,14 +14055,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -14341,7 +14197,7 @@
                 "mirror": "bytes"
               },
               "meta": {
-                "lifetime_node_id": "n15",
+                "lifetime_node_id": "n14",
                 "lifetime_defs": [
                   "compressed"
                 ],
@@ -14357,14 +14213,12 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "fr_buf",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "_gif_append",
@@ -14374,13 +14228,11 @@
                   "bytes",
                   "compressed",
                   "delay_cs",
-                  "f",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": [
                   "fr_buf"
@@ -14433,7 +14285,7 @@
                 "mirror": "int64"
               },
               "meta": {
-                "lifetime_node_id": "n14",
+                "lifetime_node_id": "n13",
                 "lifetime_defs": [
                   "pos"
                 ],
@@ -14446,13 +14298,11 @@
                   "bytes",
                   "compressed",
                   "delay_cs",
-                  "f",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "_gif_append",
@@ -14462,14 +14312,12 @@
                   "bytes",
                   "compressed",
                   "delay_cs",
-                  "f",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
                   "pos",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -14865,7 +14713,7 @@
                     "mirror": "int64"
                   },
                   "meta": {
-                    "lifetime_node_id": "n13",
+                    "lifetime_node_id": "n12",
                     "lifetime_defs": [
                       "remain"
                     ],
@@ -14882,14 +14730,12 @@
                       "bytes",
                       "compressed",
                       "delay_cs",
-                      "f",
                       "frame_lists",
                       "height",
                       "len",
                       "out",
                       "pos",
-                      "width",
-                      "with"
+                      "width"
                     ],
                     "lifetime_live_out": [
                       "_gif_append",
@@ -14899,15 +14745,13 @@
                       "bytes",
                       "compressed",
                       "delay_cs",
-                      "f",
                       "frame_lists",
                       "height",
                       "len",
                       "out",
                       "pos",
                       "remain",
-                      "width",
-                      "with"
+                      "width"
                     ],
                     "lifetime_last_use_vars": []
                   }
@@ -15079,7 +14923,7 @@
                     "mirror": "int64"
                   },
                   "meta": {
-                    "lifetime_node_id": "n12",
+                    "lifetime_node_id": "n11",
                     "lifetime_defs": [
                       "chunk_len"
                     ],
@@ -15094,15 +14938,13 @@
                       "bytes",
                       "compressed",
                       "delay_cs",
-                      "f",
                       "frame_lists",
                       "height",
                       "len",
                       "out",
                       "pos",
                       "remain",
-                      "width",
-                      "with"
+                      "width"
                     ],
                     "lifetime_live_out": [
                       "_gif_append",
@@ -15113,14 +14955,12 @@
                       "chunk_len",
                       "compressed",
                       "delay_cs",
-                      "f",
                       "frame_lists",
                       "height",
                       "len",
                       "out",
                       "pos",
-                      "width",
-                      "with"
+                      "width"
                     ],
                     "lifetime_last_use_vars": [
                       "remain"
@@ -15201,7 +15041,7 @@
                     }
                   },
                   "meta": {
-                    "lifetime_node_id": "n11",
+                    "lifetime_node_id": "n10",
                     "lifetime_defs": [],
                     "lifetime_uses": [
                       "chunk_len",
@@ -15216,14 +15056,12 @@
                       "chunk_len",
                       "compressed",
                       "delay_cs",
-                      "f",
                       "frame_lists",
                       "height",
                       "len",
                       "out",
                       "pos",
-                      "width",
-                      "with"
+                      "width"
                     ],
                     "lifetime_live_out": [
                       "_gif_append",
@@ -15234,14 +15072,12 @@
                       "chunk_len",
                       "compressed",
                       "delay_cs",
-                      "f",
                       "frame_lists",
                       "height",
                       "len",
                       "out",
                       "pos",
-                      "width",
-                      "with"
+                      "width"
                     ],
                     "lifetime_last_use_vars": []
                   }
@@ -15292,7 +15128,7 @@
                     "mirror": "int64"
                   },
                   "meta": {
-                    "lifetime_node_id": "n10",
+                    "lifetime_node_id": "n9",
                     "lifetime_defs": [
                       "i"
                     ],
@@ -15306,14 +15142,12 @@
                       "chunk_len",
                       "compressed",
                       "delay_cs",
-                      "f",
                       "frame_lists",
                       "height",
                       "len",
                       "out",
                       "pos",
-                      "width",
-                      "with"
+                      "width"
                     ],
                     "lifetime_live_out": [
                       "_gif_append",
@@ -15324,15 +15158,13 @@
                       "chunk_len",
                       "compressed",
                       "delay_cs",
-                      "f",
                       "frame_lists",
                       "height",
                       "i",
                       "len",
                       "out",
                       "pos",
-                      "width",
-                      "with"
+                      "width"
                     ],
                     "lifetime_last_use_vars": []
                   }
@@ -15611,7 +15443,7 @@
                         }
                       },
                       "meta": {
-                        "lifetime_node_id": "n9",
+                        "lifetime_node_id": "n8",
                         "lifetime_defs": [],
                         "lifetime_uses": [
                           "compressed",
@@ -15628,15 +15460,13 @@
                           "chunk_len",
                           "compressed",
                           "delay_cs",
-                          "f",
                           "frame_lists",
                           "height",
                           "i",
                           "len",
                           "out",
                           "pos",
-                          "width",
-                          "with"
+                          "width"
                         ],
                         "lifetime_live_out": [
                           "_gif_append",
@@ -15647,15 +15477,13 @@
                           "chunk_len",
                           "compressed",
                           "delay_cs",
-                          "f",
                           "frame_lists",
                           "height",
                           "i",
                           "len",
                           "out",
                           "pos",
-                          "width",
-                          "with"
+                          "width"
                         ],
                         "lifetime_last_use_vars": []
                       }
@@ -15706,7 +15534,7 @@
                         "mirror": "int64"
                       },
                       "meta": {
-                        "lifetime_node_id": "n8",
+                        "lifetime_node_id": "n7",
                         "lifetime_defs": [
                           "i"
                         ],
@@ -15722,15 +15550,13 @@
                           "chunk_len",
                           "compressed",
                           "delay_cs",
-                          "f",
                           "frame_lists",
                           "height",
                           "i",
                           "len",
                           "out",
                           "pos",
-                          "width",
-                          "with"
+                          "width"
                         ],
                         "lifetime_live_out": [
                           "_gif_append",
@@ -15741,15 +15567,13 @@
                           "chunk_len",
                           "compressed",
                           "delay_cs",
-                          "f",
                           "frame_lists",
                           "height",
                           "i",
                           "len",
                           "out",
                           "pos",
-                          "width",
-                          "with"
+                          "width"
                         ],
                         "lifetime_last_use_vars": []
                       }
@@ -15757,7 +15581,7 @@
                   ],
                   "orelse": [],
                   "meta": {
-                    "lifetime_node_id": "n7",
+                    "lifetime_node_id": "n6",
                     "lifetime_defs": [],
                     "lifetime_uses": [
                       "chunk_len",
@@ -15772,15 +15596,13 @@
                       "chunk_len",
                       "compressed",
                       "delay_cs",
-                      "f",
                       "frame_lists",
                       "height",
                       "i",
                       "len",
                       "out",
                       "pos",
-                      "width",
-                      "with"
+                      "width"
                     ],
                     "lifetime_live_out": [
                       "_gif_append",
@@ -15791,15 +15613,13 @@
                       "chunk_len",
                       "compressed",
                       "delay_cs",
-                      "f",
                       "frame_lists",
                       "height",
                       "i",
                       "len",
                       "out",
                       "pos",
-                      "width",
-                      "with"
+                      "width"
                     ],
                     "lifetime_last_use_vars": []
                   }
@@ -15850,7 +15670,7 @@
                     "mirror": "int64"
                   },
                   "meta": {
-                    "lifetime_node_id": "n6",
+                    "lifetime_node_id": "n5",
                     "lifetime_defs": [
                       "pos"
                     ],
@@ -15867,14 +15687,12 @@
                       "chunk_len",
                       "compressed",
                       "delay_cs",
-                      "f",
                       "frame_lists",
                       "height",
                       "len",
                       "out",
                       "pos",
-                      "width",
-                      "with"
+                      "width"
                     ],
                     "lifetime_live_out": [
                       "_gif_append",
@@ -15884,14 +15702,12 @@
                       "bytes",
                       "compressed",
                       "delay_cs",
-                      "f",
                       "frame_lists",
                       "height",
                       "len",
                       "out",
                       "pos",
-                      "width",
-                      "with"
+                      "width"
                     ],
                     "lifetime_last_use_vars": [
                       "chunk_len"
@@ -15901,7 +15717,7 @@
               ],
               "orelse": [],
               "meta": {
-                "lifetime_node_id": "n5",
+                "lifetime_node_id": "n4",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "compressed",
@@ -15916,14 +15732,12 @@
                   "bytes",
                   "compressed",
                   "delay_cs",
-                  "f",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
                   "pos",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "_gif_append",
@@ -15933,14 +15747,12 @@
                   "bytes",
                   "compressed",
                   "delay_cs",
-                  "f",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
                   "pos",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -16019,7 +15831,7 @@
                 }
               },
               "meta": {
-                "lifetime_node_id": "n4",
+                "lifetime_node_id": "n3",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "out"
@@ -16031,13 +15843,11 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_live_out": [
                   "_gif_append",
@@ -16046,13 +15856,11 @@
                   "bytearray",
                   "bytes",
                   "delay_cs",
-                  "f",
                   "frame_lists",
                   "height",
                   "len",
                   "out",
-                  "width",
-                  "with"
+                  "width"
                 ],
                 "lifetime_last_use_vars": []
               }
@@ -16072,7 +15880,7 @@
             }
           ],
           "meta": {
-            "lifetime_node_id": "n3",
+            "lifetime_node_id": "n2",
             "lifetime_defs": [
               "fr_buf"
             ],
@@ -16086,13 +15894,11 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "frame_lists",
               "height",
               "len",
               "out",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_live_out": [
               "_gif_append",
@@ -16101,14 +15907,12 @@
               "bytearray",
               "bytes",
               "delay_cs",
-              "f",
               "fr_buf",
               "frame_lists",
               "height",
               "len",
               "out",
-              "width",
-              "with"
+              "width"
             ],
             "lifetime_last_use_vars": []
           }
@@ -16187,204 +15991,202 @@
             }
           },
           "meta": {
-            "lifetime_node_id": "n2",
-            "lifetime_defs": [],
-            "lifetime_uses": [
-              "out"
-            ],
-            "lifetime_live_in": [
-              "bytes",
-              "f",
-              "out",
-              "with"
-            ],
-            "lifetime_live_out": [
-              "bytes",
-              "f",
-              "out",
-              "with"
-            ],
-            "lifetime_last_use_vars": []
-          }
-        },
-        {
-          "kind": "Expr",
-          "source_span": {
-            "lineno": 147,
-            "col_offset": 4,
-            "end_lineno": 147,
-            "end_col_offset": 31
-          },
-          "value": {
-            "kind": "Name",
-            "source_span": {
-              "lineno": 147,
-              "col_offset": 4,
-              "end_lineno": 147,
-              "end_col_offset": 8
-            },
-            "resolved_type": "unknown",
-            "casts": [],
-            "borrow_kind": "value",
-            "repr": "with",
-            "id": "with"
-          },
-          "leading_trivia": [
-            {
-              "kind": "blank",
-              "count": 1
-            }
-          ],
-          "meta": {
             "lifetime_node_id": "n1",
             "lifetime_defs": [],
             "lifetime_uses": [
-              "with"
-            ],
-            "lifetime_live_in": [
-              "bytes",
-              "f",
-              "out",
-              "with"
-            ],
-            "lifetime_live_out": [
-              "bytes",
-              "f",
               "out"
             ],
+            "lifetime_live_in": [
+              "out"
+            ],
+            "lifetime_live_out": [],
             "lifetime_last_use_vars": [
-              "with"
+              "out"
             ]
           }
         },
         {
-          "kind": "Expr",
+          "kind": "With",
           "source_span": {
-            "lineno": 148,
-            "col_offset": 8,
+            "lineno": 147,
+            "col_offset": 4,
             "end_lineno": 148,
             "end_col_offset": 27
           },
-          "value": {
+          "context_expr": {
             "kind": "Call",
             "source_span": {
-              "lineno": 148,
-              "col_offset": 8,
-              "end_lineno": 148,
-              "end_col_offset": 27
+              "lineno": 147,
+              "col_offset": 9,
+              "end_lineno": 147,
+              "end_col_offset": 25
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "f.write(bytes(out))",
+            "repr": "open(path, \"wb\")",
             "func": {
-              "kind": "Attribute",
+              "kind": "Name",
+              "source_span": {
+                "lineno": 147,
+                "col_offset": 9,
+                "end_lineno": 147,
+                "end_col_offset": 13
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "open",
+              "id": "open"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 147,
+                  "col_offset": 14,
+                  "end_lineno": 147,
+                  "end_col_offset": 18
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "path",
+                "id": "path"
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 147,
+                  "col_offset": 20,
+                  "end_lineno": 147,
+                  "end_col_offset": 24
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"wb\"",
+                "value": "wb"
+              }
+            ],
+            "keywords": []
+          },
+          "var_name": "f",
+          "body": [
+            {
+              "kind": "Expr",
               "source_span": {
                 "lineno": 148,
                 "col_offset": 8,
                 "end_lineno": 148,
-                "end_col_offset": 15
+                "end_col_offset": 27
               },
-              "resolved_type": "unknown",
-              "casts": [],
-              "borrow_kind": "value",
-              "repr": "f.write",
               "value": {
-                "kind": "Name",
+                "kind": "Call",
                 "source_span": {
                   "lineno": 148,
                   "col_offset": 8,
                   "end_lineno": 148,
-                  "end_col_offset": 9
+                  "end_col_offset": 27
                 },
                 "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "f",
-                "id": "f"
-              },
-              "attr": "write"
-            },
-            "args": [
-              {
-                "kind": "Call",
-                "source_span": {
-                  "lineno": 148,
-                  "col_offset": 16,
-                  "end_lineno": 148,
-                  "end_col_offset": 26
-                },
-                "resolved_type": "bytes",
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "bytes(out)",
+                "repr": "f.write(bytes(out))",
                 "func": {
-                  "kind": "Name",
+                  "kind": "Attribute",
                   "source_span": {
                     "lineno": 148,
-                    "col_offset": 16,
+                    "col_offset": 8,
                     "end_lineno": 148,
-                    "end_col_offset": 21
+                    "end_col_offset": 15
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "bytes",
-                  "id": "bytes"
-                },
-                "args": [
-                  {
+                  "repr": "f.write",
+                  "value": {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 148,
-                      "col_offset": 22,
+                      "col_offset": 8,
                       "end_lineno": 148,
-                      "end_col_offset": 25
+                      "end_col_offset": 9
                     },
-                    "resolved_type": "bytearray",
+                    "resolved_type": "unknown",
                     "casts": [],
-                    "borrow_kind": "readonly_ref",
-                    "repr": "out",
-                    "id": "out"
+                    "borrow_kind": "value",
+                    "repr": "f",
+                    "id": "f"
+                  },
+                  "attr": "write"
+                },
+                "args": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 148,
+                      "col_offset": 16,
+                      "end_lineno": 148,
+                      "end_col_offset": 26
+                    },
+                    "resolved_type": "bytes",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "bytes(out)",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 148,
+                        "col_offset": 16,
+                        "end_lineno": 148,
+                        "end_col_offset": 21
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "bytes",
+                      "id": "bytes"
+                    },
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 148,
+                          "col_offset": 22,
+                          "end_lineno": 148,
+                          "end_col_offset": 25
+                        },
+                        "resolved_type": "bytearray",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "out",
+                        "id": "out"
+                      }
+                    ],
+                    "keywords": [],
+                    "type_expr_summary_v1": {
+                      "schema_version": 1,
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "bytes"
+                    }
                   }
                 ],
                 "keywords": [],
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "NamedType",
-                  "category": "static",
-                  "mirror": "bytes"
+                  "kind": "DynamicType",
+                  "category": "dynamic",
+                  "mirror": "unknown",
+                  "dynamic_name": "unknown"
                 }
               }
-            ],
-            "keywords": [],
-            "type_expr_summary_v1": {
-              "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
             }
-          },
+          ],
           "meta": {
             "lifetime_node_id": "n0",
             "lifetime_defs": [],
-            "lifetime_uses": [
-              "bytes",
-              "f",
-              "out"
-            ],
-            "lifetime_live_in": [
-              "bytes",
-              "f",
-              "out"
-            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [],
             "lifetime_live_out": [],
-            "lifetime_last_use_vars": [
-              "bytes",
-              "f",
-              "out"
-            ]
+            "lifetime_last_use_vars": []
           }
         }
       ],
@@ -16438,7 +16240,7 @@
           "schema_version": "east3_lifetime_v1",
           "status": "ok",
           "reason": "",
-          "entry_node": "n50",
+          "entry_node": "n49",
           "order": [
             "n0",
             "n1",
@@ -16490,19 +16292,14 @@
             "n47",
             "n48",
             "n49",
-            "n50",
-            "n51"
+            "n50"
           ],
           "cfg": [
             {
               "id": "n0",
-              "kind": "Expr",
+              "kind": "With",
               "defs": [],
-              "uses": [
-                "bytes",
-                "f",
-                "out"
-              ],
+              "uses": [],
               "succ": []
             },
             {
@@ -16510,7 +16307,7 @@
               "kind": "Expr",
               "defs": [],
               "uses": [
-                "with"
+                "out"
               ],
               "succ": [
                 "n0"
@@ -16518,17 +16315,6 @@
             },
             {
               "id": "n2",
-              "kind": "Expr",
-              "defs": [],
-              "uses": [
-                "out"
-              ],
-              "succ": [
-                "n1"
-              ]
-            },
-            {
-              "id": "n3",
               "kind": "ForCore",
               "defs": [
                 "fr_buf"
@@ -16537,23 +16323,23 @@
                 "frame_lists"
               ],
               "succ": [
-                "n2",
-                "n25"
+                "n1",
+                "n24"
               ]
             },
             {
-              "id": "n4",
+              "id": "n3",
               "kind": "Expr",
               "defs": [],
               "uses": [
                 "out"
               ],
               "succ": [
-                "n3"
+                "n2"
               ]
             },
             {
-              "id": "n5",
+              "id": "n4",
               "kind": "While",
               "defs": [],
               "uses": [
@@ -16562,12 +16348,12 @@
                 "pos"
               ],
               "succ": [
-                "n13",
-                "n4"
+                "n12",
+                "n3"
               ]
             },
             {
-              "id": "n6",
+              "id": "n5",
               "kind": "AugAssign",
               "defs": [
                 "pos"
@@ -16577,11 +16363,11 @@
                 "pos"
               ],
               "succ": [
-                "n5"
+                "n4"
               ]
             },
             {
-              "id": "n7",
+              "id": "n6",
               "kind": "While",
               "defs": [],
               "uses": [
@@ -16589,12 +16375,12 @@
                 "i"
               ],
               "succ": [
-                "n6",
-                "n9"
+                "n5",
+                "n8"
               ]
             },
             {
-              "id": "n8",
+              "id": "n7",
               "kind": "AugAssign",
               "defs": [
                 "i"
@@ -16603,11 +16389,11 @@
                 "i"
               ],
               "succ": [
-                "n7"
+                "n6"
               ]
             },
             {
-              "id": "n9",
+              "id": "n8",
               "kind": "Expr",
               "defs": [],
               "uses": [
@@ -16617,22 +16403,22 @@
                 "pos"
               ],
               "succ": [
-                "n8"
+                "n7"
               ]
             },
             {
-              "id": "n10",
+              "id": "n9",
               "kind": "Assign",
               "defs": [
                 "i"
               ],
               "uses": [],
               "succ": [
-                "n7"
+                "n6"
               ]
             },
             {
-              "id": "n11",
+              "id": "n10",
               "kind": "Expr",
               "defs": [],
               "uses": [
@@ -16640,11 +16426,11 @@
                 "out"
               ],
               "succ": [
-                "n10"
+                "n9"
               ]
             },
             {
-              "id": "n12",
+              "id": "n11",
               "kind": "Assign",
               "defs": [
                 "chunk_len"
@@ -16653,11 +16439,11 @@
                 "remain"
               ],
               "succ": [
-                "n11"
+                "n10"
               ]
             },
             {
-              "id": "n13",
+              "id": "n12",
               "kind": "Assign",
               "defs": [
                 "remain"
@@ -16668,22 +16454,22 @@
                 "pos"
               ],
               "succ": [
-                "n12"
+                "n11"
               ]
             },
             {
-              "id": "n14",
+              "id": "n13",
               "kind": "Assign",
               "defs": [
                 "pos"
               ],
               "uses": [],
               "succ": [
-                "n5"
+                "n4"
               ]
             },
             {
-              "id": "n15",
+              "id": "n14",
               "kind": "Assign",
               "defs": [
                 "compressed"
@@ -16692,6 +16478,17 @@
                 "_lzw_encode",
                 "bytes",
                 "fr_buf"
+              ],
+              "succ": [
+                "n13"
+              ]
+            },
+            {
+              "id": "n15",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "out"
               ],
               "succ": [
                 "n14"
@@ -16713,6 +16510,9 @@
               "kind": "Expr",
               "defs": [],
               "uses": [
+                "_gif_append",
+                "_gif_u16le",
+                "height",
                 "out"
               ],
               "succ": [
@@ -16726,8 +16526,8 @@
               "uses": [
                 "_gif_append",
                 "_gif_u16le",
-                "height",
-                "out"
+                "out",
+                "width"
               ],
               "succ": [
                 "n17"
@@ -16740,8 +16540,7 @@
               "uses": [
                 "_gif_append",
                 "_gif_u16le",
-                "out",
-                "width"
+                "out"
               ],
               "succ": [
                 "n18"
@@ -16765,8 +16564,6 @@
               "kind": "Expr",
               "defs": [],
               "uses": [
-                "_gif_append",
-                "_gif_u16le",
                 "out"
               ],
               "succ": [
@@ -16778,6 +16575,8 @@
               "kind": "Expr",
               "defs": [],
               "uses": [
+                "_gif_append",
+                "bytearray",
                 "out"
               ],
               "succ": [
@@ -16790,7 +16589,8 @@
               "defs": [],
               "uses": [
                 "_gif_append",
-                "bytearray",
+                "_gif_u16le",
+                "delay_cs",
                 "out"
               ],
               "succ": [
@@ -16803,8 +16603,7 @@
               "defs": [],
               "uses": [
                 "_gif_append",
-                "_gif_u16le",
-                "delay_cs",
+                "bytearray",
                 "out"
               ],
               "succ": [
@@ -16816,12 +16615,10 @@
               "kind": "Expr",
               "defs": [],
               "uses": [
-                "_gif_append",
-                "bytearray",
                 "out"
               ],
               "succ": [
-                "n24"
+                "n2"
               ]
             },
             {
@@ -16829,10 +16626,13 @@
               "kind": "Expr",
               "defs": [],
               "uses": [
+                "_gif_append",
+                "_gif_u16le",
+                "loop",
                 "out"
               ],
               "succ": [
-                "n3"
+                "n25"
               ]
             },
             {
@@ -16841,8 +16641,7 @@
               "defs": [],
               "uses": [
                 "_gif_append",
-                "_gif_u16le",
-                "loop",
+                "bytearray",
                 "out"
               ],
               "succ": [
@@ -16855,8 +16654,8 @@
               "defs": [],
               "uses": [
                 "_gif_append",
-                "bytearray",
-                "out"
+                "out",
+                "palette_buf"
               ],
               "succ": [
                 "n27"
@@ -16867,9 +16666,7 @@
               "kind": "Expr",
               "defs": [],
               "uses": [
-                "_gif_append",
-                "out",
-                "palette_buf"
+                "out"
               ],
               "succ": [
                 "n28"
@@ -16902,6 +16699,9 @@
               "kind": "Expr",
               "defs": [],
               "uses": [
+                "_gif_append",
+                "_gif_u16le",
+                "height",
                 "out"
               ],
               "succ": [
@@ -16915,8 +16715,8 @@
               "uses": [
                 "_gif_append",
                 "_gif_u16le",
-                "height",
-                "out"
+                "out",
+                "width"
               ],
               "succ": [
                 "n32"
@@ -16928,9 +16728,8 @@
               "defs": [],
               "uses": [
                 "_gif_append",
-                "_gif_u16le",
-                "out",
-                "width"
+                "bytearray",
+                "out"
               ],
               "succ": [
                 "n33"
@@ -16938,19 +16737,6 @@
             },
             {
               "id": "n35",
-              "kind": "Expr",
-              "defs": [],
-              "uses": [
-                "_gif_append",
-                "bytearray",
-                "out"
-              ],
-              "succ": [
-                "n34"
-              ]
-            },
-            {
-              "id": "n36",
               "kind": "AnnAssign",
               "defs": [
                 "out"
@@ -16959,11 +16745,11 @@
                 "bytearray"
               ],
               "succ": [
-                "n35"
+                "n34"
               ]
             },
             {
-              "id": "n37",
+              "id": "n36",
               "kind": "ForCore",
               "defs": [
                 "v"
@@ -16972,12 +16758,12 @@
                 "palette"
               ],
               "succ": [
-                "n36",
-                "n38"
+                "n35",
+                "n37"
               ]
             },
             {
-              "id": "n38",
+              "id": "n37",
               "kind": "Expr",
               "defs": [],
               "uses": [
@@ -16986,11 +16772,11 @@
                 "v"
               ],
               "succ": [
-                "n37"
+                "n36"
               ]
             },
             {
-              "id": "n39",
+              "id": "n38",
               "kind": "AnnAssign",
               "defs": [
                 "palette_buf"
@@ -16999,11 +16785,11 @@
                 "bytearray"
               ],
               "succ": [
-                "n37"
+                "n36"
               ]
             },
             {
-              "id": "n40",
+              "id": "n39",
               "kind": "ForCore",
               "defs": [
                 "fr"
@@ -17012,12 +16798,12 @@
                 "frames"
               ],
               "succ": [
-                "n39",
-                "n46"
+                "n38",
+                "n45"
               ]
             },
             {
-              "id": "n41",
+              "id": "n40",
               "kind": "Expr",
               "defs": [],
               "uses": [
@@ -17025,11 +16811,11 @@
                 "frame_lists"
               ],
               "succ": [
-                "n40"
+                "n39"
               ]
             },
             {
-              "id": "n42",
+              "id": "n41",
               "kind": "If",
               "defs": [],
               "uses": [
@@ -17039,23 +16825,23 @@
                 "width"
               ],
               "succ": [
-                "n41",
-                "n43"
+                "n40",
+                "n42"
               ]
             },
             {
-              "id": "n43",
+              "id": "n42",
               "kind": "Raise",
               "defs": [],
               "uses": [
                 "ValueError"
               ],
               "succ": [
-                "n41"
+                "n40"
               ]
             },
             {
-              "id": "n44",
+              "id": "n43",
               "kind": "ForCore",
               "defs": [
                 "v"
@@ -17064,12 +16850,12 @@
                 "fr"
               ],
               "succ": [
-                "n42",
-                "n45"
+                "n41",
+                "n44"
               ]
             },
             {
-              "id": "n45",
+              "id": "n44",
               "kind": "Expr",
               "defs": [],
               "uses": [
@@ -17078,11 +16864,11 @@
                 "v"
               ],
               "succ": [
-                "n44"
+                "n43"
               ]
             },
             {
-              "id": "n46",
+              "id": "n45",
               "kind": "AnnAssign",
               "defs": [
                 "fr_buf"
@@ -17091,7 +16877,16 @@
                 "bytearray"
               ],
               "succ": [
-                "n44"
+                "n43"
+              ]
+            },
+            {
+              "id": "n46",
+              "kind": "VarDecl",
+              "defs": [],
+              "uses": [],
+              "succ": [
+                "n39"
               ]
             },
             {
@@ -17100,13 +16895,15 @@
               "defs": [],
               "uses": [],
               "succ": [
-                "n40"
+                "n46"
               ]
             },
             {
               "id": "n48",
-              "kind": "VarDecl",
-              "defs": [],
+              "kind": "AnnAssign",
+              "defs": [
+                "frame_lists"
+              ],
               "uses": [],
               "succ": [
                 "n47"
@@ -17114,17 +16911,6 @@
             },
             {
               "id": "n49",
-              "kind": "AnnAssign",
-              "defs": [
-                "frame_lists"
-              ],
-              "uses": [],
-              "succ": [
-                "n48"
-              ]
-            },
-            {
-              "id": "n50",
               "kind": "If",
               "defs": [],
               "uses": [
@@ -17132,171 +16918,167 @@
                 "palette"
               ],
               "succ": [
-                "n49",
-                "n51"
+                "n48",
+                "n50"
               ]
             },
             {
-              "id": "n51",
+              "id": "n50",
               "kind": "Raise",
               "defs": [],
               "uses": [
                 "ValueError"
               ],
               "succ": [
-                "n49"
+                "n48"
               ]
             }
           ],
           "def_use": {
             "defs": {
               "chunk_len": [
-                "n12"
+                "n11"
               ],
               "compressed": [
-                "n15"
+                "n14"
               ],
               "fr": [
-                "n40"
-              ],
-              "fr_buf": [
-                "n3",
-                "n46"
-              ],
-              "frame_lists": [
-                "n49"
-              ],
-              "i": [
-                "n10",
-                "n8"
-              ],
-              "out": [
-                "n36"
-              ],
-              "palette_buf": [
                 "n39"
               ],
+              "fr_buf": [
+                "n2",
+                "n45"
+              ],
+              "frame_lists": [
+                "n48"
+              ],
+              "i": [
+                "n7",
+                "n9"
+              ],
+              "out": [
+                "n35"
+              ],
+              "palette_buf": [
+                "n38"
+              ],
               "pos": [
-                "n14",
-                "n6"
+                "n13",
+                "n5"
               ],
               "remain": [
-                "n13"
+                "n12"
               ],
               "v": [
-                "n37",
-                "n44"
+                "n36",
+                "n43"
               ]
             },
             "uses": {
               "ValueError": [
-                "n43",
-                "n51"
+                "n42",
+                "n50"
               ],
               "_gif_append": [
+                "n17",
                 "n18",
                 "n19",
                 "n20",
-                "n21",
+                "n22",
                 "n23",
                 "n24",
-                "n25",
+                "n26",
                 "n27",
                 "n28",
-                "n29",
-                "n33",
-                "n34",
-                "n35"
-              ],
-              "_gif_u16le": [
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n24",
-                "n27",
+                "n32",
                 "n33",
                 "n34"
               ],
+              "_gif_u16le": [
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n23",
+                "n26",
+                "n32",
+                "n33"
+              ],
               "_lzw_encode": [
-                "n15"
+                "n14"
               ],
               "bytearray": [
-                "n23",
-                "n25",
-                "n28",
+                "n22",
+                "n24",
+                "n27",
+                "n34",
                 "n35",
-                "n36",
-                "n39",
-                "n46"
-              ],
-              "bytes": [
-                "n0",
-                "n15"
-              ],
-              "chunk_len": [
-                "n11",
-                "n6",
-                "n7"
-              ],
-              "compressed": [
-                "n13",
-                "n5",
-                "n9"
-              ],
-              "delay_cs": [
-                "n24"
-              ],
-              "f": [
-                "n0"
-              ],
-              "fr": [
-                "n44"
-              ],
-              "fr_buf": [
-                "n15",
-                "n41",
-                "n42",
-                "n45"
-              ],
-              "frame_lists": [
-                "n3",
-                "n41"
-              ],
-              "frames": [
-                "n40"
-              ],
-              "height": [
-                "n18",
-                "n33",
-                "n42"
-              ],
-              "i": [
-                "n7",
-                "n8",
-                "n9"
-              ],
-              "int": [
                 "n38",
                 "n45"
               ],
-              "len": [
-                "n13",
-                "n42",
+              "bytes": [
+                "n14"
+              ],
+              "chunk_len": [
+                "n10",
                 "n5",
-                "n50"
+                "n6"
+              ],
+              "compressed": [
+                "n12",
+                "n4",
+                "n8"
+              ],
+              "delay_cs": [
+                "n23"
+              ],
+              "fr": [
+                "n43"
+              ],
+              "fr_buf": [
+                "n14",
+                "n40",
+                "n41",
+                "n44"
+              ],
+              "frame_lists": [
+                "n2",
+                "n40"
+              ],
+              "frames": [
+                "n39"
+              ],
+              "height": [
+                "n17",
+                "n32",
+                "n41"
+              ],
+              "i": [
+                "n6",
+                "n7",
+                "n8"
+              ],
+              "int": [
+                "n37",
+                "n44"
+              ],
+              "len": [
+                "n12",
+                "n4",
+                "n41",
+                "n49"
               ],
               "loop": [
-                "n27"
+                "n26"
               ],
               "out": [
-                "n0",
-                "n11",
+                "n1",
+                "n10",
+                "n15",
                 "n16",
                 "n17",
                 "n18",
                 "n19",
-                "n2",
                 "n20",
                 "n21",
                 "n22",
@@ -17307,43 +17089,39 @@
                 "n27",
                 "n28",
                 "n29",
+                "n3",
                 "n30",
                 "n31",
                 "n32",
                 "n33",
                 "n34",
-                "n35",
-                "n4",
-                "n9"
+                "n8"
               ],
               "palette": [
-                "n37",
-                "n50"
+                "n36",
+                "n49"
               ],
               "palette_buf": [
-                "n29",
-                "n38"
+                "n28",
+                "n37"
               ],
               "pos": [
-                "n13",
+                "n12",
+                "n4",
                 "n5",
-                "n6",
-                "n9"
+                "n8"
               ],
               "remain": [
-                "n12"
+                "n11"
               ],
               "v": [
-                "n38",
-                "n45"
+                "n37",
+                "n44"
               ],
               "width": [
-                "n19",
-                "n34",
-                "n42"
-              ],
-              "with": [
-                "n1"
+                "n18",
+                "n33",
+                "n41"
               ]
             }
           },
@@ -17351,10 +17129,11 @@
             "ValueError": {
               "def_nodes": [],
               "use_nodes": [
-                "n43",
-                "n51"
+                "n42",
+                "n50"
               ],
               "live_in_nodes": [
+                "n39",
                 "n40",
                 "n41",
                 "n42",
@@ -17365,10 +17144,10 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "live_out_nodes": [
+                "n39",
                 "n40",
                 "n41",
                 "n42",
@@ -17379,8 +17158,7 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -17388,21 +17166,22 @@
             "_gif_append": {
               "def_nodes": [],
               "use_nodes": [
+                "n17",
                 "n18",
                 "n19",
                 "n20",
-                "n21",
+                "n22",
                 "n23",
                 "n24",
-                "n25",
+                "n26",
                 "n27",
                 "n28",
-                "n29",
+                "n32",
                 "n33",
-                "n34",
-                "n35"
+                "n34"
               ],
               "live_in_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -17450,10 +17229,10 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "live_out_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -17501,8 +17280,7 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -17510,16 +17288,17 @@
             "_gif_u16le": {
               "def_nodes": [],
               "use_nodes": [
+                "n17",
                 "n18",
                 "n19",
                 "n20",
-                "n21",
-                "n24",
-                "n27",
-                "n33",
-                "n34"
+                "n23",
+                "n26",
+                "n32",
+                "n33"
               ],
               "live_in_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -17567,10 +17346,10 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "live_out_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -17618,8 +17397,7 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -17627,9 +17405,10 @@
             "_lzw_encode": {
               "def_nodes": [],
               "use_nodes": [
-                "n15"
+                "n14"
               ],
               "live_in_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -17677,10 +17456,10 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "live_out_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -17728,8 +17507,7 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -17737,15 +17515,16 @@
             "bytearray": {
               "def_nodes": [],
               "use_nodes": [
-                "n23",
-                "n25",
-                "n28",
+                "n22",
+                "n24",
+                "n27",
+                "n34",
                 "n35",
-                "n36",
-                "n39",
-                "n46"
+                "n38",
+                "n45"
               ],
               "live_in_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -17793,10 +17572,10 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "live_out_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -17844,8 +17623,7 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -17853,12 +17631,9 @@
             "bytes": {
               "def_nodes": [],
               "use_nodes": [
-                "n0",
-                "n15"
+                "n14"
               ],
               "live_in_nodes": [
-                "n0",
-                "n1",
                 "n2",
                 "n3",
                 "n4",
@@ -17907,11 +17682,9 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "live_out_nodes": [
-                "n1",
                 "n2",
                 "n3",
                 "n4",
@@ -17960,24 +17733,29 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
-              "last_use_nodes": [
-                "n0"
-              ],
+              "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
             },
             "chunk_len": {
               "def_nodes": [
-                "n12"
+                "n11"
               ],
               "use_nodes": [
-                "n11",
-                "n6",
-                "n7"
+                "n10",
+                "n5",
+                "n6"
               ],
               "live_in_nodes": [
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10"
+              ],
+              "live_out_nodes": [
                 "n6",
                 "n7",
                 "n8",
@@ -17985,29 +17763,34 @@
                 "n10",
                 "n11"
               ],
-              "live_out_nodes": [
-                "n7",
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12"
-              ],
               "last_use_nodes": [
-                "n6"
+                "n5"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
             "compressed": {
               "def_nodes": [
-                "n15"
+                "n14"
               ],
               "use_nodes": [
-                "n13",
-                "n5",
-                "n9"
+                "n12",
+                "n4",
+                "n8"
               ],
               "live_in_nodes": [
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13"
+              ],
+              "live_out_nodes": [
+                "n4",
                 "n5",
                 "n6",
                 "n7",
@@ -18019,28 +17802,16 @@
                 "n13",
                 "n14"
               ],
-              "live_out_nodes": [
-                "n5",
-                "n6",
-                "n7",
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12",
-                "n13",
-                "n14",
-                "n15"
-              ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
             },
             "delay_cs": {
               "def_nodes": [],
               "use_nodes": [
-                "n24"
+                "n23"
               ],
               "live_in_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -18088,10 +17859,10 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "live_out_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -18139,162 +17910,45 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
             },
-            "f": {
-              "def_nodes": [],
-              "use_nodes": [
-                "n0"
-              ],
-              "live_in_nodes": [
-                "n0",
-                "n1",
-                "n2",
-                "n3",
-                "n4",
-                "n5",
-                "n6",
-                "n7",
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12",
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24",
-                "n25",
-                "n26",
-                "n27",
-                "n28",
-                "n29",
-                "n30",
-                "n31",
-                "n32",
-                "n33",
-                "n34",
-                "n35",
-                "n36",
-                "n37",
-                "n38",
-                "n39",
-                "n40",
-                "n41",
-                "n42",
-                "n43",
-                "n44",
-                "n45",
-                "n46",
-                "n47",
-                "n48",
-                "n49",
-                "n50",
-                "n51"
-              ],
-              "live_out_nodes": [
-                "n1",
-                "n2",
-                "n3",
-                "n4",
-                "n5",
-                "n6",
-                "n7",
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12",
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24",
-                "n25",
-                "n26",
-                "n27",
-                "n28",
-                "n29",
-                "n30",
-                "n31",
-                "n32",
-                "n33",
-                "n34",
-                "n35",
-                "n36",
-                "n37",
-                "n38",
-                "n39",
-                "n40",
-                "n41",
-                "n42",
-                "n43",
-                "n44",
-                "n45",
-                "n46",
-                "n47",
-                "n48",
-                "n49",
-                "n50",
-                "n51"
-              ],
-              "last_use_nodes": [
-                "n0"
-              ],
-              "lifetime_class": "local_non_escape_candidate"
-            },
             "fr": {
               "def_nodes": [
-                "n40"
+                "n39"
               ],
               "use_nodes": [
-                "n44"
+                "n43"
               ],
               "live_in_nodes": [
+                "n43",
                 "n44",
-                "n45",
-                "n46"
+                "n45"
               ],
               "live_out_nodes": [
-                "n40",
+                "n39",
+                "n43",
                 "n44",
-                "n45",
-                "n46"
+                "n45"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
             },
             "fr_buf": {
               "def_nodes": [
-                "n3",
-                "n46"
+                "n2",
+                "n45"
               ],
               "use_nodes": [
-                "n15",
+                "n14",
+                "n40",
                 "n41",
-                "n42",
-                "n45"
+                "n44"
               ],
               "live_in_nodes": [
+                "n14",
                 "n15",
                 "n16",
                 "n17",
@@ -18305,46 +17959,94 @@
                 "n22",
                 "n23",
                 "n24",
-                "n25",
+                "n40",
+                "n41",
+                "n42",
+                "n43",
+                "n44"
+              ],
+              "live_out_nodes": [
+                "n2",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
                 "n41",
                 "n42",
                 "n43",
                 "n44",
                 "n45"
               ],
-              "live_out_nodes": [
-                "n3",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24",
-                "n25",
-                "n42",
-                "n43",
-                "n44",
-                "n45",
-                "n46"
-              ],
               "last_use_nodes": [
-                "n15",
-                "n41"
+                "n14",
+                "n40"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
             "frame_lists": {
               "def_nodes": [
-                "n49"
+                "n48"
               ],
               "use_nodes": [
-                "n3",
-                "n41"
+                "n2",
+                "n40"
               ],
               "live_in_nodes": [
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31",
+                "n32",
+                "n33",
+                "n34",
+                "n35",
+                "n36",
+                "n37",
+                "n38",
+                "n39",
+                "n40",
+                "n41",
+                "n42",
+                "n43",
+                "n44",
+                "n45",
+                "n46",
+                "n47"
+              ],
+              "live_out_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -18392,43 +18094,15 @@
                 "n47",
                 "n48"
               ],
-              "live_out_nodes": [
-                "n3",
-                "n4",
-                "n5",
-                "n6",
-                "n7",
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12",
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24",
-                "n25",
-                "n26",
-                "n27",
-                "n28",
-                "n29",
-                "n30",
-                "n31",
-                "n32",
-                "n33",
-                "n34",
-                "n35",
-                "n36",
-                "n37",
-                "n38",
+              "last_use_nodes": [],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "frames": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n39"
+              ],
+              "live_in_nodes": [
                 "n39",
                 "n40",
                 "n41",
@@ -18439,31 +18113,11 @@
                 "n46",
                 "n47",
                 "n48",
-                "n49"
-              ],
-              "last_use_nodes": [],
-              "lifetime_class": "local_non_escape_candidate"
-            },
-            "frames": {
-              "def_nodes": [],
-              "use_nodes": [
-                "n40"
-              ],
-              "live_in_nodes": [
-                "n40",
-                "n41",
-                "n42",
-                "n43",
-                "n44",
-                "n45",
-                "n46",
-                "n47",
-                "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "live_out_nodes": [
+                "n39",
                 "n40",
                 "n41",
                 "n42",
@@ -18474,8 +18128,7 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -18483,11 +18136,12 @@
             "height": {
               "def_nodes": [],
               "use_nodes": [
-                "n18",
-                "n33",
-                "n42"
+                "n17",
+                "n32",
+                "n41"
               ],
               "live_in_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -18535,10 +18189,10 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "live_out_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -18586,32 +18240,31 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
             },
             "i": {
               "def_nodes": [
-                "n10",
-                "n8"
+                "n7",
+                "n9"
               ],
               "use_nodes": [
+                "n6",
                 "n7",
-                "n8",
-                "n9"
+                "n8"
               ],
               "live_in_nodes": [
+                "n6",
+                "n7",
+                "n8"
+              ],
+              "live_out_nodes": [
+                "n6",
                 "n7",
                 "n8",
                 "n9"
-              ],
-              "live_out_nodes": [
-                "n7",
-                "n8",
-                "n9",
-                "n10"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -18619,10 +18272,11 @@
             "int": {
               "def_nodes": [],
               "use_nodes": [
-                "n38",
-                "n45"
+                "n37",
+                "n44"
               ],
               "live_in_nodes": [
+                "n36",
                 "n37",
                 "n38",
                 "n39",
@@ -18636,10 +18290,10 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "live_out_nodes": [
+                "n36",
                 "n37",
                 "n38",
                 "n39",
@@ -18653,8 +18307,7 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -18662,12 +18315,13 @@
             "len": {
               "def_nodes": [],
               "use_nodes": [
-                "n13",
-                "n42",
-                "n5",
-                "n50"
+                "n12",
+                "n4",
+                "n41",
+                "n49"
               ],
               "live_in_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -18715,10 +18369,10 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "live_out_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -18766,8 +18420,7 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -18775,9 +18428,10 @@
             "loop": {
               "def_nodes": [],
               "use_nodes": [
-                "n27"
+                "n26"
               ],
               "live_in_nodes": [
+                "n26",
                 "n27",
                 "n28",
                 "n29",
@@ -18801,10 +18455,10 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "live_out_nodes": [
+                "n27",
                 "n28",
                 "n29",
                 "n30",
@@ -18827,26 +18481,63 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "last_use_nodes": [
-                "n27"
+                "n26"
               ],
               "lifetime_class": "escape_or_unknown"
             },
             "out": {
               "def_nodes": [
-                "n36"
+                "n35"
               ],
               "use_nodes": [
-                "n0",
-                "n11",
+                "n1",
+                "n10",
+                "n15",
                 "n16",
                 "n17",
                 "n18",
                 "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n3",
+                "n30",
+                "n31",
+                "n32",
+                "n33",
+                "n34",
+                "n8"
+              ],
+              "live_in_nodes": [
+                "n1",
                 "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
                 "n20",
                 "n21",
                 "n22",
@@ -18861,14 +18552,9 @@
                 "n31",
                 "n32",
                 "n33",
-                "n34",
-                "n35",
-                "n4",
-                "n9"
+                "n34"
               ],
-              "live_in_nodes": [
-                "n0",
-                "n1",
+              "live_out_nodes": [
                 "n2",
                 "n3",
                 "n4",
@@ -18904,34 +18590,63 @@
                 "n34",
                 "n35"
               ],
+              "last_use_nodes": [
+                "n1"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "palette": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n36",
+                "n49"
+              ],
+              "live_in_nodes": [
+                "n36",
+                "n37",
+                "n38",
+                "n39",
+                "n40",
+                "n41",
+                "n42",
+                "n43",
+                "n44",
+                "n45",
+                "n46",
+                "n47",
+                "n48",
+                "n49",
+                "n50"
+              ],
               "live_out_nodes": [
-                "n1",
-                "n2",
-                "n3",
-                "n4",
-                "n5",
-                "n6",
-                "n7",
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12",
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24",
-                "n25",
-                "n26",
-                "n27",
+                "n36",
+                "n37",
+                "n38",
+                "n39",
+                "n40",
+                "n41",
+                "n42",
+                "n43",
+                "n44",
+                "n45",
+                "n46",
+                "n47",
+                "n48",
+                "n49",
+                "n50"
+              ],
+              "last_use_nodes": [],
+              "lifetime_class": "escape_or_unknown"
+            },
+            "palette_buf": {
+              "def_nodes": [
+                "n38"
+              ],
+              "use_nodes": [
+                "n28",
+                "n37"
+              ],
+              "live_in_nodes": [
                 "n28",
                 "n29",
                 "n30",
@@ -18940,65 +18655,10 @@
                 "n33",
                 "n34",
                 "n35",
-                "n36"
-              ],
-              "last_use_nodes": [
-                "n0"
-              ],
-              "lifetime_class": "local_non_escape_candidate"
-            },
-            "palette": {
-              "def_nodes": [],
-              "use_nodes": [
-                "n37",
-                "n50"
-              ],
-              "live_in_nodes": [
-                "n37",
-                "n38",
-                "n39",
-                "n40",
-                "n41",
-                "n42",
-                "n43",
-                "n44",
-                "n45",
-                "n46",
-                "n47",
-                "n48",
-                "n49",
-                "n50",
-                "n51"
+                "n36",
+                "n37"
               ],
               "live_out_nodes": [
-                "n37",
-                "n38",
-                "n39",
-                "n40",
-                "n41",
-                "n42",
-                "n43",
-                "n44",
-                "n45",
-                "n46",
-                "n47",
-                "n48",
-                "n49",
-                "n50",
-                "n51"
-              ],
-              "last_use_nodes": [],
-              "lifetime_class": "escape_or_unknown"
-            },
-            "palette_buf": {
-              "def_nodes": [
-                "n39"
-              ],
-              "use_nodes": [
-                "n29",
-                "n38"
-              ],
-              "live_in_nodes": [
                 "n29",
                 "n30",
                 "n31",
@@ -19010,20 +18670,8 @@
                 "n37",
                 "n38"
               ],
-              "live_out_nodes": [
-                "n30",
-                "n31",
-                "n32",
-                "n33",
-                "n34",
-                "n35",
-                "n36",
-                "n37",
-                "n38",
-                "n39"
-              ],
               "last_use_nodes": [
-                "n29"
+                "n28"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
@@ -19037,16 +18685,28 @@
             },
             "pos": {
               "def_nodes": [
-                "n14",
-                "n6"
+                "n13",
+                "n5"
               ],
               "use_nodes": [
-                "n13",
+                "n12",
+                "n4",
                 "n5",
-                "n6",
-                "n9"
+                "n8"
               ],
               "live_in_nodes": [
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12"
+              ],
+              "live_out_nodes": [
+                "n4",
                 "n5",
                 "n6",
                 "n7",
@@ -19056,71 +18716,60 @@
                 "n11",
                 "n12",
                 "n13"
-              ],
-              "live_out_nodes": [
-                "n5",
-                "n6",
-                "n7",
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12",
-                "n13",
-                "n14"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
             },
             "remain": {
               "def_nodes": [
-                "n13"
+                "n12"
               ],
               "use_nodes": [
-                "n12"
+                "n11"
               ],
               "live_in_nodes": [
-                "n12"
+                "n11"
               ],
               "live_out_nodes": [
-                "n13"
+                "n12"
               ],
               "last_use_nodes": [
-                "n12"
+                "n11"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
             "v": {
               "def_nodes": [
-                "n37",
-                "n44"
+                "n36",
+                "n43"
               ],
               "use_nodes": [
-                "n38",
-                "n45"
-              ],
-              "live_in_nodes": [
-                "n38",
-                "n45"
-              ],
-              "live_out_nodes": [
                 "n37",
                 "n44"
               ],
+              "live_in_nodes": [
+                "n37",
+                "n44"
+              ],
+              "live_out_nodes": [
+                "n36",
+                "n43"
+              ],
               "last_use_nodes": [
-                "n38",
-                "n45"
+                "n37",
+                "n44"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
             "width": {
               "def_nodes": [],
               "use_nodes": [
-                "n19",
-                "n34",
-                "n42"
+                "n18",
+                "n33",
+                "n41"
               ],
               "live_in_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -19168,10 +18817,10 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "live_out_nodes": [
+                "n2",
                 "n3",
                 "n4",
                 "n5",
@@ -19219,126 +18868,10 @@
                 "n47",
                 "n48",
                 "n49",
-                "n50",
-                "n51"
+                "n50"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
-            },
-            "with": {
-              "def_nodes": [],
-              "use_nodes": [
-                "n1"
-              ],
-              "live_in_nodes": [
-                "n1",
-                "n2",
-                "n3",
-                "n4",
-                "n5",
-                "n6",
-                "n7",
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12",
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24",
-                "n25",
-                "n26",
-                "n27",
-                "n28",
-                "n29",
-                "n30",
-                "n31",
-                "n32",
-                "n33",
-                "n34",
-                "n35",
-                "n36",
-                "n37",
-                "n38",
-                "n39",
-                "n40",
-                "n41",
-                "n42",
-                "n43",
-                "n44",
-                "n45",
-                "n46",
-                "n47",
-                "n48",
-                "n49",
-                "n50",
-                "n51"
-              ],
-              "live_out_nodes": [
-                "n2",
-                "n3",
-                "n4",
-                "n5",
-                "n6",
-                "n7",
-                "n8",
-                "n9",
-                "n10",
-                "n11",
-                "n12",
-                "n13",
-                "n14",
-                "n15",
-                "n16",
-                "n17",
-                "n18",
-                "n19",
-                "n20",
-                "n21",
-                "n22",
-                "n23",
-                "n24",
-                "n25",
-                "n26",
-                "n27",
-                "n28",
-                "n29",
-                "n30",
-                "n31",
-                "n32",
-                "n33",
-                "n34",
-                "n35",
-                "n36",
-                "n37",
-                "n38",
-                "n39",
-                "n40",
-                "n41",
-                "n42",
-                "n43",
-                "n44",
-                "n45",
-                "n46",
-                "n47",
-                "n48",
-                "n49",
-                "n50",
-                "n51"
-              ],
-              "last_use_nodes": [
-                "n1"
-              ],
-              "lifetime_class": "local_non_escape_candidate"
             }
           },
           "arg_order": [
