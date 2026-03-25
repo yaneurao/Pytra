@@ -4,7 +4,7 @@
 from pytra.std import abi
 
 
-def _gif_append_list(dst: list[int], src: list[int]) -> None:
+def _gif_append(dst: bytearray, src: bytearray) -> None:
     i = 0
     n = len(src)
     while i < n:
@@ -12,20 +12,20 @@ def _gif_append_list(dst: list[int], src: list[int]) -> None:
         i += 1
 
 
-def _gif_u16le(v: int) -> list[int]:
-    return [v & 0xFF, (v >> 8) & 0xFF]
+def _gif_u16le(v: int) -> bytearray:
+    return bytearray([v & 0xFF, (v >> 8) & 0xFF])
 
 
 def _lzw_encode(data: bytes, min_code_size: int = 8) -> bytes:
     if len(data) == 0:
-        empty: list[int] = []
+        empty: bytearray = bytearray()
         return bytes(empty)
 
     clear_code = 1 << min_code_size
     end_code = clear_code + 1
     code_size = min_code_size + 1
 
-    out: list[int] = []
+    out: bytearray = bytearray()
     bit_buffer = 0
     bit_count = 0
 
@@ -68,7 +68,7 @@ def _lzw_encode(data: bytes, min_code_size: int = 8) -> bytes:
 
 
 def grayscale_palette() -> bytes:
-    p: list[int] = []
+    p: bytearray = bytearray()
     i = 0
     while i < 256:
         p.append(i)
@@ -91,45 +91,45 @@ def save_gif(
     if len(palette) != 256 * 3:
         raise ValueError("palette must be 256*3 bytes")
 
-    frame_lists: list[list[int]] = []
+    frame_lists: list[bytearray] = []
     for fr in frames:
-        fr_list: list[int] = []
+        fr_buf: bytearray = bytearray()
         for v in fr:
-            fr_list.append(int(v))
-        if len(fr_list) != width * height:
+            fr_buf.append(int(v))
+        if len(fr_buf) != width * height:
             raise ValueError("frame size mismatch")
-        frame_lists.append(fr_list)
+        frame_lists.append(fr_buf)
 
-    palette_list: list[int] = []
+    palette_buf: bytearray = bytearray()
     for v in palette:
-        palette_list.append(int(v))
+        palette_buf.append(int(v))
 
-    out: list[int] = []
-    _gif_append_list(out, [71, 73, 70, 56, 57, 97])  # GIF89a
-    _gif_append_list(out, _gif_u16le(width))
-    _gif_append_list(out, _gif_u16le(height))
+    out: bytearray = bytearray()
+    _gif_append(out, bytearray([71, 73, 70, 56, 57, 97]))  # GIF89a
+    _gif_append(out, _gif_u16le(width))
+    _gif_append(out, _gif_u16le(height))
     out.append(0xF7)
     out.append(0)
     out.append(0)
-    _gif_append_list(out, palette_list)
+    _gif_append(out, palette_buf)
 
-    _gif_append_list(out, [0x21, 0xFF, 0x0B, 78, 69, 84, 83, 67, 65, 80, 69, 50, 46, 48, 0x03, 0x01])
-    _gif_append_list(out, _gif_u16le(loop))
+    _gif_append(out, bytearray([0x21, 0xFF, 0x0B, 78, 69, 84, 83, 67, 65, 80, 69, 50, 46, 48, 0x03, 0x01]))
+    _gif_append(out, _gif_u16le(loop))
     out.append(0)
 
-    for fr_list in frame_lists:
-        _gif_append_list(out, [0x21, 0xF9, 0x04, 0x00])
-        _gif_append_list(out, _gif_u16le(delay_cs))
-        _gif_append_list(out, [0x00, 0x00])
+    for fr_buf in frame_lists:
+        _gif_append(out, bytearray([0x21, 0xF9, 0x04, 0x00]))
+        _gif_append(out, _gif_u16le(delay_cs))
+        _gif_append(out, bytearray([0x00, 0x00]))
 
         out.append(0x2C)
-        _gif_append_list(out, _gif_u16le(0))
-        _gif_append_list(out, _gif_u16le(0))
-        _gif_append_list(out, _gif_u16le(width))
-        _gif_append_list(out, _gif_u16le(height))
+        _gif_append(out, _gif_u16le(0))
+        _gif_append(out, _gif_u16le(0))
+        _gif_append(out, _gif_u16le(width))
+        _gif_append(out, _gif_u16le(height))
         out.append(0)
         out.append(8)
-        compressed = _lzw_encode(bytes(fr_list), 8)
+        compressed = _lzw_encode(bytes(fr_buf), 8)
         pos = 0
         while pos < len(compressed):
             remain = len(compressed) - pos
