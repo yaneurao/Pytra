@@ -528,6 +528,24 @@ def _expand_tuple_unpack_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> 
             continue
         value = stmt.get("value")
 
+        # Detect swap pattern: a, b = b, a → Swap node
+        if isinstance(value, dict) and value.get("kind") == TUPLE and len(elements) == 2:
+            val_elements = value.get("elements")
+            if isinstance(val_elements, list) and len(val_elements) == 2:
+                le0 = elements[0] if isinstance(elements[0], dict) else {}
+                le1 = elements[1] if isinstance(elements[1], dict) else {}
+                re0 = val_elements[0] if isinstance(val_elements[0], dict) else {}
+                re1 = val_elements[1] if isinstance(val_elements[1], dict) else {}
+                # Check if targets[0]=rhs[1] and targets[1]=rhs[0] (cross reference)
+                if _same_lvalue(le0, re1) and _same_lvalue(le1, re0):
+                    swap_node: Node = {
+                        "kind": SWAP,
+                        "left": deep_copy_json(le0),
+                        "right": deep_copy_json(le1),
+                    }
+                    result.append(swap_node)
+                    continue
+
         # Generate: _tmp = value
         tmp_name: str = ctx.next_tuple_tmp_name()
         val_rt = ""
@@ -569,6 +587,34 @@ def _expand_tuple_unpack_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> 
             result.append(elem_assign)
 
     return result
+
+
+def _same_lvalue(a: Node, b: Node) -> bool:
+    """Check if two nodes refer to the same l-value (Name or Subscript)."""
+    if not isinstance(a, dict) or not isinstance(b, dict):
+        return False
+    ak = a.get("kind", "")
+    bk = b.get("kind", "")
+    if ak != bk:
+        return False
+    if ak == NAME:
+        return a.get("id", "") == b.get("id", "") and a.get("id", "") != ""
+    if ak == SUBSCRIPT:
+        av = a.get("value")
+        bv = b.get("value")
+        asl = a.get("slice")
+        bsl = b.get("slice")
+        return _same_lvalue(av, bv) and _same_lvalue(asl, bsl)
+    if ak == "Constant":
+        return a.get("value") == b.get("value")
+    if ak == ATTRIBUTE:
+        return (a.get("attr", "") == b.get("attr", "") and
+                _same_lvalue(a.get("value"), b.get("value")))
+    if ak == BIN_OP:
+        return (a.get("op", "") == b.get("op", "") and
+                _same_lvalue(a.get("left"), b.get("left")) and
+                _same_lvalue(a.get("right"), b.get("right")))
+    return False
 
 
 def _parse_tuple_element_types(rt: str) -> list[str]:

@@ -893,11 +893,9 @@ def _emit_expr_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         return
     code = _emit_expr(ctx, value)
     if code != "":
-        # Discard result if needed
-        if _bool(value, "discard_result"):
-            _emit(ctx, "_ = " + code)
-        else:
-            _emit(ctx, code)
+        # discard_result on void functions: just call, don't assign
+        # Only use _ = for non-void expressions
+        _emit(ctx, code)
 
 
 def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
@@ -964,6 +962,10 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
     val_code = _emit_expr(ctx, value)
     target_node = targets[0]
+
+    # unused=True + declare=True → assign but add _ = var to suppress Go's unused error
+    is_unused = _bool(node, "unused") and _bool(node, "declare")
+
     if isinstance(target_node, dict):
         t_kind = _str(target_node, "kind")
         if t_kind == "Name" or t_kind == "NameTarget":
@@ -978,6 +980,8 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                     declared_gt = go_type(declared_rt)
                     val_code = _coerce_to_type(val_code, declared_gt, value)
                 _emit(ctx, gn + " = " + val_code)
+                if is_unused:
+                    _emit(ctx, "_ = " + gn)
             else:
                 # Check for decl_type on the Assign node, target, or value
                 decl_type = _str(node, "decl_type")
@@ -995,6 +999,8 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                     _emit(ctx, "var " + gn + " " + gt + " = " + val_code)
                 else:
                     _emit(ctx, gn + " := " + val_code)
+                if is_unused:
+                    _emit(ctx, "_ = " + gn)
         elif t_kind == "Attribute":
             _emit(ctx, _emit_expr(ctx, target_node) + " = " + val_code)
         elif t_kind == "Subscript":
