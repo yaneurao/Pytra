@@ -44,9 +44,10 @@ from toolchain.emit.cs.optimizer import optimize_cs_ir
 from toolchain.emit.cs.emitter.cs_emitter import transpile_to_csharp
 from toolchain.emit.common.program_writer import write_single_file_program
 from toolchain.emit.cpp.program_writer import write_cpp_program
-from toolchain.emit.go.lower import lower_east3_to_go_ir
-from toolchain.emit.go.optimizer import optimize_go_ir
-from toolchain.emit.go.emitter import transpile_to_go_native
+# Go: migrated to toolchain2. Stubs for registry compatibility.
+def lower_east3_to_go_ir(doc: object) -> object: return doc
+def optimize_go_ir(doc: object) -> object: return doc
+def transpile_to_go_native(doc: object) -> str: return ""
 from toolchain.emit.java.lower import lower_east3_to_java_ir
 from toolchain.emit.java.optimizer import optimize_java_ir
 from toolchain.emit.java.emitter import transpile_to_java_native
