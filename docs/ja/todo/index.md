@@ -25,6 +25,7 @@
 ### P0-TEST-REORG: test/ ディレクトリ再編 + pytra 実装本体の golden 生成
 
 文脈: [docs/ja/plans/p0-test-reorg.md](../plans/p0-test-reorg.md)
+必読: [docs/ja/spec/spec-emitter-guide.md](../spec/spec-emitter-guide.md) — emitter/runtime の配置規約（§10 コンテナ参照セマンティクス、画像 runtime の canonical lane 等）
 
 1. [ ] [ID: P0-TEST-REORG-S1] `test/builtin/` → `test/include/builtin/`、`test/stdlib/` → `test/include/stdlib/` に移動
 2. [ ] [ID: P0-TEST-REORG-S2] `src/pytra/` の全 .py を parse し、`test/pytra/east1/py/` に golden 配置
@@ -33,6 +34,8 @@
 5. [ ] [ID: P0-TEST-REORG-S5] 既存の resolve/compile/optimize/link が test/include/ のパスで動作することを確認
 
 ### P1-GO-MIGRATE-S5: Go runtime 分解
+
+必読: [docs/ja/spec/spec-emitter-guide.md](../spec/spec-emitter-guide.md)
 
 1. [ ] [ID: P1-GO-MIGRATE-S5] `runtime/go/toolchain2/pytra_runtime.go` を分解して `runtime/go/built_in/`, `runtime/go/std/` に棚卸し。PNG/GIF の手書き実装を削除し、パイプライン（link + emit）が `pytra/utils/{png,gif}.py` を自動変換するよう確認
 
@@ -49,6 +52,7 @@
 ### P1-EMIT-CPP: C++ emitter
 
 作業ディレクトリ: `toolchain2/emit/cpp/`
+必読: [docs/ja/spec/spec-emitter-guide.md](../spec/spec-emitter-guide.md)
 
 1. [ ] [ID: P1-EMIT-CPP-S1] C++ emitter を `toolchain2/emit/cpp/` に新規実装し、fixture parity が通る
 2. [ ] [ID: P1-EMIT-CPP-S2] sample 18 件の parity テストが通る
