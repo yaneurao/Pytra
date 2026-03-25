@@ -186,7 +186,7 @@ parser 等を修正するたびに golden file を手動で全段再生成する
 `toolchain2/` のパイプラインを使って再生成し、emit parity で正しさを検証する。
 
 1. [x] [ID: P0-REGEN-S1] `tools/regenerate_golden.py` を実装: `pytra-cli2` の全段（parse→resolve→compile→optimize）を fixture 132 件 + sample 18 件に実行し、golden を上書き更新する — 完了（600 件全成功）
-2. [ ] [ID: P0-REGEN-S2] golden 更新後に emit parity テスト（Python 実行結果との一致）を自動実行し、end-to-end の正しさを検証する
+2. [ ] [ID: P0-REGEN-S2] golden 更新後に emit parity テスト（Python 実行結果との一致）を自動実行し、end-to-end の正しさを検証する — emit 段まではP0-BUILD-S1で検証済み、C++ compile+run parity は runtime 互換性対応後
 
 ### P1-EMIT: toolchain2/emit/ に新規 emitter を実装
 
