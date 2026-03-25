@@ -1,0 +1,3385 @@
+{
+  "kind": "Module",
+  "source_path": "src/toolchain2/common/kinds.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 51
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col": 0,
+          "end_lineno": 1,
+          "end_col": 51
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"EAST node kind string constants (selfhost-safe).",
+        "value": "EAST node kind string constants (selfhost-saf"
+      }
+    },
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 4,
+        "end_col": 3
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 4,
+          "col": 0,
+          "end_lineno": 4,
+          "end_col": 3
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"",
+        "value": ""
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 9,
+        "col": 0,
+        "end_lineno": 9,
+        "end_col": 22
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 9,
+          "col": 0,
+          "end_lineno": 9,
+          "end_col": 6
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "MODULE",
+        "id": "MODULE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 9,
+          "col": 14,
+          "end_lineno": 9,
+          "end_col": 22
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Module\"",
+        "value": "Module"
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- top-level ---"
+        }
+      ],
+      "leading_comments": [
+        "--- top-level ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 12,
+        "col": 0,
+        "end_lineno": 12,
+        "end_col": 33
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 12,
+          "col": 0,
+          "end_lineno": 12,
+          "end_col": 12
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "FUNCTION_DEF",
+        "id": "FUNCTION_DEF"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 12,
+          "col": 20,
+          "end_lineno": 12,
+          "end_col": 33
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"FunctionDef\"",
+        "value": "FunctionDef"
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- definitions ---"
+        }
+      ],
+      "leading_comments": [
+        "--- definitions ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 13,
+        "col": 0,
+        "end_lineno": 13,
+        "end_col": 27
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 13,
+          "col": 0,
+          "end_lineno": 13,
+          "end_col": 9
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "CLASS_DEF",
+        "id": "CLASS_DEF"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 13,
+          "col": 17,
+          "end_lineno": 13,
+          "end_col": 27
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ClassDef\"",
+        "value": "ClassDef"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 14,
+        "col": 0,
+        "end_lineno": 14,
+        "end_col": 25
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 14,
+          "col": 0,
+          "end_lineno": 14,
+          "end_col": 8
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "VAR_DECL",
+        "id": "VAR_DECL"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 14,
+          "col": 16,
+          "end_lineno": 14,
+          "end_col": 25
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"VarDecl\"",
+        "value": "VarDecl"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 17,
+        "col": 0,
+        "end_lineno": 17,
+        "end_col": 22
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 17,
+          "col": 0,
+          "end_lineno": 17,
+          "end_col": 6
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "ASSIGN",
+        "id": "ASSIGN"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 17,
+          "col": 14,
+          "end_lineno": 17,
+          "end_col": 22
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Assign\"",
+        "value": "Assign"
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- statements ---"
+        }
+      ],
+      "leading_comments": [
+        "--- statements ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 18,
+        "col": 0,
+        "end_lineno": 18,
+        "end_col": 29
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 18,
+          "col": 0,
+          "end_lineno": 18,
+          "end_col": 10
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "ANN_ASSIGN",
+        "id": "ANN_ASSIGN"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 18,
+          "col": 18,
+          "end_lineno": 18,
+          "end_col": 29
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"AnnAssign\"",
+        "value": "AnnAssign"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 19,
+        "col": 0,
+        "end_lineno": 19,
+        "end_col": 29
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 19,
+          "col": 0,
+          "end_lineno": 19,
+          "end_col": 10
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "AUG_ASSIGN",
+        "id": "AUG_ASSIGN"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 19,
+          "col": 18,
+          "end_lineno": 19,
+          "end_col": 29
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"AugAssign\"",
+        "value": "AugAssign"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 20,
+        "col": 0,
+        "end_lineno": 20,
+        "end_col": 18
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 20,
+          "col": 0,
+          "end_lineno": 20,
+          "end_col": 4
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "EXPR",
+        "id": "EXPR"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 20,
+          "col": 12,
+          "end_lineno": 20,
+          "end_col": 18
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Expr\"",
+        "value": "Expr"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 21,
+        "col": 0,
+        "end_lineno": 21,
+        "end_col": 22
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 21,
+          "col": 0,
+          "end_lineno": 21,
+          "end_col": 6
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "RETURN",
+        "id": "RETURN"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 21,
+          "col": 14,
+          "end_lineno": 21,
+          "end_col": 22
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Return\"",
+        "value": "Return"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 22,
+        "col": 0,
+        "end_lineno": 22,
+        "end_col": 20
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 22,
+          "col": 0,
+          "end_lineno": 22,
+          "end_col": 5
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "YIELD",
+        "id": "YIELD"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 22,
+          "col": 13,
+          "end_lineno": 22,
+          "end_col": 20
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Yield\"",
+        "value": "Yield"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 23,
+        "col": 0,
+        "end_lineno": 23,
+        "end_col": 14
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 23,
+          "col": 0,
+          "end_lineno": 23,
+          "end_col": 2
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "IF",
+        "id": "IF"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 23,
+          "col": 10,
+          "end_lineno": 23,
+          "end_col": 14
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"If\"",
+        "value": "If"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 24,
+        "col": 0,
+        "end_lineno": 24,
+        "end_col": 20
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 24,
+          "col": 0,
+          "end_lineno": 24,
+          "end_col": 5
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "WHILE",
+        "id": "WHILE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 24,
+          "col": 13,
+          "end_lineno": 24,
+          "end_col": 20
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"While\"",
+        "value": "While"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 25,
+        "col": 0,
+        "end_lineno": 25,
+        "end_col": 16
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 25,
+          "col": 0,
+          "end_lineno": 25,
+          "end_col": 3
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "FOR",
+        "id": "FOR"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 25,
+          "col": 11,
+          "end_lineno": 25,
+          "end_col": 16
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"For\"",
+        "value": "For"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 26,
+        "col": 0,
+        "end_lineno": 26,
+        "end_col": 27
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 26,
+          "col": 0,
+          "end_lineno": 26,
+          "end_col": 9
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "FOR_RANGE",
+        "id": "FOR_RANGE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 26,
+          "col": 17,
+          "end_lineno": 26,
+          "end_col": 27
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ForRange\"",
+        "value": "ForRange"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 27,
+        "col": 0,
+        "end_lineno": 27,
+        "end_col": 25
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 27,
+          "col": 0,
+          "end_lineno": 27,
+          "end_col": 8
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "FOR_CORE",
+        "id": "FOR_CORE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 27,
+          "col": 16,
+          "end_lineno": 27,
+          "end_col": 25
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ForCore\"",
+        "value": "ForCore"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 28,
+        "col": 0,
+        "end_lineno": 28,
+        "end_col": 16
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 28,
+          "col": 0,
+          "end_lineno": 28,
+          "end_col": 3
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "TRY",
+        "id": "TRY"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 28,
+          "col": 11,
+          "end_lineno": 28,
+          "end_col": 16
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Try\"",
+        "value": "Try"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 29,
+        "col": 0,
+        "end_lineno": 29,
+        "end_col": 18
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 29,
+          "col": 0,
+          "end_lineno": 29,
+          "end_col": 4
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "WITH",
+        "id": "WITH"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 29,
+          "col": 12,
+          "end_lineno": 29,
+          "end_col": 18
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"With\"",
+        "value": "With"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 30,
+        "col": 0,
+        "end_lineno": 30,
+        "end_col": 20
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 30,
+          "col": 0,
+          "end_lineno": 30,
+          "end_col": 5
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "BREAK",
+        "id": "BREAK"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 30,
+          "col": 13,
+          "end_lineno": 30,
+          "end_col": 20
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Break\"",
+        "value": "Break"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 31,
+        "col": 0,
+        "end_lineno": 31,
+        "end_col": 26
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 31,
+          "col": 0,
+          "end_lineno": 31,
+          "end_col": 8
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "CONTINUE",
+        "id": "CONTINUE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 31,
+          "col": 16,
+          "end_lineno": 31,
+          "end_col": 26
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Continue\"",
+        "value": "Continue"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 32,
+        "col": 0,
+        "end_lineno": 32,
+        "end_col": 18
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 32,
+          "col": 0,
+          "end_lineno": 32,
+          "end_col": 4
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "SWAP",
+        "id": "SWAP"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 32,
+          "col": 12,
+          "end_lineno": 32,
+          "end_col": 18
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Swap\"",
+        "value": "Swap"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 35,
+        "col": 0,
+        "end_lineno": 35,
+        "end_col": 18
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 35,
+          "col": 0,
+          "end_lineno": 35,
+          "end_col": 4
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NAME",
+        "id": "NAME"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 35,
+          "col": 12,
+          "end_lineno": 35,
+          "end_col": 18
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Name\"",
+        "value": "Name"
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- expressions ---"
+        }
+      ],
+      "leading_comments": [
+        "--- expressions ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 36,
+        "col": 0,
+        "end_lineno": 36,
+        "end_col": 26
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 36,
+          "col": 0,
+          "end_lineno": 36,
+          "end_col": 8
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "CONSTANT",
+        "id": "CONSTANT"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 36,
+          "col": 16,
+          "end_lineno": 36,
+          "end_col": 26
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Constant\"",
+        "value": "Constant"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 37,
+        "col": 0,
+        "end_lineno": 37,
+        "end_col": 18
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 37,
+          "col": 0,
+          "end_lineno": 37,
+          "end_col": 4
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "CALL",
+        "id": "CALL"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 37,
+          "col": 12,
+          "end_lineno": 37,
+          "end_col": 18
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Call\"",
+        "value": "Call"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 38,
+        "col": 0,
+        "end_lineno": 38,
+        "end_col": 28
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 38,
+          "col": 0,
+          "end_lineno": 38,
+          "end_col": 9
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "ATTRIBUTE",
+        "id": "ATTRIBUTE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 38,
+          "col": 17,
+          "end_lineno": 38,
+          "end_col": 28
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Attribute\"",
+        "value": "Attribute"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 39,
+        "col": 0,
+        "end_lineno": 39,
+        "end_col": 28
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 39,
+          "col": 0,
+          "end_lineno": 39,
+          "end_col": 9
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "SUBSCRIPT",
+        "id": "SUBSCRIPT"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 39,
+          "col": 17,
+          "end_lineno": 39,
+          "end_col": 28
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Subscript\"",
+        "value": "Subscript"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 40,
+        "col": 0,
+        "end_lineno": 40,
+        "end_col": 21
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 40,
+          "col": 0,
+          "end_lineno": 40,
+          "end_col": 6
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "BIN_OP",
+        "id": "BIN_OP"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 40,
+          "col": 14,
+          "end_lineno": 40,
+          "end_col": 21
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"BinOp\"",
+        "value": "BinOp"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 41,
+        "col": 0,
+        "end_lineno": 41,
+        "end_col": 25
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 41,
+          "col": 0,
+          "end_lineno": 41,
+          "end_col": 8
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "UNARY_OP",
+        "id": "UNARY_OP"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 41,
+          "col": 16,
+          "end_lineno": 41,
+          "end_col": 25
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"UnaryOp\"",
+        "value": "UnaryOp"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 42,
+        "col": 0,
+        "end_lineno": 42,
+        "end_col": 24
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 42,
+          "col": 0,
+          "end_lineno": 42,
+          "end_col": 7
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "COMPARE",
+        "id": "COMPARE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 42,
+          "col": 15,
+          "end_lineno": 42,
+          "end_col": 24
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Compare\"",
+        "value": "Compare"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 43,
+        "col": 0,
+        "end_lineno": 43,
+        "end_col": 21
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 43,
+          "col": 0,
+          "end_lineno": 43,
+          "end_col": 6
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "IF_EXP",
+        "id": "IF_EXP"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 43,
+          "col": 14,
+          "end_lineno": 43,
+          "end_col": 21
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"IfExp\"",
+        "value": "IfExp"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 44,
+        "col": 0,
+        "end_lineno": 44,
+        "end_col": 18
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 44,
+          "col": 0,
+          "end_lineno": 44,
+          "end_col": 4
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "LIST",
+        "id": "LIST"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 44,
+          "col": 12,
+          "end_lineno": 44,
+          "end_col": 18
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"List\"",
+        "value": "List"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 45,
+        "col": 0,
+        "end_lineno": 45,
+        "end_col": 18
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 45,
+          "col": 0,
+          "end_lineno": 45,
+          "end_col": 4
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "DICT",
+        "id": "DICT"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 45,
+          "col": 12,
+          "end_lineno": 45,
+          "end_col": 18
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Dict\"",
+        "value": "Dict"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 46,
+        "col": 0,
+        "end_lineno": 46,
+        "end_col": 16
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 46,
+          "col": 0,
+          "end_lineno": 46,
+          "end_col": 3
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "SET",
+        "id": "SET"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 46,
+          "col": 11,
+          "end_lineno": 46,
+          "end_col": 16
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Set\"",
+        "value": "Set"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 47,
+        "col": 0,
+        "end_lineno": 47,
+        "end_col": 20
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 47,
+          "col": 0,
+          "end_lineno": 47,
+          "end_col": 5
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "TUPLE",
+        "id": "TUPLE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 47,
+          "col": 13,
+          "end_lineno": 47,
+          "end_col": 20
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Tuple\"",
+        "value": "Tuple"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 48,
+        "col": 0,
+        "end_lineno": 48,
+        "end_col": 27
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 48,
+          "col": 0,
+          "end_lineno": 48,
+          "end_col": 9
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "LIST_COMP",
+        "id": "LIST_COMP"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 48,
+          "col": 17,
+          "end_lineno": 48,
+          "end_col": 27
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ListComp\"",
+        "value": "ListComp"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 51,
+        "col": 0,
+        "end_lineno": 51,
+        "end_col": 31
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 51,
+          "col": 0,
+          "end_lineno": 51,
+          "end_col": 11
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "IMPORT_FROM",
+        "id": "IMPORT_FROM"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 51,
+          "col": 19,
+          "end_lineno": 51,
+          "end_col": 31
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ImportFrom\"",
+        "value": "ImportFrom"
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- import ---"
+        }
+      ],
+      "leading_comments": [
+        "--- import ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 54,
+        "col": 0,
+        "end_lineno": 54,
+        "end_col": 20
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 54,
+          "col": 0,
+          "end_lineno": 54,
+          "end_col": 5
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "MATCH",
+        "id": "MATCH"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 54,
+          "col": 13,
+          "end_lineno": 54,
+          "end_col": 20
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Match\"",
+        "value": "Match"
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- pattern matching ---"
+        }
+      ],
+      "leading_comments": [
+        "--- pattern matching ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 55,
+        "col": 0,
+        "end_lineno": 55,
+        "end_col": 39
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 55,
+          "col": 0,
+          "end_lineno": 55,
+          "end_col": 15
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "VARIANT_PATTERN",
+        "id": "VARIANT_PATTERN"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 55,
+          "col": 23,
+          "end_lineno": 55,
+          "end_col": 39
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"VariantPattern\"",
+        "value": "VariantPattern"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 56,
+        "col": 0,
+        "end_lineno": 56,
+        "end_col": 33
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 56,
+          "col": 0,
+          "end_lineno": 56,
+          "end_col": 12
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "PATTERN_BIND",
+        "id": "PATTERN_BIND"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 56,
+          "col": 20,
+          "end_lineno": 56,
+          "end_col": 33
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"PatternBind\"",
+        "value": "PatternBind"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 57,
+        "col": 0,
+        "end_lineno": 57,
+        "end_col": 41
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 57,
+          "col": 0,
+          "end_lineno": 57,
+          "end_col": 16
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "PATTERN_WILDCARD",
+        "id": "PATTERN_WILDCARD"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 57,
+          "col": 24,
+          "end_lineno": 57,
+          "end_col": 41
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"PatternWildcard\"",
+        "value": "PatternWildcard"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 60,
+        "col": 0,
+        "end_lineno": 60,
+        "end_col": 16
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 60,
+          "col": 0,
+          "end_lineno": 60,
+          "end_col": 3
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "BOX",
+        "id": "BOX"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 60,
+          "col": 11,
+          "end_lineno": 60,
+          "end_col": 16
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Box\"",
+        "value": "Box"
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- unbox / cast / boundary ---"
+        }
+      ],
+      "leading_comments": [
+        "--- unbox / cast / boundary ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 61,
+        "col": 0,
+        "end_lineno": 61,
+        "end_col": 20
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 61,
+          "col": 0,
+          "end_lineno": 61,
+          "end_col": 5
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "UNBOX",
+        "id": "UNBOX"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 61,
+          "col": 13,
+          "end_lineno": 61,
+          "end_col": 20
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Unbox\"",
+        "value": "Unbox"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 62,
+        "col": 0,
+        "end_lineno": 62,
+        "end_col": 34
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 62,
+          "col": 0,
+          "end_lineno": 62,
+          "end_col": 13
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "CAST_OR_RAISE",
+        "id": "CAST_OR_RAISE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 62,
+          "col": 21,
+          "end_lineno": 62,
+          "end_col": 34
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"CastOrRaise\"",
+        "value": "CastOrRaise"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 63,
+        "col": 0,
+        "end_lineno": 63,
+        "end_col": 24
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 63,
+          "col": 0,
+          "end_lineno": 63,
+          "end_col": 7
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "STARRED",
+        "id": "STARRED"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 63,
+          "col": 15,
+          "end_lineno": 63,
+          "end_col": 24
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Starred\"",
+        "value": "Starred"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 66,
+        "col": 0,
+        "end_lineno": 66,
+        "end_col": 23
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 66,
+          "col": 0,
+          "end_lineno": 66,
+          "end_col": 7
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "BOOL_OP",
+        "id": "BOOL_OP"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 66,
+          "col": 15,
+          "end_lineno": 66,
+          "end_col": 23
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"BoolOp\"",
+        "value": "BoolOp"
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- boolean ---"
+        }
+      ],
+      "leading_comments": [
+        "--- boolean ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 69,
+        "col": 0,
+        "end_lineno": 69,
+        "end_col": 31
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 69,
+          "col": 0,
+          "end_lineno": 69,
+          "end_col": 11
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "IS_INSTANCE",
+        "id": "IS_INSTANCE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 69,
+          "col": 19,
+          "end_lineno": 69,
+          "end_col": 31
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"IsInstance\"",
+        "value": "IsInstance"
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- type predicates ---"
+        }
+      ],
+      "leading_comments": [
+        "--- type predicates ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 70,
+        "col": 0,
+        "end_lineno": 70,
+        "end_col": 31
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 70,
+          "col": 0,
+          "end_lineno": 70,
+          "end_col": 11
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "IS_SUBCLASS",
+        "id": "IS_SUBCLASS"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 70,
+          "col": 19,
+          "end_lineno": 70,
+          "end_col": 31
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"IsSubclass\"",
+        "value": "IsSubclass"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 71,
+        "col": 0,
+        "end_lineno": 71,
+        "end_col": 29
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 71,
+          "col": 0,
+          "end_lineno": 71,
+          "end_col": 10
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "IS_SUBTYPE",
+        "id": "IS_SUBTYPE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 71,
+          "col": 18,
+          "end_lineno": 71,
+          "end_col": 29
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"IsSubtype\"",
+        "value": "IsSubtype"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 72,
+        "col": 0,
+        "end_lineno": 72,
+        "end_col": 46
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 72,
+          "col": 0,
+          "end_lineno": 72,
+          "end_col": 19
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "TYPE_PREDICATE_CALL",
+        "id": "TYPE_PREDICATE_CALL"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 72,
+          "col": 27,
+          "end_lineno": 72,
+          "end_col": 46
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"TypePredicateCall\"",
+        "value": "TypePredicateCall"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 75,
+        "col": 0,
+        "end_lineno": 75,
+        "end_col": 30
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 75,
+          "col": 0,
+          "end_lineno": 75,
+          "end_col": 11
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "OBJ_TYPE_ID",
+        "id": "OBJ_TYPE_ID"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 75,
+          "col": 19,
+          "end_lineno": 75,
+          "end_col": 30
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ObjTypeId\"",
+        "value": "ObjTypeId"
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- object boundary ops ---"
+        }
+      ],
+      "leading_comments": [
+        "--- object boundary ops ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 76,
+        "col": 0,
+        "end_lineno": 76,
+        "end_col": 25
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 76,
+          "col": 0,
+          "end_lineno": 76,
+          "end_col": 8
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "OBJ_BOOL",
+        "id": "OBJ_BOOL"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 76,
+          "col": 16,
+          "end_lineno": 76,
+          "end_col": 25
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ObjBool\"",
+        "value": "ObjBool"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 77,
+        "col": 0,
+        "end_lineno": 77,
+        "end_col": 23
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 77,
+          "col": 0,
+          "end_lineno": 77,
+          "end_col": 7
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "OBJ_LEN",
+        "id": "OBJ_LEN"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 77,
+          "col": 15,
+          "end_lineno": 77,
+          "end_col": 23
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ObjLen\"",
+        "value": "ObjLen"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 78,
+        "col": 0,
+        "end_lineno": 78,
+        "end_col": 23
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 78,
+          "col": 0,
+          "end_lineno": 78,
+          "end_col": 7
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "OBJ_STR",
+        "id": "OBJ_STR"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 78,
+          "col": 15,
+          "end_lineno": 78,
+          "end_col": 23
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ObjStr\"",
+        "value": "ObjStr"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 79,
+        "col": 0,
+        "end_lineno": 79,
+        "end_col": 34
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 79,
+          "col": 0,
+          "end_lineno": 79,
+          "end_col": 13
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "OBJ_ITER_INIT",
+        "id": "OBJ_ITER_INIT"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 79,
+          "col": 21,
+          "end_lineno": 79,
+          "end_col": 34
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ObjIterInit\"",
+        "value": "ObjIterInit"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 80,
+        "col": 0,
+        "end_lineno": 80,
+        "end_col": 34
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 80,
+          "col": 0,
+          "end_lineno": 80,
+          "end_col": 13
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "OBJ_ITER_NEXT",
+        "id": "OBJ_ITER_NEXT"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 80,
+          "col": 21,
+          "end_lineno": 80,
+          "end_col": 34
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ObjIterNext\"",
+        "value": "ObjIterNext"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 83,
+        "col": 0,
+        "end_lineno": 83,
+        "end_col": 49
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 83,
+          "col": 0,
+          "end_lineno": 83,
+          "end_col": 21
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "STATIC_RANGE_FOR_PLAN",
+        "id": "STATIC_RANGE_FOR_PLAN"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 83,
+          "col": 29,
+          "end_lineno": 83,
+          "end_col": 49
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"StaticRangeForPlan\"",
+        "value": "StaticRangeForPlan"
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- iteration plans ---"
+        }
+      ],
+      "leading_comments": [
+        "--- iteration plans ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 84,
+        "col": 0,
+        "end_lineno": 84,
+        "end_col": 49
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 84,
+          "col": 0,
+          "end_lineno": 84,
+          "end_col": 21
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "RUNTIME_ITER_FOR_PLAN",
+        "id": "RUNTIME_ITER_FOR_PLAN"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 84,
+          "col": 29,
+          "end_lineno": 84,
+          "end_col": 49
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"RuntimeIterForPlan\"",
+        "value": "RuntimeIterForPlan"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 87,
+        "col": 0,
+        "end_lineno": 87,
+        "end_col": 31
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 87,
+          "col": 0,
+          "end_lineno": 87,
+          "end_col": 11
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NAME_TARGET",
+        "id": "NAME_TARGET"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 87,
+          "col": 19,
+          "end_lineno": 87,
+          "end_col": 31
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"NameTarget\"",
+        "value": "NameTarget"
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- target plans ---"
+        }
+      ],
+      "leading_comments": [
+        "--- target plans ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 88,
+        "col": 0,
+        "end_lineno": 88,
+        "end_col": 33
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 88,
+          "col": 0,
+          "end_lineno": 88,
+          "end_col": 12
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "TUPLE_TARGET",
+        "id": "TUPLE_TARGET"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 88,
+          "col": 20,
+          "end_lineno": 88,
+          "end_col": 33
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"TupleTarget\"",
+        "value": "TupleTarget"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 89,
+        "col": 0,
+        "end_lineno": 89,
+        "end_col": 31
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 89,
+          "col": 0,
+          "end_lineno": 89,
+          "end_col": 11
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "EXPR_TARGET",
+        "id": "EXPR_TARGET"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 89,
+          "col": 19,
+          "end_lineno": 89,
+          "end_col": 31
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ExprTarget\"",
+        "value": "ExprTarget"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 92,
+        "col": 0,
+        "end_lineno": 92,
+        "end_col": 49
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 92,
+          "col": 0,
+          "end_lineno": 92,
+          "end_col": 21
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NOMINAL_ADT_CTOR_CALL",
+        "id": "NOMINAL_ADT_CTOR_CALL"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 92,
+          "col": 29,
+          "end_lineno": 92,
+          "end_col": 49
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"NominalAdtCtorCall\"",
+        "value": "NominalAdtCtorCall"
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- nominal ADT lowered kinds ---"
+        }
+      ],
+      "leading_comments": [
+        "--- nominal ADT lowered kinds ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 93,
+        "col": 0,
+        "end_lineno": 93,
+        "end_col": 52
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 93,
+          "col": 0,
+          "end_lineno": 93,
+          "end_col": 22
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NOMINAL_ADT_PROJECTION",
+        "id": "NOMINAL_ADT_PROJECTION"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 93,
+          "col": 30,
+          "end_lineno": 93,
+          "end_col": 52
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"NominalAdtProjection\"",
+        "value": "NominalAdtProjection"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 94,
+        "col": 0,
+        "end_lineno": 94,
+        "end_col": 61
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 94,
+          "col": 0,
+          "end_lineno": 94,
+          "end_col": 27
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NOMINAL_ADT_VARIANT_PATTERN",
+        "id": "NOMINAL_ADT_VARIANT_PATTERN"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 94,
+          "col": 35,
+          "end_lineno": 94,
+          "end_col": 61
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"NominalAdtVariantPattern\"",
+        "value": "NominalAdtVariantPattern"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 95,
+        "col": 0,
+        "end_lineno": 95,
+        "end_col": 55
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 95,
+          "col": 0,
+          "end_lineno": 95,
+          "end_col": 24
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NOMINAL_ADT_PATTERN_BIND",
+        "id": "NOMINAL_ADT_PATTERN_BIND"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 95,
+          "col": 32,
+          "end_lineno": 95,
+          "end_col": 55
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"NominalAdtPatternBind\"",
+        "value": "NominalAdtPatternBind"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 96,
+        "col": 0,
+        "end_lineno": 96,
+        "end_col": 42
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 96,
+          "col": 0,
+          "end_lineno": 96,
+          "end_col": 17
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NOMINAL_ADT_MATCH",
+        "id": "NOMINAL_ADT_MATCH"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 96,
+          "col": 25,
+          "end_lineno": 96,
+          "end_col": 42
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"NominalAdtMatch\"",
+        "value": "NominalAdtMatch"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 99,
+        "col": 0,
+        "end_lineno": 99,
+        "end_col": 40
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 99,
+          "col": 0,
+          "end_lineno": 99,
+          "end_col": 16
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "JSON_DECODE_CALL",
+        "id": "JSON_DECODE_CALL"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 99,
+          "col": 24,
+          "end_lineno": 99,
+          "end_col": 40
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"JsonDecodeCall\"",
+        "value": "JsonDecodeCall"
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- JSON decode ---"
+        }
+      ],
+      "leading_comments": [
+        "--- JSON decode ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 100,
+        "col": 0,
+        "end_lineno": 100,
+        "end_col": 33
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 100,
+          "col": 0,
+          "end_lineno": 100,
+          "end_col": 12
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "BUILTIN_CALL",
+        "id": "BUILTIN_CALL"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 100,
+          "col": 20,
+          "end_lineno": 100,
+          "end_col": 33
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"BuiltinCall\"",
+        "value": "BuiltinCall"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 103,
+        "col": 0,
+        "end_lineno": 103,
+        "end_col": 36
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 103,
+          "col": 0,
+          "end_lineno": 103,
+          "end_col": 14
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "DICT_GET_MAYBE",
+        "id": "DICT_GET_MAYBE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 103,
+          "col": 22,
+          "end_lineno": 103,
+          "end_col": 36
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"DictGetMaybe\"",
+        "value": "DictGetMaybe"
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- dict lowered ops ---"
+        }
+      ],
+      "leading_comments": [
+        "--- dict lowered ops ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 104,
+        "col": 0,
+        "end_lineno": 104,
+        "end_col": 40
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 104,
+          "col": 0,
+          "end_lineno": 104,
+          "end_col": 16
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "DICT_GET_DEFAULT",
+        "id": "DICT_GET_DEFAULT"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 104,
+          "col": 24,
+          "end_lineno": 104,
+          "end_col": 40
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"DictGetDefault\"",
+        "value": "DictGetDefault"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 105,
+        "col": 0,
+        "end_lineno": 105,
+        "end_col": 25
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 105,
+          "col": 0,
+          "end_lineno": 105,
+          "end_col": 8
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "DICT_POP",
+        "id": "DICT_POP"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 105,
+          "col": 16,
+          "end_lineno": 105,
+          "end_col": 25
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"DictPop\"",
+        "value": "DictPop"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 106,
+        "col": 0,
+        "end_lineno": 106,
+        "end_col": 40
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 106,
+          "col": 0,
+          "end_lineno": 106,
+          "end_col": 16
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "DICT_POP_DEFAULT",
+        "id": "DICT_POP_DEFAULT"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 106,
+          "col": 24,
+          "end_lineno": 106,
+          "end_col": 40
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"DictPopDefault\"",
+        "value": "DictPopDefault"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 109,
+        "col": 0,
+        "end_lineno": 109,
+        "end_col": 29
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 109,
+          "col": 0,
+          "end_lineno": 109,
+          "end_col": 10
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NAMED_TYPE",
+        "id": "NAMED_TYPE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 109,
+          "col": 18,
+          "end_lineno": 109,
+          "end_col": 29
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"NamedType\"",
+        "value": "NamedType"
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- type expression kinds ---"
+        }
+      ],
+      "leading_comments": [
+        "--- type expression kinds ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 110,
+        "col": 0,
+        "end_lineno": 110,
+        "end_col": 33
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 110,
+          "col": 0,
+          "end_lineno": 110,
+          "end_col": 12
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "GENERIC_TYPE",
+        "id": "GENERIC_TYPE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 110,
+          "col": 20,
+          "end_lineno": 110,
+          "end_col": 33
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"GenericType\"",
+        "value": "GenericType"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 111,
+        "col": 0,
+        "end_lineno": 111,
+        "end_col": 33
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 111,
+          "col": 0,
+          "end_lineno": 111,
+          "end_col": 12
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "DYNAMIC_TYPE",
+        "id": "DYNAMIC_TYPE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 111,
+          "col": 20,
+          "end_lineno": 111,
+          "end_col": 33
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"DynamicType\"",
+        "value": "DynamicType"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 112,
+        "col": 0,
+        "end_lineno": 112,
+        "end_col": 40
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 112,
+          "col": 0,
+          "end_lineno": 112,
+          "end_col": 16
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NOMINAL_ADT_TYPE",
+        "id": "NOMINAL_ADT_TYPE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 112,
+          "col": 24,
+          "end_lineno": 112,
+          "end_col": 40
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"NominalAdtType\"",
+        "value": "NominalAdtType"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 113,
+        "col": 0,
+        "end_lineno": 113,
+        "end_col": 35
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 113,
+          "col": 0,
+          "end_lineno": 113,
+          "end_col": 13
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "OPTIONAL_TYPE",
+        "id": "OPTIONAL_TYPE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 113,
+          "col": 21,
+          "end_lineno": 113,
+          "end_col": 35
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"OptionalType\"",
+        "value": "OptionalType"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 114,
+        "col": 0,
+        "end_lineno": 114,
+        "end_col": 29
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 114,
+          "col": 0,
+          "end_lineno": 114,
+          "end_col": 10
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "UNION_TYPE",
+        "id": "UNION_TYPE"
+      },
+      "annotation": "str",
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 114,
+          "col": 18,
+          "end_lineno": 114,
+          "end_col": 29
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"UnionType\"",
+        "value": "UnionType"
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 117,
+        "col": 0,
+        "end_lineno": 117,
+        "end_col": 56
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 117,
+          "col": 0,
+          "end_lineno": 117,
+          "end_col": 10
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "LOOP_KINDS",
+        "id": "LOOP_KINDS"
+      },
+      "annotation": "set[str]",
+      "value": {
+        "kind": "Set",
+        "source_span": {
+          "lineno": 117,
+          "col": 23,
+          "end_lineno": 117,
+          "end_col": 56
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "{FOR, FOR_RANGE, FOR_CORE, WHILE}",
+        "elements": [
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 117,
+              "col": 24,
+              "end_lineno": 117,
+              "end_col": 27
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "FOR",
+            "id": "FOR"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 117,
+              "col": 29,
+              "end_lineno": 117,
+              "end_col": 38
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "FOR_RANGE",
+            "id": "FOR_RANGE"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 117,
+              "col": 40,
+              "end_lineno": 117,
+              "end_col": 48
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "FOR_CORE",
+            "id": "FOR_CORE"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 117,
+              "col": 50,
+              "end_lineno": 117,
+              "end_col": 55
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "WHILE",
+            "id": "WHILE"
+          }
+        ]
+      },
+      "declare": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- kind groups ---"
+        }
+      ],
+      "leading_comments": [
+        "--- kind groups ---"
+      ]
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 118,
+        "col": 0,
+        "end_lineno": 118,
+        "end_col": 68
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 118,
+          "col": 0,
+          "end_lineno": 118,
+          "end_col": 18
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "CONTROL_FLOW_KINDS",
+        "id": "CONTROL_FLOW_KINDS"
+      },
+      "annotation": "set[str]",
+      "value": {
+        "kind": "Set",
+        "source_span": {
+          "lineno": 118,
+          "col": 31,
+          "end_lineno": 118,
+          "end_col": 68
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "{IF, WHILE, FOR, FOR_CORE, TRY, WITH}",
+        "elements": [
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 118,
+              "col": 32,
+              "end_lineno": 118,
+              "end_col": 34
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "IF",
+            "id": "IF"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 118,
+              "col": 36,
+              "end_lineno": 118,
+              "end_col": 41
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "WHILE",
+            "id": "WHILE"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 118,
+              "col": 43,
+              "end_lineno": 118,
+              "end_col": 46
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "FOR",
+            "id": "FOR"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 118,
+              "col": 48,
+              "end_lineno": 118,
+              "end_col": 56
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "FOR_CORE",
+            "id": "FOR_CORE"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 118,
+              "col": 58,
+              "end_lineno": 118,
+              "end_col": 61
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "TRY",
+            "id": "TRY"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 118,
+              "col": 63,
+              "end_lineno": 118,
+              "end_col": 67
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "WITH",
+            "id": "WITH"
+          }
+        ]
+      },
+      "declare": true
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 119,
+        "col": 0,
+        "end_lineno": 119,
+        "end_col": 61
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 119,
+          "col": 0,
+          "end_lineno": 119,
+          "end_col": 16
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "ASSIGNMENT_KINDS",
+        "id": "ASSIGNMENT_KINDS"
+      },
+      "annotation": "set[str]",
+      "value": {
+        "kind": "Set",
+        "source_span": {
+          "lineno": 119,
+          "col": 29,
+          "end_lineno": 119,
+          "end_col": 61
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "{ASSIGN, ANN_ASSIGN, AUG_ASSIGN}",
+        "elements": [
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 119,
+              "col": 30,
+              "end_lineno": 119,
+              "end_col": 36
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ASSIGN",
+            "id": "ASSIGN"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 119,
+              "col": 38,
+              "end_lineno": 119,
+              "end_col": 48
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ANN_ASSIGN",
+            "id": "ANN_ASSIGN"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 119,
+              "col": 50,
+              "end_lineno": 119,
+              "end_col": 60
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "AUG_ASSIGN",
+            "id": "AUG_ASSIGN"
+          }
+        ]
+      },
+      "declare": true
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [],
+      "qualified_refs": []
+    },
+    "import_bindings": [],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {}
+  },
+  "east_stage": 1
+}

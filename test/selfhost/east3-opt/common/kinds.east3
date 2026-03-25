@@ -1,0 +1,5112 @@
+{
+  "kind": "Module",
+  "source_path": "src/toolchain2/common/kinds.py",
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col_offset": 0,
+        "end_lineno": 1,
+        "end_col_offset": 51
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col_offset": 0,
+          "end_lineno": 1,
+          "end_col_offset": 51
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"EAST node kind string constants (selfhost-safe).",
+        "value": "EAST node kind string constants (selfhost-saf"
+      }
+    },
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 4,
+        "col_offset": 0,
+        "end_lineno": 4,
+        "end_col_offset": 3
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 4,
+          "col_offset": 0,
+          "end_lineno": 4,
+          "end_col_offset": 3
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"",
+        "value": ""
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 9,
+        "col_offset": 0,
+        "end_lineno": 9,
+        "end_col_offset": 22
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 9,
+          "col_offset": 0,
+          "end_lineno": 9,
+          "end_col_offset": 6
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "MODULE",
+        "id": "MODULE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- top-level ---"
+        }
+      ],
+      "leading_comments": [
+        "--- top-level ---"
+      ],
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 9,
+          "col_offset": 14,
+          "end_lineno": 9,
+          "end_col_offset": 22
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Module\"",
+        "value": "Module"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 12,
+        "col_offset": 0,
+        "end_lineno": 12,
+        "end_col_offset": 33
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 12,
+          "col_offset": 0,
+          "end_lineno": 12,
+          "end_col_offset": 12
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "FUNCTION_DEF",
+        "id": "FUNCTION_DEF",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- definitions ---"
+        }
+      ],
+      "leading_comments": [
+        "--- definitions ---"
+      ],
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 12,
+          "col_offset": 20,
+          "end_lineno": 12,
+          "end_col_offset": 33
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"FunctionDef\"",
+        "value": "FunctionDef"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 13,
+        "col_offset": 0,
+        "end_lineno": 13,
+        "end_col_offset": 27
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 13,
+          "col_offset": 0,
+          "end_lineno": 13,
+          "end_col_offset": 9
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "CLASS_DEF",
+        "id": "CLASS_DEF",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 13,
+          "col_offset": 17,
+          "end_lineno": 13,
+          "end_col_offset": 27
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ClassDef\"",
+        "value": "ClassDef"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 14,
+        "col_offset": 0,
+        "end_lineno": 14,
+        "end_col_offset": 25
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 14,
+          "col_offset": 0,
+          "end_lineno": 14,
+          "end_col_offset": 8
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "VAR_DECL",
+        "id": "VAR_DECL",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 14,
+          "col_offset": 16,
+          "end_lineno": 14,
+          "end_col_offset": 25
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"VarDecl\"",
+        "value": "VarDecl"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 17,
+        "col_offset": 0,
+        "end_lineno": 17,
+        "end_col_offset": 22
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 17,
+          "col_offset": 0,
+          "end_lineno": 17,
+          "end_col_offset": 6
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "ASSIGN",
+        "id": "ASSIGN",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- statements ---"
+        }
+      ],
+      "leading_comments": [
+        "--- statements ---"
+      ],
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 17,
+          "col_offset": 14,
+          "end_lineno": 17,
+          "end_col_offset": 22
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Assign\"",
+        "value": "Assign"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 18,
+        "col_offset": 0,
+        "end_lineno": 18,
+        "end_col_offset": 29
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 18,
+          "col_offset": 0,
+          "end_lineno": 18,
+          "end_col_offset": 10
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "ANN_ASSIGN",
+        "id": "ANN_ASSIGN",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 18,
+          "col_offset": 18,
+          "end_lineno": 18,
+          "end_col_offset": 29
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"AnnAssign\"",
+        "value": "AnnAssign"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 19,
+        "col_offset": 0,
+        "end_lineno": 19,
+        "end_col_offset": 29
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 19,
+          "col_offset": 0,
+          "end_lineno": 19,
+          "end_col_offset": 10
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "AUG_ASSIGN",
+        "id": "AUG_ASSIGN",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 19,
+          "col_offset": 18,
+          "end_lineno": 19,
+          "end_col_offset": 29
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"AugAssign\"",
+        "value": "AugAssign"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 20,
+        "col_offset": 0,
+        "end_lineno": 20,
+        "end_col_offset": 18
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 20,
+          "col_offset": 0,
+          "end_lineno": 20,
+          "end_col_offset": 4
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "EXPR",
+        "id": "EXPR",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 20,
+          "col_offset": 12,
+          "end_lineno": 20,
+          "end_col_offset": 18
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Expr\"",
+        "value": "Expr"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 21,
+        "col_offset": 0,
+        "end_lineno": 21,
+        "end_col_offset": 22
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 21,
+          "col_offset": 0,
+          "end_lineno": 21,
+          "end_col_offset": 6
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "RETURN",
+        "id": "RETURN",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 21,
+          "col_offset": 14,
+          "end_lineno": 21,
+          "end_col_offset": 22
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Return\"",
+        "value": "Return"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 22,
+        "col_offset": 0,
+        "end_lineno": 22,
+        "end_col_offset": 20
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 22,
+          "col_offset": 0,
+          "end_lineno": 22,
+          "end_col_offset": 5
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "YIELD",
+        "id": "YIELD",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 22,
+          "col_offset": 13,
+          "end_lineno": 22,
+          "end_col_offset": 20
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Yield\"",
+        "value": "Yield"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 23,
+        "col_offset": 0,
+        "end_lineno": 23,
+        "end_col_offset": 14
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 23,
+          "col_offset": 0,
+          "end_lineno": 23,
+          "end_col_offset": 2
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "IF",
+        "id": "IF",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 23,
+          "col_offset": 10,
+          "end_lineno": 23,
+          "end_col_offset": 14
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"If\"",
+        "value": "If"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 24,
+        "col_offset": 0,
+        "end_lineno": 24,
+        "end_col_offset": 20
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 24,
+          "col_offset": 0,
+          "end_lineno": 24,
+          "end_col_offset": 5
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "WHILE",
+        "id": "WHILE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 24,
+          "col_offset": 13,
+          "end_lineno": 24,
+          "end_col_offset": 20
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"While\"",
+        "value": "While"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 25,
+        "col_offset": 0,
+        "end_lineno": 25,
+        "end_col_offset": 16
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 25,
+          "col_offset": 0,
+          "end_lineno": 25,
+          "end_col_offset": 3
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "FOR",
+        "id": "FOR",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 25,
+          "col_offset": 11,
+          "end_lineno": 25,
+          "end_col_offset": 16
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"For\"",
+        "value": "For"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 26,
+        "col_offset": 0,
+        "end_lineno": 26,
+        "end_col_offset": 27
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 26,
+          "col_offset": 0,
+          "end_lineno": 26,
+          "end_col_offset": 9
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "FOR_RANGE",
+        "id": "FOR_RANGE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 26,
+          "col_offset": 17,
+          "end_lineno": 26,
+          "end_col_offset": 27
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ForRange\"",
+        "value": "ForRange"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 27,
+        "col_offset": 0,
+        "end_lineno": 27,
+        "end_col_offset": 25
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 27,
+          "col_offset": 0,
+          "end_lineno": 27,
+          "end_col_offset": 8
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "FOR_CORE",
+        "id": "FOR_CORE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 27,
+          "col_offset": 16,
+          "end_lineno": 27,
+          "end_col_offset": 25
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ForCore\"",
+        "value": "ForCore"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 28,
+        "col_offset": 0,
+        "end_lineno": 28,
+        "end_col_offset": 16
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 28,
+          "col_offset": 0,
+          "end_lineno": 28,
+          "end_col_offset": 3
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "TRY",
+        "id": "TRY",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 28,
+          "col_offset": 11,
+          "end_lineno": 28,
+          "end_col_offset": 16
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Try\"",
+        "value": "Try"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 29,
+        "col_offset": 0,
+        "end_lineno": 29,
+        "end_col_offset": 18
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 29,
+          "col_offset": 0,
+          "end_lineno": 29,
+          "end_col_offset": 4
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "WITH",
+        "id": "WITH",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 29,
+          "col_offset": 12,
+          "end_lineno": 29,
+          "end_col_offset": 18
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"With\"",
+        "value": "With"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 30,
+        "col_offset": 0,
+        "end_lineno": 30,
+        "end_col_offset": 20
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 30,
+          "col_offset": 0,
+          "end_lineno": 30,
+          "end_col_offset": 5
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "BREAK",
+        "id": "BREAK",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 30,
+          "col_offset": 13,
+          "end_lineno": 30,
+          "end_col_offset": 20
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Break\"",
+        "value": "Break"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 31,
+        "col_offset": 0,
+        "end_lineno": 31,
+        "end_col_offset": 26
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 31,
+          "col_offset": 0,
+          "end_lineno": 31,
+          "end_col_offset": 8
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "CONTINUE",
+        "id": "CONTINUE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 31,
+          "col_offset": 16,
+          "end_lineno": 31,
+          "end_col_offset": 26
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Continue\"",
+        "value": "Continue"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 32,
+        "col_offset": 0,
+        "end_lineno": 32,
+        "end_col_offset": 18
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 32,
+          "col_offset": 0,
+          "end_lineno": 32,
+          "end_col_offset": 4
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "SWAP",
+        "id": "SWAP",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 32,
+          "col_offset": 12,
+          "end_lineno": 32,
+          "end_col_offset": 18
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Swap\"",
+        "value": "Swap"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 35,
+        "col_offset": 0,
+        "end_lineno": 35,
+        "end_col_offset": 18
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 35,
+          "col_offset": 0,
+          "end_lineno": 35,
+          "end_col_offset": 4
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NAME",
+        "id": "NAME",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- expressions ---"
+        }
+      ],
+      "leading_comments": [
+        "--- expressions ---"
+      ],
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 35,
+          "col_offset": 12,
+          "end_lineno": 35,
+          "end_col_offset": 18
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Name\"",
+        "value": "Name"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 36,
+        "col_offset": 0,
+        "end_lineno": 36,
+        "end_col_offset": 26
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 36,
+          "col_offset": 0,
+          "end_lineno": 36,
+          "end_col_offset": 8
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "CONSTANT",
+        "id": "CONSTANT",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 36,
+          "col_offset": 16,
+          "end_lineno": 36,
+          "end_col_offset": 26
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Constant\"",
+        "value": "Constant"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 37,
+        "col_offset": 0,
+        "end_lineno": 37,
+        "end_col_offset": 18
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 37,
+          "col_offset": 0,
+          "end_lineno": 37,
+          "end_col_offset": 4
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "CALL",
+        "id": "CALL",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 37,
+          "col_offset": 12,
+          "end_lineno": 37,
+          "end_col_offset": 18
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Call\"",
+        "value": "Call"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 38,
+        "col_offset": 0,
+        "end_lineno": 38,
+        "end_col_offset": 28
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 38,
+          "col_offset": 0,
+          "end_lineno": 38,
+          "end_col_offset": 9
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "ATTRIBUTE",
+        "id": "ATTRIBUTE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 38,
+          "col_offset": 17,
+          "end_lineno": 38,
+          "end_col_offset": 28
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Attribute\"",
+        "value": "Attribute"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 39,
+        "col_offset": 0,
+        "end_lineno": 39,
+        "end_col_offset": 28
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 39,
+          "col_offset": 0,
+          "end_lineno": 39,
+          "end_col_offset": 9
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "SUBSCRIPT",
+        "id": "SUBSCRIPT",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 39,
+          "col_offset": 17,
+          "end_lineno": 39,
+          "end_col_offset": 28
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Subscript\"",
+        "value": "Subscript"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 40,
+        "col_offset": 0,
+        "end_lineno": 40,
+        "end_col_offset": 21
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 40,
+          "col_offset": 0,
+          "end_lineno": 40,
+          "end_col_offset": 6
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "BIN_OP",
+        "id": "BIN_OP",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 40,
+          "col_offset": 14,
+          "end_lineno": 40,
+          "end_col_offset": 21
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"BinOp\"",
+        "value": "BinOp"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 41,
+        "col_offset": 0,
+        "end_lineno": 41,
+        "end_col_offset": 25
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 41,
+          "col_offset": 0,
+          "end_lineno": 41,
+          "end_col_offset": 8
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "UNARY_OP",
+        "id": "UNARY_OP",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 41,
+          "col_offset": 16,
+          "end_lineno": 41,
+          "end_col_offset": 25
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"UnaryOp\"",
+        "value": "UnaryOp"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 42,
+        "col_offset": 0,
+        "end_lineno": 42,
+        "end_col_offset": 24
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 42,
+          "col_offset": 0,
+          "end_lineno": 42,
+          "end_col_offset": 7
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "COMPARE",
+        "id": "COMPARE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 42,
+          "col_offset": 15,
+          "end_lineno": 42,
+          "end_col_offset": 24
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Compare\"",
+        "value": "Compare"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 43,
+        "col_offset": 0,
+        "end_lineno": 43,
+        "end_col_offset": 21
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 43,
+          "col_offset": 0,
+          "end_lineno": 43,
+          "end_col_offset": 6
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "IF_EXP",
+        "id": "IF_EXP",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 43,
+          "col_offset": 14,
+          "end_lineno": 43,
+          "end_col_offset": 21
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"IfExp\"",
+        "value": "IfExp"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 44,
+        "col_offset": 0,
+        "end_lineno": 44,
+        "end_col_offset": 18
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 44,
+          "col_offset": 0,
+          "end_lineno": 44,
+          "end_col_offset": 4
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "LIST",
+        "id": "LIST",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 44,
+          "col_offset": 12,
+          "end_lineno": 44,
+          "end_col_offset": 18
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"List\"",
+        "value": "List"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 45,
+        "col_offset": 0,
+        "end_lineno": 45,
+        "end_col_offset": 18
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 45,
+          "col_offset": 0,
+          "end_lineno": 45,
+          "end_col_offset": 4
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "DICT",
+        "id": "DICT",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 45,
+          "col_offset": 12,
+          "end_lineno": 45,
+          "end_col_offset": 18
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Dict\"",
+        "value": "Dict"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 46,
+        "col_offset": 0,
+        "end_lineno": 46,
+        "end_col_offset": 16
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 46,
+          "col_offset": 0,
+          "end_lineno": 46,
+          "end_col_offset": 3
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "SET",
+        "id": "SET",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 46,
+          "col_offset": 11,
+          "end_lineno": 46,
+          "end_col_offset": 16
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Set\"",
+        "value": "Set"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 47,
+        "col_offset": 0,
+        "end_lineno": 47,
+        "end_col_offset": 20
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 47,
+          "col_offset": 0,
+          "end_lineno": 47,
+          "end_col_offset": 5
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "TUPLE",
+        "id": "TUPLE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 47,
+          "col_offset": 13,
+          "end_lineno": 47,
+          "end_col_offset": 20
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Tuple\"",
+        "value": "Tuple"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 48,
+        "col_offset": 0,
+        "end_lineno": 48,
+        "end_col_offset": 27
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 48,
+          "col_offset": 0,
+          "end_lineno": 48,
+          "end_col_offset": 9
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "LIST_COMP",
+        "id": "LIST_COMP",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 48,
+          "col_offset": 17,
+          "end_lineno": 48,
+          "end_col_offset": 27
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ListComp\"",
+        "value": "ListComp"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 51,
+        "col_offset": 0,
+        "end_lineno": 51,
+        "end_col_offset": 31
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 51,
+          "col_offset": 0,
+          "end_lineno": 51,
+          "end_col_offset": 11
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "IMPORT_FROM",
+        "id": "IMPORT_FROM",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- import ---"
+        }
+      ],
+      "leading_comments": [
+        "--- import ---"
+      ],
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 51,
+          "col_offset": 19,
+          "end_lineno": 51,
+          "end_col_offset": 31
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ImportFrom\"",
+        "value": "ImportFrom"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 54,
+        "col_offset": 0,
+        "end_lineno": 54,
+        "end_col_offset": 20
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 54,
+          "col_offset": 0,
+          "end_lineno": 54,
+          "end_col_offset": 5
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "MATCH",
+        "id": "MATCH",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- pattern matching ---"
+        }
+      ],
+      "leading_comments": [
+        "--- pattern matching ---"
+      ],
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 54,
+          "col_offset": 13,
+          "end_lineno": 54,
+          "end_col_offset": 20
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Match\"",
+        "value": "Match"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 55,
+        "col_offset": 0,
+        "end_lineno": 55,
+        "end_col_offset": 39
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 55,
+          "col_offset": 0,
+          "end_lineno": 55,
+          "end_col_offset": 15
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "VARIANT_PATTERN",
+        "id": "VARIANT_PATTERN",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 55,
+          "col_offset": 23,
+          "end_lineno": 55,
+          "end_col_offset": 39
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"VariantPattern\"",
+        "value": "VariantPattern"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 56,
+        "col_offset": 0,
+        "end_lineno": 56,
+        "end_col_offset": 33
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 56,
+          "col_offset": 0,
+          "end_lineno": 56,
+          "end_col_offset": 12
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "PATTERN_BIND",
+        "id": "PATTERN_BIND",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 56,
+          "col_offset": 20,
+          "end_lineno": 56,
+          "end_col_offset": 33
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"PatternBind\"",
+        "value": "PatternBind"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 57,
+        "col_offset": 0,
+        "end_lineno": 57,
+        "end_col_offset": 41
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 57,
+          "col_offset": 0,
+          "end_lineno": 57,
+          "end_col_offset": 16
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "PATTERN_WILDCARD",
+        "id": "PATTERN_WILDCARD",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 57,
+          "col_offset": 24,
+          "end_lineno": 57,
+          "end_col_offset": 41
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"PatternWildcard\"",
+        "value": "PatternWildcard"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 60,
+        "col_offset": 0,
+        "end_lineno": 60,
+        "end_col_offset": 16
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 60,
+          "col_offset": 0,
+          "end_lineno": 60,
+          "end_col_offset": 3
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "BOX",
+        "id": "BOX",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- unbox / cast / boundary ---"
+        }
+      ],
+      "leading_comments": [
+        "--- unbox / cast / boundary ---"
+      ],
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 60,
+          "col_offset": 11,
+          "end_lineno": 60,
+          "end_col_offset": 16
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Box\"",
+        "value": "Box"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 61,
+        "col_offset": 0,
+        "end_lineno": 61,
+        "end_col_offset": 20
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 61,
+          "col_offset": 0,
+          "end_lineno": 61,
+          "end_col_offset": 5
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "UNBOX",
+        "id": "UNBOX",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 61,
+          "col_offset": 13,
+          "end_lineno": 61,
+          "end_col_offset": 20
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Unbox\"",
+        "value": "Unbox"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 62,
+        "col_offset": 0,
+        "end_lineno": 62,
+        "end_col_offset": 34
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 62,
+          "col_offset": 0,
+          "end_lineno": 62,
+          "end_col_offset": 13
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "CAST_OR_RAISE",
+        "id": "CAST_OR_RAISE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 62,
+          "col_offset": 21,
+          "end_lineno": 62,
+          "end_col_offset": 34
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"CastOrRaise\"",
+        "value": "CastOrRaise"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 63,
+        "col_offset": 0,
+        "end_lineno": 63,
+        "end_col_offset": 24
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 63,
+          "col_offset": 0,
+          "end_lineno": 63,
+          "end_col_offset": 7
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "STARRED",
+        "id": "STARRED",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 63,
+          "col_offset": 15,
+          "end_lineno": 63,
+          "end_col_offset": 24
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"Starred\"",
+        "value": "Starred"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 66,
+        "col_offset": 0,
+        "end_lineno": 66,
+        "end_col_offset": 23
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 66,
+          "col_offset": 0,
+          "end_lineno": 66,
+          "end_col_offset": 7
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "BOOL_OP",
+        "id": "BOOL_OP",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- boolean ---"
+        }
+      ],
+      "leading_comments": [
+        "--- boolean ---"
+      ],
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 66,
+          "col_offset": 15,
+          "end_lineno": 66,
+          "end_col_offset": 23
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"BoolOp\"",
+        "value": "BoolOp"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 69,
+        "col_offset": 0,
+        "end_lineno": 69,
+        "end_col_offset": 31
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 69,
+          "col_offset": 0,
+          "end_lineno": 69,
+          "end_col_offset": 11
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "IS_INSTANCE",
+        "id": "IS_INSTANCE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- type predicates ---"
+        }
+      ],
+      "leading_comments": [
+        "--- type predicates ---"
+      ],
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 69,
+          "col_offset": 19,
+          "end_lineno": 69,
+          "end_col_offset": 31
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"IsInstance\"",
+        "value": "IsInstance"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 70,
+        "col_offset": 0,
+        "end_lineno": 70,
+        "end_col_offset": 31
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 70,
+          "col_offset": 0,
+          "end_lineno": 70,
+          "end_col_offset": 11
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "IS_SUBCLASS",
+        "id": "IS_SUBCLASS",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 70,
+          "col_offset": 19,
+          "end_lineno": 70,
+          "end_col_offset": 31
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"IsSubclass\"",
+        "value": "IsSubclass"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 71,
+        "col_offset": 0,
+        "end_lineno": 71,
+        "end_col_offset": 29
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 71,
+          "col_offset": 0,
+          "end_lineno": 71,
+          "end_col_offset": 10
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "IS_SUBTYPE",
+        "id": "IS_SUBTYPE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 71,
+          "col_offset": 18,
+          "end_lineno": 71,
+          "end_col_offset": 29
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"IsSubtype\"",
+        "value": "IsSubtype"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 72,
+        "col_offset": 0,
+        "end_lineno": 72,
+        "end_col_offset": 46
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 72,
+          "col_offset": 0,
+          "end_lineno": 72,
+          "end_col_offset": 19
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "TYPE_PREDICATE_CALL",
+        "id": "TYPE_PREDICATE_CALL",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 72,
+          "col_offset": 27,
+          "end_lineno": 72,
+          "end_col_offset": 46
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"TypePredicateCall\"",
+        "value": "TypePredicateCall"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 75,
+        "col_offset": 0,
+        "end_lineno": 75,
+        "end_col_offset": 30
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 75,
+          "col_offset": 0,
+          "end_lineno": 75,
+          "end_col_offset": 11
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "OBJ_TYPE_ID",
+        "id": "OBJ_TYPE_ID",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- object boundary ops ---"
+        }
+      ],
+      "leading_comments": [
+        "--- object boundary ops ---"
+      ],
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 75,
+          "col_offset": 19,
+          "end_lineno": 75,
+          "end_col_offset": 30
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ObjTypeId\"",
+        "value": "ObjTypeId"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 76,
+        "col_offset": 0,
+        "end_lineno": 76,
+        "end_col_offset": 25
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 76,
+          "col_offset": 0,
+          "end_lineno": 76,
+          "end_col_offset": 8
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "OBJ_BOOL",
+        "id": "OBJ_BOOL",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 76,
+          "col_offset": 16,
+          "end_lineno": 76,
+          "end_col_offset": 25
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ObjBool\"",
+        "value": "ObjBool"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 77,
+        "col_offset": 0,
+        "end_lineno": 77,
+        "end_col_offset": 23
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 77,
+          "col_offset": 0,
+          "end_lineno": 77,
+          "end_col_offset": 7
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "OBJ_LEN",
+        "id": "OBJ_LEN",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 77,
+          "col_offset": 15,
+          "end_lineno": 77,
+          "end_col_offset": 23
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ObjLen\"",
+        "value": "ObjLen"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 78,
+        "col_offset": 0,
+        "end_lineno": 78,
+        "end_col_offset": 23
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 78,
+          "col_offset": 0,
+          "end_lineno": 78,
+          "end_col_offset": 7
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "OBJ_STR",
+        "id": "OBJ_STR",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 78,
+          "col_offset": 15,
+          "end_lineno": 78,
+          "end_col_offset": 23
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ObjStr\"",
+        "value": "ObjStr"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 79,
+        "col_offset": 0,
+        "end_lineno": 79,
+        "end_col_offset": 34
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 79,
+          "col_offset": 0,
+          "end_lineno": 79,
+          "end_col_offset": 13
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "OBJ_ITER_INIT",
+        "id": "OBJ_ITER_INIT",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 79,
+          "col_offset": 21,
+          "end_lineno": 79,
+          "end_col_offset": 34
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ObjIterInit\"",
+        "value": "ObjIterInit"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 80,
+        "col_offset": 0,
+        "end_lineno": 80,
+        "end_col_offset": 34
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 80,
+          "col_offset": 0,
+          "end_lineno": 80,
+          "end_col_offset": 13
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "OBJ_ITER_NEXT",
+        "id": "OBJ_ITER_NEXT",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 80,
+          "col_offset": 21,
+          "end_lineno": 80,
+          "end_col_offset": 34
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ObjIterNext\"",
+        "value": "ObjIterNext"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 83,
+        "col_offset": 0,
+        "end_lineno": 83,
+        "end_col_offset": 49
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 83,
+          "col_offset": 0,
+          "end_lineno": 83,
+          "end_col_offset": 21
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "STATIC_RANGE_FOR_PLAN",
+        "id": "STATIC_RANGE_FOR_PLAN",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- iteration plans ---"
+        }
+      ],
+      "leading_comments": [
+        "--- iteration plans ---"
+      ],
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 83,
+          "col_offset": 29,
+          "end_lineno": 83,
+          "end_col_offset": 49
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"StaticRangeForPlan\"",
+        "value": "StaticRangeForPlan"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 84,
+        "col_offset": 0,
+        "end_lineno": 84,
+        "end_col_offset": 49
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 84,
+          "col_offset": 0,
+          "end_lineno": 84,
+          "end_col_offset": 21
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "RUNTIME_ITER_FOR_PLAN",
+        "id": "RUNTIME_ITER_FOR_PLAN",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 84,
+          "col_offset": 29,
+          "end_lineno": 84,
+          "end_col_offset": 49
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"RuntimeIterForPlan\"",
+        "value": "RuntimeIterForPlan"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 87,
+        "col_offset": 0,
+        "end_lineno": 87,
+        "end_col_offset": 31
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 87,
+          "col_offset": 0,
+          "end_lineno": 87,
+          "end_col_offset": 11
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NAME_TARGET",
+        "id": "NAME_TARGET",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- target plans ---"
+        }
+      ],
+      "leading_comments": [
+        "--- target plans ---"
+      ],
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 87,
+          "col_offset": 19,
+          "end_lineno": 87,
+          "end_col_offset": 31
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"NameTarget\"",
+        "value": "NameTarget"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 88,
+        "col_offset": 0,
+        "end_lineno": 88,
+        "end_col_offset": 33
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 88,
+          "col_offset": 0,
+          "end_lineno": 88,
+          "end_col_offset": 12
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "TUPLE_TARGET",
+        "id": "TUPLE_TARGET",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 88,
+          "col_offset": 20,
+          "end_lineno": 88,
+          "end_col_offset": 33
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"TupleTarget\"",
+        "value": "TupleTarget"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 89,
+        "col_offset": 0,
+        "end_lineno": 89,
+        "end_col_offset": 31
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 89,
+          "col_offset": 0,
+          "end_lineno": 89,
+          "end_col_offset": 11
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "EXPR_TARGET",
+        "id": "EXPR_TARGET",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 89,
+          "col_offset": 19,
+          "end_lineno": 89,
+          "end_col_offset": 31
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"ExprTarget\"",
+        "value": "ExprTarget"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 92,
+        "col_offset": 0,
+        "end_lineno": 92,
+        "end_col_offset": 49
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 92,
+          "col_offset": 0,
+          "end_lineno": 92,
+          "end_col_offset": 21
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NOMINAL_ADT_CTOR_CALL",
+        "id": "NOMINAL_ADT_CTOR_CALL",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- nominal ADT lowered kinds ---"
+        }
+      ],
+      "leading_comments": [
+        "--- nominal ADT lowered kinds ---"
+      ],
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 92,
+          "col_offset": 29,
+          "end_lineno": 92,
+          "end_col_offset": 49
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"NominalAdtCtorCall\"",
+        "value": "NominalAdtCtorCall"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 93,
+        "col_offset": 0,
+        "end_lineno": 93,
+        "end_col_offset": 52
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 93,
+          "col_offset": 0,
+          "end_lineno": 93,
+          "end_col_offset": 22
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NOMINAL_ADT_PROJECTION",
+        "id": "NOMINAL_ADT_PROJECTION",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 93,
+          "col_offset": 30,
+          "end_lineno": 93,
+          "end_col_offset": 52
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"NominalAdtProjection\"",
+        "value": "NominalAdtProjection"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 94,
+        "col_offset": 0,
+        "end_lineno": 94,
+        "end_col_offset": 61
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 94,
+          "col_offset": 0,
+          "end_lineno": 94,
+          "end_col_offset": 27
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NOMINAL_ADT_VARIANT_PATTERN",
+        "id": "NOMINAL_ADT_VARIANT_PATTERN",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 94,
+          "col_offset": 35,
+          "end_lineno": 94,
+          "end_col_offset": 61
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"NominalAdtVariantPattern\"",
+        "value": "NominalAdtVariantPattern"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 95,
+        "col_offset": 0,
+        "end_lineno": 95,
+        "end_col_offset": 55
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 95,
+          "col_offset": 0,
+          "end_lineno": 95,
+          "end_col_offset": 24
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NOMINAL_ADT_PATTERN_BIND",
+        "id": "NOMINAL_ADT_PATTERN_BIND",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 95,
+          "col_offset": 32,
+          "end_lineno": 95,
+          "end_col_offset": 55
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"NominalAdtPatternBind\"",
+        "value": "NominalAdtPatternBind"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 96,
+        "col_offset": 0,
+        "end_lineno": 96,
+        "end_col_offset": 42
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 96,
+          "col_offset": 0,
+          "end_lineno": 96,
+          "end_col_offset": 17
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NOMINAL_ADT_MATCH",
+        "id": "NOMINAL_ADT_MATCH",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 96,
+          "col_offset": 25,
+          "end_lineno": 96,
+          "end_col_offset": 42
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"NominalAdtMatch\"",
+        "value": "NominalAdtMatch"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 99,
+        "col_offset": 0,
+        "end_lineno": 99,
+        "end_col_offset": 40
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 99,
+          "col_offset": 0,
+          "end_lineno": 99,
+          "end_col_offset": 16
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "JSON_DECODE_CALL",
+        "id": "JSON_DECODE_CALL",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- JSON decode ---"
+        }
+      ],
+      "leading_comments": [
+        "--- JSON decode ---"
+      ],
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 99,
+          "col_offset": 24,
+          "end_lineno": 99,
+          "end_col_offset": 40
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"JsonDecodeCall\"",
+        "value": "JsonDecodeCall"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 100,
+        "col_offset": 0,
+        "end_lineno": 100,
+        "end_col_offset": 33
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 100,
+          "col_offset": 0,
+          "end_lineno": 100,
+          "end_col_offset": 12
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "BUILTIN_CALL",
+        "id": "BUILTIN_CALL",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 100,
+          "col_offset": 20,
+          "end_lineno": 100,
+          "end_col_offset": 33
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"BuiltinCall\"",
+        "value": "BuiltinCall"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 103,
+        "col_offset": 0,
+        "end_lineno": 103,
+        "end_col_offset": 36
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 103,
+          "col_offset": 0,
+          "end_lineno": 103,
+          "end_col_offset": 14
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "DICT_GET_MAYBE",
+        "id": "DICT_GET_MAYBE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- dict lowered ops ---"
+        }
+      ],
+      "leading_comments": [
+        "--- dict lowered ops ---"
+      ],
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 103,
+          "col_offset": 22,
+          "end_lineno": 103,
+          "end_col_offset": 36
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"DictGetMaybe\"",
+        "value": "DictGetMaybe"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 104,
+        "col_offset": 0,
+        "end_lineno": 104,
+        "end_col_offset": 40
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 104,
+          "col_offset": 0,
+          "end_lineno": 104,
+          "end_col_offset": 16
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "DICT_GET_DEFAULT",
+        "id": "DICT_GET_DEFAULT",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 104,
+          "col_offset": 24,
+          "end_lineno": 104,
+          "end_col_offset": 40
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"DictGetDefault\"",
+        "value": "DictGetDefault"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 105,
+        "col_offset": 0,
+        "end_lineno": 105,
+        "end_col_offset": 25
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 105,
+          "col_offset": 0,
+          "end_lineno": 105,
+          "end_col_offset": 8
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "DICT_POP",
+        "id": "DICT_POP",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 105,
+          "col_offset": 16,
+          "end_lineno": 105,
+          "end_col_offset": 25
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"DictPop\"",
+        "value": "DictPop"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 106,
+        "col_offset": 0,
+        "end_lineno": 106,
+        "end_col_offset": 40
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 106,
+          "col_offset": 0,
+          "end_lineno": 106,
+          "end_col_offset": 16
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "DICT_POP_DEFAULT",
+        "id": "DICT_POP_DEFAULT",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 106,
+          "col_offset": 24,
+          "end_lineno": 106,
+          "end_col_offset": 40
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"DictPopDefault\"",
+        "value": "DictPopDefault"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 109,
+        "col_offset": 0,
+        "end_lineno": 109,
+        "end_col_offset": 29
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 109,
+          "col_offset": 0,
+          "end_lineno": 109,
+          "end_col_offset": 10
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NAMED_TYPE",
+        "id": "NAMED_TYPE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- type expression kinds ---"
+        }
+      ],
+      "leading_comments": [
+        "--- type expression kinds ---"
+      ],
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 109,
+          "col_offset": 18,
+          "end_lineno": 109,
+          "end_col_offset": 29
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"NamedType\"",
+        "value": "NamedType"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 110,
+        "col_offset": 0,
+        "end_lineno": 110,
+        "end_col_offset": 33
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 110,
+          "col_offset": 0,
+          "end_lineno": 110,
+          "end_col_offset": 12
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "GENERIC_TYPE",
+        "id": "GENERIC_TYPE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 110,
+          "col_offset": 20,
+          "end_lineno": 110,
+          "end_col_offset": 33
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"GenericType\"",
+        "value": "GenericType"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 111,
+        "col_offset": 0,
+        "end_lineno": 111,
+        "end_col_offset": 33
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 111,
+          "col_offset": 0,
+          "end_lineno": 111,
+          "end_col_offset": 12
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "DYNAMIC_TYPE",
+        "id": "DYNAMIC_TYPE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 111,
+          "col_offset": 20,
+          "end_lineno": 111,
+          "end_col_offset": 33
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"DynamicType\"",
+        "value": "DynamicType"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 112,
+        "col_offset": 0,
+        "end_lineno": 112,
+        "end_col_offset": 40
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 112,
+          "col_offset": 0,
+          "end_lineno": 112,
+          "end_col_offset": 16
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "NOMINAL_ADT_TYPE",
+        "id": "NOMINAL_ADT_TYPE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 112,
+          "col_offset": 24,
+          "end_lineno": 112,
+          "end_col_offset": 40
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"NominalAdtType\"",
+        "value": "NominalAdtType"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 113,
+        "col_offset": 0,
+        "end_lineno": 113,
+        "end_col_offset": 35
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 113,
+          "col_offset": 0,
+          "end_lineno": 113,
+          "end_col_offset": 13
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "OPTIONAL_TYPE",
+        "id": "OPTIONAL_TYPE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 113,
+          "col_offset": 21,
+          "end_lineno": 113,
+          "end_col_offset": 35
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"OptionalType\"",
+        "value": "OptionalType"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 114,
+        "col_offset": 0,
+        "end_lineno": 114,
+        "end_col_offset": 29
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 114,
+          "col_offset": 0,
+          "end_lineno": 114,
+          "end_col_offset": 10
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "UNION_TYPE",
+        "id": "UNION_TYPE",
+        "type_expr": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "annotation": "str",
+      "declare": true,
+      "decl_type": "str",
+      "annotation_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "decl_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 114,
+          "col_offset": 18,
+          "end_lineno": 114,
+          "end_col_offset": 29
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"UnionType\"",
+        "value": "UnionType"
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "NamedType",
+        "category": "static",
+        "mirror": "str"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 117,
+        "col_offset": 0,
+        "end_lineno": 117,
+        "end_col_offset": 56
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 117,
+          "col_offset": 0,
+          "end_lineno": 117,
+          "end_col_offset": 10
+        },
+        "resolved_type": "set[str]",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "LOOP_KINDS",
+        "id": "LOOP_KINDS",
+        "type_expr": {
+          "kind": "GenericType",
+          "base": "set",
+          "args": [
+            {
+              "kind": "NamedType",
+              "name": "str"
+            }
+          ]
+        }
+      },
+      "annotation": "set[str]",
+      "declare": true,
+      "decl_type": "set[str]",
+      "annotation_type_expr": {
+        "kind": "GenericType",
+        "base": "set",
+        "args": [
+          {
+            "kind": "NamedType",
+            "name": "str"
+          }
+        ]
+      },
+      "decl_type_expr": {
+        "kind": "GenericType",
+        "base": "set",
+        "args": [
+          {
+            "kind": "NamedType",
+            "name": "str"
+          }
+        ]
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "--- kind groups ---"
+        }
+      ],
+      "leading_comments": [
+        "--- kind groups ---"
+      ],
+      "value": {
+        "kind": "Set",
+        "source_span": {
+          "lineno": 117,
+          "col_offset": 23,
+          "end_lineno": 117,
+          "end_col_offset": 56
+        },
+        "resolved_type": "set[str]",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "{FOR, FOR_RANGE, FOR_CORE, WHILE}",
+        "elements": [
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 117,
+              "col_offset": 24,
+              "end_lineno": 117,
+              "end_col_offset": 27
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "FOR",
+            "id": "FOR"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 117,
+              "col_offset": 29,
+              "end_lineno": 117,
+              "end_col_offset": 38
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "FOR_RANGE",
+            "id": "FOR_RANGE"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 117,
+              "col_offset": 40,
+              "end_lineno": 117,
+              "end_col_offset": 48
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "FOR_CORE",
+            "id": "FOR_CORE"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 117,
+              "col_offset": 50,
+              "end_lineno": 117,
+              "end_col_offset": 55
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "WHILE",
+            "id": "WHILE"
+          }
+        ]
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "GenericType",
+        "category": "static",
+        "mirror": "set[str]"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 118,
+        "col_offset": 0,
+        "end_lineno": 118,
+        "end_col_offset": 68
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 118,
+          "col_offset": 0,
+          "end_lineno": 118,
+          "end_col_offset": 18
+        },
+        "resolved_type": "set[str]",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "CONTROL_FLOW_KINDS",
+        "id": "CONTROL_FLOW_KINDS",
+        "type_expr": {
+          "kind": "GenericType",
+          "base": "set",
+          "args": [
+            {
+              "kind": "NamedType",
+              "name": "str"
+            }
+          ]
+        }
+      },
+      "annotation": "set[str]",
+      "declare": true,
+      "decl_type": "set[str]",
+      "annotation_type_expr": {
+        "kind": "GenericType",
+        "base": "set",
+        "args": [
+          {
+            "kind": "NamedType",
+            "name": "str"
+          }
+        ]
+      },
+      "decl_type_expr": {
+        "kind": "GenericType",
+        "base": "set",
+        "args": [
+          {
+            "kind": "NamedType",
+            "name": "str"
+          }
+        ]
+      },
+      "value": {
+        "kind": "Set",
+        "source_span": {
+          "lineno": 118,
+          "col_offset": 31,
+          "end_lineno": 118,
+          "end_col_offset": 68
+        },
+        "resolved_type": "set[str]",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "{IF, WHILE, FOR, FOR_CORE, TRY, WITH}",
+        "elements": [
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 118,
+              "col_offset": 32,
+              "end_lineno": 118,
+              "end_col_offset": 34
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "IF",
+            "id": "IF"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 118,
+              "col_offset": 36,
+              "end_lineno": 118,
+              "end_col_offset": 41
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "WHILE",
+            "id": "WHILE"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 118,
+              "col_offset": 43,
+              "end_lineno": 118,
+              "end_col_offset": 46
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "FOR",
+            "id": "FOR"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 118,
+              "col_offset": 48,
+              "end_lineno": 118,
+              "end_col_offset": 56
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "FOR_CORE",
+            "id": "FOR_CORE"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 118,
+              "col_offset": 58,
+              "end_lineno": 118,
+              "end_col_offset": 61
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "TRY",
+            "id": "TRY"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 118,
+              "col_offset": 63,
+              "end_lineno": 118,
+              "end_col_offset": 67
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "WITH",
+            "id": "WITH"
+          }
+        ]
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "GenericType",
+        "category": "static",
+        "mirror": "set[str]"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "source_span": {
+        "lineno": 119,
+        "col_offset": 0,
+        "end_lineno": 119,
+        "end_col_offset": 61
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 119,
+          "col_offset": 0,
+          "end_lineno": 119,
+          "end_col_offset": 16
+        },
+        "resolved_type": "set[str]",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "ASSIGNMENT_KINDS",
+        "id": "ASSIGNMENT_KINDS",
+        "type_expr": {
+          "kind": "GenericType",
+          "base": "set",
+          "args": [
+            {
+              "kind": "NamedType",
+              "name": "str"
+            }
+          ]
+        }
+      },
+      "annotation": "set[str]",
+      "declare": true,
+      "decl_type": "set[str]",
+      "annotation_type_expr": {
+        "kind": "GenericType",
+        "base": "set",
+        "args": [
+          {
+            "kind": "NamedType",
+            "name": "str"
+          }
+        ]
+      },
+      "decl_type_expr": {
+        "kind": "GenericType",
+        "base": "set",
+        "args": [
+          {
+            "kind": "NamedType",
+            "name": "str"
+          }
+        ]
+      },
+      "value": {
+        "kind": "Set",
+        "source_span": {
+          "lineno": 119,
+          "col_offset": 29,
+          "end_lineno": 119,
+          "end_col_offset": 61
+        },
+        "resolved_type": "set[str]",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "{ASSIGN, ANN_ASSIGN, AUG_ASSIGN}",
+        "elements": [
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 119,
+              "col_offset": 30,
+              "end_lineno": 119,
+              "end_col_offset": 36
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "ASSIGN",
+            "id": "ASSIGN"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 119,
+              "col_offset": 38,
+              "end_lineno": 119,
+              "end_col_offset": 48
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "ANN_ASSIGN",
+            "id": "ANN_ASSIGN"
+          },
+          {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 119,
+              "col_offset": 50,
+              "end_lineno": 119,
+              "end_col_offset": 60
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "AUG_ASSIGN",
+            "id": "AUG_ASSIGN"
+          }
+        ]
+      },
+      "type_expr_summary_v1": {
+        "schema_version": 1,
+        "kind": "GenericType",
+        "category": "static",
+        "mirror": "set[str]"
+      }
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [],
+      "qualified_refs": []
+    },
+    "import_bindings": [],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {},
+    "dispatch_mode": "native",
+    "lifetime_schema_version": "east3_lifetime_v1"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

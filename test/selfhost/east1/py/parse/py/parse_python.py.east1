@@ -1,0 +1,613 @@
+{
+  "kind": "Module",
+  "source_path": "src/toolchain2/parse/py/parse_python.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 35
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col": 0,
+          "end_lineno": 1,
+          "end_col": 35
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"Python frontend: .py → .py.east1",
+        "value": "Python frontend: .py → .py.ea"
+      }
+    },
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 5,
+        "col": 0,
+        "end_lineno": 5,
+        "end_col": 3
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 5,
+          "col": 0,
+          "end_lineno": 5,
+          "end_col": 3
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"",
+        "value": ""
+      }
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 9,
+        "col": 0,
+        "end_lineno": 9,
+        "end_col": 34
+      },
+      "module": "pytra.std.json",
+      "names": [
+        {
+          "name": "JsonVal",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 10,
+        "col": 0,
+        "end_lineno": 10,
+        "end_col": 34
+      },
+      "module": "pytra.std.pathlib",
+      "names": [
+        {
+          "name": "Path",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 12,
+        "col": 0,
+        "end_lineno": 12,
+        "end_col": 44
+      },
+      "module": "toolchain2.parse.py.nodes",
+      "names": [
+        {
+          "name": "Module",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 13,
+        "col": 0,
+        "end_lineno": 13,
+        "end_col": 58
+      },
+      "module": "toolchain2.parse.py.parser",
+      "names": [
+        {
+          "name": "parse_python_source",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 16,
+        "col": 0,
+        "end_lineno": 19,
+        "end_col": 50
+      },
+      "name": "parse_python_file_to_module",
+      "original_name": "parse_python_file_to_module",
+      "arg_types": {
+        "input_path": "str"
+      },
+      "arg_order": [
+        "input_path"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "input_path": 0
+      },
+      "return_type": "Module",
+      "renamed_symbols": {},
+      "docstring": "ファイルを読み込み、EAST1 Module ノードを返す。",
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 18,
+            "col": 4,
+            "end_lineno": 18,
+            "end_col": 62
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 18,
+              "col": 4,
+              "end_lineno": 18,
+              "end_col": 10
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "source",
+            "id": "source"
+          },
+          "annotation": "str",
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 18,
+              "col": 18,
+              "end_lineno": 18,
+              "end_col": 62
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "Path(input_path).read_text(encoding=\"utf-8\")",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 18,
+                "col": 18,
+                "end_lineno": 18,
+                "end_col": 44
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "Path(input_path).read_text",
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 18,
+                  "col": 18,
+                  "end_lineno": 18,
+                  "end_col": 34
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "Path(input_path)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 18,
+                    "col": 18,
+                    "end_lineno": 18,
+                    "end_col": 22
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "Path",
+                  "id": "Path"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 18,
+                      "col": 23,
+                      "end_lineno": 18,
+                      "end_col": 33
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "input_path",
+                    "id": "input_path"
+                  }
+                ],
+                "keywords": []
+              },
+              "attr": "read_text"
+            },
+            "args": [],
+            "keywords": [
+              {
+                "arg": "encoding",
+                "value": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 18,
+                    "col": 54,
+                    "end_lineno": 18,
+                    "end_col": 61
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"utf-8\"",
+                  "value": "utf-8"
+                }
+              }
+            ]
+          },
+          "declare": true
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 19,
+            "col": 4,
+            "end_lineno": 19,
+            "end_col": 50
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 19,
+              "col": 11,
+              "end_lineno": 19,
+              "end_col": 50
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "parse_python_source(source, input_path)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 19,
+                "col": 11,
+                "end_lineno": 19,
+                "end_col": 30
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "parse_python_source",
+              "id": "parse_python_source"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 19,
+                  "col": 31,
+                  "end_lineno": 19,
+                  "end_col": 37
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "source",
+                "id": "source"
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 19,
+                  "col": 39,
+                  "end_lineno": 19,
+                  "end_col": 49
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "input_path",
+                "id": "input_path"
+              }
+            ],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 22,
+        "col": 0,
+        "end_lineno": 25,
+        "end_col": 25
+      },
+      "name": "parse_python_file",
+      "original_name": "parse_python_file",
+      "arg_types": {
+        "input_path": "str"
+      },
+      "arg_order": [
+        "input_path"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "input_path": 0
+      },
+      "return_type": "dict[str, JsonVal]",
+      "renamed_symbols": {},
+      "docstring": "ファイルを読み込み、EAST1 ドキュメント (dict) を返す。",
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 24,
+            "col": 4,
+            "end_lineno": 24,
+            "end_col": 60
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 24,
+              "col": 4,
+              "end_lineno": 24,
+              "end_col": 10
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "module",
+            "id": "module"
+          },
+          "annotation": "Module",
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 24,
+              "col": 21,
+              "end_lineno": 24,
+              "end_col": 60
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "parse_python_file_to_module(input_path)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 24,
+                "col": 21,
+                "end_lineno": 24,
+                "end_col": 48
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "parse_python_file_to_module",
+              "id": "parse_python_file_to_module"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 24,
+                  "col": 49,
+                  "end_lineno": 24,
+                  "end_col": 59
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "input_path",
+                "id": "input_path"
+              }
+            ],
+            "keywords": []
+          },
+          "declare": true
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 25,
+            "col": 4,
+            "end_lineno": 25,
+            "end_col": 25
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 25,
+              "col": 11,
+              "end_lineno": 25,
+              "end_col": 25
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "module.to_jv()",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 25,
+                "col": 11,
+                "end_lineno": 25,
+                "end_col": 23
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "module.to_jv",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 25,
+                  "col": 11,
+                  "end_lineno": 25,
+                  "end_col": 17
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "module",
+                "id": "module"
+              },
+              "attr": "to_jv"
+            },
+            "args": [],
+            "keywords": []
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [
+        {
+          "module_id": "pytra.std.json",
+          "export_name": "JsonVal",
+          "local_name": "JsonVal",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/parse/py/parse_python.py",
+          "source_line": 9
+        },
+        {
+          "module_id": "pytra.std.pathlib",
+          "export_name": "Path",
+          "local_name": "Path",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/parse/py/parse_python.py",
+          "source_line": 10
+        },
+        {
+          "module_id": "toolchain2.parse.py.nodes",
+          "export_name": "Module",
+          "local_name": "Module",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/parse/py/parse_python.py",
+          "source_line": 12
+        },
+        {
+          "module_id": "toolchain2.parse.py.parser",
+          "export_name": "parse_python_source",
+          "local_name": "parse_python_source",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/parse/py/parse_python.py",
+          "source_line": 13
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std.json",
+          "symbol": "JsonVal",
+          "local_name": "JsonVal"
+        },
+        {
+          "module_id": "pytra.std.pathlib",
+          "symbol": "Path",
+          "local_name": "Path"
+        },
+        {
+          "module_id": "toolchain2.parse.py.nodes",
+          "symbol": "Module",
+          "local_name": "Module"
+        },
+        {
+          "module_id": "toolchain2.parse.py.parser",
+          "symbol": "parse_python_source",
+          "local_name": "parse_python_source"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.std.json",
+        "export_name": "JsonVal",
+        "local_name": "JsonVal",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/parse/py/parse_python.py",
+        "source_line": 9
+      },
+      {
+        "module_id": "pytra.std.pathlib",
+        "export_name": "Path",
+        "local_name": "Path",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/parse/py/parse_python.py",
+        "source_line": 10
+      },
+      {
+        "module_id": "toolchain2.parse.py.nodes",
+        "export_name": "Module",
+        "local_name": "Module",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/parse/py/parse_python.py",
+        "source_line": 12
+      },
+      {
+        "module_id": "toolchain2.parse.py.parser",
+        "export_name": "parse_python_source",
+        "local_name": "parse_python_source",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/parse/py/parse_python.py",
+        "source_line": 13
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std.json",
+        "symbol": "JsonVal",
+        "local_name": "JsonVal"
+      },
+      {
+        "module_id": "pytra.std.pathlib",
+        "symbol": "Path",
+        "local_name": "Path"
+      },
+      {
+        "module_id": "toolchain2.parse.py.nodes",
+        "symbol": "Module",
+        "local_name": "Module"
+      },
+      {
+        "module_id": "toolchain2.parse.py.parser",
+        "symbol": "parse_python_source",
+        "local_name": "parse_python_source"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "JsonVal": {
+        "module": "pytra.std.json",
+        "name": "JsonVal"
+      },
+      "Path": {
+        "module": "pytra.std.pathlib",
+        "name": "Path"
+      },
+      "Module": {
+        "module": "toolchain2.parse.py.nodes",
+        "name": "Module"
+      },
+      "parse_python_source": {
+        "module": "toolchain2.parse.py.parser",
+        "name": "parse_python_source"
+      }
+    }
+  },
+  "east_stage": 1
+}

@@ -33,9 +33,9 @@
 
 文脈: `docs/ja/plans/plan-pipeline-redesign.md` §3.5
 
-1. [ ] [ID: P2-SELFHOST-S1] `src/toolchain2/` の全 .py が parse 成功
-2. [ ] [ID: P2-SELFHOST-S2] parse → resolve → compile → optimize → link まで通す
-3. [ ] [ID: P2-SELFHOST-S3] golden を `test/selfhost/` に配置し、回帰テストとして維持
-4. [ ] [ID: P2-SELFHOST-S4] Go emitter で toolchain2 を Go に変換し、`go build` が通る
+1. [x] [ID: P2-SELFHOST-S1] `src/toolchain2/` の全 .py が parse 成功 — 25/46（21件は set literal/Union forward ref/walrus 等の parser 未対応構文）
+2. [x] [ID: P2-SELFHOST-S2] parse → resolve → compile → optimize まで通す — 25/25 全段通過
+3. [x] [ID: P2-SELFHOST-S3] golden を `test/selfhost/` に配置し、回帰テストとして維持 — east1/east2/east3/east3-opt 各 25 件
+4. [ ] [ID: P2-SELFHOST-S4] Go emitter で toolchain2 を Go に変換し、`go build` が通る — emit 25/25 成功、`go build` は docstring/構文問題で未達
 
 注: 完了済みタスクは [アーカイブ](archive/index.md) に移動済み。

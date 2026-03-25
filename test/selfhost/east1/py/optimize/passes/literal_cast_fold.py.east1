@@ -1,0 +1,4105 @@
+{
+  "kind": "Module",
+  "source_path": "src/toolchain2/optimize/passes/literal_cast_fold.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 71
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col": 0,
+          "end_lineno": 1,
+          "end_col": 71
+        },
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"Fold literal static_cast calls when conversion is provably no-op.\"\"\"",
+        "value": "Fold literal static_cast calls when conversion is provably no-op."
+      }
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 5,
+        "col": 0,
+        "end_lineno": 5,
+        "end_col": 34
+      },
+      "module": "pytra.std.json",
+      "names": [
+        {
+          "name": "JsonVal",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 7,
+        "col": 0,
+        "end_lineno": 7,
+        "end_col": 103
+      },
+      "module": "toolchain2.optimize.optimizer",
+      "names": [
+        {
+          "name": "East3OptimizerPass",
+          "asname": null
+        },
+        {
+          "name": "PassContext",
+          "asname": null
+        },
+        {
+          "name": "PassResult",
+          "asname": null
+        },
+        {
+          "name": "make_pass_result",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 8,
+        "col": 0,
+        "end_lineno": 8,
+        "end_col": 55
+      },
+      "module": "toolchain2.common.types",
+      "names": [
+        {
+          "name": "normalize_type_name",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 11,
+        "col": 0,
+        "end_lineno": 43,
+        "end_col": 17
+      },
+      "name": "_try_fold_literal_static_cast",
+      "original_name": "_try_fold_literal_static_cast",
+      "arg_types": {
+        "call_node": "dict[str, JsonVal]"
+      },
+      "arg_order": [
+        "call_node"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "call_node": 0
+      },
+      "return_type": "dict[str, JsonVal] | None",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 12,
+            "col": 4,
+            "end_lineno": 13,
+            "end_col": 19
+          },
+          "test": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 12,
+              "col": 7,
+              "end_lineno": 12,
+              "end_col": 38
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "call_node.get(\"kind\") != \"Call\"",
+            "left": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 12,
+                "col": 7,
+                "end_lineno": 12,
+                "end_col": 28
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "call_node.get(\"kind\")",
+              "func": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 12,
+                  "col": 7,
+                  "end_lineno": 12,
+                  "end_col": 20
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "call_node.get",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 12,
+                    "col": 7,
+                    "end_lineno": 12,
+                    "end_col": 16
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "call_node",
+                  "id": "call_node"
+                },
+                "attr": "get"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 12,
+                    "col": 21,
+                    "end_lineno": 12,
+                    "end_col": 27
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"kind\"",
+                  "value": "kind"
+                }
+              ],
+              "keywords": []
+            },
+            "ops": [
+              "NotEq"
+            ],
+            "comparators": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 12,
+                  "col": 32,
+                  "end_lineno": 12,
+                  "end_col": 38
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"Call\"",
+                "value": "Call"
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 13,
+                "col": 8,
+                "end_lineno": 13,
+                "end_col": 19
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 15,
+                  "end_lineno": 13,
+                  "end_col": 19
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "None",
+                "value": null
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 14,
+            "col": 4,
+            "end_lineno": 13,
+            "end_col": 19
+          },
+          "test": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 14,
+              "col": 7,
+              "end_lineno": 14,
+              "end_col": 53
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "call_node.get(\"lowered_kind\") != \"BuiltinCall\"",
+            "left": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 14,
+                "col": 7,
+                "end_lineno": 14,
+                "end_col": 36
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "call_node.get(\"lowered_kind\")",
+              "func": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 14,
+                  "col": 7,
+                  "end_lineno": 14,
+                  "end_col": 20
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "call_node.get",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 14,
+                    "col": 7,
+                    "end_lineno": 14,
+                    "end_col": 16
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "call_node",
+                  "id": "call_node"
+                },
+                "attr": "get"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 14,
+                    "col": 21,
+                    "end_lineno": 14,
+                    "end_col": 35
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"lowered_kind\"",
+                  "value": "lowered_kind"
+                }
+              ],
+              "keywords": []
+            },
+            "ops": [
+              "NotEq"
+            ],
+            "comparators": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 14,
+                  "col": 40,
+                  "end_lineno": 14,
+                  "end_col": 53
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"BuiltinCall\"",
+                "value": "BuiltinCall"
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 13,
+                "col": 8,
+                "end_lineno": 13,
+                "end_col": 19
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 15,
+                  "end_lineno": 13,
+                  "end_col": 19
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "None",
+                "value": null
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 16,
+            "col": 4,
+            "end_lineno": 13,
+            "end_col": 19
+          },
+          "test": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 16,
+              "col": 7,
+              "end_lineno": 16,
+              "end_col": 53
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "call_node.get(\"runtime_call\") != \"static_cast\"",
+            "left": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 16,
+                "col": 7,
+                "end_lineno": 16,
+                "end_col": 36
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "call_node.get(\"runtime_call\")",
+              "func": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 16,
+                  "col": 7,
+                  "end_lineno": 16,
+                  "end_col": 20
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "call_node.get",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 16,
+                    "col": 7,
+                    "end_lineno": 16,
+                    "end_col": 16
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "call_node",
+                  "id": "call_node"
+                },
+                "attr": "get"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 16,
+                    "col": 21,
+                    "end_lineno": 16,
+                    "end_col": 35
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"runtime_call\"",
+                  "value": "runtime_call"
+                }
+              ],
+              "keywords": []
+            },
+            "ops": [
+              "NotEq"
+            ],
+            "comparators": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 16,
+                  "col": 40,
+                  "end_lineno": 16,
+                  "end_col": 53
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"static_cast\"",
+                "value": "static_cast"
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 13,
+                "col": 8,
+                "end_lineno": 13,
+                "end_col": 19
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 15,
+                  "end_lineno": 13,
+                  "end_col": 19
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "None",
+                "value": null
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 19,
+            "col": 4,
+            "end_lineno": 19,
+            "end_col": 36
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 19,
+              "col": 4,
+              "end_lineno": 19,
+              "end_col": 12
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "args_obj",
+            "id": "args_obj"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 19,
+              "col": 15,
+              "end_lineno": 19,
+              "end_col": 36
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "call_node.get(\"args\")",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 19,
+                "col": 15,
+                "end_lineno": 19,
+                "end_col": 28
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "call_node.get",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 19,
+                  "col": 15,
+                  "end_lineno": 19,
+                  "end_col": 24
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "call_node",
+                "id": "call_node"
+              },
+              "attr": "get"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 19,
+                  "col": 29,
+                  "end_lineno": 19,
+                  "end_col": 35
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"args\"",
+                "value": "args"
+              }
+            ],
+            "keywords": []
+          },
+          "declare": true
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 20,
+            "col": 4,
+            "end_lineno": 20,
+            "end_col": 57
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 20,
+              "col": 4,
+              "end_lineno": 20,
+              "end_col": 8
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "args",
+            "id": "args"
+          },
+          "value": {
+            "kind": "IfExp",
+            "source_span": {
+              "lineno": 20,
+              "col": 11,
+              "end_lineno": 20,
+              "end_col": 57
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "args_obj if isinstance(args_obj, list) else []",
+            "test": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 20,
+                "col": 23,
+                "end_lineno": 20,
+                "end_col": 49
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "isinstance(args_obj, list)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 20,
+                  "col": 23,
+                  "end_lineno": 20,
+                  "end_col": 33
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance",
+                "id": "isinstance"
+              },
+              "args": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 20,
+                    "col": 34,
+                    "end_lineno": 20,
+                    "end_col": 42
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "args_obj",
+                  "id": "args_obj"
+                },
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 20,
+                    "col": 44,
+                    "end_lineno": 20,
+                    "end_col": 48
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "list",
+                  "id": "list"
+                }
+              ],
+              "keywords": []
+            },
+            "body": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 20,
+                "col": 11,
+                "end_lineno": 20,
+                "end_col": 19
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "args_obj",
+              "id": "args_obj"
+            },
+            "orelse": {
+              "kind": "List",
+              "source_span": {
+                "lineno": 20,
+                "col": 55,
+                "end_lineno": 20,
+                "end_col": 57
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "[]",
+              "elements": []
+            }
+          },
+          "declare": true
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 21,
+            "col": 4,
+            "end_lineno": 13,
+            "end_col": 19
+          },
+          "test": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 21,
+              "col": 7,
+              "end_lineno": 21,
+              "end_col": 21
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "len(args) != 1",
+            "left": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 21,
+                "col": 7,
+                "end_lineno": 21,
+                "end_col": 16
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "len(args)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 21,
+                  "col": 7,
+                  "end_lineno": 21,
+                  "end_col": 10
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "len",
+                "id": "len"
+              },
+              "args": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 21,
+                    "col": 11,
+                    "end_lineno": 21,
+                    "end_col": 15
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "args",
+                  "id": "args"
+                }
+              ],
+              "keywords": []
+            },
+            "ops": [
+              "NotEq"
+            ],
+            "comparators": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 21,
+                  "col": 20,
+                  "end_lineno": 21,
+                  "end_col": 21
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "1",
+                "value": 1
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 13,
+                "col": 8,
+                "end_lineno": 13,
+                "end_col": 19
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 15,
+                  "end_lineno": 13,
+                  "end_col": 19
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "None",
+                "value": null
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 23,
+            "col": 4,
+            "end_lineno": 23,
+            "end_col": 17
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 23,
+              "col": 4,
+              "end_lineno": 23,
+              "end_col": 7
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "arg",
+            "id": "arg"
+          },
+          "value": {
+            "kind": "Subscript",
+            "source_span": {
+              "lineno": 23,
+              "col": 10,
+              "end_lineno": 23,
+              "end_col": 17
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "args[0]",
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 23,
+                "col": 10,
+                "end_lineno": 23,
+                "end_col": 14
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "args",
+              "id": "args"
+            },
+            "slice": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 23,
+                "col": 15,
+                "end_lineno": 23,
+                "end_col": 16
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "0",
+              "value": 0
+            }
+          },
+          "declare": true
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 24,
+            "col": 4,
+            "end_lineno": 13,
+            "end_col": 19
+          },
+          "test": {
+            "kind": "UnaryOp",
+            "source_span": {
+              "lineno": 24,
+              "col": 7,
+              "end_lineno": 24,
+              "end_col": 32
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "not isinstance(arg, dict)",
+            "op": "Not",
+            "operand": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 24,
+                "col": 11,
+                "end_lineno": 24,
+                "end_col": 32
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "isinstance(arg, dict)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 24,
+                  "col": 11,
+                  "end_lineno": 24,
+                  "end_col": 21
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance",
+                "id": "isinstance"
+              },
+              "args": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 24,
+                    "col": 22,
+                    "end_lineno": 24,
+                    "end_col": 25
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "arg",
+                  "id": "arg"
+                },
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 24,
+                    "col": 27,
+                    "end_lineno": 24,
+                    "end_col": 31
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "dict",
+                  "id": "dict"
+                }
+              ],
+              "keywords": []
+            }
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 13,
+                "col": 8,
+                "end_lineno": 13,
+                "end_col": 19
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 15,
+                  "end_lineno": 13,
+                  "end_col": 19
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "None",
+                "value": null
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 26,
+            "col": 4,
+            "end_lineno": 13,
+            "end_col": 19
+          },
+          "test": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 26,
+              "col": 7,
+              "end_lineno": 26,
+              "end_col": 36
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "arg.get(\"kind\") != \"Constant\"",
+            "left": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 26,
+                "col": 7,
+                "end_lineno": 26,
+                "end_col": 22
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "arg.get(\"kind\")",
+              "func": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 26,
+                  "col": 7,
+                  "end_lineno": 26,
+                  "end_col": 14
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "arg.get",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 26,
+                    "col": 7,
+                    "end_lineno": 26,
+                    "end_col": 10
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "arg",
+                  "id": "arg"
+                },
+                "attr": "get"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 26,
+                    "col": 15,
+                    "end_lineno": 26,
+                    "end_col": 21
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"kind\"",
+                  "value": "kind"
+                }
+              ],
+              "keywords": []
+            },
+            "ops": [
+              "NotEq"
+            ],
+            "comparators": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 26,
+                  "col": 26,
+                  "end_lineno": 26,
+                  "end_col": 36
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"Constant\"",
+                "value": "Constant"
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 13,
+                "col": 8,
+                "end_lineno": 13,
+                "end_col": 19
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 15,
+                  "end_lineno": 13,
+                  "end_col": 19
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "None",
+                "value": null
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 29,
+            "col": 4,
+            "end_lineno": 29,
+            "end_col": 66
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 29,
+              "col": 4,
+              "end_lineno": 29,
+              "end_col": 12
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "target_t",
+            "id": "target_t"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 29,
+              "col": 15,
+              "end_lineno": 29,
+              "end_col": 66
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "normalize_type_name(call_node.get(\"resolved_type\"))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 29,
+                "col": 15,
+                "end_lineno": 29,
+                "end_col": 34
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "normalize_type_name",
+              "id": "normalize_type_name"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 29,
+                  "col": 35,
+                  "end_lineno": 29,
+                  "end_col": 65
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "call_node.get(\"resolved_type\")",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 29,
+                    "col": 35,
+                    "end_lineno": 29,
+                    "end_col": 48
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "call_node.get",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 29,
+                      "col": 35,
+                      "end_lineno": 29,
+                      "end_col": 44
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "call_node",
+                    "id": "call_node"
+                  },
+                  "attr": "get"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 29,
+                      "col": 49,
+                      "end_lineno": 29,
+                      "end_col": 64
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"resolved_type\"",
+                    "value": "resolved_type"
+                  }
+                ],
+                "keywords": []
+              }
+            ],
+            "keywords": []
+          },
+          "declare": true
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 30,
+            "col": 4,
+            "end_lineno": 30,
+            "end_col": 60
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 30,
+              "col": 4,
+              "end_lineno": 30,
+              "end_col": 12
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "source_t",
+            "id": "source_t"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 30,
+              "col": 15,
+              "end_lineno": 30,
+              "end_col": 60
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "normalize_type_name(arg.get(\"resolved_type\"))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 30,
+                "col": 15,
+                "end_lineno": 30,
+                "end_col": 34
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "normalize_type_name",
+              "id": "normalize_type_name"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 30,
+                  "col": 35,
+                  "end_lineno": 30,
+                  "end_col": 59
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "arg.get(\"resolved_type\")",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 30,
+                    "col": 35,
+                    "end_lineno": 30,
+                    "end_col": 42
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "arg.get",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 30,
+                      "col": 35,
+                      "end_lineno": 30,
+                      "end_col": 38
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "arg",
+                    "id": "arg"
+                  },
+                  "attr": "get"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 30,
+                      "col": 43,
+                      "end_lineno": 30,
+                      "end_col": 58
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"resolved_type\"",
+                    "value": "resolved_type"
+                  }
+                ],
+                "keywords": []
+              }
+            ],
+            "keywords": []
+          },
+          "declare": true
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 31,
+            "col": 4,
+            "end_lineno": 13,
+            "end_col": 19
+          },
+          "test": {
+            "kind": "BoolOp",
+            "source_span": {
+              "lineno": 31,
+              "col": 7,
+              "end_lineno": 31,
+              "end_col": 53
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "target_t == \"unknown\" or source_t == \"unknown\"",
+            "op": "Or",
+            "values": [
+              {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 31,
+                  "col": 7,
+                  "end_lineno": 31,
+                  "end_col": 28
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "target_t == \"unknown\"",
+                "left": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 31,
+                    "col": 7,
+                    "end_lineno": 31,
+                    "end_col": 15
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "target_t",
+                  "id": "target_t"
+                },
+                "ops": [
+                  "Eq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 31,
+                      "col": 19,
+                      "end_lineno": 31,
+                      "end_col": 28
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"unknown\"",
+                    "value": "unknown"
+                  }
+                ]
+              },
+              {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 31,
+                  "col": 32,
+                  "end_lineno": 31,
+                  "end_col": 53
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "source_t == \"unknown\"",
+                "left": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 31,
+                    "col": 32,
+                    "end_lineno": 31,
+                    "end_col": 40
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "source_t",
+                  "id": "source_t"
+                },
+                "ops": [
+                  "Eq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 31,
+                      "col": 44,
+                      "end_lineno": 31,
+                      "end_col": 53
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"unknown\"",
+                    "value": "unknown"
+                  }
+                ]
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 13,
+                "col": 8,
+                "end_lineno": 13,
+                "end_col": 19
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 15,
+                  "end_lineno": 13,
+                  "end_col": 19
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "None",
+                "value": null
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 33,
+            "col": 4,
+            "end_lineno": 13,
+            "end_col": 19
+          },
+          "test": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 33,
+              "col": 7,
+              "end_lineno": 33,
+              "end_col": 27
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "target_t != source_t",
+            "left": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 33,
+                "col": 7,
+                "end_lineno": 33,
+                "end_col": 15
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "target_t",
+              "id": "target_t"
+            },
+            "ops": [
+              "NotEq"
+            ],
+            "comparators": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 33,
+                  "col": 19,
+                  "end_lineno": 33,
+                  "end_col": 27
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "source_t",
+                "id": "source_t"
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 13,
+                "col": 8,
+                "end_lineno": 13,
+                "end_col": 19
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 13,
+                  "col": 15,
+                  "end_lineno": 13,
+                  "end_col": 19
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "None",
+                "value": null
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 36,
+            "col": 4,
+            "end_lineno": 36,
+            "end_col": 22
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 36,
+              "col": 4,
+              "end_lineno": 36,
+              "end_col": 10
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "folded",
+            "id": "folded"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 36,
+              "col": 13,
+              "end_lineno": 36,
+              "end_col": 22
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "dict(arg)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 36,
+                "col": 13,
+                "end_lineno": 36,
+                "end_col": 17
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "dict",
+              "id": "dict"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 36,
+                  "col": 18,
+                  "end_lineno": 36,
+                  "end_col": 21
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "arg",
+                "id": "arg"
+              }
+            ],
+            "keywords": []
+          },
+          "declare": true
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 37,
+            "col": 4,
+            "end_lineno": 37,
+            "end_col": 43
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 37,
+              "col": 4,
+              "end_lineno": 37,
+              "end_col": 12
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "span_obj",
+            "id": "span_obj"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 37,
+              "col": 15,
+              "end_lineno": 37,
+              "end_col": 43
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "call_node.get(\"source_span\")",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 37,
+                "col": 15,
+                "end_lineno": 37,
+                "end_col": 28
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "call_node.get",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 37,
+                  "col": 15,
+                  "end_lineno": 37,
+                  "end_col": 24
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "call_node",
+                "id": "call_node"
+              },
+              "attr": "get"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 37,
+                  "col": 29,
+                  "end_lineno": 37,
+                  "end_col": 42
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"source_span\"",
+                "value": "source_span"
+              }
+            ],
+            "keywords": []
+          },
+          "declare": true
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 38,
+            "col": 4,
+            "end_lineno": 39,
+            "end_col": 40
+          },
+          "test": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 38,
+              "col": 7,
+              "end_lineno": 38,
+              "end_col": 33
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "isinstance(span_obj, dict)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 38,
+                "col": 7,
+                "end_lineno": 38,
+                "end_col": 17
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "isinstance",
+              "id": "isinstance"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 38,
+                  "col": 18,
+                  "end_lineno": 38,
+                  "end_col": 26
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "span_obj",
+                "id": "span_obj"
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 38,
+                  "col": 28,
+                  "end_lineno": 38,
+                  "end_col": 32
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "dict",
+                "id": "dict"
+              }
+            ],
+            "keywords": []
+          },
+          "body": [
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 39,
+                "col": 8,
+                "end_lineno": 39,
+                "end_col": 40
+              },
+              "target": {
+                "kind": "Subscript",
+                "source_span": {
+                  "lineno": 39,
+                  "col": 8,
+                  "end_lineno": 39,
+                  "end_col": 29
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "folded[\"source_span\"]",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 39,
+                    "col": 8,
+                    "end_lineno": 39,
+                    "end_col": 14
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "folded",
+                  "id": "folded"
+                },
+                "slice": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 39,
+                    "col": 15,
+                    "end_lineno": 39,
+                    "end_col": 28
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"source_span\"",
+                  "value": "source_span"
+                }
+              },
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 39,
+                  "col": 32,
+                  "end_lineno": 39,
+                  "end_col": 40
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "span_obj",
+                "id": "span_obj"
+              },
+              "declare": true
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 40,
+            "col": 4,
+            "end_lineno": 40,
+            "end_col": 36
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 40,
+              "col": 4,
+              "end_lineno": 40,
+              "end_col": 12
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "repr_obj",
+            "id": "repr_obj"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 40,
+              "col": 15,
+              "end_lineno": 40,
+              "end_col": 36
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "call_node.get(\"repr\")",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 40,
+                "col": 15,
+                "end_lineno": 40,
+                "end_col": 28
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "call_node.get",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 40,
+                  "col": 15,
+                  "end_lineno": 40,
+                  "end_col": 24
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "call_node",
+                "id": "call_node"
+              },
+              "attr": "get"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 40,
+                  "col": 29,
+                  "end_lineno": 40,
+                  "end_col": 35
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"repr\"",
+                "value": "repr"
+              }
+            ],
+            "keywords": []
+          },
+          "declare": true
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 41,
+            "col": 4,
+            "end_lineno": 42,
+            "end_col": 33
+          },
+          "test": {
+            "kind": "BoolOp",
+            "source_span": {
+              "lineno": 41,
+              "col": 7,
+              "end_lineno": 41,
+              "end_col": 51
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "isinstance(repr_obj, str) and repr_obj != \"\"",
+            "op": "And",
+            "values": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 41,
+                  "col": 7,
+                  "end_lineno": 41,
+                  "end_col": 32
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance(repr_obj, str)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 41,
+                    "col": 7,
+                    "end_lineno": 41,
+                    "end_col": 17
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "isinstance",
+                  "id": "isinstance"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 41,
+                      "col": 18,
+                      "end_lineno": 41,
+                      "end_col": 26
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "repr_obj",
+                    "id": "repr_obj"
+                  },
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 41,
+                      "col": 28,
+                      "end_lineno": 41,
+                      "end_col": 31
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "str",
+                    "id": "str"
+                  }
+                ],
+                "keywords": []
+              },
+              {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 41,
+                  "col": 37,
+                  "end_lineno": 41,
+                  "end_col": 51
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "repr_obj != \"\"",
+                "left": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 41,
+                    "col": 37,
+                    "end_lineno": 41,
+                    "end_col": 45
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "repr_obj",
+                  "id": "repr_obj"
+                },
+                "ops": [
+                  "NotEq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 41,
+                      "col": 49,
+                      "end_lineno": 41,
+                      "end_col": 51
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"\"",
+                    "value": ""
+                  }
+                ]
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 42,
+                "col": 8,
+                "end_lineno": 42,
+                "end_col": 33
+              },
+              "target": {
+                "kind": "Subscript",
+                "source_span": {
+                  "lineno": 42,
+                  "col": 8,
+                  "end_lineno": 42,
+                  "end_col": 22
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "folded[\"repr\"]",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 42,
+                    "col": 8,
+                    "end_lineno": 42,
+                    "end_col": 14
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "folded",
+                  "id": "folded"
+                },
+                "slice": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 42,
+                    "col": 15,
+                    "end_lineno": 42,
+                    "end_col": 21
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"repr\"",
+                  "value": "repr"
+                }
+              },
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 42,
+                  "col": 25,
+                  "end_lineno": 42,
+                  "end_col": 33
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "repr_obj",
+                "id": "repr_obj"
+              },
+              "declare": true
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 43,
+            "col": 4,
+            "end_lineno": 43,
+            "end_col": 17
+          },
+          "value": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 43,
+              "col": 11,
+              "end_lineno": 43,
+              "end_col": 17
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "folded",
+            "id": "folded"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 46,
+        "col": 0,
+        "end_lineno": 84,
+        "end_col": 0
+      },
+      "name": "LiteralCastFoldPass",
+      "original_name": "LiteralCastFoldPass",
+      "base": "East3OptimizerPass",
+      "dataclass": false,
+      "field_types": {
+        "name": "str",
+        "min_opt_level": "int"
+      },
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 47,
+            "col": 4,
+            "end_lineno": 47,
+            "end_col": 69
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 47,
+              "col": 4,
+              "end_lineno": 47,
+              "end_col": 69
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"\"\"Fold literal casts conservatively under fail-closed guards.\"\"\"",
+            "value": "Fold literal casts conservatively under fail-closed guards."
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 49,
+            "col": 4,
+            "end_lineno": 49,
+            "end_col": 37
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 49,
+              "col": 4,
+              "end_lineno": 49,
+              "end_col": 8
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "name",
+            "id": "name"
+          },
+          "annotation": "str",
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 49,
+              "col": 16,
+              "end_lineno": 49,
+              "end_col": 37
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"LiteralCastFoldPass\"",
+            "value": "LiteralCastFoldPass"
+          },
+          "declare": true,
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 50,
+            "col": 4,
+            "end_lineno": 50,
+            "end_col": 26
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 50,
+              "col": 4,
+              "end_lineno": 50,
+              "end_col": 17
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "min_opt_level",
+            "id": "min_opt_level"
+          },
+          "annotation": "int",
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 50,
+              "col": 25,
+              "end_lineno": 50,
+              "end_col": 26
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "1",
+            "value": 1
+          },
+          "declare": true
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 52,
+            "col": 4,
+            "end_lineno": 79,
+            "end_col": 27
+          },
+          "name": "_rewrite",
+          "original_name": "_rewrite",
+          "arg_types": {
+            "self": "LiteralCastFoldPass",
+            "node": "JsonVal"
+          },
+          "arg_order": [
+            "self",
+            "node"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "node": 1
+          },
+          "return_type": "tuple[JsonVal, int]",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 53,
+                "col": 8,
+                "end_lineno": 61,
+                "end_col": 31
+              },
+              "test": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 53,
+                  "col": 11,
+                  "end_lineno": 53,
+                  "end_col": 33
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance(node, list)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 53,
+                    "col": 11,
+                    "end_lineno": 53,
+                    "end_col": 21
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "isinstance",
+                  "id": "isinstance"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 53,
+                      "col": 22,
+                      "end_lineno": 53,
+                      "end_col": 26
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "node",
+                    "id": "node"
+                  },
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 53,
+                      "col": 28,
+                      "end_lineno": 53,
+                      "end_col": 32
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "list",
+                    "id": "list"
+                  }
+                ],
+                "keywords": []
+              },
+              "body": [
+                {
+                  "kind": "Assign",
+                  "source_span": {
+                    "lineno": 54,
+                    "col": 12,
+                    "end_lineno": 54,
+                    "end_col": 22
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 54,
+                      "col": 12,
+                      "end_lineno": 54,
+                      "end_col": 15
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "out",
+                    "id": "out"
+                  },
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 54,
+                      "col": 18,
+                      "end_lineno": 54,
+                      "end_col": 22
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "node",
+                    "id": "node"
+                  },
+                  "declare": true
+                },
+                {
+                  "kind": "Assign",
+                  "source_span": {
+                    "lineno": 55,
+                    "col": 12,
+                    "end_lineno": 55,
+                    "end_col": 23
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 55,
+                      "col": 12,
+                      "end_lineno": 55,
+                      "end_col": 19
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "changed",
+                    "id": "changed"
+                  },
+                  "value": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 55,
+                      "col": 22,
+                      "end_lineno": 55,
+                      "end_col": 23
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "0",
+                    "value": 0
+                  },
+                  "declare": true
+                },
+                {
+                  "kind": "For",
+                  "source_span": {
+                    "lineno": 56,
+                    "col": 0,
+                    "end_lineno": 60,
+                    "end_col": 32
+                  },
+                  "target": {
+                    "kind": "Tuple",
+                    "source_span": {
+                      "lineno": 56,
+                      "col": 16,
+                      "end_lineno": 56,
+                      "end_col": 23
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "i, item",
+                    "elements": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 56,
+                          "col": 16,
+                          "end_lineno": 56,
+                          "end_col": 17
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "i",
+                        "id": "i"
+                      },
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 56,
+                          "col": 19,
+                          "end_lineno": 56,
+                          "end_col": 23
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "item",
+                        "id": "item"
+                      }
+                    ]
+                  },
+                  "iter": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 56,
+                      "col": 27,
+                      "end_lineno": 56,
+                      "end_col": 42
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "enumerate(node)",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 56,
+                        "col": 27,
+                        "end_lineno": 56,
+                        "end_col": 36
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "enumerate",
+                      "id": "enumerate"
+                    },
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 56,
+                          "col": 37,
+                          "end_lineno": 56,
+                          "end_col": 41
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "node",
+                        "id": "node"
+                      }
+                    ],
+                    "keywords": []
+                  },
+                  "body": [
+                    {
+                      "kind": "Assign",
+                      "source_span": {
+                        "lineno": 57,
+                        "col": 16,
+                        "end_lineno": 57,
+                        "end_col": 53
+                      },
+                      "target": {
+                        "kind": "Tuple",
+                        "source_span": {
+                          "lineno": 57,
+                          "col": 16,
+                          "end_lineno": 57,
+                          "end_col": 31
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "new_item, delta",
+                        "elements": [
+                          {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 57,
+                              "col": 16,
+                              "end_lineno": 57,
+                              "end_col": 24
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "new_item",
+                            "id": "new_item"
+                          },
+                          {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 57,
+                              "col": 26,
+                              "end_lineno": 57,
+                              "end_col": 31
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "delta",
+                            "id": "delta"
+                          }
+                        ]
+                      },
+                      "value": {
+                        "kind": "Call",
+                        "source_span": {
+                          "lineno": 57,
+                          "col": 34,
+                          "end_lineno": 57,
+                          "end_col": 53
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "self._rewrite(item)",
+                        "func": {
+                          "kind": "Attribute",
+                          "source_span": {
+                            "lineno": 57,
+                            "col": 34,
+                            "end_lineno": 57,
+                            "end_col": 47
+                          },
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "self._rewrite",
+                          "value": {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 57,
+                              "col": 34,
+                              "end_lineno": 57,
+                              "end_col": 38
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "self",
+                            "id": "self"
+                          },
+                          "attr": "_rewrite"
+                        },
+                        "args": [
+                          {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 57,
+                              "col": 48,
+                              "end_lineno": 57,
+                              "end_col": 52
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "item",
+                            "id": "item"
+                          }
+                        ],
+                        "keywords": []
+                      },
+                      "declare": false
+                    },
+                    {
+                      "kind": "If",
+                      "source_span": {
+                        "lineno": 58,
+                        "col": 16,
+                        "end_lineno": 59,
+                        "end_col": 37
+                      },
+                      "test": {
+                        "kind": "Compare",
+                        "source_span": {
+                          "lineno": 58,
+                          "col": 19,
+                          "end_lineno": 58,
+                          "end_col": 39
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "new_item is not item",
+                        "left": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 58,
+                            "col": 19,
+                            "end_lineno": 58,
+                            "end_col": 27
+                          },
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "new_item",
+                          "id": "new_item"
+                        },
+                        "ops": [
+                          "IsNot"
+                        ],
+                        "comparators": [
+                          {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 58,
+                              "col": 35,
+                              "end_lineno": 58,
+                              "end_col": 39
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "item",
+                            "id": "item"
+                          }
+                        ]
+                      },
+                      "body": [
+                        {
+                          "kind": "Assign",
+                          "source_span": {
+                            "lineno": 59,
+                            "col": 20,
+                            "end_lineno": 59,
+                            "end_col": 37
+                          },
+                          "target": {
+                            "kind": "Subscript",
+                            "source_span": {
+                              "lineno": 59,
+                              "col": 20,
+                              "end_lineno": 59,
+                              "end_col": 26
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "out[i]",
+                            "value": {
+                              "kind": "Name",
+                              "source_span": {
+                                "lineno": 59,
+                                "col": 20,
+                                "end_lineno": 59,
+                                "end_col": 23
+                              },
+                              "casts": [],
+                              "borrow_kind": "value",
+                              "repr": "out",
+                              "id": "out"
+                            },
+                            "slice": {
+                              "kind": "Name",
+                              "source_span": {
+                                "lineno": 59,
+                                "col": 24,
+                                "end_lineno": 59,
+                                "end_col": 25
+                              },
+                              "casts": [],
+                              "borrow_kind": "value",
+                              "repr": "i",
+                              "id": "i"
+                            }
+                          },
+                          "value": {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 59,
+                              "col": 29,
+                              "end_lineno": 59,
+                              "end_col": 37
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "new_item",
+                            "id": "new_item"
+                          },
+                          "declare": true
+                        }
+                      ],
+                      "orelse": []
+                    },
+                    {
+                      "kind": "AugAssign",
+                      "source_span": {
+                        "lineno": 60,
+                        "col": 16,
+                        "end_lineno": 60,
+                        "end_col": 32
+                      },
+                      "target": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 60,
+                          "col": 16,
+                          "end_lineno": 60,
+                          "end_col": 23
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "changed",
+                        "id": "changed"
+                      },
+                      "op": "Add",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 60,
+                          "col": 27,
+                          "end_lineno": 60,
+                          "end_col": 32
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "delta",
+                        "id": "delta"
+                      },
+                      "declare": false
+                    }
+                  ],
+                  "orelse": []
+                },
+                {
+                  "kind": "Return",
+                  "source_span": {
+                    "lineno": 61,
+                    "col": 12,
+                    "end_lineno": 61,
+                    "end_col": 31
+                  },
+                  "value": {
+                    "kind": "Tuple",
+                    "source_span": {
+                      "lineno": 61,
+                      "col": 19,
+                      "end_lineno": 61,
+                      "end_col": 31
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "out, changed",
+                    "elements": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 61,
+                          "col": 19,
+                          "end_lineno": 61,
+                          "end_col": 22
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "out",
+                        "id": "out"
+                      },
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 61,
+                          "col": 24,
+                          "end_lineno": 61,
+                          "end_col": 31
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "changed",
+                        "id": "changed"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "orelse": []
+            },
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 63,
+                "col": 8,
+                "end_lineno": 64,
+                "end_col": 26
+              },
+              "test": {
+                "kind": "UnaryOp",
+                "source_span": {
+                  "lineno": 63,
+                  "col": 11,
+                  "end_lineno": 63,
+                  "end_col": 37
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "not isinstance(node, dict)",
+                "op": "Not",
+                "operand": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 63,
+                    "col": 15,
+                    "end_lineno": 63,
+                    "end_col": 37
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "isinstance(node, dict)",
+                  "func": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 63,
+                      "col": 15,
+                      "end_lineno": 63,
+                      "end_col": 25
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "isinstance",
+                    "id": "isinstance"
+                  },
+                  "args": [
+                    {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 63,
+                        "col": 26,
+                        "end_lineno": 63,
+                        "end_col": 30
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "node",
+                      "id": "node"
+                    },
+                    {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 63,
+                        "col": 32,
+                        "end_lineno": 63,
+                        "end_col": 36
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "dict",
+                      "id": "dict"
+                    }
+                  ],
+                  "keywords": []
+                }
+              },
+              "body": [
+                {
+                  "kind": "Return",
+                  "source_span": {
+                    "lineno": 64,
+                    "col": 12,
+                    "end_lineno": 64,
+                    "end_col": 26
+                  },
+                  "value": {
+                    "kind": "Tuple",
+                    "source_span": {
+                      "lineno": 64,
+                      "col": 19,
+                      "end_lineno": 64,
+                      "end_col": 26
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "node, 0",
+                    "elements": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 64,
+                          "col": 19,
+                          "end_lineno": 64,
+                          "end_col": 23
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "node",
+                        "id": "node"
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 64,
+                          "col": 25,
+                          "end_lineno": 64,
+                          "end_col": 26
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "0",
+                        "value": 0
+                      }
+                    ]
+                  }
+                }
+              ],
+              "orelse": []
+            },
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 66,
+                "col": 8,
+                "end_lineno": 66,
+                "end_col": 18
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 66,
+                  "col": 8,
+                  "end_lineno": 66,
+                  "end_col": 11
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "out",
+                "id": "out"
+              },
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 66,
+                  "col": 14,
+                  "end_lineno": 66,
+                  "end_col": 18
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "node",
+                "id": "node"
+              },
+              "declare": true
+            },
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 67,
+                "col": 8,
+                "end_lineno": 67,
+                "end_col": 19
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 67,
+                  "col": 8,
+                  "end_lineno": 67,
+                  "end_col": 15
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "changed",
+                "id": "changed"
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 67,
+                  "col": 18,
+                  "end_lineno": 67,
+                  "end_col": 19
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "0",
+                "value": 0
+              },
+              "declare": true
+            },
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 68,
+                "col": 8,
+                "end_lineno": 68,
+                "end_col": 32
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 68,
+                  "col": 8,
+                  "end_lineno": 68,
+                  "end_col": 12
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "keys",
+                "id": "keys"
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 68,
+                  "col": 15,
+                  "end_lineno": 68,
+                  "end_col": 32
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "list(node.keys())",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 68,
+                    "col": 15,
+                    "end_lineno": 68,
+                    "end_col": 19
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "list",
+                  "id": "list"
+                },
+                "args": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 68,
+                      "col": 20,
+                      "end_lineno": 68,
+                      "end_col": 31
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "node.keys()",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 68,
+                        "col": 20,
+                        "end_lineno": 68,
+                        "end_col": 29
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "node.keys",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 68,
+                          "col": 20,
+                          "end_lineno": 68,
+                          "end_col": 24
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "node",
+                        "id": "node"
+                      },
+                      "attr": "keys"
+                    },
+                    "args": [],
+                    "keywords": []
+                  }
+                ],
+                "keywords": []
+              },
+              "declare": true
+            },
+            {
+              "kind": "For",
+              "source_span": {
+                "lineno": 69,
+                "col": 0,
+                "end_lineno": 74,
+                "end_col": 28
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 69,
+                  "col": 12,
+                  "end_lineno": 69,
+                  "end_col": 15
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "key",
+                "id": "key"
+              },
+              "iter": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 69,
+                  "col": 19,
+                  "end_lineno": 69,
+                  "end_col": 23
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "keys",
+                "id": "keys"
+              },
+              "body": [
+                {
+                  "kind": "Assign",
+                  "source_span": {
+                    "lineno": 70,
+                    "col": 12,
+                    "end_lineno": 70,
+                    "end_col": 33
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 70,
+                      "col": 12,
+                      "end_lineno": 70,
+                      "end_col": 17
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "value",
+                    "id": "value"
+                  },
+                  "value": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 70,
+                      "col": 20,
+                      "end_lineno": 70,
+                      "end_col": 33
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "node.get(key)",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 70,
+                        "col": 20,
+                        "end_lineno": 70,
+                        "end_col": 28
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "node.get",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 70,
+                          "col": 20,
+                          "end_lineno": 70,
+                          "end_col": 24
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "node",
+                        "id": "node"
+                      },
+                      "attr": "get"
+                    },
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 70,
+                          "col": 29,
+                          "end_lineno": 70,
+                          "end_col": 32
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "key",
+                        "id": "key"
+                      }
+                    ],
+                    "keywords": []
+                  },
+                  "declare": true
+                },
+                {
+                  "kind": "Assign",
+                  "source_span": {
+                    "lineno": 71,
+                    "col": 12,
+                    "end_lineno": 71,
+                    "end_col": 51
+                  },
+                  "target": {
+                    "kind": "Tuple",
+                    "source_span": {
+                      "lineno": 71,
+                      "col": 12,
+                      "end_lineno": 71,
+                      "end_col": 28
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "new_value, delta",
+                    "elements": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 71,
+                          "col": 12,
+                          "end_lineno": 71,
+                          "end_col": 21
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "new_value",
+                        "id": "new_value"
+                      },
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 71,
+                          "col": 23,
+                          "end_lineno": 71,
+                          "end_col": 28
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "delta",
+                        "id": "delta"
+                      }
+                    ]
+                  },
+                  "value": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 71,
+                      "col": 31,
+                      "end_lineno": 71,
+                      "end_col": 51
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "self._rewrite(value)",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 71,
+                        "col": 31,
+                        "end_lineno": 71,
+                        "end_col": 44
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "self._rewrite",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 71,
+                          "col": 31,
+                          "end_lineno": 71,
+                          "end_col": 35
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "self",
+                        "id": "self"
+                      },
+                      "attr": "_rewrite"
+                    },
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 71,
+                          "col": 45,
+                          "end_lineno": 71,
+                          "end_col": 50
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "value",
+                        "id": "value"
+                      }
+                    ],
+                    "keywords": []
+                  },
+                  "declare": false
+                },
+                {
+                  "kind": "If",
+                  "source_span": {
+                    "lineno": 72,
+                    "col": 12,
+                    "end_lineno": 73,
+                    "end_col": 36
+                  },
+                  "test": {
+                    "kind": "Compare",
+                    "source_span": {
+                      "lineno": 72,
+                      "col": 15,
+                      "end_lineno": 72,
+                      "end_col": 37
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "new_value is not value",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 72,
+                        "col": 15,
+                        "end_lineno": 72,
+                        "end_col": 24
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "new_value",
+                      "id": "new_value"
+                    },
+                    "ops": [
+                      "IsNot"
+                    ],
+                    "comparators": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 72,
+                          "col": 32,
+                          "end_lineno": 72,
+                          "end_col": 37
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "value",
+                        "id": "value"
+                      }
+                    ]
+                  },
+                  "body": [
+                    {
+                      "kind": "Assign",
+                      "source_span": {
+                        "lineno": 73,
+                        "col": 16,
+                        "end_lineno": 73,
+                        "end_col": 36
+                      },
+                      "target": {
+                        "kind": "Subscript",
+                        "source_span": {
+                          "lineno": 73,
+                          "col": 16,
+                          "end_lineno": 73,
+                          "end_col": 24
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "out[key]",
+                        "value": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 73,
+                            "col": 16,
+                            "end_lineno": 73,
+                            "end_col": 19
+                          },
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "out",
+                          "id": "out"
+                        },
+                        "slice": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 73,
+                            "col": 20,
+                            "end_lineno": 73,
+                            "end_col": 23
+                          },
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "key",
+                          "id": "key"
+                        }
+                      },
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 73,
+                          "col": 27,
+                          "end_lineno": 73,
+                          "end_col": 36
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "new_value",
+                        "id": "new_value"
+                      },
+                      "declare": true
+                    }
+                  ],
+                  "orelse": []
+                },
+                {
+                  "kind": "AugAssign",
+                  "source_span": {
+                    "lineno": 74,
+                    "col": 12,
+                    "end_lineno": 74,
+                    "end_col": 28
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 74,
+                      "col": 12,
+                      "end_lineno": 74,
+                      "end_col": 19
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "changed",
+                    "id": "changed"
+                  },
+                  "op": "Add",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 74,
+                      "col": 23,
+                      "end_lineno": 74,
+                      "end_col": 28
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "delta",
+                    "id": "delta"
+                  },
+                  "declare": false
+                }
+              ],
+              "orelse": []
+            },
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 76,
+                "col": 8,
+                "end_lineno": 76,
+                "end_col": 51
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 76,
+                  "col": 8,
+                  "end_lineno": 76,
+                  "end_col": 14
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "folded",
+                "id": "folded"
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 76,
+                  "col": 17,
+                  "end_lineno": 76,
+                  "end_col": 51
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "_try_fold_literal_static_cast(out)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 76,
+                    "col": 17,
+                    "end_lineno": 76,
+                    "end_col": 46
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "_try_fold_literal_static_cast",
+                  "id": "_try_fold_literal_static_cast"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 76,
+                      "col": 47,
+                      "end_lineno": 76,
+                      "end_col": 50
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "out",
+                    "id": "out"
+                  }
+                ],
+                "keywords": []
+              },
+              "declare": true
+            },
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 77,
+                "col": 8,
+                "end_lineno": 78,
+                "end_col": 38
+              },
+              "test": {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 77,
+                  "col": 11,
+                  "end_lineno": 77,
+                  "end_col": 29
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "folded is not None",
+                "left": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 77,
+                    "col": 11,
+                    "end_lineno": 77,
+                    "end_col": 17
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "folded",
+                  "id": "folded"
+                },
+                "ops": [
+                  "IsNot"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 77,
+                      "col": 25,
+                      "end_lineno": 77,
+                      "end_col": 29
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "None",
+                    "value": null
+                  }
+                ]
+              },
+              "body": [
+                {
+                  "kind": "Return",
+                  "source_span": {
+                    "lineno": 78,
+                    "col": 12,
+                    "end_lineno": 78,
+                    "end_col": 38
+                  },
+                  "value": {
+                    "kind": "Tuple",
+                    "source_span": {
+                      "lineno": 78,
+                      "col": 19,
+                      "end_lineno": 78,
+                      "end_col": 38
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "folded, changed + 1",
+                    "elements": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 78,
+                          "col": 19,
+                          "end_lineno": 78,
+                          "end_col": 25
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "folded",
+                        "id": "folded"
+                      },
+                      {
+                        "kind": "BinOp",
+                        "source_span": {
+                          "lineno": 78,
+                          "col": 27,
+                          "end_lineno": 78,
+                          "end_col": 38
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "changed + 1",
+                        "left": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 78,
+                            "col": 27,
+                            "end_lineno": 78,
+                            "end_col": 34
+                          },
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "changed",
+                          "id": "changed"
+                        },
+                        "op": "Add",
+                        "right": {
+                          "kind": "Constant",
+                          "source_span": {
+                            "lineno": 78,
+                            "col": 37,
+                            "end_lineno": 78,
+                            "end_col": 38
+                          },
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "1",
+                          "value": 1
+                        }
+                      }
+                    ]
+                  }
+                }
+              ],
+              "orelse": []
+            },
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 79,
+                "col": 8,
+                "end_lineno": 79,
+                "end_col": 27
+              },
+              "value": {
+                "kind": "Tuple",
+                "source_span": {
+                  "lineno": 79,
+                  "col": 15,
+                  "end_lineno": 79,
+                  "end_col": 27
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "out, changed",
+                "elements": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 79,
+                      "col": 15,
+                      "end_lineno": 79,
+                      "end_col": 18
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "out",
+                    "id": "out"
+                  },
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 79,
+                      "col": 20,
+                      "end_lineno": 79,
+                      "end_col": 27
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "changed",
+                    "id": "changed"
+                  }
+                ]
+              }
+            }
+          ],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 81,
+            "col": 4,
+            "end_lineno": 84,
+            "end_col": 84
+          },
+          "name": "run",
+          "original_name": "run",
+          "arg_types": {
+            "self": "LiteralCastFoldPass",
+            "east3_doc": "dict[str, JsonVal]",
+            "context": "PassContext"
+          },
+          "arg_order": [
+            "self",
+            "east3_doc",
+            "context"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "east3_doc": 1,
+            "context": 2
+          },
+          "return_type": "PassResult",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 82,
+                "col": 8,
+                "end_lineno": 82,
+                "end_col": 19
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 82,
+                  "col": 8,
+                  "end_lineno": 82,
+                  "end_col": 9
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "_",
+                "id": "_"
+              },
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 82,
+                  "col": 12,
+                  "end_lineno": 82,
+                  "end_col": 19
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "context",
+                "id": "context"
+              },
+              "declare": true
+            },
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 83,
+                "col": 8,
+                "end_lineno": 83,
+                "end_col": 50
+              },
+              "target": {
+                "kind": "Tuple",
+                "source_span": {
+                  "lineno": 83,
+                  "col": 8,
+                  "end_lineno": 83,
+                  "end_col": 23
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "_, change_count",
+                "elements": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 83,
+                      "col": 8,
+                      "end_lineno": 83,
+                      "end_col": 9
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "_",
+                    "id": "_"
+                  },
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 83,
+                      "col": 11,
+                      "end_lineno": 83,
+                      "end_col": 23
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "change_count",
+                    "id": "change_count"
+                  }
+                ]
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 83,
+                  "col": 26,
+                  "end_lineno": 83,
+                  "end_col": 50
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "self._rewrite(east3_doc)",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 83,
+                    "col": 26,
+                    "end_lineno": 83,
+                    "end_col": 39
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "self._rewrite",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 83,
+                      "col": 26,
+                      "end_lineno": 83,
+                      "end_col": 30
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "self",
+                    "id": "self"
+                  },
+                  "attr": "_rewrite"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 83,
+                      "col": 40,
+                      "end_lineno": 83,
+                      "end_col": 49
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "east3_doc",
+                    "id": "east3_doc"
+                  }
+                ],
+                "keywords": []
+              },
+              "declare": false
+            },
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 84,
+                "col": 8,
+                "end_lineno": 84,
+                "end_col": 84
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 84,
+                  "col": 15,
+                  "end_lineno": 84,
+                  "end_col": 84
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "make_pass_result(changed=change_count > 0, change_count=change_count)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 84,
+                    "col": 15,
+                    "end_lineno": 84,
+                    "end_col": 31
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "make_pass_result",
+                  "id": "make_pass_result"
+                },
+                "args": [],
+                "keywords": [
+                  {
+                    "arg": "changed",
+                    "value": {
+                      "kind": "Compare",
+                      "source_span": {
+                        "lineno": 84,
+                        "col": 40,
+                        "end_lineno": 84,
+                        "end_col": 56
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "change_count > 0",
+                      "left": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 84,
+                          "col": 40,
+                          "end_lineno": 84,
+                          "end_col": 52
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "change_count",
+                        "id": "change_count"
+                      },
+                      "ops": [
+                        "Gt"
+                      ],
+                      "comparators": [
+                        {
+                          "kind": "Constant",
+                          "source_span": {
+                            "lineno": 84,
+                            "col": 55,
+                            "end_lineno": 84,
+                            "end_col": 56
+                          },
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "0",
+                          "value": 0
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "arg": "change_count",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 84,
+                        "col": 71,
+                        "end_lineno": 84,
+                        "end_col": 83
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "change_count",
+                      "id": "change_count"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": []
+        }
+      ]
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [
+        {
+          "module_id": "pytra.std.json",
+          "export_name": "JsonVal",
+          "local_name": "JsonVal",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/optimize/passes/literal_cast_fold.py",
+          "source_line": 5
+        },
+        {
+          "module_id": "toolchain2.optimize.optimizer",
+          "export_name": "East3OptimizerPass",
+          "local_name": "East3OptimizerPass",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/optimize/passes/literal_cast_fold.py",
+          "source_line": 7
+        },
+        {
+          "module_id": "toolchain2.optimize.optimizer",
+          "export_name": "PassContext",
+          "local_name": "PassContext",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/optimize/passes/literal_cast_fold.py",
+          "source_line": 7
+        },
+        {
+          "module_id": "toolchain2.optimize.optimizer",
+          "export_name": "PassResult",
+          "local_name": "PassResult",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/optimize/passes/literal_cast_fold.py",
+          "source_line": 7
+        },
+        {
+          "module_id": "toolchain2.optimize.optimizer",
+          "export_name": "make_pass_result",
+          "local_name": "make_pass_result",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/optimize/passes/literal_cast_fold.py",
+          "source_line": 7
+        },
+        {
+          "module_id": "toolchain2.common.types",
+          "export_name": "normalize_type_name",
+          "local_name": "normalize_type_name",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/optimize/passes/literal_cast_fold.py",
+          "source_line": 8
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std.json",
+          "symbol": "JsonVal",
+          "local_name": "JsonVal"
+        },
+        {
+          "module_id": "toolchain2.optimize.optimizer",
+          "symbol": "East3OptimizerPass",
+          "local_name": "East3OptimizerPass"
+        },
+        {
+          "module_id": "toolchain2.optimize.optimizer",
+          "symbol": "PassContext",
+          "local_name": "PassContext"
+        },
+        {
+          "module_id": "toolchain2.optimize.optimizer",
+          "symbol": "PassResult",
+          "local_name": "PassResult"
+        },
+        {
+          "module_id": "toolchain2.optimize.optimizer",
+          "symbol": "make_pass_result",
+          "local_name": "make_pass_result"
+        },
+        {
+          "module_id": "toolchain2.common.types",
+          "symbol": "normalize_type_name",
+          "local_name": "normalize_type_name"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.std.json",
+        "export_name": "JsonVal",
+        "local_name": "JsonVal",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/optimize/passes/literal_cast_fold.py",
+        "source_line": 5
+      },
+      {
+        "module_id": "toolchain2.optimize.optimizer",
+        "export_name": "East3OptimizerPass",
+        "local_name": "East3OptimizerPass",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/optimize/passes/literal_cast_fold.py",
+        "source_line": 7
+      },
+      {
+        "module_id": "toolchain2.optimize.optimizer",
+        "export_name": "PassContext",
+        "local_name": "PassContext",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/optimize/passes/literal_cast_fold.py",
+        "source_line": 7
+      },
+      {
+        "module_id": "toolchain2.optimize.optimizer",
+        "export_name": "PassResult",
+        "local_name": "PassResult",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/optimize/passes/literal_cast_fold.py",
+        "source_line": 7
+      },
+      {
+        "module_id": "toolchain2.optimize.optimizer",
+        "export_name": "make_pass_result",
+        "local_name": "make_pass_result",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/optimize/passes/literal_cast_fold.py",
+        "source_line": 7
+      },
+      {
+        "module_id": "toolchain2.common.types",
+        "export_name": "normalize_type_name",
+        "local_name": "normalize_type_name",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/optimize/passes/literal_cast_fold.py",
+        "source_line": 8
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std.json",
+        "symbol": "JsonVal",
+        "local_name": "JsonVal"
+      },
+      {
+        "module_id": "toolchain2.optimize.optimizer",
+        "symbol": "East3OptimizerPass",
+        "local_name": "East3OptimizerPass"
+      },
+      {
+        "module_id": "toolchain2.optimize.optimizer",
+        "symbol": "PassContext",
+        "local_name": "PassContext"
+      },
+      {
+        "module_id": "toolchain2.optimize.optimizer",
+        "symbol": "PassResult",
+        "local_name": "PassResult"
+      },
+      {
+        "module_id": "toolchain2.optimize.optimizer",
+        "symbol": "make_pass_result",
+        "local_name": "make_pass_result"
+      },
+      {
+        "module_id": "toolchain2.common.types",
+        "symbol": "normalize_type_name",
+        "local_name": "normalize_type_name"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "JsonVal": {
+        "module": "pytra.std.json",
+        "name": "JsonVal"
+      },
+      "East3OptimizerPass": {
+        "module": "toolchain2.optimize.optimizer",
+        "name": "East3OptimizerPass"
+      },
+      "PassContext": {
+        "module": "toolchain2.optimize.optimizer",
+        "name": "PassContext"
+      },
+      "PassResult": {
+        "module": "toolchain2.optimize.optimizer",
+        "name": "PassResult"
+      },
+      "make_pass_result": {
+        "module": "toolchain2.optimize.optimizer",
+        "name": "make_pass_result"
+      },
+      "normalize_type_name": {
+        "module": "toolchain2.common.types",
+        "name": "normalize_type_name"
+      }
+    }
+  },
+  "east_stage": 1
+}
