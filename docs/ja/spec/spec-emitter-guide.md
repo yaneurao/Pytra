@@ -786,6 +786,18 @@ _LANG_UNSUPPORTED_FIXTURES = {
 
 emitter 開発時の parity 検証は `runtime_parity_check.py` を使うこと。独自スクリプトの作成は禁止。
 
+### parity テストの完了条件
+
+**「emit 成功」だけでは parity 完了ではない。** 以下の全てが通ることが完了条件:
+
+1. **emit**: ターゲット言語のソースコードが生成される（エラーなし）
+2. **compile**: 生成されたコードがコンパイルに通る（Go: `go build`, C++: `g++`, Rust: `rustc` 等）
+3. **run**: コンパイルしたバイナリが実行できる（クラッシュしない）
+4. **stdout 一致**: 実行結果の stdout が Python 実行結果と一致する（`elapsed_sec` 等は除外）
+5. **artifact 一致**: 生成されたファイル（PNG/GIF/TXT）のサイズ + CRC32 が Python と一致
+
+emit だけ成功してもプレースホルダーコード（`nil /* list comprehension */` 等）が混入している可能性がある。必ず compile + run + stdout 一致まで確認すること。
+
 ## 14. チェックリスト
 
 新しい emitter を実装するときのチェックリスト:
