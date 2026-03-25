@@ -197,7 +197,27 @@ src/
       ...
 ```
 
-### 3.3 共有ユーティリティ (`toolchain2/common/`)
+### 3.3 runtime 配置ルール
+
+toolchain2 の emitter が使う runtime は `src/runtime/<lang>/toolchain2/` に配置する。
+
+```
+src/runtime/
+  go/
+    built_in/py_runtime.go        ← 旧パイプライン用（触らない）
+    toolchain2/pytra_runtime.go   ← toolchain2 用（全部入り、暫定）
+  cpp/
+    built_in/                     ← 旧パイプライン用
+    toolchain2/                   ← toolchain2 用（将来）
+```
+
+ルール:
+- **暫定**: P1 の段階では `toolchain2/pytra_runtime.<ext>` に全関数を 1 ファイルで書いてよい
+- **将来**: runtime が大きくなったら `built_in/`, `std/`, `utils/` に分離する（Phase 3 の include/ 移行と合わせて整理）
+- 旧 runtime（`built_in/py_runtime.*`）は旧パイプラインが使うので変更しない
+- 関数名は emitter が生成するコードと一致させる（Go は `__pytra_` prefix）
+
+### 3.4 共有ユーティリティ (`toolchain2/common/`)
 
 全層で使う共有ユーティリティは `toolchain2/common/` に集約し、各層での重複実装を禁止する。
 
