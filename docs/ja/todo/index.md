@@ -188,6 +188,33 @@ parser 等を修正するたびに golden file を手動で全段再生成する
 1. [x] [ID: P0-REGEN-S1] `tools/regenerate_golden.py` を実装: `pytra-cli2` の全段（parse→resolve→compile→optimize）を fixture 132 件 + sample 18 件に実行し、golden を上書き更新する — 完了（600 件全成功）
 2. [ ] [ID: P0-REGEN-S2] golden 更新後に emit parity テスト（Python 実行結果との一致）を自動実行し、end-to-end の正しさを検証する — emit 段まではP0-BUILD-S1で検証済み、C++ compile+run parity は runtime 互換性対応後
 
+### P0-TEST-REORG: test/ ディレクトリ再編 + pytra 実装本体の golden 生成
+
+test/builtin/ と test/stdlib/ を test/include/ に移動し、src/pytra/ の実装本体の golden を test/pytra/ に配置する。
+
+```
+test/
+  include/                ← src/include/ の宣言 golden（resolve シグネチャ参照用）
+    builtin/east1/py/       builtins.py.east1, containers.py.east1
+    stdlib/east1/py/        math.py.east1, time.py.east1, ...
+  pytra/                  ← src/pytra/ の実装本体 golden（全段）
+    east1/py/
+      std/                  re.py.east1, json.py.east1, ...
+      built_in/             sequence.py.east1, io_ops.py.east1, ...
+      utils/                png.py.east1, gif.py.east1
+    east2/
+    east3/
+    east3-opt/
+  fixture/                ← ユーザーコード fixture（既存）
+  sample/                 ← ユーザーコード sample（既存）
+```
+
+1. [ ] [ID: P0-TEST-REORG-S1] `test/builtin/` → `test/include/builtin/`、`test/stdlib/` → `test/include/stdlib/` に移動
+2. [ ] [ID: P0-TEST-REORG-S2] `src/pytra/` の全 .py を parse し、`test/pytra/east1/py/` に golden 配置
+3. [ ] [ID: P0-TEST-REORG-S3] resolve → compile → optimize を通して `test/pytra/east2/`, `east3/`, `east3-opt/` に golden 配置
+4. [ ] [ID: P0-TEST-REORG-S4] `regenerate_golden.py` を test/include/ と test/pytra/ に対応させる
+5. [ ] [ID: P0-TEST-REORG-S5] 既存の resolve/compile/optimize/link が test/include/ のパスで動作することを確認
+
 ### P1-EMIT: toolchain2/emit/ に新規 emitter を実装
 
 現行 `toolchain/emit/` は selfhost 非対応（Any/object 多用、toolchain 内部依存多数）のため、
@@ -244,7 +271,7 @@ Go が新パイプライン移行のパイロットケース。
 2. [x] [ID: P1-GO-MIGRATE-S2] 旧 Go emitter（`src/toolchain/emit/go/`）を削除 — 完了
 3. [x] [ID: P1-GO-MIGRATE-S3] 旧 Go runtime（`src/runtime/go/built_in/`）を削除 — 完了
 4. [x] [ID: P1-GO-MIGRATE-S4] `runtime_parity_check.py --targets go` で全 18 sample PASS — `pytra-cli.py build --target go --run` で 18/18 PASS
-5. [x] [ID: P1-GO-MIGRATE-S5] `runtime/go/toolchain2/pytra_runtime.go` を `runtime/go/pytra_runtime.go` に正式配置。旧サブディレクトリ削除 — 完了
+5. [ ] [ID: P1-GO-MIGRATE-S5] `runtime/go/pytra_runtime.go` を分解して `runtime/go/built_in/`, `runtime/go/std/` に棚卸し。PNG/GIF は `pytra/utils/{png,gif}.py` のトランスパイル結果に置き換え
 
 #### P1-CODE-EMITTER: CodeEmitter 基底クラス + runtime mapping
 

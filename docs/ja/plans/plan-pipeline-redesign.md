@@ -469,6 +469,39 @@ test/
 - `# pytra: builtin-declarations` ディレクティブ付きファイルは emit 対象外
 - resolve がシグネチャ参照するための EAST1 のみ。east2 以降は不要
 
+#### include 系（宣言 golden、east1 のみ）
+
+```
+test/
+  include/
+    builtin/
+      east1/py/                    ← builtins.py.east1, containers.py.east1
+    stdlib/
+      east1/py/                    ← math.py.east1, time.py.east1, ...
+```
+
+- ソースは `src/include/py/pytra/built_in/` と `src/include/py/pytra/std/`
+- resolve がシグネチャ参照するための EAST1 のみ。east2 以降は不要
+- 旧 `test/builtin/` と `test/stdlib/` から移動
+
+#### pytra 系（実装本体 golden、全段）
+
+```
+test/
+  pytra/
+    east1/py/
+      std/                         ← re.py.east1, json.py.east1, ...
+      built_in/                    ← sequence.py.east1, io_ops.py.east1, ...
+      utils/                       ← png.py.east1, gif.py.east1
+    east2/
+    east3/
+    east3-opt/
+```
+
+- ソースは `src/pytra/std/`, `src/pytra/built_in/`, `src/pytra/utils/`
+- トランスパイル対象の実装本体なので全段の golden が必要
+- Go emitter の runtime 生成（PNG/GIF トランスパイル化）のベースとなる
+
 #### selfhost 系（toolchain2 自身の変換テスト）
 
 ```
