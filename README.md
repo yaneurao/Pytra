@@ -8,7 +8,7 @@
 
 <div align="center">
     <h1>Pytra</h1>
-    <img alt="Python" src="https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white"> is the source language for Pytra, which transpiles code into multiple target languages.
+    <img alt="Python" src="https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white"> is Pytra's source language. Pytra transpiles that code into multiple target languages.
 </div>
 
 <div align="center">
@@ -36,28 +36,28 @@
 </div>
 
 
-## Features
+## Features of Pytra
 
 **🐍 Python → Native code in each target language**
 
-- 🌐 Transpiles to C++ / Rust / Go / Java / TS and many more
-- 🧩 Preserves the original code structure almost as-is
-- ⚡ Generates high-performance code from Python
-- ✨ Simple Python subset
-- 🛠 Works with existing tools like VS Code
-- 🔧 Core written in Python — easy to extend
-- 🔁 Self-hosting capable
+- 🌐 Transpiles to C++, Rust, Go, Java, TS, and many more
+- 🧩 Preserves the original program structure almost as-is
+- ⚡ Generates high-performance code even when you write in Python
+- ✨ Uses a simple Python subset
+- 🛠 Works with existing tools such as VS Code
+- 🔧 The core is also written in Python, so it is easy to extend
+- 🔁 Supports self-hosting
 
 ## Runtime Performance Comparison
 
-Execution times for sample programs written in Python and their transpiled versions (unit: seconds). In the table, Python is the original code and PyPy is for reference.
+These are execution times for sample programs written in Python and for their transpiled source code. Unit: seconds. In the table, Python is the original implementation and PyPy is included as a reference.
 
 |No.|Workload|<img alt="Python" src="https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white">|<img alt="PyPy" src="https://img.shields.io/badge/-PyPy-4B8BBE?style=flat-square">|<img alt="C++" src="https://img.shields.io/badge/-C%2B%2B-00599C?style=flat-square&logo=cplusplus&logoColor=white">|<img alt="Rust" src="https://img.shields.io/badge/-Rust-F6B73C?style=flat-square&logo=rust&logoColor=black">|<img alt="C#" src="https://img.shields.io/badge/-C%23-239120?style=flat-square&logo=dotnet&logoColor=white">|<img alt="JS" src="https://img.shields.io/badge/-JS-F7DF1E?style=flat-square&logo=javascript&logoColor=black">|
 |-|-|-:|-:|-:|-:|-:|-:|
-|06 |Julia parameter sweep (GIF)|9.627|0.507|0.546|0.407|0.329|0.626|
-|16 |Chaos rotation of glass sculpture (GIF)|6.847|0.606|0.277|0.246|1.220|0.650|
+|06 |Julia-set parameter sweep (GIF)|9.627|0.507|0.546|0.407|0.329|0.626|
+|16 |Chaotic rotation of a glass sculpture (GIF)|6.847|0.606|0.277|0.246|1.220|0.650|
 
-Full data for all languages and samples → [Sample page](sample/README.md#runtime-performance-comparison)
+Full data for all languages and all samples: [Sample page](sample/README.md#runtime-performance-comparison)
 
 <table><tr>
 <td valign="top" width="50%">
@@ -67,14 +67,14 @@ Full data for all languages and samples → [Sample page](sample/README.md#runti
 <details>
 <summary>Sample code: 06_julia_parameter_sweep.py</summary>
 
-- View full source: [sample/py/06_julia_parameter_sweep.py](sample/py/06_julia_parameter_sweep.py)
+- Full source: [sample/py/06_julia_parameter_sweep.py](sample/py/06_julia_parameter_sweep.py)
 
 </details>
 
 <details>
-<summary>Transpiled code (all languages)</summary>
+<summary>Transpiled code in each language</summary>
 
-[C++](sample/cpp/06_julia_parameter_sweep.cpp) | [Rust](sample/rs/06_julia_parameter_sweep.rs) | [C#](sample/cs/06_julia_parameter_sweep.cs) | [JS](sample/js/06_julia_parameter_sweep.js) | [TS](sample/ts/06_julia_parameter_sweep.ts) | [Dart](sample/dart/06_julia_parameter_sweep.dart) | [Go](sample/go/06_julia_parameter_sweep.go) | [Java](sample/java/06_julia_parameter_sweep.java) | [Swift](sample/swift/06_julia_parameter_sweep.swift) | [Kotlin](sample/kotlin/06_julia_parameter_sweep.kt) | [Ruby](sample/ruby/06_julia_parameter_sweep.rb) | [Scala3](sample/scala/06_julia_parameter_sweep.scala) | [PHP](sample/php/06_julia_parameter_sweep.php) | [Julia](sample/julia/06_julia_parameter_sweep.jl)
+[C++](sample/cpp/06_julia_parameter_sweep.cpp) | [Rust](sample/rs/06_julia_parameter_sweep.rs) | [C#](sample/cs/06_julia_parameter_sweep.cs) | [JS](sample/js/06_julia_parameter_sweep.js) | [TS](sample/ts/06_julia_parameter_sweep.ts) | [Dart](sample/dart/06_julia_parameter_sweep.dart) | [Go](sample/go/06_julia_parameter_sweep.go) | [Java](sample/java/06_julia_parameter_sweep.java) | [Swift](sample/swift/06_julia_parameter_sweep.swift) | [Kotlin](sample/kotlin/06_julia_parameter_sweep.kt) | [Ruby](sample/ruby/06_julia_parameter_sweep.rb) | [Lua](sample/lua/06_julia_parameter_sweep.lua) | [Scala3](sample/scala/06_julia_parameter_sweep.scala) | [PHP](sample/php/06_julia_parameter_sweep.php) | [Julia](sample/julia/06_julia_parameter_sweep.jl)
 
 </details>
 
@@ -86,14 +86,14 @@ Full data for all languages and samples → [Sample page](sample/README.md#runti
 <details>
 <summary>Sample code: 16_glass_sculpture_chaos.py</summary>
 
-- View full source: [sample/py/16_glass_sculpture_chaos.py](sample/py/16_glass_sculpture_chaos.py)
+- Full source: [sample/py/16_glass_sculpture_chaos.py](sample/py/16_glass_sculpture_chaos.py)
 
 </details>
 
 <details>
-<summary>Transpiled code (all languages)</summary>
+<summary>Transpiled code in each language</summary>
 
-[C++](sample/cpp/16_glass_sculpture_chaos.cpp) | [Rust](sample/rs/16_glass_sculpture_chaos.rs) | [C#](sample/cs/16_glass_sculpture_chaos.cs) | [JS](sample/js/16_glass_sculpture_chaos.js) | [TS](sample/ts/16_glass_sculpture_chaos.ts) | [Dart](sample/dart/16_glass_sculpture_chaos.dart) | [Go](sample/go/16_glass_sculpture_chaos.go) | [Java](sample/java/16_glass_sculpture_chaos.java) | [Swift](sample/swift/16_glass_sculpture_chaos.swift) | [Kotlin](sample/kotlin/16_glass_sculpture_chaos.kt) | [Ruby](sample/ruby/16_glass_sculpture_chaos.rb) | [Scala3](sample/scala/16_glass_sculpture_chaos.scala) | [PHP](sample/php/16_glass_sculpture_chaos.php) | [Julia](sample/julia/16_glass_sculpture_chaos.jl)
+[C++](sample/cpp/16_glass_sculpture_chaos.cpp) | [Rust](sample/rs/16_glass_sculpture_chaos.rs) | [C#](sample/cs/16_glass_sculpture_chaos.cs) | [JS](sample/js/16_glass_sculpture_chaos.js) | [TS](sample/ts/16_glass_sculpture_chaos.ts) | [Dart](sample/dart/16_glass_sculpture_chaos.dart) | [Go](sample/go/16_glass_sculpture_chaos.go) | [Java](sample/java/16_glass_sculpture_chaos.java) | [Swift](sample/swift/16_glass_sculpture_chaos.swift) | [Kotlin](sample/kotlin/16_glass_sculpture_chaos.kt) | [Ruby](sample/ruby/16_glass_sculpture_chaos.rb) | [Lua](sample/lua/16_glass_sculpture_chaos.lua) | [Scala3](sample/scala/16_glass_sculpture_chaos.scala) | [PHP](sample/php/16_glass_sculpture_chaos.php) | [Julia](sample/julia/16_glass_sculpture_chaos.jl)
 
 </details>
 
@@ -104,46 +104,41 @@ Full data for all languages and samples → [Sample page](sample/README.md#runti
 
 |Aspect|Python|Pytra|
 |-|-|-|
-|Execution|Runs on Python interpreter|Runs on each target language|
-|Integers|Arbitrary precision|int64, uint64, ..., int8, uint8|
-|Float|64-bit|64/32-bit|
-|Speed|x1|x10~x100 (when converting to C++/Rust)|
-|Backend optimization|Limited|Abundant|
-|Multi-language delivery|❌|✅|
+|Execution|Runs on the Python interpreter|Runs in each backend language|
+|Integers|Arbitrary precision|`int64`, `uint64`, ..., `int8`, `uint8`|
+|Floating point|64-bit|64-bit / 32-bit|
+|Runtime speed|x1|x10 to x100 when transpiled to C++ or Rust|
+|Backend optimization|Limited|Extensive|
+|Multi-language deployment|❌|✅|
 |Typing|Dynamic typing|Static typing|
-|Boundary checks|Always|Customizable|
-|Platform integration|Python-centric|Fits each language's SDKs/tools|
-|Distribution|Python runtime required|Fits language-specific deployment|
-|mix-in|✅|✅|
-|Multiple inheritance|✅|❌ (single inheritance)|
-|Selfhost|❌|✅|
+|Bounds checks|Always enabled|Customizable|
+|Platform integration|Python-centric|Fits each language's SDKs and tools|
+|Distribution|Requires Python runtime|Uses each language's native distribution model|
+|Multiple inheritance|✅|❌, single inheritance only|
+|Mix-ins|✅|✅|
+|Self-hosting|❌|✅|
 
-⚠ This project is still under active development and may be far from production-ready. Review sample code first and use at your own risk.
+⚠ This project is still under active development and may be far from practical use. Review the sample code and use it at your own risk.
 
 <a id="read-the-docs"></a>
 
 ## Read the Docs
 
-- English tutorial: [docs/en/tutorial/README.md](docs/en/tutorial/README.md)
-- English docs top: [docs/en/index.md](docs/en/index.md)
 - Japanese tutorial: [docs/ja/tutorial/README.md](docs/ja/tutorial/README.md)
-- Japanese docs top: [docs/ja/README.md](docs/ja/README.md)
+- Architecture: [docs/ja/tutorial/architecture.md](docs/ja/tutorial/architecture.md) - an overview of the pipeline
+- Japanese document index: [docs/ja/index.md](docs/ja/index.md)
+- English tutorial: [docs/en/tutorial/how-to-use.md](docs/en/tutorial/how-to-use.md)
+- English document index: [docs/en/index.md](docs/en/index.md)
 
-<details>
-<summary>Latest News</summary>
+## Changelog
 
-> **2026-03-20 | v0.15.0 Released**<br>
-> Version 0.15.0 was released. Added PowerShell as a supported backend.
+> **2026-03-26** - Pipeline redesign completed. All six stages of the pipeline (`parse -> resolve -> compile -> optimize -> link -> emit`) now work end to end. The Go backend has been migrated to the new pipeline.
 
-> **2026-03-18 | v0.14.0 Released**<br>
-> Version 0.14.0 was released. Added support for [recursive union types](docs/ja/spec/spec-tagged-union.md).
+> **2026-03-25** - All P0 tasks completed. Reorganized the `test/` directory. Go emitter and runtime reached parity on all 18 samples.
 
-> **2026-03-11 | v0.13.0 Released**<br>
-> Version 0.13.0 was released. I wrote an NES (Famicom) emulator in Python + SDL3. [Super Mario Bros. 3 is running.](https://x.com/yaneuraou/status/2031612549658202538) It is very slow. I am currently improving Pytra so this can be transpiled to C++ with Pytra.
+> **2026-03-24** - Started the pipeline redesign. Added `toolchain2/`, implemented `pytra-cli2`, and defined the EAST1/EAST2 specifications.
 
-- Past News: [docs/en/news/index.md](docs/en/news/index.md)
-
-</details>
+Full history: [docs/ja/changelog.md](docs/ja/changelog.md)
 
 ## License
 
