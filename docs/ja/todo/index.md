@@ -44,8 +44,8 @@
 
 **フェーズ3: optimize / compile（型責務を前段に戻す）**
 
-10. [ ] [ID: P1-SPEC-CONFORM2-S10] `optimize/passes/typed_repeat_materialization.py`: resolved_type 後付け補完を除去
-11. [ ] [ID: P1-SPEC-CONFORM2-S11] `optimize/passes/typed_enumerate_normalization.py`: 同上
+10. [x] [ID: P1-SPEC-CONFORM2-S10] `optimize/passes/typed_repeat_materialization.py`: resolved_type 後付け補完を除去 — repeat/listcomp の型補完は `resolved_type` ではなく hint (`repeat_result_type_hint`, `list_comp_result_type_hint`) に限定
+11. [x] [ID: P1-SPEC-CONFORM2-S11] `optimize/passes/typed_enumerate_normalization.py`: 同上 — `iter_expr.resolved_type` は維持し、`iter_element_type` / `iter_item_type` / `target_type` の metadata 正規化だけを行う
 12. [x] [ID: P1-SPEC-CONFORM2-S12] `compile/passes.py`: int32 先行混入を戻す（bytes/bytearray 系の `uint8` target を `int64` に復帰）
 13. [x] [ID: P1-SPEC-CONFORM2-S13] golden 再生成 + parity 維持確認（fixture 132/132, sample 18/18, pytra 33/33）
 

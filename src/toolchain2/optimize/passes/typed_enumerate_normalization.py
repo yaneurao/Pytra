@@ -131,10 +131,6 @@ class TypedEnumerateNormalizationPass(East3OptimizerPass):
             return 0
 
         changed = 0
-        desired_resolved = "list[" + item_type + "]"
-        if normalize_type_name(iter_expr.get("resolved_type")) != desired_resolved:
-            iter_expr["resolved_type"] = desired_resolved
-            changed += 1
         if normalize_type_name(iter_expr.get("iterable_trait")) != "yes":
             iter_expr["iterable_trait"] = "yes"
             changed += 1

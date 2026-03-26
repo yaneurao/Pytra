@@ -13,6 +13,9 @@ _INT_LIKE_TYPES: set[str] = {
     "int64", "uint64", "int",
 }
 
+_REPEAT_RESULT_TYPE_HINT_KEY = "repeat_result_type_hint"
+_LIST_COMP_RESULT_TYPE_HINT_KEY = "list_comp_result_type_hint"
+
 
 def _is_unknown_or_any(value: JsonVal) -> bool:
     t = normalize_type_name(value)
@@ -29,6 +32,30 @@ def _list_inner_type(value: JsonVal) -> str:
         return ""
     inner = t[5:-1].strip()
     return inner if inner != "" else ""
+
+
+def _set_hint(node: dict[str, JsonVal], key: str, hint: str) -> int:
+    current = normalize_type_name(node.get(key))
+    desired = normalize_type_name(hint)
+    if desired == "":
+        if key in node:
+            node.pop(key, None)
+            return 1
+        return 0
+    if current == desired:
+        return 0
+    node[key] = desired
+    return 1
+
+
+def _effective_expr_type(node: dict[str, JsonVal]) -> str:
+    resolved = normalize_type_name(node.get("resolved_type"))
+    if not _is_unknown_or_any(resolved):
+        return resolved
+    hinted = normalize_type_name(node.get(_REPEAT_RESULT_TYPE_HINT_KEY))
+    if not _is_unknown_or_any(hinted):
+        return hinted
+    return resolved
 
 
 class TypedRepeatMaterializationPass(East3OptimizerPass):
@@ -77,8 +104,11 @@ class TypedRepeatMaterializationPass(East3OptimizerPass):
             if current_t == "" or current_t == "unknown":
                 inferred_t = self._infer_repeat_result_type(node)
                 if inferred_t != "":
-                    node["resolved_type"] = inferred_t
-                    changed += 1
+                    changed += _set_hint(node, _REPEAT_RESULT_TYPE_HINT_KEY, inferred_t)
+                else:
+                    changed += _set_hint(node, _REPEAT_RESULT_TYPE_HINT_KEY, "")
+            else:
+                changed += _set_hint(node, _REPEAT_RESULT_TYPE_HINT_KEY, "")
 
         if node.get("kind") == "ListComp":
             current_t = normalize_type_name(node.get("resolved_type"))
@@ -86,10 +116,15 @@ class TypedRepeatMaterializationPass(East3OptimizerPass):
                 elt_obj = node.get("elt")
                 elt = elt_obj if isinstance(elt_obj, dict) else None
                 if elt is not None:
-                    elt_t = normalize_type_name(elt.get("resolved_type"))
+                    elt_t = _effective_expr_type(elt)
                     if not _is_unknown_or_any(elt_t):
-                        node["resolved_type"] = "list[" + elt_t + "]"
-                        changed += 1
+                        changed += _set_hint(node, _LIST_COMP_RESULT_TYPE_HINT_KEY, "list[" + elt_t + "]")
+                    else:
+                        changed += _set_hint(node, _LIST_COMP_RESULT_TYPE_HINT_KEY, "")
+                else:
+                    changed += _set_hint(node, _LIST_COMP_RESULT_TYPE_HINT_KEY, "")
+            else:
+                changed += _set_hint(node, _LIST_COMP_RESULT_TYPE_HINT_KEY, "")
         return changed
 
     def run(self, east3_doc: dict[str, JsonVal], context: PassContext) -> PassResult:

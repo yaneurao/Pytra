@@ -22,6 +22,9 @@ from toolchain2.emit.common.code_emitter import (
     build_runtime_import_map,
     resolve_runtime_symbol_name,
 )
+from toolchain2.optimize.optimizer import make_pass_context
+from toolchain2.optimize.passes.typed_enumerate_normalization import TypedEnumerateNormalizationPass
+from toolchain2.optimize.passes.typed_repeat_materialization import TypedRepeatMaterializationPass
 from toolchain2.parse.py.parser import parse_python_source
 from toolchain2.parse.py.parse_python import parse_python_file
 from toolchain2.resolve.py.builtin_registry import BuiltinRegistry, load_builtin_registry
@@ -104,6 +107,75 @@ class Toolchain2SpecConformTests(unittest.TestCase):
         self.assertEqual(runtime_imports["helper"], "rt_helper")
         self.assertEqual(runtime_imports["math_alias"], "rt_math")
         self.assertNotIn("local_helper", runtime_imports)
+
+    def test_typed_repeat_materialization_keeps_resolved_type_and_sets_hints(self) -> None:
+        repeat_elt = {
+            "kind": "BinOp",
+            "op": "Mult",
+            "resolved_type": "unknown",
+            "left": {"kind": "List", "resolved_type": "list[int64]", "elements": [{"kind": "Constant", "value": 0}]},
+            "right": {"kind": "Name", "id": "w", "resolved_type": "int64"},
+            "casts": [],
+        }
+        list_comp = {
+            "kind": "ListComp",
+            "resolved_type": "list[unknown]",
+            "elt": repeat_elt,
+            "generators": [],
+            "casts": [],
+        }
+        doc = {"kind": "Module", "body": [{"kind": "Expr", "value": list_comp}]}
+
+        result = TypedRepeatMaterializationPass().run(doc, make_pass_context(opt_level=1))
+
+        self.assertTrue(result.changed)
+        self.assertEqual(repeat_elt.get("resolved_type"), "unknown")
+        self.assertEqual(repeat_elt.get("repeat_result_type_hint"), "list[int64]")
+        self.assertEqual(list_comp.get("resolved_type"), "list[unknown]")
+        self.assertEqual(list_comp.get("list_comp_result_type_hint"), "list[list[int64]]")
+
+    def test_typed_enumerate_normalization_keeps_resolved_type_and_sets_iter_metadata(self) -> None:
+        iter_expr = {
+            "kind": "Call",
+            "resolved_type": "unknown",
+            "func": {"kind": "Name", "id": "enumerate", "resolved_type": "unknown"},
+            "args": [{"kind": "Name", "id": "lines", "resolved_type": "list[str]"}],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "enumerate",
+            "runtime_call": "py_enumerate",
+        }
+        for_stmt = {
+            "kind": "ForCore",
+            "iter_mode": "runtime_protocol",
+            "iter_plan": {
+                "kind": "RuntimeIterForPlan",
+                "iter_expr": iter_expr,
+                "dispatch_mode": "native",
+                "init_op": "ObjIterInit",
+                "next_op": "ObjIterNext",
+            },
+            "target_plan": {
+                "kind": "TupleTarget",
+                "elements": [
+                    {"kind": "NameTarget", "id": "line_index", "target_type": "unknown"},
+                    {"kind": "NameTarget", "id": "source", "target_type": "unknown"},
+                ],
+            },
+            "body": [{"kind": "Pass"}],
+            "orelse": [],
+        }
+        doc = {"kind": "Module", "body": [for_stmt]}
+
+        result = TypedEnumerateNormalizationPass().run(doc, make_pass_context(opt_level=1))
+
+        self.assertTrue(result.changed)
+        self.assertEqual(iter_expr.get("resolved_type"), "unknown")
+        self.assertEqual(iter_expr.get("iter_element_type"), "tuple[int64, str]")
+        self.assertEqual(iter_expr.get("iterable_trait"), "yes")
+        self.assertEqual(iter_expr.get("iter_protocol"), "static_range")
+        self.assertEqual(for_stmt.get("iter_plan", {}).get("iter_item_type"), "tuple[int64, str]")
+        self.assertEqual(for_stmt.get("target_plan", {}).get("target_type"), "tuple[int64, str]")
 
     def test_parser_preserves_typing_prefix_until_resolve(self) -> None:
         source = """
