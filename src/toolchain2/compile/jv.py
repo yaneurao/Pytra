@@ -61,6 +61,7 @@ class CompileContext:
         return name
 
     tuple_unpack_counter: int = 0
+    current_return_type: str = ""
 
     def next_tuple_tmp_name(self) -> str:
         self.tuple_unpack_counter += 1

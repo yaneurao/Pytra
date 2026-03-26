@@ -387,42 +387,6 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     return "(" + left_code + " " + go_op + " " + right_code + ")"
 
 
-def _coerce_to_type(val_code: str, target_type: str, val_node: JsonVal) -> str:
-    """Wrap val_code with type conversion if needed for Go type safety."""
-    if not isinstance(val_node, dict):
-        return val_code
-    src_rt = _str(val_node, "resolved_type")
-    src_gt = go_type(src_rt) if src_rt != "" else ""
-    if src_gt == target_type:
-        return val_code  # No conversion needed
-    # Avoid double-wrapping if already cast
-    if val_code.startswith(target_type + "("):
-        return val_code
-    if val_code.endswith(".(" + target_type + ")"):
-        return val_code
-    if src_gt in ("", "any", "interface{}"):
-        if target_type == "string":
-            return val_code + ".(string)"
-        if target_type == "bool":
-            return val_code + ".(bool)"
-        if target_type == "float64":
-            return "py_to_float64(" + val_code + ")"
-        if target_type == "int64":
-            return "py_to_int64(" + val_code + ")"
-        if target_type.startswith("[]") or target_type.startswith("map["):
-            return val_code + ".(" + target_type + ")"
-    # int64 → byte, int64 → float64 etc.
-    if target_type in ("byte", "uint8") and src_gt in ("int64", "int32", "int"):
-        return "byte(" + val_code + ")"
-    if target_type == "float64" and src_gt in ("int64", "int32"):
-        return "float64(" + val_code + ")"
-    if target_type == "float32" and src_gt in ("int64", "int32"):
-        return "float32(" + val_code + ")"
-    if target_type == "int64" and src_gt in ("float64", "float32"):
-        return "int64(" + val_code + ")"
-    return val_code
-
-
 def _effective_resolved_type(ctx: EmitContext, node: JsonVal) -> str:
     if not isinstance(node, dict):
         return ""
@@ -515,9 +479,7 @@ def _wrap_optional_value_code(ctx: EmitContext, value_code: str, optional_type: 
         return "nil"
     if isinstance(value_node, dict) and _optional_inner_type(_str(value_node, "resolved_type")) != "":
         return value_code
-    inner_gt = go_type(inner_type)
-    coerced = _coerce_to_type(value_code, inner_gt, value_node)
-    return _wrap_optional_resolved_code(ctx, coerced, inner_type)
+    return _wrap_optional_resolved_code(ctx, value_code, inner_type)
 
 
 def _emit_unbox(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -1608,13 +1570,9 @@ def _emit_dict_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if key_type != "" and isinstance(key_node, dict):
                     if _optional_inner_type(key_type) != "":
                         k = _wrap_optional_value_code(ctx, k, key_type, key_node)
-                    else:
-                        k = _coerce_to_type(k, _go_signature_type(ctx, key_type), key_node)
                 if val_type != "" and isinstance(value_node, dict):
                     if _optional_inner_type(val_type) != "":
                         v = _wrap_optional_value_code(ctx, v, val_type, value_node)
-                    else:
-                        v = _coerce_to_type(v, _go_signature_type(ctx, val_type), value_node)
                 parts.append(k + ": " + v)
     else:
         # Fallback: separate keys/values lists
@@ -1628,13 +1586,9 @@ def _emit_dict_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if key_type != "" and isinstance(key_node2, dict):
                 if _optional_inner_type(key_type) != "":
                     k = _wrap_optional_value_code(ctx, k, key_type, key_node2)
-                else:
-                    k = _coerce_to_type(k, _go_signature_type(ctx, key_type), key_node2)
             if val_type != "" and isinstance(value_node2, dict):
                 if _optional_inner_type(val_type) != "":
                     v = _wrap_optional_value_code(ctx, v, val_type, value_node2)
-                else:
-                    v = _coerce_to_type(v, _go_signature_type(ctx, val_type), value_node2)
             parts.append(k + ": " + v)
 
     return gt + "{" + ", ".join(parts) + "}"

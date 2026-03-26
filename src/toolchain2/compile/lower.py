@@ -16,10 +16,10 @@ from toolchain2.compile.jv import nd_kind, nd_get_str, nd_get_dict, nd_get_list
 from toolchain2.compile.jv import normalize_type_name
 from toolchain2.compile.source_span import walk_normalize_spans
 from toolchain2.common.kinds import (
-    MODULE, FUNCTION_DEF, CLASS_DEF, ASSIGN, ANN_ASSIGN, AUG_ASSIGN,
+    MODULE, FUNCTION_DEF, CLASS_DEF, ASSIGN, ANN_ASSIGN, AUG_ASSIGN, RETURN,
     FOR, FOR_RANGE, FOR_CORE, CALL, ATTRIBUTE, NAME, CONSTANT,
     MATCH, VARIANT_PATTERN, PATTERN_BIND, PATTERN_WILDCARD,
-    SUBSCRIPT, TUPLE, LIST, STARRED, BOOL_OP,
+    SUBSCRIPT, TUPLE, LIST, DICT, STARRED, BOOL_OP,
     BOX, UNBOX, IS_INSTANCE, IS_SUBCLASS, IS_SUBTYPE,
     OBJ_TYPE_ID, OBJ_BOOL, OBJ_LEN, OBJ_STR, OBJ_ITER_INIT, OBJ_ITER_NEXT,
     TYPE_PREDICATE_CALL, BUILTIN_CALL,
@@ -311,6 +311,71 @@ def _make_static_scalar_cast_expr(value_expr: JsonVal, target_type: str, *, ctx:
     return out
 
 
+def _optional_inner_target_type(type_name: str) -> str:
+    parts = _split_union_types(type_name)
+    if len(parts) != 2:
+        return ""
+    if parts[0] == "None":
+        return parts[1]
+    if parts[1] == "None":
+        return parts[0]
+    return ""
+
+
+def _split_dict_types(type_name: str) -> tuple[str, str]:
+    norm = normalize_type_name(type_name)
+    if not (norm.startswith("dict[") and norm.endswith("]")):
+        return "", ""
+    parts = _split_generic_types(norm[5:-1])
+    if len(parts) != 2:
+        return "", ""
+    return parts[0], parts[1]
+
+
+def _wrap_dict_literal_for_target_type(value_expr: JsonVal, target_type: str, *, ctx: CompileContext) -> JsonVal:
+    if not isinstance(value_expr, dict):
+        return value_expr
+    node: Node = value_expr
+    if node.get("kind") != DICT:
+        return value_expr
+    key_type, val_type = _split_dict_types(target_type)
+    if key_type == "" or val_type == "":
+        return value_expr
+    out: Node = dict(node)
+    entries_obj = node.get("entries")
+    if isinstance(entries_obj, list):
+        wrapped_entries: list[JsonVal] = []
+        for entry in entries_obj:
+            if not isinstance(entry, dict):
+                wrapped_entries.append(entry)
+                continue
+            entry_out: Node = dict(entry)
+            key_node = entry.get("key")
+            value_node = entry.get("value")
+            if isinstance(key_node, dict):
+                entry_out["key"] = _wrap_value_for_target_type(key_node, key_type, ctx=ctx)
+            if isinstance(value_node, dict):
+                entry_out["value"] = _wrap_value_for_target_type(value_node, val_type, ctx=ctx)
+            wrapped_entries.append(entry_out)
+        out["entries"] = wrapped_entries
+    else:
+        keys_obj = node.get("keys")
+        values_obj = node.get("values")
+        if isinstance(keys_obj, list):
+            out["keys"] = [
+                _wrap_value_for_target_type(item, key_type, ctx=ctx) if isinstance(item, dict) else item
+                for item in keys_obj
+            ]
+        if isinstance(values_obj, list):
+            out["values"] = [
+                _wrap_value_for_target_type(item, val_type, ctx=ctx) if isinstance(item, dict) else item
+                for item in values_obj
+            ]
+    out["resolved_type"] = target_type
+    set_type_expr_summary(out, type_expr_summary_from_payload(ctx, None, target_type))
+    return out
+
+
 def _is_none_literal(node: JsonVal) -> bool:
     if not isinstance(node, dict):
         return False
@@ -404,6 +469,13 @@ def _wrap_value_for_target_type(
         out["bridge_lane_v1"] = bridge_lane_payload(target_summary, bridge_value_summary)
         set_type_expr_summary(out, target_summary)
         return out
+    optional_inner = _optional_inner_target_type(target_t)
+    if _supports_static_scalar_cast(value_t, optional_inner):
+        return _make_static_scalar_cast_expr(value_expr, optional_inner, ctx=ctx)
+    if not is_dynamic_like_summary(target_summary):
+        wrapped_dict = _wrap_dict_literal_for_target_type(value_expr, target_t, ctx=ctx)
+        if wrapped_dict is not value_expr:
+            return wrapped_dict
     if _supports_static_scalar_cast(value_t, target_t):
         return _make_static_scalar_cast_expr(value_expr, target_t, ctx=ctx)
     return value_expr
@@ -562,6 +634,41 @@ def _lower_assignment_like_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal]
     )
     set_type_expr_summary(out, type_expr_summary_from_payload(ctx, target_type_expr, target_type))
     return out
+
+
+def _lower_return_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal], JsonVal], ctx: CompileContext) -> Node:
+    out: Node = {}
+    for key in stmt:
+        if key == "value":
+            continue
+        out[key] = lower_node_fn(stmt[key])
+    if "value" not in stmt or stmt.get("value") is None:
+        return out
+    value_lowered = lower_node_fn(stmt.get("value"))
+    target_type = normalize_type_name(ctx.current_return_type)
+    if target_type not in ("", "unknown", "None"):
+        value_lowered = _wrap_value_for_target_type(value_lowered, target_type, ctx=ctx)
+    out["value"] = value_lowered
+    return out
+
+
+def _lower_function_def_stmt(
+    stmt: Node,
+    *,
+    dispatch_mode: str,
+    lower_node_fn: Callable[[JsonVal], JsonVal],
+    ctx: CompileContext,
+) -> Node:
+    _ = dispatch_mode
+    prev_return_type = ctx.current_return_type
+    ctx.current_return_type = normalize_type_name(stmt.get("return_type"))
+    try:
+        out: Node = {}
+        for key in stmt:
+            out[key] = lower_node_fn(stmt[key])
+        return out
+    finally:
+        ctx.current_return_type = prev_return_type
 
 
 def _lower_for_stmt(stmt: Node, *, dispatch_mode: str, lower_node_fn: Callable[[JsonVal], JsonVal], ctx: CompileContext) -> Node:
@@ -1621,6 +1728,10 @@ def _lower_call_expr(call: Node, *, dispatch_mode: str, ctx: CompileContext) -> 
 def _lower_node_dispatch(node: Node, *, dispatch_mode: str, ctx: CompileContext) -> JsonVal:
     lower_fn: Callable[[JsonVal], JsonVal] = lambda v: _lower_node(v, dispatch_mode=dispatch_mode, ctx=ctx)
     kind = node.get("kind")
+    if kind == FUNCTION_DEF:
+        return _lower_function_def_stmt(node, dispatch_mode=dispatch_mode, lower_node_fn=lower_fn, ctx=ctx)
+    if kind == RETURN:
+        return _lower_return_stmt(node, lower_node_fn=lower_fn, ctx=ctx)
     if kind == FOR:
         return _lower_for_stmt(node, dispatch_mode=dispatch_mode, lower_node_fn=lower_fn, ctx=ctx)
     if kind == FOR_RANGE:

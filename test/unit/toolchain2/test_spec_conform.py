@@ -586,6 +586,51 @@ def f(d: dict[str, float]) -> float:
         self.assertEqual(default_arg.get("resolved_type"), "float64")
         self.assertEqual(default_arg.get("args", [])[0].get("value"), 0)
 
+    def test_compile_wraps_dict_literal_entries_for_return_type(self) -> None:
+        source = """
+def f() -> dict[str, float]:
+    return {"x": 0}
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+        east3 = lower_east2_to_east3(east2)
+
+        return_stmt = next(node for node in _walk(east3) if node.get("kind") == "Return")
+        dict_value = return_stmt.get("value", {})
+        entry_value = dict_value.get("entries", [])[0].get("value", {})
+
+        self.assertEqual(dict_value.get("kind"), "Dict")
+        self.assertEqual(dict_value.get("resolved_type"), "dict[str,float64]")
+        self.assertEqual(entry_value.get("kind"), "Call")
+        self.assertEqual(entry_value.get("lowered_kind"), "BuiltinCall")
+        self.assertEqual(entry_value.get("runtime_call"), "static_cast")
+        self.assertEqual(entry_value.get("resolved_type"), "float64")
+
+    def test_compile_inserts_static_cast_for_optional_return_inner_type(self) -> None:
+        source = """
+def f(flag: bool) -> float | None:
+    if flag:
+        return 1
+    return None
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+        east3 = lower_east2_to_east3(east2)
+
+        cast_return = next(
+            node
+            for node in _walk(east3)
+            if node.get("kind") == "Return"
+            and isinstance(node.get("value"), dict)
+            and node["value"].get("kind") == "Call"
+        )
+        cast_value = cast_return.get("value", {})
+
+        self.assertEqual(cast_value.get("lowered_kind"), "BuiltinCall")
+        self.assertEqual(cast_value.get("runtime_call"), "static_cast")
+        self.assertEqual(cast_value.get("resolved_type"), "float64")
+        self.assertEqual(cast_value.get("args", [])[0].get("value"), 1)
+
     def test_compile_narrows_union_names_inside_isinstance_guard(self) -> None:
         source = """
 type Scalar = int | float

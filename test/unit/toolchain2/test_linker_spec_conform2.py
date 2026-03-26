@@ -954,6 +954,90 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
         self.assertIn("return 0", go_code)
         self.assertNotIn("return float64(0)", go_code)
 
+    def test_go_emitter_does_not_invent_dict_literal_entry_casts(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "run",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_index": {},
+                    "return_type": "dict[str,float64]",
+                    "arg_usage": {},
+                    "renamed_symbols": {},
+                    "docstring": None,
+                    "body": [
+                        {
+                            "kind": "AnnAssign",
+                            "target": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+                            "decl_type": "int64",
+                            "resolved_type": "int64",
+                            "value": {"kind": "Constant", "value": 3, "resolved_type": "int64"},
+                        },
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Dict",
+                                "resolved_type": "dict[str,float64]",
+                                "entries": [
+                                    {
+                                        "key": {"kind": "Constant", "value": "x", "resolved_type": "str"},
+                                        "value": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+                                    }
+                                ],
+                            },
+                        },
+                    ],
+                }
+            ],
+        )
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("return map[string]float64{\"x\": n}", go_code)
+        self.assertNotIn("\"x\": float64(n)", go_code)
+
+    def test_go_emitter_does_not_invent_optional_scalar_casts(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "run",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_index": {},
+                    "return_type": "float64 | None",
+                    "arg_usage": {},
+                    "renamed_symbols": {},
+                    "docstring": None,
+                    "body": [
+                        {
+                            "kind": "AnnAssign",
+                            "target": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+                            "decl_type": "int64",
+                            "resolved_type": "int64",
+                            "value": {"kind": "Constant", "value": 3, "resolved_type": "int64"},
+                        },
+                        {
+                            "kind": "Return",
+                            "value": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+                        },
+                    ],
+                }
+            ],
+        )
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("var __opt_", go_code)
+        self.assertIn("= n", go_code)
+        self.assertNotIn("float64(n)", go_code)
+
     def test_cpp_emitter_runtime_symbol_prefix_uses_skip_modules_without_pytra_hardcode(self) -> None:
         doc = _module_doc(
             "app.main",
