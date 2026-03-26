@@ -88,6 +88,23 @@ def build_import_alias_map(meta: dict[str, JsonVal]) -> dict[str, str]:
     """
     alias_map: dict[str, str] = {}
 
+    ir = meta.get("import_resolution")
+    if isinstance(ir, dict):
+        bindings = ir.get("bindings")
+        if isinstance(bindings, list):
+            for binding in bindings:
+                if not isinstance(binding, dict):
+                    continue
+                local = binding.get("local_name")
+                resolved_kind = binding.get("resolved_binding_kind")
+                runtime_module_id = binding.get("runtime_module_id")
+                if (
+                    isinstance(local, str) and local != ""
+                    and isinstance(resolved_kind, str) and resolved_kind == "module"
+                    and isinstance(runtime_module_id, str) and runtime_module_id != ""
+                ):
+                    alias_map[local] = runtime_module_id
+
     # From import_modules: {alias: module_id}
     im = meta.get("import_modules")
     if isinstance(im, dict):

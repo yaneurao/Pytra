@@ -555,6 +555,68 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
 
         self.assertIn("rt_helper()", go_code)
 
+    def test_go_emitter_uses_runtime_metadata_for_skipped_module_values(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "run",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_index": {},
+                    "return_type": "float64",
+                    "arg_usage": {},
+                    "renamed_symbols": {},
+                    "docstring": None,
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Call",
+                                "resolved_type": "float64",
+                                "func": {
+                                    "kind": "Attribute",
+                                    "resolved_type": "callable",
+                                    "value": {
+                                        "kind": "Name",
+                                        "id": "math",
+                                        "resolved_type": "module",
+                                    },
+                                    "attr": "sin",
+                                },
+                                "args": [
+                                    {
+                                        "kind": "Attribute",
+                                        "resolved_type": "float64",
+                                        "value": {
+                                            "kind": "Name",
+                                            "id": "math",
+                                            "resolved_type": "module",
+                                        },
+                                        "attr": "pi",
+                                        "runtime_module_id": "pytra.std.math",
+                                        "runtime_symbol": "pi",
+                                        "runtime_symbol_dispatch": "value",
+                                    }
+                                ],
+                                "keywords": [],
+                                "resolved_runtime_call": "math.sin",
+                                "runtime_module_id": "pytra.std.math",
+                                "runtime_symbol": "sin",
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("return py_sin(py_pi())", go_code)
+        self.assertNotIn("math.Pi", go_code)
+
     def test_go_emitter_emits_pathlib_class_and_uses_native_os_path_helpers(self) -> None:
         doc = _fixture_doc("src/runtime/east/std/pathlib.east")
         meta = doc.setdefault("meta", {})

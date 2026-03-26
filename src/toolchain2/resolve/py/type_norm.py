@@ -81,6 +81,28 @@ def _normalize_typing_alias(name: str) -> str:
     return name
 
 
+def _split_top_level_union(t: str) -> list[str]:
+    parts: list[str] = []
+    current: list[str] = []
+    depth: int = 0
+    for ch in t:
+        if ch == "[":
+            depth += 1
+        elif ch == "]" and depth > 0:
+            depth -= 1
+        if ch == "|" and depth == 0:
+            part: str = "".join(current).strip()
+            if part != "":
+                parts.append(part)
+            current = []
+            continue
+        current.append(ch)
+    tail: str = "".join(current).strip()
+    if tail != "":
+        parts.append(tail)
+    return parts
+
+
 def normalize_type(raw: str, aliases: dict[str, str] | None = None, _seen: set[str] | None = None) -> str:
     """Normalize a Python type annotation to EAST2 canonical form."""
     t: str = _strip_outer_quotes(raw.strip())
@@ -93,7 +115,7 @@ def normalize_type(raw: str, aliases: dict[str, str] | None = None, _seen: set[s
     alias_target: str = alias_map.get(t, "")
     if alias_target != "":
         if t in seen:
-            return t
+            return "Any"
         next_seen: set[str] = set(seen)
         next_seen.add(t)
         return normalize_type(alias_target, alias_map, next_seen)
@@ -113,6 +135,12 @@ def normalize_type(raw: str, aliases: dict[str, str] | None = None, _seen: set[s
         union_inner: str = t[6:-1].strip()
         union_args: list[str] = split_generic_types(union_inner)
         return " | ".join([normalize_type(a, alias_map, seen) for a in union_args])
+
+    # Union type: X | Y (top-level only)
+    union_parts: list[str] = _split_top_level_union(t)
+    if len(union_parts) > 1:
+        norm_parts: list[str] = [normalize_type(p, alias_map, seen) for p in union_parts]
+        return " | ".join(norm_parts)
 
     # Generic types: list[X], dict[K,V], set[X], tuple[X,...], deque[X]
     bracket: int = t.find("[")
@@ -137,12 +165,6 @@ def normalize_type(raw: str, aliases: dict[str, str] | None = None, _seen: set[s
         if len(norm_args) == 1:
             return base_norm + "[" + norm_args[0] + "]"
         return base_norm + "[" + ",".join(norm_args) + "]"
-
-    # Union type: X | Y
-    if "|" in t:
-        parts: list[str] = t.split("|")
-        norm_parts: list[str] = [normalize_type(p.strip(), alias_map, seen) for p in parts]
-        return " | ".join(norm_parts)
 
     # Unknown type → keep as-is (user-defined class names etc.)
     return t

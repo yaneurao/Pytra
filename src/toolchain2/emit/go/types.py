@@ -29,13 +29,57 @@ _TYPE_MAP: dict[str, str] = {
     "object": "any",
     "Obj": "any",
     "Any": "any",
+    "Callable": "any",
+    "callable": "any",
 }
+
+
+def _parse_callable_signature(resolved_type: str) -> tuple[list[str], str]:
+    if not resolved_type.startswith("callable[") or not resolved_type.endswith("]"):
+        return [], "unknown"
+    inner = resolved_type[len("callable["):-1].strip()
+    if inner == "":
+        return [], "unknown"
+    if inner.startswith("["):
+        depth = 0
+        close_idx = -1
+        i = 0
+        while i < len(inner):
+            ch = inner[i]
+            if ch == "[":
+                depth += 1
+            elif ch == "]":
+                depth -= 1
+                if depth == 0:
+                    close_idx = i
+                    break
+            i += 1
+        if close_idx >= 0 and close_idx + 1 < len(inner) and inner[close_idx + 1] == ",":
+            params_text = inner[1:close_idx].strip()
+            ret_text = inner[close_idx + 2:].strip()
+            params = _split_generic_args(params_text) if params_text != "" else []
+            return params, ret_text if ret_text != "" else "unknown"
+    arrow_idx = inner.find("->")
+    if arrow_idx >= 0:
+        params_text2 = inner[:arrow_idx].strip()
+        ret_text2 = inner[arrow_idx + 2:].strip()
+        params2 = [part.strip() for part in params_text2.split(",") if part.strip() != ""] if params_text2 != "" else []
+        return params2, ret_text2 if ret_text2 != "" else "unknown"
+    return [], inner
 
 
 def go_type(resolved_type: str) -> str:
     """Convert an EAST3 resolved_type to a Go type string."""
     if resolved_type == "" or resolved_type == "unknown":
         return "any"
+
+    if resolved_type.startswith("callable[") and resolved_type.endswith("]"):
+        params, ret = _parse_callable_signature(resolved_type)
+        param_gts = [go_type(param) for param in params]
+        ret_gt = go_type(ret)
+        if ret_gt == "":
+            return "func(" + ", ".join(param_gts) + ")"
+        return "func(" + ", ".join(param_gts) + ") " + ret_gt
 
     # Direct mapping
     mapped = _TYPE_MAP.get(resolved_type, "")
@@ -59,15 +103,15 @@ def go_type(resolved_type: str) -> str:
         inner = resolved_type[4:-1]
         return "map[" + go_type(inner) + "]struct{}"
 
-    # tuple[A, B, ...] — Go doesn't have tuples, use struct or interface{}
+    # tuple[A, B, ...] — box as []any in Go
     if resolved_type.startswith("tuple[") and resolved_type.endswith("]"):
-        return "interface{}"
+        return "[]any"
 
     # Optional[T] / T | None → *T (pointer for nilability)
     if resolved_type.endswith(" | None") or resolved_type.endswith("|None"):
         inner = resolved_type[: -7] if resolved_type.endswith(" | None") else resolved_type[: -6]
         gt = go_type(inner)
-        if gt.startswith("*") or gt == "interface{}":
+        if gt.startswith("*") or gt == "interface{}" or gt.startswith("[]") or gt.startswith("map[") or gt.startswith("func("):
             return gt
         return "*" + gt
 

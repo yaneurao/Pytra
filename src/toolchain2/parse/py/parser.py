@@ -1121,6 +1121,8 @@ def _get_func_name(func: Expr) -> str:
 
 
 _KNOWN_NUMERIC_TYPES = {"int64", "float64", "bool"}
+_TYPE_ONLY_IMPORT_MODULES = {"__future__", "typing", "dataclasses", "pytra.typing", "pytra.dataclasses", "pytra.enum"}
+_TYPE_MODULE_VALUE_EXPORTS = {"cast"}
 
 
 def _unescape_string(s: str) -> str:
@@ -1227,8 +1229,10 @@ def _prescan(ctx: ParseContext, lines: list[str]) -> None:
                     name = split[0].strip()
                     asname = split[1].strip()
                 local = asname if asname != "" else name
-                # __future__, typing, dataclasses (+ pytra.typing, pytra.dataclasses) は import_symbols に登録しない
-                if mod not in ("__future__", "typing", "dataclasses", "pytra.typing", "pytra.dataclasses", "pytra.enum"):
+                allow_value_symbol = mod in ("typing", "pytra.typing") and name in _TYPE_MODULE_VALUE_EXPORTS
+                # __future__, typing, dataclasses (+ pytra.typing, pytra.dataclasses) は
+                # 通常は import_symbols に登録しないが、cast のような値レベル helper は残す。
+                if mod not in _TYPE_ONLY_IMPORT_MODULES or allow_value_symbol:
                     ctx.import_symbols[local] = {"module": mod, "name": name}
             # Type alias from typing (prescan 用)
             if mod == "typing":
@@ -1350,7 +1354,31 @@ def _parse_module_body(
                     asname = split[1].strip()
                 aliases.append(ImportAlias(name=name, asname=asname))
             # Skip typing / __future__ / dataclasses imports (+ pytra.typing, pytra.dataclasses)
-            if mod in ("typing", "__future__", "dataclasses", "pytra.typing", "pytra.dataclasses", "pytra.enum"):
+            # ただし cast のような値レベル helper は resolve 用 metadata だけ残す。
+            if mod in _TYPE_ONLY_IMPORT_MODULES:
+                if mod in ("typing", "pytra.typing"):
+                    for alias in aliases:
+                        if alias.name not in _TYPE_MODULE_VALUE_EXPORTS:
+                            continue
+                        local = alias.asname if alias.asname is not None else alias.name
+                        ctx.import_symbols[local] = {"module": mod, "name": alias.name}
+                        ctx.import_bindings.append(
+                            {
+                                "module_id": mod,
+                                "export_name": alias.name,
+                                "local_name": local,
+                                "binding_kind": "symbol",
+                                "source_file": ctx.filename,
+                                "source_line": ln_no + 1,
+                            }
+                        )
+                        ctx.qualified_refs.append(
+                            {
+                                "module_id": mod,
+                                "symbol": alias.name,
+                                "local_name": local,
+                            }
+                        )
                 ln_no += 1
                 skip_next_blanks = True
                 continue

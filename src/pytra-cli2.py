@@ -22,6 +22,22 @@ from pytra.std import sys
 from pytra.std import json
 from pytra.std.pathlib import Path
 
+
+def _repo_root() -> Path:
+    """Return repository root from this script path."""
+    return Path(__file__).resolve().parent.parent
+
+
+def _builtin_registry_paths() -> tuple[Path, Path, Path]:
+    """Return absolute builtins/containers/stdlib registry inputs."""
+    root = _repo_root()
+    return (
+        root / "test" / "include" / "east1" / "py" / "built_in" / "builtins.py.east1",
+        root / "test" / "include" / "east1" / "py" / "built_in" / "containers.py.east1",
+        root / "test" / "include" / "east1" / "py" / "std",
+    )
+
+
 # ---------------------------------------------------------------------------
 # parse: .py → .py.east1
 # ---------------------------------------------------------------------------
@@ -118,9 +134,7 @@ def _resolve_one(input_path: Path, output_path: Path | None, pretty: bool) -> in
         return 1
 
     # Load builtin registry
-    builtins_path = Path("test/include/east1/py/built_in/builtins.py.east1")
-    containers_path = Path("test/include/east1/py/built_in/containers.py.east1")
-    stdlib_dir = Path("test/include/east1/py/std")
+    builtins_path, containers_path, stdlib_dir = _builtin_registry_paths()
     registry = load_builtin_registry(builtins_path, containers_path, stdlib_dir)
 
     try:
@@ -673,9 +687,7 @@ def _build_pipeline(inputs: list[str], output_dir_text: str, target: str) -> int
     print("build: parsed " + str(len(east1_docs)) + " files")
 
     # 2. Resolve
-    builtins_path = Path("test/include/east1/py/built_in/builtins.py.east1")
-    containers_path = Path("test/include/east1/py/built_in/containers.py.east1")
-    stdlib_dir = Path("test/include/east1/py/std")
+    builtins_path, containers_path, stdlib_dir = _builtin_registry_paths()
     registry = load_builtin_registry(builtins_path, containers_path, stdlib_dir)
 
     east2_docs: list[tuple[str, dict]] = []

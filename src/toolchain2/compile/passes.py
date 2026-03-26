@@ -198,6 +198,20 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
         "value": {"kind": LIST, "elements": [], "resolved_type": rt},
     }
     elt = lc.get("elt")
+    append_arg = deep_copy_json(elt) if elt is not None else None
+    elem_type = ""
+    if rt.startswith("list[") and rt.endswith("]"):
+        elem_type = rt[5:-1]
+    if isinstance(append_arg, dict) and elem_type != "":
+        append_arg["call_arg_type"] = elem_type
+        append_kind = append_arg.get("kind", "")
+        append_rt = jv_str(append_arg.get("resolved_type", "")).strip()
+        if append_kind == LIST and append_rt in ("", "unknown", "list[unknown]"):
+            append_arg["resolved_type"] = elem_type
+        elif append_kind == DICT and append_rt in ("", "unknown", "dict[unknown,unknown]"):
+            append_arg["resolved_type"] = elem_type
+        elif append_kind == SET and append_rt in ("", "unknown", "set[unknown]"):
+            append_arg["resolved_type"] = elem_type
     generators = lc.get("generators", [])
     if not isinstance(generators, list):
         generators = []
@@ -206,7 +220,7 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
         "value": {
             "kind": CALL,
             "func": {"kind": ATTRIBUTE, "value": {"kind": NAME, "id": result_name, "resolved_type": rt}, "attr": "append"},
-            "args": [deep_copy_json(elt)] if elt is not None else [],
+            "args": [append_arg] if append_arg is not None else [],
             "resolved_type": "None",
         },
     }
@@ -333,7 +347,8 @@ def _collect_sig_node(node: Node, sigs: dict[str, Node], class_name: str) -> Non
             return
         sig: Node = {"arg_order": ao, "arg_defaults": ad if isinstance(ad, dict) else {}}
         full = class_name + "." + name if class_name != "" else name
-        sigs[name] = sig
+        if class_name == "":
+            sigs[name] = sig
         if full != name:
             sigs[full] = sig
         body = node.get("body")
@@ -348,6 +363,38 @@ def _collect_sig_node(node: Node, sigs: dict[str, Node], class_name: str) -> Non
             for s in body:
                 if isinstance(s, dict):
                     _collect_sig_node(s, sigs, cn)
+    elif kind == ASSIGN or kind == ANN_ASSIGN:
+        target: JsonVal = node.get("target")
+        if not isinstance(target, dict):
+            targets = node.get("targets")
+            if isinstance(targets, list) and len(targets) == 1 and isinstance(targets[0], dict):
+                target = targets[0]
+        value = node.get("value")
+        if (
+            isinstance(target, dict)
+            and target.get("kind") == NAME
+            and isinstance(value, dict)
+            and value.get("kind") == "Lambda"
+        ):
+            lambda_name = jv_str(target.get("id", ""))
+            args = value.get("args")
+            if lambda_name != "" and isinstance(args, list):
+                arg_order: list[str] = []
+                arg_defaults: dict[str, JsonVal] = {}
+                for arg in args:
+                    if not isinstance(arg, dict):
+                        continue
+                    arg_name = jv_str(arg.get("arg", ""))
+                    if arg_name == "":
+                        continue
+                    arg_order.append(arg_name)
+                    default_node = arg.get("default")
+                    if isinstance(default_node, dict):
+                        arg_defaults[arg_name] = deep_copy_json(default_node)
+                sigs[lambda_name] = {
+                    "arg_order": arg_order,
+                    "arg_defaults": arg_defaults,
+                }
 
 
 def _expand_defaults_walk(node: JsonVal, sigs: dict[str, Node]) -> None:
@@ -365,7 +412,18 @@ def _expand_defaults_walk(node: JsonVal, sigs: dict[str, Node]) -> None:
             if func.get("kind") == NAME:
                 cn = jv_str(func.get("id", ""))
             elif func.get("kind") == ATTRIBUTE:
-                cn = jv_str(func.get("attr", ""))
+                attr = jv_str(func.get("attr", ""))
+                owner = func.get("value")
+                if isinstance(owner, dict):
+                    owner_type = jv_str(owner.get("resolved_type", ""))
+                    if owner_type != "" and owner_type != "unknown":
+                        qualified = owner_type + "." + attr
+                        if qualified in sigs:
+                            cn = qualified
+                        else:
+                            cn = attr
+                    else:
+                        cn = attr
         if cn != "" and cn in sigs:
             sig = sigs[cn]
             ao = sig.get("arg_order")
@@ -551,17 +609,21 @@ def _expand_tuple_unpack_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> 
         val_rt = ""
         if isinstance(value, dict):
             val_rt = jv_str(value.get("resolved_type"))
+        target_rt = jv_str(target.get("resolved_type"))
+        tmp_value, tmp_rt = _make_tuple_unpack_source(value, val_rt, target_rt)
         tmp_assign: Node = {
             "kind": ASSIGN,
-            "target": {"kind": NAME, "id": tmp_name, "resolved_type": val_rt},
-            "value": value,
+            "target": {"kind": NAME, "id": tmp_name, "resolved_type": tmp_rt},
+            "value": tmp_value,
             "declare": True,
-            "decl_type": val_rt,
+            "decl_type": tmp_rt,
         }
         result.append(tmp_assign)
 
-        # Parse tuple element types from val_rt: "tuple[int64,str]" → ["int64", "str"]
-        elem_types: list[str] = _parse_tuple_element_types(val_rt)
+        # Parse tuple element types from the effective tuple source.
+        elem_types: list[str] = _parse_tuple_element_types(tmp_rt)
+        if len(elem_types) == 0:
+            elem_types = _parse_tuple_element_types(target_rt)
 
         # Generate: x = _tmp[0], y = _tmp[1], ...
         for i, elem in enumerate(elements):
@@ -573,7 +635,7 @@ def _expand_tuple_unpack_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> 
             elem_rt = elem_types[i] if i < len(elem_types) else "unknown"
             idx_node: Node = {
                 "kind": SUBSCRIPT,
-                "value": {"kind": NAME, "id": tmp_name, "resolved_type": val_rt},
+                "value": {"kind": NAME, "id": tmp_name, "resolved_type": tmp_rt},
                 "slice": {"kind": CONSTANT, "value": i, "resolved_type": "int64"},
                 "resolved_type": elem_rt,
             }
@@ -641,6 +703,33 @@ def _parse_tuple_element_types(rt: str) -> list[str]:
     if tail != "":
         parts.append(tail)
     return parts
+
+
+def _make_tuple_unpack_source(value: JsonVal, source_type: str, target_type: str) -> tuple[JsonVal, str]:
+    normalized_source = normalize_type_name(source_type)
+    normalized_target = normalize_type_name(target_type)
+    if normalized_target.startswith("tuple["):
+        if normalized_source.startswith("tuple["):
+            return value, normalized_source
+        if "None" in normalized_source.split(" | "):
+            out: Node = {
+                "kind": UNBOX,
+                "value": deep_copy_json(value),
+                "resolved_type": normalized_target,
+                "borrow_kind": "value",
+                "casts": [],
+                "target": normalized_target,
+                "on_fail": "raise",
+            }
+            if isinstance(value, dict):
+                span = value.get("source_span")
+                if isinstance(span, dict):
+                    out["source_span"] = span
+                repr_text = value.get("repr")
+                if isinstance(repr_text, str) and repr_text != "":
+                    out["repr"] = repr_text
+            return out, normalized_target
+    return value, normalized_source
 
 
 def expand_tuple_unpack(module: Node, ctx: CompileContext) -> Node:
@@ -1384,6 +1473,10 @@ _TYPE_GUARD_DEFAULTS: dict[str, str] = {
     "PYTRA_TID_INT": "int64",
     "PYTRA_TID_FLOAT": "float64",
     "PYTRA_TID_STR": "str",
+    "PYTRA_TID_LIST": "list",
+    "PYTRA_TID_DICT": "dict",
+    "PYTRA_TID_SET": "set",
+    "PYTRA_TID_TUPLE": "tuple",
 }
 
 
@@ -1480,6 +1573,34 @@ def _guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
         if target_type == "" or target_type == "unknown":
             return {}
         return {name: target_type}
+    if kind == COMPARE:
+        left = nd.get("left")
+        comparators = nd.get("comparators")
+        ops = nd.get("ops")
+        if (
+            isinstance(left, dict)
+            and left.get("kind") == NAME
+            and isinstance(comparators, list)
+            and len(comparators) == 1
+            and isinstance(comparators[0], dict)
+            and comparators[0].get("kind") == CONSTANT
+            and comparators[0].get("value") is None
+            and isinstance(ops, list)
+            and len(ops) == 1
+        ):
+            name2 = _tp_safe(left.get("id"))
+            src_type = _tp_safe(left.get("resolved_type"))
+            if name2 == "" or src_type == "":
+                return {}
+            members = [member for member in _split_union_members(src_type) if normalize_type_name(member) != "None"]
+            op = _tp_safe(ops[0])
+            if op == "IsNot":
+                if len(members) == 0:
+                    return {}
+                if len(members) == 1:
+                    return {name2: normalize_type_name(members[0])}
+                return {name2: " | ".join([normalize_type_name(member) for member in members])}
+        return {}
     if kind == BOOL_OP and _tp_safe(nd.get("op")) == "And":
         merged: dict[str, str] = {}
         values = nd.get("values")
@@ -1494,6 +1615,41 @@ def _guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
                 else:
                     merged.pop(name, None)
         return merged
+    return {}
+
+
+def _invert_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
+    if not isinstance(expr, dict):
+        return {}
+    nd: Node = expr
+    if nd.get("kind", "") != COMPARE:
+        return {}
+    left = nd.get("left")
+    comparators = nd.get("comparators")
+    ops = nd.get("ops")
+    if (
+        not isinstance(left, dict)
+        or left.get("kind") != NAME
+        or not isinstance(comparators, list)
+        or len(comparators) != 1
+        or not isinstance(comparators[0], dict)
+        or comparators[0].get("kind") != CONSTANT
+        or comparators[0].get("value") is not None
+        or not isinstance(ops, list)
+        or len(ops) != 1
+    ):
+        return {}
+    name = _tp_safe(left.get("id"))
+    src_type = _tp_safe(left.get("resolved_type"))
+    if name == "" or src_type == "":
+        return {}
+    members = [member for member in _split_union_members(src_type) if normalize_type_name(member) != "None"]
+    if len(members) == 0:
+        return {}
+    narrowed = members[0] if len(members) == 1 else " | ".join(members)
+    op = _tp_safe(ops[0])
+    if op == "Is":
+        return {name: normalize_type_name(narrowed)}
     return {}
 
 
@@ -1605,6 +1761,15 @@ def _guard_stmt_list(stmts: JsonVal, env: dict[str, str]) -> JsonVal:
         if not isinstance(stmt, dict):
             continue
         kind = stmt.get("kind", "")
+        if kind == IF:
+            body = stmt.get("body")
+            orelse = stmt.get("orelse")
+            body_exits = _guard_block_guarantees_exit(body)
+            orelse_exits = _guard_block_guarantees_exit(orelse)
+            if body_exits and not orelse_exits:
+                local_env.update(_invert_guard_narrowing_from_expr(stmt.get("test")))
+            elif orelse_exits and not body_exits:
+                local_env.update(_guard_narrowing_from_expr(stmt.get("test")))
         if kind in (ASSIGN, ANN_ASSIGN, AUG_ASSIGN, FOR, FOR_RANGE):
             for name in _target_names(stmt.get("target")):
                 local_env.pop(name, None)
@@ -1612,6 +1777,23 @@ def _guard_stmt_list(stmts: JsonVal, env: dict[str, str]) -> JsonVal:
             for name in _target_names(stmt.get("target_plan")):
                 local_env.pop(name, None)
     return stmts
+
+
+def _guard_stmt_guarantees_exit(stmt: JsonVal) -> bool:
+    if not isinstance(stmt, dict):
+        return False
+    kind = _tp_safe(stmt.get("kind"))
+    if kind in (RETURN, "Raise"):
+        return True
+    if kind == IF:
+        return _guard_block_guarantees_exit(stmt.get("body")) and _guard_block_guarantees_exit(stmt.get("orelse"))
+    return False
+
+
+def _guard_block_guarantees_exit(stmts: JsonVal) -> bool:
+    if not isinstance(stmts, list) or len(stmts) == 0:
+        return False
+    return _guard_stmt_guarantees_exit(stmts[-1])
 
 
 def _guard_stmt(stmt: JsonVal, env: dict[str, str]) -> None:
