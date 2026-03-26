@@ -107,6 +107,54 @@ def identity(value: Scalar) -> Scalar:
         self.assertEqual(fn.get("return_type"), "int64 | float64")
         self.assertEqual(ret_name.get("resolved_type"), "int64 | float64")
 
+    def test_pytra_typing_cast_is_kept_as_value_import_and_resolves_target_type(self) -> None:
+        source = """
+from pytra.typing import Any, cast
+from pytra.std.pathlib import Path
+
+def f(value: str | Path, raw: Any) -> str:
+    text = cast(str, value)
+    path_obj = cast(Path, value)
+    return text
+"""
+        east1 = parse_python_source(source, "<mem>").to_jv()
+        meta1 = east1.get("meta", {})
+        self.assertIsInstance(meta1, dict)
+        import_symbols1 = meta1.get("import_symbols", {})
+        self.assertIsInstance(import_symbols1, dict)
+        self.assertEqual(import_symbols1.get("cast"), {"module": "pytra.typing", "name": "cast"})
+        self.assertNotIn("Any", import_symbols1)
+
+        east2 = deep_copy_json(east1)
+        self.assertIsInstance(east2, dict)
+        resolve_east1_to_east2(east2, registry=_load_registry())
+
+        cast_calls = [
+            node
+            for node in _walk(east2)
+            if node.get("kind") == "Call"
+            and isinstance(node.get("func"), dict)
+            and node["func"].get("kind") == "Name"
+            and node["func"].get("id") == "cast"
+        ]
+        self.assertEqual([node.get("resolved_type") for node in cast_calls], ["str", "Path"])
+
+        east3 = lower_east2_to_east3(deep_copy_json(east2))
+        text_assign = next(
+            node for node in _walk(east3)
+            if node.get("kind") == "Assign"
+            and isinstance(node.get("target"), dict)
+            and node["target"].get("id") == "text"
+        )
+        path_assign = next(
+            node for node in _walk(east3)
+            if node.get("kind") == "Assign"
+            and isinstance(node.get("target"), dict)
+            and node["target"].get("id") == "path_obj"
+        )
+        self.assertEqual(text_assign.get("decl_type"), "str")
+        self.assertEqual(path_assign.get("decl_type"), "Path")
+
     def test_registry_driven_resolution_covers_builtins_stdlib_and_forrange(self) -> None:
         source = """
 from pytra.std import json, random
@@ -181,6 +229,76 @@ def f(xs: list[int], ys: list[str], text: str) -> None:
         self.assertEqual(path_call.get("resolved_type"), "Path")
         self.assertEqual(for_range.get("target_type"), "int64")
         self.assertEqual(for_range.get("target", {}).get("resolved_type"), "int64")
+
+    def test_resolver_annotates_module_attr_runtime_metadata_for_extern_values(self) -> None:
+        source = """
+from pytra.std import math
+
+def f() -> float:
+    return math.pi
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+
+        math_pi = next(
+            node
+            for node in _walk(east2)
+            if node.get("kind") == "Attribute"
+            and node.get("attr") == "pi"
+            and isinstance(node.get("value"), dict)
+            and node["value"].get("kind") == "Name"
+            and node["value"].get("id") == "math"
+        )
+
+        self.assertEqual(math_pi.get("resolved_type"), "float64")
+        self.assertEqual(math_pi.get("runtime_module_id"), "pytra.std.math")
+        self.assertEqual(math_pi.get("runtime_symbol"), "pi")
+        self.assertEqual(math_pi.get("runtime_symbol_dispatch"), "value")
+
+    def test_resolver_propagates_extern_call_argument_type(self) -> None:
+        source = """
+import sys
+from pytra.std import extern
+
+stdout = extern(sys.stdout)
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+        east3 = lower_east2_to_east3(deep_copy_json(east2))
+
+        stdout_assign = next(
+            node
+            for node in _walk(east3)
+            if node.get("kind") == "Assign"
+            and isinstance(node.get("target"), dict)
+            and node["target"].get("id") == "stdout"
+        )
+
+        self.assertEqual(stdout_assign.get("decl_type"), "str")
+        self.assertEqual(stdout_assign.get("value", {}).get("resolved_type"), "str")
+
+    def test_resolver_recognizes_builtin_type_objects_in_value_position(self) -> None:
+        source = """
+int8 = int
+float64 = float
+Obj = object
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+        east3 = lower_east2_to_east3(deep_copy_json(east2))
+
+        assigns = {
+            node["target"]["id"]: node
+            for node in _walk(east3)
+            if node.get("kind") == "Assign"
+            and isinstance(node.get("target"), dict)
+            and isinstance(node["target"].get("id"), str)
+        }
+
+        self.assertEqual(assigns["int8"].get("decl_type"), "type")
+        self.assertEqual(assigns["int8"].get("value", {}).get("resolved_type"), "type")
+        self.assertEqual(assigns["float64"].get("decl_type"), "type")
+        self.assertEqual(assigns["Obj"].get("decl_type"), "type")
 
     def test_registry_loads_runtime_builtins_and_tuple_target_comprehensions(self) -> None:
         registry = _load_registry()
@@ -457,6 +575,112 @@ def f() -> int:
         self.assertEqual(tmp_assign.get("value", {}).get("kind"), "Call")
         self.assertEqual(x_assign.get("decl_type"), "int64")
         self.assertEqual(x_assign.get("value", {}).get("resolved_type"), "int64")
+
+    def test_compile_unboxes_optional_tuple_before_unpack(self) -> None:
+        source = """
+def f(separators: tuple[str, str] | None) -> str:
+    item_sep = ","
+    key_sep = ":"
+    if separators is not None:
+        item_sep, key_sep = separators
+    return item_sep + key_sep
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+        east3 = lower_east2_to_east3(deep_copy_json(east2))
+
+        tmp_assign = next(
+            node
+            for node in _walk(east3)
+            if node.get("kind") == "Assign"
+            and isinstance(node.get("target"), dict)
+            and node["target"].get("id") == "__tup_1"
+        )
+        item_assign = next(
+            node
+            for node in _walk(east3)
+            if node.get("kind") == "Assign"
+            and isinstance(node.get("target"), dict)
+            and node["target"].get("id") == "item_sep"
+            and node.get("decl_type") == "str"
+            and isinstance(node.get("value"), dict)
+            and node["value"].get("kind") == "Subscript"
+        )
+        key_assign = next(
+            node
+            for node in _walk(east3)
+            if node.get("kind") == "Assign"
+            and isinstance(node.get("target"), dict)
+            and node["target"].get("id") == "key_sep"
+            and node.get("decl_type") == "str"
+            and isinstance(node.get("value"), dict)
+            and node["value"].get("kind") == "Subscript"
+        )
+
+        self.assertEqual(tmp_assign.get("value", {}).get("kind"), "Unbox")
+        self.assertEqual(tmp_assign.get("value", {}).get("target"), "tuple[str,str]")
+        self.assertEqual(item_assign.get("value", {}).get("resolved_type"), "str")
+        self.assertEqual(key_assign.get("value", {}).get("resolved_type"), "str")
+
+    def test_compile_casts_string_index_to_byte_target(self) -> None:
+        source = """
+def f(s: str, i: int) -> None:
+    ch: byte = s[i]
+    print(ch == 66)
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+        east3 = lower_east2_to_east3(deep_copy_json(east2))
+
+        ch_assign = next(
+            node
+            for node in _walk(east3)
+            if node.get("kind") == "AnnAssign"
+            and isinstance(node.get("target"), dict)
+            and node["target"].get("id") == "ch"
+        )
+        value = ch_assign.get("value")
+
+        self.assertEqual(ch_assign.get("decl_type"), "str")
+        self.assertEqual(ch_assign.get("decl_type_expr"), {"kind": "NamedType", "name": "str"})
+        self.assertIsInstance(ch_assign.get("target"), dict)
+        self.assertEqual(ch_assign["target"].get("resolved_type"), "str")
+        self.assertEqual(ch_assign["target"].get("type_expr"), {"kind": "NamedType", "name": "str"})
+        self.assertIsInstance(value, dict)
+        self.assertEqual(value.get("kind"), "Subscript")
+        self.assertEqual(value.get("resolved_type"), "str")
+
+    def test_resolver_sets_for_loop_target_types_for_strings_and_bytes(self) -> None:
+        source = """
+def f(b: bytes, ba: bytearray, s: str) -> None:
+    for vb in b:
+        print(vb)
+    for vba in ba:
+        print(vba)
+    for ch in s:
+        print(ch)
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+
+        for_nodes = [node for node in _walk(east2) if node.get("kind") == "For"]
+        self.assertEqual(len(for_nodes), 3)
+
+        bytes_for = for_nodes[0]
+        bytearray_for = for_nodes[1]
+        str_for = for_nodes[2]
+
+        self.assertEqual(bytes_for.get("target_type"), "int64")
+        self.assertEqual(bytes_for.get("iter_element_type"), "int64")
+        self.assertEqual(bytes_for.get("target", {}).get("resolved_type"), "int64")
+
+        self.assertEqual(bytearray_for.get("target_type"), "int64")
+        self.assertEqual(bytearray_for.get("iter_element_type"), "int64")
+        self.assertEqual(bytearray_for.get("target", {}).get("resolved_type"), "int64")
+
+        self.assertEqual(str_for.get("target_type"), "str")
+        self.assertEqual(str_for.get("iter_element_type"), "str")
+        self.assertEqual(str_for.get("target", {}).get("resolved_type"), "str")
 
     def test_resolver_refines_lambda_args_from_calls_and_defaults(self) -> None:
         source = """

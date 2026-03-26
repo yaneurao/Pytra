@@ -908,15 +908,24 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
             owner_id = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
             if owner_rt == "module" or owner_id in ctx.import_alias_modules:
-                # Check if the module is skipped (native runtime) → add prefix
-                # If not skipped (transpiled) → use bare name
-                mod_id = _str(owner_node, "runtime_module_id") if isinstance(owner_node, dict) else ""
+                mod_id = _str(node, "runtime_module_id")
+                if mod_id == "":
+                    mod_id = _str(func, "runtime_module_id")
+                if mod_id == "":
+                    mod_id = _str(owner_node, "runtime_module_id") if isinstance(owner_node, dict) else ""
                 if mod_id == "":
                     mod_id = ctx.import_alias_modules.get(owner_id, "")
+                runtime_symbol = _str(node, "runtime_symbol")
+                if runtime_symbol == "":
+                    runtime_symbol = _str(func, "runtime_symbol")
+                if runtime_symbol == "":
+                    runtime_symbol = attr
                 if should_skip_module(mod_id, ctx.mapping):
-                    return ctx.mapping.builtin_prefix + _safe_go_ident(attr) + "(" + ", ".join(call_arg_strs) + ")"
-                else:
-                    return _safe_go_ident(attr) + "(" + ", ".join(call_arg_strs) + ")"
+                    resolved_name = _resolve_runtime_symbol_name(ctx, node, runtime_symbol)
+                    if resolved_name == "":
+                        resolved_name = ctx.mapping.builtin_prefix + runtime_symbol
+                    return _safe_go_ident(resolved_name) + "(" + ", ".join(call_arg_strs) + ")"
+                return _safe_go_ident(runtime_symbol) + "(" + ", ".join(call_arg_strs) + ")"
             # .append() on non-BuiltinCall (plain method call)
             if attr == "append" and len(arg_strs) >= 1:
                 # If owner is bytes/bytearray or unknown bytes-like, use append_byte
@@ -1420,17 +1429,18 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     return "nil /* unknown builtin */"
 
 
-_MATH_CONSTANTS: dict[str, str] = {
-    "pi": "math.Pi", "e": "math.E", "inf": "math.Inf(1)", "nan": "math.NaN()",
-}
-
-_PATHLIB_PROPERTY_METHODS: set[str] = {
-    "name",
-    "parent",
-    "parents",
-    "suffix",
-    "stem",
-}
+def _resolve_runtime_symbol_name(ctx: EmitContext, node: dict[str, JsonVal], symbol: str) -> str:
+    resolved_runtime_call = _str(node, "resolved_runtime_call")
+    runtime_call = _str(node, "runtime_call")
+    if resolved_runtime_call in ctx.mapping.calls:
+        return ctx.mapping.calls[resolved_runtime_call]
+    if runtime_call in ctx.mapping.calls:
+        return ctx.mapping.calls[runtime_call]
+    if symbol in ctx.mapping.calls:
+        return ctx.mapping.calls[symbol]
+    if symbol != "":
+        return ctx.mapping.builtin_prefix + symbol
+    return ""
 
 def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     owner_node = node.get("value")
@@ -1448,20 +1458,24 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return _safe_go_ident(owner_id + "_" + attr)
     if _str(node, "attribute_access_kind") == "property_getter":
         return owner + "." + _safe_go_ident(attr) + "()"
-    # Module attribute: math.pi → math.Pi, math.sqrt → py_sqrt
-    if owner_id == "math" and attr in _MATH_CONSTANTS:
-        ctx.imports_needed.add("math")
-        return _MATH_CONSTANTS[attr]
     owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
     if owner_rt == "module" or owner_id in ctx.import_alias_modules:
-        mod_id = _str(owner_node, "runtime_module_id") if isinstance(owner_node, dict) else ""
+        mod_id = _str(node, "runtime_module_id")
+        if mod_id == "":
+            mod_id = _str(owner_node, "runtime_module_id") if isinstance(owner_node, dict) else ""
         if mod_id == "":
             mod_id = ctx.import_alias_modules.get(owner_id, "")
         if mod_id != "" and should_skip_module(mod_id, ctx.mapping):
+            runtime_symbol = _str(node, "runtime_symbol")
+            if runtime_symbol == "":
+                runtime_symbol = attr
+            resolved_name = _resolve_runtime_symbol_name(ctx, node, runtime_symbol)
+            if resolved_name != "":
+                if _str(node, "runtime_symbol_dispatch") == "value":
+                    return _safe_go_ident(resolved_name) + "()"
+                return _safe_go_ident(resolved_name)
             return ctx.mapping.builtin_prefix + _safe_go_ident(attr)
     if owner_rt != "" and attr in ctx.class_property_methods.get(owner_rt, set()):
-        return owner + "." + _safe_go_ident(attr) + "()"
-    if owner_rt == "Path" and attr in _PATHLIB_PROPERTY_METHODS:
         return owner + "." + _safe_go_ident(attr) + "()"
     return owner + "." + _safe_go_ident(attr)
 
@@ -1526,13 +1540,6 @@ def _emit_raw_string_subscript(ctx: EmitContext, node: JsonVal) -> str:
         operand = _emit_expr(ctx, slice_node.get("operand"))
         idx = "len(" + value + ")-" + operand
     return value + "[" + idx + "]"
-
-
-def _is_string_subscript(node: JsonVal) -> bool:
-    if not isinstance(node, dict) or _str(node, "kind") != "Subscript":
-        return False
-    value_node = node.get("value")
-    return isinstance(value_node, dict) and _str(value_node, "resolved_type") == "str"
 
 
 def _emit_slice_access(ctx: EmitContext, value: str, slice_node: dict[str, JsonVal]) -> str:
@@ -1843,15 +1850,21 @@ def _emit_comp_iife(
             lines.append(pad + "for _, " + byte_name + " := range " + iter_code + " {")
             depth += 1
             if t_name != "_":
-                lines.append((indent * depth) + "var " + t_name + " int64 = int64(" + byte_name + ")")
-                ctx.var_types[t_name] = "int64"
+                bind_rt = t_type if t_type not in ("", "unknown") else "int64"
+                bind_gt = _go_signature_type(ctx, bind_rt)
+                bind_code = byte_name if bind_gt in ("byte", "uint8") else bind_gt + "(" + byte_name + ")"
+                lines.append((indent * depth) + "var " + t_name + " " + bind_gt + " = " + bind_code)
+                ctx.var_types[t_name] = bind_rt
         elif iter_rt == "str":
             rune_name = _next_temp(ctx, "r")
             lines.append(pad + "for _, " + rune_name + " := range " + iter_code + " {")
             depth += 1
             if t_name != "_":
-                lines.append((indent * depth) + "var " + t_name + " string = string(" + rune_name + ")")
-                ctx.var_types[t_name] = "str"
+                bind_rt = t_type if t_type not in ("", "unknown") else "str"
+                bind_gt = _go_signature_type(ctx, bind_rt)
+                bind_code = "string(" + rune_name + ")" if bind_gt == "string" else rune_name
+                lines.append((indent * depth) + "var " + t_name + " " + bind_gt + " = " + bind_code)
+                ctx.var_types[t_name] = bind_rt
         else:
             if target_kind == "Tuple":
                 item_name = _next_temp(ctx, "tuple_item")
@@ -2063,19 +2076,6 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
     if value is not None:
         val_code = _emit_expr(ctx, value)
-        preserve_str_value = gt in ("uint8", "byte") and _is_string_subscript(value)
-        if preserve_str_value:
-            ctx.var_types[name] = "str"
-            if declare_new:
-                if at_module_scope:
-                    _emit(ctx, "var " + name + " string = " + val_code)
-                else:
-                    _emit(ctx, name + " := " + val_code)
-            else:
-                _emit(ctx, name + " = " + val_code)
-            if is_suppressed_unused and name != "_" and not at_module_scope:
-                _emit(ctx, "_ = " + name)
-            return
         if not declare_new:
             declared_rt = ctx.var_types.get(name, rt)
             declared_gt = _go_signature_type(ctx, declared_rt)
@@ -2135,32 +2135,12 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 return
             if gn in ctx.var_types:
                 declared_rt = ctx.var_types.get(gn, "")
-                # If var was declared as unknown (any), upgrade type
-                if declared_rt == "unknown" and isinstance(value, dict):
-                    new_rt = _str(value, "resolved_type")
-                    new_dt = _str(node, "decl_type")
-                    actual_rt = new_dt if new_dt != "" and new_dt != "unknown" else new_rt
-                    if actual_rt != "" and actual_rt != "unknown":
-                        ctx.var_types[gn] = actual_rt
-                        gt_new = _go_signature_type(ctx, actual_rt)
-                        _emit(ctx, gn + " = " + gt_new + "(" + val_code + ")")
-                        if is_unused:
-                            _emit(ctx, "_ = " + gn)
-                    else:
-                        _emit(ctx, gn + " = " + val_code)
-                else:
-                    if declared_rt != "":
-                        declared_gt = _go_signature_type(ctx, declared_rt)
-                        if declared_gt in ("uint8", "byte") and _is_string_subscript(value):
-                            ctx.var_types[gn] = "str"
-                            _emit(ctx, gn + " = " + val_code)
-                            if is_unused:
-                                _emit(ctx, "_ = " + gn)
-                            return
-                        val_code = _coerce_to_type(val_code, declared_gt, value)
-                    _emit(ctx, gn + " = " + val_code)
-                    if is_unused:
-                        _emit(ctx, "_ = " + gn)
+                if declared_rt != "":
+                    declared_gt = _go_signature_type(ctx, declared_rt)
+                    val_code = _coerce_to_type(val_code, declared_gt, value)
+                _emit(ctx, gn + " = " + val_code)
+                if is_unused:
+                    _emit(ctx, "_ = " + gn)
             else:
                 # Check for decl_type on the Assign node, target, or value
                 decl_type = _str(node, "decl_type")
@@ -2197,15 +2177,6 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                     ctx.var_types[gn] = "bytes"
                 if gt in ("int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64",
                           "float64", "float32"):
-                    if gt in ("uint8", "byte") and _is_string_subscript(value):
-                        ctx.var_types[gn] = "str"
-                        if at_module_scope:
-                            _emit(ctx, "var " + gn + " string = " + val_code)
-                        else:
-                            _emit(ctx, gn + " := " + val_code)
-                        if is_unused and not at_module_scope:
-                            _emit(ctx, "_ = " + gn)
-                        return
                     _emit(ctx, "var " + gn + " " + gt + " = " + val_code)
                 else:
                     if gt != "" and gt != "any":
@@ -2368,15 +2339,21 @@ def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 if iter_rt in ("bytearray", "bytes", "list[uint8]"):
                     _emit(ctx, "for _, _byte_ := range " + iter_code + " {")
                     ctx.indent_level += 1
-                    _emit(ctx, "var " + t_name + " int64 = int64(_byte_)")
-                    ctx.var_types[t_name] = "int64"
+                    bind_rt = t_type if t_type not in ("", "unknown") else "int64"
+                    bind_gt = _go_signature_type(ctx, bind_rt)
+                    bind_code = "_byte_" if bind_gt in ("byte", "uint8") else bind_gt + "(_byte_)"
+                    _emit(ctx, "var " + t_name + " " + bind_gt + " = " + bind_code)
+                    ctx.var_types[t_name] = bind_rt
                 elif iter_rt == "str":
                     rune_name = _next_temp(ctx, "r")
                     _emit(ctx, "for _, " + rune_name + " := range " + iter_code + " {")
                     ctx.indent_level += 1
                     if t_name != "_":
-                        _emit(ctx, "var " + t_name + " string = string(" + rune_name + ")")
-                        ctx.var_types[t_name] = "str"
+                        bind_rt = t_type if t_type not in ("", "unknown") else "str"
+                        bind_gt = _go_signature_type(ctx, bind_rt)
+                        bind_code = "string(" + rune_name + ")" if bind_gt == "string" else rune_name
+                        _emit(ctx, "var " + t_name + " " + bind_gt + " = " + bind_code)
+                        ctx.var_types[t_name] = bind_rt
                 elif iter_rt.startswith("set[") or iter_rt.startswith("dict["):
                     _emit(ctx, "for " + t_name + " := range " + iter_code + " {")
                     ctx.indent_level += 1

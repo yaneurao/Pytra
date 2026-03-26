@@ -42,6 +42,20 @@ from toolchain2.resolve.py.builtin_registry import (
 )
 from toolchain2.resolve.py.normalize_order import normalize_field_order
 
+_BUILTIN_TYPE_OBJECT_NAMES: set[str] = {
+    "int",
+    "float",
+    "bool",
+    "str",
+    "object",
+    "bytes",
+    "bytearray",
+    "list",
+    "dict",
+    "set",
+    "tuple",
+}
+
 
 @dataclass
 class ResolveResult:
@@ -817,6 +831,9 @@ def _resolve_name(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     if ctx.lookup_class(name) is not None:
         expr["resolved_type"] = "type"
         return "type"
+    if t == "unknown" and name in _BUILTIN_TYPE_OBJECT_NAMES:
+        expr["resolved_type"] = "type"
+        return "type"
     expr["resolved_type"] = t
     # Borrow kind: readonly_ref for typed names (references to known variables)
     # value for untyped (function names, unknown)
@@ -1128,6 +1145,33 @@ def _infer_signature_return_type(sig: FuncSig, arg_types: list[str]) -> str:
     return normalize_type(_substitute_type_bindings(sig.return_type, bindings))
 
 
+def _infer_cast_target_type(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    args = expr.get("args")
+    if not isinstance(args, list) or len(args) == 0:
+        return "unknown"
+    target = args[0]
+    if not isinstance(target, dict):
+        return "unknown"
+    target_kind_val = target.get("kind")
+    target_kind = str(target_kind_val) if isinstance(target_kind_val, str) else ""
+    if target_kind == "Name":
+        type_name_val = target.get("id")
+        type_name = str(type_name_val) if isinstance(type_name_val, str) else ""
+        if type_name != "":
+            return _ctx_normalize_type(type_name, ctx)
+    if target_kind == "Attribute":
+        owner = target.get("value")
+        owner_id = ""
+        if isinstance(owner, dict):
+            owner_id_val = owner.get("id")
+            owner_id = str(owner_id_val) if isinstance(owner_id_val, str) else ""
+        attr_val = target.get("attr")
+        attr = str(attr_val) if isinstance(attr_val, str) else ""
+        if owner_id != "" and attr != "":
+            return _ctx_normalize_type(owner_id + "." + attr, ctx)
+    return "unknown"
+
+
 def _resolve_simple_call(expr: dict[str, JsonVal], func: dict[str, JsonVal], ctx: ResolveContext) -> str:
     """Resolve a simple Name-based function call."""
     name_val = func.get("id")
@@ -1352,6 +1396,17 @@ def _resolve_imported_call(
         export_name = local_name
 
     arg_types: list[str] = _collect_call_arg_types(expr)
+
+    if module_id in ("typing", "pytra.typing") and export_name == "cast":
+        ret = _infer_cast_target_type(expr, ctx)
+        expr["resolved_type"] = ret
+        func["resolved_type"] = "callable"
+        return ret
+    if module_id == "pytra.std" and export_name == "extern":
+        ret = arg_types[0] if len(arg_types) > 0 else "unknown"
+        expr["resolved_type"] = ret
+        func["resolved_type"] = "callable"
+        return ret
 
     # Determine return type from stdlib registry if available
     ret: str = "unknown"
@@ -1677,6 +1732,19 @@ def _resolve_attribute(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
                 elif ctx.registry.lookup_stdlib_function(canonical, attr) is not None:
                     t = "callable"
             expr["resolved_type"] = t
+            sym_doc: dict[str, JsonVal] = ctx.lookup_runtime_symbol_doc(canonical, attr)
+            if len(sym_doc) > 0:
+                expr["runtime_module_id"] = canonical
+                expr["runtime_symbol"] = attr
+                dispatch = sym_doc.get("dispatch")
+                if isinstance(dispatch, str) and dispatch != "":
+                    expr["runtime_symbol_dispatch"] = dispatch
+                adapter = ctx.lookup_adapter_kind(canonical, attr)
+                if adapter != "":
+                    expr["runtime_call_adapter_kind"] = adapter
+                semantic_tag = sym_doc.get("semantic_tag")
+                if isinstance(semantic_tag, str) and semantic_tag != "":
+                    expr["semantic_tag"] = semantic_tag
             return t
 
     # Class field access — check field_types from ClassDef (parse が収集済み)
@@ -2768,6 +2836,8 @@ def _resolve_for(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
         elem_type = it[4:-1]
     elif it == "str":
         elem_type = "str"
+    elif it in ("bytes", "bytearray", "list[uint8]"):
+        elem_type = "int64"
     elif it.startswith("dict[") and it.endswith("]"):
         # Iterating over dict gives keys
         targs: list[str] = extract_type_args(it)
