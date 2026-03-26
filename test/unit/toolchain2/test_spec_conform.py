@@ -17,6 +17,11 @@ from toolchain2.common.jv import deep_copy_json
 from toolchain2.compile.jv import CompileContext
 from toolchain2.compile.lower import lower_east2_to_east3
 from toolchain2.compile.passes import apply_guard_narrowing
+from toolchain2.emit.common.code_emitter import (
+    RuntimeMapping,
+    build_runtime_import_map,
+    resolve_runtime_symbol_name,
+)
 from toolchain2.parse.py.parser import parse_python_source
 from toolchain2.parse.py.parse_python import parse_python_file
 from toolchain2.resolve.py.builtin_registry import BuiltinRegistry, load_builtin_registry
@@ -45,6 +50,61 @@ def _load_registry() -> BuiltinRegistry:
 
 
 class Toolchain2SpecConformTests(unittest.TestCase):
+    def test_common_emitter_resolves_runtime_symbol_names_from_mapping_first(self) -> None:
+        mapping = RuntimeMapping(
+            builtin_prefix="rt_",
+            calls={"math.sin": "rt_sin", "argv": "rt_argv"},
+            skip_module_prefixes=["runtime."],
+        )
+
+        self.assertEqual(
+            resolve_runtime_symbol_name(
+                "sin",
+                mapping,
+                resolved_runtime_call="math.sin",
+                runtime_call="sin",
+            ),
+            "rt_sin",
+        )
+        self.assertEqual(resolve_runtime_symbol_name("argv", mapping), "rt_argv")
+        self.assertEqual(resolve_runtime_symbol_name("helper", mapping), "rt_helper")
+        self.assertEqual(resolve_runtime_symbol_name("rt_helper", mapping), "rt_helper")
+
+    def test_common_emitter_builds_runtime_import_map_from_binding_metadata(self) -> None:
+        mapping = RuntimeMapping(
+            builtin_prefix="rt_",
+            calls={"math.sin": "rt_sin"},
+            skip_module_prefixes=["runtime.", "pytra.std."],
+        )
+        meta = {
+            "import_bindings": [
+                {
+                    "module_id": "runtime.custom",
+                    "export_name": "helper",
+                    "local_name": "helper",
+                    "binding_kind": "symbol",
+                },
+                {
+                    "module_id": "pytra.std",
+                    "export_name": "math",
+                    "local_name": "math_alias",
+                    "binding_kind": "symbol",
+                },
+                {
+                    "module_id": "app.local",
+                    "export_name": "helper",
+                    "local_name": "local_helper",
+                    "binding_kind": "symbol",
+                },
+            ]
+        }
+
+        runtime_imports = build_runtime_import_map(meta, mapping)
+
+        self.assertEqual(runtime_imports["helper"], "rt_helper")
+        self.assertEqual(runtime_imports["math_alias"], "rt_math")
+        self.assertNotIn("local_helper", runtime_imports)
+
     def test_parser_preserves_typing_prefix_until_resolve(self) -> None:
         source = """
 import typing

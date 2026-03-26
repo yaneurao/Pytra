@@ -17,7 +17,8 @@ from pytra.std.pathlib import Path
 from toolchain2.emit.go.types import go_type, go_zero_value, _safe_go_ident, _split_generic_args
 from toolchain2.emit.common.code_emitter import (
     RuntimeMapping, load_runtime_mapping, resolve_runtime_call,
-    should_skip_module, build_import_alias_map,
+    should_skip_module, build_import_alias_map, build_runtime_import_map,
+    resolve_runtime_symbol_name,
 )
 from toolchain2.link.expand_defaults import expand_cross_module_defaults
 
@@ -38,8 +39,8 @@ class EmitContext:
     var_types: dict[str, str] = field(default_factory=dict)
     # Current function return type (for empty list literal type inference)
     current_return_type: str = ""
-    # Imported runtime symbols (need py_ prefix)
-    runtime_imports: set[str] = field(default_factory=set)
+    # Imported runtime symbols mapped to emitted helper names.
+    runtime_imports: dict[str, str] = field(default_factory=dict)
     # Runtime mapping (from mapping.json)
     mapping: RuntimeMapping = field(default_factory=RuntimeMapping)
     # Import alias → module_id map (for module.attr call resolution)
@@ -840,9 +841,14 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if runtime_symbol == "":
                     runtime_symbol = attr
                 if should_skip_module(mod_id, ctx.mapping):
-                    resolved_name = _resolve_runtime_symbol_name(ctx, node, runtime_symbol)
+                    resolved_name = resolve_runtime_symbol_name(
+                        runtime_symbol,
+                        ctx.mapping,
+                        resolved_runtime_call=_str(node, "resolved_runtime_call"),
+                        runtime_call=_str(node, "runtime_call"),
+                    )
                     if resolved_name == "":
-                        resolved_name = ctx.mapping.builtin_prefix + runtime_symbol
+                        resolved_name = resolve_runtime_symbol_name(runtime_symbol, ctx.mapping)
                     return _safe_go_ident(resolved_name) + "(" + ", ".join(call_arg_strs) + ")"
                 return _safe_go_ident(runtime_symbol) + "(" + ", ".join(call_arg_strs) + ")"
             # .append() on non-BuiltinCall (plain method call)
@@ -1004,23 +1010,18 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return _go_string_literal(fn_name)
             runtime_module_id = _str(node, "runtime_module_id")
             runtime_symbol = _str(node, "runtime_symbol")
-            resolved_runtime_call = _str(node, "resolved_runtime_call")
-            runtime_call = _str(node, "runtime_call")
             if runtime_symbol != "":
                 if not should_skip_module(runtime_module_id, ctx.mapping) and runtime_symbol[:1].isupper():
                     return "New" + _safe_go_ident(runtime_symbol) + "(" + ", ".join(call_arg_strs) + ")"
                 if _str(func, "resolved_type") == "type":
                     return "New" + _safe_go_ident(runtime_symbol) + "(" + ", ".join(call_arg_strs) + ")"
                 if should_skip_module(runtime_module_id, ctx.mapping):
-                    mapped_name = ""
-                    if resolved_runtime_call in ctx.mapping.calls:
-                        mapped_name = ctx.mapping.calls[resolved_runtime_call]
-                    elif runtime_call in ctx.mapping.calls:
-                        mapped_name = ctx.mapping.calls[runtime_call]
-                    elif runtime_symbol in ctx.mapping.calls:
-                        mapped_name = ctx.mapping.calls[runtime_symbol]
-                    if mapped_name == "":
-                        mapped_name = ctx.mapping.builtin_prefix + runtime_symbol
+                    mapped_name = resolve_runtime_symbol_name(
+                        runtime_symbol,
+                        ctx.mapping,
+                        resolved_runtime_call=_str(node, "resolved_runtime_call"),
+                        runtime_call=_str(node, "runtime_call"),
+                    )
                     return _safe_go_ident(mapped_name) + "(" + ", ".join(call_arg_strs) + ")"
                 return _safe_go_ident(runtime_symbol) + "(" + ", ".join(call_arg_strs) + ")"
             # Imported/declared class constructor: Path(...) → NewPath(...)
@@ -1031,10 +1032,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return "New" + _safe_go_ident(fn_name) + "(" + ", ".join(call_arg_strs) + ")"
             # Imported runtime function: add prefix only if not already prefixed
             if fn_name in ctx.runtime_imports:
-                gn = _safe_go_ident(fn_name)
-                if not gn.startswith(ctx.mapping.builtin_prefix):
-                    gn = ctx.mapping.builtin_prefix + gn
-                return gn + "(" + ", ".join(call_arg_strs) + ")"
+                return _safe_go_ident(ctx.runtime_imports[fn_name]) + "(" + ", ".join(call_arg_strs) + ")"
             # Check mapping for known runtime function names (e.g., py_to_string → py_str)
             if fn_name in ctx.mapping.calls:
                 return ctx.mapping.calls[fn_name] + "(" + ", ".join(call_arg_strs) + ")"
@@ -1373,19 +1371,6 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     return "nil /* unknown builtin */"
 
 
-def _resolve_runtime_symbol_name(ctx: EmitContext, node: dict[str, JsonVal], symbol: str) -> str:
-    resolved_runtime_call = _str(node, "resolved_runtime_call")
-    runtime_call = _str(node, "runtime_call")
-    if resolved_runtime_call in ctx.mapping.calls:
-        return ctx.mapping.calls[resolved_runtime_call]
-    if runtime_call in ctx.mapping.calls:
-        return ctx.mapping.calls[runtime_call]
-    if symbol in ctx.mapping.calls:
-        return ctx.mapping.calls[symbol]
-    if symbol != "":
-        return ctx.mapping.builtin_prefix + symbol
-    return ""
-
 def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     owner_node = node.get("value")
     attr = _str(node, "attr")
@@ -1413,7 +1398,12 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             runtime_symbol = _str(node, "runtime_symbol")
             if runtime_symbol == "":
                 runtime_symbol = attr
-            resolved_name = _resolve_runtime_symbol_name(ctx, node, runtime_symbol)
+            resolved_name = resolve_runtime_symbol_name(
+                runtime_symbol,
+                ctx.mapping,
+                resolved_runtime_call=_str(node, "resolved_runtime_call"),
+                runtime_call=_str(node, "runtime_call"),
+            )
             if resolved_name != "":
                 return _safe_go_ident(resolved_name)
             return ctx.mapping.builtin_prefix + _safe_go_ident(attr)
@@ -2984,22 +2974,8 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
     body = _list(east3_doc, "body")
     main_guard = _list(east3_doc, "main_guard_body")
 
-    # Collect imported runtime symbols for py_ prefixing
-    import_bindings = _list(meta, "import_bindings")
-    runtime_imports: set[str] = set()
-    for binding in import_bindings:
-        if not isinstance(binding, dict):
-            continue
-        mod_id = _str(binding, "module_id")
-        local = _str(binding, "local_name")
-        bk = _str(binding, "binding_kind")
-        if bk == "symbol" and local != "":
-            # Check if this symbol's actual module is skipped (native runtime)
-            # mod_id might be parent (pytra.std) with local being submodule name (math)
-            full_mod = mod_id + "." + local
-            if should_skip_module(mod_id, mapping) or should_skip_module(full_mod, mapping):
-                runtime_imports.add(local)
-    ctx.runtime_imports = runtime_imports
+    # Collect imported runtime symbols for native helper resolution.
+    ctx.runtime_imports = build_runtime_import_map(meta, mapping)
 
     # Build import alias → module_id map for module.attr call resolution
     ctx.import_alias_modules = build_import_alias_map(meta)

@@ -17,7 +17,7 @@ from pytra.std.pathlib import Path
 from toolchain2.emit.cpp.types import cpp_type, cpp_zero_value
 from toolchain2.emit.common.code_emitter import (
     RuntimeMapping, load_runtime_mapping, resolve_runtime_call,
-    should_skip_module, build_import_alias_map,
+    should_skip_module, build_runtime_import_map, resolve_runtime_symbol_name,
 )
 
 
@@ -36,7 +36,7 @@ class CppEmitContext:
     class_names: set[str] = field(default_factory=set)
     current_class: str = ""
     current_return_type: str = ""
-    runtime_imports: set[str] = field(default_factory=set)
+    runtime_imports: dict[str, str] = field(default_factory=dict)
     mapping: RuntimeMapping = field(default_factory=RuntimeMapping)
 
 
@@ -249,7 +249,7 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                     return "std::vector<uint8_t>(" + arg_strs[0] + ")"
                 return "std::vector<uint8_t>{}"
             if fn in ctx.class_names: return fn + "(" + ", ".join(arg_strs) + ")"
-            if fn in ctx.runtime_imports: return ctx.mapping.builtin_prefix + fn + "(" + ", ".join(arg_strs) + ")"
+            if fn in ctx.runtime_imports: return ctx.runtime_imports[fn] + "(" + ", ".join(arg_strs) + ")"
             if fn == "main": return "__pytra_main(" + ", ".join(arg_strs) + ")"
             return fn + "(" + ", ".join(arg_strs) + ")"
     return _emit_expr(ctx, func) + "(" + ", ".join(arg_strs) + ")"
@@ -338,7 +338,12 @@ def _emit_attribute(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     ):
         if runtime_symbol == "":
             runtime_symbol = attr
-        return ctx.mapping.builtin_prefix + runtime_symbol
+        return resolve_runtime_symbol_name(
+            runtime_symbol,
+            ctx.mapping,
+            resolved_runtime_call=_str(node, "resolved_runtime_call"),
+            runtime_call=_str(node, "runtime_call"),
+        )
     if owner_id == "math":
         if attr == "pi": return "M_PI"
         if attr == "e": return "M_E"
@@ -764,16 +769,7 @@ def emit_cpp_module(east3_doc: dict[str, JsonVal]) -> str:
     main_guard = _list(east3_doc, "main_guard_body")
 
     # Collect imports and class names
-    import_bindings = _list(meta, "import_bindings")
-    for b in import_bindings:
-        if isinstance(b, dict):
-            mid = _str(b, "module_id")
-            local = _str(b, "local_name")
-            bk = _str(b, "binding_kind")
-            if bk == "symbol" and local != "":
-                full_mod = mid + "." + local
-                if should_skip_module(mid, mapping) or should_skip_module(full_mod, mapping):
-                    ctx.runtime_imports.add(local)
+    ctx.runtime_imports = build_runtime_import_map(meta, mapping)
     for s in body:
         if isinstance(s, dict) and _str(s, "kind") == "ClassDef":
             ctx.class_names.add(_str(s, "name"))

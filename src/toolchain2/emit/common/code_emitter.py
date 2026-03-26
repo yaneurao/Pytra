@@ -4,6 +4,7 @@
 - runtime_call → ターゲット関数名の解決 (mapping.json)
 - runtime_call_adapter_kind 判定 (builtin/extern_delegate)
 - import alias 構築
+- runtime import 名の解決
 - module skip 判定
 
 §5 準拠: Any/object 禁止, pytra.std.* のみ, selfhost 対象。
@@ -122,6 +123,70 @@ def build_import_alias_map(meta: dict[str, JsonVal]) -> dict[str, str]:
                     alias_map[alias] = mod
 
     return alias_map
+
+
+def resolve_runtime_symbol_name(
+    symbol: str,
+    mapping: RuntimeMapping,
+    *,
+    resolved_runtime_call: str = "",
+    runtime_call: str = "",
+) -> str:
+    """Resolve a runtime symbol/value name using mapping.json first.
+
+    Used for skipped runtime module symbols where the emitter should render the
+    native helper/value name instead of re-emitting a module reference.
+    """
+    if resolved_runtime_call in mapping.calls:
+        return mapping.calls[resolved_runtime_call]
+    if runtime_call in mapping.calls:
+        return mapping.calls[runtime_call]
+    if symbol in mapping.calls:
+        return mapping.calls[symbol]
+    if symbol == "":
+        return ""
+    if symbol.startswith(mapping.builtin_prefix):
+        return symbol
+    return mapping.builtin_prefix + symbol
+
+
+def build_runtime_import_map(
+    meta: dict[str, JsonVal],
+    mapping: RuntimeMapping,
+) -> dict[str, str]:
+    """Build local import name -> native runtime symbol name for skipped modules."""
+    runtime_imports: dict[str, str] = {}
+    bindings = meta.get("import_bindings")
+    if not isinstance(bindings, list):
+        return runtime_imports
+
+    for binding in bindings:
+        if not isinstance(binding, dict):
+            continue
+        binding_kind = binding.get("binding_kind")
+        local_name = binding.get("local_name")
+        if not isinstance(binding_kind, str) or binding_kind != "symbol":
+            continue
+        if not isinstance(local_name, str) or local_name == "":
+            continue
+
+        module_id = binding.get("runtime_module_id")
+        if not isinstance(module_id, str) or module_id == "":
+            module_id = binding.get("module_id")
+        if not isinstance(module_id, str) or module_id == "":
+            continue
+
+        export_name = binding.get("export_name")
+        export_symbol = export_name if isinstance(export_name, str) and export_name != "" else local_name
+        full_module_id = module_id + "." + export_symbol
+        if not should_skip_module(module_id, mapping) and not should_skip_module(full_module_id, mapping):
+            continue
+
+        runtime_symbol = binding.get("runtime_symbol")
+        symbol_name = runtime_symbol if isinstance(runtime_symbol, str) and runtime_symbol != "" else export_symbol
+        runtime_imports[local_name] = resolve_runtime_symbol_name(symbol_name, mapping)
+
+    return runtime_imports
 
 
 # ---------------------------------------------------------------------------

@@ -40,7 +40,7 @@
 
 7. [x] [ID: P1-SPEC-CONFORM2-S7] `emit/go/emitter.py`: 型推論・型変更・cast 追加・ハードコードモジュール判定を除去 — `_emit_unbox()` の `Name` fallback を削除し、runtime lane を toolchain2 生成へ同期して `json_extended` Go parity を維持
 8. [x] [ID: P1-SPEC-CONFORM2-S8] `emit/cpp/emitter.py`: 同上 — `Assign` の target/value 型推論と `VarDecl` の `unknown -> int64` fallback を除去し、`unknown` は `auto`、range target は EAST3 `target_type`、skipped runtime value は metadata + mapping 経由へ整理
-9. [ ] [ID: P1-SPEC-CONFORM2-S9] `emit/common/code_emitter.py`: mapping.json のみで分岐するように整理
+9. [x] [ID: P1-SPEC-CONFORM2-S9] `emit/common/code_emitter.py`: mapping.json のみで分岐するように整理 — skipped runtime symbol/value 名解決と import binding -> runtime helper 名解決を common helper へ集約し、Go/C++ emitter の `mapping.calls` 直参照と prefix 組み立て重複を削除
 
 **フェーズ3: optimize / compile（型責務を前段に戻す）**
 
