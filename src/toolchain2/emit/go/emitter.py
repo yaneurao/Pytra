@@ -984,8 +984,6 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                             continue
                         if _optional_inner_type(expected_type) != "":
                             arg_code = _wrap_optional_value_code(ctx, arg_code, expected_type, arg_node)
-                        else:
-                            arg_code = _coerce_to_type(arg_code, go_type(expected_type), arg_node)
                     adjusted_args.append(arg_code)
                 for kw in keywords:
                     if isinstance(kw, dict):
@@ -1000,8 +998,6 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                                 continue
                             if _optional_inner_type(expected_type2) != "":
                                 kw_code = _wrap_optional_value_code(ctx, kw_code, expected_type2, kw_node)
-                            else:
-                                kw_code = _coerce_to_type(kw_code, go_type(expected_type2), kw_node)
                         adjusted_args.append(kw_code)
                 if (
                     isinstance(sig_vararg, dict)
@@ -2074,14 +2070,10 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     if value is not None:
         val_code = _emit_expr(ctx, value)
         if not declare_new:
-            declared_rt = ctx.var_types.get(name, rt)
-            declared_gt = _go_signature_type(ctx, declared_rt)
-            val_code = _coerce_to_type(val_code, declared_gt, value)
             _emit(ctx, name + " = " + val_code)
         else:
             if at_module_scope:
                 if gt != "" and gt != "any":
-                    val_code = _coerce_to_type(val_code, gt, value)
                     _emit(ctx, "var " + name + " " + gt + " = " + val_code)
                 else:
                     _emit(ctx, "var " + name + " any = " + val_code)
@@ -2089,9 +2081,6 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 # Use typed declaration for numeric types to avoid Go's untyped int
                 if gt in ("int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64",
                           "float64", "float32", "byte", "any"):
-                    # Wrap with type cast to ensure Go type compatibility
-                    if gt != "any":
-                        val_code = _coerce_to_type(val_code, gt, value)
                     _emit(ctx, "var " + name + " " + gt + " = " + val_code)
                 else:
                     _emit(ctx, name + " := " + val_code)
@@ -2131,10 +2120,6 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 _emit(ctx, "_ = " + val_code)
                 return
             if gn in ctx.var_types:
-                declared_rt = ctx.var_types.get(gn, "")
-                if declared_rt != "":
-                    declared_gt = _go_signature_type(ctx, declared_rt)
-                    val_code = _coerce_to_type(val_code, declared_gt, value)
                 _emit(ctx, gn + " = " + val_code)
                 if is_unused:
                     _emit(ctx, "_ = " + gn)
@@ -2173,8 +2158,6 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                           "float64", "float32"):
                     _emit(ctx, "var " + gn + " " + gt + " = " + val_code)
                 else:
-                    if gt != "" and gt != "any":
-                        val_code = _coerce_to_type(val_code, gt, value)
                     if at_module_scope:
                         if gt != "" and gt != "any":
                             _emit(ctx, "var " + gn + " " + gt + " = " + val_code)
@@ -2239,8 +2222,6 @@ def _emit_aug_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     target_rt = _str(target, "resolved_type") if isinstance(target, dict) else ""
     if target_rt == "" and t_code in ctx.var_types:
         target_rt = ctx.var_types[t_code]
-    if target_rt != "" and isinstance(value, dict):
-        v_code = _coerce_to_type(v_code, go_type(target_rt), value)
     _emit(ctx, t_code + " " + go_op + "= " + v_code)
 
 

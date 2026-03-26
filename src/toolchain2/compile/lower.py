@@ -276,6 +276,41 @@ def _assignment_storage_type_override(stmt: Node, value_expr: JsonVal, target_ty
     return "str"
 
 
+_STATIC_CAST_SCALAR_TYPES: set[str] = {
+    "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64",
+    "float32", "float64",
+}
+
+
+def _supports_static_scalar_cast(source_type: str, target_type: str) -> bool:
+    if source_type == "" or target_type == "":
+        return False
+    if source_type == target_type:
+        return False
+    return source_type in _STATIC_CAST_SCALAR_TYPES and target_type in _STATIC_CAST_SCALAR_TYPES
+
+
+def _make_static_scalar_cast_expr(value_expr: JsonVal, target_type: str, *, ctx: CompileContext) -> Node:
+    func_name = "int"
+    if target_type == "float32" or target_type == "float64":
+        func_name = "float"
+    out: Node = {
+        "kind": CALL,
+        "func": _make_name_node(func_name, "callable"),
+        "args": [value_expr],
+        "keywords": [],
+        "resolved_type": target_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "lowered_kind": BUILTIN_CALL,
+        "builtin_name": func_name,
+        "runtime_call": "static_cast",
+    }
+    _copy_source_span_and_repr(value_expr, out)
+    set_type_expr_summary(out, type_expr_summary_from_payload(ctx, None, target_type))
+    return out
+
+
 def _is_none_literal(node: JsonVal) -> bool:
     if not isinstance(node, dict):
         return False
@@ -369,6 +404,8 @@ def _wrap_value_for_target_type(
         out["bridge_lane_v1"] = bridge_lane_payload(target_summary, bridge_value_summary)
         set_type_expr_summary(out, target_summary)
         return out
+    if _supports_static_scalar_cast(value_t, target_t):
+        return _make_static_scalar_cast_expr(value_expr, target_t, ctx=ctx)
     return value_expr
 
 

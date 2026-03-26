@@ -488,6 +488,82 @@ def f(d: dict[str, int]) -> bool:
         self.assertEqual(g_assign.get("value", {}).get("target"), "int64 | None")
         self.assertTrue(g_assign.get("value", {}).get("value", {}).get("yields_dynamic"))
 
+    def test_compile_inserts_static_cast_for_scalar_ann_assign(self) -> None:
+        source = """
+def f() -> float:
+    n: int = 3
+    x: float = n
+    return x
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+        east3 = lower_east2_to_east3(east2)
+
+        x_assign = next(
+            node
+            for node in _walk(east3)
+            if node.get("kind") == "AnnAssign"
+            and isinstance(node.get("target"), dict)
+            and node["target"].get("id") == "x"
+        )
+        cast_call = x_assign.get("value", {})
+
+        self.assertEqual(cast_call.get("kind"), "Call")
+        self.assertEqual(cast_call.get("lowered_kind"), "BuiltinCall")
+        self.assertEqual(cast_call.get("runtime_call"), "static_cast")
+        self.assertEqual(cast_call.get("resolved_type"), "float64")
+        self.assertEqual(cast_call.get("args", [])[0].get("id"), "n")
+
+    def test_compile_inserts_static_cast_for_local_call_args(self) -> None:
+        source = """
+def takes_float(x: float) -> float:
+    return x
+
+def f() -> float:
+    n: int = 3
+    return takes_float(n)
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+        east3 = lower_east2_to_east3(east2)
+
+        local_call = next(
+            node
+            for node in _walk(east3)
+            if node.get("kind") == "Call"
+            and isinstance(node.get("func"), dict)
+            and node["func"].get("kind") == "Name"
+            and node["func"].get("id") == "takes_float"
+        )
+        cast_arg = local_call.get("args", [])[0]
+
+        self.assertEqual(cast_arg.get("kind"), "Call")
+        self.assertEqual(cast_arg.get("lowered_kind"), "BuiltinCall")
+        self.assertEqual(cast_arg.get("runtime_call"), "static_cast")
+        self.assertEqual(cast_arg.get("resolved_type"), "float64")
+        self.assertEqual(cast_arg.get("args", [])[0].get("id"), "n")
+
+    def test_compile_inserts_static_cast_for_scalar_aug_assign(self) -> None:
+        source = """
+def f() -> float:
+    total: float = 0.0
+    n: int = 3
+    total += n
+    return total
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+        east3 = lower_east2_to_east3(east2)
+
+        aug_assign = next(node for node in _walk(east3) if node.get("kind") == "AugAssign")
+        cast_value = aug_assign.get("value", {})
+
+        self.assertEqual(cast_value.get("kind"), "Call")
+        self.assertEqual(cast_value.get("lowered_kind"), "BuiltinCall")
+        self.assertEqual(cast_value.get("runtime_call"), "static_cast")
+        self.assertEqual(cast_value.get("resolved_type"), "float64")
+        self.assertEqual(cast_value.get("args", [])[0].get("id"), "n")
+
     def test_compile_narrows_union_names_inside_isinstance_guard(self) -> None:
         source = """
 type Scalar = int | float

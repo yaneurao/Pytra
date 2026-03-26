@@ -793,6 +793,119 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
 
         self.assertIn("for i := int32(0); i < int32(3); i += int32(1) {", go_code)
 
+    def test_go_emitter_does_not_invent_local_call_casts(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "takes_float",
+                    "arg_types": {"x": "float64"},
+                    "arg_order": ["x"],
+                    "arg_defaults": {},
+                    "arg_index": {"x": 0},
+                    "return_type": "float64",
+                    "arg_usage": {},
+                    "renamed_symbols": {},
+                    "docstring": None,
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {"kind": "Name", "id": "x", "resolved_type": "float64"},
+                        }
+                    ],
+                },
+                {
+                    "kind": "FunctionDef",
+                    "name": "run",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_index": {},
+                    "return_type": "float64",
+                    "arg_usage": {},
+                    "renamed_symbols": {},
+                    "docstring": None,
+                    "body": [
+                        {
+                            "kind": "AnnAssign",
+                            "target": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+                            "decl_type": "int64",
+                            "resolved_type": "int64",
+                            "value": {"kind": "Constant", "value": 3, "resolved_type": "int64"},
+                        },
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Call",
+                                "resolved_type": "float64",
+                                "func": {"kind": "Name", "id": "takes_float", "resolved_type": "callable"},
+                                "args": [{"kind": "Name", "id": "n", "resolved_type": "int64"}],
+                                "keywords": [],
+                            },
+                        },
+                    ],
+                },
+            ],
+        )
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("return takes_float(n)", go_code)
+        self.assertNotIn("takes_float(float64(n))", go_code)
+
+    def test_go_emitter_does_not_invent_assignment_casts(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "run",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_index": {},
+                    "return_type": "float64",
+                    "arg_usage": {},
+                    "renamed_symbols": {},
+                    "docstring": None,
+                    "body": [
+                        {
+                            "kind": "AnnAssign",
+                            "target": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+                            "decl_type": "int64",
+                            "resolved_type": "int64",
+                            "value": {"kind": "Constant", "value": 3, "resolved_type": "int64"},
+                        },
+                        {
+                            "kind": "AnnAssign",
+                            "target": {"kind": "Name", "id": "x", "resolved_type": "float64"},
+                            "decl_type": "float64",
+                            "resolved_type": "float64",
+                            "value": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+                        },
+                        {
+                            "kind": "AugAssign",
+                            "target": {"kind": "Name", "id": "x", "resolved_type": "float64"},
+                            "op": "Add",
+                            "value": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+                        },
+                        {
+                            "kind": "Return",
+                            "value": {"kind": "Name", "id": "x", "resolved_type": "float64"},
+                        },
+                    ],
+                }
+            ],
+        )
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("var x float64 = n", go_code)
+        self.assertIn("x += n", go_code)
+        self.assertNotIn("var x float64 = float64(n)", go_code)
+        self.assertNotIn("x += float64(n)", go_code)
+
     def test_cpp_emitter_runtime_symbol_prefix_uses_skip_modules_without_pytra_hardcode(self) -> None:
         doc = _module_doc(
             "app.main",
