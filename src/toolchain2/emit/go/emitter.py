@@ -383,9 +383,6 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if op == "Pow":
         ctx.imports_needed.add("math")
         return "math.Pow(float64(" + left_code + "), float64(" + right_code + "))"
-    if op == "Div":
-        if rt == "Path" or _str(node.get("left") if isinstance(node.get("left"), dict) else {}, "resolved_type") == "Path":
-            return left_code + ".__truediv__(" + right_code + ")"
 
     return "(" + left_code + " " + go_op + " " + right_code + ")"
 
@@ -2172,9 +2169,6 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                         return
                 ctx.var_types[gn] = decl_type
                 gt = _go_signature_type(ctx, decl_type)
-                # Detect bytes assignment: make([]byte, ...) or []byte{...}
-                if val_code.startswith("make([]byte") or val_code.startswith("[]byte"):
-                    ctx.var_types[gn] = "bytes"
                 if gt in ("int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64",
                           "float64", "float32"):
                     _emit(ctx, "var " + gn + " " + gt + " = " + val_code)
@@ -2324,12 +2318,12 @@ def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         t_name = _safe_go_ident(t_name) if t_name != "" else "_"
 
         if ip_kind == "StaticRangeForPlan":
-            _emit_range_for(ctx, t_name, iter_plan, body)
+            _emit_range_for(ctx, t_name, t_type, iter_plan, body)
             return
         if ip_kind == "RuntimeIterForPlan":
             # Check if this is a range (has start/stop) or a collection iter (has iter_expr)
             if iter_plan.get("start") is not None or iter_plan.get("stop") is not None:
-                _emit_range_for(ctx, t_name, iter_plan, body)
+                _emit_range_for(ctx, t_name, t_type, iter_plan, body)
             else:
                 # Collection iterator: for _, item := range collection
                 iter_expr = iter_plan.get("iter_expr")
@@ -2394,7 +2388,13 @@ def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     _emit(ctx, "}")
 
 
-def _emit_range_for(ctx: EmitContext, t_name: str, plan: dict[str, JsonVal], body: list[JsonVal]) -> None:
+def _emit_range_for(
+    ctx: EmitContext,
+    t_name: str,
+    t_type: str,
+    plan: dict[str, JsonVal],
+    body: list[JsonVal],
+) -> None:
     """Emit a range-based for loop from StaticRangeForPlan or RuntimeIterForPlan."""
     start = plan.get("start")
     stop = plan.get("stop")
@@ -2402,6 +2402,11 @@ def _emit_range_for(ctx: EmitContext, t_name: str, plan: dict[str, JsonVal], bod
 
     s_code = _emit_expr(ctx, start) if start is not None else "0"
     e_code = _emit_expr(ctx, stop) if stop is not None else "0"
+    bind_rt = t_type if t_type not in ("", "unknown") else "int64"
+    bind_gt = _go_signature_type(ctx, bind_rt)
+    if bind_gt in ("", "any"):
+        bind_rt = "int64"
+        bind_gt = "int64"
 
     # Determine step
     step_code = "1"
@@ -2424,9 +2429,13 @@ def _emit_range_for(ctx: EmitContext, t_name: str, plan: dict[str, JsonVal], bod
     if loop_var == "_":
         loop_var = "_loop_"
     assign_op = " = " if loop_var in ctx.var_types else " := "
-    _emit(ctx, "for " + loop_var + assign_op + "int64(" + s_code + "); " + loop_var + cmp_op + e_code + "; " + loop_var + " += " + step_code + " {")
+    start_code = bind_gt + "(" + s_code + ")"
+    stop_code = bind_gt + "(" + e_code + ")"
+    step_bind_code = bind_gt + "(" + step_code + ")"
+    _emit(ctx, "for " + loop_var + assign_op + start_code + "; " + loop_var + cmp_op + stop_code + "; " + loop_var + " += " + step_bind_code + " {")
     ctx.indent_level += 1
-    ctx.var_types[t_name] = "int64"
+    if t_name != "_":
+        ctx.var_types[t_name] = bind_rt
     _emit_body(ctx, body)
     ctx.indent_level -= 1
     _emit(ctx, "}")
@@ -2437,10 +2446,13 @@ def _emit_runtime_iter_for(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     target = node.get("target")
     body = _list(node, "body")
     t_name = ""
+    t_type = _str(node, "target_type")
     if isinstance(target, dict):
         t_name = _str(target, "id")
+        if t_type in ("", "unknown"):
+            t_type = _str(target, "resolved_type")
     t_name = _safe_go_ident(t_name) if t_name != "" else "_"
-    _emit_range_for(ctx, t_name, node, body)
+    _emit_range_for(ctx, t_name, t_type, node, body)
 
 
 def _emit_static_range_for(ctx: EmitContext, node: dict[str, JsonVal]) -> None:

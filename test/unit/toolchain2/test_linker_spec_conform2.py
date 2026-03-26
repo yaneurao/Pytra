@@ -751,6 +751,48 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
         self.assertIn("func NewControllerState() *ControllerState {", go_code)
         self.assertIn("merge_controller_states(target, []*ControllerState{lhs, rhs}...)", go_code)
 
+    def test_go_emitter_uses_range_target_type_from_east3(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "run",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_index": {},
+                    "return_type": "None",
+                    "arg_usage": {},
+                    "renamed_symbols": {},
+                    "docstring": None,
+                    "body": [
+                        {
+                            "kind": "ForCore",
+                            "iter_mode": "static_fastpath",
+                            "iter_plan": {
+                                "kind": "StaticRangeForPlan",
+                                "start": {"kind": "Constant", "value": 0, "resolved_type": "int64"},
+                                "stop": {"kind": "Constant", "value": 3, "resolved_type": "int64"},
+                                "step": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                            },
+                            "target_plan": {
+                                "kind": "NameTarget",
+                                "id": "i",
+                                "target_type": "int32",
+                            },
+                            "body": [],
+                            "orelse": [],
+                        }
+                    ],
+                }
+            ],
+        )
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("for i := int32(0); i < int32(3); i += int32(1) {", go_code)
+
     def test_cpp_emitter_runtime_symbol_prefix_uses_skip_modules_without_pytra_hardcode(self) -> None:
         doc = _module_doc(
             "app.main",
