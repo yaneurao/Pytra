@@ -8,6 +8,7 @@ parse → resolve → compile → optimize の全段を toolchain2 で実行し�
   python3 tools/regenerate_golden.py --case-root=fixture
   python3 tools/regenerate_golden.py --case-root=sample
   python3 tools/regenerate_golden.py --case-root=all       (fixture + sample)
+  python3 tools/regenerate_golden.py --case-root=fixture --progress-every=10
 
 設計文書: docs/ja/plans/plan-pipeline-redesign.md §6
 """
@@ -79,6 +80,18 @@ def _collect_sources(source_dir: Path) -> list[tuple[Path, str]]:
     return sources
 
 
+def _should_report_progress(processed: int, total: int, progress_every: int) -> bool:
+    if progress_every <= 0 or total <= 0 or processed <= 0:
+        return False
+    if processed >= total:
+        return True
+    return processed % progress_every == 0
+
+
+def _print_progress(label: str, processed: int, total: int) -> None:
+    print(f"  {label} progress: {processed}/{total}")
+
+
 def _regen_stage(
     label: str,
     sources: list[tuple[Path, str]],
@@ -88,11 +101,13 @@ def _regen_stage(
     cli_cmd: str,
     input_ext: str,
     output_ext: str,
+    progress_every: int,
 ) -> tuple[int, int]:
     """1 段の golden を再生成する。"""
     ok = 0
     fail = 0
-    for src_path, rel_stem in sources:
+    total = len(sources)
+    for idx, (src_path, rel_stem) in enumerate(sources, start=1):
         if stage == "east1":
             in_path = src_path
         else:
@@ -107,6 +122,8 @@ def _regen_stage(
             fail += 1
         else:
             ok += 1
+        if _should_report_progress(idx, total, progress_every):
+            _print_progress(label, idx, total)
 
     print(f"  {label}: {ok} ok, {fail} failed")
     return ok, fail
@@ -117,11 +134,13 @@ def _regen_linked_stage(
     sources: list[tuple[Path, str]],
     east3_opt_dir: Path,
     linked_dir: Path,
+    progress_every: int,
 ) -> tuple[int, int]:
     """linked 段の golden を再生成する。各ファイルを個別に link する。"""
     ok = 0
     fail = 0
-    for _src_path, rel_stem in sources:
+    total = len(sources)
+    for idx, (_src_path, rel_stem) in enumerate(sources, start=1):
         in_path = east3_opt_dir / (rel_stem + ".east3")
         out_dir = linked_dir / rel_stem
 
@@ -131,12 +150,14 @@ def _regen_linked_stage(
             fail += 1
         else:
             ok += 1
+        if _should_report_progress(idx, total, progress_every):
+            _print_progress(label + " linked", idx, total)
 
     print(f"  {label} linked: {ok} ok, {fail} failed")
     return ok, fail
 
 
-def regenerate(case_root: str) -> int:
+def regenerate(case_root: str, progress_every: int = 10) -> int:
     """指定した case-root の golden を全段再生成する。"""
     configs: list[tuple[str, Path, dict[str, Path]]] = []
 
@@ -171,6 +192,7 @@ def regenerate(case_root: str) -> int:
             cli_cmd="-parse",
             input_ext="",  # not used for east1
             output_ext=".py.east1",
+            progress_every=progress_every,
         )
         total_ok += ok
         total_fail += fail
@@ -183,6 +205,7 @@ def regenerate(case_root: str) -> int:
             cli_cmd="-resolve",
             input_ext=".py.east1",
             output_ext=".east2",
+            progress_every=progress_every,
         )
         total_ok += ok
         total_fail += fail
@@ -195,6 +218,7 @@ def regenerate(case_root: str) -> int:
             cli_cmd="-compile",
             input_ext=".east2",
             output_ext=".east3",
+            progress_every=progress_every,
         )
         total_ok += ok
         total_fail += fail
@@ -207,6 +231,7 @@ def regenerate(case_root: str) -> int:
             cli_cmd="-optimize",
             input_ext=".east3",
             output_ext=".east3",
+            progress_every=progress_every,
         )
         total_ok += ok
         total_fail += fail
@@ -216,6 +241,7 @@ def regenerate(case_root: str) -> int:
         if "linked" in golden_dirs:
             ok, fail = _regen_linked_stage(
                 name, sources, golden_dirs["east3-opt"], golden_dirs["linked"],
+                progress_every=progress_every,
             )
             total_ok += ok
             total_fail += fail
@@ -226,6 +252,7 @@ def regenerate(case_root: str) -> int:
 
 def main() -> int:
     case_root = "all"
+    progress_every = 10
 
     i = 0
     args = sys.argv[1:]
@@ -242,15 +269,42 @@ def main() -> int:
             case_root = tok[len("--case-root="):]
             i += 1
             continue
+        if tok == "--progress-every":
+            if i + 1 >= len(args):
+                print(f"error: missing value for {tok}", file=sys.stderr)
+                return 1
+            try:
+                progress_every = int(args[i + 1])
+            except ValueError:
+                print(f"error: invalid integer for {tok}: {args[i + 1]}", file=sys.stderr)
+                return 1
+            if progress_every < 0:
+                print(f"error: {tok} must be >= 0", file=sys.stderr)
+                return 1
+            i += 2
+            continue
+        if tok.startswith("--progress-every="):
+            raw_value = tok[len("--progress-every="):]
+            try:
+                progress_every = int(raw_value)
+            except ValueError:
+                print(f"error: invalid integer for --progress-every: {raw_value}", file=sys.stderr)
+                return 1
+            if progress_every < 0:
+                print("error: --progress-every must be >= 0", file=sys.stderr)
+                return 1
+            i += 1
+            continue
         if tok == "-h" or tok == "--help":
-            print("usage: regenerate_golden.py [--case-root=fixture|sample|all]")
+            print("usage: regenerate_golden.py [--case-root=fixture|sample|pytra|all] [--progress-every=N]")
             print()
             print("Regenerates golden files using toolchain2 pipeline (parse→resolve→compile→optimize).")
+            print("Default progress: every 10 files (use 0 to disable).")
             print("Default: --case-root=all")
             return 0
         i += 1
 
-    return regenerate(case_root)
+    return regenerate(case_root, progress_every=progress_every)
 
 
 if __name__ == "__main__":
