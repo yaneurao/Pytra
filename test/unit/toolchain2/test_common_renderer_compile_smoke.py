@@ -115,6 +115,7 @@ if __name__ == "__main__":
 FIXTURE_ADD_SOURCE = _fixture_case_source("test/fixture/source/py/core/add.py")
 FIXTURE_COMPARE_SOURCE = _fixture_case_source("test/fixture/source/py/core/compare.py")
 FIXTURE_DEFAULT_PARAM_SOURCE = _fixture_case_source("test/fixture/source/py/core/default_param.py")
+FIXTURE_IFEXP_BOOL_SOURCE = _fixture_case_source("test/fixture/source/py/control/ifexp_bool.py")
 FIXTURE_IF_ELSE_SOURCE = _fixture_case_source("test/fixture/source/py/control/if_else.py")
 FIXTURE_NOT_SOURCE = _fixture_case_source("test/fixture/source/py/control/not.py")
 
@@ -408,6 +409,14 @@ class CommonRendererCompileSmokeTests(unittest.TestCase):
         expected = "Hello world\nHi world\n15\n25\n"
         self.assertEqual(go_stdout, expected)
         self.assertEqual(cpp_stdout, expected)
+        self.assertEqual(go_stdout, cpp_stdout)
+
+    def test_common_renderer_fixture_ifexp_bool_stdout_parity_between_go_and_cpp(self) -> None:
+        go_stdout = _run_go(FIXTURE_IFEXP_BOOL_SOURCE)
+        cpp_stdout = _run_cpp(FIXTURE_IFEXP_BOOL_SOURCE)
+
+        self.assertEqual(go_stdout, "10\n")
+        self.assertEqual(cpp_stdout, "10\n")
         self.assertEqual(go_stdout, cpp_stdout)
 
     def test_common_renderer_fixture_if_else_stdout_parity_between_go_and_cpp(self) -> None:
