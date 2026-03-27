@@ -2455,9 +2455,13 @@ def _guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
                 if cur == "" or cur == target_type:
                     merged[name] = target_type
                 else:
-                    if name in merged:
-                        del merged[name]
-        return merged
+                    conflict = "__conflict__"
+                    merged[name] = conflict
+        out: dict[str, str] = {}
+        for name, target_type in merged.items():
+            if target_type != "__conflict__":
+                out[name] = target_type
+        return out
     return {}
 
 
@@ -2478,9 +2482,13 @@ def _invert_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
                 if cur == "" or cur == target_type:
                     merged[name] = target_type
                 else:
-                    if name in merged:
-                        del merged[name]
-        return merged
+                    conflict = "__conflict__"
+                    merged[name] = conflict
+        out: dict[str, str] = {}
+        for name, target_type in merged.items():
+            if target_type != "__conflict__":
+                out[name] = target_type
+        return out
     if nd.get("kind", "") != COMPARE:
         return {}
     left = nd.get("left")
@@ -2525,15 +2533,14 @@ def _invert_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
 
 
 def _make_guard_unbox(name_node: Node, target_type: str) -> Node:
-    out: Node = {
-        "kind": UNBOX,
-        "value": deep_copy_json(name_node),
-        "resolved_type": target_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "target": target_type,
-        "on_fail": "raise",
-    }
+    out: Node = {}
+    out["kind"] = UNBOX
+    out["value"] = deep_copy_json(name_node)
+    out["resolved_type"] = target_type
+    out["borrow_kind"] = "value"
+    out["casts"] = []
+    out["target"] = target_type
+    out["on_fail"] = "raise"
     span = name_node.get("source_span")
     if isinstance(span, dict):
         out["source_span"] = span
@@ -2562,9 +2569,10 @@ def _guard_needs_unbox(current_type: str, storage_type: str, target_type: str) -
 
 def _guard_expr(node: JsonVal, env: dict[str, str]) -> JsonVal:
     if isinstance(node, list):
-        for i in range(len(node)):
-            node[i] = _guard_expr(node[i], env)
-        return node
+        node_list: list[JsonVal] = cast(list[JsonVal], node)
+        for i in range(len(node_list)):
+            node_list[i] = _guard_expr(node_list[i], env)
+        return node_list
     if not isinstance(node, dict):
         return node
     nd: Node = node
@@ -2579,15 +2587,23 @@ def _guard_expr(node: JsonVal, env: dict[str, str]) -> JsonVal:
         return nd
     if kind == "IsInstance":
         expected = nd.get("expected_type_id")
-        if isinstance(expected, (dict, list)):
-            nd["expected_type_id"] = _guard_expr(expected, env)
+        if isinstance(expected, dict):
+            expected_node: Node = cast(dict[str, JsonVal], expected)
+            nd["expected_type_id"] = _guard_expr(expected_node, env)
+        elif isinstance(expected, list):
+            expected_list: list[JsonVal] = cast(list[JsonVal], expected)
+            nd["expected_type_id"] = _guard_expr(expected_list, env)
         return nd
     if kind in (FUNCTION_DEF, CLOSURE_DEF, CLASS_DEF, UNBOX):
         return nd
     for key in list(nd.keys()):
         value = nd[key]
-        if isinstance(value, (dict, list)):
-            nd[key] = _guard_expr(value, env)
+        if isinstance(value, dict):
+            value_node: Node = cast(dict[str, JsonVal], value)
+            nd[key] = _guard_expr(value_node, env)
+        elif isinstance(value, list):
+            value_list: list[JsonVal] = cast(list[JsonVal], value)
+            nd[key] = _guard_expr(value_list, env)
     return nd
 
 
@@ -2598,59 +2614,85 @@ def _guard_lvalue(node: JsonVal, env: dict[str, str]) -> JsonVal:
     kind = nd.get("kind", "")
     if kind == ATTRIBUTE:
         value = nd.get("value")
-        if isinstance(value, (dict, list)):
-            nd["value"] = _guard_expr(value, env)
+        if isinstance(value, dict):
+            value_node: Node = cast(dict[str, JsonVal], value)
+            nd["value"] = _guard_expr(value_node, env)
+        elif isinstance(value, list):
+            value_list: list[JsonVal] = cast(list[JsonVal], value)
+            nd["value"] = _guard_expr(value_list, env)
         return nd
     if kind == SUBSCRIPT:
         value = nd.get("value")
-        if isinstance(value, (dict, list)):
-            nd["value"] = _guard_expr(value, env)
+        if isinstance(value, dict):
+            value_node2: Node = cast(dict[str, JsonVal], value)
+            nd["value"] = _guard_expr(value_node2, env)
+        elif isinstance(value, list):
+            value_list2: list[JsonVal] = cast(list[JsonVal], value)
+            nd["value"] = _guard_expr(value_list2, env)
         slice_obj = nd.get("slice")
-        if isinstance(slice_obj, (dict, list)):
-            nd["slice"] = _guard_expr(slice_obj, env)
+        if isinstance(slice_obj, dict):
+            slice_node: Node = cast(dict[str, JsonVal], slice_obj)
+            nd["slice"] = _guard_expr(slice_node, env)
+        elif isinstance(slice_obj, list):
+            slice_list: list[JsonVal] = cast(list[JsonVal], slice_obj)
+            nd["slice"] = _guard_expr(slice_list, env)
         return nd
     if kind in (TUPLE, LIST):
         elements = nd.get("elements")
         if isinstance(elements, list):
-            for i in range(len(elements)):
-                elements[i] = _guard_lvalue(elements[i], env)
+            element_list: list[JsonVal] = cast(list[JsonVal], elements)
+            for i in range(len(element_list)):
+                element_list[i] = _guard_lvalue(element_list[i], env)
         return nd
     return nd
 
 
 def _target_names(node: JsonVal) -> set[str]:
     if not isinstance(node, dict):
-        return set()
+        empty: set[str] = set()
+        return empty
     nd: Node = node
     kind = nd.get("kind", "")
     if kind == NAME:
         name = _tp_safe(nd.get("id"))
-        return {name} if name != "" else set()
+        out_name: set[str] = set()
+        if name != "":
+            out_name.add(name)
+        return out_name
     if kind == NAME_TARGET:
         name = _tp_safe(nd.get("id"))
-        return {name} if name != "" else set()
+        out_target: set[str] = set()
+        if name != "":
+            out_target.add(name)
+        return out_target
     if kind in (TUPLE, LIST):
         out: set[str] = set()
         elements = nd.get("elements")
         if isinstance(elements, list):
-            for elem in elements:
+            element_list: list[JsonVal] = cast(list[JsonVal], elements)
+            for elem in element_list:
                 out.update(_target_names(elem))
         return out
     if kind == TUPLE_TARGET:
-        out = set()
+        out: set[str] = set()
         elements = nd.get("elements")
         if isinstance(elements, list):
-            for elem in elements:
+            element_list2: list[JsonVal] = cast(list[JsonVal], elements)
+            for elem in element_list2:
                 out.update(_target_names(elem))
         return out
-    return set()
+    empty2: set[str] = set()
+    return empty2
 
 
 def _guard_stmt_list(stmts: JsonVal, env: dict[str, str]) -> JsonVal:
     if not isinstance(stmts, list):
         return stmts
-    local_env = dict(env)
-    for stmt in stmts:
+    stmt_list: list[JsonVal] = cast(list[JsonVal], stmts)
+    local_env: dict[str, str] = {}
+    for key, value in env.items():
+        local_env[key] = value
+    for stmt in stmt_list:
         _guard_stmt(stmt, local_env)
         if not isinstance(stmt, dict):
             continue
@@ -2666,11 +2708,13 @@ def _guard_stmt_list(stmts: JsonVal, env: dict[str, str]) -> JsonVal:
                 _guard_env_merge(local_env, _guard_narrowing_from_expr(stmt.get("test")))
         if kind in (ASSIGN, ANN_ASSIGN, AUG_ASSIGN, FOR, FOR_RANGE):
             for name in _target_names(stmt.get("target")):
-                local_env.pop(name, None)
+                if name in local_env:
+                    local_env[name] = ""
         elif kind == FOR_CORE:
             for name in _target_names(stmt.get("target_plan")):
-                local_env.pop(name, None)
-    return stmts
+                if name in local_env:
+                    local_env[name] = ""
+    return stmt_list
 
 
 def _guard_stmt_guarantees_exit(stmt: JsonVal) -> bool:
@@ -2685,9 +2729,12 @@ def _guard_stmt_guarantees_exit(stmt: JsonVal) -> bool:
 
 
 def _guard_block_guarantees_exit(stmts: JsonVal) -> bool:
-    if not isinstance(stmts, list) or len(stmts) == 0:
+    if not isinstance(stmts, list):
         return False
-    return _guard_stmt_guarantees_exit(stmts[-1])
+    stmt_list: list[JsonVal] = cast(list[JsonVal], stmts)
+    if len(stmt_list) == 0:
+        return False
+    return _guard_stmt_guarantees_exit(stmt_list[-1])
 
 
 def _guard_stmt(stmt: JsonVal, env: dict[str, str]) -> None:
@@ -2701,41 +2748,67 @@ def _guard_stmt(stmt: JsonVal, env: dict[str, str]) -> None:
     if kind == CLASS_DEF:
         body = nd.get("body")
         if isinstance(body, list):
-            for item in body:
+            body_list: list[JsonVal] = cast(list[JsonVal], body)
+            for item in body_list:
                 _guard_stmt(item, {})
         return
     if kind in (ASSIGN, ANN_ASSIGN, AUG_ASSIGN):
         target = nd.get("target")
         if isinstance(target, dict):
-            nd["target"] = _guard_lvalue(target, env)
+            target_node: Node = cast(dict[str, JsonVal], target)
+            nd["target"] = _guard_lvalue(target_node, env)
         value = nd.get("value")
-        if isinstance(value, (dict, list)):
-            nd["value"] = _guard_expr(value, env)
+        if isinstance(value, dict):
+            value_node: Node = cast(dict[str, JsonVal], value)
+            nd["value"] = _guard_expr(value_node, env)
+        elif isinstance(value, list):
+            value_list: list[JsonVal] = cast(list[JsonVal], value)
+            nd["value"] = _guard_expr(value_list, env)
         return
     if kind == EXPR:
         value = nd.get("value")
-        if isinstance(value, (dict, list)):
-            nd["value"] = _guard_expr(value, env)
+        if isinstance(value, dict):
+            value_node2: Node = cast(dict[str, JsonVal], value)
+            nd["value"] = _guard_expr(value_node2, env)
+        elif isinstance(value, list):
+            value_list2: list[JsonVal] = cast(list[JsonVal], value)
+            nd["value"] = _guard_expr(value_list2, env)
         return
     if kind == RETURN:
         value = nd.get("value")
-        if isinstance(value, (dict, list)):
-            nd["value"] = _guard_expr(value, env)
+        if isinstance(value, dict):
+            value_node3: Node = cast(dict[str, JsonVal], value)
+            nd["value"] = _guard_expr(value_node3, env)
+        elif isinstance(value, list):
+            value_list3: list[JsonVal] = cast(list[JsonVal], value)
+            nd["value"] = _guard_expr(value_list3, env)
         return
     if kind == IF:
         test = nd.get("test")
-        if isinstance(test, (dict, list)):
-            nd["test"] = _guard_expr(test, env)
-        body_env = dict(env)
+        if isinstance(test, dict):
+            test_node: Node = cast(dict[str, JsonVal], test)
+            nd["test"] = _guard_expr(test_node, env)
+        elif isinstance(test, list):
+            test_list: list[JsonVal] = cast(list[JsonVal], test)
+            nd["test"] = _guard_expr(test_list, env)
+        body_env: dict[str, str] = {}
+        for key, value in env.items():
+            body_env[key] = value
         _guard_env_merge(body_env, _guard_narrowing_from_expr(nd.get("test")))
         _guard_stmt_list(nd.get("body"), body_env)
         _guard_stmt_list(nd.get("orelse"), env)
         return
     if kind == WHILE:
         test = nd.get("test")
-        if isinstance(test, (dict, list)):
-            nd["test"] = _guard_expr(test, env)
-        body_env = dict(env)
+        if isinstance(test, dict):
+            test_node2: Node = cast(dict[str, JsonVal], test)
+            nd["test"] = _guard_expr(test_node2, env)
+        elif isinstance(test, list):
+            test_list2: list[JsonVal] = cast(list[JsonVal], test)
+            nd["test"] = _guard_expr(test_list2, env)
+        body_env: dict[str, str] = {}
+        for key, value in env.items():
+            body_env[key] = value
         _guard_env_merge(body_env, _guard_narrowing_from_expr(nd.get("test")))
         _guard_stmt_list(nd.get("body"), body_env)
         _guard_stmt_list(nd.get("orelse"), env)
