@@ -43,6 +43,7 @@ def _fixture_case_source(rel_path: str) -> str:
     lines = source.splitlines()
     out: list[str] = []
     in_main_guard = False
+    has_case_main = any(line.strip().startswith("def _case_main(") for line in lines)
     for line in lines:
         stripped = line.strip()
         if stripped.startswith("from pytra.utils.assertions import py_assert_stdout"):
@@ -50,9 +51,14 @@ def _fixture_case_source(rel_path: str) -> str:
         if stripped == 'if __name__ == "__main__":':
             in_main_guard = True
             out.append(line)
-            out.append("    _case_main()")
+            if has_case_main:
+                out.append("    _case_main()")
             continue
         if in_main_guard:
+            if "py_assert_stdout" in stripped:
+                continue
+            if not has_case_main:
+                out.append(line)
             continue
         out.append(line)
     return "\n".join(out) + "\n"
@@ -108,6 +114,7 @@ if __name__ == "__main__":
 
 FIXTURE_ADD_SOURCE = _fixture_case_source("test/fixture/source/py/core/add.py")
 FIXTURE_COMPARE_SOURCE = _fixture_case_source("test/fixture/source/py/core/compare.py")
+FIXTURE_DEFAULT_PARAM_SOURCE = _fixture_case_source("test/fixture/source/py/core/default_param.py")
 FIXTURE_IF_ELSE_SOURCE = _fixture_case_source("test/fixture/source/py/control/if_else.py")
 FIXTURE_NOT_SOURCE = _fixture_case_source("test/fixture/source/py/control/not.py")
 
@@ -392,6 +399,15 @@ class CommonRendererCompileSmokeTests(unittest.TestCase):
 
         self.assertEqual(go_stdout, "True\n")
         self.assertEqual(cpp_stdout, "True\n")
+        self.assertEqual(go_stdout, cpp_stdout)
+
+    def test_common_renderer_fixture_default_param_stdout_parity_between_go_and_cpp(self) -> None:
+        go_stdout = _run_go(FIXTURE_DEFAULT_PARAM_SOURCE)
+        cpp_stdout = _run_cpp(FIXTURE_DEFAULT_PARAM_SOURCE)
+
+        expected = "Hello world\nHi world\n15\n25\n"
+        self.assertEqual(go_stdout, expected)
+        self.assertEqual(cpp_stdout, expected)
         self.assertEqual(go_stdout, cpp_stdout)
 
     def test_common_renderer_fixture_if_else_stdout_parity_between_go_and_cpp(self) -> None:
