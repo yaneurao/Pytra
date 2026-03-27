@@ -44,49 +44,78 @@ def f() -> int:
     return x
 """
 
+BOOL_SOURCE = """
+def f(a: bool, b: bool) -> int:
+    x = 0
+    if not a and b:
+        x = 1
+    else:
+        pass
+    return x
+"""
+
+
+def _assert_go_compiles(source: str) -> None:
+    east3 = _build_east3(source, target_language="go")
+    go_code = emit_go_module(east3)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        go_path = Path(tmp) / "app.go"
+        runtime_path = ROOT / "src" / "runtime" / "go" / "built_in" / "py_runtime.go"
+        bundled_runtime = Path(tmp) / "py_runtime.go"
+        go_path.write_text(go_code, encoding="utf-8")
+        bundled_runtime.write_text(runtime_path.read_text(encoding="utf-8"), encoding="utf-8")
+        proc = subprocess.run(
+            ["go", "build", str(bundled_runtime), str(go_path)],
+            cwd=tmp,
+            capture_output=True,
+            text=True,
+        )
+
+    if proc.returncode != 0:
+        raise AssertionError(f"{proc.stdout}\n{proc.stderr}")
+
+
+def _assert_cpp_compiles(source: str) -> None:
+    east3 = _build_east3(source, target_language="cpp")
+    cpp_code = emit_cpp_module(east3)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        cpp_path = Path(tmp) / "app.cpp"
+        obj_path = Path(tmp) / "app.o"
+        cpp_path.write_text(cpp_code, encoding="utf-8")
+        proc = subprocess.run(
+            [
+                "g++",
+                "-std=c++20",
+                "-I",
+                str(ROOT / "src" / "runtime" / "cpp"),
+                "-c",
+                str(cpp_path),
+                "-o",
+                str(obj_path),
+            ],
+            cwd=tmp,
+            capture_output=True,
+            text=True,
+        )
+
+    if proc.returncode != 0:
+        raise AssertionError(f"{proc.stdout}\n{proc.stderr}")
+
 
 class CommonRendererCompileSmokeTests(unittest.TestCase):
     def test_go_emitted_common_renderer_shapes_compile(self) -> None:
-        east3 = _build_east3(SOURCE, target_language="go")
-        go_code = emit_go_module(east3)
-
-        with tempfile.TemporaryDirectory() as tmp:
-            go_path = Path(tmp) / "app.go"
-            go_path.write_text(go_code, encoding="utf-8")
-            proc = subprocess.run(
-                ["go", "build", str(go_path)],
-                cwd=tmp,
-                capture_output=True,
-                text=True,
-            )
-
-        self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+        _assert_go_compiles(SOURCE)
 
     def test_cpp_emitted_common_renderer_shapes_compile(self) -> None:
-        east3 = _build_east3(SOURCE, target_language="cpp")
-        cpp_code = emit_cpp_module(east3)
+        _assert_cpp_compiles(SOURCE)
 
-        with tempfile.TemporaryDirectory() as tmp:
-            cpp_path = Path(tmp) / "app.cpp"
-            obj_path = Path(tmp) / "app.o"
-            cpp_path.write_text(cpp_code, encoding="utf-8")
-            proc = subprocess.run(
-                [
-                    "g++",
-                    "-std=c++20",
-                    "-I",
-                    str(ROOT / "src" / "runtime" / "cpp"),
-                    "-c",
-                    str(cpp_path),
-                    "-o",
-                    str(obj_path),
-                ],
-                cwd=tmp,
-                capture_output=True,
-                text=True,
-            )
+    def test_go_emitted_bool_common_renderer_shapes_compile(self) -> None:
+        _assert_go_compiles(BOOL_SOURCE)
 
-        self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+    def test_cpp_emitted_bool_common_renderer_shapes_compile(self) -> None:
+        _assert_cpp_compiles(BOOL_SOURCE)
 
 
 if __name__ == "__main__":
