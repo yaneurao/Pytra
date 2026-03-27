@@ -97,6 +97,22 @@ class Toolchain2SpecConformTests(unittest.TestCase):
                     "binding_kind": "symbol",
                 },
                 {
+                    "module_id": "math",
+                    "runtime_module_id": "pytra.std.math",
+                    "export_name": "sqrt",
+                    "local_name": "msqrt",
+                    "binding_kind": "symbol",
+                    "runtime_symbol": "sqrt",
+                },
+                {
+                    "module_id": "time",
+                    "runtime_module_id": "pytra.std.time",
+                    "export_name": "perf_counter",
+                    "local_name": "perf_counter",
+                    "binding_kind": "symbol",
+                    "runtime_symbol": "perf_counter",
+                },
+                {
                     "module_id": "app.local",
                     "export_name": "helper",
                     "local_name": "local_helper",
@@ -108,7 +124,9 @@ class Toolchain2SpecConformTests(unittest.TestCase):
         runtime_imports = build_runtime_import_map(meta, mapping)
 
         self.assertEqual(runtime_imports["helper"], "rt_helper")
-        self.assertEqual(runtime_imports["math_alias"], "rt_math")
+        self.assertEqual(runtime_imports["math_alias"], "math")
+        self.assertEqual(runtime_imports["msqrt"], "sqrt")
+        self.assertEqual(runtime_imports["perf_counter"], "perf_counter")
         self.assertNotIn("local_helper", runtime_imports)
 
     def test_typed_repeat_materialization_keeps_resolved_type_and_sets_hints(self) -> None:

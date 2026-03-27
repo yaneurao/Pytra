@@ -183,7 +183,7 @@ def build_runtime_import_map(
     meta: dict[str, JsonVal],
     mapping: RuntimeMapping,
 ) -> dict[str, str]:
-    """Build local import name -> native runtime symbol name for skipped modules."""
+    """Build local import name -> native/runtime symbol name for runtime bindings."""
     runtime_imports: dict[str, str] = {}
     bindings = meta.get("import_bindings")
     if not isinstance(bindings, list):
@@ -210,14 +210,26 @@ def build_runtime_import_map(
         if isinstance(export_name, str) and export_name != "":
             export_symbol = export_name
         full_module_id = module_id + "." + export_symbol
-        if not should_skip_module(module_id, mapping) and not should_skip_module(full_module_id, mapping):
+        is_runtime_namespace = module_id.startswith("pytra.")
+        if (
+            not is_runtime_namespace
+            and not should_skip_module(module_id, mapping)
+            and not should_skip_module(full_module_id, mapping)
+        ):
             continue
 
         runtime_symbol = binding.get("runtime_symbol")
         symbol_name = export_symbol
         if isinstance(runtime_symbol, str) and runtime_symbol != "":
             symbol_name = runtime_symbol
-        runtime_imports[local_name] = resolve_runtime_symbol_name(symbol_name, mapping)
+        resolved_symbol = resolve_runtime_symbol_name(symbol_name, mapping)
+        if (
+            is_runtime_namespace
+            and symbol_name not in mapping.calls
+            and not symbol_name.startswith(mapping.builtin_prefix)
+        ):
+            resolved_symbol = symbol_name
+        runtime_imports[local_name] = resolved_symbol
 
     return runtime_imports
 
