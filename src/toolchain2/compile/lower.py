@@ -145,7 +145,7 @@ def _canonical_type_name(ctx: CompileContext, value: JsonVal) -> str:
     norm = normalize_type_name(value)
     if norm in ("", "unknown"):
         return norm
-    summary = type_expr_summary_from_payload(ctx, None, norm)
+    summary: Node = cast(dict[str, JsonVal], type_expr_summary_from_payload(ctx, None, norm))
     mirror = ""
     if "mirror" in summary:
         mirror = normalize_type_name(summary["mirror"])
@@ -532,12 +532,12 @@ def _wrap_value_for_target_type(
     target_type_expr: JsonVal = None,
     ctx: CompileContext,
 ) -> JsonVal:
-    target_summary = type_expr_summary_from_payload(ctx, target_type_expr, target_type)
+    target_summary: Node = cast(dict[str, JsonVal], type_expr_summary_from_payload(ctx, target_type_expr, target_type))
     target_mirror = target_summary["mirror"] if "mirror" in target_summary else None
     target_t = normalize_type_name(target_mirror)
     if target_t == "unknown":
         return value_expr
-    value_summary = expr_type_summary(ctx, value_expr)
+    value_summary: Node = cast(dict[str, JsonVal], expr_type_summary(ctx, value_expr))
     target_contains_dynamic_lane = (
         "Any" in target_t or "object" in target_t or "unknown" in target_t
     )
@@ -545,7 +545,7 @@ def _wrap_value_for_target_type(
     value_t = normalize_type_name(value_mirror)
     if target_t in ("dict", "list", "set", "tuple") and value_t.startswith(target_t + "["):
         target_t = value_t
-        target_summary = type_expr_summary_from_payload(ctx, None, target_t)
+        target_summary = cast(dict[str, JsonVal], type_expr_summary_from_payload(ctx, None, target_t))
     value_requires_runtime_unbox = isinstance(value_expr, dict) and value_expr.get("yields_dynamic") is True
     storage_type = ""
     if isinstance(value_expr, dict) and jv_str(value_expr.get("kind", "")) == NAME:
@@ -694,7 +694,8 @@ def _infer_tuple_assign_target_type(stmt: Node) -> str:
     any_known = False
     elements_obj = target.get("elements")
     if isinstance(elements_obj, list):
-        for elem in elements_obj:
+        elements: list[JsonVal] = cast(list[JsonVal], elements_obj)
+        for elem in elements:
             if not isinstance(elem, dict):
                 elem_types.append("unknown")
                 continue
@@ -712,7 +713,8 @@ def _infer_tuple_assign_target_type(stmt: Node) -> str:
 
     value_obj = stmt.get("value")
     if isinstance(value_obj, dict):
-        value_type = normalize_type_name(value_obj.get("resolved_type"))
+        value_node: Node = cast(dict[str, JsonVal], value_obj)
+        value_type = normalize_type_name(value_node.get("resolved_type"))
         if value_type.startswith("tuple[") and value_type.endswith("]"):
             return value_type
 
@@ -738,7 +740,7 @@ def _resolve_assign_target_type(stmt: Node, ctx: CompileContext) -> str:
         return ann_type
     target_obj = stmt.get("target")
     if isinstance(target_obj, dict):
-        tod: Node = target_obj
+        tod: Node = cast(dict[str, JsonVal], target_obj)
         target_t = normalize_type_name(tod.get("resolved_type"))
         if target_t != "unknown":
             return target_t
@@ -768,8 +770,9 @@ def _build_target_plan(
             elem_plans: list[JsonVal] = []
             elem_types = _tuple_element_types(tt_norm)
             if isinstance(elems_obj, list):
-                for i in range(len(elems_obj)):
-                    elem = elems_obj[i]
+                elems: list[JsonVal] = cast(list[JsonVal], elems_obj)
+                for i in range(len(elems)):
+                    elem = elems[i]
                     et = "unknown"
                     if i < len(elem_types):
                         et = elem_types[i]
@@ -808,10 +811,11 @@ def _lower_assignment_like_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal]
     if target_type_expr is None:
         target_type_expr = stmt.get("annotation_type_expr")
     if target_type_expr is None and isinstance(target_obj, dict):
-        tod: Node = target_obj
+        tod: Node = cast(dict[str, JsonVal], target_obj)
         target_type_expr = tod.get("type_expr")
     if target_type_expr is None and isinstance(value_lowered, dict) and nd_kind(value_lowered) == UNBOX:
-        unboxed_type = normalize_type_name(value_lowered.get("resolved_type"))
+        value_lowered_node: Node = cast(dict[str, JsonVal], value_lowered)
+        unboxed_type = normalize_type_name(value_lowered_node.get("resolved_type"))
         if unboxed_type not in ("", "unknown"):
             optional_inner = _optional_inner_target_type(target_type)
             if target_type in ("", "unknown") or optional_inner == unboxed_type:
@@ -821,7 +825,7 @@ def _lower_assignment_like_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal]
                 out["decl_type_expr"] = target_type_expr
                 target_out = out.get("target")
                 if isinstance(target_out, dict):
-                    target_dict: Node = target_out
+                    target_dict: Node = cast(dict[str, JsonVal], target_out)
                     target_dict["resolved_type"] = unboxed_type
                     target_dict["type_expr"] = target_type_expr
     storage_type = _assignment_storage_type_override(stmt, value_lowered, target_type)
@@ -832,7 +836,7 @@ def _lower_assignment_like_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal]
         out["decl_type_expr"] = target_type_expr
         target_out = out.get("target")
         if isinstance(target_out, dict):
-            target_dict: Node = target_out
+            target_dict: Node = cast(dict[str, JsonVal], target_out)
             target_dict["resolved_type"] = storage_type
             target_dict["type_expr"] = target_type_expr
     out["value"] = _wrap_value_for_target_type(
@@ -842,7 +846,8 @@ def _lower_assignment_like_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal]
     set_type_expr_summary(out, type_expr_summary_from_payload(ctx, target_type_expr, target_type))
     target_out = out.get("target")
     if isinstance(target_out, dict) and nd_kind(target_out) == NAME:
-        target_name = jv_str(target_out.get("id", ""))
+        target_dict: Node = cast(dict[str, JsonVal], target_out)
+        target_name: str = jv_str(target_dict.get("id", ""))
         storage_type = normalize_type_name(out.get("decl_type"))
         if storage_type == "unknown":
             storage_type = target_type
@@ -877,7 +882,7 @@ def _lower_function_def_stmt(
     ctx: CompileContext,
 ) -> Node:
     _ = dispatch_mode
-    prev_return_type = ctx.current_return_type
+    prev_return_type: str = ctx.current_return_type
     ctx.push_storage_scope()
     ctx.current_return_type = normalize_type_name(stmt.get("return_type"))
     try:

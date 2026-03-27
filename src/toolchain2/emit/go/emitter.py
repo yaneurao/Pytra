@@ -529,6 +529,8 @@ def _coerce_from_any(val_code: str, target_type: str) -> str:
     target_gt = go_type(target_type)
     if target_gt == "":
         return val_code
+    if val_code.endswith(".(" + target_gt + ")"):
+        return val_code
     if target_gt == "string" and val_code.startswith("py_repeat_string("):
         return val_code
     if target_gt == "string":
@@ -1212,10 +1214,15 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     value_node = args[1] if len(args) >= 2 and isinstance(args[1], dict) else None
                     if isinstance(value_node, dict) and _str(value_node, "kind") == "Name":
                         source_type0 = _str(value_node, "resolved_type")
-                        if target_name != "" and source_type0 == target_name:
-                            return arg_strs[1]
                         scope_name = _go_symbol_name(ctx, _str(value_node, "id"))
                         scope_type = ctx.var_types.get(scope_name, "")
+                        if (
+                            target_name != ""
+                            and source_type0 == target_name
+                            and scope_type not in ("", "unknown", "JsonVal", "Any", "Obj", "object")
+                            and go_type(scope_type) != "any"
+                        ):
+                            return arg_strs[1]
                         target_gt0 = _go_type_with_ctx(ctx, target_name)
                         if (
                             target_gt0 != ""
@@ -1235,6 +1242,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                         if scope_optional_inner != "" and target_name == scope_optional_inner and go_type(scope_type).startswith("*"):
                             return "(*(" + arg_strs[1] + "))"
                     if isinstance(value_node, dict):
+                        if _str(value_node, "kind") == "Unbox":
+                            unbox_target = _str(value_node, "target")
+                            if unbox_target == "":
+                                unbox_target = _str(value_node, "resolved_type")
+                            if target_name == unbox_target or _go_type_with_ctx(ctx, target_name) == _go_type_with_ctx(ctx, unbox_target):
+                                return _emit_expr(ctx, value_node)
                         source_type = _str(value_node, "resolved_type")
                         source_optional_inner = _optional_inner_type(source_type)
                         target_gt = _go_type_with_ctx(ctx, target_name)
@@ -1257,6 +1270,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                         if target_name == unbox_target or _go_type_with_ctx(ctx, target_name) == _go_type_with_ctx(ctx, unbox_target):
                             return arg_strs[1]
                     target_gt = _go_type_with_ctx(ctx, target_name)
+                    if target_gt != "" and arg_strs[1].endswith(".(" + target_gt + ")"):
+                        return arg_strs[1]
                     if target_gt != "":
                         return arg_strs[1] + ".(" + target_gt + ")"
                     return arg_strs[1]
@@ -2389,18 +2404,12 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         if not declare_new:
             _emit(ctx, name + " = " + val_code)
         else:
-            if at_module_scope:
-                if gt != "" and gt != "any":
-                    _emit(ctx, "var " + name + " " + gt + " = " + val_code)
-                else:
-                    _emit(ctx, "var " + name + " any = " + val_code)
+            if gt != "":
+                _emit(ctx, "var " + name + " " + gt + " = " + val_code)
+            elif at_module_scope:
+                _emit(ctx, "var " + name + " any = " + val_code)
             else:
-                # Use typed declaration for numeric types to avoid Go's untyped int
-                if gt in ("int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64",
-                          "float64", "float32", "byte", "any") or gt.startswith("*") or val_code == "nil":
-                    _emit(ctx, "var " + name + " " + gt + " = " + val_code)
-                else:
-                    _emit(ctx, name + " := " + val_code)
+                _emit(ctx, name + " := " + val_code)
     else:
         if declare_new:
             _emit(ctx, "var " + name + " " + gt)
@@ -2482,15 +2491,11 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                         return
                 ctx.var_types[gn] = decl_type
                 gt = _go_signature_type(ctx, decl_type)
-                if gt in ("int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64",
-                          "float64", "float32") or gt.startswith("*") or val_code == "nil":
+                if gt != "":
                     _emit(ctx, "var " + gn + " " + gt + " = " + val_code)
                 else:
                     if at_module_scope:
-                        if gt != "" and gt != "any":
-                            _emit(ctx, "var " + gn + " " + gt + " = " + val_code)
-                        else:
-                            _emit(ctx, "var " + gn + " any = " + val_code)
+                        _emit(ctx, "var " + gn + " any = " + val_code)
                     else:
                         _emit(ctx, gn + " := " + val_code)
                 if is_unused and not at_module_scope:
@@ -2515,7 +2520,10 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 tuple_rt = _str(target_node, "resolved_type")
             temp_name = _next_temp(ctx, "tuple_assign")
             ctx.var_types[temp_name] = tuple_rt if tuple_rt != "" else "tuple"
-            _emit(ctx, temp_name + " := " + val_code)
+            temp_gt = _go_signature_type(ctx, tuple_rt)
+            if temp_gt in ("", "any"):
+                temp_gt = "[]any"
+            _emit(ctx, "var " + temp_name + " " + temp_gt + " = " + val_code)
             for i, elem in enumerate(elts):
                 if not isinstance(elem, dict):
                     continue

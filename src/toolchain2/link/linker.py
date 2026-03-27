@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
 from pytra.std import json
+from pytra.typing import cast
 
 from toolchain2.link.runtime_discovery import discover_runtime_modules
 from toolchain2.link.runtime_discovery import resolve_runtime_east_path
@@ -584,13 +585,17 @@ def link_modules(
     all_module_ids = [m.module_id for m in modules]
 
     # 4. type_id テーブル構築
-    type_id_table, type_id_base_map, type_info_table = build_type_id_table(modules)
+    type_id_parts: tuple[JsonVal, JsonVal, JsonVal] = cast(tuple[JsonVal, JsonVal, JsonVal], build_type_id_table(modules))
+    type_id_table, type_id_base_map, type_info_table = type_id_parts
 
     # 5. call graph 構築
-    call_graph, sccs = build_call_graph(modules)
+    call_graph_parts: tuple[JsonVal, JsonVal] = cast(tuple[JsonVal, JsonVal], build_call_graph(modules))
+    call_graph, sccs = call_graph_parts
 
     # 6. dependency table 構築
-    resolved_deps, user_deps = build_all_resolved_dependencies(modules)
+    dependency_parts: tuple[JsonVal, JsonVal] = cast(tuple[JsonVal, JsonVal], build_all_resolved_dependencies(modules))
+    resolved_deps = cast(dict[str, list[str]], dependency_parts[0])
+    user_deps = cast(dict[str, list[str]], dependency_parts[1])
 
     # 7. program_id 生成
     pid = _program_id(target, dispatch_mode, all_module_ids)
