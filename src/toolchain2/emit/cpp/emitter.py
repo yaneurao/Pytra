@@ -28,6 +28,7 @@ from toolchain2.emit.common.code_emitter import (
     should_skip_module, build_import_alias_map, build_runtime_import_map, resolve_runtime_symbol_name,
 )
 from toolchain2.emit.cpp.runtime_paths import collect_cpp_dependency_module_ids, cpp_include_for_module
+from toolchain2.common.types import split_generic_types
 
 
 # ---------------------------------------------------------------------------
@@ -258,6 +259,102 @@ def _wrap_container_result_if_needed(node: dict[str, JsonVal], value_expr: str) 
     ):
         return value_expr
     return _wrap_container_value_expr(resolved_type, value_expr)
+
+
+def _container_type_args(resolved_type: str) -> list[str]:
+    if "[" not in resolved_type or not resolved_type.endswith("]"):
+        return []
+    inner = resolved_type[resolved_type.find("[") + 1 : -1]
+    return split_generic_types(inner)
+
+
+def _object_box_container_target(resolved_type: str) -> str:
+    if resolved_type.startswith("dict["):
+        parts = _container_type_args(resolved_type)
+        if len(parts) == 2:
+            key_type = parts[0] if parts[0] not in ("", "unknown") else "str"
+            return "dict[" + key_type + ",object]"
+    if resolved_type.startswith("list["):
+        return "list[object]"
+    if resolved_type.startswith("set["):
+        return "set[object]"
+    return ""
+
+
+def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> str:
+    if not isinstance(node, dict):
+        return _emit_expr(ctx, node)
+    if target_type in ("Any", "Obj", "object"):
+        widened_container_type = _object_box_container_target(_effective_resolved_type(node))
+        if widened_container_type != "":
+            kind = _str(node, "kind")
+            if kind == "Dict":
+                return "object(" + _emit_dict_literal_for_target_type(ctx, node, widened_container_type) + ")"
+            if kind == "List":
+                return "object(" + _emit_list_literal_for_target_type(ctx, node, widened_container_type) + ")"
+            if kind == "Set":
+                return "object(" + _emit_set_literal_for_target_type(ctx, node, widened_container_type) + ")"
+        boxed = {
+            "kind": "Box",
+            "resolved_type": target_type,
+            "value": node,
+        }
+        return _emit_expr(ctx, boxed)
+    return _emit_expr(ctx, node)
+
+
+def _emit_dict_literal_for_target_type(
+    ctx: CppEmitContext,
+    node: dict[str, JsonVal],
+    target_type: str,
+) -> str:
+    parts = _container_type_args(target_type)
+    if len(parts) != 2:
+        return _emit_dict_literal(ctx, node)
+    key_type, value_type = parts
+    plain_ct = cpp_type(target_type, prefer_value_container=True)
+    entries = _list(node, "entries")
+    rendered: list[str] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        key_expr = _emit_expr_as_type(ctx, entry.get("key"), key_type)
+        value_expr = _emit_expr_as_type(ctx, entry.get("value"), value_type)
+        rendered.append("{" + key_expr + ", " + value_expr + "}")
+    literal = plain_ct + "{" + ", ".join(rendered) + "}"
+    return _wrap_container_value_expr(target_type, literal) if is_container_resolved_type(target_type) else literal
+
+
+def _emit_list_literal_for_target_type(
+    ctx: CppEmitContext,
+    node: dict[str, JsonVal],
+    target_type: str,
+) -> str:
+    parts = _container_type_args(target_type)
+    if len(parts) != 1:
+        return _emit_list_literal(ctx, node)
+    item_type = parts[0]
+    plain_ct = cpp_type(target_type, prefer_value_container=True)
+    elements = _list(node, "elements")
+    rendered = [_emit_expr_as_type(ctx, elem, item_type) for elem in elements]
+    literal = plain_ct + "{" + ", ".join(rendered) + "}"
+    return _wrap_container_value_expr(target_type, literal) if is_container_resolved_type(target_type) else literal
+
+
+def _emit_set_literal_for_target_type(
+    ctx: CppEmitContext,
+    node: dict[str, JsonVal],
+    target_type: str,
+) -> str:
+    parts = _container_type_args(target_type)
+    if len(parts) != 1:
+        return _emit_set_literal(ctx, node)
+    item_type = parts[0]
+    plain_ct = cpp_type(target_type, prefer_value_container=True)
+    elements = _list(node, "elements")
+    rendered = [_emit_expr_as_type(ctx, elem, item_type) for elem in elements]
+    literal = plain_ct + "{" + ", ".join(rendered) + "}"
+    return _wrap_container_value_expr(target_type, literal) if is_container_resolved_type(target_type) else literal
 
 
 def _optional_inner_type(type_name: str) -> str:
@@ -686,9 +783,17 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         ct = cpp_signature_type(rt)
         if len(args) >= 1 and isinstance(args[0], dict):
             arg_kind = _str(args[0], "kind")
+            arg_type = _str(args[0], "resolved_type")
             storage_type = _expr_storage_type(ctx, args[0])
             if _optional_inner_type(storage_type) == rt:
                 return "(*(" + arg_strs[0] + "))"
+            if arg_kind == "Unbox" and arg_type in ("Obj", "Any", "object", "unknown"):
+                if rt in ("int", "int64"):
+                    return _emit_object_unbox(arg_strs[0], "int64")
+                if rt in ("float", "float64"):
+                    return _emit_object_unbox(arg_strs[0], "float64")
+                if rt == "bool":
+                    return _emit_object_unbox(arg_strs[0], "bool")
             if arg_kind != "Unbox" and storage_type not in ("", "unknown") and _needs_object_cast(storage_type):
                 if rt in ("int", "int64"):
                     return _emit_object_unbox(arg_strs[0], "int64")
@@ -705,6 +810,11 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             if arg_kind != "Unbox" and storage_type not in ("", "unknown") and _needs_object_cast(storage_type):
                 return _emit_object_unbox(arg_strs[0], "str")
             return arg_strs[0]
+        if len(args) >= 1 and isinstance(args[0], dict):
+            arg_kind = _str(args[0], "kind")
+            arg_type = _str(args[0], "resolved_type")
+            if arg_kind == "Unbox" and arg_type in ("Obj", "Any", "object", "unknown"):
+                return _emit_object_unbox(arg_strs[0], "str")
         return "str(py_to_string(" + arg_strs[0] + "))"
     if rc in ("bytearray_ctor", "bytes_ctor"):
         if len(args) >= 1 and isinstance(args[0], dict):
@@ -839,7 +949,9 @@ def _emit_subscript_store_target(ctx: CppEmitContext, node: dict[str, JsonVal]) 
     if value_type.startswith("list[") or value_type in ("bytes", "bytearray"):
         return "py_list_at_ref(" + value + ", " + idx + ")"
     if value_type.startswith("dict["):
-        return "py_at(" + value + ", " + idx + ")"
+        if _uses_ref_container_storage(ctx, value_node):
+            return "(*(" + value + "))[" + idx + "]"
+        return "(" + value + ")[" + idx + "]"
     return value + "[" + idx + "]"
 
 
@@ -942,8 +1054,32 @@ def _emit_unbox(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 
 def _emit_box(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     value = node.get("value")
+    target_type = _str(node, "resolved_type")
+    if target_type in ("Any", "Obj", "object") and isinstance(value, dict):
+        value_kind = _str(value, "kind")
+        value_type = _effective_resolved_type(value)
+        if value_kind == "Dict" and value_type == "dict[unknown,unknown]" and len(_list(value, "entries")) == 0:
+            return "object(rc_dict_from_value(dict<str, object>{}))"
+        if value_kind == "List" and value_type == "list[unknown]" and len(_list(value, "elements")) == 0:
+            return "object(rc_list_from_value(list<object>{}))"
+        if value_kind == "Set" and value_type == "set[unknown]" and len(_list(value, "elements")) == 0:
+            return "object(rc_set_from_value(set<object>{}))"
     value_expr = _emit_expr(ctx, value)
     value_type = _effective_resolved_type(value)
+    if is_container_resolved_type(target_type):
+        if isinstance(value, dict):
+            value_kind = _str(value, "kind")
+            if value_kind == "Dict":
+                return _emit_dict_literal_for_target_type(ctx, value, target_type)
+            if value_kind == "List":
+                return _emit_list_literal_for_target_type(ctx, value, target_type)
+            if value_kind == "Set":
+                return _emit_set_literal_for_target_type(ctx, value, target_type)
+        if value_type == target_type:
+            return value_expr
+        if _needs_object_cast(value_type):
+            return "(" + value_expr + ").as<" + cpp_container_value_type(target_type) + ">()"
+        return value_expr
     if value_type in ("", "unknown", "Any", "Obj", "object"):
         return value_expr
     if value_type == "None":

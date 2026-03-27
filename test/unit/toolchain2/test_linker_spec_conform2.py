@@ -1886,7 +1886,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
         cpp_code = emit_cpp_module(doc)
 
         self.assertIn("return py_at(env, name);", cpp_code)
-        self.assertIn('py_at(env, str("x")) = int64(1);', cpp_code)
+        self.assertIn('(*(env))[str("x")] = int64(1);', cpp_code)
 
     def test_cpp_emitter_rewrites_negative_unary_list_index_from_size(self) -> None:
         doc = _module_doc(
@@ -2300,6 +2300,138 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         self.assertIn("return obj.size();", cpp_code)
         self.assertNotIn("return obj.size;", cpp_code)
+
+    def test_cpp_emitter_boxes_any_dict_literals_with_object_values(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "build_payload",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_index": {},
+                    "return_type": "dict[str,Any]",
+                    "arg_usage": {},
+                    "renamed_symbols": {},
+                    "docstring": None,
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Box",
+                                "resolved_type": "dict[str,Any]",
+                                "value": {
+                                    "kind": "Dict",
+                                    "resolved_type": "dict[str,int64]",
+                                    "entries": [
+                                        {
+                                            "key": {"kind": "Constant", "resolved_type": "str", "value": "n"},
+                                            "value": {"kind": "Constant", "resolved_type": "int64", "value": 1},
+                                        },
+                                        {
+                                            "key": {"kind": "Constant", "resolved_type": "str", "value": "s"},
+                                            "value": {"kind": "Constant", "resolved_type": "str", "value": "x"},
+                                        },
+                                    ],
+                                },
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn('return rc_dict_from_value(dict<str, object>{{str("n"), object(int64(1))}, {str("s"), object(str("x"))}});', cpp_code)
+
+    def test_cpp_emitter_unboxes_object_builtin_cast_args(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "as_int",
+                    "arg_types": {"items": "list[Any]"},
+                    "arg_order": ["items"],
+                    "arg_defaults": {},
+                    "arg_index": {"items": 0},
+                    "return_type": "int64",
+                    "arg_usage": {"items": "readonly"},
+                    "renamed_symbols": {},
+                    "docstring": None,
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Call",
+                                "lowered_kind": "BuiltinCall",
+                                "resolved_type": "int64",
+                                "runtime_call": "int",
+                                "func": {"kind": "Name", "id": "int", "resolved_type": "callable"},
+                                "args": [
+                                    {
+                                        "kind": "Unbox",
+                                        "resolved_type": "Obj",
+                                        "value": {
+                                            "kind": "Subscript",
+                                            "resolved_type": "Any",
+                                            "value": {"kind": "Name", "id": "items", "resolved_type": "list[Any]"},
+                                            "slice": {"kind": "Constant", "resolved_type": "int64", "value": 0},
+                                        },
+                                    }
+                                ],
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("return (py_list_at_ref(items, int64(0))).unbox<int64, PYTRA_TID_INT>();", cpp_code)
+        self.assertNotIn("static_cast<int64>(py_list_at_ref(items, int64(0)))", cpp_code)
+
+    def test_cpp_emitter_boxes_empty_unknown_dict_as_string_key_object_values(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "default_map",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_index": {},
+                    "return_type": "object",
+                    "arg_usage": {},
+                    "renamed_symbols": {},
+                    "docstring": None,
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Box",
+                                "resolved_type": "object",
+                                "value": {
+                                    "kind": "Dict",
+                                    "resolved_type": "dict[unknown,unknown]",
+                                    "entries": [],
+                                },
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("return object(rc_dict_from_value(dict<str, object>{}));", cpp_code)
+        self.assertNotIn("dict<object, object>{}", cpp_code)
 
     def test_go_emitter_uses_list_index_helper_for_list_receivers(self) -> None:
         doc = _module_doc(
