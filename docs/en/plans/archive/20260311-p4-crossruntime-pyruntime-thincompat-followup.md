@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p4-crossruntime-pyruntime-thincompat-followup.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P4: Classify final thin-compat dependencies across the C++/Rust/C# emitters
 
 Last updated: 2026-03-11

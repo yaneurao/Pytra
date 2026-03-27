@@ -1,3 +1,7 @@
+<a href="../../ja/blog/index.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # Pytra Development Blog
 
 This is where we write about Pytra's design decisions and development backstories.

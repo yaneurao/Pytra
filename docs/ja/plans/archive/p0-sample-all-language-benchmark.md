@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/p0-sample-all-language-benchmark.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0 サンプル実行基盤リカバリ
 
 ## 背景

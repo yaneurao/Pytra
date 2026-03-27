@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p1-ir-core-import-surface-pruning.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Shrink `toolchain.ir.core` as an import hub
 
 Last updated: 2026-03-11

@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260307-p0-cpp-core-ownership-split.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ core runtime ownership 分離（`generated/core` + `native/core` + `core` 互換面）
 
 最終更新: 2026-03-07

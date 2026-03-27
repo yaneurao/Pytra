@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/p1-codeemitter-dispatch-redesign.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # TASK GROUP: TG-P1-CED
 
 最終更新: 2026-02-23

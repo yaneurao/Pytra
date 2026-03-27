@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/p0-py2cpp-responsibility-split.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # TASK GROUP: TG-P0-PY2CPP-SPLIT
 
 最終更新: 2026-02-24

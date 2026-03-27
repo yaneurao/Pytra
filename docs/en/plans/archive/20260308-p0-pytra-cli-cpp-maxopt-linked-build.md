@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260308-p0-pytra-cli-cpp-maxopt-linked-build.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Use the Linked-Program Build Route for Max-Optimized C++ in `pytra-cli`
 
 Last updated: 2026-03-08

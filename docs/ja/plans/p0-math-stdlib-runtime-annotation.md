@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-math-stdlib-runtime-annotation.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0-24: import モジュール属性呼び出し（math.* 等）の EAST3 runtime annotation 付与
 
 最終更新: 2026-03-24

@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260308-p0-cpp-pyruntime-object-dict-default-retirement.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ `py_runtime.h` `dict<str, object>` 専用 `py_dict_get_default` 縮退
 
 最終更新: 2026-03-08

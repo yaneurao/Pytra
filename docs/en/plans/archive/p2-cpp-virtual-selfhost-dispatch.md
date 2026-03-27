@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/p2-cpp-virtual-selfhost-dispatch.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2: Simplify C++ Selfhost Virtual Dispatch
 
 ## Background

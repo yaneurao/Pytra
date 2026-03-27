@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260308-p2-js-ambient-global-extern.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: JS/TS 向け ambient global extern 変数を導入する
 
 最終更新: 2026-03-08

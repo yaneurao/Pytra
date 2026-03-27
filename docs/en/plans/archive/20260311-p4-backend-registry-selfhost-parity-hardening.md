@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p4-backend-registry-selfhost-parity-hardening.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P4: Canonicalize Backend Registry Metadata and Strengthen Selfhost Parity Gates
 
 Last updated: 2026-03-11

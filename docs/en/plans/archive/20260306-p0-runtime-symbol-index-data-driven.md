@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260306-p0-runtime-symbol-index-data-driven.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Make the Runtime Symbol Index Data-Driven
 
 Last updated: 2026-03-06

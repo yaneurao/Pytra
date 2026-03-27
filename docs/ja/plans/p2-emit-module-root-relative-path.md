@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-emit-module-root-relative-path.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: emit_all_modules がモジュールにルート相対パス情報を渡す
 
 最終更新: 2026-03-22

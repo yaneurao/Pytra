@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p2-east-import-resolution-and-codeemitter-dep-collection.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2: Minimal Import Generation via EAST Resolution Data + CodeEmitter Dependency Collection
 
 Last updated: 2026-02-28

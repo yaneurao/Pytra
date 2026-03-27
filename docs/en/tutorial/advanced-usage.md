@@ -1,3 +1,7 @@
+<a href="../../ja/tutorial/advanced-usage.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # Advanced Usage
 
 This page covers advanced transpilation routes and runtime helper annotations (primarily `@abi`) that are not included in [how-to-use.md](./how-to-use.md).

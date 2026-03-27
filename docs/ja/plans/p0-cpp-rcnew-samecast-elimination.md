@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-cpp-rcnew-samecast-elimination.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ `rc_new` 同型 cast 冗長除去（最優先）
 
 最終更新: 2026-02-28

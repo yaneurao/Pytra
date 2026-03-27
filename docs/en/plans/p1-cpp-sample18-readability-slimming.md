@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-cpp-sample18-readability-slimming.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Collapse readability overhead in sample/18 C++ generated code (selected: #2,#7,#8,#5,#1)
 
 Last updated: 2026-02-27

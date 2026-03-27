@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-compile-link-pipeline.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: compile / link パイプライン分離
 
 最終更新: 2026-03-19

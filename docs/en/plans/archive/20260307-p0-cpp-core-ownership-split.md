@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260307-p0-cpp-core-ownership-split.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Split C++ `core` Ownership
 
 Last updated: 2026-03-07

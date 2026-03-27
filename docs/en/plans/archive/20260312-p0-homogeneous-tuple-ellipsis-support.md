@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p0-homogeneous-tuple-ellipsis-support.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: homogeneous tuple ellipsis support
 
 Last updated: 2026-03-12

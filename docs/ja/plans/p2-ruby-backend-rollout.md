@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-ruby-backend-rollout.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: Ruby backend 追加
 
 最終更新: 2026-02-27

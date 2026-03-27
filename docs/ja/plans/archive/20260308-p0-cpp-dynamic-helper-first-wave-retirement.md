@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260308-p0-cpp-dynamic-helper-first-wave-retirement.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ `py_runtime.h` dynamic helper 第1波退役
 
 最終更新: 2026-03-08

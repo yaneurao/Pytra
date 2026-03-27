@@ -1,3 +1,7 @@
+<a href="../../en/plans/p3-codeemitter-cs-isolation.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P3: CodeEmitter から C# selfhost 起因修正を隔離
 
 最終更新: 2026-03-01

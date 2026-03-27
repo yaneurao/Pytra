@@ -1,3 +1,7 @@
+<a href="../../../ja/spec/archive/index.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # 仕様アーカイブ（index）
 
 `docs/ja/spec/archive/` は、`docs/ja/spec/` から退役した旧仕様を保管する場所です。  

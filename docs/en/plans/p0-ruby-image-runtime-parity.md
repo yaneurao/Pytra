@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-ruby-image-runtime-parity.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Implement Ruby Image Output Runtime and Recover Byte Parity
 
 Last updated: 2026-02-28

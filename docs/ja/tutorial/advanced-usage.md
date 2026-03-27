@@ -1,3 +1,7 @@
+<a href="../../en/tutorial/advanced-usage.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # 発展的な使い方
 
 このページは、[how-to-use.md](./how-to-use.md) には載せない高度な変換ルートと runtime helper 注釈（主に `@abi`）をまとめたものです。

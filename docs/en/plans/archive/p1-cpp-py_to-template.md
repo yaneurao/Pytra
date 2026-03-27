@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/p1-cpp-py_to-template.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: C++ `py_to` Template Consolidation Plan
 
 Last updated: 2026-02-25

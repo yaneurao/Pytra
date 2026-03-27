@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-multilang-downcount-range-regression.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: `range(len-1, -1, -1)` Multilingual Regression (Add Test + Pass All Backends)
 
 Last updated: 2026-03-01

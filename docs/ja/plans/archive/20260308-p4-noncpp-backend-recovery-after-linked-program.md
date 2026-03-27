@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260308-p4-noncpp-backend-recovery-after-linked-program.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P4: linked-program 後の非C++ backend 修復
 
 最終更新: 2026-03-08

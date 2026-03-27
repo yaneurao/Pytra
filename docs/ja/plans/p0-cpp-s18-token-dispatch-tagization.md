@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-cpp-s18-token-dispatch-tagization.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample/18 tokenizer の文字列分岐を tag 化（if連鎖縮退）
 
 最終更新: 2026-03-01

@@ -1,3 +1,7 @@
+<a href="../../en/spec/spec-runtime-mapping.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # runtime mapping.json 仕様
 
 最終更新: 2026-03-25

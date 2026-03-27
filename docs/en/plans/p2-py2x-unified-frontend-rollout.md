@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p2-py2x-unified-frontend-rollout.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2: Unified Frontend Rollout with `pytra-cli.py` (Layered Option Pass-through)
 
 Last updated: 2026-03-02

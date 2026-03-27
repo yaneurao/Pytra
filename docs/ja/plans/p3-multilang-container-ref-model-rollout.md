@@ -1,3 +1,7 @@
+<a href="../../en/plans/p3-multilang-container-ref-model-rollout.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P3: 非C++ backend へのコンテナ参照管理モデル展開
 
 最終更新: 2026-03-02

@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p0-path-stringify-cpp-representative-support.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Representative C++ stringify support for `str(Path(...))`
 
 Last updated: 2026-03-12

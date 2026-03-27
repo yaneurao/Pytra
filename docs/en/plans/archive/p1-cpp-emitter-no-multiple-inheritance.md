@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/p1-cpp-emitter-no-multiple-inheritance.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Remove Multiple Inheritance from `CppEmitter`
 
 ## Goal

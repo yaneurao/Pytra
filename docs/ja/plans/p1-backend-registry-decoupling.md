@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-backend-registry-decoupling.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: backend_registry 依存の除去 — コンパイラフロントエンドを backend 非依存に
 
 最終更新: 2026-03-21

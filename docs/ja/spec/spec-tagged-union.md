@@ -1,8 +1,8 @@
-# tagged union 仕様
-
 <a href="../../en/spec/spec-tagged-union.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
+
+# tagged union 仕様
 
 この文書は、Pytra における `type X = A | B | ...` 宣言（PEP 695 型エイリアスによる union 型定義）の意味・コード生成規則・型操作規則を定義する。
 

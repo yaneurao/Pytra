@@ -1,9 +1,8 @@
-# 開発思想
-
 <a href="../../en/spec/spec-philosophy.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+# 開発思想
 
 Pytra は、「1つのロジックを複数言語で無理なく運用する」ことを目的にしたトランスパイラです。
 

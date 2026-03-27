@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260311-p1-import-graph-request-carriers.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: import graph の request carrier を構造化する
 
 最終更新: 2026-03-11

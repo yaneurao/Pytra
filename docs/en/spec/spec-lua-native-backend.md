@@ -1,7 +1,7 @@
 # Lua Native Backend Contract Specification
 
 <a href="../../ja/spec/spec-lua-native-backend.md">
-  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
 </a>
 
 This document defines the contract for the `EAST3 -> Lua native emitter` path introduced by `P0-LUA-BACKEND-01`.  

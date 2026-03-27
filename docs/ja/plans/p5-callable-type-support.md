@@ -1,3 +1,7 @@
+<a href="../../en/plans/p5-callable-type-support.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P5: Callable 型サポート（func ノードの型付与 + 高階関数型推論）
 
 最終更新: 2026-03-23

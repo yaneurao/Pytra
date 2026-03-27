@@ -1,7 +1,7 @@
 # About the Runtime Specification
 
 <a href="../../ja/spec/spec-runtime.md">
-  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
 </a>
 
 ### 0. Source of truth and responsibility boundary

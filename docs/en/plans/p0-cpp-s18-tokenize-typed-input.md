@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-s18-tokenize-typed-input.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Type sample/18 `tokenize` input (remove `object` degradation)
 
 Last updated: 2026-03-01

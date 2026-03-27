@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-ruby-dict-entry-emit-fix.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: Ruby Dict literal（EAST3 `entries`）emit 修正
 
 最終更新: 2026-03-04

@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p5-backend-feature-parity-contract.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P5 Backend Feature Parity Contract
 
 Last updated: 2026-03-12

@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260311-p4-backend-registry-selfhost-parity-hardening.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P4: backend_registry の正本化と selfhost parity gate の強化
 
 最終更新: 2026-03-11

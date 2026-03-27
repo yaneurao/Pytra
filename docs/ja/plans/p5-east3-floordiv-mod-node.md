@@ -1,3 +1,7 @@
+<a href="../../en/plans/p5-east3-floordiv-mod-node.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P5: FloorDiv / Mod を EAST3 IR ノード化し py_runtime.h から除去
 
 最終更新: 2026-03-18

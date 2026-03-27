@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/p0-isinstance-single-inheritance.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Reformat `type_id` `isinstance` Handling for Single-Inheritance Ranges
 
 Related TODO:

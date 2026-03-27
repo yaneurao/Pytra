@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/plan-east123-migration.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # TASK GROUP: TG-P0-EAST123-MIGRATION
 
 最終更新: 2026-02-26

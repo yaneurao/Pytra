@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260307-p0-cpp-list-ref-first-completion.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ mutable list の ref-first 完全化（`rc<list<T>>` 正本化）
 
 最終更新: 2026-03-07

@@ -1,9 +1,8 @@
-# Python との互換性ガイド
-
 <a href="../../en/spec/spec-python-compat.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+# Python との互換性ガイド
 
 このページは、**Python を知っているユーザー向け**に「Python ではこう動く / Pytra ではこう動く」を対比してまとめたガイドです。
 詳細な入力制約の正本は [利用仕様](./spec-user.md) を参照してください。

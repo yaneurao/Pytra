@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-py2x-single-entrypoint-remove-legacy-clis.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: `pytra-cli.py` 単一エントリ化（`py2*.py` 廃止、最終的に `py2cpp.py` 削除）
 
 最終更新: 2026-03-03

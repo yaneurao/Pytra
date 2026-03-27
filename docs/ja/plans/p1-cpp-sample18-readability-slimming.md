@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-cpp-sample18-readability-slimming.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: sample/18 C++ 生成コード可読性縮退（選定: #2,#7,#8,#5,#1）
 
 最終更新: 2026-02-27

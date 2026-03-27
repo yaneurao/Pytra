@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260309-p1-east-typeexpr-strengthening.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Structure EAST type representation and lift union / nominal ADT / narrowing out of string processing
 
 Last updated: 2026-03-09

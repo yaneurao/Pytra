@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p3-multilang-container-ref-model-rollout.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P3: Roll Out Container Reference-Management Model to non-C++ Backends
 
 Last updated: 2026-03-02

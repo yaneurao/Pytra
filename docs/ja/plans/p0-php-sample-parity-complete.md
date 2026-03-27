@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-php-sample-parity-complete.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: PHP sample parity 完了化（stdout + artifact CRC32）
 
 最終更新: 2026-03-04

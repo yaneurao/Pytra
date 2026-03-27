@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-py-runtime-h-decomposition.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: py_runtime.h 分解・廃止
 
 最終更新: 2026-03-19

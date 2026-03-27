@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260317-p1-cpp-subscript-index-cast-tuple-get.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: C++ emitter subscript index cast elision and tuple std::get<I> optimization
 
 Last updated: 2026-03-17

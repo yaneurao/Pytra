@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-lua-sample01-runtime-mapping.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Correct runtime mapping for sample/lua/01 (highest priority)
 
 Last updated: 2026-03-01

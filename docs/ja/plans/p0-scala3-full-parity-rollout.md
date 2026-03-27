@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-scala3-full-parity-rollout.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: Scala3 parity 全通過化（sample + fixture）
 
 最終更新: 2026-03-02

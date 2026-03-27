@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260311-p1-ir-core-import-surface-pruning.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: `toolchain.ir.core` の import hub を縮小する
 
 最終更新: 2026-03-11

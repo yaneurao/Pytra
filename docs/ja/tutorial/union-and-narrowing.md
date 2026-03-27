@@ -1,3 +1,7 @@
+<a href="../../en/tutorial/union-and-narrowing.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # Union 型と isinstance ナローイング
 
 このページでは、Pytra で複数の型を扱う **union 型** と、条件分岐で型を絞り込む **isinstance ナローイング** の使い方を説明します。

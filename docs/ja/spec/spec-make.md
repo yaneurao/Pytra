@@ -1,3 +1,7 @@
+<a href="../../en/spec/spec-make.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # Makefile 生成とワンショット build 仕様
 
 この文書は、C++ 向けの build 導線を `py2cpp.py` 直呼びではなく `pytra` 共通 CLI へ集約する運用仕様を定義する。

@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260314-p1-nes3-bytes-member-truthiness-cpp-support.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: `bytes` member truthiness の `!bytes` residual を C++ lane で止める
 
 最終更新: 2026-03-14

@@ -1,3 +1,7 @@
+<a href="../../en/plans/p4-selfhost-parity-readiness-report.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P4 Selfhost Parity Readiness Report
 
 最終更新: 2026-03-11

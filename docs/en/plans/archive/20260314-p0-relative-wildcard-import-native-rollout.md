@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260314-p0-relative-wildcard-import-native-rollout.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: relative wildcard import native backend rollout
 
 Last updated: 2026-03-14

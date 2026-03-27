@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-east3-optimizer-sample-cpp-strengthening.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: EAST3最適化層の強化（sample C++ 出力改善）
 
 最終更新: 2026-02-27

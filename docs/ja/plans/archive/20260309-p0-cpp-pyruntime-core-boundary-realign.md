@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260309-p0-cpp-pyruntime-core-boundary-realign.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ `py_runtime.h` の core 境界を再整理し、残存 helper を上流 / 専用lane へ戻す
 
 最終更新: 2026-03-09

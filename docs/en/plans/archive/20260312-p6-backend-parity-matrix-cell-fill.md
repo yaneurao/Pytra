@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p6-backend-parity-matrix-cell-fill.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P6: backend parity matrix cell fill
 
 Last updated: 2026-03-12

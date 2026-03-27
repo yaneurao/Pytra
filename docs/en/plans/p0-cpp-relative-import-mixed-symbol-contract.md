@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-relative-import-mixed-symbol-contract.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: C++ relative import mixed symbol contract
 
 Last updated: 2026-03-12

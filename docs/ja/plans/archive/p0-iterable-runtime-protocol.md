@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/p0-iterable-runtime-protocol.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0 Iterable/Iterator 契約反映（最優先）
 
 ID: `TG-P0-ITER`

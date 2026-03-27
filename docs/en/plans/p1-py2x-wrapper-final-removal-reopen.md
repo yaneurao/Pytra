@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-py2x-wrapper-final-removal-reopen.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Recover Remaining Work for `py2x` Unification (Complete Removal of Legacy `py2*.py` Wrappers)
 
 Last updated: 2026-03-04

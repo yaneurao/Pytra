@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-builtin-dependency-via-linker.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: built-in 依存を EAST1 → linker 経由で解決し、emitter の決め打ちバンドルを廃止
 
 最終更新: 2026-03-21

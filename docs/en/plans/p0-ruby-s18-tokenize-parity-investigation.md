@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-ruby-s18-tokenize-parity-investigation.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Investigate Ruby `sample/18` Parity Failure (`tokenize error`)
 
 Last updated: 2026-03-04

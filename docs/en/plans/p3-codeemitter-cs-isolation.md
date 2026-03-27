@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p3-codeemitter-cs-isolation.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P3: Isolate C# Selfhost-Originated Fixes from CodeEmitter
 
 Last updated: 2026-03-01

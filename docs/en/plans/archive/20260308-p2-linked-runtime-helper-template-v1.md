@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260308-p2-linked-runtime-helper-template-v1.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2: `@template` v1 for Linked Runtime Helpers
 
 Last updated: 2026-03-08

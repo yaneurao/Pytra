@@ -1,3 +1,7 @@
+<a href="../../en/plans/p3-microgpt-revival.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P3: microgpt 原本保全タスク再開
 
 最終更新: 2026-02-26

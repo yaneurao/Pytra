@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-emit-ts.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2-EMIT-TS: TypeScript emitter（JS とは別実装）
 
 最終更新: 2026-03-26

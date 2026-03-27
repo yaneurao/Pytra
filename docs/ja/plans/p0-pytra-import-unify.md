@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-pytra-import-unify.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: Python 標準モジュール import を pytra.* 経由に統一
 
 最終更新: 2026-03-19

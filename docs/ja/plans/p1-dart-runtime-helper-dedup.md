@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-dart-runtime-helper-dedup.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: Dart emitter ランタイムヘルパー重複排除
 
 ## 背景

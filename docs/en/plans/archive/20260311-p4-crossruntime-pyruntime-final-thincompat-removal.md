@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p4-crossruntime-pyruntime-final-thincompat-removal.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P4: Remove the final `py_runtime.h` thin compat helpers across runtimes
 
 Last updated: 2026-03-11

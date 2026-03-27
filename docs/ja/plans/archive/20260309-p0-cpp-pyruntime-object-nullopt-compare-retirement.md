@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260309-p0-cpp-pyruntime-object-nullopt-compare-retirement.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ `py_runtime.h` `object`-`nullopt` 比較 compat 退役
 
 最終更新: 2026-03-09

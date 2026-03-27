@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-cpp-relative-import-alias-symbol-contract.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ relative import alias symbol contract
 
 最終更新: 2026-03-12

@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260313-p0-frontends-facade-py2x-entrypoints-import.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: `py2x` entrypoint import を `toolchain.frontends` facade に揃える
 
 最終更新: 2026-03-13

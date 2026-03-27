@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p5-nominal-adt-language-rollout.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P5: Full rollout of nominal ADTs as a language feature
 
 Last updated: 2026-03-11

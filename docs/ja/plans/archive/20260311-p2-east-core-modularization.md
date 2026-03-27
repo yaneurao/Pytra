@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260311-p2-east-core-modularization.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: EAST core.py / test_east_core.py を機能単位で分割する
 
 最終更新: 2026-03-11

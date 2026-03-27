@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-pytra-src-3layer-bootstrap.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Bootstrap 3-Layer Separation Inside `src/pytra` (`frontends` / `ir` / `backend`)
 
 Last updated: 2026-03-03

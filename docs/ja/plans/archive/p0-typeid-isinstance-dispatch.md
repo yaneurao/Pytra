@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/p0-typeid-isinstance-dispatch.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0 type_id 継承判定・isinstance 統一（最優先）
 
 ID: `TG-P0-TYPEID-ISINSTANCE`

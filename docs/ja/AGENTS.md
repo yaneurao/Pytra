@@ -1,3 +1,7 @@
+<a href="../en/AGENTS.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # エージェント運用ルール（ブートストラップ）
 
 このファイルは最初に読む入口だけを定義します。  
@@ -21,6 +25,14 @@
 - `materials/` はユーザー資料置き場として扱い、Codex は read-only（明示指示がある場合のみ編集可）。
 - `materials/Yanesdk/` と `materials/microgpt/` はユーザー管理資料として扱う。
 - 変換互換性テストの原本（例: `materials/microgpt/microgpt-20260222.py`）は改変禁止とし、変換器都合の回避版が必要な場合は `work/tmp/*-lite.py` を別名で作成して分離する。
+
+## git 操作の禁止事項（複数インスタンス環境）
+
+複数の Codex / Claude Code インスタンスが同一ワーキングツリーで同時に動作する。以下を厳守すること。
+
+- **`git stash` / `git checkout -- <file>` / `git restore` / `git reset --hard` / `git clean -f` は禁止**。他インスタンスの未コミット変更を破壊する。
+- **`.git/index.lock` を削除してはならない**。このファイルが存在するときは他のインスタンスが git 操作中である。削除すると index が壊れる。ロックが残っている場合は **待つ**こと。
+- 変更を取り消したい場合は、Edit/Write で手動で元に戻すか、`git diff <file>` で差分を確認してから対処する。
 
 ## 参照先
 

@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-py2x-unified-frontend-rollout.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: `pytra-cli.py` 一本化 frontend 導入（層別 option pass-through）
 
 最終更新: 2026-03-02

@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-backend-dir-realign.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Realign C++ Backend Directories (5 Folders -> `lower/optimizer/emitter`)
 
 Last updated: 2026-03-02

@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260308-p2-jsonvalue-selfhost-decode-alignment.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: `JsonValue` を使った selfhost JSON 境界の整列
 
 最終更新: 2026-03-08

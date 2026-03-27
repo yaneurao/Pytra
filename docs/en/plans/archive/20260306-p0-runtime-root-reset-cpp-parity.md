@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260306-p0-runtime-root-reset-cpp-parity.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: runtime-root reset (`runtime2` quarantine + new `runtime/`) and C++ parity recovery
 
 Last updated: 2026-03-06

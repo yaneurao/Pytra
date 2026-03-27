@@ -1,8 +1,8 @@
-# Linker 仕様（EAST1/EAST2/EAST3 連結）
-
 <a href="../../en/spec/spec-linker.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
+
+# Linker 仕様（EAST1/EAST2/EAST3 連結）
 
 この文書は、`EAST1` / `EAST2` / `EAST3` を中間ファイルとして扱う場合の
 `linker`（連結段）仕様を定義する。

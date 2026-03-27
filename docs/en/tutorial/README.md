@@ -1,58 +1,56 @@
-<a href="../../ja/tutorial/README.md"><img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square"></a>
+<a href="../../ja/tutorial/README.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
 
-> [!WARNING]
-> This file is synchronized from `docs/ja/tutorial/README.md` and still requires manual English translation.
+# Tutorial
 
-> Source of truth: `docs/ja/tutorial/README.md`
+A starting point for first-time Pytra users.
 
-# チュートリアル
-
-Pytra を初めて触る人向けの入口です。
-
-## 3分で動かす
+## Get Running in 3 Minutes
 
 ```python
 def add(a: int, b: int) -> int:
     return a + b
 
-
 if __name__ == "__main__":
     print(add(3, 4))
 ```
 
-この `add.py` を C++ に変換して実行:
+Transpile this `add.py` to C++ and run it:
 
 ```bash
 ./pytra add.py --output-dir out/add_case --build --run --exe add.out
 ```
 
-出力:
+Output:
 
 ```text
 7
 ```
 
-Rust に変換するなら:
+To transpile to Rust instead:
 
 ```bash
 ./pytra add.py --target rs --output-dir out/rs_case
 ```
 
-## 読む順番
+## Reading Order
 
-1. [使い方](./how-to-use.md) — 実行手順、オプション、入力制約
-2. [アーキテクチャ](./architecture.md) — パイプラインの全体像と各段の役割
-3. [Python 互換性ガイド](../spec/spec-python-compat.md) — Python との違い、使えない構文
-4. [エラーの見方](./troubleshooting.md) — 詰まったときに
+1. [How to use](./how-to-use.md) — Execution steps, options, input constraints
+2. [Architecture](./architecture.md) — Pipeline overview and the role of each stage
+3. [Python compatibility guide](../spec/spec-python-compat.md) — Differences from Python, unsupported syntax
+4. [Troubleshooting](./troubleshooting.md) — When you get stuck
+5. [Union types and isinstance narrowing](./union-and-narrowing.md) — Handling multiple types and automatic type refinement
+6. [Traits (interfaces)](./trait.md) — Attaching multiple behavioral contracts to a type
 
-ここまで読めば普通に使えます。以下は必要に応じて:
+That should be enough to use Pytra. The following are for when you need them:
 
-5. [発展的な使い方](./advanced-usage.md) — `@extern`, `@abi`, `@template`, nominal ADT 等
-6. [仕様書トップ](../spec/index.md) — 言語仕様の正本
-7. [開発運用ガイド](./dev-operations.md) — parity check, local CI（開発者向け）
+7. [Advanced usage](./advanced-usage.md) — `@extern`, `@abi`, `@template`, nominal ADT, etc.
+8. [Specification index](../spec/index.md) — The source of truth for language specifications
+9. [Development operations guide](./dev-operations.md) — Parity check, local CI (for developers)
 
-## 関連リンク
+## Related Links
 
-- [仕様書トップ](../spec/index.md)
-- [pylib モジュール一覧](../spec/spec-pylib-modules.md)
-- [サンプル一覧](../../sample/README-ja.md)
+- [Specification index](../spec/index.md)
+- [pylib module list](../spec/spec-pylib-modules.md)
+- [Sample list](../../sample/README.md)

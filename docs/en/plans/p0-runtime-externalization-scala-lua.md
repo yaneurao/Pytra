@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-runtime-externalization-scala-lua.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Scala/Lua Runtime Externalization (Remove Inline Helpers)
 
 Last updated: 2026-03-02

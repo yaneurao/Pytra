@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p1-ir-entrypoint-facade-pruning.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Prune `toolchain.ir.core` facade importers
 
 Last updated: 2026-03-11

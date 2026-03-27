@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-forcore-single-stmt-brace-omit.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Omit Unnecessary Braces for Single-Statement C++ `ForCore` Loops
 
 Last updated: 2026-03-02

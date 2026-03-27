@@ -1,5 +1,5 @@
 <a href="docs/ja/README.md">
-  <img alt="Read in Japanese" src="https://img.shields.io/badge/README-日本語-2563EB?style=flat-square">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/README-日本語-DC2626?style=flat-square">
 </a>
 
 <p align="center">
@@ -124,19 +124,18 @@ Full data for all languages and all samples: [Sample page](sample/README.md#runt
 
 ## Read the Docs
 
-- Japanese tutorial: [docs/ja/tutorial/README.md](docs/ja/tutorial/README.md)
-- Architecture: [docs/ja/tutorial/architecture.md](docs/ja/tutorial/architecture.md) - an overview of the pipeline
-- Japanese document index: [docs/ja/index.md](docs/ja/index.md)
-- English tutorial: [docs/en/tutorial/how-to-use.md](docs/en/tutorial/how-to-use.md)
-- English document index: [docs/en/index.md](docs/en/index.md)
+| | ![English](https://img.shields.io/badge/English-2563EB?style=flat-square) | ![日本語](https://img.shields.io/badge/日本語-DC2626?style=flat-square) |
+|---|---|---|
+| Getting started | [Tutorial](docs/en/tutorial/README.md) | [チュートリアル](docs/ja/tutorial/README.md) |
+| All docs | [English docs](docs/en/index.md) | [日本語ドキュメント](docs/ja/index.md) |
 
 ## Changelog
+
+> **2026-03-27** - C++ emitter spec compliance completed (S1-S15). Introduced Traits (pure interface, multiple implementation) with C++/Go parity. Completed isinstance narrowing (if/elif/early return guard/ternary), ternary Optional type inference, and pytra.std.json parser support. Started Lowering Profile + CommonRenderer design.
 
 > **2026-03-26** - Pipeline redesign completed. All six stages of the pipeline (`parse -> resolve -> compile -> optimize -> link -> emit`) now work end to end. The Go backend has been migrated to the new pipeline.
 
 > **2026-03-25** - All P0 tasks completed. Reorganized the `test/` directory. Go emitter and runtime reached parity on all 18 samples.
-
-> **2026-03-24** - Started the pipeline redesign. Added `toolchain2/`, implemented `pytra-cli2`, and defined the EAST1/EAST2 specifications.
 
 Full history: [docs/en/changelog.md](docs/en/changelog.md)
 

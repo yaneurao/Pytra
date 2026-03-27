@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260308-p1-all-target-sample-parity-rollout.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Reach Sample Parity Across All Targets
 
 Last updated: 2026-03-08

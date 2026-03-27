@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-pytra-src-3layer-bootstrap.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: `src/pytra` 内 3層分離ブートストラップ（`frontends` / `ir` / `backend`）
 
 最終更新: 2026-03-03

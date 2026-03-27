@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260307-p0-linked-program-global-optimizer-and-program-writer.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: linked program 導入（multi-unit optimizer + ProgramWriter 分離）
 
 最終更新: 2026-03-07

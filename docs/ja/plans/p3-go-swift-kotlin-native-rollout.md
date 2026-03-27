@@ -1,3 +1,7 @@
+<a href="../../en/plans/p3-go-swift-kotlin-native-rollout.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P3: Go/Swift/Kotlin backend の EAST3 直生成移行（sidecar 撤去）
 
 最終更新: 2026-02-26

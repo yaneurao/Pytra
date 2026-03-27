@@ -1,3 +1,7 @@
+<a href="../../en/plans/instruction-template.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # 指示テンプレート（優先度上書き用）
 
 最終更新: 2026-02-22

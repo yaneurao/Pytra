@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-ifexp-optional-inference.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1-IFEXP-OPTIONAL: 三項演算子の Optional 型推論
 
 最終更新: 2026-03-27

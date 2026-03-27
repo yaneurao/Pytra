@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/p1-cpp-emitter-remove-pylib-compat.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Remove `pylib` Compatibility Name Normalization from `CppEmitter`
 
 Last updated: 2026-02-25

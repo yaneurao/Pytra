@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-east2-common-ir-depythonization.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: EAST2 を最初の共通 IR として再定義（Python 依存排除）
 
 最終更新: 2026-03-01

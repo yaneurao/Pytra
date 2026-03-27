@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260311-p1-east23-lowering-orchestration-split.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: `east2_to_east3_lowering.py` の残 cluster を第二波で分割する
 
 最終更新: 2026-03-11

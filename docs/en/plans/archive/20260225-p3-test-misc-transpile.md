@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260225-p3-test-misc-transpile.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # TASK GROUP: TG-P3-MISC-CONV
 
 Last updated: 2026-02-25

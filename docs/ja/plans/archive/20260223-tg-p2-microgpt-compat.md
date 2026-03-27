@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260223-tg-p2-microgpt-compat.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # TASK GROUP: TG-P2-MICROGPT-COMPAT
 
 最終更新: 2026-02-22

@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-cpp-s13-while-empty-fastpath.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample/13 `while stack` の `.empty()` fastpath
 
 最終更新: 2026-03-01

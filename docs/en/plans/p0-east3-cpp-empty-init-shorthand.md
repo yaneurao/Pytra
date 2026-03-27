@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-east3-cpp-empty-init-shorthand.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Reduce C++ Empty Initialization to `= {};` via EAST3 Markers
 
 Last updated: 2026-03-02

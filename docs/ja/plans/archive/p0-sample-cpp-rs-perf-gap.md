@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/p0-sample-cpp-rs-perf-gap.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample C++/Rust 実行時間乖離の是正
 
 最終更新: 2026-02-26

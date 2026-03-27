@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260308-p3-compiler-jsonvalue-internal-alignment.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P3: compiler/backend 内部 JSON 読み込みを `JsonValue` に揃える
 
 最終更新: 2026-03-08

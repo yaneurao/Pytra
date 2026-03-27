@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-ruby-image-runtime-parity.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: Ruby 画像出力 runtime 実装とバイト parity 回復
 
 最終更新: 2026-02-28

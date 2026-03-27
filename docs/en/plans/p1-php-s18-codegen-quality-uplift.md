@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-php-s18-codegen-quality-uplift.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Improve PHP Code Generation for `sample/18` (Runnable + Higher Quality)
 
 Last updated: 2026-03-03

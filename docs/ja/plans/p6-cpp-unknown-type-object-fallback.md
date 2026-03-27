@@ -1,3 +1,7 @@
+<a href="../../en/plans/p6-cpp-unknown-type-object-fallback.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P6: unknown / 空文字型の object フォールバック排除
 
 最終更新: 2026-03-18

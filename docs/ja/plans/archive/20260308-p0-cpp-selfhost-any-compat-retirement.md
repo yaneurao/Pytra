@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260308-p0-cpp-selfhost-any-compat-retirement.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ selfhost `std::any` 互換 lane の退役
 
 最終更新: 2026-03-08

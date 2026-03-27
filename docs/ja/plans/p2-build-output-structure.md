@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-build-output-structure.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: ビルド出力ディレクトリ構造の標準化
 
 最終更新: 2026-03-22

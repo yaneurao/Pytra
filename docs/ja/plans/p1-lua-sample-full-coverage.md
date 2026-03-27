@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-lua-sample-full-coverage.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: Lua sample 全18件対応（残り14件解消）
 
 最終更新: 2026-03-01

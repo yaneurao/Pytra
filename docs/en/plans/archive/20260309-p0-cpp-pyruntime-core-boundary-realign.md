@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260309-p0-cpp-pyruntime-core-boundary-realign.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Realign the C++ `py_runtime.h` core boundary and move remaining helpers back upstream / to dedicated lanes
 
 Last updated: 2026-03-09

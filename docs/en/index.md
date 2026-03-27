@@ -1,3 +1,7 @@
+<a href="../ja/index.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # Documentation
 
 The related documents are listed below in the order they are most frequently referenced during usage.

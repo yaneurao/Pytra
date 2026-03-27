@@ -1,3 +1,7 @@
+<a href="../../en/spec/spec-zig-native-backend.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # Zig Native Backend 契約仕様
 
 この文書は Zig native emitter（EAST3 → Zig 直接生成）の契約を定義する。

@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-east3-reserve-trip-count-normalization.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: EAST3主導 `reserve` 件数式正規化（C++ emitter文字列組み立て撤去）
 
 最終更新: 2026-03-02

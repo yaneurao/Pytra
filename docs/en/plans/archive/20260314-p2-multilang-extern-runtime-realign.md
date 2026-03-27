@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260314-p2-multilang-extern-runtime-realign.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2: realign the `@extern` runtime/emitter contract across all languages
 
 Last updated: 2026-03-14

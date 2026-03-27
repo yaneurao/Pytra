@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-main-guard-discard.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: main_guard_body の Expr Call 戻り値を Discard ノードでラップ
 
 最終更新: 2026-03-22

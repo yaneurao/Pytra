@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260223-tg-p2-microgpt-compat.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # TASK GROUP: TG-P2-MICROGPT-COMPAT
 
 最終更新: 2026-02-22

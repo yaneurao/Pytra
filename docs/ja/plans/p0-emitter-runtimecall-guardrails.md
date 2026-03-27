@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-emitter-runtimecall-guardrails.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: 非C++ emitter の runtime 関数名直書き禁止（IR解決 + CIガード）
 
 最終更新: 2026-03-05

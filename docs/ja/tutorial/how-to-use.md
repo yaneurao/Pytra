@@ -1,9 +1,8 @@
-# 使い方
-
-<a href="../../en/how-to-use.md">
+<a href="../../en/tutorial/how-to-use.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+# 使い方
 
 Pytra を実際に動かすための実行手順ガイドです。
 
@@ -14,7 +13,6 @@ Pytra を実際に動かすための実行手順ガイドです。
 ```python
 def add(a: int, b: int) -> int:
     return a + b
-
 
 if __name__ == "__main__":
     print(add(3, 4))
@@ -91,9 +89,14 @@ Pytra は Python のサブセットを変換します。主な制約:
 
 ## 次に読むページ
 
-- [Python 互換性ガイド](../spec/spec-python-compat.md) — 使えない構文、Python との違い
-- [仕様書トップ](../spec/index.md) — 言語仕様の入口
-- [`@extern` の使い方](./extern.md) — 外部関数の呼び出し
-- [エラーの見方](./troubleshooting.md) — 詰まったときに
-- [発展的な使い方](./advanced-usage.md) — `@abi`, `@template` 等
-- [開発運用ガイド](./dev-operations.md) — parity check, local CI 等（開発者向け）
+1. [アーキテクチャ](./architecture.md) — パイプラインの全体像と各段の役割
+2. [Python 互換性ガイド](../spec/spec-python-compat.md) — 使えない構文、Python との違い
+3. [エラーの見方](./troubleshooting.md) — 詰まったときに
+4. [Union 型と isinstance ナローイング](./union-and-narrowing.md) — 複数の型を扱う方法と型の自動絞り込み
+5. [Trait（インターフェース）](./trait.md) — 複数の振る舞い契約を型に付与する
+
+ここから先は必要に応じて:
+
+6. [発展的な使い方](./advanced-usage.md) — `@extern`, `@abi`, `@template`, nominal ADT 等
+7. [仕様書トップ](../spec/index.md) — 言語仕様の正本
+8. [開発運用ガイド](./dev-operations.md) — parity check, local CI（開発者向け）

@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-cpp-s18-str-identity-cast-elimination.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample/18 `str -> str` 同型変換の撤去（`py_to_string` 縮退）
 
 最終更新: 2026-03-01

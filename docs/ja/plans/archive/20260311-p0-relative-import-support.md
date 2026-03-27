@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260311-p0-relative-import-support.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: 相対 import (`from .m import x`) 正式対応
 
 最終更新: 2026-03-11

@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-east3-optimizer-sample-cpp-strengthening.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Strengthen EAST3 optimization layer (improve sample C++ output)
 
 Last updated: 2026-02-27

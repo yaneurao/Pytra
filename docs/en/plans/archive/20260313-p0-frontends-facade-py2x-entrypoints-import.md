@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260313-p0-frontends-facade-py2x-entrypoints-import.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: align `py2x` entrypoint imports to the `toolchain.frontends` facade
 
 Last updated: 2026-03-13

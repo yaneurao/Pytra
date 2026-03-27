@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260313-p0-raw-east3-node-shape-validator.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: raw EAST3 validator の node-shape 誤判定を解消する
 
 最終更新: 2026-03-13

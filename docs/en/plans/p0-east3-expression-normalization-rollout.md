@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-east3-expression-normalization-rollout.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: EAST3 Expression-Normalization Rollout (Multi-Backend Commonization)
 
 Last updated: 2026-03-02

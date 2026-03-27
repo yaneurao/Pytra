@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-isinstance-pod-exact.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1-ISINSTANCE-POD: POD 型の isinstance exact match 実装
 
 最終更新: 2026-03-27

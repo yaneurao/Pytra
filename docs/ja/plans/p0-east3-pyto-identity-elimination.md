@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-east3-pyto-identity-elimination.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: EAST3 同型 `py_to<T>` 縮退（最優先）
 
 最終更新: 2026-03-01

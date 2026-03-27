@@ -1,3 +1,7 @@
+<a href="../../en/plans/p3-trait-pure-interface.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P3-TRAIT: Trait（pure interface・多重実装）の導入
 
 最終更新: 2026-03-27

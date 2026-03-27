@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p2-cpp-s18-value-container.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2: sample/18 C++ AST Container Value-typing (`list<rc<T>>` -> `list<T>`)
 
 Last updated: 2026-03-02

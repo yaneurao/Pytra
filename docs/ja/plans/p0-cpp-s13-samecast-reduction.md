@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-cpp-s13-samecast-reduction.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample/13 同型 cast 連鎖の縮退
 
 最終更新: 2026-03-01

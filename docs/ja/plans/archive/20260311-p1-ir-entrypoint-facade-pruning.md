@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260311-p1-ir-entrypoint-facade-pruning.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: `toolchain.ir.core` facade importer を剥がす
 
 最終更新: 2026-03-11

@@ -1,5 +1,5 @@
 <a href="../../ja/spec/spec-east3-optimizer.md">
-  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
 </a>
 
 # EAST3 Optimizer Specification

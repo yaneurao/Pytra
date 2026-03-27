@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-cpp-s18-benchmark-source-typed-list.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample/18 benchmark ソース構築の typed list 化（`object + py_append` 縮退）
 
 最終更新: 2026-03-01

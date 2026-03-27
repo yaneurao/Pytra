@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p0-cpp-relative-import-linked-symbol-support.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: C++ relative import linked symbol support
 
 Last updated: 2026-03-12

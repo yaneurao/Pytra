@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p1-ir-core-decomposition.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Decompose `core.py` and `test_east_core.py` in cluster-sized slices
 
 Last updated: 2026-03-11

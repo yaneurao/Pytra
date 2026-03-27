@@ -1,3 +1,7 @@
+<a href="../../en/plans/p5-cpp-py-is-type-dead-code-remove.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P5: py_is_dict 等デッドコード関数を py_runtime.h から除去
 
 最終更新: 2026-03-18

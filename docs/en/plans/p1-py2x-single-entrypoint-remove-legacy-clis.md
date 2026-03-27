@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-py2x-single-entrypoint-remove-legacy-clis.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Single Entrypoint with `pytra-cli.py` (Retire `py2*.py`, Ultimately Remove `py2cpp.py`)
 
 Last updated: 2026-03-03

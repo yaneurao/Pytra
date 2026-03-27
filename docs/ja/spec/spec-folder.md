@@ -1,9 +1,8 @@
-# フォルダ責務マップ仕様（Pytra）
-
 <a href="../../en/spec/spec-folder.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+# フォルダ責務マップ仕様（Pytra）
 
 このドキュメントは「どのフォルダに何を置くか」を決める責務境界の正本です。  
 アルゴリズム詳細は他仕様（`spec-dev.md`, `spec-east.md`, `spec-runtime.md` など）を参照し、本書は配置判断に限定します。

@@ -1,3 +1,7 @@
+<a href="../../en/plans/p3-php-backend-rollout.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P3: PHP backend 追加（EAST3 -> PHP native）
 
 最終更新: 2026-03-02

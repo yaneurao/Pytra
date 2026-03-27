@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-ruby-true-division-parity.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Fix Ruby `/` Operator True-Division Compatibility
 
 Last updated: 2026-02-27

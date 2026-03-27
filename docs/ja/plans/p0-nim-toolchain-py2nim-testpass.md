@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-nim-toolchain-py2nim-testpass.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: Nim toolchain 導入 + py2nim 実装 + test 通過
 
 最終更新: 2026-03-03

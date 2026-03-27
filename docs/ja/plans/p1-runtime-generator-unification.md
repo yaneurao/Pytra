@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-runtime-generator-unification.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: runtime生成導線の単一化（`pytra-cli` / `py2x` 正規経路へ統合）
 
 最終更新: 2026-03-05

@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/p3-east3-only-emitters.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P3: Direct EAST3 Wiring for Non-C++ Emitters and Removal of EAST2 Compatibility
 
 Last updated: 2026-02-26

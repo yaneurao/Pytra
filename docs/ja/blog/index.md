@@ -1,3 +1,7 @@
+<a href="../../en/blog/index.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # Pytra 開発ブログ
 
 Pytra の設計判断や開発の裏話を書いていきます。

@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-runtime-externalization-gjsr.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Runtime Externalization for Go/Java/Swift/Ruby (Remove Inline Helpers)
 
 Last updated: 2026-02-28

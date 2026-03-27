@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260313-p0-noncpp-runtime-generated-cpp-baseline.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Align non-C++ generated runtime lanes to the `cpp/generated` baseline
 
 Last updated: 2026-03-13

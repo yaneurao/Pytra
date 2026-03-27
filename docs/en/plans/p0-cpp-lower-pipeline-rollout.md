@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-lower-pipeline-rollout.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: C++ Three-Stage Migration (Option 1: `CppLower` / `CppIrOptimizer` / `CppEmitter`)
 
 Last updated: 2026-03-02

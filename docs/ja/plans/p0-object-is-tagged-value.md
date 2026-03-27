@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-object-is-tagged-value.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: object = tagged value 統一
 
 最終更新: 2026-03-20

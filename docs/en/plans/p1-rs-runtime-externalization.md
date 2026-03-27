@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-rs-runtime-externalization.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Rust Runtime Externalization (Remove Inline Helpers / Embedded `mod pytra`)
 
 Last updated: 2026-03-01

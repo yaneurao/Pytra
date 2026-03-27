@@ -1,9 +1,8 @@
-# importの仕様
-
 <a href="../../en/spec/spec-import.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+# importの仕様
 
 まず、docs/ja/spec/spec-runtime.md も読むこと。
 

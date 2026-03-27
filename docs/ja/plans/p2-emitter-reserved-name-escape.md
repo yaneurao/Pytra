@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-emitter-reserved-name-escape.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: emitter にターゲット言語の予約語回避を追加
 
 最終更新: 2026-03-21

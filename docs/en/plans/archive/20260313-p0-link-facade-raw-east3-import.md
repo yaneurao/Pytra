@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260313-p0-link-facade-raw-east3-import.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: align external `validate_raw_east3_doc` imports to the `toolchain.link` facade
 
 Last updated: 2026-03-13

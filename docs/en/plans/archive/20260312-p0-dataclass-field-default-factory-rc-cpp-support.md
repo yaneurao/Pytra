@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p0-dataclass-field-default-factory-rc-cpp-support.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Representative C++ support for `field(default_factory=...)` on rc fields
 
 Last updated: 2026-03-12

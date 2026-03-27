@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-checker-unification.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: `check_py2*` checker の単一化（`--target` + プロファイル化）
 
 最終更新: 2026-03-05

@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260317-p2-cpp-pyruntime-upstream-fallback-shrink.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2: upstream fallback shrink for C++ `py_runtime.h`
 
 Last updated: 2026-03-14

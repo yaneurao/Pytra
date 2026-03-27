@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260311-p0-starred-call-tuple-unpack-support.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: fixed tuple の starred call unpack を全言語で通す
 
 最終更新: 2026-03-11

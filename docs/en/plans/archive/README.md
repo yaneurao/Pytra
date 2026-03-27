@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/README.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # plans archive
 
 このフォルダは、完了済みタスクに紐づく plan の保管場所です。

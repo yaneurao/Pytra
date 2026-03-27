@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-ruby-s18-tokenize-parity-investigation.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: Ruby `sample/18` parity 失敗（tokenize error）原因調査
 
 最終更新: 2026-03-04

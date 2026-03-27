@@ -1,13 +1,13 @@
+<a href="../../en/spec/spec-boxing.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # Boxing/Unboxing 仕様（Any/object 境界）
 
 > **[廃止済み]** `PyObj` boxing 階層は P5-ANY-ELIM-OBJECT-FREE-01-S6 で除去されました。
 > `make_object`、`obj_to_*`、`PyIntObj` 等は削除済みです。
 > `object` 型は `rc<RcObject>` に再定義されました。
 > この文書は歴史的記録として保持されます。
-
-<a href="../../en/spec/spec-boxing.md">
-  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
-</a>
 
 この文書は、Pytra C++ backend における `Any/object` 境界の boxing/unboxing 契約を定義する。
 対象は `make_object(...)`、`obj_to_*`、`py_to_*`、および変換器が生成する `Any/object` 境界コードである。

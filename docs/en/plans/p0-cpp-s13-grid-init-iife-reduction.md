@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-s13-grid-init-iife-reduction.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Reduce IIFE Usage in sample/13 C++ `grid` Initialization
 
 Last updated: 2026-03-02

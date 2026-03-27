@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/p0-sample-all-language-benchmark.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Sample Execution Infrastructure Recovery
 
 ## Background

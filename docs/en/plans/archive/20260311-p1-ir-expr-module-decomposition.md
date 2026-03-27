@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p1-ir-expr-module-decomposition.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Decompose large `toolchain.ir` expression modules by cluster
 
 Last updated: 2026-03-11

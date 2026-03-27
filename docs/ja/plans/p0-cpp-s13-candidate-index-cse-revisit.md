@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-cpp-s13-candidate-index-cse-revisit.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample/13 `candidates` 選択式 CSE/hoist 再実施
 
 最終更新: 2026-03-02

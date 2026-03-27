@@ -1,3 +1,7 @@
+<a href="../../en/plans/p6-east3-py-to-inline.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P6: py_to<T> / py_to_int64 / py_to_float64 を EAST3 IR 経由インライン emit に移行し py_runtime.h から除去
 
 最終更新: 2026-03-18

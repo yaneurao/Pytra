@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-float-div-direct-slash.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Emit Direct `/` for Division Between C++ `float64` Values Instead of `py_div`
 
 Last updated: 2026-02-28

@@ -1,3 +1,7 @@
+<a href="../../en/plans/p4-preexisting-test-failures-fix.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P4: pre-existing テスト失敗の修正
 
 最終更新: 2026-03-19

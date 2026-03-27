@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-php-s18-codegen-quality-uplift.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: sample/18 PHP コード生成改善（実行可能化 + 品質向上）
 
 最終更新: 2026-03-03

@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260313-p0-collections-deque-cpp-endops-support.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: representative C++ support for `collections.deque` appendleft / pop
 
 Last updated: 2026-03-13

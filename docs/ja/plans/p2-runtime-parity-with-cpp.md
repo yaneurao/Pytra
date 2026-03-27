@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-runtime-parity-with-cpp.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: 多言語 runtime の C++ 同等化（再設計版: SoT厳守 + 生成優先）
 
 最終更新: 2026-03-05

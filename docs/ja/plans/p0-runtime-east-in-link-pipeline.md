@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-runtime-east-in-link-pipeline.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: runtime .east を link パイプラインに統合（standalone transpile 廃止）
 
 最終更新: 2026-03-20

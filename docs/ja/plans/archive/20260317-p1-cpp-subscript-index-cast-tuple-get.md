@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260317-p1-cpp-subscript-index-cast-tuple-get.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: C++ emitter subscript index cast 省略と tuple 定数 index `std::get<I>` 最適化
 
 最終更新: 2026-03-17

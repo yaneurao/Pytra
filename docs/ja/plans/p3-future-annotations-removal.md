@@ -1,3 +1,7 @@
+<a href="../../en/plans/p3-future-annotations-removal.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P3: from __future__ import annotations の廃止検討
 
 最終更新: 2026-03-19

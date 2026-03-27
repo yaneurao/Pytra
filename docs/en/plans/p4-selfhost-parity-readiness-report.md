@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p4-selfhost-parity-readiness-report.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P4 Selfhost Parity Readiness Report
 
 Last updated: 2026-03-11

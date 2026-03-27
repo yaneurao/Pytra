@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260313-p0-pytra-nes2-crossbackend-repro-contract.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: Pytra-NES2 repro を全言語 representative contract として固定する
 
 最終更新: 2026-03-13

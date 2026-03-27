@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260311-p4-crossruntime-pyruntime-emitter-align.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P4: C++/Rust/C# emitter の `py_runtime` residual contract を揃える
 
 最終更新: 2026-03-11

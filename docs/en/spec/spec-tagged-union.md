@@ -1,7 +1,7 @@
 # Tagged Union Specification
 
 <a href="../../ja/spec/spec-tagged-union.md">
-  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
 </a>
 
 This document defines the semantics, code-generation rules, and type-manipulation rules for `type X = A | B | ...` declarations (PEP 695 type-alias union definitions) in Pytra.

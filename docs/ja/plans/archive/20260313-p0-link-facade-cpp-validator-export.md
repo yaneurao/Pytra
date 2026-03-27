@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260313-p0-link-facade-cpp-validator-export.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: `toolchain.link` facade に C++ backend validator helper を昇格する
 
 最終更新: 2026-03-13

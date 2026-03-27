@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260307-p0-cpp-list-ref-first-completion.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Complete Ref-First List Semantics in the C++ Backend
 
 Last updated: 2026-03-07

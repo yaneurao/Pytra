@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-py2x-dual-entrypoints-host-selfhost.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Split `py2x` Entrypoints (Normal `pytra-cli.py` / Self-host `pytra-cli.py`)
 
 Last updated: 2026-03-03

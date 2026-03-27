@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-east-import-resolution-and-codeemitter-dep-collection.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: EAST 解決情報 + CodeEmitter 依存収集による最小 import 生成
 
 最終更新: 2026-02-28

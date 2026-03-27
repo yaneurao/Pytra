@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260308-p0-runtime-abi-mode-simplify-value-value-mut.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: `@abi` mode を `value` / `value_mut` に整理する
 
 最終更新: 2026-03-08

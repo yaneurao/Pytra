@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-multilang-artifact-crc-align.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample artifact CRC 一致化（Kotlin gate撤去 + Swift再検証 + fail群修復）
 
 最終更新: 2026-03-04

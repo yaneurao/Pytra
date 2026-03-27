@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260312-p5-cpp-pyruntime-residual-thin-seam-shrink.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P5: C++ `py_runtime.h` residual thin seam shrink
 
 最終更新: 2026-03-12

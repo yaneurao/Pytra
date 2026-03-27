@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-east3-interprocedural-nonescape-analysis.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Introduce EAST3 interprocedural non-escape analysis (RAII candidate annotation)
 
 Last updated: 2026-02-28

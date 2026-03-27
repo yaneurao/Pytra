@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-pytra-cli-rs-target.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: 統合CLI `./pytra` の Rust target 追加
 
 最終更新: 2026-02-27

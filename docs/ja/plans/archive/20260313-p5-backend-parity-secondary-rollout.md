@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260313-p5-backend-parity-secondary-rollout.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P5 Backend Parity Secondary Rollout
 
 最終更新: 2026-03-13

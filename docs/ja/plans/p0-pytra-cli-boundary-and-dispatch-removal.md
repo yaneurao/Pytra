@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-pytra-cli-boundary-and-dispatch-removal.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: `pytra-cli` の責務再編（命名統一 + target分岐撤去）
 
 最終更新: 2026-03-05

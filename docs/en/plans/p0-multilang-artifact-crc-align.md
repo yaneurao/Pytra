@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-multilang-artifact-crc-align.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Align Sample Artifact CRC (Remove Kotlin Gate + Revalidate Swift + Repair Fail Groups)
 
 Last updated: 2026-03-04

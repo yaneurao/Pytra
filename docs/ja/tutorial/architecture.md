@@ -1,3 +1,7 @@
+<a href="../../en/tutorial/architecture.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # Pytra のアーキテクチャ
 
 Pytra は Python のサブセットを複数のターゲット言語に変換するトランスパイラです。

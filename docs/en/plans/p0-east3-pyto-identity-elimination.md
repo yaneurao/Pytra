@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-east3-pyto-identity-elimination.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Collapse EAST3 identity `py_to<T>` (highest priority)
 
 Last updated: 2026-03-01

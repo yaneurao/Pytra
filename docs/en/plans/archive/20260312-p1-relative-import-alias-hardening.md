@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p1-relative-import-alias-hardening.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Lock the representative contract for aliased relative imports
 
 Last updated: 2026-03-12

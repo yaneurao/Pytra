@@ -1,3 +1,7 @@
+<a href="../../en/plans/p7-selfhost-native-compiler-elim.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P7: native/compiler/ を完全削除し selfhost を Python シェルアウトなしで動作させる
 
 最終更新: 2026-03-18

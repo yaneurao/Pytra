@@ -1,3 +1,7 @@
+<a href="../../en/plans/p7-east3-default-arg-expansion.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P7: EAST3 lowering でデフォルト引数を呼び出し側に展開
 
 最終更新: 2026-03-22

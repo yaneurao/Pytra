@@ -1,10 +1,10 @@
-# TODO（未完了）
-
-> `docs/ja/` が正（source of truth）です。`docs/en/` はその翻訳です。
-
 <a href="../../en/todo/index.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
+
+# TODO（未完了）
+
+> `docs/ja/` が正（source of truth）です。`docs/en/` はその翻訳です。
 
 最終更新: 2026-03-27
 

@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-rs-s08-quality-uplift.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: `sample/rs/08` Output Quality Uplift (Readability + Hot-Path Reduction)
 
 Last updated: 2026-03-01

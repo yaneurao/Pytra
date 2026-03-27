@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p0-backends-common-foundation.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Introduce the `backends/common` Foundation (`CodeEmitter` + Profile Consolidation)
 
 Last updated: 2026-03-03

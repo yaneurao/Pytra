@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-src-layout-toolchain-pytra-runtime-split.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: `src` レイアウト再編（`toolchain` / `pytra` / `runtime`）
 
 最終更新: 2026-03-03

@@ -1,3 +1,7 @@
+<a href="../../en/tutorial/README.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # チュートリアル
 
 Pytra を初めて触る人向けの入口です。
@@ -7,7 +11,6 @@ Pytra を初めて触る人向けの入口です。
 ```python
 def add(a: int, b: int) -> int:
     return a + b
-
 
 if __name__ == "__main__":
     print(add(3, 4))
@@ -38,12 +41,13 @@ Rust に変換するなら:
 3. [Python 互換性ガイド](../spec/spec-python-compat.md) — Python との違い、使えない構文
 4. [エラーの見方](./troubleshooting.md) — 詰まったときに
 5. [Union 型と isinstance ナローイング](./union-and-narrowing.md) — 複数の型を扱う方法と型の自動絞り込み
+6. [Trait（インターフェース）](./trait.md) — 複数の振る舞い契約を型に付与する
 
 ここまで読めば普通に使えます。以下は必要に応じて:
 
-6. [発展的な使い方](./advanced-usage.md) — `@extern`, `@abi`, `@template`, nominal ADT 等
-7. [仕様書トップ](../spec/index.md) — 言語仕様の正本
-8. [開発運用ガイド](./dev-operations.md) — parity check, local CI（開発者向け）
+7. [発展的な使い方](./advanced-usage.md) — `@extern`, `@abi`, `@template`, nominal ADT 等
+8. [仕様書トップ](../spec/index.md) — 言語仕様の正本
+9. [開発運用ガイド](./dev-operations.md) — parity check, local CI（開発者向け）
 
 ## 関連リンク
 

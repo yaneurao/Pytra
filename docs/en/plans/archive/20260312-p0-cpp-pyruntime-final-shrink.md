@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p0-cpp-pyruntime-final-shrink.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Shrink the final residual surface of `py_runtime.h`
 
 Last updated: 2026-03-12

@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-scala-negative-fixture-fail-assertion.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: Scala 負例fixtureの「skip」撤廃と失敗期待テスト化
 
 最終更新: 2026-03-02

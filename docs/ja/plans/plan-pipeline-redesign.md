@@ -1,3 +1,7 @@
+<a href="../../en/plans/plan-pipeline-redesign.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # パイプライン再設計案: parse / resolve / compile / optimize / emit 五段分離
 
 最終更新: 2026-03-24

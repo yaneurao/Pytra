@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260309-p0-cpp-pyruntime-dict-str-default-final-retirement.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ `py_runtime.h` `dict<str, str>` default sugar 最終退役
 
 最終更新: 2026-03-09

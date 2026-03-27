@@ -1,3 +1,7 @@
+<a href="../../en/tutorial/transpiler-cli.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # トランスパイラCLIの使い方
 
 このページは、統合 CLI `./pytra` ではなく `pytra-cli.py` / `toolchain/emit/cpp.py` 等を直接使いたい場合の手順をまとめたものです。

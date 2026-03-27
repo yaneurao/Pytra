@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p2-runtime-sot-linked-program-integration.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2 Proposal: Integrate Runtime SoT into the Linked Program
 
 Last updated: 2026-03-07

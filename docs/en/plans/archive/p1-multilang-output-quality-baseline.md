@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/p1-multilang-output-quality-baseline.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1-MQ-01 Baseline
 
 計測日: 2026-02-25

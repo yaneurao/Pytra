@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/p0-east123-staged-ir.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # TASK GROUP: TG-P0-EAST123
 
 最終更新: 2026-02-23

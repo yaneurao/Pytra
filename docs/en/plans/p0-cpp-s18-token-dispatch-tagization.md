@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-s18-token-dispatch-tagization.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Tag-ify tokenizer string dispatch in sample/18 (if-chain collapse)
 
 Last updated: 2026-03-01

@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-ir2lang-lazy-backend-from-east3.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Introduce `ir2lang.py` (Direct EAST3 JSON Input + Target Lazy Import)
 
 Last updated: 2026-03-03

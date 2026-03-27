@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-emit-cpp-parity.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: toolchain2 C++ emitter の runtime 整合と parity 完了
 
 最終更新: 2026-03-27

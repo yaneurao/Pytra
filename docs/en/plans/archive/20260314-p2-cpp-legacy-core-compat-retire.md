@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260314-p2-cpp-legacy-core-compat-retire.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2: retire residual references to the deleted `src/runtime/cpp/core/**` compatibility surface
 
 Last updated: 2026-03-14

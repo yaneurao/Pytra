@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-comment-fidelity-all-backends.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Comment fidelity policy across all languages (generated comments prohibited)
 
 Last updated: 2026-02-28

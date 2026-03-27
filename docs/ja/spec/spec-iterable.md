@@ -1,3 +1,7 @@
+<a href="../../en/spec/spec-iterable.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # Iterable/Iterator 改良仕様（案）
 
 この文書は、Pytra の `for ... in ...` 変換における iterable 判定と実行契約を定義する案である。  

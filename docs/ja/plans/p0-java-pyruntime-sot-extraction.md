@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-java-pyruntime-sot-extraction.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: Java `PyRuntime` から std/utils 実装を除去（SoT正本化）
 
 最終更新: 2026-03-05

@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-scala-sample01-nonruntime-quality-uplift.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Improve `sample/01` Scala Quality (Excluding Runtime Externalization)
 
 Last updated: 2026-03-02

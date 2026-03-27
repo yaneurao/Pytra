@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260309-p0-cpp-pyruntime-scope-exit-lane-realign.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ `py_runtime.h` `py_make_scope_exit` を専用laneへ再配置する
 
 最終更新: 2026-03-09

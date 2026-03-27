@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-stdlib-signature-source-of-truth.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Make stdlib type specs a single source of truth (remove direct core writes)
 
 Last updated: 2026-03-01

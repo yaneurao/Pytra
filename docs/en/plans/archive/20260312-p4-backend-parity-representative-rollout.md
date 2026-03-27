@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p4-backend-parity-representative-rollout.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P4 Backend Parity Representative Rollout
 
 Last updated: 2026-03-12

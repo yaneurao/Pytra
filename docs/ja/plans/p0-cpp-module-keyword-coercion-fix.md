@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-cpp-module-keyword-coercion-fix.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ module import 関数の keyword 引数型伝播修正（冗長 `int64(py_to<int64>(...))` 撤去）
 
 最終更新: 2026-03-01

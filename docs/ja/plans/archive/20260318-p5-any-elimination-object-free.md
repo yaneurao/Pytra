@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260318-p5-any-elimination-object-free.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P5: `Any` アノテーション禁止と `object`/`PyObj` フリーランタイムへの移行
 
 最終更新: 2026-03-18（S7-03 完了・全サブタスク完了）

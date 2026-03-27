@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p1-relative-import-secondwave-smoke.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Relative-Import Second-Wave Transpile Smoke
 
 Last updated: 2026-03-12

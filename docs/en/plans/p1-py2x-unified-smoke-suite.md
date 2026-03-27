@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-py2x-unified-smoke-suite.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Unified `py2x` Smoke Test Integration (All Languages)
 
 Last updated: 2026-03-04

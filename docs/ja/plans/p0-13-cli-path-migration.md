@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-13-cli-path-migration.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0-13: テストが旧 src/backends/cpp/cli.py パスを参照している
 
 最終更新: 2026-03-21

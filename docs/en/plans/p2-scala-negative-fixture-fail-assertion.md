@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p2-scala-negative-fixture-fail-assertion.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2: Remove `skip` from Scala Negative Fixtures and Convert to Failure-Expected Assertions
 
 Last updated: 2026-03-02

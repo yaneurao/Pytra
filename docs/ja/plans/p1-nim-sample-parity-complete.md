@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-nim-sample-parity-complete.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: Nim sample parity 完了化（runtime_parity_check 正式統合）
 
 最終更新: 2026-03-04

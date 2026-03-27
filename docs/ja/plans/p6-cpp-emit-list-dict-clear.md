@@ -1,3 +1,7 @@
+<a href="../../en/plans/p6-cpp-emit-list-dict-clear.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P6: list.clear() / dict.clear() を C++ emitter でサポートする
 
 最終更新: 2026-03-18

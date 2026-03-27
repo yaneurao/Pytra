@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260306-p0-cpp-unit-regression-recovery.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ unit 回帰の根本修復（SoT/IR/Emitter/Runtime 契約の整流）
 
 最終更新: 2026-03-06

@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-cpp-s18-samecast-chain-reduction.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample/18 C++ 同型 cast 連鎖の追加削減
 
 最終更新: 2026-03-01

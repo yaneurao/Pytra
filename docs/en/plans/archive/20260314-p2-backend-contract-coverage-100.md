@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260314-p2-backend-contract-coverage-100.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2: fix backend contract coverage at 100% with bundle-based coverage tracking
 
 Last updated: 2026-03-14

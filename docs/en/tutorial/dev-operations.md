@@ -1,3 +1,7 @@
+<a href="../../ja/tutorial/dev-operations.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # Development Operations Guide
 
 This page collects day-to-day operational runbooks for parity, local CI, and backend health that are not included in [how-to-use.md](./how-to-use.md).

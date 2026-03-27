@@ -1,9 +1,8 @@
-# 仕様書（入口）
-
 <a href="../../en/spec/index.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+# 仕様書（入口）
 
 `docs/ja/spec/index.md` は仕様全体の入口ページです。詳細は次の3ファイルに分割しています。
 
@@ -14,6 +13,7 @@
 - Boxing/Unboxing 仕様: [Boxing/Unboxing 仕様](./spec-boxing.md)
 - type_id 仕様: [type_id 仕様](./spec-type_id.md)
 - tagged union 仕様: [tagged union 仕様](./spec-tagged-union.md)
+- Trait 仕様: [Trait 仕様（pure interface・多重実装）](./spec-trait.md)
 - GC 仕様: [GC 仕様](./spec-gc.md)
 - 言語プロファイル仕様: [言語プロファイル仕様](./spec-language-profile.md)
 - フォルダ責務マップ仕様: [フォルダ責務マップ仕様](./spec-folder.md)

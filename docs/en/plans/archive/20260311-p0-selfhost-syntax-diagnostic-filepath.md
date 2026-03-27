@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p0-selfhost-syntax-diagnostic-filepath.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Always attach file:line:col to self-hosted parser syntax errors
 
 Last updated: 2026-03-11

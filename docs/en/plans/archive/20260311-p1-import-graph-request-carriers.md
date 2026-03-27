@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p1-import-graph-request-carriers.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: structure import-graph request carriers
 
 Last updated: 2026-03-11

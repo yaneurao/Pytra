@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-php-s13-parity-investigation.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Investigate `sample/13` PHP Parity Mismatch (`frames 147 -> 2`)
 
 Last updated: 2026-03-04

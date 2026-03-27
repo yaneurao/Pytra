@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-swift-sample01-quality-uplift.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: `sample/swift/01` Quality Uplift (Narrowing the Gap vs C++ Quality)
 
 Last updated: 2026-03-01

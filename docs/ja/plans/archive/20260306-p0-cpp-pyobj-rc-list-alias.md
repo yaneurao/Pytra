@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260306-p0-cpp-pyobj-rc-list-alias.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ `cpp_list_model=pyobj` の alias 維持を `object` ではなく `rc<list<T>>` へ置換する
 
 最終更新: 2026-03-06

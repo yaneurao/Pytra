@@ -1,3 +1,7 @@
+<a href="../../../ja/spec/archive/20260224-spec-east1-build.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # アーカイブ: spec-east1-build.md
 
 - 元ファイル: docs/ja/spec/spec-east1-build.md

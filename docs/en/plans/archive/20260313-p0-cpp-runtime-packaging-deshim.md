@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260313-p0-cpp-runtime-packaging-deshim.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Move C++ runtime packaging to compiler-direct headers and retire repo shims
 
 Last updated: 2026-03-13

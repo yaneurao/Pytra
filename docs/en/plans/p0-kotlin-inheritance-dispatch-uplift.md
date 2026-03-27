@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-kotlin-inheritance-dispatch-uplift.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Improve Kotlin inheritance-method dynamic dispatch
 
 Last updated: 2026-03-01

@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260311-p2-compiler-typed-boundary.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: compiler boundary の typed 化と internal object carrier の後退
 
 最終更新: 2026-03-11

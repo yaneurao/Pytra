@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-cross-backend-common-test-suite.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: 全 backend 共通テストスイートの整備
 
 最終更新: 2026-03-23

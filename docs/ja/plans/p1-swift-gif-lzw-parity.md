@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-swift-gif-lzw-parity.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: Swift sample parity（EAST3 生成 utils 有効化）
 
 ## 背景

@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-include-reorg.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0-INCLUDE-REORG: test/include/ のフォルダ構成を他と統一
 
 最終更新: 2026-03-25

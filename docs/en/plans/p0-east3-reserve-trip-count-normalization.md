@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-east3-reserve-trip-count-normalization.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: EAST3-Led `reserve` Count-Expression Normalization (Remove C++ Emitter String Assembly)
 
 Last updated: 2026-03-02

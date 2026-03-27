@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-spec-conform2.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1-SPEC-CONFORM2: 仕様整合（compile / link / optimize / emit）
 
 最終更新: 2026-03-26

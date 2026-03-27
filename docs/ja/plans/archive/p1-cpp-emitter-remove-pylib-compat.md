@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/p1-cpp-emitter-remove-pylib-compat.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: CppEmitter の pylib 互換名正規化除去
 
 最終更新: 2026-02-25

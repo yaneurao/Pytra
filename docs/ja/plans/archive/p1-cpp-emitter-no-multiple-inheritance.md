@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/p1-cpp-emitter-no-multiple-inheritance.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: CppEmitter の多重継承廃止
 
 ## 目的

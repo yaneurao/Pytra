@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-linker-submodule-import-resolution.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: linker が from package import module 形式のサブモジュール依存を解決しない
 
 最終更新: 2026-03-21

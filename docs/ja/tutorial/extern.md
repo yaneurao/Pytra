@@ -1,3 +1,7 @@
+<a href="../../en/tutorial/extern.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # `@extern` / `extern(...)` の使い方
 
 `@extern` と `extern(...)` は、Pytra から外部実装や ambient global を参照するための独自記法です。  

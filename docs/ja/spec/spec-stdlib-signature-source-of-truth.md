@@ -1,3 +1,7 @@
+<a href="../../en/spec/spec-stdlib-signature-source-of-truth.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # stdlib シグネチャ正本化仕様
 
 この文書は、`P0-STDLIB-SOT-01` で実施する「`pytra/std` を型仕様の唯一正本にする」契約を定義する。

@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260306-p0-cpp-pyruntime-ext-slimming.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ `py_runtime.ext.h` 縮退（pure Python 正本への移管）
 
 最終更新: 2026-03-06

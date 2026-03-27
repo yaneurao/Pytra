@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-sample18-cpp-optimization-strengthening.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample/18 C++ 出力最適化の強化（実行系ホットパス）
 
 最終更新: 2026-03-01

@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-java-parentheses-reduction.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: Java 出力の過剰括弧削減
 
 最終更新: 2026-02-28

@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/p3-pythonic-restoration.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # TASK GROUP: TG-P3-PYTHONIC
 
 最終更新: 2026-02-24

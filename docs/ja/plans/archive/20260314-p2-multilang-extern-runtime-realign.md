@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260314-p2-multilang-extern-runtime-realign.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: 全言語 `@extern` runtime/emitter 契約の再整列
 
 最終更新: 2026-03-14

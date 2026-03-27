@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-sample-multilang-output-quality-uplift.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Strengthen Known-Type Fastpaths for sample Multi-language Output (Quality Uplift)
 
 Last updated: 2026-03-02

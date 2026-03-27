@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p0-relative-import-project-layout-hardening.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: relative import project layout hardening
 
 Last updated: 2026-03-11

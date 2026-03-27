@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p3-go-swift-kotlin-native-rollout.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P3: Migrate Go/Swift/Kotlin Backends to Direct EAST3 Native Generation (Remove Sidecar)
 
 Last updated: 2026-02-26

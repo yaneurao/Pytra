@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-rs-s18-quality-uplift.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: sample/18 Rust 出力品質改善（可読性 + ホットパス縮退）
 
 最終更新: 2026-03-02

@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-lua-sample01-runtime-mapping.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample/lua/01 runtime マッピング是正（最優先）
 
 最終更新: 2026-03-01

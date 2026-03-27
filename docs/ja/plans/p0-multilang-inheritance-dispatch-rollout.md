@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-multilang-inheritance-dispatch-rollout.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: 非C++ 継承メソッド動的ディスパッチ改善
 
 最終更新: 2026-03-01

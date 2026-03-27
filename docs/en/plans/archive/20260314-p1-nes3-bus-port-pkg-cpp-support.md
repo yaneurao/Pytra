@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260314-p1-nes3-bus-port-pkg-cpp-support.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: align header/symbol qualification and parameter passing for imported bus types with the C++ multi-file contract
 
 Last updated: 2026-03-14

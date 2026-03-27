@@ -1,8 +1,8 @@
-# Java Native Backend 契約仕様
-
 <a href="../../en/spec/spec-java-native-backend.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
+
+# Java Native Backend 契約仕様
 
 この文書は、`P3-JAVA-NATIVE-01` で導入した `EAST3 -> Java native emitter` 経路の契約を定義する。  
 対象は「入力 EAST3 の責務」「未対応時 fail-closed」「runtime 境界」「preview 出力との差分」である。

@@ -1,3 +1,7 @@
+<a href="../../en/spec/spec-emitter-guide.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # Emitter 実装ガイドライン
 
 このドキュメントは、新しいターゲット言語の backend（emitter）を実装するとき、および既存 emitter をメンテナンスするときに従う規約です。

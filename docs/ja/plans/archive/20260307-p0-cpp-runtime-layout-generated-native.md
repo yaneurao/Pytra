@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260307-p0-cpp-runtime-layout-generated-native.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ runtime レイアウト再編（`generated/` + `native/` + `pytra/` shim）
 
 最終更新: 2026-03-07

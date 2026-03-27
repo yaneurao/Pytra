@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260314-p1-nes3-apu-const-pkg-cpp-support.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: align header ordering and reference lanes for imported classes that use module constants
 
 Last updated: 2026-03-14

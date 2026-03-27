@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-east3-cross-module-nonescape-ipa.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: EAST3 cross-module non-escape analysis (including imported module bodies)
 
 Last updated: 2026-02-28

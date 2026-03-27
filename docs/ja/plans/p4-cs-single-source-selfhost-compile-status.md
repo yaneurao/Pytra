@@ -1,3 +1,7 @@
+<a href="../../en/plans/p4-cs-single-source-selfhost-compile-status.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P4 C# Single-Source Selfhost Compile Status
 
 計測日: 2026-03-01

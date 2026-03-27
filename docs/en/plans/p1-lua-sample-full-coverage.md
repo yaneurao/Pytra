@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-lua-sample-full-coverage.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Full Coverage for Lua Samples (Resolve Remaining 14 Cases)
 
 Last updated: 2026-03-01

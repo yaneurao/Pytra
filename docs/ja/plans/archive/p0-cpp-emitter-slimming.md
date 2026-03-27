@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/p0-cpp-emitter-slimming.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ emitter 肥大化の段階縮退
 
 最終更新: 2026-02-26

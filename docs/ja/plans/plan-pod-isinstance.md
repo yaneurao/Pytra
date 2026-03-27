@@ -1,3 +1,7 @@
+<a href="../../en/plans/plan-pod-isinstance.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # POD 型判定と汎用 deep copy の設計案
 
 最終更新: 2026-03-24

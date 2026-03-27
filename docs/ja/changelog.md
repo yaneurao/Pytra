@@ -1,4 +1,21 @@
+<a href="../en/changelog.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # 更新履歴
+
+## 2026-03-27
+
+- **C++ emitter spec 準拠完了 (S1〜S15)**: fail-fast 化、mapping.json 一本化、container 参照型ラッパー（`Object<list<T>>` 等）、implicit_promotions、is_entry/main_guard_body、@property 対応、runtime パス解決の共通化。
+- **Trait（pure interface・多重実装）導入**: `@trait` / `@implements` デコレータで pure interface を定義。C++ は virtual 継承 + `Object<T>` 変換コンストラクタ、Go は interface 生成で写像。trait の isinstance は compile 時検証のみ（runtime 情報不要）。
+- **isinstance ナローイング**: resolve 段で `if isinstance(x, T):` 後の型環境を自動更新。if/elif、early return guard（`if not isinstance: return`）、ternary isinstance（`y = x if isinstance(x, T) else None`）、`and` 連結条件に対応。
+- **三項演算子の Optional 型推論**: `expr if cond else None` → `Optional[T]`、異なる型 → `UnionType` を resolve で推論。
+- **pytra.std.json parser 対応**: PEP 695 再帰的 type alias（`type JsonVal = ...`）と Union forward reference を parser で処理可能に。golden 再生成済み。
+- **POD 型 isinstance**: `isinstance(x, int16)` 等の POD 型判定を exact type match で実装。spec-type_id.md §4.2 に規定。
+- **link 層入力完全性検証**: link-input の未解決 import を fail-closed で報告。型スタブ生成で parse 不能モジュールを補完。
+- **ClosureDef lowering**: nested FunctionDef を EAST3 で ClosureDef に lower。captures 解析（readonly/mutable）を付与。
+- **Lowering プロファイル設計**: 言語能力宣言（tuple_unpack_style, container_covariance, with_style 等 16 項目）を spec-language-profile.md §7 に追加。CommonRenderer 設計を §8 に追加。
+- **チュートリアル追加**: Union 型と isinstance ナローイング、Trait の解説ページを追加。英訳も実施。
 
 ## 2026-03-26
 

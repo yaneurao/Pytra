@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-scala-sample01-nonruntime-quality-uplift.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample/01 Scala品質改善（runtime外出し除く）
 
 最終更新: 2026-03-02

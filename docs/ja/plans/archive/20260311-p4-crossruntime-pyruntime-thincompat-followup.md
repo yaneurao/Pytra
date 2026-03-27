@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260311-p4-crossruntime-pyruntime-thincompat-followup.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P4: C++/Rust/C# emitter の final thin compat 依存を整理する
 
 最終更新: 2026-03-11

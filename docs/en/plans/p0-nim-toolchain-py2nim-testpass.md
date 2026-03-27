@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-nim-toolchain-py2nim-testpass.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Install Nim Toolchain + Implement py2nim + Pass Tests
 
 Last updated: 2026-03-03

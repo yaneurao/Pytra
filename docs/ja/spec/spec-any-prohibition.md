@@ -1,3 +1,7 @@
+<a href="../../en/spec/spec-any-prohibition.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # `Any` アノテーション禁止ガイド
 
 最終更新: 2026-03-18（S6 完了: PyObj 除去）

@@ -1,9 +1,8 @@
-# `src/pytra/` モジュール一覧
-
 <a href="../../en/spec/spec-pylib-modules.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+# `src/pytra/` モジュール一覧
 
 このページは、`src/pytra/` のサポート済みモジュールと公開 API 一覧です。  
 `_` で始まる名前は内部実装扱いで、サポート対象外です。

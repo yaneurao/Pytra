@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p1-relative-import-native-path-bundle.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: relative-import native-path bundle rollout
 
 Last updated: 2026-03-12

@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260308-p0-cpp-pyruntime-dict-str-node-retirement.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ `py_runtime.h` `dict<str, str>` 用 `dict_get_node` 縮退
 
 最終更新: 2026-03-08

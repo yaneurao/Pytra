@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/p1-multilang-selfhost-status.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1-MQ-04 Stage1 Status
 
 計測日: 2026-03-13

@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-cpp-s18-ctor-initlist.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample/18 C++ クラス生成の初期化リスト化
 
 最終更新: 2026-03-01

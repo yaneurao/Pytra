@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-s13-candidate-index-cse-revisit.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Re-run Selective CSE/Hoisting for sample/13 `candidates` Selection
 
 Last updated: 2026-03-02

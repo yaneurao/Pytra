@@ -1,8 +1,8 @@
-# EAST3 Optimizer 仕様
-
 <a href="../../en/spec/spec-east3-optimizer.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
+
+# EAST3 Optimizer 仕様
 
 この文書は `EAST3` 最適化層（`EAST3 -> EAST3`）の責務、契約、段階導入を定義する。
 

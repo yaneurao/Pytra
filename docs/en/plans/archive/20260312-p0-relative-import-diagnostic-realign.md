@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p0-relative-import-diagnostic-realign.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Realign the relative import diagnostic contract
 
 Last updated: 2026-03-12

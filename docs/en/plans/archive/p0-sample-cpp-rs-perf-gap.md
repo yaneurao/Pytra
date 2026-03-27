@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/p0-sample-cpp-rs-perf-gap.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Correct C++/Rust Performance Gaps on Samples
 
 Last updated: 2026-02-26

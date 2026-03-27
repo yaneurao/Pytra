@@ -1,8 +1,8 @@
-# Backend Parity Matrix
-
 <a href="../../en/language/backend-parity-matrix.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
+
+# Backend Parity Matrix
 
 このページは、feature × backend の support state を公開する canonical publish target です。
 

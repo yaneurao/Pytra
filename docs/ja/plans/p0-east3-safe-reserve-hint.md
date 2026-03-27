@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-east3-safe-reserve-hint.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: EAST3 主導の安全 `reserve` ヒント導入（無条件 append + 確定ループのみ）
 
 最終更新: 2026-03-01

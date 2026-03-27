@@ -1,7 +1,7 @@
 # Backend Coverage Matrix
 
 <a href="../../ja/language/backend-coverage-matrix.md">
-  <img alt="日本語で読む" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+  <img alt="日本語で読む" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
 </a>
 
 This page is the canonical publish target for bundle-based verification coverage.

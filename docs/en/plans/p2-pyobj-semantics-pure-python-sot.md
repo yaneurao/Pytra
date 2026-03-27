@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p2-pyobj-semantics-pure-python-sot.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2 draft: move `PyObj` semantics back toward a pure-Python SoT
 
 Last updated: 2026-03-14

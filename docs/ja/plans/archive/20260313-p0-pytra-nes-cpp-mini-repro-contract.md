@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260313-p0-pytra-nes-cpp-mini-repro-contract.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: Pytra-NES representative C++ mini repro contract
 
 最終更新: 2026-03-13

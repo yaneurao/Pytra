@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p1-cpp-pyruntime-header-shrink.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Shrink the remaining `py_runtime.h` surface for real
 
 Last updated: 2026-03-11

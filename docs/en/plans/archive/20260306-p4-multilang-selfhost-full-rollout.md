@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260306-p4-multilang-selfhost-full-rollout.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P4: Full Multi-Language Selfhost Completion (Deferred Until ABI Stabilization)
 
 Last updated: 2026-03-06

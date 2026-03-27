@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p2-wildcard-import-support.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2: Official Support for `from ... import *` (Wildcard Import)
 
 Last updated: 2026-03-02

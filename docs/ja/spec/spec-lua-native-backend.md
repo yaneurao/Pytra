@@ -1,8 +1,8 @@
-# Lua Native Backend 契約仕様
-
 <a href="../../en/spec/spec-lua-native-backend.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
+
+# Lua Native Backend 契約仕様
 
 この文書は、`P0-LUA-BACKEND-01` で導入する `EAST3 -> Lua native emitter` 経路の契約を定義する。  
 対象は「入力 EAST3 の責務」「未対応時 fail-closed」「runtime 境界」「非対象」である。

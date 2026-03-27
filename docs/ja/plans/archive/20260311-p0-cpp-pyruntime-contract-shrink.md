@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260311-p0-cpp-pyruntime-contract-shrink.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ `py_runtime.h` 契約縮小（object bridge / type_id shared contract の整理）
 
 最終更新: 2026-03-11

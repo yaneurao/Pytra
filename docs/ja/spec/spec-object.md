@@ -1,9 +1,8 @@
-# Object\<T\> 設計仕様
-
 <a href="../../en/spec/spec-object.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+# Object\<T\> 設計仕様
 
 ## 1. 背景
 
@@ -212,7 +211,6 @@ TypeInfo* g_type_table[] = {&type_Y, &type_X};
 - **upcast** は ptr 変更のみ
 - **rc** は共有
 - **type_id** は不変
-
 
 ## 14. vtable あり object
 

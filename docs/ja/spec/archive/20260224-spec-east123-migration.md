@@ -1,3 +1,7 @@
+<a href="../../../en/spec/archive/20260224-spec-east123-migration.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # アーカイブ: spec-east123-migration.md
 
 - 元ファイル: docs/ja/spec/spec-east123-migration.md

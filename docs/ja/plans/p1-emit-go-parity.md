@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-emit-go-parity.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1-EMIT-GO-PARITY: Go emitter の compile + run parity 修正
 
 最終更新: 2026-03-26

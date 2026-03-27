@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-php-image-runtime-and-s16-repair.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Implement PHP Image Runtime and Repair `sample/16` Execution Failure
 
 Last updated: 2026-03-04

@@ -1,3 +1,7 @@
+<a href="../../en/plans/README.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # plans
 
 このフォルダは、長期計画・設計ドラフト・調査メモの置き場です。

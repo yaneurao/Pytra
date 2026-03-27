@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p2-relative-import-backend-coverage.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2: Relative-Import Backend Coverage Contract
 
 Last updated: 2026-03-12

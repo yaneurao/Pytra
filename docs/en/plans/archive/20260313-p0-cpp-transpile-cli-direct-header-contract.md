@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260313-p0-cpp-transpile-cli-direct-header-contract.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: align the `transpile_cli` typed C++ contract to the direct-ownership header/source layout
 
 Last updated: 2026-03-13

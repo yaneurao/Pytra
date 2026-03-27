@@ -1,4 +1,4 @@
-<a href="../../ja/plans/archive/20260309-p0-cpp-pyruntime-optional-predicates-retirement.md"><img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square"></a>
+<a href="../../ja/plans/archive/20260309-p0-cpp-pyruntime-optional-predicates-retirement.md"><img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square"></a>
 
 > [!WARNING]
 > This file is synchronized from `docs/ja/plans/archive/20260309-p0-cpp-pyruntime-optional-predicates-retirement.md` and still requires manual English translation.

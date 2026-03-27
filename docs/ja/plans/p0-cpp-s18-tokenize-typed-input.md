@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-cpp-s18-tokenize-typed-input.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample/18 `tokenize` 入力の typed 化（`object` 退化撤去）
 
 最終更新: 2026-03-01

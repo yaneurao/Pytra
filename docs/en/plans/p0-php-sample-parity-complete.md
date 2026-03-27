@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-php-sample-parity-complete.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Complete PHP Sample Parity (stdout + artifact CRC32)
 
 Last updated: 2026-03-04

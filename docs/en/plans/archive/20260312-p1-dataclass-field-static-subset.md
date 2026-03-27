@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p1-dataclass-field-static-subset.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: static dataclass `field(...)` subset
 
 Last updated: 2026-03-12

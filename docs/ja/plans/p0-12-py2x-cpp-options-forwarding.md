@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-12-py2x-cpp-options-forwarding.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0-12: pytra-cli.py が C++ 固有オプションを toolchain/emit/cpp/cli.py に転送しない
 
 最終更新: 2026-03-21

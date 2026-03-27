@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-generator-statemachine-lowering.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: generator の EAST3 ステートマシン lowering
 
 最終更新: 2026-03-22

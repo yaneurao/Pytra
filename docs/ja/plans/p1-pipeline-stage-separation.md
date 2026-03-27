@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-pipeline-stage-separation.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: パイプライン段分離 — compile / link / emit の独立化
 
 最終更新: 2026-03-21

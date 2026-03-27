@@ -1,9 +1,8 @@
-# 利用仕様（Pytra）
-
 <a href="../../en/spec/spec-user.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+# 利用仕様（Pytra）
 
 このドキュメントは、Pytra の利用方法と入力制約をまとめた仕様です。
 本書は仕様定義にフォーカスし、実行コマンドや実行手順は [tutorial/how-to-use.md](../tutorial/how-to-use.md) で管理します。

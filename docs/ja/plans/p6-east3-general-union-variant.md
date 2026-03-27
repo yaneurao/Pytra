@@ -1,3 +1,7 @@
+<a href="../../en/plans/p6-east3-general-union-variant.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P6: 一般ユニオン型 → std::variant / 多言語 tagged union 対応
 
 最終更新: 2026-03-18

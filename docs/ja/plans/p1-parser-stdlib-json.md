@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-parser-stdlib-json.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1-PARSER-STDLIB-JSON: pytra.std.json の parser 対応 + golden 再生成
 
 最終更新: 2026-03-27

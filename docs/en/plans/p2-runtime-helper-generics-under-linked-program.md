@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p2-runtime-helper-generics-under-linked-program.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2 Proposal: Introduce Helper Generics for Linked Runtime
 
 Last updated: 2026-03-08

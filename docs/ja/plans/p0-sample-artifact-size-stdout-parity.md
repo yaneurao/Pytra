@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-sample-artifact-size-stdout-parity.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample 画像 artifact_size の stdout parity 導入
 
 最終更新: 2026-02-28

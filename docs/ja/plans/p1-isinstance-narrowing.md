@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-isinstance-narrowing.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1-ISINSTANCE-NARROWING: isinstance 後の自動型ナローイング
 
 最終更新: 2026-03-27

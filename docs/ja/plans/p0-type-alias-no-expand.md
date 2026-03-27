@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-type-alias-no-expand.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: パーサーの型エイリアス展開を抑止
 
 最終更新: 2026-03-19

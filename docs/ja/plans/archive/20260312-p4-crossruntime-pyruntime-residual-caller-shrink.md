@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260312-p4-crossruntime-pyruntime-residual-caller-shrink.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P4 Crossruntime PyRuntime Residual Caller Shrink
 
 最終更新: 2026-03-12

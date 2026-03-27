@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p3-java-native-rollout.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P3: Migrate Java Backend to Direct EAST3 Native Generation (Remove Sidecar)
 
 Last updated: 2026-02-26

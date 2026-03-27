@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260313-p1-noncpp-runtime-layout-rollout-remaining.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: 残り non-C++ backend runtime を C++ 比較可能な `generated/native` layout へ段階 rollout する
 
 最終更新: 2026-03-13

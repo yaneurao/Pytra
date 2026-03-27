@@ -1,8 +1,8 @@
-# type_id 仕様（単一継承・区間判定）
-
 <a href="../../en/spec/spec-type_id.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
+
+# type_id 仕様（単一継承・区間判定）
 
 この文書は、Pytra における `type_id` の意味・生成規則・判定規則を定義する。
 主目的は、`isinstance` / `issubclass` を全ターゲットで同一契約に統一し、場当たり分岐を減らすことである。

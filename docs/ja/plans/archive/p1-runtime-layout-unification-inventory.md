@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/p1-runtime-layout-unification-inventory.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0-RUNTIME-SEP-01-S1: C++ runtime 棚卸し結果
 
 最終更新: 2026-02-23

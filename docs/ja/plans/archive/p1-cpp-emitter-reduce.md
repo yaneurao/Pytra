@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/p1-cpp-emitter-reduce.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: C++ Emitter Reduction Plan
 
 ## 目的

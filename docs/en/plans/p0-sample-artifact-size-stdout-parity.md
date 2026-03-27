@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-sample-artifact-size-stdout-parity.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Introduce `artifact_size` stdout parity for sample image artifacts
 
 Last updated: 2026-02-28

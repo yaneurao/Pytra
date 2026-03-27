@@ -1,3 +1,7 @@
+<a href="../../en/plans/p5-lua-backend-emit-fix.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P5: Lua バックエンドの emit 失敗修正
 
 最終更新: 2026-03-19

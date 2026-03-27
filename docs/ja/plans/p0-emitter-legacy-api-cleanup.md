@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-emitter-legacy-api-cleanup.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: emitter 旧 API 出力の一掃 — runtime API 移行残り
 
 最終更新: 2026-03-21

@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-module-keyword-coercion-fix.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Fix Keyword-Argument Type Propagation for C++ Module Import Functions (remove redundant `int64(py_to<int64>(...))`)
 
 Last updated: 2026-03-01

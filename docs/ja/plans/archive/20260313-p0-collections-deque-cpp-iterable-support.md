@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260313-p0-collections-deque-cpp-iterable-support.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: `collections.deque` iterable constructor / extendleft representative C++ support
 
 最終更新: 2026-03-13

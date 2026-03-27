@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260312-p0-relative-import-paren-sibling-contract.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: 括弧付き sibling relative import contract 固定
 
 最終更新: 2026-03-12

@@ -1,3 +1,7 @@
+<a href="../../en/tutorial/dev-operations.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # 開発運用ガイド
 
 このページは、[how-to-use.md](./how-to-use.md) には載せない parity、local CI、backend health などの日常開発向け運用手順をまとめたものです。

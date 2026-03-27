@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p1-go-sample01-quality-uplift.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Improve `sample/go/01` quality and narrow the gap with C++
 
 Last updated: 2026-03-02

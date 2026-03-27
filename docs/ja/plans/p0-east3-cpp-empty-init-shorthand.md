@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-east3-cpp-empty-init-shorthand.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: EAST3 マーカー経由で C++ 空初期化を `= {};` へ縮退
 
 最終更新: 2026-03-02

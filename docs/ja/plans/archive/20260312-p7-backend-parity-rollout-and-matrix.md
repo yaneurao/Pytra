@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260312-p7-backend-parity-rollout-and-matrix.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P7 Backend Parity Rollout And Matrix
 
 最終更新: 2026-03-12

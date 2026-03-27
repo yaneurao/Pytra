@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-cpp-path-rc-type.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: C++ emitter Path が rc<Path> でなく bare 型で宣言される
 
 最終更新: 2026-03-21

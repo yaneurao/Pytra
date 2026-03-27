@@ -1,3 +1,7 @@
+<a href="../../ja/spec/spec-stdlib-signature-source-of-truth.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # Stdlib Signature Source-of-Truth Specification
 
 This document defines the contract for `P0-STDLIB-SOT-01`: making `pytra/std` the single source of truth for type specifications.

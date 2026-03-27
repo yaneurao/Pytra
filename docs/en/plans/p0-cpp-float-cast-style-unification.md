@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-float-cast-style-unification.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Unify C++ `float64` Cast Style (`static_cast<float64>` -> `float64(...)`)
 
 Last updated: 2026-02-28

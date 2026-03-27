@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260312-p1-ruby-benchmark-readme-fix.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Ruby Benchmark Re-Measurement and README Reflection Fix
 
 Last updated: 2026-03-01

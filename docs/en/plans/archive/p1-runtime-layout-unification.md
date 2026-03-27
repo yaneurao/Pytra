@@ -1,5 +1,5 @@
 <a href="../../ja/plans/archive/p1-runtime-layout-unification.md">
-  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
 </a>
 
 # TASK GROUP: TG-P1-RUNTIME-LAYOUT

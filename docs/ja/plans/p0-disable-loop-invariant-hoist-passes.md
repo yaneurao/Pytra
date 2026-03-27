@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-disable-loop-invariant-hoist-passes.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: ループ不変式 hoist 最適化パスを無効化
 
 最終更新: 2026-03-21

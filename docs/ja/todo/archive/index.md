@@ -1,8 +1,8 @@
-# TODO（履歴）
-
 <a href="../../../en/todo/archive/index.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
+
+# TODO（履歴）
 
 最終更新: 2026-03-27
 
@@ -15,7 +15,8 @@
 
 ## 完了 plan アーカイブ
 
-- [2026-03-27 / P1-CLOSURE-DEF + P2-LINK-INPUT-COMPLETENESS + P1-ISINSTANCE-NARROWING + P1-ISINSTANCE-POD + P1-PARSER-STDLIB-JSON 全完了](20260327.md)
+- [2026-03-28 / P1-EMIT-CPP S1〜S15 完了 + P3-TRAIT 全完了](20260328.md)
+- [2026-03-27 / P1-CLOSURE-DEF + P2-LINK-INPUT-COMPLETENESS + P1-ISINSTANCE-NARROWING + P1-ISINSTANCE-POD + P1-PARSER-STDLIB-JSON + P1-IFEXP-OPTIONAL 全完了](20260327.md)
 - [2026-03-26 / P1-EMIT-GO-PARITY 全完了 + P1-SPEC-CONFORM2 フェーズ2+3 全完了](20260326.md)
 - [2026-03-25 / P0 全完了 + P1-EMIT-GO/GO-RUNTIME/GO-MIGRATE 完了](20260325.md)
 - [2026-03-24 / パイプライン再設計着手に伴う全 TODO 一括アーカイブ](20260324.md)

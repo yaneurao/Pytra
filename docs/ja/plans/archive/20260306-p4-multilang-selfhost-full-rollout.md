@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260306-p4-multilang-selfhost-full-rollout.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P4: 全言語 selfhost 完全化（ABI 確立まで保留）
 
 最終更新: 2026-03-06

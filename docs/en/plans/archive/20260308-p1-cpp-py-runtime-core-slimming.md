@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260308-p1-cpp-py-runtime-core-slimming.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Shrink C++ `py_runtime` Down to Low-Level Glue
 
 Last updated: 2026-03-08

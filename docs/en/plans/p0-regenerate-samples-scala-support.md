@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-regenerate-samples-scala-support.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Add Scala Support to `regenerate_samples.py`
 
 Last updated: 2026-03-02

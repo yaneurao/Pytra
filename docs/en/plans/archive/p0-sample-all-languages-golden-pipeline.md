@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/p0-sample-all-languages-golden-pipeline.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: All-Language Golden-Match Pipeline for Samples
 
 Last updated: 2026-02-25

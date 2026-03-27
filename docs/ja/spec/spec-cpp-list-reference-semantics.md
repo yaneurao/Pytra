@@ -1,3 +1,7 @@
+<a href="../../en/spec/spec-cpp-list-reference-semantics.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # C++ list 参照セマンティクス仕様（ref-first 正本）
 
 この文書は C++ backend の mutable `list` について、最終契約である ref-first 正本と、そこから外れてよい例外条件を定義する。

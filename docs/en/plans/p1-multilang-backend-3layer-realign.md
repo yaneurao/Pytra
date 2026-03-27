@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-multilang-backend-3layer-realign.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Realign Non-C++ Backends into 3 Layers (`Lower` / `Optimizer` / `Emitter`)
 
 Last updated: 2026-03-03

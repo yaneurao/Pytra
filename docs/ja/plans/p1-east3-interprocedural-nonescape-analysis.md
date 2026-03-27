@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-east3-interprocedural-nonescape-analysis.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: EAST3 関数間 non-escape 解析導入（RAII 候補注釈）
 
 最終更新: 2026-02-28

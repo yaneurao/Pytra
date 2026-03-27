@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-tagged-union-cast-narrowing.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: tagged union の型ナローイングを cast() 方式に統一
 
 最終更新: 2026-03-18

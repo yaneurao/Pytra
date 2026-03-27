@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-ruby-s03-quality-uplift.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: sample/ruby/03 Output Quality Uplift (Julia Hot Path)
 
 Last updated: 2026-03-02

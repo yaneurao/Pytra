@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-swap-name-only-contract.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: Swap ノードを Name 限定に制約し、Subscript swap を Assign 展開する
 
 最終更新: 2026-03-23

@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260313-p0-cpp-backend-input-validator-itertree.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: fix the C++ backend input validator drift against the object-tree iterator API
 
 Last updated: 2026-03-13

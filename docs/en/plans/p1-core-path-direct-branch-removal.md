@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-core-path-direct-branch-removal.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Remove direct `Path` branches from `core.py`
 
 Last updated: 2026-03-01

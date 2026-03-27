@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p0-cpp-pyruntime-contract-shrink.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Shrink the C++ `py_runtime.h` contract (object bridge and shared `type_id` contract cleanup)
 
 Last updated: 2026-03-11

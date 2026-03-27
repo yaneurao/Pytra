@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-list-pyobj-migration.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: C++ `list` Migration to the PyObj/RC Model (Phased Rollout)
 
 Last updated: 2026-02-28

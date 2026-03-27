@@ -1,3 +1,7 @@
+<a href="../../ja/tutorial/transpiler-cli.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # Transpiler CLI Usage
 
 This page covers how to use `pytra-cli.py` / `toolchain/emit/cpp.py` directly, rather than through the unified CLI `./pytra`.

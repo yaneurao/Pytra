@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-ruby-true-division-parity.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: Ruby `/` 演算の真の除算互換修正
 
 最終更新: 2026-02-27

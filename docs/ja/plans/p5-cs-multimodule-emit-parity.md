@@ -1,3 +1,7 @@
+<a href="../../en/plans/p5-cs-multimodule-emit-parity.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P5: C# multi-module emit parity
 
 最終更新: 2026-03-21

@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-cpp-s13-tuple-construction-slimming.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample/13 C++ tuple 構築の冗長ラップ削減
 
 最終更新: 2026-03-02

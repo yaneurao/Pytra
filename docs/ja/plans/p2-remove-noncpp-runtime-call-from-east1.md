@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-remove-noncpp-runtime-call-from-east1.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: EAST1 パーサーから noncpp_runtime_call / noncpp_module_id を除去
 
 最終更新: 2026-03-21

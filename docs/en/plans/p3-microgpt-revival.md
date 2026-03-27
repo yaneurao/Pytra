@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p3-microgpt-revival.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P3: Resume microgpt Source-Preservation Tasks
 
 Last updated: 2026-02-26

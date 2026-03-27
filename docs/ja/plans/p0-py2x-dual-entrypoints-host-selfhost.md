@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-py2x-dual-entrypoints-host-selfhost.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: `py2x` エントリ分離（通常 `pytra-cli.py` / selfhost `pytra-cli.py`）
 
 最終更新: 2026-03-03

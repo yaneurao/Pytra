@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260314-p2-backend-contract-coverage-100.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: backend 契約カバレッジ 100% を bundle-based coverage で固定する
 
 最終更新: 2026-03-14

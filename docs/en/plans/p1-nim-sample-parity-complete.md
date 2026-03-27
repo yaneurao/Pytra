@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-nim-sample-parity-complete.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Complete Nim sample parity and integrate it formally into `runtime_parity_check`
 
 Last updated: 2026-03-04

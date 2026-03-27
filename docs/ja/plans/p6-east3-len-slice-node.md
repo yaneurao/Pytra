@@ -1,3 +1,7 @@
+<a href="../../en/plans/p6-east3-len-slice-node.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P6: py_len / py_slice を EAST3 IR ノード化し py_runtime.h から除去
 
 最終更新: 2026-03-18

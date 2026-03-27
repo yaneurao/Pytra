@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260306-p0-cpp-unit-regression-recovery.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Root-Fix C++ Unit Regressions (Normalize SoT/IR/Emitter/Runtime Contracts)
 
 Last updated: 2026-03-06

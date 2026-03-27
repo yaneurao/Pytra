@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-cpp-float-div-direct-slash.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ `float64` 同士の除算で `py_div` を使わず `/` を直接出力する
 
 最終更新: 2026-02-28

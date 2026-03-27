@@ -1,8 +1,8 @@
-# C++ Optimizer 仕様
-
 <a href="../../en/spec/spec-cpp-optimizer.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
+
+# C++ Optimizer 仕様
 
 この文書は、`EAST3` から C++ backend へ lower した後段で適用する `CppOptimizer` 層の責務と契約を定義する。
 

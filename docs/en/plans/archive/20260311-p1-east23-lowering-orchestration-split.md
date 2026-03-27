@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p1-east23-lowering-orchestration-split.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Split the remaining `east2_to_east3_lowering.py` clusters in a second wave
 
 Last updated: 2026-03-11

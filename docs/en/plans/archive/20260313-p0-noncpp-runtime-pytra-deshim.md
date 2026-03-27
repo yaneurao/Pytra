@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260313-p0-noncpp-runtime-pytra-deshim.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Remove all checked-in non-C++/non-C# runtime `pytra/` lanes
 
 Last updated: 2026-03-13

@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/p0-cpp-emitter-slimming.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Staged Slimming of the C++ Emitter Bloat
 
 Last updated: 2026-02-26

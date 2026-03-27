@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260313-p0-cpp-runtime-packaging-deshim.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: C++ runtime packaging を compiler 直結へ寄せ、repo shim を退役させる
 
 最終更新: 2026-03-13

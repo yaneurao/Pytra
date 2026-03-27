@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-east3-lifetime-analysis-foundation.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: EAST3 変数 lifetime 解析基盤の導入（backend 共通）
 
 最終更新: 2026-03-02

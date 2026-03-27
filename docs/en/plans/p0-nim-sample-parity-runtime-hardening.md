@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-nim-sample-parity-runtime-hardening.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Harden Nim Runtime and Pass Full `sample/` Parity
 
 Last updated: 2026-03-03

@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-s18-str-identity-cast-elimination.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Remove `str -> str` identity conversions in sample/18 (`py_to_string` collapse)
 
 Last updated: 2026-03-01

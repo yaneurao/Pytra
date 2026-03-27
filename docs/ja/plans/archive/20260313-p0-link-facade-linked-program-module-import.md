@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260313-p0-link-facade-linked-program-module-import.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: `LinkedProgramModule` import を `toolchain.link` facade に揃える
 
 最終更新: 2026-03-13

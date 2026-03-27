@@ -1,9 +1,8 @@
-# トランスパイルオプション仕様（案）
-
 <a href="../../en/spec/spec-options.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+# トランスパイルオプション仕様（案）
 
 この文書は、Pytra のオプション設計を整理するためのドラフトです。  
 目的は「Python 互換性」と「生成コード性能」のトレードオフを、利用者が明示的に選べるようにすることです。
@@ -139,7 +138,6 @@
   - `str-slice-mode=codepoint`
   - `int-width=bigint`（実装完了後）
   - `-O0`
-
 
 ## 5. 導入優先順位（提案）
 

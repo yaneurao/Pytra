@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-s18-enumerate-direct-typed.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Direct typed unpack for sample/18 `enumerate(lines)`
 
 Last updated: 2026-03-01

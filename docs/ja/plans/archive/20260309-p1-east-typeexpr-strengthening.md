@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260309-p1-east-typeexpr-strengthening.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: EAST の型表現を構造化し、union / nominal ADT / narrowing を文字列処理から引き上げる
 
 最終更新: 2026-03-09

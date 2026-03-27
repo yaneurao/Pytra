@@ -1,3 +1,7 @@
+<a href="../../ja/spec/spec-any-prohibition.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # `Any` Annotation Prohibition Guide
 
 Last updated: 2026-03-18 (S6 complete: PyObj removed)

@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-kotlin-sample01-quality-uplift.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: sample/kotlin/01 品質改善（C++品質との差分縮小）
 
 最終更新: 2026-03-01

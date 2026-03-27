@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-mutable-param-rename.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: immutable 引数言語向けの引数リネーム共通メソッド
 
 最終更新: 2026-03-22

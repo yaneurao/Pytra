@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p2-runtime-parity-with-cpp.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2: Bring multi-language runtimes to C++ parity, redesigned with strict SoT and generation-first rules
 
 Last updated: 2026-03-05

@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260314-p1-nes3-list-default-factory-rc-list-cpp-support.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: `field(default_factory=lambda: [0] * N)` の `rc<list<T>>` lane を C++ で整合させる
 
 最終更新: 2026-03-14

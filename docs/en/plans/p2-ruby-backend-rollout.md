@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p2-ruby-backend-rollout.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2: Add Ruby Backend
 
 Last updated: 2026-02-27

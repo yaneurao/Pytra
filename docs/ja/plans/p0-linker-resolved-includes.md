@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-linker-resolved-includes.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: リンカーによる C++ include 完全確定（generated ヘッダー廃止）
 
 最終更新: 2026-03-19

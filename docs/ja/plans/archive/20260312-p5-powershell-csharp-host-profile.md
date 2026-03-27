@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260312-p5-powershell-csharp-host-profile.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P5 PowerShell Host Profile For C# Backend
 
 最終更新: 2026-03-12

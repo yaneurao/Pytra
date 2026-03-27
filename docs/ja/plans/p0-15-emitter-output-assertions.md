@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-15-emitter-output-assertions.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0-15: エミッター出力変化によるテストアサーション不一致
 
 最終更新: 2026-03-21

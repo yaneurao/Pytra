@@ -1,5 +1,5 @@
 <a href="../../ja/spec/spec-make.md">
-  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
 </a>
 
 # Makefile Generation and One-Shot Build Specification

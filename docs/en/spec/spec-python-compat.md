@@ -1,7 +1,7 @@
 # Python Compatibility Guide
 
 <a href="../../ja/spec/spec-python-compat.md">
-  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
 </a>
 
 This page is a guide for **users who know Python**, showing side-by-side comparisons of "how Python behaves / how Pytra behaves".

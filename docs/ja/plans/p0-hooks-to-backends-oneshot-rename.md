@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-hooks-to-backends-oneshot-rename.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: `src/hooks` -> `src/backends` 一括改名（最優先の最優先）
 
 最終更新: 2026-03-03

@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-redundant-same-type-cast-elimination.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Eliminate C++ Same-Type Casts and Pull Type Inference Earlier (highest priority)
 
 Last updated: 2026-02-28

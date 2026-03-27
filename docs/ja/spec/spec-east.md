@@ -1,9 +1,8 @@
-# EAST仕様（実装準拠）
-
 <a href="../../en/spec/spec-east.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
+# EAST仕様（実装準拠）
 
 この文書は `src/toolchain/misc/east.py` / `src/toolchain/misc/east_parts/` の現実装に合わせた EAST 仕様の統合正本である。
 
@@ -17,7 +16,6 @@
 - EAST(Extended AST) は Python AST から、言語非依存の意味注釈付き JSON を生成する中間表現である。
 - 型解決、cast情報、引数 readonly/mutable、mainガード分離を前段で確定させる。
 - Pythonにはastという抽象構文木を扱うモジュールがあるが、これだと元のソースコードのコメントなどを残してトランスパイルできないのでEASTという表現を考え、そしてこのためのparserをPythonで実装する。
-
 
 ## 2. 入出力
 

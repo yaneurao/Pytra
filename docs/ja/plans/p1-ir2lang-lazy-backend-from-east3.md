@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-ir2lang-lazy-backend-from-east3.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: `ir2lang.py` 導入（EAST3 JSON 直入力 + target lazy import）
 
 最終更新: 2026-03-03

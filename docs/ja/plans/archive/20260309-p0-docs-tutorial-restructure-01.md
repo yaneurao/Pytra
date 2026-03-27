@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260309-p0-docs-tutorial-restructure-01.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # [ID: P0-DOCS-TUTORIAL-RESTRUCTURE-01] tutorial/ への導線再編
 
 ## 背景

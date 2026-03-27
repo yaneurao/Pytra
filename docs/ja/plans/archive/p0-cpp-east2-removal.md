@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/p0-cpp-east2-removal.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # TASK GROUP: TG-P0-CPP-EAST2-REMOVAL
 
 最終更新: 2026-02-24

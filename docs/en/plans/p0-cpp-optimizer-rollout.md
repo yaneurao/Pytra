@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-optimizer-rollout.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Introduce a Post-Lowering Optimization Layer for the C++ Backend (`CppOptimizer`)
 
 Last updated: 2026-02-26

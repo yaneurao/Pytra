@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260308-p4-noncpp-backend-recovery-after-linked-program.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P4: Recover Non-C++ Backends After Linked-Program Introduction
 
 Last updated: 2026-03-08

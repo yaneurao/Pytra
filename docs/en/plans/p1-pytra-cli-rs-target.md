@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p1-pytra-cli-rs-target.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P1: Add Rust target to unified CLI `./pytra`
 
 Last updated: 2026-02-27

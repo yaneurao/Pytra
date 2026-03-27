@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-regenerate-samples-scala-support.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: `regenerate_samples.py` への Scala 追加
 
 最終更新: 2026-03-02

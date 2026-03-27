@@ -1,3 +1,7 @@
+<a href="../../en/plans/p2-link-input-completeness.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2-LINK-INPUT-COMPLETENESS: link 層の入力完全性検証
 
 最終更新: 2026-03-26

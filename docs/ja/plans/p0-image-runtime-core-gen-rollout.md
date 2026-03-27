@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-image-runtime-core-gen-rollout.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: 画像runtime 構成是正（`pytra-core` / `pytra-gen` 分離 + 正本自動生成）
 
 最終更新: 2026-03-04

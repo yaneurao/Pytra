@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p2-east-core-modularization.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P2: Split EAST core.py / test_east_core.py by responsibility
 
 Last updated: 2026-03-11

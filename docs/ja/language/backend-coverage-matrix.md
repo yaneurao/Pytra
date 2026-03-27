@@ -1,8 +1,8 @@
-# Backend Coverage Matrix
-
 <a href="../../en/language/backend-coverage-matrix.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
+
+# Backend Coverage Matrix
 
 このページは、bundle-based verification coverage を公開する canonical publish target です。
 

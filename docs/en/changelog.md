@@ -1,11 +1,21 @@
-<a href="../../ja/changelog.md"><img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square"></a>
+<a href="../ja/changelog.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
 
-> [!WARNING]
-> This file is synchronized from `docs/ja/changelog.md` and still requires manual English translation.
+# Changelog
 
-> Source of truth: `docs/ja/changelog.md`
+## 2026-03-27
 
-# 更新履歴
+- **C++ emitter spec compliance (S1-S15)**: Fail-fast, mapping.json unification, container reference wrappers (`Object<list<T>>` etc.), implicit_promotions, is_entry/main_guard_body, @property support, shared runtime path resolution.
+- **Traits (pure interface, multiple implementation)**: `@trait` / `@implements` decorators for pure interfaces. C++ uses virtual inheritance + `Object<T>` converting constructor; Go uses interface generation. Trait isinstance is compile-time only (no runtime info needed).
+- **isinstance narrowing**: Automatic type environment update after `if isinstance(x, T):` in the resolve stage. Supports if/elif, early return guard (`if not isinstance: return`), ternary isinstance (`y = x if isinstance(x, T) else None`), and `and`-chained conditions.
+- **Ternary Optional type inference**: `expr if cond else None` → `Optional[T]`, different types → `UnionType` inferred at resolve.
+- **pytra.std.json parser support**: PEP 695 recursive type alias (`type JsonVal = ...`) and Union forward reference now parseable. Golden files regenerated.
+- **POD isinstance**: `isinstance(x, int16)` etc. implemented as exact type match. Specified in spec-type_id.md §4.2.
+- **Link input completeness check**: Unresolved imports in link-input are reported as fail-closed errors. Type stubs for unparseable modules.
+- **ClosureDef lowering**: Nested FunctionDef lowered to ClosureDef in EAST3 with capture analysis (readonly/mutable).
+- **Lowering profile design**: Language capability declarations (tuple_unpack_style, container_covariance, with_style, etc. — 16 items) added to spec-language-profile.md §7. CommonRenderer design in §8.
+- **Tutorial additions**: Union types and isinstance narrowing, Traits tutorial pages added. English translations included.
 
 ## 2026-03-26
 

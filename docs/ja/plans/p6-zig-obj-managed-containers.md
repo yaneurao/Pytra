@@ -1,3 +1,7 @@
+<a href="../../en/plans/p6-zig-obj-managed-containers.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P6 Zig: コンテナ型の Obj（rc）管理
 
 最終更新: 2026-03-22

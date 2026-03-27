@@ -1,3 +1,7 @@
+<a href="../../en/plans/p1-sample-multilang-output-quality-uplift.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: sample 多言語出力の型既知 fastpath 強化（品質改善）
 
 最終更新: 2026-03-02

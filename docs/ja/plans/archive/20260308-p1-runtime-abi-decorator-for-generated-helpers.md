@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260308-p1-runtime-abi-decorator-for-generated-helpers.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P1: generated/runtime helper 向け `@abi` decorator 導入
 
 最終更新: 2026-03-07

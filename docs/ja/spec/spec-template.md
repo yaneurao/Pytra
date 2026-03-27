@@ -1,3 +1,7 @@
+<a href="../../en/spec/spec-template.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # template 仕様（案）
 
 この文書は、Pytra における generic / template サポート方針を定義する。  

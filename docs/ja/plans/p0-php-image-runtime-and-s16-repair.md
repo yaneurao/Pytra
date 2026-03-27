@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-php-image-runtime-and-s16-repair.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: PHP 画像 runtime 実装と sample/16 実行失敗の修復
 
 最終更新: 2026-03-04

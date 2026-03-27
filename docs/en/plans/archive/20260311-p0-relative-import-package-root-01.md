@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p0-relative-import-package-root-01.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Stabilize package-style relative-import root inference
 
 Last updated: 2026-03-11

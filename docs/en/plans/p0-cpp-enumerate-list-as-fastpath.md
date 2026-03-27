@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-enumerate-list-as-fastpath.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Introduce C++ `py_enumerate_list_as<T>()` (remove intermediate copy from `py_to_str_list_from_object`)
 
 Last updated: 2026-03-01

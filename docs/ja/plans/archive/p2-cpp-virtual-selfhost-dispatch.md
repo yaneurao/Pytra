@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/p2-cpp-virtual-selfhost-dispatch.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P2: C++ selfhost virtual ディスパッチ簡略化
 
 ## 背景

@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/p0-sample-all-languages-golden-pipeline.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0 サンプル全言語ゴールデン一致パイプライン
 
 最終更新: 2026-02-25

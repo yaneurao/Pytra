@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-multilang-downcount-range-regression.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: `range(len-1, -1, -1)` 多言語回帰（test追加 + 全backend通過）
 
 最終更新: 2026-03-01

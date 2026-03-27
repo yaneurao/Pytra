@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-sample-multilang-output-correctness-fixes.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: sample 多言語出力の正しさ修正（Scala/C#）
 
 最終更新: 2026-03-02

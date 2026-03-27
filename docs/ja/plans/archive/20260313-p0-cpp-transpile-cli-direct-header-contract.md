@@ -1,3 +1,7 @@
+<a href="../../../en/plans/archive/20260313-p0-cpp-transpile-cli-direct-header-contract.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: `transpile_cli` typed C++ contract を direct ownership header/source に揃える
 
 最終更新: 2026-03-13

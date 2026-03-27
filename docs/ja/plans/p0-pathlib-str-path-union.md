@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-pathlib-str-path-union.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: pathlib.Path の __init__ / __truediv__ を str | Path 対応に修正
 
 最終更新: 2026-03-19

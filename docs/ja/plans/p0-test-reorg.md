@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-test-reorg.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0-TEST-REORG: test/ ディレクトリ再編 + pytra 実装本体の golden 生成
 
 最終更新: 2026-03-25

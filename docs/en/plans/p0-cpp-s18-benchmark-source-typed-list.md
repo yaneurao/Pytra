@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-s18-benchmark-source-typed-list.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Convert sample/18 benchmark source construction to a typed list (`object + py_append` collapse)
 
 Last updated: 2026-03-01

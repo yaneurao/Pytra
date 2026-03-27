@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-lua-parity-test-sample-rollout.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Full Lua parity completion (test/fixture + sample)
 
 Last updated: 2026-03-01

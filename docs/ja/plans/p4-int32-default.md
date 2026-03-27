@@ -1,3 +1,7 @@
+<a href="../../en/plans/p4-int32-default.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P4-INT32: int のデフォルトサイズを int64 → int32 に変更
 
 最終更新: 2026-03-26

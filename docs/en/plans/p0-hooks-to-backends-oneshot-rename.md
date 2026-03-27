@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-hooks-to-backends-oneshot-rename.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Bulk Rename `src/hooks` -> `src/backends` (Highest Priority)
 
 Last updated: 2026-03-03

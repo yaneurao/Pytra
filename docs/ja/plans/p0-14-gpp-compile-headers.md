@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-14-gpp-compile-headers.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0-14: g++ コンパイルテストが built_in/string_ops.h を見つけられない
 
 最終更新: 2026-03-21

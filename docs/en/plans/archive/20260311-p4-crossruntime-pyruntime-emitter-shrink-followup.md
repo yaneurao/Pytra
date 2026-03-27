@@ -1,3 +1,7 @@
+<a href="../../../ja/plans/archive/20260311-p4-crossruntime-pyruntime-emitter-shrink-followup.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P4: emitter-side `py_runtime.h` shrink follow-up
 
 Last updated: 2026-03-11

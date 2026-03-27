@@ -1,3 +1,7 @@
+<a href="../../en/plans/p0-escape-analysis-to-storage-hint.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # P0: escape 解析結果を class_storage_hint に反映する
 
 最終更新: 2026-03-20

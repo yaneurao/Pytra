@@ -1,3 +1,7 @@
+<a href="../../ja/plans/p0-cpp-s13-grid-row-hoist.md">
+  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+</a>
+
 # P0: Hoist `grid` Row Access in sample/13
 
 Last updated: 2026-03-01

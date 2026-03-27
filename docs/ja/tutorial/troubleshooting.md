@@ -1,3 +1,7 @@
+<a href="../../en/tutorial/troubleshooting.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
 # エラーの見方と詰まりどころ
 
 このページは、Pytra の変換時エラーの見方と、詰まりやすいポイントへの導線をまとめたものです。  
