@@ -5,6 +5,9 @@ from __future__ import annotations
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
 
+from toolchain2.link.runtime_discovery import is_runtime_namespace_module
+from toolchain2.link.runtime_discovery import resolve_runtime_module_rel_tail
+
 
 _RUNTIME_CPP_ROOT = Path(__file__).resolve().parents[3] / "runtime" / "cpp"
 _TYPE_ONLY_MODULES = {
@@ -19,29 +22,20 @@ _TYPE_ONLY_MODULES = {
     "pytra.enum",
     "pytra.std.template",
 }
-_CPP_RUNTIME_UMBRELLAS = {"pytra.std", "pytra.utils", "pytra.built_in", "pytra.core"}
 
 
 def runtime_rel_tail_for_module(module_id: str) -> str:
-    if module_id.startswith("pytra.built_in."):
-        return "built_in/" + module_id[len("pytra.built_in."):].replace(".", "/")
-    if module_id.startswith("pytra.std."):
-        return "std/" + module_id[len("pytra.std."):].replace(".", "/")
-    if module_id.startswith("pytra.utils."):
-        return "utils/" + module_id[len("pytra.utils."):].replace(".", "/")
-    return ""
+    return resolve_runtime_module_rel_tail(module_id)
 
 
 def cpp_include_for_module(module_id: str) -> str:
-    if module_id in _CPP_RUNTIME_UMBRELLAS or module_id in _TYPE_ONLY_MODULES:
+    if is_runtime_namespace_module(module_id) or module_id in _TYPE_ONLY_MODULES:
         return ""
-    if module_id == "pytra.core.py_runtime":
-        return "core/py_runtime.h"
-    if module_id.startswith("pytra.core."):
-        return ""
-    rel = runtime_rel_tail_for_module(module_id)
+    rel = resolve_runtime_module_rel_tail(module_id)
     if rel != "":
         return rel + ".h"
+    if module_id.startswith("pytra.core."):
+        return ""
     if module_id != "":
         return module_id.replace(".", "/") + ".h"
     return ""

@@ -18,6 +18,15 @@ _RUNTIME_MODULE_BUCKETS: dict[str, str] = {
     "pytra.std.": "std",
     "pytra.utils.": "utils",
 }
+_RUNTIME_NAMESPACE_MODULES: set[str] = {
+    "pytra.built_in",
+    "pytra.std",
+    "pytra.utils",
+    "pytra.core",
+}
+_RUNTIME_ARTIFACT_OVERRIDES: dict[str, str] = {
+    "pytra.core.py_runtime": "core/py_runtime",
+}
 
 _TYPE_ID_RUNTIME_NODE_KINDS: set[str] = {
     "IsInstance",
@@ -28,17 +37,32 @@ _TYPE_ID_RUNTIME_NODE_KINDS: set[str] = {
 
 def resolve_runtime_east_path(module_id: str) -> str:
     """Resolve a runtime module_id to its .east file path, or empty string."""
-    for prefix, bucket in _RUNTIME_MODULE_BUCKETS.items():
-        if module_id.startswith(prefix):
-            name = module_id[len(prefix):]
-            east_path = _RUNTIME_EAST_ROOT / bucket / (name + ".east")
-            if east_path.exists():
-                return str(east_path)
+    rel = resolve_runtime_module_rel_tail(module_id)
+    if rel != "" and not rel.startswith("core/"):
+        east_path = _RUNTIME_EAST_ROOT / (rel + ".east")
+        if east_path.exists():
+            return str(east_path)
     # Fallback: bare module name → pytra.std.X
     bare_path = _RUNTIME_EAST_ROOT / "std" / (module_id + ".east")
     if bare_path.exists():
         return str(bare_path)
     return ""
+
+
+def resolve_runtime_module_rel_tail(module_id: str) -> str:
+    """Resolve a runtime module_id to its shared runtime-relative path tail."""
+    override = _RUNTIME_ARTIFACT_OVERRIDES.get(module_id)
+    if isinstance(override, str) and override != "":
+        return override
+    for prefix, bucket in _RUNTIME_MODULE_BUCKETS.items():
+        if module_id.startswith(prefix):
+            name = module_id[len(prefix):]
+            return bucket + "/" + name.replace(".", "/")
+    return ""
+
+
+def is_runtime_namespace_module(module_id: str) -> bool:
+    return module_id in _RUNTIME_NAMESPACE_MODULES
 
 
 def _is_explicit_runtime_module(module_id: str) -> bool:

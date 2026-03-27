@@ -21,6 +21,8 @@ from toolchain2.link.dependencies import build_all_resolved_dependencies
 from toolchain2.link.expand_defaults import expand_cross_module_defaults
 from toolchain2.link.manifest_loader import load_linked_output
 from toolchain2.link.runtime_discovery import discover_runtime_modules
+from toolchain2.link.runtime_discovery import is_runtime_namespace_module
+from toolchain2.link.runtime_discovery import resolve_runtime_module_rel_tail
 from toolchain2.link.type_id import build_type_id_table
 from toolchain2.common.jv import deep_copy_json
 from toolchain2.parse.py.parse_python import parse_python_file
@@ -33,6 +35,8 @@ from toolchain2.emit.cpp.emitter import emit_cpp_module
 from toolchain2.emit.cpp.header_gen import build_cpp_header_from_east3
 from toolchain2.emit.cpp.runtime_bundle import emit_runtime_module_artifacts
 from toolchain2.emit.cpp.runtime_paths import collect_cpp_dependency_module_ids
+from toolchain2.emit.cpp.runtime_paths import cpp_include_for_module
+from toolchain2.emit.cpp.runtime_paths import runtime_rel_tail_for_module
 from toolchain2.emit.common.code_emitter import RuntimeMapping
 
 
@@ -1188,6 +1192,22 @@ def has_key(env: dict[str, int], name: str) -> bool:
         )
 
         self.assertEqual(dep_ids, ["pytra.core.py_runtime"])
+
+    def test_runtime_discovery_exposes_shared_runtime_rel_tail(self) -> None:
+        self.assertEqual(resolve_runtime_module_rel_tail("pytra.std.json"), "std/json")
+        self.assertEqual(resolve_runtime_module_rel_tail("pytra.built_in.numeric_ops"), "built_in/numeric_ops")
+        self.assertEqual(resolve_runtime_module_rel_tail("pytra.utils.png"), "utils/png")
+        self.assertEqual(resolve_runtime_module_rel_tail("pytra.core.py_runtime"), "core/py_runtime")
+        self.assertEqual(resolve_runtime_module_rel_tail("app.main"), "")
+        self.assertTrue(is_runtime_namespace_module("pytra.std"))
+        self.assertTrue(is_runtime_namespace_module("pytra.core"))
+        self.assertFalse(is_runtime_namespace_module("pytra.std.json"))
+
+    def test_cpp_runtime_paths_delegate_rel_tail_to_shared_runtime_loader(self) -> None:
+        self.assertEqual(runtime_rel_tail_for_module("pytra.std.json"), "std/json")
+        self.assertEqual(runtime_rel_tail_for_module("pytra.core.py_runtime"), "core/py_runtime")
+        self.assertEqual(cpp_include_for_module("pytra.core.py_runtime"), "core/py_runtime.h")
+        self.assertEqual(cpp_include_for_module("pytra.std"), "")
 
     def test_cpp_runtime_paths_skip_pytra_types_type_only_imports(self) -> None:
         dep_ids = collect_cpp_dependency_module_ids(

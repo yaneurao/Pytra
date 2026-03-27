@@ -1892,9 +1892,9 @@ def emit_cpp_module(
     if self_header != "":
         header.append('#include "' + self_header + '"')
 
-    seen_includes: set[str] = set()
+    seen_includes: set[str] = {"core/py_runtime.h"}
     for dep_id in dep_ids:
-        if dep_id == "" or dep_id == module_id or dep_id == "pytra.core.py_runtime":
+        if dep_id == "" or dep_id == module_id:
             continue
         include_path = cpp_include_for_module(dep_id)
         if include_path == "" or include_path in seen_includes:
