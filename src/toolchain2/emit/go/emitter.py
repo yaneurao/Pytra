@@ -306,6 +306,8 @@ def _emit_expr(ctx: EmitContext, node: JsonVal) -> str:
         return _emit_set_literal(ctx, node)
     if kind == "Tuple":
         return _emit_tuple_literal(ctx, node)
+    if kind == "CovariantCopy":
+        return _emit_covariant_copy(ctx, node)
     if kind == "IfExp":
         return _emit_ifexp(ctx, node)
     if kind == "JoinedStr":
@@ -1960,6 +1962,34 @@ def _emit_tuple_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     elements = _list(node, "elements")
     parts = [_emit_expr(ctx, e) for e in elements]
     return "[]any{" + ", ".join(parts) + "}"
+
+
+def _emit_covariant_copy(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
+    source_node = node.get("source")
+    source_expr = _emit_expr(ctx, source_node)
+    target_type = _str(node, "target_type")
+    source_elem_type = _str(node, "source_elem_type")
+    target_elem_type = _str(node, "target_elem_type")
+    target_go = _go_signature_type(ctx, target_type)
+    if not target_go.startswith("[]"):
+        return source_expr
+    elem_go = target_go[2:]
+    out_name = _next_temp(ctx, "cov")
+    idx_name = _next_temp(ctx, "i")
+    val_name = _next_temp(ctx, "v")
+    assign_expr = val_name
+    if target_elem_type not in ("", "unknown", "Any", "JsonVal", "object", "Obj"):
+        if target_elem_type != source_elem_type:
+            assign_expr = _go_signature_type(ctx, target_elem_type) + "(" + val_name + ")"
+    return (
+        "func() " + target_go + " {\n"
+        + "\t" + out_name + " := make(" + target_go + ", len(" + source_expr + "))\n"
+        + "\tfor " + idx_name + ", " + val_name + " := range " + source_expr + " {\n"
+        + "\t\t" + out_name + "[" + idx_name + "] = " + assign_expr + "\n"
+        + "\t}\n"
+        + "\treturn " + out_name + "\n"
+        + "}()"
+    )
 
 
 def _emit_ifexp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:

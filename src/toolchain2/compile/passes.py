@@ -21,7 +21,7 @@ from toolchain2.common.kinds import (
     NAME, CONSTANT, CALL, ATTRIBUTE, SUBSCRIPT,
     BIN_OP, UNARY_OP, COMPARE, IF_EXP, BOOL_OP,
     LIST, DICT, SET, TUPLE, LIST_COMP,
-    UNBOX,
+    UNBOX, COVARIANT_COPY,
     STATIC_RANGE_FOR_PLAN, RUNTIME_ITER_FOR_PLAN,
     NAME_TARGET, TUPLE_TARGET,
     ASSIGNMENT_KINDS,
@@ -1364,6 +1364,43 @@ def _parse_tuple_element_types(rt: str) -> list[str]:
     return parts
 
 
+def _split_type_args(type_name: str) -> list[str]:
+    if "[" not in type_name or not type_name.endswith("]"):
+        return []
+    inner = type_name[type_name.find("[") + 1 : -1]
+    parts: list[str] = []
+    depth = 0
+    cur: list[str] = []
+    for ch in inner:
+        if ch == "[":
+            depth += 1
+            cur.append(ch)
+        elif ch == "]":
+            depth -= 1
+            cur.append(ch)
+        elif ch == "," and depth == 0:
+            part = "".join(cur).strip()
+            if part != "":
+                parts.append(part)
+            cur = []
+        else:
+            cur.append(ch)
+    tail = "".join(cur).strip()
+    if tail != "":
+        parts.append(tail)
+    return parts
+
+
+def _list_elem_type(type_name: str) -> str:
+    norm = normalize_type_name(type_name)
+    if not norm.startswith("list[") or not norm.endswith("]"):
+        return ""
+    parts = _split_type_args(norm)
+    if len(parts) != 1:
+        return ""
+    return parts[0]
+
+
 def _make_tuple_unpack_source(value: JsonVal, source_type: str, target_type: str) -> tuple[JsonVal, str]:
     normalized_source: str = normalize_type_name(source_type)
     normalized_target: str = normalize_type_name(target_type)
@@ -1655,6 +1692,22 @@ def _sk(node: JsonVal) -> str:
         if isinstance(k, str):
             return k
     return ""
+
+
+def _str(node: JsonVal, key: str) -> str:
+    if isinstance(node, dict):
+        value = node.get(key)
+        if isinstance(value, str):
+            return value
+    return ""
+
+
+def _node_list(node: JsonVal, key: str) -> list[JsonVal]:
+    if isinstance(node, dict):
+        value = node.get(key)
+        if isinstance(value, list):
+            return cast(list[JsonVal], value)
+    return []
 
 
 def _split_comma_types(tn: str) -> list[str]:
@@ -3549,6 +3602,164 @@ def _yd_walk(node: JsonVal) -> None:
 
 def apply_yields_dynamic(module: Node, ctx: CompileContext) -> None:
     _yd_walk(module)
+
+
+# ===========================================================================
+# lowering profile semantics
+# ===========================================================================
+
+def _make_name_ref(name: str, resolved_type: str) -> Node:
+    out: Node = {}
+    out["kind"] = NAME
+    out["id"] = name
+    out["resolved_type"] = resolved_type
+    return out
+
+
+def _make_close_finalizer(var_name: str, resolved_type: str) -> Node:
+    close_attr: Node = {}
+    close_attr["kind"] = ATTRIBUTE
+    close_attr["value"] = _make_name_ref(var_name, resolved_type)
+    close_attr["attr"] = "close"
+    close_attr["resolved_type"] = "callable"
+    close_call: Node = {}
+    close_call["kind"] = CALL
+    close_call["func"] = close_attr
+    close_call["args"] = []
+    close_call["keywords"] = []
+    close_call["resolved_type"] = "None"
+    close_stmt: Node = {}
+    close_stmt["kind"] = EXPR
+    close_stmt["value"] = close_call
+    return close_stmt
+
+
+def _lower_covariant_copy(node: Node, ctx: CompileContext) -> JsonVal:
+    if _sk(node) != CALL or ctx.lowering_profile.container_covariance:
+        return node
+    func = node.get("func")
+    args = _node_list(node, "args")
+    if not isinstance(func, dict) or _str(func, "kind") != NAME or _str(func, "id") != "list" or len(args) != 1:
+        return node
+    source = args[0]
+    if not isinstance(source, dict):
+        return node
+    source_type = normalize_type_name(source.get("resolved_type"))
+    target_type = normalize_type_name(node.get("resolved_type"))
+    source_elem_type = _list_elem_type(source_type)
+    target_elem_type = _list_elem_type(target_type)
+    if source_elem_type == "" or target_elem_type == "" or source_elem_type == target_elem_type:
+        return node
+    out: Node = {}
+    out["kind"] = COVARIANT_COPY
+    out["source"] = deep_copy_json(source)
+    out["source_type"] = source_type
+    out["source_elem_type"] = source_elem_type
+    out["target_type"] = target_type
+    out["target_elem_type"] = target_elem_type
+    out["resolved_type"] = target_type
+    return out
+
+
+def _apply_profile_expr(node: JsonVal, ctx: CompileContext) -> JsonVal:
+    if isinstance(node, list):
+        items: list[JsonVal] = []
+        for item in node:
+            items.append(_apply_profile_expr(item, ctx))
+        return items
+    if not isinstance(node, dict):
+        return node
+    out: Node = {}
+    for key, value in node.items():
+        key_s = key if isinstance(key, str) else ""
+        if key_s == "":
+            continue
+        if isinstance(value, dict) or isinstance(value, list):
+            out[key_s] = _apply_profile_expr(value, ctx)
+        else:
+            out[key_s] = value
+    if (
+        _sk(out) == ATTRIBUTE
+        and ctx.lowering_profile.property_style == "field_access"
+        and _str(out, "attribute_access_kind") == "property_getter"
+    ):
+        out["attribute_access_kind"] = "field_access"
+    return _lower_covariant_copy(out, ctx)
+
+
+def _apply_profile_stmt(stmt: JsonVal, ctx: CompileContext) -> list[JsonVal]:
+    if not isinstance(stmt, dict):
+        return [stmt]
+    out = _apply_profile_expr(stmt, ctx)
+    if not isinstance(out, dict):
+        return [out]
+    kind = _sk(out)
+    if kind == WITH:
+        out["body"] = _apply_profile_stmts(_node_list(out, "body"), ctx)
+        style = ctx.lowering_profile.with_style
+        out["with_lowering_style"] = style
+        if style != "try_finally":
+            return [out]
+        var_name = _str(out, "var_name")
+        if var_name == "":
+            var_name = ctx.next_comp_name()
+            out["var_name"] = var_name
+        context_expr = out.get("context_expr")
+        context_type = ""
+        if isinstance(context_expr, dict):
+            context_type = normalize_type_name(context_expr.get("resolved_type"))
+        bind_stmt: Node = {}
+        bind_stmt["kind"] = ASSIGN
+        bind_stmt["target"] = _make_name_ref(var_name, context_type)
+        bind_stmt["value"] = context_expr
+        bind_stmt["declare"] = True
+        if context_type != "":
+            bind_stmt["decl_type"] = context_type
+        try_stmt: Node = {}
+        try_stmt["kind"] = TRY
+        try_stmt["body"] = out["body"]
+        try_stmt["handlers"] = []
+        try_stmt["orelse"] = []
+        try_stmt["finalbody"] = [_make_close_finalizer(var_name, context_type)]
+        return [bind_stmt, try_stmt]
+    for key in ("body", "orelse", "finalbody"):
+        nested = out.get(key)
+        if isinstance(nested, list):
+            out[key] = _apply_profile_stmts(cast(list[JsonVal], nested), ctx)
+    handlers = out.get("handlers")
+    if isinstance(handlers, list):
+        new_handlers: list[JsonVal] = []
+        for handler in cast(list[JsonVal], handlers):
+            if isinstance(handler, dict):
+                handler_out = _apply_profile_expr(handler, ctx)
+                if isinstance(handler_out, dict):
+                    hb = handler_out.get("body")
+                    if isinstance(hb, list):
+                        handler_out["body"] = _apply_profile_stmts(cast(list[JsonVal], hb), ctx)
+                new_handlers.append(handler_out)
+            else:
+                new_handlers.append(handler)
+        out["handlers"] = new_handlers
+    return [out]
+
+
+def _apply_profile_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
+    out: list[JsonVal] = []
+    for stmt in stmts:
+        lowered = _apply_profile_stmt(stmt, ctx)
+        for item in lowered:
+            out.append(item)
+    return out
+
+
+def apply_profile_lowering(module: Node, ctx: CompileContext) -> Node:
+    body = module.get("body")
+    if isinstance(body, list):
+        module["body"] = _apply_profile_stmts(cast(list[JsonVal], body), ctx)
+    mg = module.get("main_guard_body")
+    if isinstance(mg, list):
+        module["main_guard_body"] = _apply_profile_stmts(cast(list[JsonVal], mg), ctx)
+    return module
 
 
 # ===========================================================================

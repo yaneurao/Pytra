@@ -62,6 +62,7 @@ from toolchain2.compile.passes import (
     apply_guard_narrowing,
     apply_type_propagation,
     apply_yields_dynamic,
+    apply_profile_lowering,
     detect_swap_patterns,
     detect_mutates_self,
     detect_unused_variables,
@@ -2226,6 +2227,7 @@ def lower_east2_to_east3(east_module: Node, object_dispatch_mode: str = "", targ
     apply_guard_narrowing(lowered_node, ctx)
     apply_type_propagation(lowered_node, ctx)
     apply_yields_dynamic(lowered_node, ctx)
+    apply_profile_lowering(lowered_node, ctx)
     detect_swap_patterns(lowered_node, ctx)
     detect_mutates_self(lowered_node, ctx)
     detect_unused_variables(lowered_node, ctx)

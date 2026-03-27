@@ -67,6 +67,7 @@ STARRED: str = "Starred"
 
 # --- boolean ---
 BOOL_OP: str = "BoolOp"
+COVARIANT_COPY: str = "CovariantCopy"
 
 # --- type predicates ---
 IS_INSTANCE: str = "IsInstance"

@@ -527,6 +527,7 @@ def _emit_expr(ctx: CppEmitContext, node: JsonVal) -> str:
     if kind == "Set": return _emit_set_literal(ctx, node)
     if kind == "Dict": return _emit_dict_literal(ctx, node)
     if kind == "Tuple": return _emit_tuple_literal(ctx, node)
+    if kind == "CovariantCopy": return _emit_covariant_copy(ctx, node)
     if kind == "IfExp": return _emit_ifexp(ctx, node)
     if kind == "JoinedStr": return _emit_fstring(ctx, node)
     if kind == "FormattedValue": return _emit_formatted_value(ctx, node)
@@ -1092,6 +1093,37 @@ def _emit_tuple_literal(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     elements = _list(node, "elements")
     parts = [_emit_expr(ctx, e) for e in elements]
     return "std::make_tuple(" + ", ".join(parts) + ")"
+
+
+def _emit_covariant_copy(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
+    source_expr = _emit_expr(ctx, node.get("source"))
+    target_type = _str(node, "target_type")
+    source_elem_type = _str(node, "source_elem_type")
+    target_elem_type = _str(node, "target_elem_type")
+    plain_ct = cpp_type(target_type, prefer_value_container=True)
+    out_name = _next_temp(ctx, "__cov")
+    val_name = _next_temp(ctx, "__item")
+    push_expr = val_name
+    if target_elem_type not in ("", "unknown", "Any", "JsonVal", "object", "Obj"):
+        if target_elem_type != source_elem_type:
+            push_expr = _emit_expr_as_type(
+                ctx,
+                {
+                    "kind": "Name",
+                    "id": val_name,
+                    "resolved_type": source_elem_type if source_elem_type != "" else target_elem_type,
+                },
+                target_elem_type,
+            )
+    return (
+        "([&]() {\n"
+        + "    " + plain_ct + " " + out_name + ";\n"
+        + "    for (auto const& " + val_name + " : " + source_expr + ") {\n"
+        + "        " + out_name + ".push_back(" + push_expr + ");\n"
+        + "    }\n"
+        + "    return " + _wrap_container_value_expr(target_type, out_name) + ";\n"
+        + "}())"
+    )
 
 
 def _emit_unbox(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:

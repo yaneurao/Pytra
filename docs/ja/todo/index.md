@@ -40,7 +40,7 @@
 
 1. [x] [ID: P2-LOWERING-PROFILE-S1] lowering プロファイルのスキーマを確定し、C++ / Go のプロファイル JSON を作成する — `src/toolchain2/emit/profiles/core.json`, `src/toolchain2/emit/profiles/cpp.json`, `src/toolchain2/emit/profiles/go.json` を正本とし、`toolchain2.emit.common.profile_loader` と focused unittest で schema validation / core merge / C++ / Go profile 読込を確認
 2. [x] [ID: P2-LOWERING-PROFILE-S2] EAST3 lowering が lowering プロファイルを読み、`tuple_unpack_style` に従って tuple unpack を展開するようにする — `lower_east2_to_east3(..., target_language=...)` で profile を読み、`core=individual_temps`, `cpp=TupleUnpack`, `go=MultiAssign` へ分岐し、Go は `multi_return[...]` の関数署名/return/multi-assign を consume できるところまで接続する
-3. [ ] [ID: P2-LOWERING-PROFILE-S3] `container_covariance` / `with_style` / `property_style` を lowering に反映する
+3. [x] [ID: P2-LOWERING-PROFILE-S3] `container_covariance` / `with_style` / `property_style` を lowering に反映する — `container_covariance=false` では `list[T] -> list[U]` を `CovariantCopy` に lower し、`with_style=try_finally` では `With` を bind+`Try(finally close)` に lower、`property_style=field_access` では `property_getter` を field access へ正規化する。C++ / Go emitter には `CovariantCopy` 消費を追加
 — S4〜S7（CommonRenderer 実装 + emitter 移行 + parity）は P3-COMMON-RENDERER に統合済み
 
 ### P3-COMMON-RENDERER: CommonRenderer 導入 + C++/Go emitter 移行 + fixture parity
