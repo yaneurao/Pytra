@@ -14,6 +14,26 @@ if TYPE_CHECKING:
     from toolchain2.link.linker import LinkedModule
 
 
+_TYPE_ONLY_MODULE_IDS: set[str] = {
+    "__future__",
+    "typing",
+    "pytra.typing",
+    "types",
+    "pytra.types",
+    "dataclasses",
+    "pytra.dataclasses",
+    "enum",
+    "pytra.enum",
+    "pytra.std.template",
+}
+
+_TYPE_ID_RUNTIME_NODE_KINDS: set[str] = {
+    "IsInstance",
+    "IsSubclass",
+    "IsSubtype",
+}
+
+
 def _scan_runtime_refs(node: JsonVal, out: set[str]) -> None:
     if isinstance(node, list):
         for item in node:
@@ -25,9 +45,14 @@ def _scan_runtime_refs(node: JsonVal, out: set[str]) -> None:
     runtime_module_id = node.get("runtime_module_id")
     if isinstance(runtime_module_id, str) and runtime_module_id != "":
         out.add(runtime_module_id)
+    kind = node.get("kind")
+    if isinstance(kind, str) and kind in _TYPE_ID_RUNTIME_NODE_KINDS:
+        out.add("pytra.built_in.type_id")
 
     for value in node.values():
-        if isinstance(value, (dict, list)):
+        if isinstance(value, dict):
+            _scan_runtime_refs(value, out)
+        elif isinstance(value, list):
             _scan_runtime_refs(value, out)
 
 
@@ -39,17 +64,27 @@ def _binding_dependency_module_id(binding: JsonVal) -> str:
     runtime_group = binding.get("runtime_group")
     module_id = binding.get("module_id")
     host_only = binding.get("host_only") is True
+    binding_kind = binding.get("binding_kind")
+    resolved_binding_kind = binding.get("resolved_binding_kind")
 
     if isinstance(runtime_module_id, str) and runtime_module_id != "":
+        if runtime_module_id in _TYPE_ONLY_MODULE_IDS:
+            return ""
         if runtime_module_id.startswith("pytra."):
+            if host_only and binding_kind != "module" and resolved_binding_kind != "module":
+                return ""
             return runtime_module_id
         if isinstance(runtime_group, str) and runtime_group != "" and not host_only:
             return runtime_module_id
+        if host_only and (binding_kind == "module" or resolved_binding_kind == "module"):
+            return ""
         if not host_only:
             return runtime_module_id
         return ""
 
     if isinstance(module_id, str) and module_id != "":
+        if module_id in _TYPE_ONLY_MODULE_IDS:
+            return ""
         if module_id.startswith("pytra.") or not host_only:
             return module_id
     return ""
@@ -128,13 +163,12 @@ def build_all_resolved_dependencies(
     user_deps: dict[str, list[str]] = {}
 
     for module in modules:
-        doc = module.east_doc
-        if not isinstance(doc, dict):
+        if not isinstance(module.east_doc, dict):
             resolved[module.module_id] = []
             user_deps[module.module_id] = []
             continue
 
-        deps = _build_resolved_dependencies(doc)
+        deps = _build_resolved_dependencies(module.east_doc)
         resolved[module.module_id] = deps
         # Filter to only user module dependencies (exclude self)
         u_deps = [d for d in deps if d in user_module_ids and d != module.module_id]

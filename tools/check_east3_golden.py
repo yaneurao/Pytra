@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from functools import lru_cache
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,6 +60,34 @@ def _generate_east3(fixture_path: Path) -> dict[str, object]:
     if not isinstance(filtered, dict):
         raise RuntimeError("EAST3 output is not a dict")
     return filtered
+
+
+@lru_cache(maxsize=1)
+def _toolchain2_runtime_registry() -> object:
+    from toolchain2.resolve.py.builtin_registry import load_builtin_registry
+
+    east1_root = ROOT / "test" / "include" / "east1" / "py"
+    return load_builtin_registry(
+        east1_root / "built_in" / "builtins.py.east1",
+        east1_root / "built_in" / "containers.py.east1",
+        east1_root / "std",
+    )
+
+
+def _generate_runtime_east_toolchain2(py_file: Path) -> dict[str, object]:
+    from toolchain2.parse.py.parse_python import parse_python_file
+    from toolchain2.resolve.py.resolver import resolve_east1_to_east2
+    from toolchain2.compile.lower import lower_east2_to_east3
+
+    east1_doc = parse_python_file(str(py_file))
+    if not isinstance(east1_doc, dict):
+        raise RuntimeError("toolchain2 parse failed")
+    registry = _toolchain2_runtime_registry()
+    resolve_east1_to_east2(east1_doc, registry=registry)
+    east3_doc = lower_east2_to_east3(east1_doc)
+    if not isinstance(east3_doc, dict):
+        raise RuntimeError("toolchain2 compile failed")
+    return east3_doc
 
 
 def check_all(update: bool = False) -> int:
@@ -145,22 +174,7 @@ def check_runtime_east_freshness(update: bool = False) -> int:
                 continue
 
             try:
-                from toolchain.frontends import load_east3_document_typed
-                from toolchain.misc.typed_boundary import export_compiler_root_document
-
-                doc = export_compiler_root_document(
-                    load_east3_document_typed(
-                        py_file,
-                        parser_backend="self_hosted",
-                        object_dispatch_mode="native",
-                        east3_opt_level="1",
-                        east3_opt_pass="",
-                        dump_east3_before_opt="",
-                        dump_east3_after_opt="",
-                        dump_east3_opt_trace="",
-                        target_lang="cpp",
-                    )
-                )
+                doc = _generate_runtime_east_toolchain2(py_file)
             except Exception as e:
                 print(f"[SKIP] {bucket}/{stem}: {e}")
                 continue

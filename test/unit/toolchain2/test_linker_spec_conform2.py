@@ -30,6 +30,7 @@ from toolchain2.compile.lower import lower_east2_to_east3
 from toolchain2.optimize.optimizer import optimize_east3_document
 from toolchain2.emit.go.emitter import emit_go_module
 from toolchain2.emit.cpp.emitter import emit_cpp_module
+from toolchain2.emit.cpp.header_gen import build_cpp_header_from_east3
 from toolchain2.emit.cpp.runtime_bundle import emit_runtime_module_artifacts
 from toolchain2.emit.cpp.runtime_paths import collect_cpp_dependency_module_ids
 from toolchain2.emit.common.code_emitter import RuntimeMapping
@@ -257,6 +258,51 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
 
         self.assertEqual(resolved["app.main"], ["pytra.std.pathlib"])
         self.assertEqual(user_deps["app.main"], [])
+
+    def test_discover_runtime_modules_adds_type_id_runtime_for_isinstance_nodes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            entry_path = Path(tmp) / "app.main.east3.json"
+            entry_doc = _module_doc(
+                "app.main",
+                body=[
+                    {
+                        "kind": "Expr",
+                        "value": {
+                            "kind": "IsInstance",
+                            "value": {"kind": "Name", "id": "dyn", "resolved_type": "object"},
+                            "expected_type_id": {"kind": "Name", "id": "PYTRA_TID_LIST", "resolved_type": "int64"},
+                            "resolved_type": "bool",
+                        },
+                    }
+                ],
+            )
+            entry_path.write_text(json.dumps(entry_doc, ensure_ascii=False), encoding="utf-8")
+
+            discovered = discover_runtime_modules({str(entry_path): entry_doc})
+
+            self.assertIn(str(ROOT / "src/runtime/east/built_in/type_id.east"), discovered)
+
+    def test_build_all_resolved_dependencies_includes_type_id_for_type_predicates(self) -> None:
+        modules = [
+            _linked_module(
+                "app.main",
+                body=[
+                    {
+                        "kind": "Expr",
+                        "value": {
+                            "kind": "IsSubtype",
+                            "actual_type_id": {"kind": "Name", "id": "actual", "resolved_type": "int64"},
+                            "expected_type_id": {"kind": "Name", "id": "expected", "resolved_type": "int64"},
+                            "resolved_type": "bool",
+                        },
+                    }
+                ],
+            )
+        ]
+
+        resolved, _ = build_all_resolved_dependencies(modules)
+
+        self.assertEqual(resolved["app.main"], ["pytra.built_in.type_id"])
 
     def test_resolve_deep_copy_keeps_enhanced_import_bindings_in_sync(self) -> None:
         source_path = ROOT / "sample" / "py" / "17_monte_carlo_pi.py"
@@ -751,6 +797,49 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertEqual(len(call["args"]), 2)
         self.assertEqual(call["args"][1]["value"], 9)
 
+    def test_expand_defaults_uses_explicit_module_ids_when_meta_is_missing(self) -> None:
+        dep_doc = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "foo",
+                    "arg_order": ["x", "y"],
+                    "arg_defaults": {
+                        "y": {"kind": "Constant", "value": 9},
+                    },
+                    "body": [],
+                }
+            ],
+        }
+        main_doc = {
+            "kind": "Module",
+            "meta": {
+                "import_symbols": {
+                    "foo": {"module": "pkg.dep", "name": "foo"},
+                }
+            },
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Name", "id": "foo"},
+                        "args": [{"kind": "Constant", "value": 1}],
+                        "keywords": [],
+                    },
+                }
+            ],
+        }
+
+        expand_cross_module_defaults([("pkg.dep", dep_doc), ("app.main", main_doc)])
+
+        body = main_doc["body"]
+        assert isinstance(body, list)
+        call = body[0]["value"]
+        self.assertEqual(len(call["args"]), 2)
+        self.assertEqual(call["args"][1]["value"], 9)
+
     def test_expand_defaults_uses_imported_module_symbol_runtime_module_id(self) -> None:
         dep_doc = _module_doc(
             "pytra.std.os",
@@ -973,6 +1062,36 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn("rt_helper();", cpp_code)
         self.assertNotIn("custom.helper();", cpp_code)
 
+    def test_cpp_emitter_applies_save_gif_keyword_defaults_adapter(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Name", "id": "save_gif"},
+                        "args": [
+                            {"kind": "Name", "id": "out_path", "resolved_type": "str"},
+                            {"kind": "Name", "id": "width", "resolved_type": "int64"},
+                            {"kind": "Name", "id": "height", "resolved_type": "int64"},
+                            {"kind": "Name", "id": "frames", "resolved_type": "list[bytes]"},
+                            {"kind": "Call", "func": {"kind": "Name", "id": "grayscale_palette"}, "args": [], "keywords": [], "resolved_type": "bytes"},
+                        ],
+                        "keywords": [
+                            {"arg": "delay_cs", "value": {"kind": "Constant", "value": 5, "resolved_type": "int64"}},
+                            {"arg": "loop", "value": {"kind": "Constant", "value": 0, "resolved_type": "int64"}},
+                        ],
+                        "runtime_call_adapter_kind": "image.save_gif.keyword_defaults",
+                    },
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("save_gif(out_path, width, height, frames, grayscale_palette(), int64(5), int64(0));", cpp_code)
+
     def test_runtime_bundle_emits_header_only_for_native_companion_modules(self) -> None:
         doc = _fixture_doc("src/runtime/east/built_in/io_ops.east")
         if "meta" not in doc:
@@ -1019,8 +1138,11 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertNotIn('#include "glob.h"', header_text)
         self.assertIn("Path joinpath(const list<object>& parts) const;", header_text)
         self.assertNotIn("struct Path {", source_text)
-        self.assertIn("::splitext(", source_text)
+        self.assertIn('#include "std/os_path.h"', source_text)
+        self.assertIn('#include "std/glob.h"', source_text)
+        self.assertIn("splitext(", source_text)
         self.assertIn("py_str_slice(", source_text)
+        self.assertNotIn("py_str(", source_text)
 
     def test_cpp_runtime_paths_skip_host_only_template_imports(self) -> None:
         dep_ids = collect_cpp_dependency_module_ids(
@@ -1043,6 +1165,52 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         self.assertEqual(dep_ids, ["pytra.core.py_runtime"])
 
+    def test_cpp_runtime_paths_skip_std_template_runtime_module_binding(self) -> None:
+        dep_ids = collect_cpp_dependency_module_ids(
+            "pytra.built_in.numeric_ops",
+            {
+                "import_resolution": {
+                    "bindings": [
+                        {
+                            "module_id": "pytra.std",
+                            "runtime_module_id": "pytra.std.template",
+                            "runtime_group": "std",
+                            "resolved_binding_kind": "module",
+                        },
+                        {
+                            "module_id": "pytra.core.py_runtime",
+                            "runtime_module_id": "pytra.core.py_runtime",
+                            "runtime_group": "core",
+                        },
+                    ]
+                }
+            },
+        )
+
+        self.assertEqual(dep_ids, ["pytra.core.py_runtime"])
+
+    def test_cpp_runtime_paths_skip_pytra_types_type_only_imports(self) -> None:
+        dep_ids = collect_cpp_dependency_module_ids(
+            "pytra.std.json",
+            {
+                "import_bindings": [
+                    {
+                        "module_id": "pytra.types",
+                        "runtime_module_id": "pytra.types",
+                        "binding_kind": "symbol",
+                        "local_name": "int64",
+                    },
+                    {
+                        "module_id": "pytra.built_in.contains",
+                        "runtime_module_id": "pytra.built_in.contains",
+                        "runtime_group": "built_in",
+                    },
+                ]
+            },
+        )
+
+        self.assertEqual(dep_ids, ["pytra.built_in.contains"])
+
     def test_cpp_runtime_bundle_keeps_template_runtime_helpers_header_only(self) -> None:
         doc = _fixture_doc("src/runtime/east/built_in/numeric_ops.east")
         meta = doc.setdefault("meta", {})
@@ -1062,6 +1230,27 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertEqual(source_path, "")
         self.assertIn("template <class T>", header_text)
         self.assertIn("T py_max(const T& a, const T& b) {", header_text)
+
+    def test_cpp_runtime_bundle_keeps_extern_decls_for_native_companion_headers(self) -> None:
+        doc = _fixture_doc("src/runtime/east/std/os_path.east")
+        meta = doc.setdefault("meta", {})
+        assert isinstance(meta, dict)
+        meta["linked_program_v1"] = {"module_id": "pytra.std.os_path"}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            header_path, source_path = emit_runtime_module_artifacts(
+                "pytra.std.os_path",
+                doc,
+                output_dir=Path(tmp),
+                source_path=str(ROOT / "src" / "pytra" / "std" / "os_path.py"),
+            )
+
+            header_text = Path(header_path).read_text(encoding="utf-8")
+
+        self.assertEqual(source_path, "")
+        self.assertIn("str join(const str& a, const str& b);", header_text)
+        self.assertIn("str dirname(const str& p);", header_text)
+        self.assertIn("bool exists(const str& p);", header_text)
 
     def test_runtime_pathlib_lane_uses_string_ops_for_string_methods(self) -> None:
         doc = _fixture_doc("src/runtime/east/std/pathlib.east")
@@ -1767,6 +1956,46 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn("interface{ __pytra_is_Base() }", go_code)
         self.assertNotIn("any(c).(*Base)", go_code)
 
+    def test_go_emitter_uses_exact_helpers_for_pod_isinstance(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsInstance",
+                        "value": {"kind": "Name", "id": "x16", "resolved_type": "int16"},
+                        "expected_type_id": {"kind": "Name", "id": "int16"},
+                        "resolved_type": "bool",
+                    },
+                }
+            ],
+        )
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("py_is_exact_int16(x16)", go_code)
+
+    def test_go_emitter_keeps_int64_constants_typed_in_calls(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Name", "id": "consume"},
+                        "args": [{"kind": "Constant", "value": 123, "resolved_type": "int64"}],
+                        "keywords": [],
+                    },
+                }
+            ],
+        )
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("consume(int64(123))", go_code)
+
     def test_go_emitter_lowers_class_vars_and_staticmethods_without_instance_fields(self) -> None:
         class_doc = _fixture_doc("test/fixture/east3-opt/oop/class_member.east3")
         static_doc = _fixture_doc("test/fixture/east3-opt/oop/staticmethod_basic.east3")
@@ -2437,6 +2666,267 @@ def has_key(env: dict[str, int], name: str) -> bool:
             cpp_code = emit_cpp_module(doc)
 
         self.assertIn("rt_helper();", cpp_code)
+
+    def test_cpp_emitter_uses_exact_helpers_for_pod_isinstance(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsInstance",
+                        "value": {"kind": "Name", "id": "x16", "resolved_type": "int16"},
+                        "expected_type_id": {"kind": "Name", "id": "int16"},
+                        "resolved_type": "bool",
+                    },
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("py_runtime_value_exact_is<int16>(x16)", cpp_code)
+
+    def test_cpp_emitter_supports_container_type_ids_for_isinstance(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsInstance",
+                        "value": {"kind": "Name", "id": "dyn", "resolved_type": "object"},
+                        "expected_type_id": {"kind": "Name", "id": "list"},
+                        "resolved_type": "bool",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsInstance",
+                        "value": {"kind": "Name", "id": "items", "resolved_type": "dict[str,int64]"},
+                        "expected_type_id": {"kind": "Name", "id": "dict"},
+                        "resolved_type": "bool",
+                    },
+                },
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("py_runtime_object_isinstance(dyn, PYTRA_TID_LIST)", cpp_code)
+        self.assertIn("py_runtime_value_isinstance(items, PYTRA_TID_DICT)", cpp_code)
+
+    def test_cpp_emitter_iterates_dicts_as_keys_for_direct_for_loops(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "ForCore",
+                    "iter_mode": "runtime_protocol",
+                    "iter_plan": {
+                        "kind": "RuntimeIterForPlan",
+                        "iter_expr": {
+                            "kind": "Name",
+                            "id": "values",
+                            "resolved_type": "dict[str,int64]",
+                        },
+                    },
+                    "target_plan": {
+                        "kind": "NameTarget",
+                        "id": "key",
+                        "target_type": "str",
+                    },
+                    "body": [
+                        {
+                            "kind": "Assign",
+                            "target": {"kind": "Name", "id": "_", "resolved_type": "str"},
+                            "value": {"kind": "Name", "id": "key", "resolved_type": "str"},
+                            "declare": True,
+                            "decl_type": "str",
+                            "unused": True,
+                        }
+                    ],
+                    "orelse": [],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("for (const auto& __entry_", cpp_code)
+        self.assertIn("str key = __entry_", cpp_code)
+        self.assertIn(".first;", cpp_code)
+
+    def test_cpp_emitter_supports_type_id_boundary_nodes_and_clear_methods(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "ObjTypeId",
+                        "value": {"kind": "Name", "id": "dyn", "resolved_type": "object"},
+                        "resolved_type": "int64",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsSubtype",
+                        "actual_type_id": {"kind": "Constant", "value": 1001, "resolved_type": "int64"},
+                        "expected_type_id": {"kind": "Constant", "value": 1000, "resolved_type": "int64"},
+                        "resolved_type": "bool",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsSubclass",
+                        "actual_type_id": {"kind": "Constant", "value": 1001, "resolved_type": "int64"},
+                        "expected_type_id": {"kind": "Constant", "value": 1000, "resolved_type": "int64"},
+                        "resolved_type": "bool",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "lowered_kind": "BuiltinCall",
+                        "builtin_name": "clear",
+                        "runtime_call": "dict.clear",
+                        "resolved_type": "None",
+                        "func": {
+                            "kind": "Attribute",
+                            "value": {"kind": "Name", "id": "state", "resolved_type": "dict[str,int64]"},
+                            "attr": "clear",
+                        },
+                        "args": [],
+                    },
+                },
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("py_runtime_object_type_id(dyn)", cpp_code)
+        self.assertIn("py_runtime_type_id_is_subtype(int64(1001), int64(1000))", cpp_code)
+        self.assertIn("py_runtime_type_id_issubclass(int64(1001), int64(1000))", cpp_code)
+        self.assertIn("state.clear();", cpp_code)
+
+    def test_cpp_emitter_uses_linked_type_ids_for_nominal_classes(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            meta_extra={
+                "linked_program_v1": {
+                    "module_id": "app.main",
+                    "type_id_resolved_v1": {"app.main.Path": 1000},
+                    "type_info_table_v1": {
+                        "app.main.Path": {"id": 1000, "entry": 1000, "exit": 1001},
+                    },
+                },
+            },
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsInstance",
+                        "value": {"kind": "Name", "id": "dyn", "resolved_type": "object"},
+                        "expected_type_id": {"kind": "Name", "id": "Path", "resolved_type": "type"},
+                        "resolved_type": "bool",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Box",
+                        "value": {"kind": "Name", "id": "p", "resolved_type": "Path"},
+                        "resolved_type": "object",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "ObjTypeId",
+                        "value": {"kind": "Name", "id": "p", "resolved_type": "Path"},
+                        "resolved_type": "int64",
+                    },
+                },
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("py_runtime_object_isinstance(dyn, static_cast<pytra_type_id>(1000))", cpp_code)
+        self.assertIn("object(make_object<Path>(1000, p))", cpp_code)
+        self.assertIn("static_cast<pytra_type_id>(1000)", cpp_code)
+
+    def test_cpp_header_gen_emits_forward_decls_before_class_bodies(self) -> None:
+        doc = _module_doc(
+            "pytra.std.json",
+            body=[
+                {
+                    "kind": "ClassDef",
+                    "name": "JsonObj",
+                    "field_types": {"raw": "dict[str,object]"},
+                    "body": [
+                        {
+                            "kind": "FunctionDef",
+                            "name": "get",
+                            "arg_types": {"self": "JsonObj", "key": "str"},
+                            "arg_order": ["self", "key"],
+                            "arg_defaults": {},
+                            "arg_usage": {"self": "readonly", "key": "readonly"},
+                            "return_type": "JsonValue | None",
+                            "body": [],
+                        }
+                    ],
+                },
+                {
+                    "kind": "ClassDef",
+                    "name": "JsonValue",
+                    "field_types": {"raw": "object"},
+                    "body": [],
+                },
+            ],
+        )
+
+        header_text = build_cpp_header_from_east3("pytra.std.json", doc, rel_header_path="std/json.h")
+
+        self.assertIn("struct JsonObj;", header_text)
+        self.assertIn("struct JsonValue;", header_text)
+        self.assertLess(header_text.index("struct JsonValue;"), header_text.index("struct JsonObj {"))
+
+    def test_cpp_emitter_uses_py_str_slice_for_string_index(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "hex_digit",
+                    "arg_types": {"digits": "str", "i": "int64"},
+                    "arg_order": ["digits", "i"],
+                    "arg_defaults": {},
+                    "arg_usage": {"digits": "readonly", "i": "readonly"},
+                    "return_type": "str",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Subscript",
+                                "value": {"kind": "Name", "id": "digits", "resolved_type": "str"},
+                                "slice": {"kind": "Name", "id": "i", "resolved_type": "int64"},
+                                "resolved_type": "str",
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("return py_str_slice(digits, i, (i + int64(1)));", cpp_code)
 
 
 if __name__ == "__main__":

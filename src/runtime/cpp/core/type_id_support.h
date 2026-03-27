@@ -5,19 +5,12 @@
 #include "core/py_types.h"
 
 // Forward declarations for generated type_id functions (defined in runtime/east/built_in/type_id.east).
-// These are defined in namespace pytra::built_in::type_id and re-exported here.
-namespace pytra::built_in::type_id {
-    bool py_tid_is_subtype(int64 actual_type_id, int64 expected_type_id);
-    bool py_tid_issubclass(int64 actual_type_id, int64 expected_type_id);
-    bool py_tid_isinstance(const object& value, int64 expected_type_id);
-    int64 py_tid_register_class_type(int64 base_type_id);
-    int64 py_tid_register_known_class_type(int64 type_id, int64 base_type_id);
-}
-using pytra::built_in::type_id::py_tid_is_subtype;
-using pytra::built_in::type_id::py_tid_issubclass;
-using pytra::built_in::type_id::py_tid_isinstance;
-using pytra::built_in::type_id::py_tid_register_class_type;
-using pytra::built_in::type_id::py_tid_register_known_class_type;
+// toolchain2 emits runtime symbols at global scope, so this header mirrors that surface.
+bool py_tid_is_subtype(int64 actual_type_id, int64 expected_type_id);
+bool py_tid_issubclass(int64 actual_type_id, int64 expected_type_id);
+bool py_tid_isinstance(const object& value, int64 expected_type_id);
+int64 py_tid_register_class_type(int64 base_type_id);
+int64 py_tid_register_known_class_type(int64 type_id, int64 base_type_id);
 
 static inline bool py_runtime_type_id_is_subtype(pytra_type_id actual_type_id, pytra_type_id expected_type_id) {
     return py_tid_is_subtype(static_cast<int64>(actual_type_id), static_cast<int64>(expected_type_id));
@@ -43,6 +36,28 @@ static inline bool py_runtime_object_isinstance(const object& value, pytra_type_
         return expected_type_id == PYTRA_TID_NONE;
     }
     return py_tid_isinstance(value, static_cast<int64>(expected_type_id));
+}
+
+template <class Exact>
+static inline bool py_runtime_object_exact_is(const object& value) {
+    if (!value) {
+        return false;
+    }
+    if constexpr (::std::is_same_v<Exact, bool>) return value.type_id() == PYTRA_TID_BOOL;
+    else if constexpr (::std::is_same_v<Exact, int64>) return value.type_id() == PYTRA_TID_INT;
+    else if constexpr (::std::is_same_v<Exact, float64>) return value.type_id() == PYTRA_TID_FLOAT;
+    else if constexpr (::std::is_same_v<Exact, str>) return value.type_id() == PYTRA_TID_STR;
+    else return false;
+}
+
+template <class Exact, class T>
+static inline bool py_runtime_value_exact_is(const T&) {
+    return ::std::is_same_v<::std::decay_t<T>, Exact>;
+}
+
+template <class Exact>
+static inline bool py_runtime_value_exact_is(const object& value) {
+    return py_runtime_object_exact_is<Exact>(value);
 }
 
 template <class T>

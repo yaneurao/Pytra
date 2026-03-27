@@ -19,6 +19,12 @@ _RUNTIME_MODULE_BUCKETS: dict[str, str] = {
     "pytra.utils.": "utils",
 }
 
+_TYPE_ID_RUNTIME_NODE_KINDS: set[str] = {
+    "IsInstance",
+    "IsSubclass",
+    "IsSubtype",
+}
+
 
 def resolve_runtime_east_path(module_id: str) -> str:
     """Resolve a runtime module_id to its .east file path, or empty string."""
@@ -110,6 +116,8 @@ def _scan_runtime_refs(node: JsonVal, out: set[str]) -> None:
     runtime_module_id = node.get("runtime_module_id")
     if isinstance(kind, str) and kind != "" and isinstance(runtime_module_id, str) and runtime_module_id != "":
         out.add(runtime_module_id)
+    if isinstance(kind, str) and kind in _TYPE_ID_RUNTIME_NODE_KINDS:
+        out.add("pytra.built_in.type_id")
 
     for value in node.values():
         if isinstance(value, (dict, list)):

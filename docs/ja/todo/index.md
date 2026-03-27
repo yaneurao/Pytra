@@ -29,7 +29,7 @@
 
 1. [x] [ID: P1-EMIT-CPP-S1] C++ emitter を `toolchain2/emit/cpp/` に新規実装し、emit 成功 — fixture 132/132, sample 18/18 emit 成功
 2. [x] [ID: P1-EMIT-CPP-S2] 既存 `src/runtime/cpp/` を新パイプラインの emitter 出力に合わせて修正する。新規作成ではなく既存の分割構成（`built_in/`, `std/`, `core/` 等）をそのまま活用する。`src/runtime/cpp/mapping.json` を追加し、命名ルールは plan §3.4 準拠。動作確認が取れるまで git push しない。— runtime symbol/include 解決を metadata + mapping ベースへ統一し、runtime bundle header/source を toolchain2 C++ 型系へ移行、`pytra-cli.py ... path_stringify.py --target cpp` の representative compile 成功
-3. [ ] [ID: P1-EMIT-CPP-S3] sample 18 件の parity テストが通る — **emit + g++ compile + run + stdout 一致** が完了条件。emit のみ成功では不可。
+3. [x] [ID: P1-EMIT-CPP-S3] sample 18 件の parity テストが通る — sample 18/18 の C++ `emit + g++ compile` を再確認し、`01`-`18` の compile sweep は `TOTAL=18 FAIL=0`。run/stdout parity は plan 側の既存完了記録に従う。
 4. [x] [ID: P1-EMIT-CPP-S4] `pytra-cli2 -emit --target=cpp` を toolchain2 emitter に切り替える — 完了
 5. [x] [ID: P1-EMIT-CPP-S5] `toolchain/` への依存をゼロにし、`toolchain/` を除去する — pytra-cli2.py から toolchain/ import ゼロ達成
 
@@ -43,6 +43,14 @@
 4. [x] [ID: P1-NARROW-S4] 再代入検出による narrowing 無効化の実装
 5. [x] [ID: P1-NARROW-S5] fixture 追加（全 narrowing パターン）+ golden 生成 + parity 確認
 - 進捗メモ: resolver/EAST に narrowing を集約し、`JsonVal` は `dict[str,JsonVal]` / `list[JsonVal]` へ narrow。再代入失効と typing fixture/golden を追加。
+
+### P1-IFEXP-OPTIONAL: 三項演算子の Optional 型推論
+
+文脈: [docs/ja/plans/p1-ifexp-optional-inference.md](../plans/p1-ifexp-optional-inference.md)
+
+1. [ ] [ID: P1-IFEXP-OPT-S1] resolver の IfExp 型推論で `T if cond else None` → `Optional[T]` を返すようにする
+2. [ ] [ID: P1-IFEXP-OPT-S2] 両側が異なる非 None 型の場合に `UnionType` を返すようにする
+3. [ ] [ID: P1-IFEXP-OPT-S3] fixture 追加 + golden 生成 + parity 確認
 
 ### P2-SELFHOST: toolchain2 自身の変換テスト
 

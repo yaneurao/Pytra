@@ -622,6 +622,66 @@ def _merge_literal_type(current: str, new_type: str) -> str:
     return current
 
 
+def _split_union_type_parts(type_str: str) -> list[str]:
+    parts: list[str] = []
+    cur: list[str] = []
+    depth = 0
+    for ch in type_str:
+        if ch == "[":
+            depth += 1
+        elif ch == "]" and depth > 0:
+            depth -= 1
+        if ch == "|" and depth == 0:
+            part = "".join(cur).strip()
+            if part != "":
+                parts.append(part)
+            cur = []
+            continue
+        cur.append(ch)
+    tail = "".join(cur).strip()
+    if tail != "":
+        parts.append(tail)
+    return parts
+
+
+def _merge_ifexp_result_type(body_type: str, orelse_type: str) -> str:
+    if _is_unknown_like_type(body_type):
+        return orelse_type
+    if _is_unknown_like_type(orelse_type):
+        return body_type
+    if body_type == orelse_type:
+        return body_type
+
+    merged_literal = _merge_literal_type(body_type, orelse_type)
+    body_base = extract_base_type(body_type)
+    orelse_base = extract_base_type(orelse_type)
+    body_has_args = "[" in body_type and body_type.endswith("]")
+    orelse_has_args = "[" in orelse_type and orelse_type.endswith("]")
+    if body_base == orelse_base and body_base != "":
+        if body_has_args != orelse_has_args:
+            return merged_literal
+        if merged_literal != body_type and merged_literal != orelse_type:
+            return merged_literal
+
+    merged_parts: list[str] = []
+    seen: set[str] = set()
+    pending_none = False
+    for part in _split_union_type_parts(body_type) + _split_union_type_parts(orelse_type):
+        if part == "None":
+            pending_none = True
+            continue
+        if part not in seen:
+            seen.add(part)
+            merged_parts.append(part)
+    if pending_none:
+        merged_parts.append("None")
+    if len(merged_parts) == 0:
+        return "unknown"
+    if len(merged_parts) == 1:
+        return merged_parts[0]
+    return " | ".join(merged_parts)
+
+
 def _is_dynamic_supertype(type_str: str) -> bool:
     return type_str == "JsonVal" or type_str == "Any" or type_str == "Obj" or type_str == "object"
 
@@ -1681,6 +1741,9 @@ def _infer_cast_target_type(expr: dict[str, JsonVal], ctx: ResolveContext) -> st
         attr = str(attr_val) if isinstance(attr_val, str) else ""
         if owner_id != "" and attr != "":
             return _ctx_normalize_type(owner_id + "." + attr, ctx)
+    target_repr_val = target.get("repr")
+    if isinstance(target_repr_val, str) and target_repr_val != "":
+        return _ctx_normalize_type(target_repr_val, ctx)
     return "unknown"
 
 
@@ -1763,7 +1826,7 @@ def _resolve_simple_call(expr: dict[str, JsonVal], func: dict[str, JsonVal], ctx
         return str(expr.get("resolved_type", "unknown"))
 
     # Built-in function (registry or known constructors)
-    if ctx.registry.is_builtin(name):
+    if name == "open" or ctx.registry.is_builtin(name):
         return _resolve_builtin_call(expr, func, name, ctx)
     # bytearray/bytes are built-in constructors not always in registry
     if name == "bytearray":
@@ -1855,6 +1918,20 @@ def _resolve_builtin_call(
     ctx: ResolveContext,
 ) -> str:
     """Resolve a built-in function call (print, len, int, etc.)."""
+    if name == "open":
+        _resolve_call_args(expr, ctx)
+        expr["resolved_type"] = "PyFile"
+        func["resolved_type"] = "callable"
+        expr["lowered_kind"] = "BuiltinCall"
+        expr["builtin_name"] = "open"
+        expr["runtime_call"] = "open"
+        expr["runtime_module_id"] = "pytra.core.py_runtime"
+        expr["runtime_symbol"] = "open"
+        expr["runtime_call_adapter_kind"] = "builtin"
+        expr["semantic_tag"] = "core.open"
+        ctx.used_builtin_modules.add("pytra.core.py_runtime")
+        return "PyFile"
+
     sig: FuncSig | None = ctx.registry.lookup_function(name)
     ret: str = "unknown"
     if sig is not None:
@@ -1963,6 +2040,13 @@ def _resolve_imported_call(
         ret = _infer_cast_target_type(expr, ctx)
         expr["resolved_type"] = ret
         func["resolved_type"] = "callable"
+        args_raw = expr.get("args")
+        if ret != "unknown" and isinstance(args_raw, list):
+            if len(args_raw) >= 1 and isinstance(args_raw[0], dict):
+                args_raw[0]["resolved_type"] = ret
+                args_raw[0]["type_expr"] = _ctx_make_type_expr(ret, ctx)
+            if len(args_raw) >= 2 and isinstance(args_raw[1], dict):
+                args_raw[1]["call_arg_type"] = ret
         return ret
     if module_id == "pytra.std" and export_name == "extern":
         ret = arg_types[0] if len(arg_types) > 0 else "unknown"
@@ -2057,6 +2141,18 @@ def _resolve_method_call(
             hinted_arg_types = _substitute_arg_types(method_sig.arg_types, receiver_type, container_cls)
         _apply_call_arg_hints(expr, method_sig.arg_names[1:], hinted_arg_types, ctx)
         return _resolve_container_method_call(expr, func, receiver_type, owner_base, attr, method_sig, ctx)
+
+    if owner_base == "PyFile":
+        pyfile_method_returns: dict[str, str] = {
+            "read": "str",
+            "write": "int64",
+            "close": "None",
+        }
+        pyfile_ret = pyfile_method_returns.get(attr, "")
+        if pyfile_ret != "":
+            expr["resolved_type"] = pyfile_ret
+            func["resolved_type"] = "callable"
+            return pyfile_ret
 
     cls, msig = _lookup_method_sig(owner_base, attr, ctx)
     if cls is not None and msig is not None and "property" not in msig.decorators:
@@ -2569,11 +2665,9 @@ def _resolve_ifexp(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
         body["resolved_type"] = narrowed_body
     if isinstance(orelse, dict) and not _is_unknown_like_type(narrowed_orelse):
         orelse["resolved_type"] = narrowed_orelse
-    merged_literal = _merge_literal_type(narrowed_body, narrowed_orelse)
-    if _is_unknown_like_type(merged):
-        merged = merged_literal
-    elif not _is_unknown_like_type(merged_literal) and merged_literal != narrowed_body:
-        merged = merged_literal
+    merged_resolved = _merge_ifexp_result_type(narrowed_body, narrowed_orelse)
+    if not _is_unknown_like_type(merged_resolved):
+        merged = merged_resolved
     expr["resolved_type"] = merged
     return merged
 
@@ -3720,14 +3814,15 @@ def _resolve_try(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
 
 def _resolve_with(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     context_expr = stmt.get("context_expr")
+    context_type: str = "unknown"
     if isinstance(context_expr, dict):
-        _resolve_expr(context_expr, ctx)
+        context_type = _resolve_expr(context_expr, ctx)
 
     saved_scope: Scope = ctx.scope
     body_scope: Scope = saved_scope.child()
     var_name_val = stmt.get("var_name")
     if isinstance(var_name_val, str) and var_name_val != "":
-        body_scope.define(var_name_val, "unknown")
+        body_scope.define(var_name_val, context_type)
     ctx.scope = body_scope
 
     items = stmt.get("items")

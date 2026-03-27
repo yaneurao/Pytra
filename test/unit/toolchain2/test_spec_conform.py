@@ -813,11 +813,15 @@ def f(p: Path) -> str:
         )
         with_node = next(node for node in _walk(east2) if node.get("kind") == "With")
         with_body_call = with_node["body"][0]["value"]
+        file_name = with_body_call["func"]["value"]
 
         self.assertNotEqual(write_call.get("lowered_kind"), "BuiltinCall")
         self.assertNotEqual(read_call.get("lowered_kind"), "BuiltinCall")
         self.assertEqual(with_node.get("context_expr", {}).get("kind"), "Call")
+        self.assertEqual(with_node.get("context_expr", {}).get("resolved_type"), "PyFile")
         self.assertEqual(with_node.get("context_expr", {}).get("args", [])[0].get("resolved_type"), "str")
+        self.assertEqual(file_name.get("resolved_type"), "PyFile")
+        self.assertEqual(with_body_call.get("resolved_type"), "int64")
         self.assertEqual(with_body_call.get("args", [])[0].get("resolved_type"), "bytes")
 
     def test_resolver_keeps_builtin_calls_lowered_when_registry_also_has_runtime_helpers(self) -> None:
