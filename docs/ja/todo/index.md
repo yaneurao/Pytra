@@ -37,6 +37,10 @@
 8. [x] [ID: P1-EMIT-CPP-S8] C++ emitter の container 既定表現を spec 準拠に修正する — `list<T>` / `dict<K,V>` / `set<T>` を既定で `Object<list<T>>` 等の参照型ラッパーへ移行し、`container_value_locals_v1` がある局所のみ値型を許可。`dict_wrapper_methods.py` / `set_wrapper_methods.py` の C++ build+run を確認
 9. [x] [ID: P1-EMIT-CPP-S9] C++ emitter の runtime パス解決を loader.py 共通関数に委譲する — `link/runtime_discovery.py` に runtime rel-tail の正本を追加し、`emit/cpp/runtime_paths.py` は shared helper 呼び出しへ縮退。`pytra.core.py_runtime` の include 個別分岐も emitter 側から削除
 10. [x] [ID: P1-EMIT-CPP-S10] C++ emitter の runtime call 名解決を mapping.json に一本化する — `runtime/cpp/mapping.json` に `py_int_from_str/std::stoll`・`py_float_from_str/std::stod` を寄せ、C++ emitter から `append → push_back` と container helper / numeric cast の個別分岐を削除。attribute call も runtime metadata + mapping 経由で解決
+11. [x] [ID: P1-EMIT-CPP-S11] C++ emitter の `is_entry` / `main_guard_body` 出力を emitter guide 準拠に修正する — `emit_context.is_entry` を唯一のスイッチにし、`is_entry=False` の module では `main_guard_body` も `main()` も emit しないよう修正。entry module だけ `__pytra_main_guard()` を保持
+12. [ ] [ID: P1-EMIT-CPP-S12] C++ emitter の残存プレースホルダ出力を廃止し fail-fast を徹底する — `/* slice */`、`/* assign */` 等の fallback を `RuntimeError` に置き換え、unsupported shape を parity 実行前に必ず停止させる
+13. [ ] [ID: P1-EMIT-CPP-S13] C++ emitter の数値 cast 出力判定を `mapping.json` `implicit_promotions` 準拠に修正する — `BinOp.casts` を常時 `static_cast` へ描画する現状を改め、`implicit_promotions` に一致する cast だけを省略し、それ以外は明示 cast を出力する。cast 省略判定を backend 固有ロジックで持たない
+14. [ ] [ID: P1-EMIT-CPP-S14] C++ backend helper の module/path ハードコードを shared metadata へ寄せる — `runtime_paths.py` に残っている `pytra.typing` / `pytra.types` / `pytra.dataclasses` / `pytra.enum` / `pytra.std.template` / `pytra.core.` 等の具体的 module ID 依存を棚卸しし、shared helper / linker metadata 経由へ縮退して emitter guide の「具体的 module ID を backend に持ち込まない」契約へ合わせる
 
 ### P2-SELFHOST: toolchain2 自身の変換テスト
 

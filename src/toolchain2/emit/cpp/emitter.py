@@ -1811,7 +1811,7 @@ def emit_cpp_module(
     for s in body: _emit_stmt(ctx, s)
 
     # Main guard
-    if len(main_guard) > 0:
+    if ctx.is_entry and len(main_guard) > 0:
         _emit_blank(ctx)
         _emit(ctx, "void __pytra_main_guard() {")
         ctx.indent_level += 1
@@ -1820,11 +1820,12 @@ def emit_cpp_module(
         _emit(ctx, "}")
 
     # main() for entry
-    if ctx.is_entry or len(main_guard) > 0:
+    if ctx.is_entry:
         _emit_blank(ctx)
         _emit(ctx, "int main() {")
         ctx.indent_level += 1
-        _emit(ctx, "__pytra_main_guard();")
+        if len(main_guard) > 0:
+            _emit(ctx, "__pytra_main_guard();")
         _emit(ctx, "return 0;")
         ctx.indent_level -= 1
         _emit(ctx, "}")

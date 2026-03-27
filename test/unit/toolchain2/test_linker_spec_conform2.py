@@ -1138,6 +1138,76 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertNotIn("py_int_from_str(", cpp_code)
         self.assertNotIn("py_float_from_str(", cpp_code)
 
+    def test_cpp_emitter_emits_main_only_for_entry_modules(self) -> None:
+        doc = _module_doc(
+            "lib.worker",
+            meta_extra={
+                "emit_context": {
+                    "module_id": "lib.worker",
+                    "is_entry": False,
+                }
+            },
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "run",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_usage": {},
+                    "return_type": "None",
+                    "body": [{"kind": "Pass"}],
+                }
+            ],
+        )
+        doc["main_guard_body"] = [
+            {
+                "kind": "Expr",
+                "value": {
+                    "kind": "Call",
+                    "lowered_kind": "BuiltinCall",
+                    "runtime_call": "py_print",
+                    "builtin_name": "print",
+                    "args": [{"kind": "Constant", "value": "boot", "resolved_type": "str"}],
+                },
+            }
+        ]
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertNotIn("__pytra_main_guard", cpp_code)
+        self.assertNotIn("int main()", cpp_code)
+
+    def test_cpp_emitter_entry_module_keeps_main_guard(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            meta_extra={
+                "emit_context": {
+                    "module_id": "app.main",
+                    "is_entry": True,
+                }
+            },
+            body=[],
+        )
+        doc["main_guard_body"] = [
+            {
+                "kind": "Expr",
+                "value": {
+                    "kind": "Call",
+                    "lowered_kind": "BuiltinCall",
+                    "runtime_call": "py_print",
+                    "builtin_name": "print",
+                    "args": [{"kind": "Constant", "value": "boot", "resolved_type": "str"}],
+                },
+            }
+        ]
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("void __pytra_main_guard()", cpp_code)
+        self.assertIn("int main()", cpp_code)
+        self.assertIn("__pytra_main_guard();", cpp_code)
+
     def test_cpp_emitter_rewrites_runtime_module_alias_calls_to_direct_symbols(self) -> None:
         doc = _module_doc(
             "app.main",
