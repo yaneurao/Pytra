@@ -1206,8 +1206,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     if isinstance(value_node, dict):
                         source_type = _str(value_node, "resolved_type")
                         source_optional_inner = _optional_inner_type(source_type)
-                        target_gt = go_type(target_name)
+                        target_gt = _go_type_with_ctx(ctx, target_name)
                         source_gt = go_type(source_type) if source_type != "" else ""
+                        if target_gt != "" and source_gt == target_gt:
+                            return arg_strs[1]
                         if (
                             source_optional_inner != ""
                             and target_gt != ""
@@ -1221,9 +1223,9 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                             unbox_target = _str(value_node, "resolved_type")
                         if target_name in ("dict", "list", "set", "tuple"):
                             return arg_strs[1]
-                        if target_name == unbox_target or go_type(target_name) == go_type(unbox_target):
+                        if target_name == unbox_target or _go_type_with_ctx(ctx, target_name) == _go_type_with_ctx(ctx, unbox_target):
                             return arg_strs[1]
-                    target_gt = go_type(target_name)
+                    target_gt = _go_type_with_ctx(ctx, target_name)
                     if target_gt != "":
                         return arg_strs[1] + ".(" + target_gt + ")"
                     return arg_strs[1]
@@ -1926,7 +1928,7 @@ def _emit_ifexp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if rt == "str":
         return "py_ternary_str(" + test + ", " + body + ", " + orelse + ")"
     # Fallback: use func literal
-    result_gt = go_type(rt)
+    result_gt = _go_type_with_ctx(ctx, rt)
     if result_gt == "":
         result_gt = "any"
     return "func() " + result_gt + " { if " + test + " { return " + body + " }; return " + orelse + " }()"
