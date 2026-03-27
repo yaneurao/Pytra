@@ -107,6 +107,7 @@ if __name__ == "__main__":
 """
 
 FIXTURE_ADD_SOURCE = _fixture_case_source("test/fixture/source/py/core/add.py")
+FIXTURE_NOT_SOURCE = _fixture_case_source("test/fixture/source/py/control/not.py")
 
 
 def _assert_go_compiles(source: str) -> None:
@@ -381,6 +382,14 @@ class CommonRendererCompileSmokeTests(unittest.TestCase):
 
         self.assertEqual(go_stdout, "7\n")
         self.assertEqual(cpp_stdout, "7\n")
+        self.assertEqual(go_stdout, cpp_stdout)
+
+    def test_common_renderer_fixture_not_stdout_parity_between_go_and_cpp(self) -> None:
+        go_stdout = _run_go(FIXTURE_NOT_SOURCE)
+        cpp_stdout = _run_cpp(FIXTURE_NOT_SOURCE)
+
+        self.assertEqual(go_stdout, "True\n")
+        self.assertEqual(cpp_stdout, "True\n")
         self.assertEqual(go_stdout, cpp_stdout)
 
 
