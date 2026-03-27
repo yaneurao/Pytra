@@ -34,6 +34,10 @@ def _build_east3(source: str, *, target_language: str) -> dict:
     return east3
 
 
+def _emit_context_meta() -> dict[str, object]:
+    return {"emit_context": {"module_id": "app", "is_entry": True}}
+
+
 SOURCE = """
 def f() -> int:
     x = 1
@@ -121,6 +125,53 @@ def _assert_cpp_compiles(source: str) -> None:
         raise AssertionError(f"{proc.stdout}\n{proc.stderr}")
 
 
+def _assert_go_doc_compiles(doc: dict) -> None:
+    go_code = emit_go_module(doc)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        go_path = Path(tmp) / "app.go"
+        runtime_path = ROOT / "src" / "runtime" / "go" / "built_in" / "py_runtime.go"
+        bundled_runtime = Path(tmp) / "py_runtime.go"
+        go_path.write_text(go_code, encoding="utf-8")
+        bundled_runtime.write_text(runtime_path.read_text(encoding="utf-8"), encoding="utf-8")
+        proc = subprocess.run(
+            ["go", "build", str(bundled_runtime), str(go_path)],
+            cwd=tmp,
+            capture_output=True,
+            text=True,
+        )
+
+    if proc.returncode != 0:
+        raise AssertionError(f"{proc.stdout}\n{proc.stderr}")
+
+
+def _assert_cpp_doc_compiles(doc: dict) -> None:
+    cpp_code = emit_cpp_module(doc)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        cpp_path = Path(tmp) / "app.cpp"
+        obj_path = Path(tmp) / "app.o"
+        cpp_path.write_text(cpp_code, encoding="utf-8")
+        proc = subprocess.run(
+            [
+                "g++",
+                "-std=c++20",
+                "-I",
+                str(ROOT / "src" / "runtime" / "cpp"),
+                "-c",
+                str(cpp_path),
+                "-o",
+                str(obj_path),
+            ],
+            cwd=tmp,
+            capture_output=True,
+            text=True,
+        )
+
+    if proc.returncode != 0:
+        raise AssertionError(f"{proc.stdout}\n{proc.stderr}")
+
+
 class CommonRendererCompileSmokeTests(unittest.TestCase):
     def test_go_emitted_common_renderer_shapes_compile(self) -> None:
         _assert_go_compiles(SOURCE)
@@ -145,6 +196,60 @@ class CommonRendererCompileSmokeTests(unittest.TestCase):
 
     def test_cpp_emitted_docstring_common_renderer_shapes_compile(self) -> None:
         _assert_cpp_compiles(DOCSTRING_SOURCE)
+
+    def test_go_emitted_comment_blank_nodes_compile(self) -> None:
+        _assert_go_doc_compiles(
+            {
+                "kind": "Module",
+                "meta": _emit_context_meta(),
+                "body": [
+                    {"kind": "comment", "text": "note"},
+                    {"kind": "blank"},
+                    {
+                        "kind": "FunctionDef",
+                        "name": "f",
+                        "arg_types": {},
+                        "arg_order": [],
+                        "arg_defaults": {},
+                        "arg_index": {},
+                        "arg_usage": {},
+                        "renamed_symbols": {},
+                        "return_type": "int64",
+                        "body": [
+                            {"kind": "Pass"},
+                            {"kind": "Return", "value": {"kind": "Constant", "value": 1, "resolved_type": "int64"}},
+                        ],
+                    },
+                ],
+            }
+        )
+
+    def test_cpp_emitted_comment_blank_nodes_compile(self) -> None:
+        _assert_cpp_doc_compiles(
+            {
+                "kind": "Module",
+                "meta": _emit_context_meta(),
+                "body": [
+                    {"kind": "comment", "text": "note"},
+                    {"kind": "blank"},
+                    {
+                        "kind": "FunctionDef",
+                        "name": "f",
+                        "arg_types": {},
+                        "arg_order": [],
+                        "arg_defaults": {},
+                        "arg_index": {},
+                        "arg_usage": {},
+                        "renamed_symbols": {},
+                        "return_type": "int64",
+                        "body": [
+                            {"kind": "Pass"},
+                            {"kind": "Return", "value": {"kind": "Constant", "value": 1, "resolved_type": "int64"}},
+                        ],
+                    },
+                ],
+            }
+        )
 
 
 if __name__ == "__main__":
