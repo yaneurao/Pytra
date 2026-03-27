@@ -14,7 +14,13 @@ from dataclasses import field
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
 
-from toolchain2.emit.cpp.types import cpp_type, cpp_zero_value, cpp_signature_type, cpp_param_decl
+from toolchain2.emit.cpp.types import (
+    cpp_type,
+    cpp_zero_value,
+    cpp_signature_type,
+    cpp_param_decl,
+    collect_cpp_type_vars,
+)
 from toolchain2.emit.common.code_emitter import (
     RuntimeMapping, load_runtime_mapping, resolve_runtime_call,
     should_skip_module, build_import_alias_map, build_runtime_import_map, resolve_runtime_symbol_name,
@@ -79,6 +85,51 @@ def _dict(node: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
     return v if isinstance(v, dict) else {}
 
 
+def _lookup_explicit_runtime_symbol_mapping(
+    ctx: CppEmitContext,
+    *,
+    resolved_runtime_call: str = "",
+    runtime_call: str = "",
+    runtime_symbol: str = "",
+    fallback_symbol: str = "",
+) -> str:
+    for key in (resolved_runtime_call, runtime_call, runtime_symbol, fallback_symbol):
+        if key != "" and key in ctx.mapping.calls:
+            return ctx.mapping.calls[key]
+    return ""
+
+
+def _resolve_runtime_attr_symbol(
+    ctx: CppEmitContext,
+    *,
+    runtime_module_id: str = "",
+    resolved_runtime_call: str = "",
+    runtime_call: str = "",
+    runtime_symbol: str = "",
+    fallback_symbol: str = "",
+) -> str:
+    mapped = _lookup_explicit_runtime_symbol_mapping(
+        ctx,
+        resolved_runtime_call=resolved_runtime_call,
+        runtime_call=runtime_call,
+        runtime_symbol=runtime_symbol,
+        fallback_symbol=fallback_symbol,
+    )
+    if mapped != "":
+        return mapped
+    symbol_name = runtime_symbol if runtime_symbol != "" else fallback_symbol
+    if symbol_name == "":
+        return ""
+    if runtime_module_id != "" and should_skip_module(runtime_module_id, ctx.mapping):
+        return resolve_runtime_symbol_name(
+            symbol_name,
+            ctx.mapping,
+            resolved_runtime_call=resolved_runtime_call,
+            runtime_call=runtime_call,
+        )
+    return symbol_name
+
+
 # ---------------------------------------------------------------------------
 # Expression emission
 # ---------------------------------------------------------------------------
@@ -120,6 +171,8 @@ def _emit_constant(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     if isinstance(val, int):
         rt = _str(node, "resolved_type")
         if rt in ("float64", "float32", "float"): return str(float(val))
+        if rt in ("int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"):
+            return cpp_signature_type(rt) + "(" + str(val) + ")"
         return str(val)
     if isinstance(val, float):
         s = repr(val)
@@ -237,10 +290,30 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             owner_node = func.get("value")
             owner_id = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
             owner_module = ctx.import_aliases.get(owner_id, "")
+            runtime_module_id = _str(func, "runtime_module_id")
+            runtime_symbol = _str(func, "runtime_symbol")
             if _is_type_owner(ctx, owner_node):
                 return owner + "::" + attr + "(" + ", ".join(arg_strs) + ")"
-            if owner_module.startswith("pytra.") or owner_module.startswith("toolchain."):
-                return "::" + attr + "(" + ", ".join(arg_strs) + ")"
+            if owner_module != "":
+                symbol_name = _resolve_runtime_attr_symbol(
+                    ctx,
+                    runtime_module_id=runtime_module_id if runtime_module_id != "" else owner_module,
+                    resolved_runtime_call=_str(node, "resolved_runtime_call"),
+                    runtime_call=_str(node, "runtime_call"),
+                    runtime_symbol=runtime_symbol,
+                    fallback_symbol=attr,
+                )
+                return symbol_name + "(" + ", ".join(arg_strs) + ")"
+            if runtime_module_id != "" and should_skip_module(runtime_module_id, ctx.mapping):
+                symbol_name = _resolve_runtime_attr_symbol(
+                    ctx,
+                    runtime_module_id=runtime_module_id,
+                    resolved_runtime_call=_str(node, "resolved_runtime_call"),
+                    runtime_call=_str(node, "runtime_call"),
+                    runtime_symbol=runtime_symbol,
+                    fallback_symbol=attr,
+                )
+                return symbol_name + "(" + ", ".join(arg_strs) + ")"
             if attr == "append" and len(arg_strs) >= 1:
                 return owner + ".push_back(" + arg_strs[0] + ")"
             if owner == "this":
@@ -269,6 +342,21 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             if fn == "main": return "__pytra_main(" + ", ".join(arg_strs) + ")"
             return fn + "(" + ", ".join(arg_strs) + ")"
     return _emit_expr(ctx, func) + "(" + ", ".join(arg_strs) + ")"
+
+
+def _emit_condition_expr(ctx: CppEmitContext, node: JsonVal) -> str:
+    expr = _emit_expr(ctx, node)
+    if not isinstance(node, dict):
+        return expr
+    resolved_type = _str(node, "resolved_type")
+    if (
+        resolved_type.startswith("list[")
+        or resolved_type.startswith("dict[")
+        or resolved_type.startswith("set[")
+        or resolved_type in ("bytes", "bytearray")
+    ):
+        return "(!(" + expr + ").empty())"
+    return expr
 
 
 def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
@@ -319,7 +407,9 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     if rc == "list.pop":
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
-            return "py_list_pop(" + owner + ")"
+            if len(arg_strs) >= 1:
+                return "py_list_pop_mut(" + owner + ", " + arg_strs[0] + ")"
+            return "py_list_pop_mut(" + owner + ")"
     if rc == "list.index" and method_owner != "" and len(arg_strs) >= 1:
         return "py_index(" + method_owner + ", " + arg_strs[0] + ")"
     if rc == "dict.get":
@@ -352,14 +442,24 @@ def _emit_attribute(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     owner_module = ctx.import_aliases.get(owner_id, "")
     if _is_type_owner(ctx, owner_node):
         return owner + "::" + attr
-    if owner_module.startswith("pytra.") or owner_module.startswith("toolchain."):
-        if owner_id == "math":
-            if attr == "pi": return "M_PI"
-            if attr == "e": return "M_E"
-        return "::" + attr
-    if runtime_symbol_dispatch == "value" and runtime_module_id.startswith("pytra."):
-        value_name = runtime_symbol if runtime_symbol != "" else attr
-        return "::" + value_name
+    if owner_module != "":
+        return _resolve_runtime_attr_symbol(
+            ctx,
+            runtime_module_id=runtime_module_id if runtime_module_id != "" else owner_module,
+            resolved_runtime_call=_str(node, "resolved_runtime_call"),
+            runtime_call=_str(node, "runtime_call"),
+            runtime_symbol=runtime_symbol,
+            fallback_symbol=attr,
+        )
+    if runtime_symbol_dispatch == "value" and runtime_module_id != "":
+        return _resolve_runtime_attr_symbol(
+            ctx,
+            runtime_module_id=runtime_module_id,
+            resolved_runtime_call=_str(node, "resolved_runtime_call"),
+            runtime_call=_str(node, "runtime_call"),
+            runtime_symbol=runtime_symbol,
+            fallback_symbol=attr,
+        )
     if (
         runtime_module_id != ""
         and should_skip_module(runtime_module_id, ctx.mapping)
@@ -373,12 +473,21 @@ def _emit_attribute(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             resolved_runtime_call=_str(node, "resolved_runtime_call"),
             runtime_call=_str(node, "runtime_call"),
         )
-    if owner_id == "math":
-        if attr == "pi": return "M_PI"
-        if attr == "e": return "M_E"
     if owner == "this":
         return "this->" + attr
     return owner + "." + attr
+
+
+def _emit_subscript_index(ctx: CppEmitContext, value: str, slice_node: JsonVal) -> str:
+    idx = _emit_expr(ctx, slice_node)
+    if isinstance(slice_node, dict) and _str(slice_node, "kind") == "Constant":
+        iv = slice_node.get("value")
+        if isinstance(iv, int) and iv < 0:
+            return "(" + value + ".size()" + str(iv) + ")"
+    if isinstance(slice_node, dict) and _str(slice_node, "kind") == "UnaryOp" and _str(slice_node, "op") == "USub":
+        operand = _emit_expr(ctx, slice_node.get("operand"))
+        return "(" + value + ".size() - " + operand + ")"
+    return idx
 
 
 def _emit_subscript(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
@@ -392,12 +501,16 @@ def _emit_subscript(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         iv = sl.get("value")
         if isinstance(iv, int) and iv >= 0:
             return "::std::get<" + str(iv) + ">(" + value + ")"
-    idx = _emit_expr(ctx, sl)
-    # Negative index
-    if isinstance(sl, dict) and _str(sl, "kind") == "Constant":
-        iv = sl.get("value")
-        if isinstance(iv, int) and iv < 0:
-            idx = value + ".size()" + str(iv)
+    idx = _emit_subscript_index(ctx, value, sl)
+    if value_type.startswith("dict["):
+        return "py_at(" + value + ", " + idx + ")"
+    return value + "[" + idx + "]"
+
+
+def _emit_subscript_store_target(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
+    value = _emit_expr(ctx, node.get("value"))
+    sl = node.get("slice")
+    idx = _emit_subscript_index(ctx, value, sl)
     return value + "[" + idx + "]"
 
 
@@ -640,7 +753,7 @@ def _emit_assign(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     elif tk == "Attribute":
         _emit(ctx, _emit_expr(ctx, t) + " = " + val_code + ";")
     elif tk == "Subscript":
-        _emit(ctx, _emit_expr(ctx, t) + " = " + val_code + ";")
+        _emit(ctx, _emit_subscript_store_target(ctx, t) + " = " + val_code + ";")
     elif tk == "Tuple":
         elts = _list(t, "elements")
         names = [_emit_expr(ctx, e) for e in elts]
@@ -662,7 +775,7 @@ def _emit_return(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
 
 
 def _emit_if(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
-    test = _emit_expr(ctx, node.get("test"))
+    test = _emit_condition_expr(ctx, node.get("test"))
     _emit(ctx, "if (" + test + ") {")
     ctx.indent_level += 1
     _emit_body(ctx, _list(node, "body"))
@@ -682,7 +795,7 @@ def _emit_if(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
 
 
 def _emit_while(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
-    test = _emit_expr(ctx, node.get("test"))
+    test = _emit_condition_expr(ctx, node.get("test"))
     _emit(ctx, "while (" + test + ") {")
     ctx.indent_level += 1
     _emit_body(ctx, _list(node, "body"))
@@ -698,6 +811,8 @@ def _emit_for_core(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
         ip_kind = _str(iter_plan, "kind")
         t_name = _str(target_plan, "id") if isinstance(target_plan, dict) else "_"
         if t_name == "": t_name = "_"
+        if t_name == "_" or (isinstance(target_plan, dict) and _bool(target_plan, "unused")):
+            t_name = _next_temp(ctx, "__discard")
         if ip_kind in ("StaticRangeForPlan", "RuntimeIterForPlan"):
             if iter_plan.get("start") is not None or iter_plan.get("stop") is not None:
                 start = _emit_expr(ctx, iter_plan.get("start")) if iter_plan.get("start") else "0"
@@ -891,6 +1006,9 @@ def _emit_function_def_impl(ctx: CppEmitContext, node: dict[str, JsonVal], owner
         ctx.var_types = saved
         ctx.current_return_type = saved_ret
         return
+    template_prefix = _function_template_prefix(node)
+    if template_prefix != "":
+        _emit(ctx, template_prefix)
     _emit(ctx, signature + " {")
     ctx.indent_level += 1
     _emit_body(ctx, _list(node, "body"))
@@ -925,11 +1043,34 @@ def _function_signature(
     if owner_name != "" and not declaration_only:
         qual_name = owner_name + "::" + name
     suffix = ""
-    if declaration_only and owner_name != "" and not is_static and not _bool(node, "mutates_self"):
+    self_mutates = _function_self_mutates(node)
+    if declaration_only and owner_name != "" and not is_static and not self_mutates:
         suffix = " const"
-    if (not declaration_only) and owner_name != "" and not is_static and not _bool(node, "mutates_self"):
+    if (not declaration_only) and owner_name != "" and not is_static and not self_mutates:
         suffix = " const"
     return static_prefix + ret + " " + qual_name + "(" + ", ".join(params) + ")" + suffix
+
+
+def _function_template_prefix(node: dict[str, JsonVal]) -> str:
+    params = _function_template_params(node)
+    if len(params) == 0:
+        return ""
+    return "template <" + ", ".join("class " + name for name in params) + ">"
+
+
+def _function_template_params(node: dict[str, JsonVal]) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    for _arg_name, arg_type, _mutable in _function_param_meta(node):
+        for type_var in collect_cpp_type_vars(arg_type):
+            if type_var not in seen:
+                seen.add(type_var)
+                out.append(type_var)
+    for type_var in collect_cpp_type_vars(_return_type(node)):
+        if type_var not in seen:
+            seen.add(type_var)
+            out.append(type_var)
+    return out
 
 
 def _function_param_meta(node: dict[str, JsonVal]) -> list[tuple[str, str, bool]]:
@@ -948,6 +1089,13 @@ def _function_param_meta(node: dict[str, JsonVal]) -> list[tuple[str, str, bool]
         arg_type_str = arg_type if isinstance(arg_type, str) else "object"
         out.append((arg_name, arg_type_str, arg_usage.get(arg_name) == "reassigned"))
     return out
+
+
+def _function_self_mutates(node: dict[str, JsonVal]) -> bool:
+    if _bool(node, "mutates_self"):
+        return True
+    arg_usage = _dict(node, "arg_usage")
+    return arg_usage.get("self") == "reassigned"
 
 
 def _param_decl_text(resolved_type: str, name: str, mutable: bool) -> str:

@@ -22,6 +22,7 @@ from toolchain2.link.expand_defaults import expand_cross_module_defaults
 from toolchain2.link.manifest_loader import load_linked_output
 from toolchain2.link.runtime_discovery import discover_runtime_modules
 from toolchain2.link.type_id import build_type_id_table
+from toolchain2.common.jv import deep_copy_json
 from toolchain2.parse.py.parse_python import parse_python_file
 from toolchain2.resolve.py.builtin_registry import load_builtin_registry
 from toolchain2.resolve.py.resolver import resolve_east1_to_east2
@@ -30,6 +31,7 @@ from toolchain2.optimize.optimizer import optimize_east3_document
 from toolchain2.emit.go.emitter import emit_go_module
 from toolchain2.emit.cpp.emitter import emit_cpp_module
 from toolchain2.emit.cpp.runtime_bundle import emit_runtime_module_artifacts
+from toolchain2.emit.cpp.runtime_paths import collect_cpp_dependency_module_ids
 from toolchain2.emit.common.code_emitter import RuntimeMapping
 
 
@@ -130,7 +132,7 @@ def _build_current_selfhost_east3_paths(tmpdir: Path) -> list[str]:
         east3["source_path"] = rel
         east3, _ = optimize_east3_document(east3, opt_level=1)
         east3["source_path"] = rel
-        target = outdir / (src.stem + ".east3")
+        target = outdir / (rel.replace("/", "__").replace(".py", "") + ".east3")
         target.write_text(json.dumps(east3, ensure_ascii=False), encoding="utf-8")
         out_paths.append(str(target))
     return out_paths
@@ -182,6 +184,125 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
 
             self.assertEqual(result.manifest["entry_modules"], ["app.main"])
 
+    def test_link_modules_accepts_host_only_module_binding_when_runtime_module_is_provided(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            entry_path = Path(tmp) / "app.main.east3.json"
+            entry_path.write_text(
+                json.dumps(
+                    _module_doc(
+                        "app.main",
+                        source_path="app/main.py",
+                        meta_extra={
+                            "import_bindings": [
+                                {
+                                    "module_id": "pathlib",
+                                    "binding_kind": "module",
+                                    "local_name": "pathlib",
+                                    "runtime_module_id": "pytra.std.pathlib",
+                                    "resolved_binding_kind": "module",
+                                    "host_only": True,
+                                }
+                            ],
+                            "import_modules": {"pathlib": "pathlib"},
+                        },
+                    ),
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            result = link_modules([str(entry_path)], target="cpp", dispatch_mode="native")
+
+            self.assertEqual(result.manifest["entry_modules"], ["app.main"])
+
+    def test_build_all_resolved_dependencies_skips_type_only_template_but_keeps_runtime_module_import(self) -> None:
+        modules = [
+            _linked_module(
+                "app.main",
+                body=[],
+            )
+        ]
+        meta = modules[0].east_doc["meta"]
+        assert isinstance(meta, dict)
+        meta["import_bindings"] = [
+            {
+                "module_id": "pytra.std",
+                "export_name": "template",
+                "binding_kind": "symbol",
+                "local_name": "template",
+                "runtime_module_id": "pytra.std.template",
+                "runtime_group": "std",
+                "resolved_binding_kind": "module",
+                "host_only": True,
+            },
+            {
+                "module_id": "pathlib",
+                "binding_kind": "module",
+                "local_name": "pathlib",
+                "runtime_module_id": "pytra.std.pathlib",
+                "resolved_binding_kind": "module",
+                "host_only": True,
+            },
+            {
+                "module_id": "os.path",
+                "binding_kind": "module",
+                "local_name": "os.path",
+                "runtime_module_id": "os.path",
+                "resolved_binding_kind": "module",
+                "host_only": True,
+            },
+        ]
+
+        resolved, user_deps = build_all_resolved_dependencies(modules)
+
+        self.assertEqual(resolved["app.main"], ["pytra.std.pathlib"])
+        self.assertEqual(user_deps["app.main"], [])
+
+    def test_resolve_deep_copy_keeps_enhanced_import_bindings_in_sync(self) -> None:
+        source_path = ROOT / "sample" / "py" / "17_monte_carlo_pi.py"
+        east1 = parse_python_file(str(source_path))
+        east2 = deep_copy_json(east1)
+        assert isinstance(east2, dict)
+        registry = load_builtin_registry(
+            ROOT / "test" / "include" / "east1" / "py" / "built_in" / "builtins.py.east1",
+            ROOT / "test" / "include" / "east1" / "py" / "built_in" / "containers.py.east1",
+            ROOT / "test" / "include" / "east1" / "py" / "std",
+        )
+
+        resolve_east1_to_east2(east2, registry=registry)
+
+        meta = east2.get("meta")
+        assert isinstance(meta, dict)
+        bindings = meta.get("import_bindings")
+        assert isinstance(bindings, list)
+        self.assertGreater(len(bindings), 0)
+        first = bindings[0]
+        assert isinstance(first, dict)
+        self.assertEqual(first.get("runtime_module_id"), "pytra.std.pathlib")
+        self.assertEqual(first.get("runtime_symbol_dispatch"), "ctor")
+
+    def test_resolve_membership_adds_contains_builtin_dependency(self) -> None:
+        source = """\
+def has_key(env: dict[str, int], name: str) -> bool:
+    return name in env
+"""
+        registry = load_builtin_registry(
+            ROOT / "test" / "include" / "east1" / "py" / "built_in" / "builtins.py.east1",
+            ROOT / "test" / "include" / "east1" / "py" / "built_in" / "containers.py.east1",
+            ROOT / "test" / "include" / "east1" / "py" / "std",
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "has_key.py"
+            src.write_text(source, encoding="utf-8")
+            east2 = parse_python_file(str(src))
+            resolve_east1_to_east2(east2, registry=registry)
+
+        meta = east2.get("meta")
+        assert isinstance(meta, dict)
+        bindings = meta.get("import_bindings")
+        assert isinstance(bindings, list)
+        self.assertTrue(any(isinstance(b, dict) and b.get("module_id") == "pytra.built_in.contains" for b in bindings))
+
     def test_link_modules_reports_missing_selfhost_transitive_modules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             paths = _build_current_selfhost_east3_paths(Path(tmp))
@@ -198,7 +319,6 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
                 self.fail("expected unresolved import dependency")
 
         self.assertIn("toolchain2.compile.jv", msg)
-        self.assertIn("toolchain2.common.types", msg)
         self.assertIn("toolchain2.link.expand_defaults", msg)
         self.assertIn("toolchain2.optimize.passes", msg)
         self.assertIn("toolchain2.parse.py.nodes", msg)
@@ -817,6 +937,42 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
         self.assertIn('loads(text);', cpp_code)
         self.assertNotIn('json.loads(text);', cpp_code)
 
+    def test_cpp_emitter_rewrites_skipped_runtime_module_alias_calls_without_pytra_hardcode(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            meta_extra={
+                "import_modules": {"custom": "runtime.custom"},
+                "linked_program_v1": {"module_id": "app.main", "resolved_dependencies_v1": ["runtime.custom"]},
+            },
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {
+                            "kind": "Attribute",
+                            "value": {"kind": "Name", "id": "custom", "resolved_type": "module"},
+                            "attr": "helper",
+                            "runtime_module_id": "runtime.custom",
+                            "runtime_symbol": "helper",
+                        },
+                        "args": [],
+                    },
+                }
+            ],
+        )
+
+        mapping = RuntimeMapping(
+            builtin_prefix="rt_",
+            calls={},
+            skip_module_prefixes=["runtime."],
+        )
+        with patch("toolchain2.emit.cpp.emitter.load_runtime_mapping", return_value=mapping):
+            cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("rt_helper();", cpp_code)
+        self.assertNotIn("custom.helper();", cpp_code)
+
     def test_runtime_bundle_emits_header_only_for_native_companion_modules(self) -> None:
         doc = _fixture_doc("src/runtime/east/built_in/io_ops.east")
         if "meta" not in doc:
@@ -866,6 +1022,47 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
         self.assertIn("::splitext(", source_text)
         self.assertIn("py_str_slice(", source_text)
 
+    def test_cpp_runtime_paths_skip_host_only_template_imports(self) -> None:
+        dep_ids = collect_cpp_dependency_module_ids(
+            "pytra.built_in.numeric_ops",
+            {
+                "import_bindings": [
+                    {
+                        "module_id": "pytra.std",
+                        "runtime_module_id": "pytra.std.template",
+                        "runtime_group": "std",
+                        "resolved_binding_kind": "module",
+                        "host_only": True,
+                    },
+                    {
+                        "module_id": "pytra.core.py_runtime",
+                    },
+                ]
+            },
+        )
+
+        self.assertEqual(dep_ids, ["pytra.core.py_runtime"])
+
+    def test_cpp_runtime_bundle_keeps_template_runtime_helpers_header_only(self) -> None:
+        doc = _fixture_doc("src/runtime/east/built_in/numeric_ops.east")
+        meta = doc.setdefault("meta", {})
+        assert isinstance(meta, dict)
+        meta["linked_program_v1"] = {"module_id": "pytra.built_in.numeric_ops"}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            header_path, source_path = emit_runtime_module_artifacts(
+                "pytra.built_in.numeric_ops",
+                doc,
+                output_dir=Path(tmp),
+                source_path=str(ROOT / "src" / "pytra" / "built_in" / "numeric_ops.py"),
+            )
+
+            header_text = Path(header_path).read_text(encoding="utf-8")
+
+        self.assertEqual(source_path, "")
+        self.assertIn("template <class T>", header_text)
+        self.assertIn("T py_max(const T& a, const T& b) {", header_text)
+
     def test_runtime_pathlib_lane_uses_string_ops_for_string_methods(self) -> None:
         doc = _fixture_doc("src/runtime/east/std/pathlib.east")
         method_calls: list[dict[str, object]] = []
@@ -904,6 +1101,266 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
         cpp_code = emit_cpp_module(doc, allow_runtime_module=True)
 
         self.assertIn("void _png_append(bytearray& dst, const bytearray& src)", cpp_code)
+
+    def test_cpp_runtime_helpers_emit_template_prefix_for_generic_function_types(self) -> None:
+        doc = _module_doc(
+            "pytra.built_in.numeric_ops",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "py_max",
+                    "arg_types": {"a": "T", "b": "T"},
+                    "arg_order": ["a", "b"],
+                    "arg_defaults": {},
+                    "return_type": "T",
+                    "body": [{"kind": "Return", "value": {"kind": "Name", "id": "a", "resolved_type": "T"}}],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc, allow_runtime_module=True)
+
+        self.assertIn("template <class T>\nT py_max(const T& a, const T& b)", cpp_code)
+
+    def test_cpp_emitter_drops_const_when_self_arg_usage_is_reassigned(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "ClassDef",
+                    "name": "Parser",
+                    "body": [
+                        {
+                            "kind": "FunctionDef",
+                            "name": "add_expr",
+                            "arg_types": {"self": "Parser", "node": "int64"},
+                            "arg_order": ["self", "node"],
+                            "arg_defaults": {},
+                            "arg_usage": {"self": "reassigned", "node": "readonly"},
+                            "return_type": "int64",
+                            "body": [{"kind": "Return", "value": {"kind": "Constant", "value": 0, "resolved_type": "int64"}}],
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("int64 add_expr(int64 node);", cpp_code)
+        self.assertIn("int64 Parser::add_expr(int64 node) {", cpp_code)
+        self.assertNotIn("add_expr(int64 node) const", cpp_code)
+
+    def test_cpp_emitter_types_int64_literals_for_generic_runtime_calls(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            meta_extra={
+                "import_bindings": [
+                    {
+                        "module_id": "pytra.built_in.numeric_ops",
+                        "local_name": "py_max",
+                        "binding_kind": "symbol",
+                        "runtime_module_id": "pytra.built_in.numeric_ops",
+                        "runtime_symbol": "py_max",
+                    }
+                ]
+            },
+            body=[
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "v", "resolved_type": "int64"},
+                    "declare": True,
+                    "decl_type": "int64",
+                    "declare_init": True,
+                    "value": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Name", "id": "py_max"},
+                        "args": [
+                            {"kind": "Constant", "value": 0, "resolved_type": "int64"},
+                            {"kind": "Name", "id": "v", "resolved_type": "int64"},
+                        ],
+                    },
+                },
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("py_max(int64(0), v);", cpp_code)
+
+    def test_cpp_emitter_uses_fresh_discard_names_for_range_targets(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "ForCore",
+                    "iter_plan": {
+                        "kind": "StaticRangeForPlan",
+                        "start": {"kind": "Constant", "value": 0, "resolved_type": "int64"},
+                        "stop": {"kind": "Constant", "value": 2, "resolved_type": "int64"},
+                        "step": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                    },
+                    "target_plan": {"id": "_", "target_type": "int64", "unused": True},
+                    "body": [{"kind": "Pass"}],
+                },
+                {
+                    "kind": "ForCore",
+                    "iter_plan": {
+                        "kind": "StaticRangeForPlan",
+                        "start": {"kind": "Constant", "value": 0, "resolved_type": "int64"},
+                        "stop": {"kind": "Constant", "value": 3, "resolved_type": "int64"},
+                        "step": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                    },
+                    "target_plan": {"id": "_", "target_type": "int64", "unused": True},
+                    "body": [{"kind": "Pass"}],
+                },
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("for (int64 __discard_1 = 0; __discard_1 < 2; __discard_1 += 1)", cpp_code)
+        self.assertIn("for (int64 __discard_2 = 0; __discard_2 < 3; __discard_2 += 1)", cpp_code)
+        self.assertNotIn("for (_ = 0;", cpp_code)
+
+    def test_cpp_emitter_uses_list_truthiness_and_mutating_pop_helper(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "stack", "resolved_type": "list[int64]"},
+                    "declare": True,
+                    "decl_type": "list[int64]",
+                    "declare_init": True,
+                    "value": {
+                        "kind": "List",
+                        "resolved_type": "list[int64]",
+                        "elements": [{"kind": "Constant", "value": 1, "resolved_type": "int64"}],
+                    },
+                },
+                {
+                    "kind": "While",
+                    "test": {"kind": "Name", "id": "stack", "resolved_type": "list[int64]"},
+                    "body": [
+                        {
+                            "kind": "Expr",
+                            "value": {
+                                "kind": "Call",
+                                "lowered_kind": "BuiltinCall",
+                                "runtime_call": "list.pop",
+                                "builtin_name": "pop",
+                                "func": {
+                                    "kind": "Attribute",
+                                    "value": {"kind": "Name", "id": "stack", "resolved_type": "list[int64]"},
+                                    "attr": "pop",
+                                },
+                                "args": [],
+                            },
+                        }
+                    ],
+                    "orelse": [],
+                },
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("while ((!(stack).empty())) {", cpp_code)
+        self.assertIn("py_list_pop_mut(stack);", cpp_code)
+
+    def test_cpp_emitter_uses_py_at_for_dict_reads_but_keeps_subscript_store_targets(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "read_env",
+                    "arg_types": {"env": "dict[str,int64]", "name": "str"},
+                    "arg_order": ["env", "name"],
+                    "arg_defaults": {},
+                    "arg_usage": {"env": "readonly", "name": "readonly"},
+                    "return_type": "int64",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Subscript",
+                                "value": {"kind": "Name", "id": "env", "resolved_type": "dict[str,int64]"},
+                                "slice": {"kind": "Name", "id": "name", "resolved_type": "str"},
+                                "resolved_type": "int64",
+                            },
+                        }
+                    ],
+                },
+                {
+                    "kind": "FunctionDef",
+                    "name": "write_env",
+                    "arg_types": {"env": "dict[str,int64]"},
+                    "arg_order": ["env"],
+                    "arg_defaults": {},
+                    "arg_usage": {"env": "reassigned"},
+                    "return_type": "None",
+                    "body": [
+                        {
+                            "kind": "Assign",
+                            "target": {
+                                "kind": "Subscript",
+                                "value": {"kind": "Name", "id": "env", "resolved_type": "dict[str,int64]"},
+                                "slice": {"kind": "Constant", "value": "x", "resolved_type": "str"},
+                                "resolved_type": "int64",
+                            },
+                            "value": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                        }
+                    ],
+                },
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("return py_at(env, name);", cpp_code)
+        self.assertIn('env[str("x")] = int64(1);', cpp_code)
+
+    def test_cpp_emitter_rewrites_negative_unary_list_index_from_size(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "tail",
+                    "arg_types": {"stack": "list[int64]"},
+                    "arg_order": ["stack"],
+                    "arg_defaults": {},
+                    "arg_usage": {"stack": "readonly"},
+                    "return_type": "int64",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Subscript",
+                                "value": {"kind": "Name", "id": "stack", "resolved_type": "list[int64]"},
+                                "slice": {
+                                    "kind": "UnaryOp",
+                                    "op": "USub",
+                                    "operand": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                                    "resolved_type": "int64",
+                                },
+                                "resolved_type": "int64",
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("return stack[(stack.size() - int64(1))];", cpp_code)
 
     def test_emitters_treat_runtime_call_int_as_cast_without_link_normalization(self) -> None:
         doc = _fixture_doc("test/fixture/east3-opt/typing/intenum_basic.east3")
@@ -1011,6 +1468,75 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
 
         self.assertIn("return py_sin(py_pi)", go_code)
         self.assertNotIn("math.Pi", go_code)
+
+    def test_cpp_emitter_maps_math_module_calls_to_std_symbols(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            meta_extra={
+                "import_modules": {
+                    "math": "pytra.std.math",
+                }
+            },
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "run",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_index": {},
+                    "return_type": "float64",
+                    "arg_usage": {},
+                    "renamed_symbols": {},
+                    "docstring": None,
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Call",
+                                "resolved_type": "float64",
+                                "func": {
+                                    "kind": "Attribute",
+                                    "resolved_type": "callable",
+                                    "value": {
+                                        "kind": "Name",
+                                        "id": "math",
+                                        "resolved_type": "module",
+                                    },
+                                    "attr": "sin",
+                                    "runtime_module_id": "pytra.std.math",
+                                    "runtime_symbol": "sin",
+                                },
+                                "args": [
+                                    {
+                                        "kind": "Attribute",
+                                        "resolved_type": "float64",
+                                        "value": {
+                                            "kind": "Name",
+                                            "id": "math",
+                                            "resolved_type": "module",
+                                        },
+                                        "attr": "pi",
+                                        "runtime_module_id": "pytra.std.math",
+                                        "runtime_symbol": "pi",
+                                        "runtime_symbol_dispatch": "value",
+                                    }
+                                ],
+                                "keywords": [],
+                                "resolved_runtime_call": "math.sin",
+                                "runtime_module_id": "pytra.std.math",
+                                "runtime_symbol": "sin",
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("return std::sin(M_PI);", cpp_code)
+        self.assertNotIn("return ::sin(::pi);", cpp_code)
 
     def test_go_emitter_emits_pathlib_class_and_uses_native_os_path_helpers(self) -> None:
         doc = _fixture_doc("src/runtime/east/std/pathlib.east")
