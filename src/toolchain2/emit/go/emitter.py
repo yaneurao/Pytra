@@ -1864,8 +1864,14 @@ def _emit_slice_expr(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
 
 def _emit_slice_bound(ctx: EmitContext, value: str, bound: JsonVal) -> str:
+    def _idx(code: str) -> str:
+        if code.startswith("int64(len(") and code.endswith("))"):
+            return code[6:-1]
+        if code.startswith("int64(") and code.endswith(")"):
+            return code[6:-1]
+        return code
     if not isinstance(bound, dict):
-        return _emit_expr(ctx, bound)
+        return _idx(_emit_expr(ctx, bound))
     if _str(bound, "kind") == "Call":
         func = bound.get("func")
         if isinstance(func, dict) and _str(func, "kind") == "Name" and _str(func, "id") == "len":
@@ -1874,11 +1880,8 @@ def _emit_slice_bound(ctx: EmitContext, value: str, bound: JsonVal) -> str:
                 return "len(" + _emit_expr(ctx, args[0]) + ")"
     if _str(bound, "kind") == "UnaryOp" and _str(bound, "op") == "USub":
         operand = bound.get("operand")
-        return "(len(" + value + ") - " + _emit_expr(ctx, operand) + ")"
-    code = _emit_expr(ctx, bound)
-    if code.startswith("int64(len(") and code.endswith("))"):
-        return code[6:-1]
-    return code
+        return "(len(" + value + ") - " + _idx(_emit_expr(ctx, operand)) + ")"
+    return _idx(_emit_expr(ctx, bound))
 
 
 def _emit_list_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:

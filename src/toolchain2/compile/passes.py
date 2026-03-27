@@ -8,6 +8,7 @@ Consolidated port of all toolchain/compile/east2_to_east3_*_*.py passes.
 from __future__ import annotations
 
 from typing import Union
+from pytra.typing import cast
 
 from toolchain2.compile.jv import JsonVal, Node, CompileContext, deep_copy_json
 from toolchain2.compile.jv import jv_str, jv_is_dict, jv_is_list
@@ -109,7 +110,7 @@ def _replace_yield_with_append(node: JsonVal, acc: str, list_type: str) -> JsonV
         if key_s == "body" or key_s == "orelse" or key_s == "finalbody":
             out[key_s] = _replace_yield_with_append(val, acc, list_type)
         elif key_s == "handlers" and isinstance(val, list):
-            handlers: list[JsonVal] = val
+            handlers: list[JsonVal] = cast(list[JsonVal], val)
             hs: list[JsonVal] = []
             for h in handlers:
                 if isinstance(h, dict):
@@ -161,6 +162,7 @@ def _lower_generator_function(func: Node) -> None:
     new_body = _replace_yield_with_append(body, acc, lt)
     if not isinstance(new_body, list):
         new_body = body
+    new_body_list: list[JsonVal] = cast(list[JsonVal], new_body) if isinstance(new_body, list) else cast(list[JsonVal], body)
     ret_name: Node = {}
     ret_name["kind"] = NAME
     ret_name["id"] = acc
@@ -168,7 +170,11 @@ def _lower_generator_function(func: Node) -> None:
     ret_stmt: Node = {}
     ret_stmt["kind"] = RETURN
     ret_stmt["value"] = ret_name
-    func["body"] = [init] + new_body + [ret_stmt]
+    final_body: list[JsonVal] = [init]
+    for stmt in new_body_list:
+        final_body.append(stmt)
+    final_body.append(ret_stmt)
+    func["body"] = final_body
 
 
 def _yield_walk(node: JsonVal) -> None:
@@ -186,13 +192,15 @@ def _yield_walk(node: JsonVal) -> None:
             _lower_generator_function(nd)
         body2 = nd.get("body")
         if isinstance(body2, list):
-            for s in body2:
+            body2_list: list[JsonVal] = cast(list[JsonVal], body2)
+            for s in body2_list:
                 _yield_walk(s)
         return
     if kind in (CLASS_DEF, MODULE):
         body = nd.get("body")
         if isinstance(body, list):
-            for s in body:
+            body_list: list[JsonVal] = cast(list[JsonVal], body)
+            for s in body_list:
                 _yield_walk(s)
         return
     for val in nd.values():
@@ -213,8 +221,10 @@ def _build_lc_target_plan(target: JsonVal) -> Node:
     if isinstance(target, dict):
         kind = target.get("kind", "")
         if kind == NAME:
-            plan: Node = {"kind": NAME_TARGET, "id": target.get("id", "_")}
-            rt = jv_str(target.get("resolved_type", "")).strip()
+            plan: Node = {}
+            plan["kind"] = NAME_TARGET
+            plan["id"] = target.get("id", "_")
+            rt: str = jv_str(target.get("resolved_type", ""))
             if rt not in ("", "unknown"):
                 plan["target_type"] = rt
             return plan
@@ -224,16 +234,21 @@ def _build_lc_target_plan(target: JsonVal) -> Node:
             if isinstance(elements, list):
                 for elem in elements:
                     eps.append(_build_lc_target_plan(elem))
-            plan = {"kind": TUPLE_TARGET, "elements": eps}
-            rt = jv_str(target.get("resolved_type", "")).strip()
+            plan: Node = {}
+            plan["kind"] = TUPLE_TARGET
+            plan["elements"] = eps
+            rt: str = jv_str(target.get("resolved_type", ""))
             if rt not in ("", "unknown"):
                 plan["target_type"] = rt
             return plan
-    return {"kind": NAME_TARGET, "id": "_"}
+    out: Node = {}
+    out["kind"] = NAME_TARGET
+    out["id"] = "_"
+    return out
 
 
 def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -> list[Node]:
-    rt = jv_str(lc.get("resolved_type", "")).strip()
+    rt: str = jv_str(lc.get("resolved_type", ""))
     if rt in ("", "unknown") or "unknown" in rt:
         if annotation_type != "":
             rt = annotation_type

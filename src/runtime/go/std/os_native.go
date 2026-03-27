@@ -23,7 +23,13 @@ func mkdir(path string, exist_ok bool) {
 		panic(err)
 	}
 }
-func py_mkdir(path string, exist_ok bool) { mkdir(path, exist_ok) }
+func py_mkdir(path string, exist_ok ...bool) {
+	ok := false
+	if len(exist_ok) > 0 {
+		ok = exist_ok[0]
+	}
+	mkdir(path, ok)
+}
 
 func makedirs(path string, exist_ok bool) {
 	_ = exist_ok
