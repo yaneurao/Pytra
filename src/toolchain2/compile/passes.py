@@ -2734,7 +2734,9 @@ def _guard_block_guarantees_exit(stmts: JsonVal) -> bool:
     stmt_list: list[JsonVal] = cast(list[JsonVal], stmts)
     if len(stmt_list) == 0:
         return False
-    return _guard_stmt_guarantees_exit(stmt_list[-1])
+    last_idx = len(stmt_list) - 1
+    last_stmt = stmt_list[last_idx]
+    return _guard_stmt_guarantees_exit(last_stmt)
 
 
 def _guard_stmt(stmt: JsonVal, env: dict[str, str]) -> None:
@@ -2815,35 +2817,90 @@ def _guard_stmt(stmt: JsonVal, env: dict[str, str]) -> None:
         return
     if kind == FOR:
         iter_obj = nd.get("iter")
-        if isinstance(iter_obj, (dict, list)):
-            nd["iter"] = _guard_expr(iter_obj, env)
-        body_env = dict(env)
+        if isinstance(iter_obj, dict):
+            iter_node: Node = cast(dict[str, JsonVal], iter_obj)
+            nd["iter"] = _guard_expr(iter_node, env)
+        elif isinstance(iter_obj, list):
+            iter_list: list[JsonVal] = cast(list[JsonVal], iter_obj)
+            nd["iter"] = _guard_expr(iter_list, env)
+        body_env: dict[str, str] = {}
+        for key, value in env.items():
+            body_env[key] = value
         for name in _target_names(nd.get("target")):
-            body_env.pop(name, None)
+            if name in body_env:
+                body_env[name] = ""
         _guard_stmt_list(nd.get("body"), body_env)
         _guard_stmt_list(nd.get("orelse"), env)
         return
     if kind == FOR_RANGE:
-        for key in ("start", "stop", "step"):
-            value = nd.get(key)
-            if isinstance(value, (dict, list)):
-                nd[key] = _guard_expr(value, env)
-        body_env = dict(env)
+        start_val = nd.get("start")
+        if isinstance(start_val, dict):
+            start_node: Node = cast(dict[str, JsonVal], start_val)
+            nd["start"] = _guard_expr(start_node, env)
+        elif isinstance(start_val, list):
+            start_list: list[JsonVal] = cast(list[JsonVal], start_val)
+            nd["start"] = _guard_expr(start_list, env)
+        stop_val = nd.get("stop")
+        if isinstance(stop_val, dict):
+            stop_node: Node = cast(dict[str, JsonVal], stop_val)
+            nd["stop"] = _guard_expr(stop_node, env)
+        elif isinstance(stop_val, list):
+            stop_list: list[JsonVal] = cast(list[JsonVal], stop_val)
+            nd["stop"] = _guard_expr(stop_list, env)
+        step_val = nd.get("step")
+        if isinstance(step_val, dict):
+            step_node: Node = cast(dict[str, JsonVal], step_val)
+            nd["step"] = _guard_expr(step_node, env)
+        elif isinstance(step_val, list):
+            step_list: list[JsonVal] = cast(list[JsonVal], step_val)
+            nd["step"] = _guard_expr(step_list, env)
+        body_env: dict[str, str] = {}
+        for env_name, env_type in env.items():
+            body_env[env_name] = env_type
         for name in _target_names(nd.get("target")):
-            body_env.pop(name, None)
+            if name in body_env:
+                body_env[name] = ""
         _guard_stmt_list(nd.get("body"), body_env)
         _guard_stmt_list(nd.get("orelse"), env)
         return
     if kind == FOR_CORE:
         iter_plan = nd.get("iter_plan")
         if isinstance(iter_plan, dict):
-            for key in ("iter_expr", "start", "stop", "step"):
-                value = iter_plan.get(key)
-                if isinstance(value, (dict, list)):
-                    iter_plan[key] = _guard_expr(value, env)
-        body_env = dict(env)
+            iter_plan_node: Node = cast(dict[str, JsonVal], iter_plan)
+            iter_expr_val = iter_plan_node.get("iter_expr")
+            if isinstance(iter_expr_val, dict):
+                iter_expr_node: Node = cast(dict[str, JsonVal], iter_expr_val)
+                iter_plan_node["iter_expr"] = _guard_expr(iter_expr_node, env)
+            elif isinstance(iter_expr_val, list):
+                iter_expr_list: list[JsonVal] = cast(list[JsonVal], iter_expr_val)
+                iter_plan_node["iter_expr"] = _guard_expr(iter_expr_list, env)
+            start_val2 = iter_plan_node.get("start")
+            if isinstance(start_val2, dict):
+                start_node2: Node = cast(dict[str, JsonVal], start_val2)
+                iter_plan_node["start"] = _guard_expr(start_node2, env)
+            elif isinstance(start_val2, list):
+                start_list2: list[JsonVal] = cast(list[JsonVal], start_val2)
+                iter_plan_node["start"] = _guard_expr(start_list2, env)
+            stop_val2 = iter_plan_node.get("stop")
+            if isinstance(stop_val2, dict):
+                stop_node2: Node = cast(dict[str, JsonVal], stop_val2)
+                iter_plan_node["stop"] = _guard_expr(stop_node2, env)
+            elif isinstance(stop_val2, list):
+                stop_list2: list[JsonVal] = cast(list[JsonVal], stop_val2)
+                iter_plan_node["stop"] = _guard_expr(stop_list2, env)
+            step_val2 = iter_plan_node.get("step")
+            if isinstance(step_val2, dict):
+                step_node2: Node = cast(dict[str, JsonVal], step_val2)
+                iter_plan_node["step"] = _guard_expr(step_node2, env)
+            elif isinstance(step_val2, list):
+                step_list2: list[JsonVal] = cast(list[JsonVal], step_val2)
+                iter_plan_node["step"] = _guard_expr(step_list2, env)
+        body_env: dict[str, str] = {}
+        for env_name2, env_type2 in env.items():
+            body_env[env_name2] = env_type2
         for name in _target_names(nd.get("target_plan")):
-            body_env.pop(name, None)
+            if name in body_env:
+                body_env[name] = ""
         _guard_stmt_list(nd.get("body"), body_env)
         _guard_stmt_list(nd.get("orelse"), env)
         return
@@ -2851,25 +2908,38 @@ def _guard_stmt(stmt: JsonVal, env: dict[str, str]) -> None:
         _guard_stmt_list(nd.get("body"), env)
         handlers = nd.get("handlers")
         if isinstance(handlers, list):
-            for handler in handlers:
+            handler_list: list[JsonVal] = cast(list[JsonVal], handlers)
+            for handler in handler_list:
                 if not isinstance(handler, dict):
                     continue
-                body = handler.get("body")
+                handler_node: Node = cast(dict[str, JsonVal], handler)
+                body = handler_node.get("body")
                 if isinstance(body, list):
-                    _guard_stmt_list(body, env)
+                    body_list2: list[JsonVal] = cast(list[JsonVal], body)
+                    _guard_stmt_list(body_list2, env)
         _guard_stmt_list(nd.get("orelse"), env)
         _guard_stmt_list(nd.get("finalbody"), env)
         return
     for key in list(nd.keys()):
         value = nd[key]
-        if isinstance(value, (dict, list)):
-            nd[key] = _guard_expr(value, env)
+        if isinstance(value, dict):
+            value_node6: Node = cast(dict[str, JsonVal], value)
+            nd[key] = _guard_expr(value_node6, env)
+        elif isinstance(value, list):
+            value_list6: list[JsonVal] = cast(list[JsonVal], value)
+            nd[key] = _guard_expr(value_list6, env)
 
 
 def apply_guard_narrowing(module: Node, ctx: CompileContext) -> Node:
     env = _guard_storage_env(module)
-    _guard_stmt_list(module.get("body"), dict(env))
-    _guard_stmt_list(module.get("main_guard_body"), dict(env))
+    body_env: dict[str, str] = {}
+    for key, value in env.items():
+        body_env[key] = value
+    main_guard_env: dict[str, str] = {}
+    for key, value in env.items():
+        main_guard_env[key] = value
+    _guard_stmt_list(module.get("body"), body_env)
+    _guard_stmt_list(module.get("main_guard_body"), main_guard_env)
     return module
 
 
@@ -2882,10 +2952,12 @@ def _guard_storage_env(module: Node) -> dict[str, str]:
     out: dict[str, str] = {}
     body = module.get("body")
     if isinstance(body, list):
-        _guard_collect_storage_types(body, out)
+        body_list: list[JsonVal] = cast(list[JsonVal], body)
+        _guard_collect_storage_types(body_list, out)
     main_guard_body = module.get("main_guard_body")
     if isinstance(main_guard_body, list):
-        _guard_collect_storage_types(main_guard_body, out)
+        main_guard_list: list[JsonVal] = cast(list[JsonVal], main_guard_body)
+        _guard_collect_storage_types(main_guard_list, out)
     return out
 
 
@@ -2898,7 +2970,8 @@ def _guard_function_env(func: Node) -> dict[str, str]:
                 out["__storage__:" + arg_name] = arg_type
     body = func.get("body")
     if isinstance(body, list):
-        _guard_collect_storage_types(body, out)
+        body_list: list[JsonVal] = cast(list[JsonVal], body)
+        _guard_collect_storage_types(body_list, out)
     return out
 
 
@@ -2906,49 +2979,61 @@ def _guard_collect_storage_types(stmts: list[JsonVal], out: dict[str, str]) -> N
     for stmt in stmts:
         if not isinstance(stmt, dict):
             continue
-        kind = _tp_safe(stmt.get("kind"))
+        stmt_node: Node = cast(dict[str, JsonVal], stmt)
+        kind = _tp_safe(stmt_node.get("kind"))
         if kind == FUNCTION_DEF or kind == CLOSURE_DEF:
-            name = _tp_safe(stmt.get("name"))
+            name = _tp_safe(stmt_node.get("name"))
             if name != "":
-                out["__storage__:" + name] = _closure_callable_type(stmt)
-            arg_types = stmt.get("arg_types")
+                out["__storage__:" + name] = _closure_callable_type(stmt_node)
+            arg_types = stmt_node.get("arg_types")
             if isinstance(arg_types, dict):
                 for arg_name, arg_type in arg_types.items():
                     if isinstance(arg_name, str) and isinstance(arg_type, str) and arg_name != "":
                         out["__storage__:" + arg_name] = arg_type
             continue
         if kind == CLASS_DEF:
-            name2 = _tp_safe(stmt.get("name"))
+            name2 = _tp_safe(stmt_node.get("name"))
             if name2 != "":
                 out["__storage__:" + name2] = name2
             continue
         if kind == VAR_DECL:
-            name3 = _tp_safe(stmt.get("name"))
-            type3 = _tp_safe(stmt.get("type"))
+            name3 = _tp_safe(stmt_node.get("name"))
+            type3 = _tp_safe(stmt_node.get("type"))
             if name3 != "" and type3 != "":
                 out["__storage__:" + name3] = type3
         elif kind in (ASSIGN, ANN_ASSIGN, AUG_ASSIGN):
-            _guard_collect_target_storage(stmt.get("target"), stmt, out)
+            _guard_collect_target_storage(stmt_node.get("target"), stmt_node, out)
         elif kind == FOR or kind == FOR_RANGE:
-            target_type = _tp_safe(stmt.get("target_type"))
-            _guard_collect_target_storage_direct(stmt.get("target"), target_type, out)
+            target_type = _tp_safe(stmt_node.get("target_type"))
+            _guard_collect_target_storage_direct(stmt_node.get("target"), target_type, out)
         elif kind == FOR_CORE:
-            _guard_collect_target_plan_storage(stmt.get("target_plan"), out)
-        for key in ("body", "orelse", "finalbody"):
-            nested = stmt.get(key)
-            if isinstance(nested, list):
-                _guard_collect_storage_types(nested, out)
-        handlers = stmt.get("handlers")
+            _guard_collect_target_plan_storage(stmt_node.get("target_plan"), out)
+        body = stmt_node.get("body")
+        if isinstance(body, list):
+            body_list2: list[JsonVal] = cast(list[JsonVal], body)
+            _guard_collect_storage_types(body_list2, out)
+        orelse = stmt_node.get("orelse")
+        if isinstance(orelse, list):
+            orelse_list: list[JsonVal] = cast(list[JsonVal], orelse)
+            _guard_collect_storage_types(orelse_list, out)
+        finalbody = stmt_node.get("finalbody")
+        if isinstance(finalbody, list):
+            finalbody_list: list[JsonVal] = cast(list[JsonVal], finalbody)
+            _guard_collect_storage_types(finalbody_list, out)
+        handlers = stmt_node.get("handlers")
         if isinstance(handlers, list):
-            for handler in handlers:
+            handler_list: list[JsonVal] = cast(list[JsonVal], handlers)
+            for handler in handler_list:
                 if not isinstance(handler, dict):
                     continue
-                ex_name = _tp_safe(handler.get("name"))
+                handler_node: Node = cast(dict[str, JsonVal], handler)
+                ex_name = _tp_safe(handler_node.get("name"))
                 if ex_name != "":
                     out["__storage__:" + ex_name] = "BaseException"
-                hbody = handler.get("body")
+                hbody = handler_node.get("body")
                 if isinstance(hbody, list):
-                    _guard_collect_storage_types(hbody, out)
+                    hbody_list: list[JsonVal] = cast(list[JsonVal], hbody)
+                    _guard_collect_storage_types(hbody_list, out)
 
 
 def _guard_collect_target_storage(target: JsonVal, stmt: Node, out: dict[str, str]) -> None:
@@ -2958,40 +3043,45 @@ def _guard_collect_target_storage(target: JsonVal, stmt: Node, out: dict[str, st
     if decl_type == "":
         value = stmt.get("value")
         if isinstance(value, dict):
-            decl_type = _tp_safe(value.get("resolved_type"))
+            value_node: Node = cast(dict[str, JsonVal], value)
+            decl_type = _tp_safe(value_node.get("resolved_type"))
     _guard_collect_target_storage_direct(target, decl_type, out)
 
 
 def _guard_collect_target_storage_direct(target: JsonVal, target_type: str, out: dict[str, str]) -> None:
     if not isinstance(target, dict):
         return
-    kind = _tp_safe(target.get("kind"))
+    target_node: Node = cast(dict[str, JsonVal], target)
+    kind = _tp_safe(target_node.get("kind"))
     if kind == NAME:
-        name = _tp_safe(target.get("id"))
+        name = _tp_safe(target_node.get("id"))
         if name != "" and target_type != "":
             out["__storage__:" + name] = target_type
         return
     if kind == TUPLE or kind == LIST:
-        elements = target.get("elements")
+        elements = target_node.get("elements")
         if isinstance(elements, list):
-            for elem in elements:
+            element_list: list[JsonVal] = cast(list[JsonVal], elements)
+            for elem in element_list:
                 _guard_collect_target_storage_direct(elem, target_type, out)
 
 
 def _guard_collect_target_plan_storage(target_plan: JsonVal, out: dict[str, str]) -> None:
     if not isinstance(target_plan, dict):
         return
-    kind = _tp_safe(target_plan.get("kind"))
+    target_plan_node: Node = cast(dict[str, JsonVal], target_plan)
+    kind = _tp_safe(target_plan_node.get("kind"))
     if kind == NAME_TARGET:
-        name = _tp_safe(target_plan.get("id"))
-        target_type = _tp_safe(target_plan.get("target_type"))
+        name = _tp_safe(target_plan_node.get("id"))
+        target_type = _tp_safe(target_plan_node.get("target_type"))
         if name != "" and target_type != "":
             out["__storage__:" + name] = target_type
         return
     if kind == TUPLE_TARGET:
-        elements = target_plan.get("elements")
+        elements = target_plan_node.get("elements")
         if isinstance(elements, list):
-            for elem in elements:
+            element_list2: list[JsonVal] = cast(list[JsonVal], elements)
+            for elem in element_list2:
                 _guard_collect_target_plan_storage(elem, out)
 
 
@@ -3007,7 +3097,8 @@ def _tp_safe(v: JsonVal) -> str:
 
 def _tp_assign_target(node: JsonVal) -> None:
     if isinstance(node, list):
-        for item in node:
+        node_list: list[JsonVal] = cast(list[JsonVal], node)
+        for item in node_list:
             _tp_assign_target(item)
         return
     if not isinstance(node, dict):
@@ -3023,29 +3114,37 @@ def _tp_assign_target(node: JsonVal) -> None:
         target = nd.get("target")
         value = nd.get("value")
         if isinstance(target, dict):
-            tt = _tp_safe(target.get("resolved_type"))
+            target_node: Node = cast(dict[str, JsonVal], target)
+            tt = _tp_safe(target_node.get("resolved_type"))
             if tt in ("", "unknown"):
                 inf = _tp_safe(nd.get("decl_type"))
                 if inf in ("", "unknown"):
                     inf = _tp_safe(nd.get("annotation"))
                 if inf in ("", "unknown") and isinstance(value, dict):
-                    inf = _tp_safe(value.get("resolved_type"))
+                    value_node: Node = cast(dict[str, JsonVal], value)
+                    inf = _tp_safe(value_node.get("resolved_type"))
                 if inf not in ("", "unknown"):
-                    target["resolved_type"] = inf
+                    target_node["resolved_type"] = inf
                     if _tp_safe(nd.get("decl_type")) in ("", "unknown"):
                         nd["decl_type"] = inf
             if isinstance(value, dict):
-                vt = _tp_safe(value.get("resolved_type"))
+                value_node2: Node = cast(dict[str, JsonVal], value)
+                vt = _tp_safe(value_node2.get("resolved_type"))
                 dt = _tp_safe(nd.get("decl_type"))
                 if dt not in ("", "unknown") and "unknown" in vt:
-                    vk = value.get("kind", "")
+                    vk = value_node2.get("kind", "")
                     if vk in (LIST, DICT, SET):
-                        value["resolved_type"] = dt
-            if target.get("kind") == TUPLE and isinstance(value, dict):
-                _tp_tuple_targets(target, value)
+                        value_node2["resolved_type"] = dt
+            if target_node.get("kind") == TUPLE and isinstance(value, dict):
+                value_node3: Node = cast(dict[str, JsonVal], value)
+                _tp_tuple_targets(target_node, value_node3)
     for v in nd.values():
-        if isinstance(v, (dict, list)):
-            _tp_assign_target(v)
+        if isinstance(v, dict):
+            v_node: Node = cast(dict[str, JsonVal], v)
+            _tp_assign_target(v_node)
+        elif isinstance(v, list):
+            v_list: list[JsonVal] = cast(list[JsonVal], v)
+            _tp_assign_target(v_list)
 
 
 def _tp_tuple_targets(target: Node, value: Node) -> None:
@@ -3057,33 +3156,46 @@ def _tp_tuple_targets(target: Node, value: Node) -> None:
     elements = target.get("elements")
     if not isinstance(elements, list):
         return
-    for i, elem in enumerate(elements):
+    element_list: list[JsonVal] = cast(list[JsonVal], elements)
+    for i, elem in enumerate(element_list):
         if not isinstance(elem, dict) or i >= len(ets):
             continue
-        et = _tp_safe(elem.get("resolved_type"))
+        elem_node: Node = cast(dict[str, JsonVal], elem)
+        et = _tp_safe(elem_node.get("resolved_type"))
         if et in ("", "unknown"):
-            elem["resolved_type"] = ets[i].strip()
+            elem_node["resolved_type"] = ets[i].strip()
 
 
 def _tp_binop(node: JsonVal) -> None:
     if isinstance(node, list):
-        for item in node:
+        node_list: list[JsonVal] = cast(list[JsonVal], node)
+        for item in node_list:
             _tp_binop(item)
         return
     if not isinstance(node, dict):
         return
     nd: Node = node
     for v in nd.values():
-        if isinstance(v, (dict, list)):
-            _tp_binop(v)
+        if isinstance(v, dict):
+            v_node: Node = cast(dict[str, JsonVal], v)
+            _tp_binop(v_node)
+        elif isinstance(v, list):
+            v_list: list[JsonVal] = cast(list[JsonVal], v)
+            _tp_binop(v_list)
     if nd.get("kind") == BIN_OP:
         rt = _tp_safe(nd.get("resolved_type"))
         if rt not in ("", "unknown") and "|" not in rt:
             return
         left = nd.get("left")
         right = nd.get("right")
-        lt2 = _tp_safe(left.get("resolved_type")) if isinstance(left, dict) else ""
-        rt2 = _tp_safe(right.get("resolved_type")) if isinstance(right, dict) else ""
+        lt2 = ""
+        rt2 = ""
+        if isinstance(left, dict):
+            left_node: Node = cast(dict[str, JsonVal], left)
+            lt2 = _tp_safe(left_node.get("resolved_type"))
+        if isinstance(right, dict):
+            right_node: Node = cast(dict[str, JsonVal], right)
+            rt2 = _tp_safe(right_node.get("resolved_type"))
         if lt2 in ("", "unknown") and rt2 in ("", "unknown"):
             return
         fts = {"float32", "float64"}
@@ -3106,7 +3218,8 @@ def _tp_binop(node: JsonVal) -> None:
         if _tp_safe(nd.get("resolved_type")) in ("", "unknown"):
             value = nd.get("value")
             if isinstance(value, dict):
-                vt = _tp_safe(value.get("resolved_type"))
+                value_node2: Node = cast(dict[str, JsonVal], value)
+                vt = _tp_safe(value_node2.get("resolved_type"))
                 if vt == "str":
                     nd["resolved_type"] = "str"
                 elif vt in ("bytes", "bytearray"):
@@ -3121,7 +3234,8 @@ def _tp_binop(node: JsonVal) -> None:
         if _tp_safe(nd.get("resolved_type")) in ("", "unknown"):
             operand = nd.get("operand")
             if isinstance(operand, dict):
-                ot = _tp_safe(operand.get("resolved_type"))
+                operand_node: Node = cast(dict[str, JsonVal], operand)
+                ot = _tp_safe(operand_node.get("resolved_type"))
                 if ot == "bool" and nd.get("op") == "Not":
                     nd["resolved_type"] = "bool"
                 elif ot not in ("", "unknown"):
@@ -3154,23 +3268,32 @@ def _tp_truediv(node: JsonVal) -> None:
 def _try_truediv(node: JsonVal) -> Node | None:
     if not isinstance(node, dict):
         return None
-    if node.get("kind") != BIN_OP or node.get("op") != "Div":
+    node_obj: Node = cast(dict[str, JsonVal], node)
+    if node_obj.get("kind") != BIN_OP or node_obj.get("op") != "Div":
         return None
-    left = node.get("left")
+    left = node_obj.get("left")
     if not isinstance(left, dict):
         return None
-    lt = _tp_safe(left.get("resolved_type"))
+    left_node: Node = cast(dict[str, JsonVal], left)
+    lt = _tp_safe(left_node.get("resolved_type"))
     if lt != "Path":
         return None
-    right = node.get("right")
-    call: Node = {
-        "kind": CALL,
-        "func": {"kind": ATTRIBUTE, "value": left, "attr": "joinpath", "resolved_type": "Path"},
-        "args": [right] if right is not None else [],
-        "keywords": [],
-        "resolved_type": "Path",
-    }
-    span = node.get("source_span")
+    right = node_obj.get("right")
+    func_node: Node = {}
+    func_node["kind"] = ATTRIBUTE
+    func_node["value"] = left_node
+    func_node["attr"] = "joinpath"
+    func_node["resolved_type"] = "Path"
+    args: list[JsonVal] = []
+    if right is not None:
+        args.append(right)
+    call: Node = {}
+    call["kind"] = CALL
+    call["func"] = func_node
+    call["args"] = args
+    call["keywords"] = []
+    call["resolved_type"] = "Path"
+    span = node_obj.get("source_span")
     if isinstance(span, dict):
         call["source_span"] = span
     return call
