@@ -223,7 +223,11 @@ def resolve_runtime_call(
 
     # 3. Builtin → prefix
     if adapter_kind == "builtin":
-        return mapping.builtin_prefix + builtin_name if builtin_name != "" else mapping.builtin_prefix + runtime_call
+        if builtin_name != "":
+            return mapping.builtin_prefix + builtin_name
+        if runtime_call != "" and "." not in runtime_call:
+            return mapping.builtin_prefix + runtime_call
+        return ""
 
     # 4. Extern delegate → bare name (no prefix)
     if adapter_kind == "extern_delegate":
@@ -231,6 +235,8 @@ def resolve_runtime_call(
 
     # 5. Fallback
     if runtime_call != "":
+        if "." in runtime_call:
+            return ""
         return mapping.builtin_prefix + runtime_call
     if builtin_name != "":
         return mapping.builtin_prefix + builtin_name

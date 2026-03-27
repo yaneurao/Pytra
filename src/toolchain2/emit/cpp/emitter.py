@@ -64,6 +64,11 @@ def _emit_blank(ctx: CppEmitContext) -> None:
     ctx.lines.append("")
 
 
+def _emit_fail(ctx: CppEmitContext, code: str, detail: str) -> None:
+    module_label = ctx.module_id if ctx.module_id != "" else "<unknown>"
+    raise RuntimeError("cpp emitter " + code + " in " + module_label + ": " + detail)
+
+
 # ---------------------------------------------------------------------------
 # Node accessors
 # ---------------------------------------------------------------------------
@@ -306,7 +311,7 @@ def _qualify_runtime_call_symbol(symbol_name: str) -> str:
 
 def _emit_expr(ctx: CppEmitContext, node: JsonVal) -> str:
     if not isinstance(node, dict):
-        return "/* nil */"
+        _emit_fail(ctx, "invalid_expr", "expected dict expression node")
     kind = _str(node, "kind")
 
     if kind == "Constant": return _emit_constant(ctx, node)
@@ -339,7 +344,7 @@ def _emit_expr(ctx: CppEmitContext, node: JsonVal) -> str:
         return "str(py_to_string(" + value_expr + "))"
     if kind == "ObjLen": return "py_len(" + _emit_expr(ctx, node.get("value")) + ")"
     if kind == "ObjBool": return "py_bool(" + _emit_expr(ctx, node.get("value")) + ")"
-    return "/* unsupported: " + kind + " */"
+    _emit_fail(ctx, "unsupported_expr_kind", kind)
 
 
 def _emit_constant(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
@@ -642,8 +647,11 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     resolved = resolve_runtime_call(rc, bn, adapter, ctx.mapping)
     if resolved != "": return resolved + "(" + ", ".join(call_arg_strs) + ")"
     fn = rc if rc != "" else bn
-    if fn != "": return ctx.mapping.builtin_prefix + fn.replace(".", "_") + "(" + ", ".join(call_arg_strs) + ")"
-    return "/* unknown builtin */"
+    if fn != "":
+        if "." in fn:
+            _emit_fail(ctx, "unmapped_runtime_call", fn)
+        return ctx.mapping.builtin_prefix + fn + "(" + ", ".join(call_arg_strs) + ")"
+    _emit_fail(ctx, "unknown_builtin", repr(node))
 
 
 def _emit_attribute(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
@@ -1005,7 +1013,8 @@ def _emit_lambda(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 # ---------------------------------------------------------------------------
 
 def _emit_stmt(ctx: CppEmitContext, node: JsonVal) -> None:
-    if not isinstance(node, dict): return
+    if not isinstance(node, dict):
+        _emit_fail(ctx, "invalid_stmt", "expected dict statement node")
     kind = _str(node, "kind")
 
     if kind == "Expr": _emit_expr_stmt(ctx, node)
@@ -1030,6 +1039,8 @@ def _emit_stmt(ctx: CppEmitContext, node: JsonVal) -> None:
         t = _str(node, "text")
         if t != "": _emit(ctx, "// " + t)
     elif kind == "blank": _emit_blank(ctx)
+    else:
+        _emit_fail(ctx, "unsupported_stmt_kind", kind)
 
 
 def _emit_body(ctx: CppEmitContext, body: list[JsonVal]) -> None:
@@ -1238,7 +1249,7 @@ def _emit_for_core(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
                 ctx.indent_level -= 1
                 _emit(ctx, "}")
                 return
-    _emit(ctx, "// unsupported for")
+    _emit_fail(ctx, "unsupported_for", repr(node))
 
 
 def _emit_function_def(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:

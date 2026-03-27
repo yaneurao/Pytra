@@ -32,29 +32,9 @@
 3. [x] [ID: P1-EMIT-CPP-S3] sample 18 件の parity テストが通る — sample 18/18 の C++ `emit + g++ compile` を再確認し、`01`-`18` の compile sweep は `TOTAL=18 FAIL=0`。run/stdout parity は plan 側の既存完了記録に従う。
 4. [x] [ID: P1-EMIT-CPP-S4] `pytra-cli2 -emit --target=cpp` を toolchain2 emitter に切り替える — 完了
 5. [x] [ID: P1-EMIT-CPP-S5] `toolchain/` への依存をゼロにし、`toolchain/` を除去する — pytra-cli2.py から toolchain/ import ゼロ達成
-6. [ ] [ID: P1-EMIT-CPP-S6] C++ emitter の unsupported ノードを fail-fast に変更し、プレースホルダ出力を禁止する — `/* unknown builtin */` / `// unsupported for` を廃止
-7. [ ] [ID: P1-EMIT-CPP-S7] mapping.json 外の名前変換ハードコードを除去する — `resolve_runtime_call()` fallback の `fn.replace(".", "_")` を mapping.json に寄せる
+6. [x] [ID: P1-EMIT-CPP-S6] C++ emitter の unsupported ノードを fail-fast に変更し、プレースホルダ出力を禁止する — `/* unknown builtin */` / `// unsupported for` を廃止し、unknown expr/stmt/builtin/ForCore shape を `RuntimeError` で fail-closed 化
+7. [x] [ID: P1-EMIT-CPP-S7] mapping.json 外の名前変換ハードコードを除去する — `resolve_runtime_call()` fallback の dotted `runtime_call` は unmapped なら fail-closed とし、C++ emitter の `fn.replace(".", "_")` を削除
 8. [ ] [ID: P1-EMIT-CPP-S8] C++ emitter の container 既定表現を spec 準拠に修正する — `list<T>` / `dict<K,V>` / `set<T>` を既定で `Object<list<T>>` 等の参照型ラッパーにし、`container_value_locals_v1` がある局所のみ値型を許可する
-
-### P1-ISINSTANCE-NARROWING: isinstance 後の自動型ナローイング
-
-文脈: [docs/ja/plans/p1-isinstance-narrowing.md](../plans/p1-isinstance-narrowing.md)
-
-1. [x] [ID: P1-NARROW-S1] resolve に isinstance 条件式の検出 + if/elif ブロック内型環境更新を実装
-2. [x] [ID: P1-NARROW-S2] early return guard の対応（`if not isinstance(x, T): return` 後の fallthrough narrowing）
-3. [x] [ID: P1-NARROW-S3] ternary isinstance の対応（`y = x if isinstance(x, T) else None`）
-4. [x] [ID: P1-NARROW-S4] 再代入検出による narrowing 無効化の実装
-5. [x] [ID: P1-NARROW-S5] fixture 追加（全 narrowing パターン）+ golden 生成 + parity 確認
-- 進捗メモ: resolver/EAST に narrowing を集約し、`JsonVal` は `dict[str,JsonVal]` / `list[JsonVal]` へ narrow。再代入失効と typing fixture/golden を追加。
-
-### P1-IFEXP-OPTIONAL: 三項演算子の Optional 型推論
-
-文脈: [docs/ja/plans/p1-ifexp-optional-inference.md](../plans/p1-ifexp-optional-inference.md)
-
-1. [x] [ID: P1-IFEXP-OPT-S1] resolver の IfExp 型推論で `T if cond else None` → `Optional[T]` を返すようにする
-2. [x] [ID: P1-IFEXP-OPT-S2] 両側が異なる非 None 型の場合に `UnionType` を返すようにする
-3. [x] [ID: P1-IFEXP-OPT-S3] fixture 追加 + golden 生成 + parity 確認
-- 進捗メモ: resolver で `IfExp` の `Optional[T]` / `A | B` merge を実装し、`ifexp_optional_inference` fixture・golden・linked を追加。
 
 ### P2-SELFHOST: toolchain2 自身の変換テスト
 

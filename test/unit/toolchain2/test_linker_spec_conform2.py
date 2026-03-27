@@ -2928,6 +2928,89 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         self.assertIn("return py_str_slice(digits, i, (i + int64(1)));", cpp_code)
 
+    def test_cpp_emitter_fails_fast_on_unsupported_expr_kind(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "MysteryExpr",
+                    },
+                }
+            ],
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "unsupported_expr_kind"):
+            emit_cpp_module(doc)
+
+    def test_cpp_emitter_fails_fast_on_unknown_builtin_without_symbol(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "lowered_kind": "BuiltinCall",
+                        "args": [],
+                        "func": {"kind": "Constant", "value": None},
+                    },
+                }
+            ],
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "unknown_builtin"):
+            emit_cpp_module(doc)
+
+    def test_cpp_emitter_fails_fast_on_unmapped_dotted_runtime_call(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "lowered_kind": "BuiltinCall",
+                        "runtime_call": "pkg.helper",
+                        "args": [],
+                        "func": {"kind": "Name", "id": "helper"},
+                    },
+                }
+            ],
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "unmapped_runtime_call"):
+            emit_cpp_module(doc)
+
+    def test_cpp_emitter_fails_fast_on_unsupported_for_shape(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "ForCore",
+                    "body": [],
+                }
+            ],
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "unsupported_for"):
+            emit_cpp_module(doc)
+
+    def test_cpp_emitter_fails_fast_on_unknown_statement_kind(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "For",
+                    "body": [],
+                }
+            ],
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "unsupported_stmt_kind"):
+            emit_cpp_module(doc)
+
 
 if __name__ == "__main__":
     unittest.main()
