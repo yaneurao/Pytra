@@ -138,7 +138,7 @@ Full data for all languages and all samples: [Sample page](sample/README.md#runt
 
 > **2026-03-24** - Started the pipeline redesign. Added `toolchain2/`, implemented `pytra-cli2`, and defined the EAST1/EAST2 specifications.
 
-Full history: [docs/ja/changelog.md](docs/ja/changelog.md)
+Full history: [docs/en/changelog.md](docs/en/changelog.md)
 
 ## License
 
