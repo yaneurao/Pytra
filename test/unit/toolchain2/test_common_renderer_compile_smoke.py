@@ -123,6 +123,8 @@ FIXTURE_IFEXP_TERNARY_REGRESSION_SOURCE = _fixture_case_source(
 FIXTURE_IF_ELSE_SOURCE = _fixture_case_source("test/fixture/source/py/control/if_else.py")
 FIXTURE_NESTED_CALL_SOURCE = _fixture_case_source("test/fixture/source/py/core/nested_call.py")
 FIXTURE_NOT_SOURCE = _fixture_case_source("test/fixture/source/py/control/not.py")
+FIXTURE_STRING_SOURCE = _fixture_case_source("test/fixture/source/py/strings/string.py")
+FIXTURE_STRING_OPS_SOURCE = _fixture_case_source("test/fixture/source/py/strings/string_ops.py")
 FIXTURE_TUPLE_ASSIGN_SOURCE = _fixture_case_source("test/fixture/source/py/core/tuple_assign.py")
 
 
@@ -464,6 +466,22 @@ class CommonRendererCompileSmokeTests(unittest.TestCase):
 
         self.assertEqual(go_stdout, "True\n")
         self.assertEqual(cpp_stdout, "True\n")
+        self.assertEqual(go_stdout, cpp_stdout)
+
+    def test_common_renderer_fixture_string_stdout_parity_between_go_and_cpp(self) -> None:
+        go_stdout = _run_go(FIXTURE_STRING_SOURCE)
+        cpp_stdout = _run_cpp(FIXTURE_STRING_SOURCE)
+
+        self.assertEqual(go_stdout, "Hello, Codex\n")
+        self.assertEqual(cpp_stdout, "Hello, Codex\n")
+        self.assertEqual(go_stdout, cpp_stdout)
+
+    def test_common_renderer_fixture_string_ops_stdout_parity_between_go_and_cpp(self) -> None:
+        go_stdout = _run_go(FIXTURE_STRING_OPS_SOURCE)
+        cpp_stdout = _run_cpp(FIXTURE_STRING_OPS_SOURCE)
+
+        self.assertEqual(go_stdout, "[USER] Alice!\n")
+        self.assertEqual(cpp_stdout, "[USER] Alice!\n")
         self.assertEqual(go_stdout, cpp_stdout)
 
     def test_common_renderer_fixture_tuple_assign_stdout_parity_between_go_and_cpp(self) -> None:
