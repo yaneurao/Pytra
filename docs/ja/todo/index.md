@@ -36,7 +36,7 @@
 7. [x] [ID: P1-EMIT-CPP-S7] mapping.json 外の名前変換ハードコードを除去する — `resolve_runtime_call()` fallback の dotted `runtime_call` は unmapped なら fail-closed とし、C++ emitter の `fn.replace(".", "_")` を削除
 8. [x] [ID: P1-EMIT-CPP-S8] C++ emitter の container 既定表現を spec 準拠に修正する — `list<T>` / `dict<K,V>` / `set<T>` を既定で `Object<list<T>>` 等の参照型ラッパーへ移行し、`container_value_locals_v1` がある局所のみ値型を許可。`dict_wrapper_methods.py` / `set_wrapper_methods.py` の C++ build+run を確認
 9. [x] [ID: P1-EMIT-CPP-S9] C++ emitter の runtime パス解決を loader.py 共通関数に委譲する — `link/runtime_discovery.py` に runtime rel-tail の正本を追加し、`emit/cpp/runtime_paths.py` は shared helper 呼び出しへ縮退。`pytra.core.py_runtime` の include 個別分岐も emitter 側から削除
-10. [ ] [ID: P1-EMIT-CPP-S10] C++ emitter の runtime call 名解決を mapping.json に一本化する — emitter が mapping.json を迂回して個別描画している箇所を全て mapping.json 経由に移行する。具体的には: (a) 属性呼び出しの `append → push_back` 等の直接描画（emitter.py:579, 609）、(b) BuiltinCall の `py_int_from_str → std::stoll`、`py_float_from_str → std::stod` の先回り処理（emitter.py:706, 708）、(c) `list.append/pop/clear`、`dict.get/items/keys/values`、`set.add/discard/remove` の個別分岐（emitter.py:715, 731, 754）。mapping.json に写像を追加し、emitter 側の個別分岐を除去して二重管理を解消する。
+10. [x] [ID: P1-EMIT-CPP-S10] C++ emitter の runtime call 名解決を mapping.json に一本化する — `runtime/cpp/mapping.json` に `py_int_from_str/std::stoll`・`py_float_from_str/std::stod` を寄せ、C++ emitter から `append → push_back` と container helper / numeric cast の個別分岐を削除。attribute call も runtime metadata + mapping 経由で解決
 
 ### P2-SELFHOST: toolchain2 自身の変換テスト
 

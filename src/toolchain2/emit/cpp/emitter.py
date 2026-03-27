@@ -584,14 +584,17 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             owner_module = ctx.import_aliases.get(owner_id, "")
             runtime_module_id = _str(func, "runtime_module_id")
             runtime_symbol = _str(func, "runtime_symbol")
+            runtime_call = _str(node, "runtime_call")
+            resolved_runtime_call = _str(node, "resolved_runtime_call")
+            builtin_name = _str(node, "builtin_name")
             if _is_type_owner(ctx, owner_node):
                 return owner + "::" + attr + "(" + ", ".join(call_arg_strs) + ")"
             if owner_module != "":
                 symbol_name = _resolve_runtime_attr_symbol(
                     ctx,
                     runtime_module_id=runtime_module_id if runtime_module_id != "" else owner_module,
-                    resolved_runtime_call=_str(node, "resolved_runtime_call"),
-                    runtime_call=_str(node, "runtime_call"),
+                    resolved_runtime_call=resolved_runtime_call,
+                    runtime_call=runtime_call,
                     runtime_symbol=runtime_symbol,
                     fallback_symbol=attr,
                 )
@@ -600,15 +603,24 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 symbol_name = _resolve_runtime_attr_symbol(
                     ctx,
                     runtime_module_id=runtime_module_id,
-                    resolved_runtime_call=_str(node, "resolved_runtime_call"),
-                    runtime_call=_str(node, "runtime_call"),
+                    resolved_runtime_call=resolved_runtime_call,
+                    runtime_call=runtime_call,
                     runtime_symbol=runtime_symbol,
                     fallback_symbol=attr,
                 )
                 return _qualify_runtime_call_symbol(symbol_name) + "(" + ", ".join(call_arg_strs) + ")"
-            if attr == "append" and len(call_arg_strs) >= 1:
-                member_sep = "->" if _uses_ref_container_storage(ctx, owner_node) else "."
-                return owner + member_sep + "push_back(" + call_arg_strs[0] + ")"
+            if runtime_call != "" or resolved_runtime_call != "" or builtin_name != "":
+                mapped_name = resolve_runtime_call(
+                    resolved_runtime_call if resolved_runtime_call != "" else runtime_call,
+                    builtin_name if builtin_name != "" else attr,
+                    adapter,
+                    ctx.mapping,
+                )
+                if mapped_name != "":
+                    return _wrap_container_result_if_needed(
+                        node,
+                        _qualify_runtime_call_symbol(mapped_name) + "(" + ", ".join([owner] + call_arg_strs) + ")",
+                    )
             if owner == "this":
                 return "this->" + attr + "(" + ", ".join(call_arg_strs) + ")"
             member_sep = "->" if _uses_ref_container_storage(ctx, owner_node) else "."
@@ -659,11 +671,9 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     args = _list(node, "args")
     arg_strs = [_emit_expr(ctx, a) for a in args]
     func = node.get("func")
-    method_owner = ""
     call_arg_strs = arg_strs
     if isinstance(func, dict) and _str(func, "kind") == "Attribute":
-        method_owner = _emit_expr(ctx, func.get("value"))
-        call_arg_strs = [method_owner] + arg_strs
+        call_arg_strs = [_emit_expr(ctx, func.get("value"))] + arg_strs
 
     if rc in ("static_cast", "int", "float", "bool"):
         rt = _str(node, "resolved_type")
@@ -705,64 +715,9 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         return "bytes{}"
     if rc in ("py_print", "py_len") and len(arg_strs) >= 1:
         return rc + "(" + ", ".join(arg_strs) + ")"
-    if rc == "py_int_from_str" and len(arg_strs) >= 1:
-        return "std::stoll(" + arg_strs[0] + ")"
-    if rc == "py_float_from_str" and len(arg_strs) >= 1:
-        return "std::stod(" + arg_strs[0] + ")"
     if bn in ("RuntimeError", "ValueError", "TypeError") or rc == "std::runtime_error":
         if len(arg_strs) >= 1: return "throw std::runtime_error(" + arg_strs[0] + ")"
         return 'throw std::runtime_error("' + bn + '")'
-    if rc == "list.append":
-        if isinstance(func, dict):
-            owner = _emit_expr(ctx, func.get("value"))
-            if len(arg_strs) >= 1: return "py_list_append_mut(" + owner + ", " + arg_strs[0] + ")"
-    if rc == "list.pop":
-        if isinstance(func, dict):
-            owner = _emit_expr(ctx, func.get("value"))
-            if len(arg_strs) >= 1:
-                return _wrap_container_result_if_needed(node, "py_list_pop_mut(" + owner + ", " + arg_strs[0] + ")")
-            return _wrap_container_result_if_needed(node, "py_list_pop_mut(" + owner + ")")
-    if rc == "list.clear":
-        if isinstance(func, dict):
-            owner = _emit_expr(ctx, func.get("value"))
-            return "py_list_clear_mut(" + owner + ")"
-    if rc == "list.index" and method_owner != "" and len(arg_strs) >= 1:
-        return "py_index(" + method_owner + ", " + arg_strs[0] + ")"
-    if rc == "dict.get":
-        if isinstance(func, dict):
-            owner = _emit_expr(ctx, func.get("value"))
-            if len(arg_strs) >= 2:
-                return _wrap_container_result_if_needed(node, "py_dict_get(" + owner + ", " + arg_strs[0] + ", " + arg_strs[1] + ")")
-            if len(arg_strs) >= 1:
-                return _wrap_container_result_if_needed(node, "py_dict_get(" + owner + ", " + arg_strs[0] + ")")
-    if rc == "dict.clear":
-        if isinstance(func, dict):
-            owner = _emit_expr(ctx, func.get("value"))
-            return "py_dict_clear_mut(" + owner + ")"
-    if rc == "dict.items":
-        if isinstance(func, dict):
-            owner = _emit_expr(ctx, func.get("value"))
-            return _wrap_container_result_if_needed(node, "py_dict_items(" + owner + ")")
-    if rc == "dict.keys":
-        if isinstance(func, dict):
-            owner = _emit_expr(ctx, func.get("value"))
-            return _wrap_container_result_if_needed(node, "py_dict_keys(" + owner + ")")
-    if rc == "dict.values":
-        if isinstance(func, dict):
-            owner = _emit_expr(ctx, func.get("value"))
-            return _wrap_container_result_if_needed(node, "py_dict_values(" + owner + ")")
-    if rc == "set.add":
-        if isinstance(func, dict) and len(arg_strs) >= 1:
-            owner = _emit_expr(ctx, func.get("value"))
-            return "py_set_add_mut(" + owner + ", " + arg_strs[0] + ")"
-    if rc == "set.discard":
-        if isinstance(func, dict) and len(arg_strs) >= 1:
-            owner = _emit_expr(ctx, func.get("value"))
-            return "py_set_discard_mut(" + owner + ", " + arg_strs[0] + ")"
-    if rc == "set.remove":
-        if isinstance(func, dict) and len(arg_strs) >= 1:
-            owner = _emit_expr(ctx, func.get("value"))
-            return "py_set_remove_mut(" + owner + ", " + arg_strs[0] + ")"
     if rc in ("py_write_text", "pathlib.write_text"):
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))

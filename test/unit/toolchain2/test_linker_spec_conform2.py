@@ -1002,6 +1002,142 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn('#include "built_in/io_ops.h"', cpp_code)
         self.assertIn('#include "utils/assertions.h"', cpp_code)
 
+    def test_cpp_emitter_uses_mapping_for_runtime_container_helpers(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                    "declare": True,
+                    "decl_type": "list[int64]",
+                    "declare_init": True,
+                    "value": {"kind": "List", "resolved_type": "list[int64]", "elements": []},
+                },
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "d", "resolved_type": "dict[str,int64]"},
+                    "declare": True,
+                    "decl_type": "dict[str,int64]",
+                    "declare_init": True,
+                    "value": {"kind": "Dict", "resolved_type": "dict[str,int64]", "entries": []},
+                },
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "s", "resolved_type": "set[str]"},
+                    "declare": True,
+                    "decl_type": "set[str]",
+                    "declare_init": True,
+                    "value": {"kind": "Set", "resolved_type": "set[str]", "elements": []},
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "runtime_call": "list.append",
+                        "builtin_name": "append",
+                        "func": {
+                            "kind": "Attribute",
+                            "value": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+                            "attr": "append",
+                        },
+                        "args": [{"kind": "Constant", "value": 1, "resolved_type": "int64"}],
+                    },
+                },
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "item", "resolved_type": "int64"},
+                    "declare": True,
+                    "decl_type": "int64",
+                    "declare_init": True,
+                    "value": {
+                        "kind": "Call",
+                        "lowered_kind": "BuiltinCall",
+                        "runtime_call": "dict.get",
+                        "builtin_name": "get",
+                        "resolved_type": "int64",
+                        "func": {
+                            "kind": "Attribute",
+                            "value": {"kind": "Name", "id": "d", "resolved_type": "dict[str,int64]"},
+                            "attr": "get",
+                        },
+                        "args": [
+                            {"kind": "Constant", "value": "x", "resolved_type": "str"},
+                            {"kind": "Constant", "value": 0, "resolved_type": "int64"},
+                        ],
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "lowered_kind": "BuiltinCall",
+                        "runtime_call": "set.add",
+                        "builtin_name": "add",
+                        "func": {
+                            "kind": "Attribute",
+                            "value": {"kind": "Name", "id": "s", "resolved_type": "set[str]"},
+                            "attr": "add",
+                        },
+                        "args": [{"kind": "Constant", "value": "x", "resolved_type": "str"}],
+                    },
+                },
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("py_list_append_mut(xs, int64(1));", cpp_code)
+        self.assertIn('int64 item = py_dict_get(d, str("x"), int64(0));', cpp_code)
+        self.assertIn('py_set_add_mut(s, str("x"));', cpp_code)
+        self.assertNotIn("push_back(", cpp_code)
+
+    def test_cpp_emitter_uses_mapping_for_string_numeric_cast_helpers(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "i", "resolved_type": "int64"},
+                    "declare": True,
+                    "decl_type": "int64",
+                    "declare_init": True,
+                    "value": {
+                        "kind": "Call",
+                        "lowered_kind": "BuiltinCall",
+                        "runtime_call": "py_int_from_str",
+                        "builtin_name": "int",
+                        "resolved_type": "int64",
+                        "func": {"kind": "Name", "id": "int"},
+                        "args": [{"kind": "Constant", "value": "12", "resolved_type": "str"}],
+                    },
+                },
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "f", "resolved_type": "float64"},
+                    "declare": True,
+                    "decl_type": "float64",
+                    "declare_init": True,
+                    "value": {
+                        "kind": "Call",
+                        "lowered_kind": "BuiltinCall",
+                        "runtime_call": "py_float_from_str",
+                        "builtin_name": "float",
+                        "resolved_type": "float64",
+                        "func": {"kind": "Name", "id": "float"},
+                        "args": [{"kind": "Constant", "value": "1.5", "resolved_type": "str"}],
+                    },
+                },
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn('std::stoll(str("12"))', cpp_code)
+        self.assertIn('std::stod(str("1.5"))', cpp_code)
+        self.assertNotIn("py_int_from_str(", cpp_code)
+        self.assertNotIn("py_float_from_str(", cpp_code)
+
     def test_cpp_emitter_rewrites_runtime_module_alias_calls_to_direct_symbols(self) -> None:
         doc = _module_doc(
             "app.main",
