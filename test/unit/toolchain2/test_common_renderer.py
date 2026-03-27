@@ -4,6 +4,8 @@ import unittest
 
 from toolchain2.emit.common.common_renderer import CommonRenderer
 from toolchain2.emit.common.profile_loader import load_profile_doc
+from toolchain2.emit.cpp.emitter import _emit_expr as emit_cpp_expr, CppEmitContext
+from toolchain2.emit.go.emitter import _emit_expr as emit_go_expr, EmitContext
 
 
 class DummyRenderer(CommonRenderer):
@@ -89,6 +91,42 @@ class CommonRendererTests(unittest.TestCase):
         self.assertIn("for (ready && running) {", rendered)
         self.assertIn("x = (x + 1)", rendered)
         self.assertNotIn(";", rendered)
+
+    def test_go_emitter_expr_dispatch_uses_common_renderer_for_shared_boolop(self) -> None:
+        rendered = emit_go_expr(
+            EmitContext(),
+            {
+                "kind": "BoolOp",
+                "op": "And",
+                "values": [
+                    {"kind": "Name", "id": "ready"},
+                    {
+                        "kind": "Compare",
+                        "left": {"kind": "Name", "id": "count", "resolved_type": "int"},
+                        "ops": ["Gt"],
+                        "comparators": [{"kind": "Constant", "value": 0, "resolved_type": "int"}],
+                    },
+                ],
+            },
+        )
+
+        self.assertIn("ready", rendered)
+        self.assertIn("count", rendered)
+        self.assertIn(">", rendered)
+
+    def test_cpp_emitter_expr_dispatch_uses_common_renderer_for_shared_binop(self) -> None:
+        rendered = emit_cpp_expr(
+            CppEmitContext(),
+            {
+                "kind": "BinOp",
+                "left": {"kind": "Constant", "value": 1, "resolved_type": "int"},
+                "op": "Add",
+                "right": {"kind": "Constant", "value": 2, "resolved_type": "int"},
+                "resolved_type": "int",
+            },
+        )
+
+        self.assertEqual(rendered, "(int64(1) + int64(2))")
 
 
 if __name__ == "__main__":

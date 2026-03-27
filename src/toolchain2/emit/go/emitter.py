@@ -99,7 +99,12 @@ class _GoStmtCommonRenderer(CommonRenderer):
 
     def emit_stmt(self, node: JsonVal) -> None:
         kind = self._str(node, "kind")
-        if kind in ("Expr", "Return", "If", "While"):
+        if kind == "Return" and isinstance(node, dict):
+            self.ctx.indent_level = self.state.indent_level
+            _emit_return(self.ctx, node)
+            self.state.indent_level = self.ctx.indent_level
+            return
+        if kind in ("Expr", "If", "While"):
             super().emit_stmt(node)
             self.ctx.indent_level = self.state.indent_level
             return
@@ -110,6 +115,42 @@ class _GoStmtCommonRenderer(CommonRenderer):
         self.ctx.indent_level = self.state.indent_level
         _emit_stmt(self.ctx, node)
         self.state.indent_level = self.ctx.indent_level
+
+
+class _GoExprCommonRenderer(CommonRenderer):
+    def __init__(self, ctx: EmitContext) -> None:
+        self.ctx = ctx
+        super().__init__("go")
+
+    def render_name(self, node: dict[str, JsonVal]) -> str:
+        return _emit_name(self.ctx, node)
+
+    def render_constant(self, node: dict[str, JsonVal]) -> str:
+        return _emit_constant(self.ctx, node)
+
+    def render_binop(self, node: dict[str, JsonVal]) -> str:
+        return _emit_binop(self.ctx, node)
+
+    def render_unaryop(self, node: dict[str, JsonVal]) -> str:
+        return _emit_unaryop(self.ctx, node)
+
+    def render_compare(self, node: dict[str, JsonVal]) -> str:
+        return _emit_compare(self.ctx, node)
+
+    def render_boolop(self, node: dict[str, JsonVal]) -> str:
+        return _emit_boolop(self.ctx, node)
+
+    def render_attribute(self, node: dict[str, JsonVal]) -> str:
+        return _emit_attribute(self.ctx, node)
+
+    def render_call(self, node: dict[str, JsonVal]) -> str:
+        return _emit_call(self.ctx, node)
+
+    def render_assign_stmt(self, node: dict[str, JsonVal]) -> str:
+        raise RuntimeError("go common renderer assign hook is not used in expr adapter")
+
+    def render_expr_extension(self, node: dict[str, JsonVal]) -> str:
+        return _emit_expr_extension(self.ctx, node)
 
 
 def _emit_common_stmt_if_supported(ctx: EmitContext, node: dict[str, JsonVal]) -> bool:
@@ -328,25 +369,12 @@ def _emit_expr(ctx: EmitContext, node: JsonVal) -> str:
     """Emit an expression node and return Go code string."""
     if not isinstance(node, dict):
         return "nil"
+    renderer = _GoExprCommonRenderer(ctx)
+    return renderer.render_expr(node)
 
+
+def _emit_expr_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     kind = _str(node, "kind")
-
-    if kind == "Constant":
-        return _emit_constant(ctx, node)
-    if kind == "Name":
-        return _emit_name(ctx, node)
-    if kind == "BinOp":
-        return _emit_binop(ctx, node)
-    if kind == "UnaryOp":
-        return _emit_unaryop(ctx, node)
-    if kind == "Compare":
-        return _emit_compare(ctx, node)
-    if kind == "BoolOp":
-        return _emit_boolop(ctx, node)
-    if kind == "Call":
-        return _emit_call(ctx, node)
-    if kind == "Attribute":
-        return _emit_attribute(ctx, node)
     if kind == "Subscript":
         return _emit_subscript(ctx, node)
     if kind == "List":
