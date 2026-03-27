@@ -48,7 +48,7 @@
 文脈: [docs/ja/plans/p2-lowering-profile-common-renderer.md](../plans/p2-lowering-profile-common-renderer.md)
 仕様: [docs/ja/spec/spec-language-profile.md](../spec/spec-language-profile.md) §8
 
-1. [ ] [ID: P3-COMMON-RENDERER-S1] CommonRenderer 基底クラスを実装する — If/While/BinOp/Call/Return/Assign/Constant/Compare/UnaryOp/BoolOp 等の共通ノード走査を、プロファイル JSON（type_map, operator_map, syntax, lowering）を参照して生成する共通基底。言語固有ノード（FunctionDef, ClassDef, ForCore 等）は abstract override として残す
+1. [x] [ID: P3-COMMON-RENDERER-S1] CommonRenderer 基底クラスを実装する — If/While/BinOp/Call/Return/Assign/Constant/Compare/UnaryOp/BoolOp 等の共通ノード走査を、プロファイル JSON（type_map, operator_map, syntax, lowering）を参照して生成する共通基底。言語固有ノード（FunctionDef, ClassDef, ForCore 等）は abstract override として残す
 2. [ ] [ID: P3-COMMON-RENDERER-S2] C++ emitter を CommonRenderer + override 構成に移行する — `src/toolchain2/emit/profiles/cpp.json` のプロファイルに従い、CommonRenderer の共通ノード走査を使う構成にする。C++ 固有のノード（ClassDef, FunctionDef, ForCore, With 等）だけ override として残す
 3. [ ] [ID: P3-COMMON-RENDERER-S3] Go emitter を CommonRenderer + override 構成に移行する — `src/toolchain2/emit/profiles/go.json` のプロファイルに従い同様に移行する
 4. [ ] [ID: P3-COMMON-RENDERER-S4] fixture 132 件 + sample 18 件の C++/Go compile + run parity を通す — CommonRenderer 移行後に **emit + compile + run + stdout 一致** を全件確認する

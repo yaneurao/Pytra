@@ -149,3 +149,9 @@ def load_lowering_profile(language: str) -> LoweringProfile:
     profile_path = _profiles_root().joinpath(language + ".json")
     doc = load_profile_with_includes(profile_path)
     return parse_lowering_profile(doc)
+
+
+def load_profile_doc(language: str) -> dict[str, JsonVal]:
+    if language == "":
+        raise RuntimeError("language must not be empty")
+    return load_profile_with_includes(_profiles_root().joinpath(language + ".json"))
