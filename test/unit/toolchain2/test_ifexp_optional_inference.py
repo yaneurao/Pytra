@@ -104,7 +104,7 @@ def f(node: Node):
         )
 
         ifexp = next(node for node in _walk(east2) if node.get("kind") == "IfExp")
-        self.assertEqual(ifexp.get("resolved_type"), "Any | None")
+        self.assertEqual(ifexp.get("resolved_type"), "object | None")
 
 
 if __name__ == "__main__":
