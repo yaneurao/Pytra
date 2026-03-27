@@ -158,11 +158,17 @@ def _build_module_call_graph(
 
     # Also scan main_guard_body
     main_guard = east_doc.get("main_guard_body")
-    if isinstance(main_guard, list) and len(main_guard) > 0:
-        main_fn = module_id + "::__main__"
-        if main_fn not in graph:
-            graph[main_fn] = set()
-        _collect_calls_in_node(main_guard, known_symbols, module_id, main_fn, graph, unresolved)
+    if isinstance(main_guard, list):
+        has_main_guard = False
+        for item in main_guard:
+            _ = item
+            has_main_guard = True
+            break
+        if has_main_guard:
+            main_fn = module_id + "::__main__"
+            if main_fn not in graph:
+                graph[main_fn] = set()
+            _collect_calls_in_node(main_guard, known_symbols, module_id, main_fn, graph, unresolved)
 
     return graph, unresolved
 

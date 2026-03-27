@@ -66,10 +66,9 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
         calls_raw = raw["calls"]
     calls: dict[str, str] = {}
     if isinstance(calls_raw, dict):
-        for k in calls_raw:
-            v = calls_raw[k]
-            if isinstance(k, str) and isinstance(v, str):
-                calls[k] = v
+        for key, v in calls_raw.items():
+            if isinstance(v, str):
+                calls[key] = v
 
     skip_raw: JsonVal = None
     if "skip_modules" in raw:

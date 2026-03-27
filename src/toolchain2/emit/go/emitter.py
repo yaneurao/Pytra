@@ -422,10 +422,21 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     safe_name = _go_symbol_name(ctx, name)
     resolved_type = _str(node, "resolved_type")
     scope_type = ctx.var_types.get(safe_name, "")
+    scope_optional_inner = _optional_inner_type(scope_type)
+    if (
+        resolved_type != ""
+        and scope_optional_inner != ""
+        and resolved_type == scope_optional_inner
+        and go_type(scope_type).startswith("*")
+    ):
+        return "(*(" + safe_name + "))"
     if (
         resolved_type != ""
         and resolved_type != scope_type
-        and scope_type in ("JsonVal", "Any", "Obj", "object", "unknown")
+        and (
+            scope_type in ("JsonVal", "Any", "Obj", "object", "unknown")
+            or go_type(scope_type) == "any"
+        )
     ):
         return _coerce_from_any(safe_name, resolved_type)
     if safe_name in ctx.list_alias_vars:
@@ -557,7 +568,9 @@ def _maybe_coerce_expr_to_type(ctx: EmitContext, value_node: JsonVal, value_code
         return "(*(" + value_code + "))"
     optional_inner = _optional_inner_type(target_type)
     if optional_inner != "":
-        return _wrap_optional_value_code(ctx, _coerce_from_any(value_code, optional_inner), target_type, value_node)
+        if source_type in ("JsonVal", "Any", "Obj", "object", "unknown") or source_gt == "any":
+            return _wrap_optional_value_code(ctx, _coerce_from_any(value_code, optional_inner), target_type, value_node)
+        return _wrap_optional_value_code(ctx, value_code, target_type, value_node)
     if source_type in ("JsonVal", "Any", "Obj", "object", "unknown") or source_gt == "any":
         return _coerce_from_any(value_code, target_type)
     return value_code
@@ -633,10 +646,30 @@ def _wrap_optional_value_code(ctx: EmitContext, value_code: str, optional_type: 
     inner_type = _optional_inner_type(optional_type)
     if inner_type == "":
         return value_code
+    if ".as_obj()" in value_code or ".as_arr()" in value_code or ".as_str()" in value_code or ".as_int()" in value_code or ".as_float()" in value_code or ".as_bool()" in value_code:
+        return value_code
+    if value_code.startswith("NewJsonValue("):
+        return value_code
+    if value_code.startswith("NewJsonObj(") or value_code.startswith("NewJsonArr("):
+        return value_code
+    if value_code.startswith("pytra_std_json__jv_as_str(") or value_code.startswith("pytra_std_json__jv_as_int(") or value_code.startswith("pytra_std_json__jv_as_float(") or value_code.startswith("pytra_std_json__jv_as_bool("):
+        return value_code
     if isinstance(value_node, dict) and _str(value_node, "kind") == "Constant" and value_node.get("value") is None:
         return "nil"
-    if isinstance(value_node, dict) and _optional_inner_type(_str(value_node, "resolved_type")) != "":
-        return value_code
+    if isinstance(value_node, dict):
+        source_type = _str(value_node, "resolved_type")
+        source_optional_inner = _optional_inner_type(source_type)
+        if source_optional_inner != "":
+            return value_code
+        if _str(value_node, "kind") == "Name":
+            scope_name = _go_symbol_name(ctx, _str(value_node, "id"))
+            scope_type = ctx.var_types.get(scope_name, "")
+            if scope_type == optional_type:
+                return value_code
+        inner_code = value_code
+        if source_type in ("JsonVal", "Any", "Obj", "object", "unknown") or go_type(source_type) == "any":
+            inner_code = _coerce_from_any(value_code, inner_type)
+        return _wrap_optional_resolved_code(ctx, inner_code, inner_type)
     return _wrap_optional_resolved_code(ctx, value_code, inner_type)
 
 
@@ -799,11 +832,13 @@ def _box_value_code(ctx: EmitContext, value_node: JsonVal, target_type: str) -> 
             val_name = _next_temp(ctx, "boxed_val")
             key_ref: dict[str, JsonVal] = {"kind": "Name", "id": key_name, "resolved_type": source_key_type}
             val_ref: dict[str, JsonVal] = {"kind": "Name", "id": val_name, "resolved_type": source_val_type}
+            boxed_key = key_name if key_type == "str" else _box_value_code(ctx, key_ref, key_type)
+            boxed_val = _box_value_code(ctx, val_ref, val_type)
             return (
                 "func() map[" + key_gt + "]" + val_gt + " {\n"
                 + "\t" + out_name + " := map[" + key_gt + "]" + val_gt + "{}\n"
                 + "\tfor " + key_name + ", " + val_name + " := range " + src + " {\n"
-                + "\t\t" + out_name + "[" + _box_value_code(ctx, key_ref, key_type) + "] = " + _box_value_code(ctx, val_ref, val_type) + "\n"
+                + "\t\t" + out_name + "[" + boxed_key + "] = " + boxed_val + "\n"
                 + "\t}\n"
                 + "\treturn " + out_name + "\n"
                 + "}()"
@@ -1162,6 +1197,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                         if target_name == "":
                             target_name = _str(target_node, "repr")
                     value_node = args[1] if len(args) >= 2 and isinstance(args[1], dict) else None
+                    if isinstance(value_node, dict) and _str(value_node, "kind") == "Name":
+                        scope_name = _go_symbol_name(ctx, _str(value_node, "id"))
+                        scope_type = ctx.var_types.get(scope_name, "")
+                        scope_optional_inner = _optional_inner_type(scope_type)
+                        if scope_optional_inner != "" and target_name == scope_optional_inner and go_type(scope_type).startswith("*"):
+                            return "(*(" + arg_strs[1] + "))"
                     if isinstance(value_node, dict):
                         source_type = _str(value_node, "resolved_type")
                         source_optional_inner = _optional_inner_type(source_type)
@@ -1318,6 +1359,11 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if len(arg_strs) >= 1:
             arg0 = args[0] if isinstance(args[0], dict) else None
             arg0_rt = _str(arg0, "resolved_type") if isinstance(arg0, dict) else ""
+            if isinstance(arg0, dict) and _str(arg0, "kind") == "Name":
+                arg0_name = _safe_go_ident(_str(arg0, "id"))
+                scope_type = ctx.var_types.get(arg0_name, "")
+                if scope_type != "":
+                    arg0_rt = scope_type
             if arg0_rt.startswith("list[") or arg0_rt.startswith("dict[") or arg0_rt.startswith("set["):
                 return "int64(len(" + arg_strs[0] + "))"
             if arg0_rt in ("str", "bytes", "bytearray"):
@@ -2318,7 +2364,7 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             else:
                 # Use typed declaration for numeric types to avoid Go's untyped int
                 if gt in ("int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64",
-                          "float64", "float32", "byte", "any"):
+                          "float64", "float32", "byte", "any") or gt.startswith("*") or val_code == "nil":
                     _emit(ctx, "var " + name + " " + gt + " = " + val_code)
                 else:
                     _emit(ctx, name + " := " + val_code)
@@ -2404,7 +2450,7 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 ctx.var_types[gn] = decl_type
                 gt = _go_signature_type(ctx, decl_type)
                 if gt in ("int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64",
-                          "float64", "float32"):
+                          "float64", "float32") or gt.startswith("*") or val_code == "nil":
                     _emit(ctx, "var " + gn + " " + gt + " = " + val_code)
                 else:
                     if at_module_scope:
@@ -2483,7 +2529,25 @@ def _emit_return(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         _emit(ctx, "return")
     else:
         value_code = _emit_expr(ctx, value)
-        if _optional_inner_type(ctx.current_return_type) != "":
+        if isinstance(value, dict) and _str(value, "kind") == "Name":
+            scope_name = _go_symbol_name(ctx, _str(value, "id"))
+            scope_type = ctx.var_types.get(scope_name, "")
+            if scope_type != "" and scope_type == ctx.current_return_type and _optional_inner_type(scope_type) != "":
+                value_code = scope_name
+        optional_inner = _optional_inner_type(ctx.current_return_type)
+        if optional_inner != "":
+            if isinstance(value, dict):
+                source_type = _str(value, "resolved_type")
+                scope_type = ""
+                if _str(value, "kind") == "Name":
+                    scope_name = _go_symbol_name(ctx, _str(value, "id"))
+                    scope_type = ctx.var_types.get(scope_name, "")
+                if (
+                    source_type in ("JsonVal", "Any", "Obj", "object", "unknown")
+                    or go_type(source_type) == "any"
+                    or go_type(scope_type) == "any"
+                ):
+                    value_code = _coerce_from_any(value_code, optional_inner)
             value_code = _wrap_optional_value_code(ctx, value_code, ctx.current_return_type, value)
         _emit(ctx, "return " + value_code)
 
@@ -2497,6 +2561,8 @@ def _emit_if(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         test = "(" + test + " != 0)"
     elif test_rt.startswith("list[") or test_rt in ("str", "bytes", "bytearray"):
         test = "len(" + test + ") > 0"
+    elif test_rt != "bool":
+        test = "py_truthy(" + test + ")"
     _emit(ctx, "if " + test + " {")
     ctx.indent_level += 1
     _emit_body(ctx, _list(node, "body"))
@@ -3061,13 +3127,17 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         _emit(ctx, "obj := &" + gn + "{}")
         saved_receiver = ctx.current_receiver
         saved_ctor_target = ctx.constructor_return_target
+        saved_vars = dict(ctx.var_types)
         ctx.current_receiver = "obj"
         ctx.current_class = name
         ctx.constructor_return_target = "obj"
+        for param_name, param_type in ctor_params:
+            ctx.var_types[_safe_go_ident(param_name)] = param_type
         for init_s in init_body_stmts:
             _emit_stmt(ctx, init_s)
         ctx.current_receiver = saved_receiver
         ctx.constructor_return_target = saved_ctor_target
+        ctx.var_types = saved_vars
         _emit(ctx, "return obj")
     else:
         if first_default_index < len(ctor_params):

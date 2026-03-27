@@ -195,6 +195,17 @@ func py_len(v any) int64 {
 	}
 }
 
+func py_pop(m map[string]any, key string, defaultValue any) any {
+	if m == nil {
+		return defaultValue
+	}
+	if value, ok := m[key]; ok {
+		delete(m, key)
+		return value
+	}
+	return defaultValue
+}
+
 func py_abs(v int64) int64 {
 	if v < 0 {
 		return -v
@@ -383,6 +394,17 @@ func py_is_int(v any) bool {
 		return false
 	}
 }
+
+func py_is_exact_int8(v any) bool    { return goreflect.TypeOf(v) == goreflect.TypeOf(int8(0)) }
+func py_is_exact_uint8(v any) bool   { return goreflect.TypeOf(v) == goreflect.TypeOf(uint8(0)) }
+func py_is_exact_int16(v any) bool   { return goreflect.TypeOf(v) == goreflect.TypeOf(int16(0)) }
+func py_is_exact_uint16(v any) bool  { return goreflect.TypeOf(v) == goreflect.TypeOf(uint16(0)) }
+func py_is_exact_int32(v any) bool   { return goreflect.TypeOf(v) == goreflect.TypeOf(int32(0)) }
+func py_is_exact_uint32(v any) bool  { return goreflect.TypeOf(v) == goreflect.TypeOf(uint32(0)) }
+func py_is_exact_int64(v any) bool   { return goreflect.TypeOf(v) == goreflect.TypeOf(int64(0)) }
+func py_is_exact_uint64(v any) bool  { return goreflect.TypeOf(v) == goreflect.TypeOf(uint64(0)) }
+func py_is_exact_float32(v any) bool { return goreflect.TypeOf(v) == goreflect.TypeOf(float32(0)) }
+func py_is_exact_float64(v any) bool { return goreflect.TypeOf(v) == goreflect.TypeOf(float64(0)) }
 
 func py_is_float(v any) bool {
 	rv := goreflect.ValueOf(v)
@@ -699,6 +721,146 @@ func py_items(m any) [][]any {
 	for _, key := range keys {
 		value := mv.MapIndex(key)
 		out = append(out, []any{key.Interface(), value.Interface()})
+	}
+	return out
+}
+
+func py_dict_keys(m any) []string {
+	mv := goreflect.ValueOf(m)
+	if !mv.IsValid() || mv.Kind() != goreflect.Map {
+		return []string{}
+	}
+	keys := mv.MapKeys()
+	out := make([]string, 0, len(keys))
+	for _, key := range keys {
+		if key.Kind() == goreflect.String {
+			out = append(out, key.String())
+		}
+	}
+	return out
+}
+
+func py_dict_values(m any) []any {
+	mv := goreflect.ValueOf(m)
+	if !mv.IsValid() || mv.Kind() != goreflect.Map {
+		return []any{}
+	}
+	keys := mv.MapKeys()
+	out := make([]any, 0, len(keys))
+	for _, key := range keys {
+		value := mv.MapIndex(key)
+		out = append(out, value.Interface())
+	}
+	return out
+}
+
+func py_iter(v any) []any {
+	rv := goreflect.ValueOf(v)
+	if !rv.IsValid() {
+		return []any{}
+	}
+	for rv.Kind() == goreflect.Interface || rv.Kind() == goreflect.Pointer {
+		if rv.IsNil() {
+			return []any{}
+		}
+		rv = rv.Elem()
+	}
+	switch rv.Kind() {
+	case goreflect.Slice, goreflect.Array:
+		out := make([]any, rv.Len())
+		for i := 0; i < rv.Len(); i++ {
+			out[i] = rv.Index(i).Interface()
+		}
+		return out
+	case goreflect.Map:
+		keys := rv.MapKeys()
+		out := make([]any, 0, len(keys))
+		for _, key := range keys {
+			out = append(out, key.Interface())
+		}
+		return out
+	case goreflect.String:
+		text := rv.String()
+		out := make([]any, 0, len(text))
+		for _, ch := range text {
+			out = append(out, string(ch))
+		}
+		return out
+	default:
+		return []any{}
+	}
+}
+
+type pySetSource[T comparable] interface {
+	~[]T | ~map[T]struct{}
+}
+
+func py_set[T comparable, S pySetSource[T]](values S) map[T]struct{} {
+	out := map[T]struct{}{}
+	switch src := any(values).(type) {
+	case []T:
+		for _, value := range src {
+			out[value] = struct{}{}
+		}
+	case map[T]struct{}:
+		for value := range src {
+			out[value] = struct{}{}
+		}
+	}
+	return out
+}
+
+func py_set_str(values any) map[string]struct{} {
+	out := map[string]struct{}{}
+	switch t := values.(type) {
+	case []string:
+		for _, value := range t {
+			out[value] = struct{}{}
+		}
+	case map[string]struct{}:
+		for value := range t {
+			out[value] = struct{}{}
+		}
+	case map[any]struct{}:
+		for raw := range t {
+			if value, ok := raw.(string); ok {
+				out[value] = struct{}{}
+			}
+		}
+	}
+	return out
+}
+
+func py_set_update_str(dst map[string]struct{}, values any) map[string]struct{} {
+	if dst == nil {
+		dst = map[string]struct{}{}
+	}
+	switch t := values.(type) {
+	case []string:
+		for _, value := range t {
+			dst[value] = struct{}{}
+		}
+	case map[string]struct{}:
+		for value := range t {
+			dst[value] = struct{}{}
+		}
+	case map[any]struct{}:
+		for raw := range t {
+			if value, ok := raw.(string); ok {
+				dst[value] = struct{}{}
+			}
+		}
+	}
+	return dst
+}
+
+func py_set_union_str(left map[string]struct{}, right map[string]struct{}) map[string]struct{} {
+	out := map[string]struct{}{}
+	for value := range left {
+		out[value] = struct{}{}
+	}
+	for value := range right {
+		out[value] = struct{}{}
 	}
 	return out
 }

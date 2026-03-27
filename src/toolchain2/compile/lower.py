@@ -146,8 +146,9 @@ def _canonical_type_name(ctx: CompileContext, value: JsonVal) -> str:
     if norm in ("", "unknown"):
         return norm
     summary = type_expr_summary_from_payload(ctx, None, norm)
-    mirror_val = summary["mirror"] if "mirror" in summary else None
-    mirror = normalize_type_name(mirror_val)
+    mirror = ""
+    if "mirror" in summary:
+        mirror = normalize_type_name(summary["mirror"])
     if mirror not in ("", "unknown"):
         return mirror
     return norm
@@ -155,11 +156,10 @@ def _canonical_type_name(ctx: CompileContext, value: JsonVal) -> str:
 
 def _copy_node(node: Node) -> Node:
     out: Node = {}
-    for item in node.items():
-        pair: list[JsonVal] = cast(list[JsonVal], item)
-        key = jv_str(pair[0])
-        value = pair[1]
-        out[key] = value
+    for key in node.keys():
+        key_s: str = cast(str, key)
+        value = node[key_s]
+        out[key_s] = value
     return out
 
 
@@ -273,16 +273,19 @@ def _const_string_value(node: JsonVal) -> str:
     if not isinstance(node, dict):
         return ""
     d: Node = node
-    kind = d["kind"] if "kind" in d else None
-    value = d["value"] if "value" in d else None
+    kind = ""
+    if "kind" in d:
+        kind = jv_str(d["kind"])
+    value: JsonVal = None
+    if "value" in d:
+        value = d["value"]
     if kind == CONSTANT and isinstance(value, str):
         return value
     if kind == CALL:
-        func_obj = d["func"] if "func" in d else None
-        if isinstance(func_obj, dict):
-            fd: Node = func_obj
-            fd_kind = fd["kind"] if "kind" in fd else None
-            fd_id = fd["id"] if "id" in fd else None
+        if "func" in d and isinstance(d["func"], dict):
+            fd: Node = d["func"]
+            fd_kind = jv_str(fd["kind"]) if "kind" in fd else ""
+            fd_id = jv_str(fd["id"]) if "id" in fd else ""
             if fd_kind == NAME and fd_id == "str":
                 args: list[JsonVal] = []
                 if "args" in d:
@@ -300,16 +303,24 @@ def _is_string_index_expr(node: JsonVal) -> bool:
     nd: Node = node
     if ("kind" not in nd) or nd["kind"] != SUBSCRIPT:
         return False
-    value_node = nd["value"] if "value" in nd else None
-    slice_node = nd["slice"] if "slice" in nd else None
+    value_node: JsonVal = None
+    if "value" in nd:
+        value_node = nd["value"]
+    slice_node: JsonVal = None
+    if "slice" in nd:
+        slice_node = nd["slice"]
     if isinstance(slice_node, dict):
-        slice_kind = slice_node["kind"] if "kind" in slice_node else None
+        slice_kind = ""
+        if "kind" in slice_node:
+            slice_kind = jv_str(slice_node["kind"])
         if slice_kind == "Slice":
             return False
     if not isinstance(value_node, dict):
         return False
     value_dict: Node = cast(dict[str, JsonVal], value_node)
-    value_type = value_dict["resolved_type"] if "resolved_type" in value_dict else None
+    value_type: JsonVal = None
+    if "resolved_type" in value_dict:
+        value_type = value_dict["resolved_type"]
     return normalize_type_name(value_type) == "str"
 
 
@@ -321,7 +332,9 @@ def _make_named_type_expr(name: str) -> Node:
 
 
 def _assignment_storage_type_override(stmt: Node, value_expr: JsonVal, target_type: str) -> str:
-    stmt_kind = stmt["kind"] if "kind" in stmt else None
+    stmt_kind = ""
+    if "kind" in stmt:
+        stmt_kind = jv_str(stmt["kind"])
     if stmt_kind != ANN_ASSIGN:
         return ""
     if target_type not in ("uint8", "byte"):
@@ -436,7 +449,7 @@ def _wrap_dict_literal_for_target_type(value_expr: JsonVal, target_type: str, *,
             if not isinstance(entry, dict):
                 wrapped_entries.append(entry)
                 continue
-            entry_node: Node = cast(dict[str, JsonVal], entry)
+            entry_node: Node = entry
             entry_out: Node = _copy_node(entry_node)
             key_node = entry_node["key"] if "key" in entry_node else None
             value_node = entry_node["value"] if "value" in entry_node else None
@@ -474,10 +487,14 @@ def _is_none_literal(node: JsonVal) -> bool:
     if not isinstance(node, dict):
         return False
     nd: Node = node
-    kind = nd["kind"] if "kind" in nd else None
+    kind = ""
+    if "kind" in nd:
+        kind = jv_str(nd["kind"])
     if kind != CONSTANT:
         return False
-    value = nd["value"] if "value" in nd else None
+    value: JsonVal = None
+    if "value" in nd:
+        value = nd["value"]
     return value is None
 
 
@@ -501,13 +518,12 @@ def _copy_extra_fields(
     *,
     lower_node_fn: Callable[[JsonVal], JsonVal],
 ) -> None:
-    for item in source.items():
-        pair: list[JsonVal] = cast(list[JsonVal], item)
-        key = jv_str(pair[0])
-        value = pair[1]
-        if key in consumed:
+    for key in source.keys():
+        key_s: str = cast(str, key)
+        value = source[key_s]
+        if key_s in consumed:
             continue
-        out[key] = lower_node_fn(value)
+        out[key_s] = lower_node_fn(value)
 
 
 def _wrap_value_for_target_type(
@@ -534,6 +550,19 @@ def _wrap_value_for_target_type(
     storage_type = ""
     if isinstance(value_expr, dict) and jv_str(value_expr.get("kind", "")) == NAME:
         storage_type = _canonical_type_name(ctx, ctx.lookup_storage_type(jv_str(value_expr.get("id", ""))))
+    storage_requires_runtime_unbox = (
+        storage_type not in ("", "unknown")
+        and storage_type != target_t
+        and (
+            storage_type.endswith(" | None")
+            or storage_type.endswith("|None")
+            or "|" in storage_type
+            or "Any" in storage_type
+            or "object" in storage_type
+            or storage_type == "Obj"
+        )
+        and not is_dynamic_like_summary(target_summary)
+    )
     target_optional_inner = _optional_inner_target_type(target_t)
     unbox_target = ""
     if value_t == target_t:
@@ -541,17 +570,9 @@ def _wrap_value_for_target_type(
     elif target_optional_inner != "" and value_t == target_optional_inner:
         unbox_target = target_optional_inner
     if (
-        storage_type not in ("", "unknown")
-        and storage_type != unbox_target
+        storage_requires_runtime_unbox
         and unbox_target != ""
-        and (
-            storage_type.endswith(" | None")
-            or storage_type.endswith("|None")
-            or "|" in storage_type
-            or "Any" in storage_type
-            or "object" in storage_type
-        )
-        and not is_dynamic_like_summary(target_summary)
+        and storage_type != unbox_target
     ):
         storage_summary = type_expr_summary_from_payload(ctx, None, storage_type)
         unbox_summary = type_expr_summary_from_payload(ctx, None, unbox_target)
@@ -564,6 +585,18 @@ def _wrap_value_for_target_type(
         out["on_fail"] = "raise"
         out["bridge_lane_v1"] = bridge_lane_payload(unbox_summary, storage_summary)
         set_type_expr_summary(out, unbox_summary)
+        return out
+    if storage_requires_runtime_unbox:
+        storage_summary = type_expr_summary_from_payload(ctx, None, storage_type)
+        out = _make_boundary_expr(
+            kind="Unbox", value_key="value", value_node=value_expr,
+            resolved_type=target_t, source_expr=value_expr,
+            ctx=ctx,
+        )
+        out["target"] = target_t
+        out["on_fail"] = "raise"
+        out["bridge_lane_v1"] = bridge_lane_payload(target_summary, storage_summary)
+        set_type_expr_summary(out, target_summary)
         return out
     if (
         target_contains_dynamic_lane
@@ -741,13 +774,13 @@ def _build_target_plan(
                     if i < len(elem_types):
                         et = elem_types[i]
                     elem_plans.append(_build_target_plan(elem, et, lower_node_fn=lower_node_fn, ctx=ctx))
-            out = {}
+            out: Node = {}
             out["kind"] = TUPLE_TARGET
             out["elements"] = elem_plans
             if tt_norm != "unknown":
                 out["target_type"] = tt_norm
             return out
-    out = {}
+    out: Node = {}
     out["kind"] = EXPR_TARGET
     out["target"] = lower_node_fn(target)
     if tt_norm != "unknown":
@@ -757,10 +790,12 @@ def _build_target_plan(
 
 def _lower_assignment_like_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal], JsonVal], ctx: CompileContext) -> Node:
     out: Node = {}
-    for key in stmt:
-        if key == "value":
+    for key in stmt.keys():
+        key_s: str = cast(str, key)
+        if key_s == "value":
             continue
-        out[key] = lower_node_fn(stmt[key])
+        value = stmt[key_s]
+        out[key_s] = lower_node_fn(value)
     if "value" not in stmt or stmt.get("value") is None:
         return out
     value_lowered = lower_node_fn(stmt.get("value"))
@@ -786,8 +821,9 @@ def _lower_assignment_like_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal]
                 out["decl_type_expr"] = target_type_expr
                 target_out = out.get("target")
                 if isinstance(target_out, dict):
-                    target_out["resolved_type"] = unboxed_type
-                    target_out["type_expr"] = target_type_expr
+                    target_dict: Node = target_out
+                    target_dict["resolved_type"] = unboxed_type
+                    target_dict["type_expr"] = target_type_expr
     storage_type = _assignment_storage_type_override(stmt, value_lowered, target_type)
     if storage_type != "":
         target_type = storage_type
@@ -796,8 +832,9 @@ def _lower_assignment_like_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal]
         out["decl_type_expr"] = target_type_expr
         target_out = out.get("target")
         if isinstance(target_out, dict):
-            target_out["resolved_type"] = storage_type
-            target_out["type_expr"] = target_type_expr
+            target_dict: Node = target_out
+            target_dict["resolved_type"] = storage_type
+            target_dict["type_expr"] = target_type_expr
     out["value"] = _wrap_value_for_target_type(
         value_lowered, target_type, target_type_expr=target_type_expr,
         ctx=ctx,
@@ -816,10 +853,12 @@ def _lower_assignment_like_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal]
 
 def _lower_return_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal], JsonVal], ctx: CompileContext) -> Node:
     out: Node = {}
-    for key in stmt:
-        if key == "value":
+    for key in stmt.keys():
+        key_s: str = cast(str, key)
+        if key_s == "value":
             continue
-        out[key] = lower_node_fn(stmt[key])
+        value = stmt[key_s]
+        out[key_s] = lower_node_fn(value)
     if "value" not in stmt or stmt.get("value") is None:
         return out
     value_lowered = lower_node_fn(stmt.get("value"))
@@ -852,8 +891,10 @@ def _lower_function_def_stmt(
         if vararg_name != "" and vararg_type != "":
             ctx.set_storage_type(vararg_name, vararg_type)
         out: Node = {}
-        for key in stmt:
-            out[key] = lower_node_fn(stmt[key])
+        for key in stmt.keys():
+            key_s: str = cast(str, key)
+            value = stmt[key_s]
+            out[key_s] = lower_node_fn(value)
         return out
     finally:
         ctx.current_return_type = prev_return_type
@@ -862,24 +903,22 @@ def _lower_function_def_stmt(
 
 def _lower_for_stmt(stmt: Node, *, dispatch_mode: str, lower_node_fn: Callable[[JsonVal], JsonVal], ctx: CompileContext) -> Node:
     iter_expr = lower_node_fn(stmt.get("iter"))
-    iter_plan: Node = {
-        "kind": RUNTIME_ITER_FOR_PLAN,
-        "iter_expr": iter_expr,
-        "dispatch_mode": dispatch_mode,
-        "init_op": OBJ_ITER_INIT,
-        "next_op": OBJ_ITER_NEXT,
-    }
+    iter_plan: Node = {}
+    iter_plan["kind"] = RUNTIME_ITER_FOR_PLAN
+    iter_plan["iter_expr"] = iter_expr
+    iter_plan["dispatch_mode"] = dispatch_mode
+    iter_plan["init_op"] = OBJ_ITER_INIT
+    iter_plan["next_op"] = OBJ_ITER_NEXT
     target_type = normalize_type_name(stmt.get("target_type"))
     if target_type == "unknown":
         target_type = normalize_type_name(stmt.get("iter_element_type"))
-    out: Node = {
-        "kind": FOR_CORE,
-        "iter_mode": "runtime_protocol",
-        "iter_plan": iter_plan,
-        "target_plan": _build_target_plan(stmt.get("target"), target_type, lower_node_fn=lower_node_fn, ctx=ctx),
-        "body": lower_node_fn(stmt.get("body", [])),
-        "orelse": lower_node_fn(stmt.get("orelse", [])),
-    }
+    out: Node = {}
+    out["kind"] = FOR_CORE
+    out["iter_mode"] = "runtime_protocol"
+    out["iter_plan"] = iter_plan
+    out["target_plan"] = _build_target_plan(stmt.get("target"), target_type, lower_node_fn=lower_node_fn, ctx=ctx)
+    out["body"] = lower_node_fn(stmt.get("body", []))
+    out["orelse"] = lower_node_fn(stmt.get("orelse", []))
     consumed = {"kind", "target", "target_type", "iter_mode", "iter_source_type", "iter_element_type", "iter", "body", "orelse"}
     _copy_extra_fields(stmt, out, consumed, lower_node_fn=lower_node_fn)
     return out
@@ -891,20 +930,18 @@ def _lower_forrange_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal], JsonV
     step_node = lower_node_fn(stmt.get("step"))
     if not isinstance(step_node, dict):
         step_node = _const_int_node(1)
-    iter_plan: Node = {
-        "kind": STATIC_RANGE_FOR_PLAN,
-        "start": start_node,
-        "stop": stop_node,
-        "step": step_node,
-    }
-    out: Node = {
-        "kind": FOR_CORE,
-        "iter_mode": "static_fastpath",
-        "iter_plan": iter_plan,
-        "target_plan": _build_target_plan(stmt.get("target"), stmt.get("target_type"), lower_node_fn=lower_node_fn, ctx=ctx),
-        "body": lower_node_fn(stmt.get("body", [])),
-        "orelse": lower_node_fn(stmt.get("orelse", [])),
-    }
+    iter_plan: Node = {}
+    iter_plan["kind"] = STATIC_RANGE_FOR_PLAN
+    iter_plan["start"] = start_node
+    iter_plan["stop"] = stop_node
+    iter_plan["step"] = step_node
+    out: Node = {}
+    out["kind"] = FOR_CORE
+    out["iter_mode"] = "static_fastpath"
+    out["iter_plan"] = iter_plan
+    out["target_plan"] = _build_target_plan(stmt.get("target"), stmt.get("target_type"), lower_node_fn=lower_node_fn, ctx=ctx)
+    out["body"] = lower_node_fn(stmt.get("body", []))
+    out["orelse"] = lower_node_fn(stmt.get("orelse", []))
     consumed = {"kind", "target", "target_type", "start", "stop", "step", "range_mode", "body", "orelse"}
     _copy_extra_fields(stmt, out, consumed, lower_node_fn=lower_node_fn)
     return out
@@ -912,8 +949,10 @@ def _lower_forrange_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal], JsonV
 
 def _lower_forcore_stmt(stmt: Node, *, dispatch_mode: str, lower_node_fn: Callable[[JsonVal], JsonVal], ctx: CompileContext) -> Node:
     out: Node = {}
-    for key in stmt:
-        out[key] = lower_node_fn(stmt[key])
+    for key in stmt.keys():
+        key_s: str = cast(str, key)
+        value = stmt[key_s]
+        out[key_s] = lower_node_fn(value)
     ip = out.get("iter_plan")
     if isinstance(ip, dict):
         ipd: Node = ip
@@ -926,30 +965,35 @@ def _lower_forcore_stmt(stmt: Node, *, dispatch_mode: str, lower_node_fn: Callab
 # Nominal ADT metadata helpers
 # ---------------------------------------------------------------------------
 
-def _build_nominal_adt_ctor_meta(call: Node, ctx: CompileContext) -> Node | None:
+def _build_nominal_adt_ctor_meta(call: Node, ctx: CompileContext) -> JsonVal:
     func_obj = call.get("func")
     if not isinstance(func_obj, dict) or func_obj.get("kind") != NAME:
         return None
     ctor_name = normalize_type_name(func_obj.get("id"))
-    decl = lookup_nominal_adt_decl(ctx, ctor_name)
-    if decl is None or jv_str(decl.get("role", "")).strip() != "variant":
+    decl_obj = lookup_nominal_adt_decl(ctx, ctor_name)
+    if not isinstance(decl_obj, dict):
         return None
-    ps = jv_str(decl.get("payload_style", "")).strip()
+    decl: Node = decl_obj
+    decl_role = jv_str(decl["role"] if "role" in decl else "")
+    if decl_role != "variant":
+        return None
+    ps = jv_str(decl["payload_style"] if "payload_style" in decl else "")
     if ps == "":
         ps = "unit"
-    return {
-        "schema_version": 1,
-        "ir_category": NOMINAL_ADT_CTOR_CALL,
-        "family_name": jv_str(decl.get("family_name", ctor_name)),
-        "variant_name": ctor_name,
-        "payload_style": ps,
-    }
+    meta: Node = {}
+    meta["schema_version"] = 1
+    meta["ir_category"] = NOMINAL_ADT_CTOR_CALL
+    meta["family_name"] = jv_str(decl["family_name"] if "family_name" in decl else ctor_name)
+    meta["variant_name"] = ctor_name
+    meta["payload_style"] = ps
+    return meta
 
 
 def _decorate_nominal_adt_ctor_call(call: Node, ctx: CompileContext) -> Node:
-    meta = _build_nominal_adt_ctor_meta(call, ctx)
-    if meta is None:
+    meta_obj = _build_nominal_adt_ctor_meta(call, ctx)
+    if not isinstance(meta_obj, dict):
         return call
+    meta: Node = meta_obj
     call["semantic_tag"] = "nominal_adt.variant_ctor"
     call["lowered_kind"] = NOMINAL_ADT_CTOR_CALL
     call["nominal_adt_ctor_v1"] = meta
@@ -958,32 +1002,36 @@ def _decorate_nominal_adt_ctor_call(call: Node, ctx: CompileContext) -> Node:
 
 
 def _decorate_nominal_adt_projection_attr(attr_expr: Node, ctx: CompileContext) -> Node:
-    attr_name = jv_str(attr_expr.get("attr", "")).strip()
+    attr_name = jv_str(attr_expr.get("attr", ""))
     if attr_name == "":
         return attr_expr
-    owner_summary = expr_type_summary(ctx, attr_expr.get("value"))
-    if jv_str(owner_summary.get("category", "unknown")).strip() != "nominal_adt":
+    owner_summary: Node = expr_type_summary(ctx, attr_expr.get("value"))
+    owner_category = jv_str(owner_summary["category"] if "category" in owner_summary else "unknown")
+    if owner_category != "nominal_adt":
         return attr_expr
-    variant_name = normalize_type_name(owner_summary.get("nominal_adt_name"))
+    variant_name = normalize_type_name(owner_summary["nominal_adt_name"] if "nominal_adt_name" in owner_summary else None)
     if variant_name == "unknown":
-        variant_name = normalize_type_name(owner_summary.get("mirror"))
-    decl = lookup_nominal_adt_decl(ctx, variant_name)
-    if decl is None or jv_str(decl.get("role", "")).strip() != "variant":
+        variant_name = normalize_type_name(owner_summary["mirror"] if "mirror" in owner_summary else None)
+    decl_obj = lookup_nominal_adt_decl(ctx, variant_name)
+    if not isinstance(decl_obj, dict):
         return attr_expr
-    ft_obj = decl.get("field_types")
+    decl: Node = decl_obj
+    decl_role = jv_str(decl["role"] if "role" in decl else "")
+    if decl_role != "variant":
+        return attr_expr
+    ft_obj = decl["field_types"] if "field_types" in decl else None
     ft = ft_obj if isinstance(ft_obj, dict) else {}
     field_type = normalize_type_name(ft.get(attr_name))
     if field_type == "unknown":
         return attr_expr
-    meta: Node = {
-        "schema_version": 1,
-        "ir_category": NOMINAL_ADT_PROJECTION,
-        "family_name": jv_str(decl.get("family_name", variant_name)),
-        "variant_name": variant_name,
-        "field_name": attr_name,
-        "field_type": field_type,
-    }
-    ps = jv_str(decl.get("payload_style", "")).strip()
+    meta: Node = {}
+    meta["schema_version"] = 1
+    meta["ir_category"] = NOMINAL_ADT_PROJECTION
+    meta["family_name"] = jv_str(decl["family_name"] if "family_name" in decl else variant_name)
+    meta["variant_name"] = variant_name
+    meta["field_name"] = attr_name
+    meta["field_type"] = field_type
+    ps = jv_str(decl["payload_style"] if "payload_style" in decl else "")
     if ps != "":
         meta["payload_style"] = ps
     attr_expr["semantic_tag"] = "nominal_adt.variant_projection"
@@ -1001,15 +1049,18 @@ def _decorate_nominal_adt_variant_pattern(pattern: Node, ctx: CompileContext) ->
     if variant_name == "unknown":
         return pattern
     decl = lookup_nominal_adt_decl(ctx, variant_name)
-    if decl is None or jv_str(decl.get("role", "")).strip() != "variant":
+    if decl is None:
         return pattern
-    family_name = jv_str(pattern.get("family_name", "")).strip()
-    decl_family = jv_str(decl.get("family_name", variant_name)).strip()
+    decl_role = jv_str(decl.get("role", ""))
+    if decl_role != "variant":
+        return pattern
+    family_name = jv_str(pattern.get("family_name", ""))
+    decl_family = jv_str(decl.get("family_name", variant_name))
     if family_name == "":
         family_name = decl_family
     elif decl_family != "" and family_name != decl_family:
         return pattern
-    ps = jv_str(decl.get("payload_style", "")).strip()
+    ps = jv_str(decl.get("payload_style", ""))
     if ps == "":
         ps = "unit"
     subs_obj = pattern.get("subpatterns")
@@ -1017,18 +1068,17 @@ def _decorate_nominal_adt_variant_pattern(pattern: Node, ctx: CompileContext) ->
     bind_names: list[JsonVal] = []
     for item in subs:
         if isinstance(item, dict) and item.get("kind") == PATTERN_BIND:
-            n = jv_str(item.get("name", "")).strip()
+            n = jv_str(item.get("name", ""))
             if n != "":
                 bind_names.append(n)
-    meta: Node = {
-        "schema_version": 1,
-        "ir_category": NOMINAL_ADT_VARIANT_PATTERN,
-        "family_name": family_name,
-        "variant_name": variant_name,
-        "payload_style": ps,
-        "payload_arity": len(subs),
-        "bind_names": bind_names,
-    }
+    meta: Node = {}
+    meta["schema_version"] = 1
+    meta["ir_category"] = NOMINAL_ADT_VARIANT_PATTERN
+    meta["family_name"] = family_name
+    meta["variant_name"] = variant_name
+    meta["payload_style"] = ps
+    meta["payload_arity"] = len(subs)
+    meta["bind_names"] = bind_names
     pattern["lowered_kind"] = NOMINAL_ADT_VARIANT_PATTERN
     pattern["semantic_tag"] = "nominal_adt.variant_pattern"
     pattern["nominal_adt_pattern_v1"] = meta
