@@ -65,6 +65,10 @@ def is_runtime_namespace_module(module_id: str) -> bool:
     return module_id in _RUNTIME_NAMESPACE_MODULES
 
 
+def is_runtime_internal_helper_module(module_id: str) -> bool:
+    return module_id.startswith("pytra.core.") and resolve_runtime_module_rel_tail(module_id) == ""
+
+
 def _is_explicit_runtime_module(module_id: str) -> bool:
     for prefix in _RUNTIME_MODULE_BUCKETS.keys():
         if module_id.startswith(prefix):

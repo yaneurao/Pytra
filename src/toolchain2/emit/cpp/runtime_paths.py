@@ -5,23 +5,13 @@ from __future__ import annotations
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
 
+from toolchain2.link.dependencies import is_type_only_dependency_module_id
+from toolchain2.link.runtime_discovery import is_runtime_internal_helper_module
 from toolchain2.link.runtime_discovery import is_runtime_namespace_module
 from toolchain2.link.runtime_discovery import resolve_runtime_module_rel_tail
 
 
 _RUNTIME_CPP_ROOT = Path(__file__).resolve().parents[3] / "runtime" / "cpp"
-_TYPE_ONLY_MODULES = {
-    "__future__",
-    "typing",
-    "pytra.typing",
-    "types",
-    "pytra.types",
-    "dataclasses",
-    "pytra.dataclasses",
-    "enum",
-    "pytra.enum",
-    "pytra.std.template",
-}
 
 
 def runtime_rel_tail_for_module(module_id: str) -> str:
@@ -29,12 +19,12 @@ def runtime_rel_tail_for_module(module_id: str) -> str:
 
 
 def cpp_include_for_module(module_id: str) -> str:
-    if is_runtime_namespace_module(module_id) or module_id in _TYPE_ONLY_MODULES:
+    if is_runtime_namespace_module(module_id) or is_type_only_dependency_module_id(module_id):
         return ""
     rel = resolve_runtime_module_rel_tail(module_id)
     if rel != "":
         return rel + ".h"
-    if module_id.startswith("pytra.core."):
+    if is_runtime_internal_helper_module(module_id):
         return ""
     if module_id != "":
         return module_id.replace(".", "/") + ".h"

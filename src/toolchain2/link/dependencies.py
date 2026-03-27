@@ -34,6 +34,10 @@ _TYPE_ID_RUNTIME_NODE_KINDS: set[str] = {
 }
 
 
+def is_type_only_dependency_module_id(module_id: str) -> bool:
+    return module_id in _TYPE_ONLY_MODULE_IDS
+
+
 def _scan_runtime_refs(node: JsonVal, out: set[str]) -> None:
     if isinstance(node, list):
         for item in node:
@@ -68,7 +72,7 @@ def _binding_dependency_module_id(binding: JsonVal) -> str:
     resolved_binding_kind = binding.get("resolved_binding_kind")
 
     if isinstance(runtime_module_id, str) and runtime_module_id != "":
-        if runtime_module_id in _TYPE_ONLY_MODULE_IDS:
+        if is_type_only_dependency_module_id(runtime_module_id):
             return ""
         if runtime_module_id.startswith("pytra."):
             if host_only and binding_kind != "module" and resolved_binding_kind != "module":
@@ -83,7 +87,7 @@ def _binding_dependency_module_id(binding: JsonVal) -> str:
         return ""
 
     if isinstance(module_id, str) and module_id != "":
-        if module_id in _TYPE_ONLY_MODULE_IDS:
+        if is_type_only_dependency_module_id(module_id):
             return ""
         if module_id.startswith("pytra.") or not host_only:
             return module_id
