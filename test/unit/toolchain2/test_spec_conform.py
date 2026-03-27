@@ -1158,10 +1158,10 @@ def add_scalars(a: Scalar, b: Scalar) -> int:
         left = binop.get("left", {})
         right = binop.get("right", {})
 
-        self.assertEqual(left.get("kind"), "Unbox")
-        self.assertEqual(left.get("target"), "int64")
-        self.assertEqual(right.get("kind"), "Unbox")
-        self.assertEqual(right.get("target"), "int64")
+        self.assertEqual(left.get("kind"), "Name")
+        self.assertEqual(left.get("resolved_type"), "int64")
+        self.assertEqual(right.get("kind"), "Name")
+        self.assertEqual(right.get("resolved_type"), "int64")
         self.assertEqual(binop.get("resolved_type"), "int64")
 
     def test_guard_narrowing_sees_through_unbox_wrapped_isinstance_subject(self) -> None:
@@ -1218,7 +1218,7 @@ def add_scalars(a: Scalar, b: Scalar) -> int:
 
         guarded_return = module["body"][0]["body"][0]["body"][0]["value"]
         self.assertEqual(guarded_return.get("kind"), "Unbox")
-        self.assertEqual(guarded_return.get("target"), "list[Any]")
+        self.assertEqual(guarded_return.get("target"), "list[JsonVal]")
 
     def test_compile_boxes_imported_stdlib_alias_arguments(self) -> None:
         source = """
@@ -1319,8 +1319,8 @@ def f(separators: tuple[str, str] | None) -> str:
             and node["value"].get("kind") == "Subscript"
         )
 
-        self.assertEqual(tmp_assign.get("value", {}).get("kind"), "Unbox")
-        self.assertEqual(tmp_assign.get("value", {}).get("target"), "tuple[str,str]")
+        self.assertEqual(tmp_assign.get("value", {}).get("kind"), "Name")
+        self.assertEqual(tmp_assign.get("value", {}).get("resolved_type"), "tuple[str,str]")
         self.assertEqual(item_assign.get("value", {}).get("resolved_type"), "str")
         self.assertEqual(key_assign.get("value", {}).get("resolved_type"), "str")
 
@@ -1518,6 +1518,45 @@ def f(n_layer: int) -> list[list[int]]:
 
         self.assertEqual(append_arg.get("resolved_type"), "list[int64]")
         self.assertEqual(append_arg.get("call_arg_type"), "list[int64]")
+
+    def test_compile_marks_closure_methods_that_mutate_self_transitively(self) -> None:
+        source = """
+class Parser:
+    def __init__(self) -> None:
+        self.pos: int = 0
+        self.items: list[int] = []
+
+    def match(self) -> bool:
+        self.pos += 1
+        return True
+
+    def add(self, v: int) -> int:
+        self.items.append(v)
+        return len(self.items)
+
+    def step(self, v: int) -> int:
+        if self.match():
+            return self.add(v)
+        return 0
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+        east3 = lower_east2_to_east3(deep_copy_json(east2))
+
+        parser_class = next(
+            node
+            for node in _walk(east3)
+            if node.get("kind") == "ClassDef" and node.get("name") == "Parser"
+        )
+        methods = {
+            node.get("name"): node
+            for node in parser_class.get("body", [])
+            if isinstance(node, dict) and node.get("kind") == "ClosureDef"
+        }
+
+        self.assertTrue(methods["match"].get("mutates_self"))
+        self.assertTrue(methods["add"].get("mutates_self"))
+        self.assertTrue(methods["step"].get("mutates_self"))
 
     def test_validator_reports_unknown_missing_and_unnormalized_types(self) -> None:
         unknown_doc = {

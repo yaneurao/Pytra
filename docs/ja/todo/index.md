@@ -42,23 +42,16 @@
 3. [ ] [ID: P1-ISINSTANCE-POD-S3] `isinstance_pod_exact.py` の golden 生成（east1/east2/east3/east3-opt/linked）
 4. [ ] [ID: P1-ISINSTANCE-POD-S4] C++ / Go emitter で compile + run + stdout 一致（`py_assert_stdout` 通過）
 
-### P1-CLOSURE-DEF: nested FunctionDef の ClosureDef lowering
+### P1-ISINSTANCE-NARROWING: isinstance 後の自動型ナローイング
 
-文脈: [docs/ja/plans/p1-closure-def-lowering.md](../plans/p1-closure-def-lowering.md)
+文脈: [docs/ja/plans/p1-isinstance-narrowing.md](../plans/p1-isinstance-narrowing.md)
 
-1. [x] [ID: P1-CLOSURE-DEF-S1] EAST3 の ClosureDef ノード仕様を spec-east.md に追加
-2. [x] [ID: P1-CLOSURE-DEF-S2] EAST3 lowering でキャプチャ解析 + ClosureDef 生成を実装
-3. [x] [ID: P1-CLOSURE-DEF-S3] fixture 追加（nested function のキャプチャパターン）+ golden 生成
-4. [x] [ID: P1-CLOSURE-DEF-S4] 各 emitter の ClosureDef 写像実装 + parity 確認
-
-### P2-LINK-INPUT-COMPLETENESS: link 層の入力完全性検証
-
-文脈: [docs/ja/plans/p2-link-input-completeness.md](../plans/p2-link-input-completeness.md)
-
-1. [x] [ID: P2-LINK-COMPLETE-S1] link 層で import 解決の完全性検証を実装（未解決 import を fail-closed で報告）— `link_modules()` が未提供 module_id を列挙して停止
-2. [x] [ID: P2-LINK-COMPLETE-S2] runtime / stdlib モジュールのホワイトリスト（検証除外対象）を定義 — `pytra.*` と runtime importer 由来の外部 stdlib import を除外
-3. [ ] [ID: P2-LINK-COMPLETE-S3] 型スタブ生成の仕組みを設計・実装（parse 不能モジュール向け）
-4. [x] [ID: P2-LINK-COMPLETE-S4] selfhost 37本に対して完全性検証を実行し、欠落モジュールを確認 — current source 再生成ベースの回帰テストを追加
+1. [x] [ID: P1-NARROW-S1] resolve に isinstance 条件式の検出 + if/elif ブロック内型環境更新を実装
+2. [x] [ID: P1-NARROW-S2] early return guard の対応（`if not isinstance(x, T): return` 後の fallthrough narrowing）
+3. [x] [ID: P1-NARROW-S3] ternary isinstance の対応（`y = x if isinstance(x, T) else None`）
+4. [x] [ID: P1-NARROW-S4] 再代入検出による narrowing 無効化の実装
+5. [x] [ID: P1-NARROW-S5] fixture 追加（全 narrowing パターン）+ golden 生成 + parity 確認
+- 進捗メモ: resolver/EAST に narrowing を集約し、`JsonVal` は `dict[str,JsonVal]` / `list[JsonVal]` へ narrow。再代入失効と typing fixture/golden を追加。
 
 ### P2-SELFHOST: toolchain2 自身の変換テスト
 

@@ -1,0 +1,2759 @@
+{
+  "kind": "Module",
+  "source_path": "/workspace/Pytra/test/fixture/source/py/typing/isinstance_narrowing.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 34
+      },
+      "module": "pytra.std.json",
+      "names": [
+        {
+          "name": "JsonVal",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 10,
+        "end_col": 13
+      },
+      "name": "read_kind",
+      "original_name": "read_kind",
+      "arg_types": {
+        "node": "JsonVal"
+      },
+      "arg_order": [
+        "node"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "node": 0
+      },
+      "return_type": "str",
+      "arg_usage": {
+        "node": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 5,
+            "col": 4,
+            "end_lineno": 6,
+            "end_col": 17
+          },
+          "test": {
+            "kind": "UnaryOp",
+            "source_span": {
+              "lineno": 5,
+              "col": 7,
+              "end_lineno": 5,
+              "end_col": 33
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "not isinstance(node, dict)",
+            "op": "Not",
+            "operand": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 5,
+                "col": 11,
+                "end_lineno": 5,
+                "end_col": 33
+              },
+              "resolved_type": "bool",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "isinstance(node, dict)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 5,
+                  "col": 11,
+                  "end_lineno": 5,
+                  "end_col": 21
+                },
+                "resolved_type": "callable",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance",
+                "id": "isinstance"
+              },
+              "args": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 5,
+                    "col": 22,
+                    "end_lineno": 5,
+                    "end_col": 26
+                  },
+                  "resolved_type": "JsonVal",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "node",
+                  "id": "node",
+                  "call_arg_type": "Obj"
+                },
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 5,
+                    "col": 28,
+                    "end_lineno": 5,
+                    "end_col": 32
+                  },
+                  "resolved_type": "type",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "dict",
+                  "id": "dict",
+                  "type_object_of": "dict",
+                  "call_arg_type": "type"
+                }
+              ],
+              "keywords": [],
+              "lowered_kind": "TypePredicateCall",
+              "semantic_tag": "type.isinstance",
+              "predicate_kind": "isinstance"
+            }
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 6,
+                "col": 8,
+                "end_lineno": 6,
+                "end_col": 17
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 15,
+                  "end_lineno": 6,
+                  "end_col": 17
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"\"",
+                "value": ""
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 7,
+            "col": 4,
+            "end_lineno": 7,
+            "end_col": 27
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 7,
+              "col": 4,
+              "end_lineno": 7,
+              "end_col": 8
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "kind",
+            "id": "kind"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 7,
+              "col": 11,
+              "end_lineno": 7,
+              "end_col": 27
+            },
+            "resolved_type": "JsonVal",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "node.get(\"kind\")",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 7,
+                "col": 11,
+                "end_lineno": 7,
+                "end_col": 19
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "node.get",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 7,
+                  "col": 11,
+                  "end_lineno": 7,
+                  "end_col": 15
+                },
+                "resolved_type": "dict[str,JsonVal]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "node",
+                "id": "node"
+              },
+              "attr": "get"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 7,
+                  "col": 20,
+                  "end_lineno": 7,
+                  "end_col": 26
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"kind\"",
+                "value": "kind",
+                "call_arg_type": "str"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "get",
+            "runtime_call": "dict.get",
+            "runtime_module_id": "pytra.core.dict",
+            "runtime_symbol": "dict.get",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.get",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 7,
+                "col": 11,
+                "end_lineno": 7,
+                "end_col": 15
+              },
+              "resolved_type": "dict[str,JsonVal]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "node",
+              "id": "node"
+            },
+            "yields_dynamic": true
+          },
+          "declare": true,
+          "decl_type": "JsonVal",
+          "declare_init": true
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 8,
+            "col": 4,
+            "end_lineno": 9,
+            "end_col": 27
+          },
+          "test": {
+            "kind": "BoolOp",
+            "source_span": {
+              "lineno": 8,
+              "col": 7,
+              "end_lineno": 8,
+              "end_col": 51
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "isinstance(kind, str) and kind.strip() != \"\"",
+            "op": "And",
+            "values": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 8,
+                  "col": 7,
+                  "end_lineno": 8,
+                  "end_col": 28
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance(kind, str)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 8,
+                    "col": 7,
+                    "end_lineno": 8,
+                    "end_col": 17
+                  },
+                  "resolved_type": "callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "isinstance",
+                  "id": "isinstance"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 8,
+                      "col": 18,
+                      "end_lineno": 8,
+                      "end_col": 22
+                    },
+                    "resolved_type": "JsonVal",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "kind",
+                    "id": "kind",
+                    "call_arg_type": "Obj"
+                  },
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 8,
+                      "col": 24,
+                      "end_lineno": 8,
+                      "end_col": 27
+                    },
+                    "resolved_type": "type",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "str",
+                    "id": "str",
+                    "type_object_of": "str",
+                    "call_arg_type": "type"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "TypePredicateCall",
+                "semantic_tag": "type.isinstance",
+                "predicate_kind": "isinstance"
+              },
+              {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 8,
+                  "col": 33,
+                  "end_lineno": 8,
+                  "end_col": 51
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "kind.strip() != \"\"",
+                "left": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 8,
+                    "col": 33,
+                    "end_lineno": 8,
+                    "end_col": 45
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "kind.strip()",
+                  "func": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 8,
+                      "col": 33,
+                      "end_lineno": 8,
+                      "end_col": 43
+                    },
+                    "resolved_type": "callable",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "kind.strip",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 8,
+                        "col": 33,
+                        "end_lineno": 8,
+                        "end_col": 37
+                      },
+                      "resolved_type": "str",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "kind",
+                      "id": "kind"
+                    },
+                    "attr": "strip"
+                  },
+                  "args": [],
+                  "keywords": [],
+                  "lowered_kind": "BuiltinCall",
+                  "builtin_name": "strip",
+                  "runtime_call": "str.strip",
+                  "runtime_module_id": "pytra.built_in.string_ops",
+                  "runtime_symbol": "str.strip",
+                  "runtime_call_adapter_kind": "builtin",
+                  "semantic_tag": "stdlib.method.strip",
+                  "runtime_owner": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 8,
+                      "col": 33,
+                      "end_lineno": 8,
+                      "end_col": 37
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "kind",
+                    "id": "kind"
+                  }
+                },
+                "ops": [
+                  "NotEq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 8,
+                      "col": 49,
+                      "end_lineno": 8,
+                      "end_col": 51
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"\"",
+                    "value": ""
+                  }
+                ]
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 9,
+                "col": 8,
+                "end_lineno": 9,
+                "end_col": 27
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 9,
+                  "col": 15,
+                  "end_lineno": 9,
+                  "end_col": 27
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "kind.strip()",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 9,
+                    "col": 15,
+                    "end_lineno": 9,
+                    "end_col": 25
+                  },
+                  "resolved_type": "callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "kind.strip",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 15,
+                      "end_lineno": 9,
+                      "end_col": 19
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "kind",
+                    "id": "kind"
+                  },
+                  "attr": "strip"
+                },
+                "args": [],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "strip",
+                "runtime_call": "str.strip",
+                "runtime_module_id": "pytra.built_in.string_ops",
+                "runtime_symbol": "str.strip",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "stdlib.method.strip",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 9,
+                    "col": 15,
+                    "end_lineno": 9,
+                    "end_col": 19
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "kind",
+                  "id": "kind"
+                }
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 10,
+            "col": 4,
+            "end_lineno": 10,
+            "end_col": 13
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 10,
+              "col": 11,
+              "end_lineno": 10,
+              "end_col": 13
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"\"",
+            "value": ""
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "node": {
+          "kind": "NamedType",
+          "name": "JsonVal"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 13,
+        "col": 0,
+        "end_lineno": 26,
+        "end_col": 16
+      },
+      "name": "collect_names",
+      "original_name": "collect_names",
+      "arg_types": {
+        "doc": "dict[str,JsonVal]"
+      },
+      "arg_order": [
+        "doc"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "doc": 0
+      },
+      "return_type": "list[str]",
+      "arg_usage": {
+        "doc": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 14,
+            "col": 4,
+            "end_lineno": 14,
+            "end_col": 25
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 14,
+              "col": 4,
+              "end_lineno": 14,
+              "end_col": 9
+            },
+            "resolved_type": "list[str]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "names",
+            "id": "names",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "str"
+                }
+              ]
+            }
+          },
+          "annotation": "list[str]",
+          "value": {
+            "kind": "List",
+            "source_span": {
+              "lineno": 14,
+              "col": 23,
+              "end_lineno": 14,
+              "end_col": 25
+            },
+            "resolved_type": "list[str]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "[]",
+            "elements": []
+          },
+          "declare": true,
+          "decl_type": "list[str]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "str"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "str"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 15,
+            "col": 4,
+            "end_lineno": 15,
+            "end_col": 26
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 15,
+              "col": 4,
+              "end_lineno": 15,
+              "end_col": 8
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "body",
+            "id": "body"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 15,
+              "col": 11,
+              "end_lineno": 15,
+              "end_col": 26
+            },
+            "resolved_type": "JsonVal",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "doc.get(\"body\")",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 15,
+                "col": 11,
+                "end_lineno": 15,
+                "end_col": 18
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "doc.get",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 11,
+                  "end_lineno": 15,
+                  "end_col": 14
+                },
+                "resolved_type": "dict[str,JsonVal]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "doc",
+                "id": "doc"
+              },
+              "attr": "get"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 19,
+                  "end_lineno": 15,
+                  "end_col": 25
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"body\"",
+                "value": "body",
+                "call_arg_type": "str"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "get",
+            "runtime_call": "dict.get",
+            "runtime_module_id": "pytra.core.dict",
+            "runtime_symbol": "dict.get",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.get",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 15,
+                "col": 11,
+                "end_lineno": 15,
+                "end_col": 14
+              },
+              "resolved_type": "dict[str,JsonVal]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "doc",
+              "id": "doc"
+            },
+            "yields_dynamic": true
+          },
+          "declare": true,
+          "decl_type": "JsonVal",
+          "declare_init": true
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 16,
+            "col": 4,
+            "end_lineno": 17,
+            "end_col": 20
+          },
+          "test": {
+            "kind": "UnaryOp",
+            "source_span": {
+              "lineno": 16,
+              "col": 7,
+              "end_lineno": 16,
+              "end_col": 33
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "not isinstance(body, list)",
+            "op": "Not",
+            "operand": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 16,
+                "col": 11,
+                "end_lineno": 16,
+                "end_col": 33
+              },
+              "resolved_type": "bool",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "isinstance(body, list)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 16,
+                  "col": 11,
+                  "end_lineno": 16,
+                  "end_col": 21
+                },
+                "resolved_type": "callable",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance",
+                "id": "isinstance"
+              },
+              "args": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 16,
+                    "col": 22,
+                    "end_lineno": 16,
+                    "end_col": 26
+                  },
+                  "resolved_type": "JsonVal",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "body",
+                  "id": "body",
+                  "call_arg_type": "Obj"
+                },
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 16,
+                    "col": 28,
+                    "end_lineno": 16,
+                    "end_col": 32
+                  },
+                  "resolved_type": "type",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "list",
+                  "id": "list",
+                  "type_object_of": "list",
+                  "call_arg_type": "type"
+                }
+              ],
+              "keywords": [],
+              "lowered_kind": "TypePredicateCall",
+              "semantic_tag": "type.isinstance",
+              "predicate_kind": "isinstance"
+            }
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 17,
+                "col": 8,
+                "end_lineno": 17,
+                "end_col": 20
+              },
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 17,
+                  "col": 15,
+                  "end_lineno": 17,
+                  "end_col": 20
+                },
+                "resolved_type": "list[str]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "names",
+                "id": "names"
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "For",
+          "source_span": {
+            "lineno": 18,
+            "col": 0,
+            "end_lineno": 25,
+            "end_col": 30
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 18,
+              "col": 8,
+              "end_lineno": 18,
+              "end_col": 12
+            },
+            "resolved_type": "JsonVal",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "stmt",
+            "id": "stmt"
+          },
+          "target_type": "JsonVal",
+          "iter_mode": "static_fastpath",
+          "iter_source_type": "list[JsonVal]",
+          "iter_element_type": "JsonVal",
+          "iter": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 18,
+              "col": 16,
+              "end_lineno": 18,
+              "end_col": 20
+            },
+            "resolved_type": "list[JsonVal]",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "body",
+            "id": "body",
+            "iterable_trait": "yes",
+            "iter_protocol": "static_range",
+            "iter_element_type": "JsonVal"
+          },
+          "body": [
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 19,
+                "col": 8,
+                "end_lineno": 20,
+                "end_col": 20
+              },
+              "test": {
+                "kind": "UnaryOp",
+                "source_span": {
+                  "lineno": 19,
+                  "col": 11,
+                  "end_lineno": 19,
+                  "end_col": 37
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "not isinstance(stmt, dict)",
+                "op": "Not",
+                "operand": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 19,
+                    "col": 15,
+                    "end_lineno": 19,
+                    "end_col": 37
+                  },
+                  "resolved_type": "bool",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "isinstance(stmt, dict)",
+                  "func": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 19,
+                      "col": 15,
+                      "end_lineno": 19,
+                      "end_col": 25
+                    },
+                    "resolved_type": "callable",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "isinstance",
+                    "id": "isinstance"
+                  },
+                  "args": [
+                    {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 19,
+                        "col": 26,
+                        "end_lineno": 19,
+                        "end_col": 30
+                      },
+                      "resolved_type": "JsonVal",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "stmt",
+                      "id": "stmt",
+                      "call_arg_type": "Obj"
+                    },
+                    {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 19,
+                        "col": 32,
+                        "end_lineno": 19,
+                        "end_col": 36
+                      },
+                      "resolved_type": "type",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "dict",
+                      "id": "dict",
+                      "type_object_of": "dict",
+                      "call_arg_type": "type"
+                    }
+                  ],
+                  "keywords": [],
+                  "lowered_kind": "TypePredicateCall",
+                  "semantic_tag": "type.isinstance",
+                  "predicate_kind": "isinstance"
+                }
+              },
+              "body": [
+                {
+                  "kind": "Expr",
+                  "source_span": {
+                    "lineno": 20,
+                    "col": 12,
+                    "end_lineno": 20,
+                    "end_col": 20
+                  },
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 20,
+                      "col": 12,
+                      "end_lineno": 20,
+                      "end_col": 20
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "continue",
+                    "id": "continue"
+                  }
+                }
+              ],
+              "orelse": []
+            },
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 21,
+                "col": 8,
+                "end_lineno": 20,
+                "end_col": 20
+              },
+              "test": {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 21,
+                  "col": 11,
+                  "end_lineno": 21,
+                  "end_col": 44
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "stmt.get(\"kind\") != \"FunctionDef\"",
+                "left": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 21,
+                    "col": 11,
+                    "end_lineno": 21,
+                    "end_col": 27
+                  },
+                  "resolved_type": "JsonVal",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "stmt.get(\"kind\")",
+                  "func": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 21,
+                      "col": 11,
+                      "end_lineno": 21,
+                      "end_col": 19
+                    },
+                    "resolved_type": "callable",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "stmt.get",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 21,
+                        "col": 11,
+                        "end_lineno": 21,
+                        "end_col": 15
+                      },
+                      "resolved_type": "dict[str,JsonVal]",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "stmt",
+                      "id": "stmt"
+                    },
+                    "attr": "get"
+                  },
+                  "args": [
+                    {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 21,
+                        "col": 20,
+                        "end_lineno": 21,
+                        "end_col": 26
+                      },
+                      "resolved_type": "str",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "\"kind\"",
+                      "value": "kind",
+                      "call_arg_type": "str"
+                    }
+                  ],
+                  "keywords": [],
+                  "lowered_kind": "BuiltinCall",
+                  "builtin_name": "get",
+                  "runtime_call": "dict.get",
+                  "runtime_module_id": "pytra.core.dict",
+                  "runtime_symbol": "dict.get",
+                  "runtime_call_adapter_kind": "builtin",
+                  "semantic_tag": "stdlib.method.get",
+                  "runtime_owner": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 21,
+                      "col": 11,
+                      "end_lineno": 21,
+                      "end_col": 15
+                    },
+                    "resolved_type": "dict[str,JsonVal]",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "stmt",
+                    "id": "stmt"
+                  },
+                  "yields_dynamic": true
+                },
+                "ops": [
+                  "NotEq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 21,
+                      "col": 31,
+                      "end_lineno": 21,
+                      "end_col": 44
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"FunctionDef\"",
+                    "value": "FunctionDef"
+                  }
+                ]
+              },
+              "body": [
+                {
+                  "kind": "Expr",
+                  "source_span": {
+                    "lineno": 20,
+                    "col": 12,
+                    "end_lineno": 20,
+                    "end_col": 20
+                  },
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 20,
+                      "col": 12,
+                      "end_lineno": 20,
+                      "end_col": 20
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "continue",
+                    "id": "continue"
+                  }
+                }
+              ],
+              "orelse": []
+            },
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 23,
+                "col": 8,
+                "end_lineno": 23,
+                "end_col": 31
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 23,
+                  "col": 8,
+                  "end_lineno": 23,
+                  "end_col": 12
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "name",
+                "id": "name"
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 23,
+                  "col": 15,
+                  "end_lineno": 23,
+                  "end_col": 31
+                },
+                "resolved_type": "JsonVal",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "stmt.get(\"name\")",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 23,
+                    "col": 15,
+                    "end_lineno": 23,
+                    "end_col": 23
+                  },
+                  "resolved_type": "callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "stmt.get",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 23,
+                      "col": 15,
+                      "end_lineno": 23,
+                      "end_col": 19
+                    },
+                    "resolved_type": "dict[str,JsonVal]",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "stmt",
+                    "id": "stmt"
+                  },
+                  "attr": "get"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 23,
+                      "col": 24,
+                      "end_lineno": 23,
+                      "end_col": 30
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"name\"",
+                    "value": "name",
+                    "call_arg_type": "str"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "get",
+                "runtime_call": "dict.get",
+                "runtime_module_id": "pytra.core.dict",
+                "runtime_symbol": "dict.get",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "stdlib.method.get",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 23,
+                    "col": 15,
+                    "end_lineno": 23,
+                    "end_col": 19
+                  },
+                  "resolved_type": "dict[str,JsonVal]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "stmt",
+                  "id": "stmt"
+                },
+                "yields_dynamic": true
+              },
+              "declare": true,
+              "decl_type": "JsonVal",
+              "declare_init": true
+            },
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 24,
+                "col": 8,
+                "end_lineno": 25,
+                "end_col": 30
+              },
+              "test": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 24,
+                  "col": 11,
+                  "end_lineno": 24,
+                  "end_col": 32
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance(name, str)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 24,
+                    "col": 11,
+                    "end_lineno": 24,
+                    "end_col": 21
+                  },
+                  "resolved_type": "callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "isinstance",
+                  "id": "isinstance"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 24,
+                      "col": 22,
+                      "end_lineno": 24,
+                      "end_col": 26
+                    },
+                    "resolved_type": "JsonVal",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "name",
+                    "id": "name",
+                    "call_arg_type": "Obj"
+                  },
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 24,
+                      "col": 28,
+                      "end_lineno": 24,
+                      "end_col": 31
+                    },
+                    "resolved_type": "type",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "str",
+                    "id": "str",
+                    "type_object_of": "str",
+                    "call_arg_type": "type"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "TypePredicateCall",
+                "semantic_tag": "type.isinstance",
+                "predicate_kind": "isinstance"
+              },
+              "body": [
+                {
+                  "kind": "Expr",
+                  "source_span": {
+                    "lineno": 25,
+                    "col": 12,
+                    "end_lineno": 25,
+                    "end_col": 30
+                  },
+                  "value": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 25,
+                      "col": 12,
+                      "end_lineno": 25,
+                      "end_col": 30
+                    },
+                    "resolved_type": "None",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "names.append(name)",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 25,
+                        "col": 12,
+                        "end_lineno": 25,
+                        "end_col": 24
+                      },
+                      "resolved_type": "callable",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "names.append",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 25,
+                          "col": 12,
+                          "end_lineno": 25,
+                          "end_col": 17
+                        },
+                        "resolved_type": "list[str]",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "names",
+                        "id": "names"
+                      },
+                      "attr": "append"
+                    },
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 25,
+                          "col": 25,
+                          "end_lineno": 25,
+                          "end_col": 29
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "name",
+                        "id": "name",
+                        "call_arg_type": "str"
+                      }
+                    ],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "builtin_name": "append",
+                    "runtime_call": "list.append",
+                    "runtime_module_id": "pytra.core.list",
+                    "runtime_symbol": "list.append",
+                    "runtime_call_adapter_kind": "builtin",
+                    "semantic_tag": "stdlib.method.append",
+                    "runtime_owner": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 25,
+                        "col": 12,
+                        "end_lineno": 25,
+                        "end_col": 17
+                      },
+                      "resolved_type": "list[str]",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "names",
+                      "id": "names"
+                    }
+                  }
+                }
+              ],
+              "orelse": []
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 26,
+            "col": 4,
+            "end_lineno": 26,
+            "end_col": 16
+          },
+          "value": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 26,
+              "col": 11,
+              "end_lineno": 26,
+              "end_col": 16
+            },
+            "resolved_type": "list[str]",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "names",
+            "id": "names"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "doc": {
+          "kind": "GenericType",
+          "base": "dict",
+          "args": [
+            {
+              "kind": "NamedType",
+              "name": "str"
+            },
+            {
+              "kind": "NamedType",
+              "name": "JsonVal"
+            }
+          ]
+        }
+      },
+      "return_type_expr": {
+        "kind": "GenericType",
+        "base": "list",
+        "args": [
+          {
+            "kind": "NamedType",
+            "name": "str"
+          }
+        ]
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 29,
+        "col": 0,
+        "end_lineno": 34,
+        "end_col": 48
+      },
+      "name": "owner_name",
+      "original_name": "owner_name",
+      "arg_types": {
+        "owner": "JsonVal"
+      },
+      "arg_order": [
+        "owner"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "owner": 0
+      },
+      "return_type": "str",
+      "arg_usage": {
+        "owner": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 30,
+            "col": 4,
+            "end_lineno": 30,
+            "end_col": 59
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 30,
+              "col": 4,
+              "end_lineno": 30,
+              "end_col": 14
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "owner_node",
+            "id": "owner_node"
+          },
+          "value": {
+            "kind": "IfExp",
+            "source_span": {
+              "lineno": 30,
+              "col": 17,
+              "end_lineno": 30,
+              "end_col": 59
+            },
+            "resolved_type": "dict[str,JsonVal] | None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "owner if isinstance(owner, dict) else None",
+            "test": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 30,
+                "col": 26,
+                "end_lineno": 30,
+                "end_col": 49
+              },
+              "resolved_type": "bool",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "isinstance(owner, dict)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 30,
+                  "col": 26,
+                  "end_lineno": 30,
+                  "end_col": 36
+                },
+                "resolved_type": "callable",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance",
+                "id": "isinstance"
+              },
+              "args": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 30,
+                    "col": 37,
+                    "end_lineno": 30,
+                    "end_col": 42
+                  },
+                  "resolved_type": "JsonVal",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "owner",
+                  "id": "owner",
+                  "call_arg_type": "Obj"
+                },
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 30,
+                    "col": 44,
+                    "end_lineno": 30,
+                    "end_col": 48
+                  },
+                  "resolved_type": "type",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "dict",
+                  "id": "dict",
+                  "type_object_of": "dict",
+                  "call_arg_type": "type"
+                }
+              ],
+              "keywords": [],
+              "lowered_kind": "TypePredicateCall",
+              "semantic_tag": "type.isinstance",
+              "predicate_kind": "isinstance"
+            },
+            "body": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 30,
+                "col": 17,
+                "end_lineno": 30,
+                "end_col": 22
+              },
+              "resolved_type": "dict[str,JsonVal]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "owner",
+              "id": "owner"
+            },
+            "orelse": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 30,
+                "col": 55,
+                "end_lineno": 30,
+                "end_col": 59
+              },
+              "resolved_type": "None",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "None",
+              "value": null
+            }
+          },
+          "declare": true,
+          "decl_type": "dict[str,JsonVal] | None",
+          "declare_init": true
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 31,
+            "col": 4,
+            "end_lineno": 6,
+            "end_col": 17
+          },
+          "test": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 31,
+              "col": 7,
+              "end_lineno": 31,
+              "end_col": 25
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "owner_node is None",
+            "left": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 31,
+                "col": 7,
+                "end_lineno": 31,
+                "end_col": 17
+              },
+              "resolved_type": "dict[str,JsonVal] | None",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "owner_node",
+              "id": "owner_node"
+            },
+            "ops": [
+              "Is"
+            ],
+            "comparators": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 31,
+                  "col": 21,
+                  "end_lineno": 31,
+                  "end_col": 25
+                },
+                "resolved_type": "None",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "None",
+                "value": null
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 6,
+                "col": 8,
+                "end_lineno": 6,
+                "end_col": 17
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 15,
+                  "end_lineno": 6,
+                  "end_col": 17
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"\"",
+                "value": ""
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 33,
+            "col": 4,
+            "end_lineno": 33,
+            "end_col": 33
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 33,
+              "col": 4,
+              "end_lineno": 33,
+              "end_col": 8
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "name",
+            "id": "name"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 33,
+              "col": 11,
+              "end_lineno": 33,
+              "end_col": 33
+            },
+            "resolved_type": "JsonVal",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "owner_node.get(\"name\")",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 33,
+                "col": 11,
+                "end_lineno": 33,
+                "end_col": 25
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "owner_node.get",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 33,
+                  "col": 11,
+                  "end_lineno": 33,
+                  "end_col": 21
+                },
+                "resolved_type": "dict[str,JsonVal]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "owner_node",
+                "id": "owner_node"
+              },
+              "attr": "get"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 33,
+                  "col": 26,
+                  "end_lineno": 33,
+                  "end_col": 32
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"name\"",
+                "value": "name",
+                "call_arg_type": "str"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "get",
+            "runtime_call": "dict.get",
+            "runtime_module_id": "pytra.core.dict",
+            "runtime_symbol": "dict.get",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.get",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 33,
+                "col": 11,
+                "end_lineno": 33,
+                "end_col": 21
+              },
+              "resolved_type": "dict[str,JsonVal]",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "owner_node",
+              "id": "owner_node"
+            },
+            "yields_dynamic": true
+          },
+          "declare": true,
+          "decl_type": "JsonVal",
+          "declare_init": true
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 34,
+            "col": 4,
+            "end_lineno": 34,
+            "end_col": 48
+          },
+          "value": {
+            "kind": "IfExp",
+            "source_span": {
+              "lineno": 34,
+              "col": 11,
+              "end_lineno": 34,
+              "end_col": 48
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "name if isinstance(name, str) else \"\"",
+            "test": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 34,
+                "col": 19,
+                "end_lineno": 34,
+                "end_col": 40
+              },
+              "resolved_type": "bool",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "isinstance(name, str)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 34,
+                  "col": 19,
+                  "end_lineno": 34,
+                  "end_col": 29
+                },
+                "resolved_type": "callable",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance",
+                "id": "isinstance"
+              },
+              "args": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 34,
+                    "col": 30,
+                    "end_lineno": 34,
+                    "end_col": 34
+                  },
+                  "resolved_type": "JsonVal",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "name",
+                  "id": "name",
+                  "call_arg_type": "Obj"
+                },
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 34,
+                    "col": 36,
+                    "end_lineno": 34,
+                    "end_col": 39
+                  },
+                  "resolved_type": "type",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "str",
+                  "id": "str",
+                  "type_object_of": "str",
+                  "call_arg_type": "type"
+                }
+              ],
+              "keywords": [],
+              "lowered_kind": "TypePredicateCall",
+              "semantic_tag": "type.isinstance",
+              "predicate_kind": "isinstance"
+            },
+            "body": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 34,
+                "col": 11,
+                "end_lineno": 34,
+                "end_col": 15
+              },
+              "resolved_type": "str",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "name",
+              "id": "name"
+            },
+            "orelse": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 34,
+                "col": 46,
+                "end_lineno": 34,
+                "end_col": 48
+              },
+              "resolved_type": "str",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"\"",
+              "value": ""
+            }
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "owner": {
+          "kind": "NamedType",
+          "name": "JsonVal"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 37,
+        "col": 0,
+        "end_lineno": 46,
+        "end_col": 13
+      },
+      "name": "reassign_then_check",
+      "original_name": "reassign_then_check",
+      "arg_types": {
+        "node": "JsonVal",
+        "other": "JsonVal"
+      },
+      "arg_order": [
+        "node",
+        "other"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "node": 0,
+        "other": 1
+      },
+      "return_type": "str",
+      "arg_usage": {
+        "node": "reassigned",
+        "other": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 38,
+            "col": 4,
+            "end_lineno": 45,
+            "end_col": 52
+          },
+          "test": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 38,
+              "col": 7,
+              "end_lineno": 38,
+              "end_col": 29
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "isinstance(node, dict)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 38,
+                "col": 7,
+                "end_lineno": 38,
+                "end_col": 17
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "isinstance",
+              "id": "isinstance"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 38,
+                  "col": 18,
+                  "end_lineno": 38,
+                  "end_col": 22
+                },
+                "resolved_type": "JsonVal",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "node",
+                "id": "node",
+                "call_arg_type": "Obj"
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 38,
+                  "col": 24,
+                  "end_lineno": 38,
+                  "end_col": 28
+                },
+                "resolved_type": "type",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "dict",
+                "id": "dict",
+                "type_object_of": "dict",
+                "call_arg_type": "type"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "TypePredicateCall",
+            "semantic_tag": "type.isinstance",
+            "predicate_kind": "isinstance"
+          },
+          "body": [
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 39,
+                "col": 8,
+                "end_lineno": 39,
+                "end_col": 31
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 39,
+                  "col": 8,
+                  "end_lineno": 39,
+                  "end_col": 12
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "name",
+                "id": "name"
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 39,
+                  "col": 15,
+                  "end_lineno": 39,
+                  "end_col": 31
+                },
+                "resolved_type": "JsonVal",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "node.get(\"name\")",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 39,
+                    "col": 15,
+                    "end_lineno": 39,
+                    "end_col": 23
+                  },
+                  "resolved_type": "callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "node.get",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 39,
+                      "col": 15,
+                      "end_lineno": 39,
+                      "end_col": 19
+                    },
+                    "resolved_type": "dict[str,JsonVal]",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "node",
+                    "id": "node"
+                  },
+                  "attr": "get"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 39,
+                      "col": 24,
+                      "end_lineno": 39,
+                      "end_col": 30
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"name\"",
+                    "value": "name",
+                    "call_arg_type": "str"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "get",
+                "runtime_call": "dict.get",
+                "runtime_module_id": "pytra.core.dict",
+                "runtime_symbol": "dict.get",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "stdlib.method.get",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 39,
+                    "col": 15,
+                    "end_lineno": 39,
+                    "end_col": 19
+                  },
+                  "resolved_type": "dict[str,JsonVal]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "node",
+                  "id": "node"
+                },
+                "yields_dynamic": true
+              },
+              "declare": true,
+              "decl_type": "JsonVal",
+              "declare_init": true
+            },
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 40,
+                "col": 8,
+                "end_lineno": 40,
+                "end_col": 20
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 40,
+                  "col": 8,
+                  "end_lineno": 40,
+                  "end_col": 12
+                },
+                "resolved_type": "dict[str,JsonVal]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "node",
+                "id": "node"
+              },
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 40,
+                  "col": 15,
+                  "end_lineno": 40,
+                  "end_col": 20
+                },
+                "resolved_type": "JsonVal",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "other",
+                "id": "other"
+              },
+              "declare": true,
+              "decl_type": "JsonVal",
+              "declare_init": true
+            },
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 41,
+                "col": 8,
+                "end_lineno": 44,
+                "end_col": 33
+              },
+              "test": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 41,
+                  "col": 11,
+                  "end_lineno": 41,
+                  "end_col": 33
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance(node, dict)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 41,
+                    "col": 11,
+                    "end_lineno": 41,
+                    "end_col": 21
+                  },
+                  "resolved_type": "callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "isinstance",
+                  "id": "isinstance"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 41,
+                      "col": 22,
+                      "end_lineno": 41,
+                      "end_col": 26
+                    },
+                    "resolved_type": "JsonVal",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "node",
+                    "id": "node",
+                    "call_arg_type": "Obj"
+                  },
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 41,
+                      "col": 28,
+                      "end_lineno": 41,
+                      "end_col": 32
+                    },
+                    "resolved_type": "type",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "dict",
+                    "id": "dict",
+                    "type_object_of": "dict",
+                    "call_arg_type": "type"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "TypePredicateCall",
+                "semantic_tag": "type.isinstance",
+                "predicate_kind": "isinstance"
+              },
+              "body": [
+                {
+                  "kind": "Assign",
+                  "source_span": {
+                    "lineno": 42,
+                    "col": 12,
+                    "end_lineno": 42,
+                    "end_col": 41
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 42,
+                      "col": 12,
+                      "end_lineno": 42,
+                      "end_col": 22
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "other_name",
+                    "id": "other_name"
+                  },
+                  "value": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 42,
+                      "col": 25,
+                      "end_lineno": 42,
+                      "end_col": 41
+                    },
+                    "resolved_type": "JsonVal",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "node.get(\"name\")",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 42,
+                        "col": 25,
+                        "end_lineno": 42,
+                        "end_col": 33
+                      },
+                      "resolved_type": "callable",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "node.get",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 42,
+                          "col": 25,
+                          "end_lineno": 42,
+                          "end_col": 29
+                        },
+                        "resolved_type": "dict[str,JsonVal]",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "node",
+                        "id": "node"
+                      },
+                      "attr": "get"
+                    },
+                    "args": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 42,
+                          "col": 34,
+                          "end_lineno": 42,
+                          "end_col": 40
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"name\"",
+                        "value": "name",
+                        "call_arg_type": "str"
+                      }
+                    ],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "builtin_name": "get",
+                    "runtime_call": "dict.get",
+                    "runtime_module_id": "pytra.core.dict",
+                    "runtime_symbol": "dict.get",
+                    "runtime_call_adapter_kind": "builtin",
+                    "semantic_tag": "stdlib.method.get",
+                    "runtime_owner": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 42,
+                        "col": 25,
+                        "end_lineno": 42,
+                        "end_col": 29
+                      },
+                      "resolved_type": "dict[str,JsonVal]",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "node",
+                      "id": "node"
+                    },
+                    "yields_dynamic": true
+                  },
+                  "declare": true,
+                  "decl_type": "JsonVal",
+                  "declare_init": true
+                },
+                {
+                  "kind": "If",
+                  "source_span": {
+                    "lineno": 43,
+                    "col": 12,
+                    "end_lineno": 44,
+                    "end_col": 33
+                  },
+                  "test": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 43,
+                      "col": 15,
+                      "end_lineno": 43,
+                      "end_col": 42
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "isinstance(other_name, str)",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 43,
+                        "col": 15,
+                        "end_lineno": 43,
+                        "end_col": 25
+                      },
+                      "resolved_type": "callable",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "isinstance",
+                      "id": "isinstance"
+                    },
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 43,
+                          "col": 26,
+                          "end_lineno": 43,
+                          "end_col": 36
+                        },
+                        "resolved_type": "JsonVal",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "other_name",
+                        "id": "other_name",
+                        "call_arg_type": "Obj"
+                      },
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 43,
+                          "col": 38,
+                          "end_lineno": 43,
+                          "end_col": 41
+                        },
+                        "resolved_type": "type",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "str",
+                        "id": "str",
+                        "type_object_of": "str",
+                        "call_arg_type": "type"
+                      }
+                    ],
+                    "keywords": [],
+                    "lowered_kind": "TypePredicateCall",
+                    "semantic_tag": "type.isinstance",
+                    "predicate_kind": "isinstance"
+                  },
+                  "body": [
+                    {
+                      "kind": "Return",
+                      "source_span": {
+                        "lineno": 44,
+                        "col": 16,
+                        "end_lineno": 44,
+                        "end_col": 33
+                      },
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 44,
+                          "col": 23,
+                          "end_lineno": 44,
+                          "end_col": 33
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "other_name",
+                        "id": "other_name"
+                      }
+                    }
+                  ],
+                  "orelse": []
+                }
+              ],
+              "orelse": []
+            },
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 45,
+                "col": 8,
+                "end_lineno": 45,
+                "end_col": 52
+              },
+              "value": {
+                "kind": "IfExp",
+                "source_span": {
+                  "lineno": 45,
+                  "col": 15,
+                  "end_lineno": 45,
+                  "end_col": 52
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "name if isinstance(name, str) else \"\"",
+                "test": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 45,
+                    "col": 23,
+                    "end_lineno": 45,
+                    "end_col": 44
+                  },
+                  "resolved_type": "bool",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "isinstance(name, str)",
+                  "func": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 45,
+                      "col": 23,
+                      "end_lineno": 45,
+                      "end_col": 33
+                    },
+                    "resolved_type": "callable",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "isinstance",
+                    "id": "isinstance"
+                  },
+                  "args": [
+                    {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 45,
+                        "col": 34,
+                        "end_lineno": 45,
+                        "end_col": 38
+                      },
+                      "resolved_type": "JsonVal",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "name",
+                      "id": "name",
+                      "call_arg_type": "Obj"
+                    },
+                    {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 45,
+                        "col": 40,
+                        "end_lineno": 45,
+                        "end_col": 43
+                      },
+                      "resolved_type": "type",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "str",
+                      "id": "str",
+                      "type_object_of": "str",
+                      "call_arg_type": "type"
+                    }
+                  ],
+                  "keywords": [],
+                  "lowered_kind": "TypePredicateCall",
+                  "semantic_tag": "type.isinstance",
+                  "predicate_kind": "isinstance"
+                },
+                "body": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 45,
+                    "col": 15,
+                    "end_lineno": 45,
+                    "end_col": 19
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "name",
+                  "id": "name"
+                },
+                "orelse": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 45,
+                    "col": 50,
+                    "end_lineno": 45,
+                    "end_col": 52
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"\"",
+                  "value": ""
+                }
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 46,
+            "col": 4,
+            "end_lineno": 46,
+            "end_col": 13
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 46,
+              "col": 11,
+              "end_lineno": 46,
+              "end_col": 13
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"\"",
+            "value": ""
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "node": {
+          "kind": "NamedType",
+          "name": "JsonVal"
+        },
+        "other": {
+          "kind": "NamedType",
+          "name": "JsonVal"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.std.json",
+          "export_name": "JsonVal",
+          "local_name": "JsonVal",
+          "binding_kind": "symbol",
+          "source_file": "/workspace/Pytra/test/fixture/source/py/typing/isinstance_narrowing.py",
+          "source_line": 1,
+          "source_module_id": "pytra.std.json",
+          "source_export_name": "JsonVal",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.std.json",
+          "runtime_group": "std"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std.json",
+          "symbol": "JsonVal",
+          "local_name": "JsonVal"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.std.json",
+        "export_name": "JsonVal",
+        "local_name": "JsonVal",
+        "binding_kind": "symbol",
+        "source_file": "/workspace/Pytra/test/fixture/source/py/typing/isinstance_narrowing.py",
+        "source_line": 1,
+        "source_module_id": "pytra.std.json",
+        "source_export_name": "JsonVal",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.std.json",
+        "runtime_group": "std"
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std.json",
+        "symbol": "JsonVal",
+        "local_name": "JsonVal"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "JsonVal": {
+        "module": "pytra.std.json",
+        "name": "JsonVal"
+      }
+    },
+    "dispatch_mode": "native"
+  },
+  "east_stage": 2,
+  "schema_version": 1
+}

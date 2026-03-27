@@ -1,0 +1,2203 @@
+{
+  "kind": "Module",
+  "source_path": "/workspace/Pytra/test/fixture/source/py/typing/isinstance_narrowing.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 34
+      },
+      "module": "pytra.std.json",
+      "names": [
+        {
+          "name": "JsonVal",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 4,
+        "col": 0,
+        "end_lineno": 10,
+        "end_col": 13
+      },
+      "name": "read_kind",
+      "original_name": "read_kind",
+      "arg_types": {
+        "node": "JsonVal"
+      },
+      "arg_order": [
+        "node"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "node": 0
+      },
+      "return_type": "str",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 5,
+            "col": 4,
+            "end_lineno": 6,
+            "end_col": 17
+          },
+          "test": {
+            "kind": "UnaryOp",
+            "source_span": {
+              "lineno": 5,
+              "col": 7,
+              "end_lineno": 5,
+              "end_col": 33
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "not isinstance(node, dict)",
+            "op": "Not",
+            "operand": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 5,
+                "col": 11,
+                "end_lineno": 5,
+                "end_col": 33
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "isinstance(node, dict)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 5,
+                  "col": 11,
+                  "end_lineno": 5,
+                  "end_col": 21
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance",
+                "id": "isinstance"
+              },
+              "args": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 5,
+                    "col": 22,
+                    "end_lineno": 5,
+                    "end_col": 26
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "node",
+                  "id": "node"
+                },
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 5,
+                    "col": 28,
+                    "end_lineno": 5,
+                    "end_col": 32
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "dict",
+                  "id": "dict"
+                }
+              ],
+              "keywords": []
+            }
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 6,
+                "col": 8,
+                "end_lineno": 6,
+                "end_col": 17
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 15,
+                  "end_lineno": 6,
+                  "end_col": 17
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"\"",
+                "value": ""
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 7,
+            "col": 4,
+            "end_lineno": 7,
+            "end_col": 27
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 7,
+              "col": 4,
+              "end_lineno": 7,
+              "end_col": 8
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "kind",
+            "id": "kind"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 7,
+              "col": 11,
+              "end_lineno": 7,
+              "end_col": 27
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "node.get(\"kind\")",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 7,
+                "col": 11,
+                "end_lineno": 7,
+                "end_col": 19
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "node.get",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 7,
+                  "col": 11,
+                  "end_lineno": 7,
+                  "end_col": 15
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "node",
+                "id": "node"
+              },
+              "attr": "get"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 7,
+                  "col": 20,
+                  "end_lineno": 7,
+                  "end_col": 26
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"kind\"",
+                "value": "kind"
+              }
+            ],
+            "keywords": []
+          },
+          "declare": true
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 8,
+            "col": 4,
+            "end_lineno": 9,
+            "end_col": 27
+          },
+          "test": {
+            "kind": "BoolOp",
+            "source_span": {
+              "lineno": 8,
+              "col": 7,
+              "end_lineno": 8,
+              "end_col": 51
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "isinstance(kind, str) and kind.strip() != \"\"",
+            "op": "And",
+            "values": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 8,
+                  "col": 7,
+                  "end_lineno": 8,
+                  "end_col": 28
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance(kind, str)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 8,
+                    "col": 7,
+                    "end_lineno": 8,
+                    "end_col": 17
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "isinstance",
+                  "id": "isinstance"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 8,
+                      "col": 18,
+                      "end_lineno": 8,
+                      "end_col": 22
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "kind",
+                    "id": "kind"
+                  },
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 8,
+                      "col": 24,
+                      "end_lineno": 8,
+                      "end_col": 27
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "str",
+                    "id": "str"
+                  }
+                ],
+                "keywords": []
+              },
+              {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 8,
+                  "col": 33,
+                  "end_lineno": 8,
+                  "end_col": 51
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "kind.strip() != \"\"",
+                "left": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 8,
+                    "col": 33,
+                    "end_lineno": 8,
+                    "end_col": 45
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "kind.strip()",
+                  "func": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 8,
+                      "col": 33,
+                      "end_lineno": 8,
+                      "end_col": 43
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "kind.strip",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 8,
+                        "col": 33,
+                        "end_lineno": 8,
+                        "end_col": 37
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "kind",
+                      "id": "kind"
+                    },
+                    "attr": "strip"
+                  },
+                  "args": [],
+                  "keywords": []
+                },
+                "ops": [
+                  "NotEq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 8,
+                      "col": 49,
+                      "end_lineno": 8,
+                      "end_col": 51
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"\"",
+                    "value": ""
+                  }
+                ]
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 9,
+                "col": 8,
+                "end_lineno": 9,
+                "end_col": 27
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 9,
+                  "col": 15,
+                  "end_lineno": 9,
+                  "end_col": 27
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "kind.strip()",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 9,
+                    "col": 15,
+                    "end_lineno": 9,
+                    "end_col": 25
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "kind.strip",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 15,
+                      "end_lineno": 9,
+                      "end_col": 19
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "kind",
+                    "id": "kind"
+                  },
+                  "attr": "strip"
+                },
+                "args": [],
+                "keywords": []
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 10,
+            "col": 4,
+            "end_lineno": 10,
+            "end_col": 13
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 10,
+              "col": 11,
+              "end_lineno": 10,
+              "end_col": 13
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"\"",
+            "value": ""
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 13,
+        "col": 0,
+        "end_lineno": 26,
+        "end_col": 16
+      },
+      "name": "collect_names",
+      "original_name": "collect_names",
+      "arg_types": {
+        "doc": "dict[str, JsonVal]"
+      },
+      "arg_order": [
+        "doc"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "doc": 0
+      },
+      "return_type": "list[str]",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 14,
+            "col": 4,
+            "end_lineno": 14,
+            "end_col": 25
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 14,
+              "col": 4,
+              "end_lineno": 14,
+              "end_col": 9
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "names",
+            "id": "names"
+          },
+          "annotation": "list[str]",
+          "value": {
+            "kind": "List",
+            "source_span": {
+              "lineno": 14,
+              "col": 23,
+              "end_lineno": 14,
+              "end_col": 25
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "[]",
+            "elements": []
+          },
+          "declare": true
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 15,
+            "col": 4,
+            "end_lineno": 15,
+            "end_col": 26
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 15,
+              "col": 4,
+              "end_lineno": 15,
+              "end_col": 8
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "body",
+            "id": "body"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 15,
+              "col": 11,
+              "end_lineno": 15,
+              "end_col": 26
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "doc.get(\"body\")",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 15,
+                "col": 11,
+                "end_lineno": 15,
+                "end_col": 18
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "doc.get",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 11,
+                  "end_lineno": 15,
+                  "end_col": 14
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "doc",
+                "id": "doc"
+              },
+              "attr": "get"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 15,
+                  "col": 19,
+                  "end_lineno": 15,
+                  "end_col": 25
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"body\"",
+                "value": "body"
+              }
+            ],
+            "keywords": []
+          },
+          "declare": true
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 16,
+            "col": 4,
+            "end_lineno": 17,
+            "end_col": 20
+          },
+          "test": {
+            "kind": "UnaryOp",
+            "source_span": {
+              "lineno": 16,
+              "col": 7,
+              "end_lineno": 16,
+              "end_col": 33
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "not isinstance(body, list)",
+            "op": "Not",
+            "operand": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 16,
+                "col": 11,
+                "end_lineno": 16,
+                "end_col": 33
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "isinstance(body, list)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 16,
+                  "col": 11,
+                  "end_lineno": 16,
+                  "end_col": 21
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance",
+                "id": "isinstance"
+              },
+              "args": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 16,
+                    "col": 22,
+                    "end_lineno": 16,
+                    "end_col": 26
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "body",
+                  "id": "body"
+                },
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 16,
+                    "col": 28,
+                    "end_lineno": 16,
+                    "end_col": 32
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "list",
+                  "id": "list"
+                }
+              ],
+              "keywords": []
+            }
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 17,
+                "col": 8,
+                "end_lineno": 17,
+                "end_col": 20
+              },
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 17,
+                  "col": 15,
+                  "end_lineno": 17,
+                  "end_col": 20
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "names",
+                "id": "names"
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "For",
+          "source_span": {
+            "lineno": 18,
+            "col": 0,
+            "end_lineno": 25,
+            "end_col": 30
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 18,
+              "col": 8,
+              "end_lineno": 18,
+              "end_col": 12
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "stmt",
+            "id": "stmt"
+          },
+          "iter": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 18,
+              "col": 16,
+              "end_lineno": 18,
+              "end_col": 20
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "body",
+            "id": "body"
+          },
+          "body": [
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 19,
+                "col": 8,
+                "end_lineno": 20,
+                "end_col": 20
+              },
+              "test": {
+                "kind": "UnaryOp",
+                "source_span": {
+                  "lineno": 19,
+                  "col": 11,
+                  "end_lineno": 19,
+                  "end_col": 37
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "not isinstance(stmt, dict)",
+                "op": "Not",
+                "operand": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 19,
+                    "col": 15,
+                    "end_lineno": 19,
+                    "end_col": 37
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "isinstance(stmt, dict)",
+                  "func": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 19,
+                      "col": 15,
+                      "end_lineno": 19,
+                      "end_col": 25
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "isinstance",
+                    "id": "isinstance"
+                  },
+                  "args": [
+                    {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 19,
+                        "col": 26,
+                        "end_lineno": 19,
+                        "end_col": 30
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "stmt",
+                      "id": "stmt"
+                    },
+                    {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 19,
+                        "col": 32,
+                        "end_lineno": 19,
+                        "end_col": 36
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "dict",
+                      "id": "dict"
+                    }
+                  ],
+                  "keywords": []
+                }
+              },
+              "body": [
+                {
+                  "kind": "Expr",
+                  "source_span": {
+                    "lineno": 20,
+                    "col": 12,
+                    "end_lineno": 20,
+                    "end_col": 20
+                  },
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 20,
+                      "col": 12,
+                      "end_lineno": 20,
+                      "end_col": 20
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "continue",
+                    "id": "continue"
+                  }
+                }
+              ],
+              "orelse": []
+            },
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 21,
+                "col": 8,
+                "end_lineno": 20,
+                "end_col": 20
+              },
+              "test": {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 21,
+                  "col": 11,
+                  "end_lineno": 21,
+                  "end_col": 44
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "stmt.get(\"kind\") != \"FunctionDef\"",
+                "left": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 21,
+                    "col": 11,
+                    "end_lineno": 21,
+                    "end_col": 27
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "stmt.get(\"kind\")",
+                  "func": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 21,
+                      "col": 11,
+                      "end_lineno": 21,
+                      "end_col": 19
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "stmt.get",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 21,
+                        "col": 11,
+                        "end_lineno": 21,
+                        "end_col": 15
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "stmt",
+                      "id": "stmt"
+                    },
+                    "attr": "get"
+                  },
+                  "args": [
+                    {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 21,
+                        "col": 20,
+                        "end_lineno": 21,
+                        "end_col": 26
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "\"kind\"",
+                      "value": "kind"
+                    }
+                  ],
+                  "keywords": []
+                },
+                "ops": [
+                  "NotEq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 21,
+                      "col": 31,
+                      "end_lineno": 21,
+                      "end_col": 44
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"FunctionDef\"",
+                    "value": "FunctionDef"
+                  }
+                ]
+              },
+              "body": [
+                {
+                  "kind": "Expr",
+                  "source_span": {
+                    "lineno": 20,
+                    "col": 12,
+                    "end_lineno": 20,
+                    "end_col": 20
+                  },
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 20,
+                      "col": 12,
+                      "end_lineno": 20,
+                      "end_col": 20
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "continue",
+                    "id": "continue"
+                  }
+                }
+              ],
+              "orelse": []
+            },
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 23,
+                "col": 8,
+                "end_lineno": 23,
+                "end_col": 31
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 23,
+                  "col": 8,
+                  "end_lineno": 23,
+                  "end_col": 12
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "name",
+                "id": "name"
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 23,
+                  "col": 15,
+                  "end_lineno": 23,
+                  "end_col": 31
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "stmt.get(\"name\")",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 23,
+                    "col": 15,
+                    "end_lineno": 23,
+                    "end_col": 23
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "stmt.get",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 23,
+                      "col": 15,
+                      "end_lineno": 23,
+                      "end_col": 19
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "stmt",
+                    "id": "stmt"
+                  },
+                  "attr": "get"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 23,
+                      "col": 24,
+                      "end_lineno": 23,
+                      "end_col": 30
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"name\"",
+                    "value": "name"
+                  }
+                ],
+                "keywords": []
+              },
+              "declare": true
+            },
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 24,
+                "col": 8,
+                "end_lineno": 25,
+                "end_col": 30
+              },
+              "test": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 24,
+                  "col": 11,
+                  "end_lineno": 24,
+                  "end_col": 32
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance(name, str)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 24,
+                    "col": 11,
+                    "end_lineno": 24,
+                    "end_col": 21
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "isinstance",
+                  "id": "isinstance"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 24,
+                      "col": 22,
+                      "end_lineno": 24,
+                      "end_col": 26
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "name",
+                    "id": "name"
+                  },
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 24,
+                      "col": 28,
+                      "end_lineno": 24,
+                      "end_col": 31
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "str",
+                    "id": "str"
+                  }
+                ],
+                "keywords": []
+              },
+              "body": [
+                {
+                  "kind": "Expr",
+                  "source_span": {
+                    "lineno": 25,
+                    "col": 12,
+                    "end_lineno": 25,
+                    "end_col": 30
+                  },
+                  "value": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 25,
+                      "col": 12,
+                      "end_lineno": 25,
+                      "end_col": 30
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "names.append(name)",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 25,
+                        "col": 12,
+                        "end_lineno": 25,
+                        "end_col": 24
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "names.append",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 25,
+                          "col": 12,
+                          "end_lineno": 25,
+                          "end_col": 17
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "names",
+                        "id": "names"
+                      },
+                      "attr": "append"
+                    },
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 25,
+                          "col": 25,
+                          "end_lineno": 25,
+                          "end_col": 29
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "name",
+                        "id": "name"
+                      }
+                    ],
+                    "keywords": []
+                  }
+                }
+              ],
+              "orelse": []
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 26,
+            "col": 4,
+            "end_lineno": 26,
+            "end_col": 16
+          },
+          "value": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 26,
+              "col": 11,
+              "end_lineno": 26,
+              "end_col": 16
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "names",
+            "id": "names"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 29,
+        "col": 0,
+        "end_lineno": 34,
+        "end_col": 48
+      },
+      "name": "owner_name",
+      "original_name": "owner_name",
+      "arg_types": {
+        "owner": "JsonVal"
+      },
+      "arg_order": [
+        "owner"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "owner": 0
+      },
+      "return_type": "str",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 30,
+            "col": 4,
+            "end_lineno": 30,
+            "end_col": 59
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 30,
+              "col": 4,
+              "end_lineno": 30,
+              "end_col": 14
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "owner_node",
+            "id": "owner_node"
+          },
+          "value": {
+            "kind": "IfExp",
+            "source_span": {
+              "lineno": 30,
+              "col": 17,
+              "end_lineno": 30,
+              "end_col": 59
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "owner if isinstance(owner, dict) else None",
+            "test": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 30,
+                "col": 26,
+                "end_lineno": 30,
+                "end_col": 49
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "isinstance(owner, dict)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 30,
+                  "col": 26,
+                  "end_lineno": 30,
+                  "end_col": 36
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance",
+                "id": "isinstance"
+              },
+              "args": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 30,
+                    "col": 37,
+                    "end_lineno": 30,
+                    "end_col": 42
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "owner",
+                  "id": "owner"
+                },
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 30,
+                    "col": 44,
+                    "end_lineno": 30,
+                    "end_col": 48
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "dict",
+                  "id": "dict"
+                }
+              ],
+              "keywords": []
+            },
+            "body": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 30,
+                "col": 17,
+                "end_lineno": 30,
+                "end_col": 22
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "owner",
+              "id": "owner"
+            },
+            "orelse": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 30,
+                "col": 55,
+                "end_lineno": 30,
+                "end_col": 59
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "None",
+              "value": null
+            }
+          },
+          "declare": true
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 31,
+            "col": 4,
+            "end_lineno": 6,
+            "end_col": 17
+          },
+          "test": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 31,
+              "col": 7,
+              "end_lineno": 31,
+              "end_col": 25
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "owner_node is None",
+            "left": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 31,
+                "col": 7,
+                "end_lineno": 31,
+                "end_col": 17
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "owner_node",
+              "id": "owner_node"
+            },
+            "ops": [
+              "Is"
+            ],
+            "comparators": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 31,
+                  "col": 21,
+                  "end_lineno": 31,
+                  "end_col": 25
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "None",
+                "value": null
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 6,
+                "col": 8,
+                "end_lineno": 6,
+                "end_col": 17
+              },
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 15,
+                  "end_lineno": 6,
+                  "end_col": 17
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"\"",
+                "value": ""
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 33,
+            "col": 4,
+            "end_lineno": 33,
+            "end_col": 33
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 33,
+              "col": 4,
+              "end_lineno": 33,
+              "end_col": 8
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "name",
+            "id": "name"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 33,
+              "col": 11,
+              "end_lineno": 33,
+              "end_col": 33
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "owner_node.get(\"name\")",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 33,
+                "col": 11,
+                "end_lineno": 33,
+                "end_col": 25
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "owner_node.get",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 33,
+                  "col": 11,
+                  "end_lineno": 33,
+                  "end_col": 21
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "owner_node",
+                "id": "owner_node"
+              },
+              "attr": "get"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 33,
+                  "col": 26,
+                  "end_lineno": 33,
+                  "end_col": 32
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"name\"",
+                "value": "name"
+              }
+            ],
+            "keywords": []
+          },
+          "declare": true
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 34,
+            "col": 4,
+            "end_lineno": 34,
+            "end_col": 48
+          },
+          "value": {
+            "kind": "IfExp",
+            "source_span": {
+              "lineno": 34,
+              "col": 11,
+              "end_lineno": 34,
+              "end_col": 48
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "name if isinstance(name, str) else \"\"",
+            "test": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 34,
+                "col": 19,
+                "end_lineno": 34,
+                "end_col": 40
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "isinstance(name, str)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 34,
+                  "col": 19,
+                  "end_lineno": 34,
+                  "end_col": 29
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance",
+                "id": "isinstance"
+              },
+              "args": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 34,
+                    "col": 30,
+                    "end_lineno": 34,
+                    "end_col": 34
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "name",
+                  "id": "name"
+                },
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 34,
+                    "col": 36,
+                    "end_lineno": 34,
+                    "end_col": 39
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "str",
+                  "id": "str"
+                }
+              ],
+              "keywords": []
+            },
+            "body": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 34,
+                "col": 11,
+                "end_lineno": 34,
+                "end_col": 15
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "name",
+              "id": "name"
+            },
+            "orelse": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 34,
+                "col": 46,
+                "end_lineno": 34,
+                "end_col": 48
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"\"",
+              "value": ""
+            }
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 37,
+        "col": 0,
+        "end_lineno": 46,
+        "end_col": 13
+      },
+      "name": "reassign_then_check",
+      "original_name": "reassign_then_check",
+      "arg_types": {
+        "node": "JsonVal",
+        "other": "JsonVal"
+      },
+      "arg_order": [
+        "node",
+        "other"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "node": 0,
+        "other": 1
+      },
+      "return_type": "str",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 38,
+            "col": 4,
+            "end_lineno": 45,
+            "end_col": 52
+          },
+          "test": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 38,
+              "col": 7,
+              "end_lineno": 38,
+              "end_col": 29
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "isinstance(node, dict)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 38,
+                "col": 7,
+                "end_lineno": 38,
+                "end_col": 17
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "isinstance",
+              "id": "isinstance"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 38,
+                  "col": 18,
+                  "end_lineno": 38,
+                  "end_col": 22
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "node",
+                "id": "node"
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 38,
+                  "col": 24,
+                  "end_lineno": 38,
+                  "end_col": 28
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "dict",
+                "id": "dict"
+              }
+            ],
+            "keywords": []
+          },
+          "body": [
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 39,
+                "col": 8,
+                "end_lineno": 39,
+                "end_col": 31
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 39,
+                  "col": 8,
+                  "end_lineno": 39,
+                  "end_col": 12
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "name",
+                "id": "name"
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 39,
+                  "col": 15,
+                  "end_lineno": 39,
+                  "end_col": 31
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "node.get(\"name\")",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 39,
+                    "col": 15,
+                    "end_lineno": 39,
+                    "end_col": 23
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "node.get",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 39,
+                      "col": 15,
+                      "end_lineno": 39,
+                      "end_col": 19
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "node",
+                    "id": "node"
+                  },
+                  "attr": "get"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 39,
+                      "col": 24,
+                      "end_lineno": 39,
+                      "end_col": 30
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"name\"",
+                    "value": "name"
+                  }
+                ],
+                "keywords": []
+              },
+              "declare": true
+            },
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 40,
+                "col": 8,
+                "end_lineno": 40,
+                "end_col": 20
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 40,
+                  "col": 8,
+                  "end_lineno": 40,
+                  "end_col": 12
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "node",
+                "id": "node"
+              },
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 40,
+                  "col": 15,
+                  "end_lineno": 40,
+                  "end_col": 20
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "other",
+                "id": "other"
+              },
+              "declare": true
+            },
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 41,
+                "col": 8,
+                "end_lineno": 44,
+                "end_col": 33
+              },
+              "test": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 41,
+                  "col": 11,
+                  "end_lineno": 41,
+                  "end_col": 33
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "isinstance(node, dict)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 41,
+                    "col": 11,
+                    "end_lineno": 41,
+                    "end_col": 21
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "isinstance",
+                  "id": "isinstance"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 41,
+                      "col": 22,
+                      "end_lineno": 41,
+                      "end_col": 26
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "node",
+                    "id": "node"
+                  },
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 41,
+                      "col": 28,
+                      "end_lineno": 41,
+                      "end_col": 32
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "dict",
+                    "id": "dict"
+                  }
+                ],
+                "keywords": []
+              },
+              "body": [
+                {
+                  "kind": "Assign",
+                  "source_span": {
+                    "lineno": 42,
+                    "col": 12,
+                    "end_lineno": 42,
+                    "end_col": 41
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 42,
+                      "col": 12,
+                      "end_lineno": 42,
+                      "end_col": 22
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "other_name",
+                    "id": "other_name"
+                  },
+                  "value": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 42,
+                      "col": 25,
+                      "end_lineno": 42,
+                      "end_col": 41
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "node.get(\"name\")",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 42,
+                        "col": 25,
+                        "end_lineno": 42,
+                        "end_col": 33
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "node.get",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 42,
+                          "col": 25,
+                          "end_lineno": 42,
+                          "end_col": 29
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "node",
+                        "id": "node"
+                      },
+                      "attr": "get"
+                    },
+                    "args": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 42,
+                          "col": 34,
+                          "end_lineno": 42,
+                          "end_col": 40
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"name\"",
+                        "value": "name"
+                      }
+                    ],
+                    "keywords": []
+                  },
+                  "declare": true
+                },
+                {
+                  "kind": "If",
+                  "source_span": {
+                    "lineno": 43,
+                    "col": 12,
+                    "end_lineno": 44,
+                    "end_col": 33
+                  },
+                  "test": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 43,
+                      "col": 15,
+                      "end_lineno": 43,
+                      "end_col": 42
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "isinstance(other_name, str)",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 43,
+                        "col": 15,
+                        "end_lineno": 43,
+                        "end_col": 25
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "isinstance",
+                      "id": "isinstance"
+                    },
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 43,
+                          "col": 26,
+                          "end_lineno": 43,
+                          "end_col": 36
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "other_name",
+                        "id": "other_name"
+                      },
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 43,
+                          "col": 38,
+                          "end_lineno": 43,
+                          "end_col": 41
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "str",
+                        "id": "str"
+                      }
+                    ],
+                    "keywords": []
+                  },
+                  "body": [
+                    {
+                      "kind": "Return",
+                      "source_span": {
+                        "lineno": 44,
+                        "col": 16,
+                        "end_lineno": 44,
+                        "end_col": 33
+                      },
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 44,
+                          "col": 23,
+                          "end_lineno": 44,
+                          "end_col": 33
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "other_name",
+                        "id": "other_name"
+                      }
+                    }
+                  ],
+                  "orelse": []
+                }
+              ],
+              "orelse": []
+            },
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 45,
+                "col": 8,
+                "end_lineno": 45,
+                "end_col": 52
+              },
+              "value": {
+                "kind": "IfExp",
+                "source_span": {
+                  "lineno": 45,
+                  "col": 15,
+                  "end_lineno": 45,
+                  "end_col": 52
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "name if isinstance(name, str) else \"\"",
+                "test": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 45,
+                    "col": 23,
+                    "end_lineno": 45,
+                    "end_col": 44
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "isinstance(name, str)",
+                  "func": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 45,
+                      "col": 23,
+                      "end_lineno": 45,
+                      "end_col": 33
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "isinstance",
+                    "id": "isinstance"
+                  },
+                  "args": [
+                    {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 45,
+                        "col": 34,
+                        "end_lineno": 45,
+                        "end_col": 38
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "name",
+                      "id": "name"
+                    },
+                    {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 45,
+                        "col": 40,
+                        "end_lineno": 45,
+                        "end_col": 43
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "str",
+                      "id": "str"
+                    }
+                  ],
+                  "keywords": []
+                },
+                "body": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 45,
+                    "col": 15,
+                    "end_lineno": 45,
+                    "end_col": 19
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "name",
+                  "id": "name"
+                },
+                "orelse": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 45,
+                    "col": 50,
+                    "end_lineno": 45,
+                    "end_col": 52
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"\"",
+                  "value": ""
+                }
+              }
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 46,
+            "col": 4,
+            "end_lineno": 46,
+            "end_col": 13
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 46,
+              "col": 11,
+              "end_lineno": 46,
+              "end_col": 13
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"\"",
+            "value": ""
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [
+        {
+          "module_id": "pytra.std.json",
+          "export_name": "JsonVal",
+          "local_name": "JsonVal",
+          "binding_kind": "symbol",
+          "source_file": "/workspace/Pytra/test/fixture/source/py/typing/isinstance_narrowing.py",
+          "source_line": 1
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std.json",
+          "symbol": "JsonVal",
+          "local_name": "JsonVal"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.std.json",
+        "export_name": "JsonVal",
+        "local_name": "JsonVal",
+        "binding_kind": "symbol",
+        "source_file": "/workspace/Pytra/test/fixture/source/py/typing/isinstance_narrowing.py",
+        "source_line": 1
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std.json",
+        "symbol": "JsonVal",
+        "local_name": "JsonVal"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "JsonVal": {
+        "module": "pytra.std.json",
+        "name": "JsonVal"
+      }
+    }
+  },
+  "east_stage": 1
+}

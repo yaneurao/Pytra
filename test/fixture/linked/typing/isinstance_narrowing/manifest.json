@@ -1,0 +1,455 @@
+{
+  "schema": "pytra.link_output.v1",
+  "target": "cpp",
+  "dispatch_mode": "native",
+  "entry_modules": [
+    "isinstance_narrowing"
+  ],
+  "modules": [
+    {
+      "module_id": "isinstance_narrowing",
+      "input": "/workspace/Pytra/test/fixture/east3-opt/typing/isinstance_narrowing.east3",
+      "output": "east3/isinstance_narrowing.east3.json",
+      "source_path": "/workspace/Pytra/test/fixture/source/py/typing/isinstance_narrowing.py",
+      "is_entry": true,
+      "module_kind": "user"
+    },
+    {
+      "module_id": "pytra.built_in.scalar_ops",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/scalar_ops.east",
+      "output": "east3/pytra/built_in/scalar_ops.east3.json",
+      "source_path": "/workspace/Pytra/src/pytra/built_in/scalar_ops.py",
+      "is_entry": false,
+      "module_kind": "runtime"
+    },
+    {
+      "module_id": "pytra.built_in.sequence",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/sequence.east",
+      "output": "east3/pytra/built_in/sequence.east3.json",
+      "source_path": "/workspace/Pytra/src/pytra/built_in/sequence.py",
+      "is_entry": false,
+      "module_kind": "runtime"
+    },
+    {
+      "module_id": "pytra.built_in.string_ops",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/string_ops.east",
+      "output": "east3/pytra/built_in/string_ops.east3.json",
+      "source_path": "/workspace/Pytra/src/pytra/built_in/string_ops.py",
+      "is_entry": false,
+      "module_kind": "runtime"
+    },
+    {
+      "module_id": "pytra.std.json",
+      "input": "/workspace/Pytra/src/runtime/east/std/json.east",
+      "output": "east3/pytra/std/json.east3.json",
+      "source_path": "/workspace/Pytra/src/pytra/std/json.py",
+      "is_entry": false,
+      "module_kind": "runtime"
+    }
+  ],
+  "global": {
+    "type_id_table": {
+      "pytra.std.json.JsonArr": 1000,
+      "pytra.std.json.JsonObj": 1001,
+      "pytra.std.json.JsonValue": 1002,
+      "pytra.std.json._JsonParser": 1003
+    },
+    "type_id_base_map": {
+      "pytra.std.json.JsonArr": 8,
+      "pytra.std.json.JsonObj": 8,
+      "pytra.std.json.JsonValue": 8,
+      "pytra.std.json._JsonParser": 8
+    },
+    "call_graph": {
+      "isinstance_narrowing::collect_names": [],
+      "isinstance_narrowing::owner_name": [],
+      "isinstance_narrowing::read_kind": [],
+      "isinstance_narrowing::reassign_then_check": [],
+      "pytra.built_in.scalar_ops::py_chr": [],
+      "pytra.built_in.scalar_ops::py_ord": [],
+      "pytra.built_in.scalar_ops::py_to_int64_base": [],
+      "pytra.built_in.sequence::py_range": [],
+      "pytra.built_in.sequence::py_repeat": [],
+      "pytra.built_in.string_ops::_contains_char": [],
+      "pytra.built_in.string_ops::_is_space": [],
+      "pytra.built_in.string_ops::_normalize_index": [],
+      "pytra.built_in.string_ops::py_count": [
+        "pytra.built_in.string_ops::py_find_window"
+      ],
+      "pytra.built_in.string_ops::py_endswith": [],
+      "pytra.built_in.string_ops::py_find": [
+        "pytra.built_in.string_ops::py_find_window"
+      ],
+      "pytra.built_in.string_ops::py_find_window": [
+        "pytra.built_in.string_ops::_normalize_index"
+      ],
+      "pytra.built_in.string_ops::py_join": [],
+      "pytra.built_in.string_ops::py_lstrip": [
+        "pytra.built_in.string_ops::_is_space"
+      ],
+      "pytra.built_in.string_ops::py_lstrip_chars": [
+        "pytra.built_in.string_ops::_contains_char"
+      ],
+      "pytra.built_in.string_ops::py_replace": [
+        "pytra.built_in.string_ops::py_find_window"
+      ],
+      "pytra.built_in.string_ops::py_replace_n": [
+        "pytra.built_in.string_ops::py_find_window"
+      ],
+      "pytra.built_in.string_ops::py_rfind": [
+        "pytra.built_in.string_ops::py_rfind_window"
+      ],
+      "pytra.built_in.string_ops::py_rfind_window": [
+        "pytra.built_in.string_ops::_normalize_index"
+      ],
+      "pytra.built_in.string_ops::py_rstrip": [
+        "pytra.built_in.string_ops::_is_space"
+      ],
+      "pytra.built_in.string_ops::py_rstrip_chars": [
+        "pytra.built_in.string_ops::_contains_char"
+      ],
+      "pytra.built_in.string_ops::py_split": [
+        "pytra.built_in.string_ops::py_find_window"
+      ],
+      "pytra.built_in.string_ops::py_splitlines": [],
+      "pytra.built_in.string_ops::py_startswith": [],
+      "pytra.built_in.string_ops::py_strip": [
+        "pytra.built_in.string_ops::py_lstrip",
+        "pytra.built_in.string_ops::py_rstrip"
+      ],
+      "pytra.built_in.string_ops::py_strip_chars": [
+        "pytra.built_in.string_ops::py_lstrip_chars",
+        "pytra.built_in.string_ops::py_rstrip_chars"
+      ],
+      "pytra.std.json::JsonArr.__init__": [],
+      "pytra.std.json::JsonArr.get": [],
+      "pytra.std.json::JsonArr.get_arr": [],
+      "pytra.std.json::JsonArr.get_bool": [],
+      "pytra.std.json::JsonArr.get_float": [],
+      "pytra.std.json::JsonArr.get_int": [],
+      "pytra.std.json::JsonArr.get_obj": [],
+      "pytra.std.json::JsonArr.get_str": [],
+      "pytra.std.json::JsonObj.__init__": [],
+      "pytra.std.json::JsonObj.get": [
+        "pytra.std.json::_jv_obj_require"
+      ],
+      "pytra.std.json::JsonObj.get_arr": [
+        "pytra.std.json::_jv_obj_require"
+      ],
+      "pytra.std.json::JsonObj.get_bool": [
+        "pytra.std.json::_jv_obj_require"
+      ],
+      "pytra.std.json::JsonObj.get_float": [
+        "pytra.std.json::_jv_obj_require"
+      ],
+      "pytra.std.json::JsonObj.get_int": [
+        "pytra.std.json::_jv_obj_require"
+      ],
+      "pytra.std.json::JsonObj.get_obj": [
+        "pytra.std.json::_jv_obj_require"
+      ],
+      "pytra.std.json::JsonObj.get_str": [
+        "pytra.std.json::_jv_obj_require"
+      ],
+      "pytra.std.json::JsonValue.__init__": [],
+      "pytra.std.json::JsonValue.as_arr": [],
+      "pytra.std.json::JsonValue.as_bool": [],
+      "pytra.std.json::JsonValue.as_float": [],
+      "pytra.std.json::JsonValue.as_int": [],
+      "pytra.std.json::JsonValue.as_obj": [],
+      "pytra.std.json::JsonValue.as_str": [],
+      "pytra.std.json::_JsonParser.__init__": [],
+      "pytra.std.json::_JsonParser._parse_array": [],
+      "pytra.std.json::_JsonParser._parse_number": [
+        "pytra.std.json::_is_digit"
+      ],
+      "pytra.std.json::_JsonParser._parse_object": [],
+      "pytra.std.json::_JsonParser._parse_string": [
+        "pytra.std.json::_int_from_hex4",
+        "pytra.std.json::_join_strs"
+      ],
+      "pytra.std.json::_JsonParser._parse_value": [],
+      "pytra.std.json::_JsonParser._skip_ws": [
+        "pytra.std.json::_is_ws"
+      ],
+      "pytra.std.json::_JsonParser.parse": [],
+      "pytra.std.json::_dump_json_dict": [
+        "pytra.std.json::_dump_json_value",
+        "pytra.std.json::_escape_str",
+        "pytra.std.json::_join_strs",
+        "pytra.std.json::_json_indent_value"
+      ],
+      "pytra.std.json::_dump_json_list": [
+        "pytra.std.json::_dump_json_value",
+        "pytra.std.json::_join_strs",
+        "pytra.std.json::_json_indent_value"
+      ],
+      "pytra.std.json::_dump_json_value": [
+        "pytra.std.json::_dump_json_dict",
+        "pytra.std.json::_dump_json_list",
+        "pytra.std.json::_escape_str"
+      ],
+      "pytra.std.json::_escape_str": [
+        "pytra.std.json::_hex4",
+        "pytra.std.json::_join_strs"
+      ],
+      "pytra.std.json::_hex4": [],
+      "pytra.std.json::_hex_value": [],
+      "pytra.std.json::_int_from_hex4": [
+        "pytra.std.json::_hex_value"
+      ],
+      "pytra.std.json::_is_digit": [],
+      "pytra.std.json::_is_ws": [],
+      "pytra.std.json::_join_strs": [],
+      "pytra.std.json::_json_indent_value": [],
+      "pytra.std.json::_jv_obj_require": [],
+      "pytra.std.json::dumps": [
+        "pytra.std.json::_dump_json_value"
+      ],
+      "pytra.std.json::dumps_jv": [
+        "pytra.std.json::_dump_json_value"
+      ],
+      "pytra.std.json::loads": [],
+      "pytra.std.json::loads_arr": [],
+      "pytra.std.json::loads_obj": []
+    },
+    "sccs": [
+      [
+        "isinstance_narrowing::collect_names"
+      ],
+      [
+        "isinstance_narrowing::owner_name"
+      ],
+      [
+        "isinstance_narrowing::read_kind"
+      ],
+      [
+        "isinstance_narrowing::reassign_then_check"
+      ],
+      [
+        "pytra.built_in.scalar_ops::py_chr"
+      ],
+      [
+        "pytra.built_in.scalar_ops::py_ord"
+      ],
+      [
+        "pytra.built_in.scalar_ops::py_to_int64_base"
+      ],
+      [
+        "pytra.built_in.sequence::py_range"
+      ],
+      [
+        "pytra.built_in.sequence::py_repeat"
+      ],
+      [
+        "pytra.built_in.string_ops::_contains_char"
+      ],
+      [
+        "pytra.built_in.string_ops::_is_space"
+      ],
+      [
+        "pytra.built_in.string_ops::_normalize_index"
+      ],
+      [
+        "pytra.built_in.string_ops::py_find_window"
+      ],
+      [
+        "pytra.built_in.string_ops::py_count"
+      ],
+      [
+        "pytra.built_in.string_ops::py_endswith"
+      ],
+      [
+        "pytra.built_in.string_ops::py_find"
+      ],
+      [
+        "pytra.built_in.string_ops::py_join"
+      ],
+      [
+        "pytra.built_in.string_ops::py_lstrip"
+      ],
+      [
+        "pytra.built_in.string_ops::py_lstrip_chars"
+      ],
+      [
+        "pytra.built_in.string_ops::py_replace"
+      ],
+      [
+        "pytra.built_in.string_ops::py_replace_n"
+      ],
+      [
+        "pytra.built_in.string_ops::py_rfind_window"
+      ],
+      [
+        "pytra.built_in.string_ops::py_rfind"
+      ],
+      [
+        "pytra.built_in.string_ops::py_rstrip"
+      ],
+      [
+        "pytra.built_in.string_ops::py_rstrip_chars"
+      ],
+      [
+        "pytra.built_in.string_ops::py_split"
+      ],
+      [
+        "pytra.built_in.string_ops::py_splitlines"
+      ],
+      [
+        "pytra.built_in.string_ops::py_startswith"
+      ],
+      [
+        "pytra.built_in.string_ops::py_strip"
+      ],
+      [
+        "pytra.built_in.string_ops::py_strip_chars"
+      ],
+      [
+        "pytra.std.json::JsonArr.__init__"
+      ],
+      [
+        "pytra.std.json::JsonArr.get"
+      ],
+      [
+        "pytra.std.json::JsonArr.get_arr"
+      ],
+      [
+        "pytra.std.json::JsonArr.get_bool"
+      ],
+      [
+        "pytra.std.json::JsonArr.get_float"
+      ],
+      [
+        "pytra.std.json::JsonArr.get_int"
+      ],
+      [
+        "pytra.std.json::JsonArr.get_obj"
+      ],
+      [
+        "pytra.std.json::JsonArr.get_str"
+      ],
+      [
+        "pytra.std.json::JsonObj.__init__"
+      ],
+      [
+        "pytra.std.json::_jv_obj_require"
+      ],
+      [
+        "pytra.std.json::JsonObj.get"
+      ],
+      [
+        "pytra.std.json::JsonObj.get_arr"
+      ],
+      [
+        "pytra.std.json::JsonObj.get_bool"
+      ],
+      [
+        "pytra.std.json::JsonObj.get_float"
+      ],
+      [
+        "pytra.std.json::JsonObj.get_int"
+      ],
+      [
+        "pytra.std.json::JsonObj.get_obj"
+      ],
+      [
+        "pytra.std.json::JsonObj.get_str"
+      ],
+      [
+        "pytra.std.json::JsonValue.__init__"
+      ],
+      [
+        "pytra.std.json::JsonValue.as_arr"
+      ],
+      [
+        "pytra.std.json::JsonValue.as_bool"
+      ],
+      [
+        "pytra.std.json::JsonValue.as_float"
+      ],
+      [
+        "pytra.std.json::JsonValue.as_int"
+      ],
+      [
+        "pytra.std.json::JsonValue.as_obj"
+      ],
+      [
+        "pytra.std.json::JsonValue.as_str"
+      ],
+      [
+        "pytra.std.json::_JsonParser.__init__"
+      ],
+      [
+        "pytra.std.json::_JsonParser._parse_array"
+      ],
+      [
+        "pytra.std.json::_is_digit"
+      ],
+      [
+        "pytra.std.json::_JsonParser._parse_number"
+      ],
+      [
+        "pytra.std.json::_JsonParser._parse_object"
+      ],
+      [
+        "pytra.std.json::_hex_value"
+      ],
+      [
+        "pytra.std.json::_int_from_hex4"
+      ],
+      [
+        "pytra.std.json::_join_strs"
+      ],
+      [
+        "pytra.std.json::_JsonParser._parse_string"
+      ],
+      [
+        "pytra.std.json::_JsonParser._parse_value"
+      ],
+      [
+        "pytra.std.json::_is_ws"
+      ],
+      [
+        "pytra.std.json::_JsonParser._skip_ws"
+      ],
+      [
+        "pytra.std.json::_JsonParser.parse"
+      ],
+      [
+        "pytra.std.json::_json_indent_value"
+      ],
+      [
+        "pytra.std.json::_hex4"
+      ],
+      [
+        "pytra.std.json::_escape_str"
+      ],
+      [
+        "pytra.std.json::_dump_json_dict",
+        "pytra.std.json::_dump_json_list",
+        "pytra.std.json::_dump_json_value"
+      ],
+      [
+        "pytra.std.json::dumps"
+      ],
+      [
+        "pytra.std.json::dumps_jv"
+      ],
+      [
+        "pytra.std.json::loads"
+      ],
+      [
+        "pytra.std.json::loads_arr"
+      ],
+      [
+        "pytra.std.json::loads_obj"
+      ]
+    ],
+    "non_escape_summary": {},
+    "container_ownership_hints_v1": {}
+  },
+  "diagnostics": {
+    "warnings": [],
+    "errors": []
+  }
+}
