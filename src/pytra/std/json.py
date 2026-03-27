@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pytra.typing import cast
 from pytra.types import int64
-from pytra.std import abi
 
 type JsonVal = None | bool | int | float | str | list[JsonVal] | dict[str, JsonVal]
 
@@ -65,11 +64,39 @@ def _hex4(code: int) -> str:
     return p0 + p1 + p2 + p3
 
 
-def _json_indent_value(indent: int | None) -> int:
+def _json_indent_value(indent: int64 | None) -> int64:
     if indent is None:
         raise ValueError("json indent is required")
-    indent_i: int = indent
+    indent_i: int64 = cast(int64, indent)
     return indent_i
+
+
+def _jv_as_str(raw: JsonVal) -> str | None:
+    if not isinstance(raw, str):
+        return None
+    text: str = cast(str, raw)
+    return text
+
+
+def _jv_as_int(raw: JsonVal) -> int | None:
+    if not isinstance(raw, int):
+        return None
+    value_i: int = cast(int, raw)
+    return value_i
+
+
+def _jv_as_float(raw: JsonVal) -> float | None:
+    if not isinstance(raw, float):
+        return None
+    value_f: float = cast(float, raw)
+    return value_f
+
+
+def _jv_as_bool(raw: JsonVal) -> bool | None:
+    if not isinstance(raw, bool):
+        return None
+    value_b: bool = cast(bool, raw)
+    return value_b
 
 
 def _jv_obj_require(raw: dict[str, JsonVal], key: str) -> JsonVal:
@@ -172,38 +199,28 @@ class JsonValue:
     def as_obj(self) -> JsonObj | None:
         jv: JsonVal = self.raw
         if isinstance(jv, dict):
-            return JsonObj(cast(dict, jv))
+            obj_raw: dict[str, JsonVal] = cast(dict[str, JsonVal], jv)
+            return JsonObj(obj_raw)
         return None
 
     def as_arr(self) -> JsonArr | None:
         jv: JsonVal = self.raw
         if isinstance(jv, list):
-            return JsonArr(cast(list, jv))
+            arr_raw: list[JsonVal] = cast(list[JsonVal], jv)
+            return JsonArr(arr_raw)
         return None
 
     def as_str(self) -> str | None:
-        jv: JsonVal = self.raw
-        if isinstance(jv, str):
-            return cast(str, jv)
-        return None
+        return _jv_as_str(self.raw)
 
     def as_int(self) -> int | None:
-        jv: JsonVal = self.raw
-        if isinstance(jv, int):
-            return cast(int, jv)
-        return None
+        return _jv_as_int(self.raw)
 
     def as_float(self) -> float | None:
-        jv: JsonVal = self.raw
-        if isinstance(jv, float):
-            return cast(float, jv)
-        return None
+        return _jv_as_float(self.raw)
 
     def as_bool(self) -> bool | None:
-        jv: JsonVal = self.raw
-        if isinstance(jv, bool):
-            return cast(bool, jv)
-        return None
+        return _jv_as_bool(self.raw)
 
 
 class _JsonParser:
@@ -389,14 +406,16 @@ def loads(text: str) -> JsonValue:
 def loads_obj(text: str) -> JsonObj | None:
     val: JsonVal = _JsonParser(text).parse()
     if isinstance(val, dict):
-        return JsonObj(cast(dict, val))
+        obj_raw: dict[str, JsonVal] = cast(dict[str, JsonVal], val)
+        return JsonObj(obj_raw)
     return None
 
 
 def loads_arr(text: str) -> JsonArr | None:
     val: JsonVal = _JsonParser(text).parse()
     if isinstance(val, list):
-        return JsonArr(cast(list, val))
+        arr_raw: list[JsonVal] = cast(list[JsonVal], val)
+        return JsonArr(arr_raw)
     return None
 
 
@@ -500,20 +519,23 @@ def _dump_json_value(
     if v is None:
         return "null"
     if isinstance(v, bool):
-        raw_b: bool = cast(bool, v)
-        if raw_b:
+        vb: bool = cast(bool, v)
+        if vb:
             return "true"
         return "false"
     if isinstance(v, int):
-        return str(cast(int, v))
+        vi: int = cast(int, v)
+        return str(vi)
     if isinstance(v, float):
-        return str(cast(float, v))
+        vf: float = cast(float, v)
+        return str(vf)
     if isinstance(v, str):
-        return _escape_str(cast(str, v), ensure_ascii)
+        vs: str = cast(str, v)
+        return _escape_str(vs, ensure_ascii)
     if isinstance(v, list):
-        return _dump_json_list(cast(list, v), ensure_ascii, indent, item_sep, key_sep, level)
+        return _dump_json_list(cast(list[JsonVal], v), ensure_ascii, indent, item_sep, key_sep, level)
     if isinstance(v, dict):
-        return _dump_json_dict(cast(dict, v), ensure_ascii, indent, item_sep, key_sep, level)
+        return _dump_json_dict(cast(dict[str, JsonVal], v), ensure_ascii, indent, item_sep, key_sep, level)
     raise TypeError("json.dumps unsupported type")
 
 
@@ -521,7 +543,7 @@ def dumps(
     obj: JsonVal,
     *,
     ensure_ascii: bool = True,
-    indent: int | None = None,
+    indent: int64 | None = None,
     separators: tuple[str, str] | None = None,
 ) -> str:
     item_sep = ","
@@ -535,7 +557,7 @@ def dumps_jv(
     jv: JsonVal,
     *,
     ensure_ascii: bool = True,
-    indent: int | None = None,
+    indent: int64 | None = None,
     separators: tuple[str, str] | None = None,
 ) -> str:
     item_sep = ","

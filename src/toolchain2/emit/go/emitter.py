@@ -1034,7 +1034,11 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     return owner + " = py_append_byte(" + owner + ", " + arg_strs[0] + ")"
                 if owner_rt.startswith("list["):
                     return owner + " = append(" + owner + ", " + arg_strs[0] + ")"
-            if attr in ("keys", "values") and owner_rt.startswith("dict[") and owner_rt.endswith("]"):
+            if attr in ("keys", "values") and ((owner_rt.startswith("dict[") and owner_rt.endswith("]")) or owner_rt in ("Node", "dict[str,Any]")):
+                if owner_rt in ("Node", "dict[str,Any]"):
+                    if attr == "keys":
+                        return "py_dict_keys(" + owner + ")"
+                    return "py_dict_values(" + owner + ")"
                 parts = _split_generic_args(owner_rt[5:-1])
                 if len(parts) == 2:
                     item_type = parts[0] if attr == "keys" else parts[1]
@@ -1056,7 +1060,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                         + "\treturn " + out_name + "\n"
                         + "}()"
                     )
-            if attr == "items" and (owner_rt.startswith("dict[") or owner_rt.startswith("map[")):
+            if attr == "items" and (owner_rt.startswith("dict[") or owner_rt.startswith("map[") or owner_rt in ("Node", "dict[str,Any]")):
                 return "py_items(" + owner + ")"
             if attr == "update" and owner_rt == "set[str]" and len(arg_strs) >= 1:
                 return "py_set_update_str(" + owner + ", " + arg_strs[0] + ")"
@@ -1069,7 +1073,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             # dict.get → py_dict_get
             if attr == "get" and len(arg_strs) >= 1:
                 owner_rt = _str(func.get("value", {}), "resolved_type") if isinstance(func.get("value"), dict) else ""
-                if owner_rt.startswith("dict[") or owner_rt.startswith("map["):
+                if owner_rt.startswith("dict[") or owner_rt.startswith("map[") or owner_rt in ("Node", "dict[str,Any]"):
                     if len(arg_strs) >= 2:
                         return "py_dict_get(" + owner + ", " + arg_strs[0] + ", " + arg_strs[1] + ")"
                     return owner + "[" + arg_strs[0] + "]"
@@ -1158,6 +1162,18 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                         if target_name == "":
                             target_name = _str(target_node, "repr")
                     value_node = args[1] if len(args) >= 2 and isinstance(args[1], dict) else None
+                    if isinstance(value_node, dict):
+                        source_type = _str(value_node, "resolved_type")
+                        source_optional_inner = _optional_inner_type(source_type)
+                        target_gt = go_type(target_name)
+                        source_gt = go_type(source_type) if source_type != "" else ""
+                        if (
+                            source_optional_inner != ""
+                            and target_gt != ""
+                            and go_type(source_optional_inner) == target_gt
+                            and source_gt.startswith("*")
+                        ):
+                            return "(*(" + arg_strs[1] + "))"
                     if isinstance(value_node, dict) and _str(value_node, "kind") == "Unbox":
                         unbox_target = _str(value_node, "target")
                         if unbox_target == "":
@@ -1522,6 +1538,9 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                             + "}()"
                         )
                 return owner + "[" + arg_strs[0] + "]"
+    if rc == "dict.items" and isinstance(func, dict):
+        owner = _emit_expr(ctx, func.get("value"))
+        return "py_items(" + owner + ")"
     if rc in ("dict.keys", "dict.values") and isinstance(func, dict):
         owner = _emit_expr(ctx, func.get("value"))
         owner_node = func.get("value")

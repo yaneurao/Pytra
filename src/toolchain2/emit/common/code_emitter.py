@@ -50,26 +50,36 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
     if not mapping_path.exists():
         return RuntimeMapping()
     text = mapping_path.read_text(encoding="utf-8")
-    raw = json.loads(text).raw
-    if not isinstance(raw, dict):
+    raw_obj = json.loads_obj(text)
+    if raw_obj is None:
         return RuntimeMapping()
+    raw = raw_obj.raw
 
-    prefix = raw.get("builtin_prefix")
-    prefix_str = prefix if isinstance(prefix, str) else "__pytra_"
+    prefix_str = "__pytra_"
+    if "builtin_prefix" in raw:
+        prefix = raw["builtin_prefix"]
+        if isinstance(prefix, str):
+            prefix_str = str(prefix)
 
-    calls_raw = raw.get("calls")
+    calls_raw: JsonVal = None
+    if "calls" in raw:
+        calls_raw = raw["calls"]
     calls: dict[str, str] = {}
     if isinstance(calls_raw, dict):
-        for k, v in calls_raw.items():
+        for k in calls_raw:
+            v = calls_raw[k]
             if isinstance(k, str) and isinstance(v, str):
                 calls[k] = v
 
-    skip_raw = raw.get("skip_modules")
+    skip_raw: JsonVal = None
+    if "skip_modules" in raw:
+        skip_raw = raw["skip_modules"]
     skip: list[str] = []
     if isinstance(skip_raw, list):
         for item in skip_raw:
             if isinstance(item, str):
-                skip.append(item)
+                skip_item = str(item)
+                skip.append(skip_item)
 
     return RuntimeMapping(
         builtin_prefix=prefix_str,
@@ -177,13 +187,17 @@ def build_runtime_import_map(
             continue
 
         export_name = binding.get("export_name")
-        export_symbol = export_name if isinstance(export_name, str) and export_name != "" else local_name
+        export_symbol = local_name
+        if isinstance(export_name, str) and export_name != "":
+            export_symbol = export_name
         full_module_id = module_id + "." + export_symbol
         if not should_skip_module(module_id, mapping) and not should_skip_module(full_module_id, mapping):
             continue
 
         runtime_symbol = binding.get("runtime_symbol")
-        symbol_name = runtime_symbol if isinstance(runtime_symbol, str) and runtime_symbol != "" else export_symbol
+        symbol_name = export_symbol
+        if isinstance(runtime_symbol, str) and runtime_symbol != "":
+            symbol_name = runtime_symbol
         runtime_imports[local_name] = resolve_runtime_symbol_name(symbol_name, mapping)
 
     return runtime_imports
@@ -199,15 +213,7 @@ def resolve_runtime_call(
     adapter_kind: str,
     mapping: RuntimeMapping,
 ) -> str:
-    """Resolve a runtime_call to a target language function name.
-
-    Priority:
-    1. Exact match in mapping.calls
-    2. builtin_name match in mapping.calls
-    3. adapter_kind == "builtin" → prefix + builtin_name
-    4. adapter_kind == "extern_delegate" → bare function name
-    5. Fallback: prefix + runtime_call
-    """
+    """Resolve a runtime_call to a target language function name."""
     # 1. Exact match
     if runtime_call in mapping.calls:
         return mapping.calls[runtime_call]

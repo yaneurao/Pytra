@@ -33,15 +33,6 @@
 4. [x] [ID: P1-EMIT-CPP-S4] `pytra-cli2 -emit --target=cpp` を toolchain2 emitter に切り替える — 完了
 5. [x] [ID: P1-EMIT-CPP-S5] `toolchain/` への依存をゼロにし、`toolchain/` を除去する — pytra-cli2.py から toolchain/ import ゼロ達成
 
-### P1-ISINSTANCE-POD: POD 型の isinstance exact match 実装 + golden 生成
-
-文脈: [docs/ja/plans/p1-isinstance-pod-exact.md](../plans/p1-isinstance-pod-exact.md)
-
-1. [ ] [ID: P1-ISINSTANCE-POD-S1] パーサー / resolve が `isinstance(x, int16)` 等の POD 型判定を処理できるようにする
-2. [ ] [ID: P1-ISINSTANCE-POD-S2] EAST3 で POD isinstance を exact match 命令に lower する
-3. [ ] [ID: P1-ISINSTANCE-POD-S3] `isinstance_pod_exact.py` の golden 生成（east1/east2/east3/east3-opt/linked）
-4. [ ] [ID: P1-ISINSTANCE-POD-S4] C++ / Go emitter で compile + run + stdout 一致（`py_assert_stdout` 通過）
-
 ### P1-ISINSTANCE-NARROWING: isinstance 後の自動型ナローイング
 
 文脈: [docs/ja/plans/p1-isinstance-narrowing.md](../plans/p1-isinstance-narrowing.md)
@@ -61,6 +52,9 @@
 2. [x] [ID: P2-SELFHOST-S2] parse → resolve → compile → optimize まで通す — 37/37 全段通過
 3. [x] [ID: P2-SELFHOST-S3] golden を `test/selfhost/` に配置し、回帰テストとして維持 — east1/east2/east3/east3-opt 各 37 件
 4. [ ] [ID: P2-SELFHOST-S4] Go emitter で toolchain2 を Go に変換し、`go build` が通る — emit 25/25 成功、`go build` は docstring/構文問題で未達
+5. [ ] [ID: P2-SELFHOST-S5] Go emitter の unsupported expr/stmt を fail-fast に変更し、プレースホルダ出力を禁止する — `nil /* unsupported */` / `// unsupported stmt` を廃止し、spec-emitter-guide.md の fail-closed 契約に合わせる
+6. [ ] [ID: P2-SELFHOST-S6] Go emitter が `yields_dynamic` を正本として container getter/pop の型アサーションを判断するよう修正する — `resolved_type` / owner 文字列ベースの分岐をやめ、`Call.yields_dynamic` を使用
+7. [ ] [ID: P2-SELFHOST-S7] Go emitter の container 既定表現を spec 準拠に修正する — list/dict/set を既定で参照型ラッパーにし、`meta.linked_program_v1.container_ownership_hints_v1.container_value_locals_v1` がある局所のみ値型縮退を許可する
 
 ### P4-INT32: int のデフォルトサイズを int64 → int32 に変更
 

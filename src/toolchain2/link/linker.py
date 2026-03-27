@@ -241,6 +241,13 @@ def _docs_as_json(copied_docs: list[tuple[LinkedModule, dict[str, JsonVal]]]) ->
     return out
 
 
+def _copy_doc_rows(copied_docs: list[tuple[LinkedModule, dict[str, JsonVal]]]) -> list[tuple[LinkedModule, dict[str, JsonVal]]]:
+    out: list[tuple[LinkedModule, dict[str, JsonVal]]] = []
+    for module, doc in copied_docs:
+        out.append((module, doc))
+    return out
+
+
 def _iter_declared_import_module_ids(doc: dict[str, JsonVal]) -> list[str]:
     meta_val = doc.get("meta")
     if not isinstance(meta_val, dict):
@@ -382,9 +389,9 @@ def _collect_module_type_aliases(doc: dict[str, JsonVal]) -> dict[str, str]:
 def _default_collection_hint(type_name: str) -> str:
     t = type_name.strip()
     if t.endswith(" | None"):
-        t = t[:-7].strip()
+        t = t[0 : len(t) - 7].strip()
     elif t.endswith("|None"):
-        t = t[:-6].strip()
+        t = t[0 : len(t) - 6].strip()
     if t.startswith("list[") or t.startswith("dict[") or t.startswith("set["):
         return t
     return ""
@@ -501,9 +508,10 @@ def link_modules(
         if not p.exists():
             raise RuntimeError("file not found: " + path_str)
         text = p.read_text(encoding="utf-8")
-        doc = json.loads(text).raw
-        if not isinstance(doc, dict):
+        doc_obj = json.loads_obj(text)
+        if doc_obj is None:
             raise RuntimeError("invalid east3 document: " + path_str)
+        doc = doc_obj.raw
         module_map[str(p.resolve())] = doc
 
     # 2. runtime module を探索・追加 (transitive closure)
@@ -583,22 +591,27 @@ def link_modules(
     # 8. Deep copy all modules
     copied_docs: list[tuple[LinkedModule, dict[str, JsonVal]]] = []
     for module in modules:
-        doc = _copy_json(module.east_doc)
-        if not isinstance(doc, dict):
+        doc_val = _copy_json(module.east_doc)
+        if not isinstance(doc_val, dict):
             continue
+        doc: dict[str, JsonVal] = doc_val
         aliases = _collect_module_type_aliases(doc)
         if len(aliases) > 0:
             _normalize_runtime_type_aliases(doc, aliases)
         copied_docs.append((module, doc))
 
     # 9. Cross-module default argument expansion
-    expand_cross_module_defaults([(module.module_id, doc) for module, doc in copied_docs])
+    all_docs = _docs_as_json(copied_docs)
+    expand_cross_module_defaults(all_docs)
 
     # 10. 各 module に linked_program_v1 を注入
     linked_modules: list[LinkedModule] = []
     module_entries: list[dict[str, JsonVal]] = []
 
-    for module, doc in copied_docs:
+    copied_rows = _copy_doc_rows(copied_docs)
+    for row in copied_rows:
+        module = row[0]
+        doc = row[1]
         meta = _ensure_meta(doc)
         linked_meta: dict[str, JsonVal] = {
             "program_id": pid,
