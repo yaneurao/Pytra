@@ -67,11 +67,48 @@ def extend(self, x: list[T]) -> None: ...
 - 1デコレータで完結
 - ただし `args={"x": "readonly"}` が冗長
 
+### 案D: `@namespace` + `@method` 最小記述（class名・メソッド名から自動導出）
+
+```python
+# containers.py 冒頭
+@namespace("pytra.core")
+
+class list(Generic[T]):
+
+    @method
+    def append(self, x: T) -> None: ...
+
+    @method(x="readonly")
+    def extend(self, x: list[T]) -> None: ...
+
+    @method
+    def pop(self, index: int = -1) -> T: ...
+
+    @method(key="readonly")
+    def sort(self, key: str = "") -> None: ...
+
+class dict(Generic[K, V]):
+
+    @method
+    def get(self, key: K) -> V: ...
+
+    @method
+    def items(self) -> list[tuple[K, V]]: ...
+```
+
+自動導出ルール:
+- module: `@namespace` + class名 → `pytra.core.list`
+- symbol: class名 + メソッド名 → `list.extend`
+- tag: `stdlib.method.` + メソッド名 → `stdlib.method.extend`（自動導出）
+- arg_usage: `@method` の kwargs で指定。指定なしはデフォルト mutable
+
+runtime 側の関数名変換（`list.extend` → `py_list_extend_mut` 等）は mapping.json の責務。`@method` には書かない。
+
 ## 比較
 
 現状と各案の `containers.py` の書き味:
 
-### append（self=mutable, x=readonly な引数なし）
+### append（self=mutable, arg_usage なし）
 
 | 方式 | 記述 |
 |---|---|
@@ -79,6 +116,7 @@ def extend(self, x: list[T]) -> None: ...
 | 案A | `@method("pytra.core.list.append")` |
 | 案B | `@method("pytra.core.list.append")` |
 | 案C | `@method("pytra.core.list.append")` |
+| **案D** | **`@method`** |
 
 ### extend（x=readonly）
 
@@ -88,6 +126,7 @@ def extend(self, x: list[T]) -> None: ...
 | 案A | `@method("pytra.core.list.extend", x="readonly")` |
 | 案B | `@method("pytra.core.list.extend")` + `@usage(x="readonly")` |
 | 案C | `@method("pytra.core.list.extend", args={"x": "readonly"})` |
+| **案D** | **`@method(x="readonly")`** |
 
 ### sort（self=mutable, key=readonly）
 
@@ -97,20 +136,23 @@ def extend(self, x: list[T]) -> None: ...
 | 案A | `@method("pytra.core.list.sort", key="readonly")` |
 | 案B | `@method("pytra.core.list.sort")` + `@usage(key="readonly")` |
 | 案C | `@method("pytra.core.list.sort", args={"key": "readonly"})` |
+| **案D** | **`@method(key="readonly")`** |
 
 ## 推奨
 
-**案A** が最も簡潔。
+**案D** が最も簡潔。
 
-- デコレータ1つで完結
-- arg_usage がない（大半のメソッド）は `@method("path")` の1行
-- arg_usage がある場合は kwargs で `key="readonly"` を追加
+- arg_usage がないメソッド（大半）は `@method` の1語だけ
+- arg_usage があるメソッドは `@method(x="readonly")` だけ
+- module / symbol / tag はクラス名・メソッド名・`@namespace` から全自動導出
+- パス指定が一切不要
+- runtime 関数名の変換は mapping.json の責務（`@method` には書かない）
 - `@abi` は廃止（未実装・未使用なので影響ゼロ）
-- `@extern_method` は `@method` にリネーム（短い）
+- `@extern_method` は `@method` + `@namespace` に置き換え
 
 注意:
-- `@method` の第1引数から module と symbol を分割するルール（最後の `.` で分割）をパーサーに実装する必要がある
-- tag の自動導出ルールを spec に定義する必要がある
+- `@namespace` はファイル冒頭に1回だけ書く
+- parser が `@namespace` + class名 + メソッド名から module / symbol / tag を自動導出する実装が必要
 - `self` はデフォルト mutable。明示不要。
 - arg_usage を指定しない引数はデフォルト「escape する（mutable）」として扱う（安全側）
 
