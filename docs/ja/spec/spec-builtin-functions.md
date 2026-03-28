@@ -301,7 +301,7 @@ class set:
 ```python
 # pytra: builtin-declarations
 
-@extern_fn(module="pytra.core.py_runtime", symbol="len", tag="core.len")
+@runtime("pytra.core")
 def len(x: Obj) -> int: ...
 ```
 
@@ -325,7 +325,7 @@ def len(x: Obj) -> int: ...
 ```python
 # pytra: builtin-declarations
 
-@extern_fn(module="my_game.physics", symbol="apply_gravity", tag="user.physics.gravity")
+@extern
 def apply_gravity(x: float, y: float, dt: float) -> float: ...
 ```
 
@@ -363,70 +363,34 @@ print([1, "hello", 3.14])    # 型: list[Obj]
 print([ObjBox(1), "hello", ObjBox(3.14)])  # POD を boxing
 ```
 
-## 10. v2 extern: `extern_fn` / `extern_var` / `extern_class`
+## 10. extern 宣言（v3: `@runtime` / `@extern` / `runtime_var`）
 
-v2 では `@extern` を用途別に 3 つに分離し、`module` / `symbol` / `tag` を必須引数とする。
+> **旧仕様（v2: `extern_fn` / `extern_var` / `extern_class`）は廃止されました。**
+> 正本は [spec-runtime-decorator.md](./spec-runtime-decorator.md) を参照してください。
 
-### 10.1 `extern_fn` — 外部関数宣言
+v3 では `@runtime("namespace")` / `@extern` / `runtime_var("namespace")` に統一し、module / symbol / tag を自動導出する。
 
 ```python
-@extern_fn(module="pytra.built_in.io_ops", symbol="py_print", tag="core.print")
+# Pytra runtime クラス
+@runtime("pytra.std.pathlib")
+class Path:
+    def read_text(self) -> str: ...
+    def write_text(self, content: str) -> None: ...
+
+# Pytra runtime 関数
+@runtime("pytra.built_in.io_ops")
 def print(*args: Obj) -> None: ...
 
-@extern_fn(module="pytra.std.math", symbol="sqrt", tag="stdlib.method.sqrt")
-def sqrt(x: float) -> float: ...
+# Pytra runtime 変数
+pi: float = runtime_var("pytra.std.math")
+
+# 外部 opaque 型
+@extern
+class Window:
+    def set_title(self, title: str) -> None: ...
 ```
 
-### 10.2 `extern_var` — 外部変数宣言
-
-```python
-pi: float = extern_var(module="pytra.std.math", symbol="pi", tag="stdlib.symbol.pi")
-argv: list[str] = extern_var(module="pytra.std.sys", symbol="argv", tag="stdlib.symbol.argv")
-```
-
-### 10.3 `extern_class` — 外部クラス宣言
-
-```python
-@extern_class(module="pytra.std.pathlib", symbol="Path", tag="stdlib.class.Path")
-class Path:
-    def read_text(self, encoding: str = "utf-8") -> str: ...
-    def write_text(self, text: str, encoding: str = "utf-8") -> int: ...
-```
-
-### 10.4 引数
-
-| 引数 | 意味 | 必須 |
-|---|---|---|
-| `module` | 実装がある runtime モジュール（言語非依存） | 必須 |
-| `symbol` | runtime モジュール内での名前 | 必須 |
-| `tag` | resolve が EAST2 に付与する semantic_tag | 必須 |
-
-### 10.5 処理の流れ
-
-1. **parse**: `extern_fn` / `extern_var` / `extern_class` の引数を読み、EAST1 の meta に `extern_v2: {module, symbol, tag}` として格納
-2. **resolve**: meta から module/symbol/tag を取り、EAST2 ノードに `runtime_module_id` / `runtime_symbol` / `semantic_tag` を付与
-3. **emitter**: 解決済み属性を見て各言語に写像するだけ
-
-### 10.6 必須性
-
-v2 では `module`, `symbol`, `tag` を **全て必須** とする。理由:
-- 省略すると resolve がハードコードや推測に頼ることになり、§5.7（ハードコードテーブル禁止）に反する
-- 明示的に書くことで、宣言ファイルだけ読めば runtime 配置が完全に分かる
-- emitter が extern を見て「module/symbol がないから何もできない」という状態を防ぐ
-
-### 10.7 v1 との関係
-
-- v1（`@extern` 引数なし）は現行 `src/pytra/std/` で引き続き使用
-- v2（`extern_fn` / `extern_var` / `extern_class`）は `src/include/py/pytra/` で使用
-- `toolchain2/` のコードでは v2 を必須とする
-
-### 10.8 メリット
-
-- ハードコードテーブルが不要になる（`builtin_registry.py` の 4 テーブルを除去可能）
-- built-in / stdlib の追加・変更が宣言ファイルの編集だけで完結
-- ユーザーも同じ仕組みで独自の extern を定義可能
-- runtime 情報が宣言ファイルに 1 箇所で集約され、全 emitter で共有される
-- 用途別に分離することで Pylance の型チェックが正しく動く
+詳細は [spec-runtime-decorator.md](./spec-runtime-decorator.md) を参照。
 
 ## 11. 未決事項
 
