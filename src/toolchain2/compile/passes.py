@@ -367,7 +367,7 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
         else:
             iter_plan: Node = {}
             iter_plan["kind"] = RUNTIME_ITER_FOR_PLAN
-            if iter_expr:
+            if iter_expr is not None:
                 iter_plan["iter_expr"] = deep_copy_json(iter_expr)
             else:
                 empty_name: Node = {}
@@ -1029,7 +1029,7 @@ def _expand_defaults_walk(node: JsonVal, sigs: dict[str, Node]) -> None:
 
 def expand_default_arguments(module: Node, ctx: CompileContext) -> Node:
     sigs = _collect_fn_sigs(module)
-    if sigs:
+    if len(sigs) != 0:
         _expand_defaults_walk(module, sigs)
     return module
 
@@ -1210,7 +1210,7 @@ def _expand_tuple_unpack_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> 
         if len(elem_types) == 0:
             elem_types = _parse_tuple_element_types(val_rt)
 
-        tuple_style = ctx.lowering_profile.tuple_unpack_style
+        tuple_style: str = ctx.lowering_profile.tuple_unpack_style
         if tuple_style == "structured_binding" or tuple_style == "pattern_match":
             result.append(_make_tuple_unpack_high_level(TUPLE_UNPACK, elements_list, value, elem_types))
             continue
@@ -1392,7 +1392,7 @@ def _split_type_args(type_name: str) -> list[str]:
 
 
 def _list_elem_type(type_name: str) -> str:
-    norm = normalize_type_name(type_name)
+    norm: str = normalize_type_name(type_name)
     if not norm.startswith("list[") or not norm.endswith("]"):
         return ""
     parts = _split_type_args(norm)

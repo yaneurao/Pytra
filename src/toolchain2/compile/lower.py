@@ -2208,7 +2208,7 @@ def lower_east2_to_east3(east_module: Node, object_dispatch_mode: str = "", targ
     # Vararg desugaring
     vt: dict[str, Node] = {}
     _collect_vararg_table(lowered_node, vt)
-    if vt:
+    if len(vt) != 0:
         lowered = _apply_vararg_walk(lowered_node, vt)
         if not isinstance(lowered, dict):
             return east_module

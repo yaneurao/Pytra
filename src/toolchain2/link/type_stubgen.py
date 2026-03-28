@@ -218,6 +218,7 @@ def _compile_jv_stub() -> dict[str, JsonVal]:
             field_types={
                 "nominal_adt_table": "dict[str,Node]",
                 "legacy_compat_bridge": "bool",
+                "lowering_profile": "LoweringProfile",
                 "comp_counter": "int64",
                 "enum_counter": "int64",
                 "tte_counter": "int64",
@@ -228,6 +229,36 @@ def _compile_jv_stub() -> dict[str, JsonVal]:
             body=[
                 _ann_assign("nominal_adt_table", "dict[str,Node]", _return_empty_dict("dict[str,Node]")["value"]),
                 _ann_assign("legacy_compat_bridge", "bool", _return_bool(True)["value"]),
+                _ann_assign(
+                    "lowering_profile",
+                    "LoweringProfile",
+                    {
+                        "kind": "Call",
+                        "func": {
+                            "kind": "Name",
+                            "id": "load_lowering_profile",
+                            "resolved_type": "callable[[str],LoweringProfile]",
+                            "borrow_kind": "value",
+                            "casts": [],
+                            "repr": "load_lowering_profile",
+                        },
+                        "args": [
+                            {
+                                "kind": "Constant",
+                                "value": "core",
+                                "resolved_type": "str",
+                                "borrow_kind": "value",
+                                "casts": [],
+                                "repr": '"core"',
+                            }
+                        ],
+                        "keywords": [],
+                        "resolved_type": "LoweringProfile",
+                        "borrow_kind": "value",
+                        "casts": [],
+                        "repr": 'load_lowering_profile("core")',
+                    },
+                ),
                 _ann_assign("comp_counter", "int64", _return_int(0)["value"]),
                 _ann_assign("enum_counter", "int64", _return_int(0)["value"]),
                 _ann_assign("tte_counter", "int64", _return_int(0)["value"]),
