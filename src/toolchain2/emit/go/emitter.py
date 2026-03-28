@@ -83,6 +83,9 @@ class EmitContext:
     current_value_container_locals: set[str] = field(default_factory=set)
     container_value_locals_by_scope: dict[str, set[str]] = field(default_factory=dict)
     ref_container_locals: set[str] = field(default_factory=set)
+    # Go variadic parameters (func(args ...T)): these are Go slices, NOT *PyList.
+    # _wrapper_container_storage_expr must NOT append .items for these.
+    go_vararg_params: set[str] = field(default_factory=set)
 
 
 def _sig_default_empty_list(elem_type: str) -> dict[str, JsonVal]:
@@ -536,6 +539,9 @@ def _wrapper_container_storage_expr(ctx: EmitContext, node: JsonVal, rendered: s
     if name == "":
         return rendered
     safe_name = _go_symbol_name(ctx, name)
+    # Go variadic params are []T (Go slice), not *PyList[T] — never append .items.
+    if safe_name in ctx.go_vararg_params:
+        return rendered
     scope_type = ctx.var_types.get(safe_name, "")
     if (
         safe_name not in ctx.ref_container_locals
@@ -4068,6 +4074,7 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     saved_scope = ctx.current_function_scope
     saved_scope_locals = set(ctx.current_value_container_locals)
     saved_ref_locals = set(ctx.ref_container_locals)
+    saved_vararg_params = set(ctx.go_vararg_params)
     for a in arg_order:
         a_str = a if isinstance(a, str) else ""
         if a_str == "self":
@@ -4079,6 +4086,9 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         if vararg_name != "" and a_str == vararg_name:
             vararg_gt = go_type(vararg_elem_type if vararg_elem_type != "" else a_type)
             params.append(ga + " ..." + vararg_gt)
+            # Mark as a Go variadic ([]T) so _wrapper_container_storage_expr
+            # does NOT add .items when this variable is used in a range loop.
+            ctx.go_vararg_params.add(ga)
             if vararg_list_type != "":
                 ctx.var_types[ga] = vararg_list_type
             else:
@@ -4130,6 +4140,7 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     ctx.current_function_scope = saved_scope
     ctx.current_value_container_locals = saved_scope_locals
     ctx.ref_container_locals = saved_ref_locals
+    ctx.go_vararg_params = saved_vararg_params
 
 
 def _closure_signature_parts(

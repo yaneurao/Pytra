@@ -11,4 +11,4 @@ func glob(pattern string) []string {
 	}
 	return items
 }
-func py_glob(pattern string) []string { return glob(pattern) }
+func py_glob(pattern string) *PyList[string] { return PyListFromSlice[string](glob(pattern)) }
