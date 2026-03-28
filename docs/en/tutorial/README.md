@@ -38,19 +38,16 @@ To transpile to Rust instead:
 
 1. [How to use](./how-to-use.md) — Execution steps, options, input constraints
 2. [Troubleshooting](./troubleshooting.md) — When you get stuck
-3. [Exception handling](./exception.md) — raise / try / except / finally
-4. [Traits (interfaces)](./trait.md) — Attaching multiple behavioral contracts to a type
-5. [Union types and isinstance narrowing](./union-and-narrowing.md) — Handling multiple types and automatic type refinement
-6. [Python compatibility guide](../spec/spec-python-compat.md) — Differences from Python, unsupported syntax
+3. [Try the samples](./samples.md) — Try the 18 sample programs
+4. [Exception handling](./exception.md) — raise / try / except / finally
+5. [Traits (interfaces)](./trait.md) — Attaching multiple behavioral contracts to a type
+6. [Union types and isinstance narrowing](./union-and-narrowing.md) — Handling multiple types and automatic type refinement
+7. [Python compatibility guide](../spec/spec-python-compat.md) — Differences from Python, unsupported syntax
 
 That should be enough to use Pytra. The following are for when you need them:
 
-7. [pylib module list](../spec/spec-pylib-modules.md) — Available modules and functions
-8. [Architecture](./architecture.md) — Pipeline overview and the role of each stage
-9. [Advanced usage](./advanced-usage.md) — `@extern`, `@abi`, `@template`, nominal ADT, etc.
-10. [Specification index](../spec/index.md) — The source of truth for language specifications
-11. [Development operations guide](./dev-operations.md) — Parity check, local CI (for developers)
-
-## Related Links
-
-- [Sample list](../../sample/README.md)
+8. [pylib module list](../spec/spec-pylib-modules.md) — Available modules and functions
+9. [Architecture](./architecture.md) — Pipeline overview and the role of each stage
+10. [Advanced usage](./advanced-usage.md) — `@extern`, `@abi`, `@template`, nominal ADT, etc.
+11. [Specification index](../spec/index.md) — The source of truth for language specifications
+12. [Development operations guide](./dev-operations.md) — Parity check, local CI (for developers)
