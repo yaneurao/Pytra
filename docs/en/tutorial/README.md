@@ -37,15 +37,15 @@ To transpile to Rust instead:
 ## Reading Order
 
 1. [How to use](./how-to-use.md) — Execution steps, options, input constraints
-2. [Architecture](./architecture.md) — Pipeline overview and the role of each stage
-3. [Python compatibility guide](../spec/spec-python-compat.md) — Differences from Python, unsupported syntax
-4. [Troubleshooting](./troubleshooting.md) — When you get stuck
+2. [Troubleshooting](./troubleshooting.md) — When you get stuck
+3. [Exception handling](./exception.md) — raise / try / except / finally
+4. [Traits (interfaces)](./trait.md) — Attaching multiple behavioral contracts to a type
 5. [Union types and isinstance narrowing](./union-and-narrowing.md) — Handling multiple types and automatic type refinement
-6. [Traits (interfaces)](./trait.md) — Attaching multiple behavioral contracts to a type
-7. [Exception handling](./exception.md) — raise / try / except / finally
+6. [Python compatibility guide](../spec/spec-python-compat.md) — Differences from Python, unsupported syntax
 
 That should be enough to use Pytra. The following are for when you need them:
 
+7. [Architecture](./architecture.md) — Pipeline overview and the role of each stage
 8. [Advanced usage](./advanced-usage.md) — `@extern`, `@abi`, `@template`, nominal ADT, etc.
 9. [Specification index](../spec/index.md) — The source of truth for language specifications
 10. [Development operations guide](./dev-operations.md) — Parity check, local CI (for developers)

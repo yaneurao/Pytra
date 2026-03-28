@@ -37,15 +37,15 @@ Rust に変換するなら:
 ## 読む順番
 
 1. [使い方](./how-to-use.md) — 実行手順、オプション、入力制約
-2. [アーキテクチャ](./architecture.md) — パイプラインの全体像と各段の役割
-3. [Python 互換性ガイド](../spec/spec-python-compat.md) — Python との違い、使えない構文
-4. [エラーの見方](./troubleshooting.md) — 詰まったときに
+2. [エラーの見方](./troubleshooting.md) — 詰まったときに
+3. [例外処理](./exception.md) — raise / try / except / finally の使い方
+4. [Trait（インターフェース）](./trait.md) — 複数の振る舞い契約を型に付与する
 5. [Union 型と isinstance ナローイング](./union-and-narrowing.md) — 複数の型を扱う方法と型の自動絞り込み
-6. [Trait（インターフェース）](./trait.md) — 複数の振る舞い契約を型に付与する
-7. [例外処理](./exception.md) — raise / try / except / finally の使い方
+6. [Python 互換性ガイド](../spec/spec-python-compat.md) — Python との違い、使えない構文
 
 ここまで読めば普通に使えます。以下は必要に応じて:
 
+7. [アーキテクチャ](./architecture.md) — パイプラインの全体像と各段の役割
 8. [発展的な使い方](./advanced-usage.md) — `@extern`, `@abi`, `@template`, nominal ADT 等
 9. [仕様書トップ](../spec/index.md) — 言語仕様の正本
 10. [開発運用ガイド](./dev-operations.md) — parity check, local CI（開発者向け）

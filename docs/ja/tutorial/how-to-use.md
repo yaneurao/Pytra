@@ -89,15 +89,15 @@ Pytra は Python のサブセットを変換します。主な制約:
 
 ## 次に読むページ
 
-1. [アーキテクチャ](./architecture.md) — パイプラインの全体像と各段の役割
-2. [Python 互換性ガイド](../spec/spec-python-compat.md) — 使えない構文、Python との違い
-3. [エラーの見方](./troubleshooting.md) — 詰まったときに
+1. [エラーの見方](./troubleshooting.md) — 詰まったときに
+2. [例外処理](./exception.md) — raise / try / except / finally の使い方
+3. [Trait（インターフェース）](./trait.md) — 複数の振る舞い契約を型に付与する
 4. [Union 型と isinstance ナローイング](./union-and-narrowing.md) — 複数の型を扱う方法と型の自動絞り込み
-5. [Trait（インターフェース）](./trait.md) — 複数の振る舞い契約を型に付与する
-6. [例外処理](./exception.md) — raise / try / except / finally の使い方
+5. [Python 互換性ガイド](../spec/spec-python-compat.md) — Python との違い、使えない構文
 
 ここから先は必要に応じて:
 
+6. [アーキテクチャ](./architecture.md) — パイプラインの全体像と各段の役割
 7. [発展的な使い方](./advanced-usage.md) — `@extern`, `@abi`, `@template`, nominal ADT 等
 8. [仕様書トップ](../spec/index.md) — 言語仕様の正本
 9. [開発運用ガイド](./dev-operations.md) — parity check, local CI（開発者向け）
