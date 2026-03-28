@@ -2568,7 +2568,7 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             idx = "len(" + value + ")" + str(idx_val)
     # Negative unary: x[-expr] → x[len(x)-expr]
     if isinstance(slice_node, dict) and _str(slice_node, "kind") == "UnaryOp" and _str(slice_node, "op") == "USub":
-        operand = _emit_expr(ctx, slice_node.get("operand"))
+        operand = _emit_index_int_expr(ctx, slice_node.get("operand"))
         idx = "len(" + value + ")-" + operand
 
     # String indexing: wrap with py_byte_to_string for str[int] → string
@@ -3375,7 +3375,8 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             # Byte subscript assignment: p[i] = v → p[i] = byte(v)
             sub_val = target_node.get("value")
             sub_id = _str(sub_val, "id") if isinstance(sub_val, dict) else ""
-            if sub_id in ctx.var_types and ctx.var_types[sub_id] in ("bytes", "bytearray"):
+            sub_type = ctx.var_types.get(sub_id, "")
+            if sub_type in ("bytes", "bytearray"):
                 val_code = "byte(" + val_code + ")"
             store_value = _emit_expr(ctx, sub_val)
             store_value = _wrapper_container_storage_expr(ctx, sub_val, store_value)
@@ -3383,7 +3384,10 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             if isinstance(store_slice, dict) and _str(store_slice, "kind") == "Slice":
                 _emit(ctx, _emit_expr(ctx, target_node) + " = " + val_code)
             else:
-                _emit(ctx, store_value + "[" + _emit_expr(ctx, store_slice) + "] = " + val_code)
+                store_idx = _emit_expr(ctx, store_slice)
+                if sub_type.startswith("list[") or sub_type in ("bytes", "bytearray", "list[uint8]"):
+                    store_idx = "int(" + _emit_index_int_expr(ctx, store_slice) + ")"
+                _emit(ctx, store_value + "[" + store_idx + "] = " + val_code)
         elif t_kind == "Tuple":
             # Some precompiled EAST3 modules still carry tuple targets directly.
             # Go emitter models tuple values as []any, so unpack through a temp.
