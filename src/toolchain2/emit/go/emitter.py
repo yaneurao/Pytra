@@ -1071,7 +1071,7 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return "break"
     # Avoid collision with Go's main()
     if name == "main":
-        return "__pytra_main"
+        return _go_symbol_name(ctx, "__pytra_main")
     safe_name = _go_symbol_name(ctx, name)
     resolved_type = _str(node, "resolved_type")
     if (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) and resolved_type.endswith("]"):
@@ -5107,6 +5107,8 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
         ctx.indent_level -= 1
         _emit(ctx, "}")
 
+    entry_main_name = _emit_name(ctx, {"kind": "Name", "id": "main", "resolved_type": "callable"})
+
     # Generate main() for entry module
     if ctx.is_entry:
         _emit_blank(ctx)
@@ -5114,6 +5116,8 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
         ctx.indent_level += 1
         if len(main_guard) > 0:
             _emit(ctx, "_main_guard()")
+        elif "main" in ctx.function_signatures:
+            _emit(ctx, entry_main_name + "()")
         ctx.indent_level -= 1
         _emit(ctx, "}")
 
