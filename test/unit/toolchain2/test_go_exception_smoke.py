@@ -112,6 +112,17 @@ if __name__ == "__main__":
         print(e)
 """
 
+CUSTOM_EXCEPTION_BASE_CATCH_SOURCE = """
+class ParseError(ValueError):
+    pass
+
+if __name__ == "__main__":
+    try:
+        raise ParseError("bad parse")
+    except ValueError as e:
+        print("value", e)
+"""
+
 
 class GoExceptionSmokeTests(unittest.TestCase):
     def test_go_emits_typed_value_error_catch_and_finally(self) -> None:
@@ -136,6 +147,15 @@ class GoExceptionSmokeTests(unittest.TestCase):
             },
         )
         self.assertEqual(stdout, "bad parse\n")
+
+    def test_go_builtin_base_handler_catches_custom_descendant(self) -> None:
+        stdout = _run_go(
+            CUSTOM_EXCEPTION_BASE_CATCH_SOURCE,
+            type_info_table={
+                "app.ParseError": {"id": 1000, "entry": 1000, "exit": 1001},
+            },
+        )
+        self.assertEqual(stdout, "value bad parse\n")
 
 
 if __name__ == "__main__":

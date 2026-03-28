@@ -335,6 +335,43 @@ def _exception_struct_literal(ctx: EmitContext, type_name: str, message_code: st
     )
 
 
+def _is_exception_subtype_name(ctx: EmitContext, actual_type_name: str, expected_type_name: str) -> bool:
+    actual = _short_type_name(actual_type_name)
+    expected = _short_type_name(expected_type_name)
+    seen: set[str] = set()
+    cur = actual
+    while cur != "" and cur not in seen:
+        if cur == expected:
+            return True
+        seen.add(cur)
+        cur = _short_type_name(ctx.class_bases.get(cur, ""))
+    return False
+
+
+def _exception_match_condition(ctx: EmitContext, err_name: str, type_name: str) -> str:
+    conds: list[str] = []
+    bounds = _exception_bounds(ctx, type_name)
+    if bounds != (0, 0):
+        conds.append(
+            "pytraErrorIsInstance(" + err_name + ", " + str(bounds[0]) + ", " + str(bounds[1]) + ")"
+        )
+    short_name = _short_type_name(type_name)
+    for fqcn, derived_bounds in ctx.exception_type_bounds.items():
+        if _short_type_name(fqcn) == short_name:
+            continue
+        if not _is_exception_subtype_name(ctx, fqcn, type_name):
+            continue
+        derived_cond = (
+            "pytraErrorIsInstance(" + err_name + ", "
+            + str(derived_bounds[0]) + ", " + str(derived_bounds[1]) + ")"
+        )
+        if derived_cond not in conds:
+            conds.append(derived_cond)
+    if len(conds) == 0:
+        return err_name + " != nil"
+    return " || ".join(conds)
+
+
 def _go_enum_const_name(ctx: EmitContext, type_name: str, member_name: str) -> str:
     return _go_symbol_name(ctx, type_name + "_" + member_name)
 
@@ -3713,10 +3750,7 @@ def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             if not isinstance(handler, dict):
                 continue
             handler_type = _handler_type_name(handler)
-            bounds = _exception_bounds(ctx, handler_type)
-            cond = "__pytra_err != nil"
-            if bounds != (0, 0):
-                cond = "pytraErrorIsInstance(__pytra_err, " + str(bounds[0]) + ", " + str(bounds[1]) + ")"
+            cond = _exception_match_condition(ctx, "__pytra_err", handler_type)
             _emit(ctx, "if !__handled && " + cond + " {")
             ctx.indent_level += 1
             _emit(ctx, "__handled = true")
@@ -3767,10 +3801,7 @@ def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             if not isinstance(handler, dict):
                 continue
             handler_type = _handler_type_name(handler)
-            bounds = _exception_bounds(ctx, handler_type)
-            cond = "__pytra_err != nil"
-            if bounds != (0, 0):
-                cond = "pytraErrorIsInstance(__pytra_err, " + str(bounds[0]) + ", " + str(bounds[1]) + ")"
+            cond = _exception_match_condition(ctx, "__pytra_err", handler_type)
             _emit(ctx, "if !__handled && " + cond + " {")
             ctx.indent_level += 1
             handler_name = _str(handler, "name")
@@ -3829,10 +3860,7 @@ def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         if not isinstance(handler, dict):
             continue
         handler_type = _handler_type_name(handler)
-        bounds = _exception_bounds(ctx, handler_type)
-        cond = "__pytra_err != nil"
-        if bounds != (0, 0):
-            cond = "pytraErrorIsInstance(__pytra_err, " + str(bounds[0]) + ", " + str(bounds[1]) + ")"
+        cond = _exception_match_condition(ctx, "__pytra_err", handler_type)
         _emit(ctx, "if !__handled && " + cond + " {")
         ctx.indent_level += 1
         handler_name = _str(handler, "name")
