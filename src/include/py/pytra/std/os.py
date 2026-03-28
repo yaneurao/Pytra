@@ -1,13 +1,13 @@
 # pytra: builtin-declarations
-"""pytra.std.os: OS 関数の宣言（v2 extern）。"""
+"""pytra.std.os: OS 関数の宣言。"""
 
-from pytra.std import extern_fn
+from pytra.std import runtime
 
-@extern_fn(module="pytra.std.os", symbol="getcwd", tag="stdlib.fn.getcwd")
+@runtime("pytra.std.os")
 def getcwd() -> str: ...
 
-@extern_fn(module="pytra.std.os", symbol="mkdir", tag="stdlib.fn.mkdir")
+@runtime("pytra.std.os")
 def mkdir(p: str, exist_ok: bool = False) -> None: ...
 
-@extern_fn(module="pytra.std.os", symbol="makedirs", tag="stdlib.fn.makedirs")
+@runtime("pytra.std.os")
 def makedirs(p: str, exist_ok: bool = False) -> None: ...

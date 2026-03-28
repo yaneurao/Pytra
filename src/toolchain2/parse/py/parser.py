@@ -200,12 +200,22 @@ def _runtime_method_extern_v2(namespace: str, class_name: str, method_name: str)
     }
 
 
-def _parse_extern_var_call(value_text: str) -> Optional[dict[str, str]]:
-    """extern_var(module=..., symbol=..., tag=...) からキーワード引数を抽出。"""
+def _parse_extern_var_call(value_text: str, var_name: str = "") -> Optional[dict[str, str]]:
+    """extern_var(module=..., symbol=..., tag=...) または runtime_var("namespace") を解析。"""
     vt = value_text.strip()
     if vt.startswith("extern_var(") and vt.endswith(")"):
         inner = vt[len("extern_var("):-1]
         return _parse_extern_kwargs(inner)
+    if vt.startswith("runtime_var(") and vt.endswith(")"):
+        inner = vt[len("runtime_var("):-1].strip()
+        if len(inner) >= 2 and inner[0] in ('"', "'") and inner[-1] == inner[0]:
+            namespace = inner[1:-1]
+            if namespace != "" and var_name != "":
+                return {
+                    "module": namespace,
+                    "symbol": var_name,
+                    "tag": "stdlib.symbol." + var_name,
+                }
     return None
 
 
@@ -1665,8 +1675,8 @@ def _parse_module_body(
             val_expr = _parse_expr_text(ctx, tl_value, ln_no + 1, _find_expr_col(ctx, tl_value, ln_no + 1, 0), {})
             span = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
             ann_stmt = AnnAssign(source_span=span, target=target, annotation=tl_type, value=val_expr, declare=True)
-            # Check for extern_var(...) in value
-            ev2 = _parse_extern_var_call(tl_value)
+            # Check for extern_var(...) / runtime_var(...) in value
+            ev2 = _parse_extern_var_call(tl_value, tl_var)
             if ev2 is not None:
                 ann_stmt.node_meta = {"extern_v2": ev2}
             if len(pending_trivia) > 0:

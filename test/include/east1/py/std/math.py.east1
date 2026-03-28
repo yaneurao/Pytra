@@ -14,7 +14,7 @@
         "lineno": 2,
         "col": 0,
         "end_lineno": 2,
-        "end_col": 41
+        "end_col": 30
       },
       "value": {
         "kind": "Constant",
@@ -22,12 +22,12 @@
           "lineno": 2,
           "col": 0,
           "end_lineno": 2,
-          "end_col": 41
+          "end_col": 30
         },
         "casts": [],
         "borrow_kind": "value",
-        "repr": "\"\"\"pytra.std.math: 数学関数の宣言（v2 extern）。\"\"\"",
-        "value": "pytra.std.math: 数学関数の宣言（v2 extern）。"
+        "repr": "\"\"\"pytra.std.math: 数学関数の宣言。\"\"\"",
+        "value": "pytra.std.math: 数学関数の宣言。"
       }
     },
     {
@@ -36,16 +36,16 @@
         "lineno": 4,
         "col": 0,
         "end_lineno": 4,
-        "end_col": 43
+        "end_col": 42
       },
       "module": "pytra.std",
       "names": [
         {
-          "name": "extern_fn",
+          "name": "runtime",
           "asname": null
         },
         {
-          "name": "extern_var",
+          "name": "runtime_var",
           "asname": null
         }
       ],
@@ -57,7 +57,7 @@
         "lineno": 6,
         "col": 0,
         "end_lineno": 6,
-        "end_col": 84
+        "end_col": 41
       },
       "target": {
         "kind": "Name",
@@ -79,75 +79,40 @@
           "lineno": 6,
           "col": 12,
           "end_lineno": 6,
-          "end_col": 84
+          "end_col": 41
         },
         "casts": [],
         "borrow_kind": "value",
-        "repr": "extern_var(module=\"pytra.std.math\", symbol=\"pi\", tag=\"stdlib.symbol.pi\")",
+        "repr": "runtime_var(\"pytra.std.math\")",
         "func": {
           "kind": "Name",
           "source_span": {
             "lineno": 6,
             "col": 12,
             "end_lineno": 6,
-            "end_col": 22
+            "end_col": 23
           },
           "casts": [],
           "borrow_kind": "value",
-          "repr": "extern_var",
-          "id": "extern_var"
+          "repr": "runtime_var",
+          "id": "runtime_var"
         },
-        "args": [],
-        "keywords": [
+        "args": [
           {
-            "arg": "module",
-            "value": {
-              "kind": "Constant",
-              "source_span": {
-                "lineno": 6,
-                "col": 30,
-                "end_lineno": 6,
-                "end_col": 46
-              },
-              "casts": [],
-              "borrow_kind": "value",
-              "repr": "\"pytra.std.math\"",
-              "value": "pytra.std.math"
-            }
-          },
-          {
-            "arg": "symbol",
-            "value": {
-              "kind": "Constant",
-              "source_span": {
-                "lineno": 6,
-                "col": 55,
-                "end_lineno": 6,
-                "end_col": 59
-              },
-              "casts": [],
-              "borrow_kind": "value",
-              "repr": "\"pi\"",
-              "value": "pi"
-            }
-          },
-          {
-            "arg": "tag",
-            "value": {
-              "kind": "Constant",
-              "source_span": {
-                "lineno": 6,
-                "col": 65,
-                "end_lineno": 6,
-                "end_col": 83
-              },
-              "casts": [],
-              "borrow_kind": "value",
-              "repr": "\"stdlib.symbol.pi\"",
-              "value": "stdlib.symbol.pi"
-            }
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 6,
+              "col": 24,
+              "end_lineno": 6,
+              "end_col": 40
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"pytra.std.math\"",
+            "value": "pytra.std.math"
           }
-        ]
+        ],
+        "keywords": []
       },
       "declare": true,
       "meta": {
@@ -170,7 +135,7 @@
         "lineno": 7,
         "col": 0,
         "end_lineno": 7,
-        "end_col": 81
+        "end_col": 40
       },
       "target": {
         "kind": "Name",
@@ -192,75 +157,40 @@
           "lineno": 7,
           "col": 11,
           "end_lineno": 7,
-          "end_col": 81
+          "end_col": 40
         },
         "casts": [],
         "borrow_kind": "value",
-        "repr": "extern_var(module=\"pytra.std.math\", symbol=\"e\", tag=\"stdlib.symbol.e\")",
+        "repr": "runtime_var(\"pytra.std.math\")",
         "func": {
           "kind": "Name",
           "source_span": {
             "lineno": 7,
             "col": 11,
             "end_lineno": 7,
-            "end_col": 21
+            "end_col": 22
           },
           "casts": [],
           "borrow_kind": "value",
-          "repr": "extern_var",
-          "id": "extern_var"
+          "repr": "runtime_var",
+          "id": "runtime_var"
         },
-        "args": [],
-        "keywords": [
+        "args": [
           {
-            "arg": "module",
-            "value": {
-              "kind": "Constant",
-              "source_span": {
-                "lineno": 7,
-                "col": 29,
-                "end_lineno": 7,
-                "end_col": 45
-              },
-              "casts": [],
-              "borrow_kind": "value",
-              "repr": "\"pytra.std.math\"",
-              "value": "pytra.std.math"
-            }
-          },
-          {
-            "arg": "symbol",
-            "value": {
-              "kind": "Constant",
-              "source_span": {
-                "lineno": 7,
-                "col": 54,
-                "end_lineno": 7,
-                "end_col": 57
-              },
-              "casts": [],
-              "borrow_kind": "value",
-              "repr": "\"e\"",
-              "value": "e"
-            }
-          },
-          {
-            "arg": "tag",
-            "value": {
-              "kind": "Constant",
-              "source_span": {
-                "lineno": 7,
-                "col": 63,
-                "end_lineno": 7,
-                "end_col": 80
-              },
-              "casts": [],
-              "borrow_kind": "value",
-              "repr": "\"stdlib.symbol.e\"",
-              "value": "stdlib.symbol.e"
-            }
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 7,
+              "col": 23,
+              "end_lineno": 7,
+              "end_col": 39
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"pytra.std.math\"",
+            "value": "pytra.std.math"
           }
-        ]
+        ],
+        "keywords": []
       },
       "declare": true,
       "meta": {
@@ -297,11 +227,14 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.std.math\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.std.math",
           "symbol": "sqrt",
-          "tag": "stdlib.method.sqrt"
+          "tag": "stdlib.fn.sqrt"
         }
       },
       "leading_comments": [],
@@ -338,11 +271,14 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.std.math\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.std.math",
           "symbol": "sin",
-          "tag": "stdlib.method.sin"
+          "tag": "stdlib.fn.sin"
         }
       },
       "leading_comments": [],
@@ -374,11 +310,14 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.std.math\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.std.math",
           "symbol": "cos",
-          "tag": "stdlib.method.cos"
+          "tag": "stdlib.fn.cos"
         }
       },
       "leading_comments": [],
@@ -410,11 +349,14 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.std.math\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.std.math",
           "symbol": "tan",
-          "tag": "stdlib.method.tan"
+          "tag": "stdlib.fn.tan"
         }
       },
       "leading_comments": [],
@@ -446,11 +388,14 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.std.math\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.std.math",
           "symbol": "exp",
-          "tag": "stdlib.method.exp"
+          "tag": "stdlib.fn.exp"
         }
       },
       "leading_comments": [],
@@ -482,11 +427,14 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.std.math\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.std.math",
           "symbol": "log",
-          "tag": "stdlib.method.log"
+          "tag": "stdlib.fn.log"
         }
       },
       "leading_comments": [],
@@ -518,11 +466,14 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.std.math\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.std.math",
           "symbol": "log10",
-          "tag": "stdlib.method.log10"
+          "tag": "stdlib.fn.log10"
         }
       },
       "leading_comments": [],
@@ -554,11 +505,14 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.std.math\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.std.math",
           "symbol": "fabs",
-          "tag": "stdlib.method.fabs"
+          "tag": "stdlib.fn.fabs"
         }
       },
       "leading_comments": [],
@@ -590,11 +544,14 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.std.math\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.std.math",
           "symbol": "floor",
-          "tag": "stdlib.method.floor"
+          "tag": "stdlib.fn.floor"
         }
       },
       "leading_comments": [],
@@ -626,11 +583,14 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.std.math\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.std.math",
           "symbol": "ceil",
-          "tag": "stdlib.method.ceil"
+          "tag": "stdlib.fn.ceil"
         }
       },
       "leading_comments": [],
@@ -665,11 +625,14 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.std.math\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.std.math",
           "symbol": "pow",
-          "tag": "stdlib.method.pow"
+          "tag": "stdlib.fn.pow"
         }
       },
       "leading_comments": [],
@@ -683,16 +646,16 @@
       "bindings": [
         {
           "module_id": "pytra.std",
-          "export_name": "extern_fn",
-          "local_name": "extern_fn",
+          "export_name": "runtime",
+          "local_name": "runtime",
           "binding_kind": "symbol",
           "source_file": "src/include/py/pytra/std/math.py",
           "source_line": 4
         },
         {
           "module_id": "pytra.std",
-          "export_name": "extern_var",
-          "local_name": "extern_var",
+          "export_name": "runtime_var",
+          "local_name": "runtime_var",
           "binding_kind": "symbol",
           "source_file": "src/include/py/pytra/std/math.py",
           "source_line": 4
@@ -701,29 +664,29 @@
       "qualified_refs": [
         {
           "module_id": "pytra.std",
-          "symbol": "extern_fn",
-          "local_name": "extern_fn"
+          "symbol": "runtime",
+          "local_name": "runtime"
         },
         {
           "module_id": "pytra.std",
-          "symbol": "extern_var",
-          "local_name": "extern_var"
+          "symbol": "runtime_var",
+          "local_name": "runtime_var"
         }
       ]
     },
     "import_bindings": [
       {
         "module_id": "pytra.std",
-        "export_name": "extern_fn",
-        "local_name": "extern_fn",
+        "export_name": "runtime",
+        "local_name": "runtime",
         "binding_kind": "symbol",
         "source_file": "src/include/py/pytra/std/math.py",
         "source_line": 4
       },
       {
         "module_id": "pytra.std",
-        "export_name": "extern_var",
-        "local_name": "extern_var",
+        "export_name": "runtime_var",
+        "local_name": "runtime_var",
         "binding_kind": "symbol",
         "source_file": "src/include/py/pytra/std/math.py",
         "source_line": 4
@@ -732,24 +695,24 @@
     "qualified_symbol_refs": [
       {
         "module_id": "pytra.std",
-        "symbol": "extern_fn",
-        "local_name": "extern_fn"
+        "symbol": "runtime",
+        "local_name": "runtime"
       },
       {
         "module_id": "pytra.std",
-        "symbol": "extern_var",
-        "local_name": "extern_var"
+        "symbol": "runtime_var",
+        "local_name": "runtime_var"
       }
     ],
     "import_modules": {},
     "import_symbols": {
-      "extern_fn": {
+      "runtime": {
         "module": "pytra.std",
-        "name": "extern_fn"
+        "name": "runtime"
       },
-      "extern_var": {
+      "runtime_var": {
         "module": "pytra.std",
-        "name": "extern_var"
+        "name": "runtime_var"
       }
     }
   },

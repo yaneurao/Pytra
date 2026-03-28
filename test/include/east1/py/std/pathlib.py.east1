@@ -14,7 +14,7 @@
         "lineno": 2,
         "col": 0,
         "end_lineno": 2,
-        "end_col": 48
+        "end_col": 37
       },
       "value": {
         "kind": "Constant",
@@ -22,12 +22,12 @@
           "lineno": 2,
           "col": 0,
           "end_lineno": 2,
-          "end_col": 48
+          "end_col": 37
         },
         "casts": [],
         "borrow_kind": "value",
-        "repr": "\"\"\"pytra.std.pathlib: Path クラスの宣言（v2 extern）。\"\"\"",
-        "value": "pytra.std.pathlib: Path クラスの宣言（v2 extern）。"
+        "repr": "\"\"\"pytra.std.pathlib: Path クラスの宣言。\"\"\"",
+        "value": "pytra.std.pathlib: Path クラスの宣言。"
       }
     },
     {
@@ -36,20 +36,12 @@
         "lineno": 4,
         "col": 0,
         "end_lineno": 4,
-        "end_col": 60
+        "end_col": 29
       },
       "module": "pytra.std",
       "names": [
         {
-          "name": "extern_class",
-          "asname": null
-        },
-        {
-          "name": "extern_method",
-          "asname": null
-        },
-        {
-          "name": "extern_fn",
+          "name": "runtime",
           "asname": null
         }
       ],
@@ -81,6 +73,9 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.std.pathlib\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.std.pathlib",
@@ -101,7 +96,7 @@
       "source_span": {
         "lineno": 12,
         "col": 0,
-        "end_lineno": 20,
+        "end_lineno": 15,
         "end_col": 0
       },
       "name": "Path",
@@ -113,9 +108,9 @@
         {
           "kind": "FunctionDef",
           "source_span": {
-            "lineno": 14,
+            "lineno": 13,
             "col": 4,
-            "end_lineno": 14,
+            "end_lineno": 13,
             "end_col": 0
           },
           "name": "write_text",
@@ -139,13 +134,11 @@
           "body": [],
           "is_generator": 0,
           "yield_value_type": "unknown",
-          "decorators": [
-            "extern_method"
-          ],
+          "decorators": [],
           "meta": {
             "extern_v2": {
-              "module": "pytra.std.pathlib",
-              "symbol": "pathlib.write_text",
+              "module": "pytra.std.pathlib.Path",
+              "symbol": "Path.write_text",
               "tag": "stdlib.method.write_text",
               "kind": "method"
             }
@@ -154,9 +147,9 @@
         {
           "kind": "FunctionDef",
           "source_span": {
-            "lineno": 17,
+            "lineno": 14,
             "col": 4,
-            "end_lineno": 17,
+            "end_lineno": 14,
             "end_col": 0
           },
           "name": "write_bytes",
@@ -180,13 +173,11 @@
           "body": [],
           "is_generator": 0,
           "yield_value_type": "unknown",
-          "decorators": [
-            "extern_method"
-          ],
+          "decorators": [],
           "meta": {
             "extern_v2": {
-              "module": "pytra.std.pathlib",
-              "symbol": "pathlib.write_bytes",
+              "module": "pytra.std.pathlib.Path",
+              "symbol": "Path.write_bytes",
               "tag": "stdlib.method.write_bytes",
               "kind": "method"
             }
@@ -195,9 +186,9 @@
         {
           "kind": "FunctionDef",
           "source_span": {
-            "lineno": 20,
+            "lineno": 15,
             "col": 4,
-            "end_lineno": 20,
+            "end_lineno": 15,
             "end_col": 0
           },
           "name": "read_text",
@@ -218,24 +209,29 @@
           "body": [],
           "is_generator": 0,
           "yield_value_type": "unknown",
-          "decorators": [
-            "extern_method"
-          ],
+          "decorators": [],
           "meta": {
             "extern_v2": {
-              "module": "pytra.std.pathlib",
-              "symbol": "pathlib.read_text",
+              "module": "pytra.std.pathlib.Path",
+              "symbol": "Path.read_text",
               "tag": "stdlib.method.read_text",
               "kind": "method"
             }
           }
         }
       ],
+      "decorators": [
+        "runtime(\"pytra.std.pathlib\")"
+      ],
       "meta": {
+        "runtime_v1": {
+          "schema_version": 1,
+          "namespace": "pytra.std.pathlib"
+        },
         "extern_v2": {
-          "module": "pytra.std.pathlib",
+          "module": "pytra.std.pathlib.Path",
           "symbol": "Path",
-          "tag": "stdlib.class.Path"
+          "tag": "container.Path"
         }
       }
     }
@@ -247,24 +243,8 @@
       "bindings": [
         {
           "module_id": "pytra.std",
-          "export_name": "extern_class",
-          "local_name": "extern_class",
-          "binding_kind": "symbol",
-          "source_file": "src/include/py/pytra/std/pathlib.py",
-          "source_line": 4
-        },
-        {
-          "module_id": "pytra.std",
-          "export_name": "extern_method",
-          "local_name": "extern_method",
-          "binding_kind": "symbol",
-          "source_file": "src/include/py/pytra/std/pathlib.py",
-          "source_line": 4
-        },
-        {
-          "module_id": "pytra.std",
-          "export_name": "extern_fn",
-          "local_name": "extern_fn",
+          "export_name": "runtime",
+          "local_name": "runtime",
           "binding_kind": "symbol",
           "source_file": "src/include/py/pytra/std/pathlib.py",
           "source_line": 4
@@ -273,42 +253,16 @@
       "qualified_refs": [
         {
           "module_id": "pytra.std",
-          "symbol": "extern_class",
-          "local_name": "extern_class"
-        },
-        {
-          "module_id": "pytra.std",
-          "symbol": "extern_method",
-          "local_name": "extern_method"
-        },
-        {
-          "module_id": "pytra.std",
-          "symbol": "extern_fn",
-          "local_name": "extern_fn"
+          "symbol": "runtime",
+          "local_name": "runtime"
         }
       ]
     },
     "import_bindings": [
       {
         "module_id": "pytra.std",
-        "export_name": "extern_class",
-        "local_name": "extern_class",
-        "binding_kind": "symbol",
-        "source_file": "src/include/py/pytra/std/pathlib.py",
-        "source_line": 4
-      },
-      {
-        "module_id": "pytra.std",
-        "export_name": "extern_method",
-        "local_name": "extern_method",
-        "binding_kind": "symbol",
-        "source_file": "src/include/py/pytra/std/pathlib.py",
-        "source_line": 4
-      },
-      {
-        "module_id": "pytra.std",
-        "export_name": "extern_fn",
-        "local_name": "extern_fn",
+        "export_name": "runtime",
+        "local_name": "runtime",
         "binding_kind": "symbol",
         "source_file": "src/include/py/pytra/std/pathlib.py",
         "source_line": 4
@@ -317,33 +271,15 @@
     "qualified_symbol_refs": [
       {
         "module_id": "pytra.std",
-        "symbol": "extern_class",
-        "local_name": "extern_class"
-      },
-      {
-        "module_id": "pytra.std",
-        "symbol": "extern_method",
-        "local_name": "extern_method"
-      },
-      {
-        "module_id": "pytra.std",
-        "symbol": "extern_fn",
-        "local_name": "extern_fn"
+        "symbol": "runtime",
+        "local_name": "runtime"
       }
     ],
     "import_modules": {},
     "import_symbols": {
-      "extern_class": {
+      "runtime": {
         "module": "pytra.std",
-        "name": "extern_class"
-      },
-      "extern_method": {
-        "module": "pytra.std",
-        "name": "extern_method"
-      },
-      "extern_fn": {
-        "module": "pytra.std",
-        "name": "extern_fn"
+        "name": "runtime"
       }
     }
   },

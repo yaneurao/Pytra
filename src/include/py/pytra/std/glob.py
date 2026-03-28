@@ -1,7 +1,7 @@
 # pytra: builtin-declarations
-"""pytra.std.glob: glob 関数の宣言（v2 extern）。"""
+"""pytra.std.glob: glob 関数の宣言。"""
 
-from pytra.std import extern_fn
+from pytra.std import runtime
 
-@extern_fn(module="pytra.std.glob", symbol="glob", tag="stdlib.fn.glob")
+@runtime("pytra.std.glob")
 def glob(pattern: str) -> list[str]: ...

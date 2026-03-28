@@ -1,22 +1,22 @@
 # pytra: builtin-declarations
-"""pytra.std.os_path: os.path 関数の宣言（v2 extern）。"""
+"""pytra.std.os_path: os.path 関数の宣言。"""
 
-from pytra.std import extern_fn
+from pytra.std import runtime
 
-@extern_fn(module="pytra.std.os_path", symbol="join", tag="stdlib.fn.path_join")
+@runtime("pytra.std.os_path")
 def join(a: str, b: str) -> str: ...
 
-@extern_fn(module="pytra.std.os_path", symbol="dirname", tag="stdlib.fn.path_dirname")
+@runtime("pytra.std.os_path")
 def dirname(p: str) -> str: ...
 
-@extern_fn(module="pytra.std.os_path", symbol="basename", tag="stdlib.fn.path_basename")
+@runtime("pytra.std.os_path")
 def basename(p: str) -> str: ...
 
-@extern_fn(module="pytra.std.os_path", symbol="splitext", tag="stdlib.fn.path_splitext")
+@runtime("pytra.std.os_path")
 def splitext(p: str) -> tuple[str, str]: ...
 
-@extern_fn(module="pytra.std.os_path", symbol="abspath", tag="stdlib.fn.path_abspath")
+@runtime("pytra.std.os_path")
 def abspath(p: str) -> str: ...
 
-@extern_fn(module="pytra.std.os_path", symbol="exists", tag="stdlib.fn.path_exists")
+@runtime("pytra.std.os_path")
 def exists(p: str) -> bool: ...

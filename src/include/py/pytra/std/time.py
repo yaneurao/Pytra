@@ -1,7 +1,7 @@
 # pytra: builtin-declarations
-"""pytra.std.time: 時間関数の宣言（v2 extern）。"""
+"""pytra.std.time: 時間関数の宣言。"""
 
-from pytra.std import extern_fn
+from pytra.std import runtime
 
-@extern_fn(module="pytra.std.time", symbol="perf_counter", tag="stdlib.fn.perf_counter")
+@runtime("pytra.std.time")
 def perf_counter() -> float: ...

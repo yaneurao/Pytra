@@ -1,40 +1,40 @@
 # pytra: builtin-declarations
-"""pytra.std.math: 数学関数の宣言（v2 extern）。"""
+"""pytra.std.math: 数学関数の宣言。"""
 
-from pytra.std import extern_fn, extern_var
+from pytra.std import runtime, runtime_var
 
-pi: float = extern_var(module="pytra.std.math", symbol="pi", tag="stdlib.symbol.pi")
-e: float = extern_var(module="pytra.std.math", symbol="e", tag="stdlib.symbol.e")
+pi: float = runtime_var("pytra.std.math")
+e: float = runtime_var("pytra.std.math")
 
-@extern_fn(module="pytra.std.math", symbol="sqrt", tag="stdlib.method.sqrt")
+@runtime("pytra.std.math")
 def sqrt(x: float) -> float: ...
 
-@extern_fn(module="pytra.std.math", symbol="sin", tag="stdlib.method.sin")
+@runtime("pytra.std.math")
 def sin(x: float) -> float: ...
 
-@extern_fn(module="pytra.std.math", symbol="cos", tag="stdlib.method.cos")
+@runtime("pytra.std.math")
 def cos(x: float) -> float: ...
 
-@extern_fn(module="pytra.std.math", symbol="tan", tag="stdlib.method.tan")
+@runtime("pytra.std.math")
 def tan(x: float) -> float: ...
 
-@extern_fn(module="pytra.std.math", symbol="exp", tag="stdlib.method.exp")
+@runtime("pytra.std.math")
 def exp(x: float) -> float: ...
 
-@extern_fn(module="pytra.std.math", symbol="log", tag="stdlib.method.log")
+@runtime("pytra.std.math")
 def log(x: float) -> float: ...
 
-@extern_fn(module="pytra.std.math", symbol="log10", tag="stdlib.method.log10")
+@runtime("pytra.std.math")
 def log10(x: float) -> float: ...
 
-@extern_fn(module="pytra.std.math", symbol="fabs", tag="stdlib.method.fabs")
+@runtime("pytra.std.math")
 def fabs(x: float) -> float: ...
 
-@extern_fn(module="pytra.std.math", symbol="floor", tag="stdlib.method.floor")
+@runtime("pytra.std.math")
 def floor(x: float) -> float: ...
 
-@extern_fn(module="pytra.std.math", symbol="ceil", tag="stdlib.method.ceil")
+@runtime("pytra.std.math")
 def ceil(x: float) -> float: ...
 
-@extern_fn(module="pytra.std.math", symbol="pow", tag="stdlib.method.pow")
+@runtime("pytra.std.math")
 def pow(x: float, y: float) -> float: ...

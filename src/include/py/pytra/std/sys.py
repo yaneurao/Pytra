@@ -1,24 +1,24 @@
 # pytra: builtin-declarations
-"""pytra.std.sys: sys モジュールの宣言（v2 extern）。"""
+"""pytra.std.sys: sys モジュールの宣言。"""
 
-from pytra.std import extern_fn, extern_var
+from pytra.std import runtime, runtime_var
 
-argv: list[str] = extern_var(module="pytra.std.sys", symbol="argv", tag="stdlib.symbol.argv")
-path: list[str] = extern_var(module="pytra.std.sys", symbol="path", tag="stdlib.symbol.path")
-stderr: str = extern_var(module="pytra.std.sys", symbol="stderr", tag="stdlib.symbol.stderr")
-stdout: str = extern_var(module="pytra.std.sys", symbol="stdout", tag="stdlib.symbol.stdout")
+argv: list[str] = runtime_var("pytra.std.sys")
+path: list[str] = runtime_var("pytra.std.sys")
+stderr: str = runtime_var("pytra.std.sys")
+stdout: str = runtime_var("pytra.std.sys")
 
-@extern_fn(module="pytra.std.sys", symbol="exit", tag="stdlib.fn.exit")
+@runtime("pytra.std.sys")
 def exit(code: int = 0) -> None: ...
 
-@extern_fn(module="pytra.std.sys", symbol="set_argv", tag="stdlib.fn.set_argv")
+@runtime("pytra.std.sys")
 def set_argv(values: list[str]) -> None: ...
 
-@extern_fn(module="pytra.std.sys", symbol="set_path", tag="stdlib.fn.set_path")
+@runtime("pytra.std.sys")
 def set_path(values: list[str]) -> None: ...
 
-@extern_fn(module="pytra.std.sys", symbol="write_stderr", tag="stdlib.fn.write_stderr")
+@runtime("pytra.std.sys")
 def write_stderr(text: str) -> None: ...
 
-@extern_fn(module="pytra.std.sys", symbol="write_stdout", tag="stdlib.fn.write_stdout")
+@runtime("pytra.std.sys")
 def write_stdout(text: str) -> None: ...
