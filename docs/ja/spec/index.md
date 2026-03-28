@@ -4,102 +4,65 @@
 
 # 仕様書（入口）
 
-`docs/ja/spec/index.md` は仕様全体の入口ページです。詳細は次の3ファイルに分割しています。
+### ユーザー向け
 
-- 利用仕様: [利用仕様](./spec-user.md)
-- Python との互換性ガイド: [Python 互換性ガイド](./spec-python-compat.md)
-- 実装仕様: [実装仕様](./spec-dev.md)
-- ランタイム仕様: [ランタイム仕様](./spec-runtime.md)
-- Boxing/Unboxing 仕様: [Boxing/Unboxing 仕様](./spec-boxing.md)
-- type_id 仕様: [type_id 仕様](./spec-type_id.md)
-- tagged union 仕様: [tagged union 仕様](./spec-tagged-union.md)
-- Trait 仕様: [Trait 仕様（pure interface・多重実装）](./spec-trait.md)
-- 例外処理仕様: [例外処理仕様](./spec-exception.md)
-- GC 仕様: [GC 仕様](./spec-gc.md)
-- 言語プロファイル仕様: [言語プロファイル仕様](./spec-language-profile.md)
-- フォルダ責務マップ仕様: [フォルダ責務マップ仕様](./spec-folder.md)
-- EAST 統合仕様（現行正本）: [EAST仕様（統合）](./spec-east.md)
-- EAST1 仕様（parse 出力契約）: [EAST1 仕様](./spec-east1.md)
-- EAST2 仕様（resolve 出力契約）: [EAST2 仕様](./spec-east2.md)
-- EAST 三段構成の責務: [EAST 段階構成](./spec-east.md#east-stages)
-- EAST3 最適化層仕様: [EAST3 Optimizer 仕様](./spec-east3-optimizer.md)
-- C++ backend 最適化層仕様: [C++ Optimizer 仕様](./spec-cpp-optimizer.md)
-- C++ list 参照セマンティクス仕様: [C++ list 参照セマンティクス仕様](./spec-cpp-list-reference-semantics.md)
-- stdlib シグネチャ正本化仕様: [stdlib シグネチャ正本化仕様](./spec-stdlib-signature-source-of-truth.md)
-- Java native backend 契約仕様: [Java Native Backend 契約仕様](./spec-java-native-backend.md)
-- Lua native backend 契約仕様: [Lua Native Backend 契約仕様](./spec-lua-native-backend.md)
-- Zig native backend 契約仕様: [Zig Native Backend 契約仕様](./spec-zig-native-backend.md)
-- Backend Emitter 共通契約仕様: [Emitter 実装ガイドライン](./spec-emitter-guide.md)
-- runtime mapping.json 仕様: [runtime mapping 仕様](./spec-runtime-mapping.md)
-- EAST 三段構成の現行/移行後ファイル責務対応表: [責務対応表](./spec-east.md#east-file-mapping)
-- EAST1 build 責務境界: [EAST1 build 責務境界](./spec-east.md#east1-build-boundary)
-- EAST 移行フェーズ: [EAST 移行フェーズ](./spec-east.md#east-migration-phases)
-- Linker 仕様（EAST 連結）: [Linker 仕様](./spec-linker.md)
-- compile / link パイプライン計画: [compile / link パイプライン](../plans/p2-compile-link-pipeline.md)
-- 言語別仕様: [言語別仕様](../language/index.md)
-- Codex 向け運用仕様: [Codex 向け運用仕様](./spec-codex.md)
-- 旧仕様アーカイブ: [仕様アーカイブ](./archive/index.md)
-- `pylib` モジュール一覧: [pylib モジュール一覧](./spec-pylib-modules.md)
-- 開発思想: [開発思想](./spec-philosophy.md)
+| 内容 | リンク | 説明 |
+|---|---|---|
+| 利用仕様 | [spec-user.md](./spec-user.md) | 使い方、入力制約、テスト実行方法 |
+| Python 互換性 | [spec-python-compat.md](./spec-python-compat.md) | Python との違い、使えない構文 |
+| pylib モジュール | [spec-pylib-modules.md](./spec-pylib-modules.md) | 使えるモジュールと関数の一覧 |
 
-## 読み分け方
+### 言語仕様
 
-- ツールの使い方・入力制約・テスト実行方法を確認したい場合:
-  - [利用仕様](./spec-user.md)
-- Python との違い・非対応機能を確認したい場合:
-  - [Python 互換性ガイド](./spec-python-compat.md)
-- `import` ルール（`pytra.*` 経由の統一ルール・使える型・モジュール一覧）を確認したい場合:
-  - [利用仕様 § Python 入力仕様](./spec-user.md#2-python-入力仕様)
-- 実装方針・モジュール構成・変換仕様を確認したい場合:
-  - [実装仕様](./spec-dev.md)
-- C++ ランタイム配置・include対応規約・`Any` の C++ 表現方針を確認したい場合:
-  - [ランタイム仕様](./spec-runtime.md)
-- `Any/object` 境界の Boxing/Unboxing 契約を確認したい場合:
-  - [Boxing/Unboxing 仕様](./spec-boxing.md)
-- 単一継承の `type_id` 判定契約（`isinstance`/`issubclass`）を確認したい場合:
-  - [type_id 仕様](./spec-type_id.md)
-- `type X = A | B | ...` の tagged union 宣言・isinstance・cast ナローイングを確認したい場合:
-  - [tagged union 仕様](./spec-tagged-union.md)
-- RC ベースの GC 方針を確認したい場合:
-  - [GC 仕様](./spec-gc.md)
-- `CodeEmitter` の JSON プロファイルと hooks 仕様を確認したい場合:
-  - [言語プロファイル仕様](./spec-language-profile.md)
-- どのフォルダに何を置くべきか（責務境界）を確認したい場合:
-  - [フォルダ責務マップ仕様](./spec-folder.md)
-- EAST を三段（EAST1/EAST2/EAST3）でどう運用するかを確認したい場合:
-  - [EAST 段階構成](./spec-east.md#east-stages)
-- `EAST3` 最適化層（共通/言語別）の責務・契約を確認したい場合:
-  - [EAST3 Optimizer 仕様](./spec-east3-optimizer.md)
-- C++ backend 後段最適化（`CppOptimizer` と `CppEmitter` の責務分離）を確認したい場合:
-  - [C++ Optimizer 仕様](./spec-cpp-optimizer.md)
-- C++ list の alias/共有/破壊的更新契約（value/pyobj 移行境界）を確認したい場合:
-  - [C++ list 参照セマンティクス仕様](./spec-cpp-list-reference-semantics.md)
-- `pytra/std` を型仕様の正本にする契約（`core.py` 直書き撤去）を確認したい場合:
-  - [stdlib シグネチャ正本化仕様](./spec-stdlib-signature-source-of-truth.md)
-- Java backend の sidecar 撤去移行契約（入力責務 / fail-closed / runtime 境界）を確認したい場合:
-  - [Java Native Backend 契約仕様](./spec-java-native-backend.md)
-- Lua backend の native 直生成契約（入力責務 / fail-closed / runtime 境界）を確認したい場合:
-  - [Lua Native Backend 契約仕様](./spec-lua-native-backend.md)
-- Zig backend の契約（try/except 非対応・継承非対応・参照セマンティクス制約）を確認したい場合:
-  - [Zig Native Backend 契約仕様](./spec-zig-native-backend.md)
-- 新規 backend 開発・コンテナ参照セマンティクス要件・`yields_dynamic` 契約を確認したい場合:
-  - [Emitter 実装ガイドライン](./spec-emitter-guide.md)
-- EAST1/EAST2/EAST3 の現行/移行後ファイル責務対応表を確認したい場合:
-  - [責務対応表](./spec-east.md#east-file-mapping)
-- `EAST1` build 入口（`east1_build.py`）の責務境界を確認したい場合:
-  - [EAST1 build 責務境界](./spec-east.md#east1-build-boundary)
-- EAST3 主経路化までの移行順を確認したい場合:
-  - [EAST 移行フェーズ](./spec-east.md#east-migration-phases)
-- `EAST3` の連結段（`type_id` 決定、manifest、中間ファイル再開）を確認したい場合:
-  - [Linker 仕様](./spec-linker.md)
-- 言語ごとの機能対応状況を確認したい場合:
-  - [言語別仕様](../language/index.md)
-- Codex の作業ルール・TODO 運用・コミット運用を確認したい場合:
-  - [Codex 向け運用仕様](./spec-codex.md)
-- 旧仕様（現行ではない文書）を確認したい場合:
-  - [仕様アーカイブ](./archive/index.md)
-- 設計思想・EAST 中心設計の背景を確認したい場合:
-  - [開発思想](./spec-philosophy.md)
+| 内容 | リンク | 説明 |
+|---|---|---|
+| 型システム・type_id | [spec-type_id.md](./spec-type_id.md) | 単一継承、isinstance、POD exact match |
+| tagged union | [spec-tagged-union.md](./spec-tagged-union.md) | `type X = A \| B` の宣言、コード生成 |
+| Trait | [spec-trait.md](./spec-trait.md) | `@trait` / `@implements`、pure interface |
+| 例外処理 | [spec-exception.md](./spec-exception.md) | raise/try/except、native_throw と union_return |
+| Boxing/Unboxing | [spec-boxing.md](./spec-boxing.md) | Any/object 境界の型変換 |
+| GC | [spec-gc.md](./spec-gc.md) | RC ベースの GC 方針 |
+
+### EAST（中間表現）
+
+| 内容 | リンク | 説明 |
+|---|---|---|
+| EAST 統合仕様 | [spec-east.md](./spec-east.md) | 現行正本。型推論、ノード仕様、ナローイング |
+| EAST1 | [spec-east1.md](./spec-east1.md) | parse 出力契約（型未解決） |
+| EAST2 | [spec-east2.md](./spec-east2.md) | resolve 出力契約（型確定） |
+| EAST3 Optimizer | [spec-east3-optimizer.md](./spec-east3-optimizer.md) | 最適化パスの責務と契約 |
+| Linker | [spec-linker.md](./spec-linker.md) | multi-module 連結、type_id 確定 |
+
+### Backend / Emitter
+
+| 内容 | リンク | 説明 |
+|---|---|---|
+| Emitter ガイドライン | [spec-emitter-guide.md](./spec-emitter-guide.md) | 全 emitter 共通の契約、禁止事項 |
+| 言語プロファイル | [spec-language-profile.md](./spec-language-profile.md) | Lowering プロファイル、CommonRenderer |
+| runtime mapping | [spec-runtime-mapping.md](./spec-runtime-mapping.md) | mapping.json のフォーマット |
+| ランタイム | [spec-runtime.md](./spec-runtime.md) | ランタイム配置、include 規約 |
+| C++ Optimizer | [spec-cpp-optimizer.md](./spec-cpp-optimizer.md) | C++ backend 後段最適化 |
+| C++ list 参照 | [spec-cpp-list-reference-semantics.md](./spec-cpp-list-reference-semantics.md) | C++ list の alias/共有/破壊的更新 |
+
+### 言語別 Backend 契約
+
+| 内容 | リンク | 説明 |
+|---|---|---|
+| Java | [spec-java-native-backend.md](./spec-java-native-backend.md) | Java native backend 契約 |
+| Lua | [spec-lua-native-backend.md](./spec-lua-native-backend.md) | Lua native backend 契約 |
+| Zig | [spec-zig-native-backend.md](./spec-zig-native-backend.md) | Zig native backend 契約 |
+| 言語別一覧 | [language/index.md](../language/index.md) | 言語ごとの機能対応状況 |
+
+### 開発者向け
+
+| 内容 | リンク | 説明 |
+|---|---|---|
+| 実装仕様 | [spec-dev.md](./spec-dev.md) | 実装方針、モジュール構成 |
+| フォルダ責務 | [spec-folder.md](./spec-folder.md) | どのフォルダに何を置くか |
+| stdlib 正本化 | [spec-stdlib-signature-source-of-truth.md](./spec-stdlib-signature-source-of-truth.md) | pytra/std を型仕様の正本にする契約 |
+| Codex 運用 | [spec-codex.md](./spec-codex.md) | Codex の作業ルール、TODO 運用 |
+| 開発思想 | [spec-philosophy.md](./spec-philosophy.md) | EAST 中心設計の背景 |
+| 旧仕様 | [archive/index.md](./archive/index.md) | 退役した仕様のアーカイブ |
 
 ## Codex 起動時の確認先
 
