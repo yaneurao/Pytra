@@ -161,6 +161,17 @@ if __name__ == "__main__":
         print(e)
 """
 
+WRAPPED_EXCEPTION_SOURCE = """
+if __name__ == "__main__":
+    try:
+        try:
+            raise ValueError("bad")
+        except Exception as exc:
+            raise RuntimeError("wrap: " + str(exc))
+    except RuntimeError as err:
+        print(err)
+"""
+
 
 class GoExceptionSmokeTests(unittest.TestCase):
     def test_go_emits_typed_value_error_catch_and_finally(self) -> None:
@@ -222,6 +233,10 @@ class GoExceptionSmokeTests(unittest.TestCase):
             },
         )
         self.assertEqual(stdout, "bad parse\n")
+
+    def test_go_preserves_wrapped_exception_pattern(self) -> None:
+        stdout = _run_go(WRAPPED_EXCEPTION_SOURCE)
+        self.assertEqual(stdout, "wrap: bad\n")
 
 
 if __name__ == "__main__":
