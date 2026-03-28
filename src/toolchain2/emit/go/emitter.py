@@ -74,6 +74,7 @@ class EmitContext:
     exception_type_bounds: dict[str, tuple[int, int]] = field(default_factory=dict)
     # Exception type ids from linked_program_v1.type_info_table_v1.
     exception_type_ids: dict[str, int] = field(default_factory=dict)
+    current_exception_var: str = ""
 
 
 class _GoStmtCommonRenderer(CommonRenderer):
@@ -3758,7 +3759,10 @@ def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, "if !__handled && " + cond + " {")
             ctx.indent_level += 1
             _emit(ctx, "__handled = true")
+            saved_exc_var = ctx.current_exception_var
+            ctx.current_exception_var = "__pytra_err"
             _emit(ctx, "__try_result = " + handler_ret_expr)
+            ctx.current_exception_var = saved_exc_var
             ctx.indent_level -= 1
             _emit(ctx, "}")
         _emit(ctx, "if !__handled {")
@@ -3818,7 +3822,10 @@ def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, "__handled = true")
             _emit(ctx, "__try_result = func() " + ret_type + " {")
             ctx.indent_level += 1
+            saved_exc_var = ctx.current_exception_var
+            ctx.current_exception_var = "__pytra_err"
             _emit_body(ctx, _list(handler, "body"))
+            ctx.current_exception_var = saved_exc_var
             _emit(ctx, "return __try_result")
             ctx.indent_level -= 1
             _emit(ctx, "}()")
@@ -3875,7 +3882,10 @@ def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, safe_name + " := __pytra_err")
             ctx.var_types[safe_name] = "*PytraError"
         _emit(ctx, "__handled = true")
+        saved_exc_var = ctx.current_exception_var
+        ctx.current_exception_var = "__pytra_err"
         _emit_body(ctx, _list(handler, "body"))
+        ctx.current_exception_var = saved_exc_var
         if handler_name != "":
             safe_name2 = _safe_go_ident(handler_name)
             if saved_handler_type != "":
@@ -3933,7 +3943,10 @@ def _emit_raise(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     elif exc is not None:
         _emit(ctx, "panic(pytraEnsureRecoveredError(" + _emit_expr(ctx, exc) + "))")
     else:
-        _emit(ctx, "panic(pytraNewRuntimeError(\"raise\"))")
+        if ctx.current_exception_var != "":
+            _emit(ctx, "panic(" + ctx.current_exception_var + ")")
+        else:
+            _emit(ctx, "panic(pytraNewRuntimeError(\"raise\"))")
     # Go requires unreachable return after panic in non-void functions
     if ctx.current_return_type != "" and ctx.current_return_type != "None":
         zv = go_zero_value(ctx.current_return_type)

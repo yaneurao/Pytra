@@ -2306,6 +2306,13 @@ def _parse_block_lines(
             continue
 
         # raise
+        if s_clean == "raise":
+            span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+            stmts.append(Raise(source_span=span, exc=None, cause=None))
+            i += 1
+            pending_trivia = []
+            pending_comments = []
+            continue
         if s_clean.startswith("raise "):
             expr_text = s_clean[6:].strip()
             expr = _parse_expr_text(ctx, expr_text, abs_ln, _find_expr_col(ctx, expr_text, abs_ln, indent + 6), name_types)

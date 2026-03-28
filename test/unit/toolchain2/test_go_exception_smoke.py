@@ -172,6 +172,17 @@ if __name__ == "__main__":
         print(err)
 """
 
+BARE_RERAISE_SOURCE = """
+if __name__ == "__main__":
+    try:
+        try:
+            raise ValueError("bad")
+        except ValueError:
+            raise
+    except ValueError as err:
+        print(err)
+"""
+
 
 class GoExceptionSmokeTests(unittest.TestCase):
     def test_go_emits_typed_value_error_catch_and_finally(self) -> None:
@@ -237,6 +248,10 @@ class GoExceptionSmokeTests(unittest.TestCase):
     def test_go_preserves_wrapped_exception_pattern(self) -> None:
         stdout = _run_go(WRAPPED_EXCEPTION_SOURCE)
         self.assertEqual(stdout, "wrap: bad\n")
+
+    def test_go_bare_raise_rethrows_current_exception(self) -> None:
+        stdout = _run_go(BARE_RERAISE_SOURCE)
+        self.assertEqual(stdout, "bad\n")
 
 
 if __name__ == "__main__":

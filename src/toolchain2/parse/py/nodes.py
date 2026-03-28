@@ -573,11 +573,11 @@ class Yield:
 @dataclass
 class Raise:
     source_span: SourceSpan
-    exc: Expr
+    exc: Optional[Expr]
     cause: Optional[Expr]
     def to_jv(self) -> dict[str, JsonVal]:
         return {"kind": "Raise", "source_span": self.source_span.to_jv(),
-                "exc": expr_to_jv(self.exc),
+                "exc": expr_to_jv(self.exc) if self.exc is not None else None,
                 "cause": expr_to_jv(self.cause) if self.cause is not None else None}
 
 @dataclass
