@@ -34,6 +34,13 @@
 - **`.git/index.lock` を削除してはならない**。このファイルが存在するときは他のインスタンスが git 操作中である。削除すると index が壊れる。ロックが残っている場合は **待つ**こと。
 - 変更を取り消したい場合は、Edit/Write で手動で元に戻すか、`git diff <file>` で差分を確認してから対処する。
 
+## golden / テスト生成の禁止事項
+
+- **golden ファイル（east1/east2/east3/east3-opt/linked）は `python3 tools/regenerate_golden.py` でのみ生成すること**。`pytra-cli2` を直接叩いて手動で出力先を指定してはならない。手動生成はパスの間違い（`test/fixtures/` や `test/pytra/east1/built_in/` のような誤ったディレクトリ）の原因になる。
+- **sample の再生成は `python3 tools/regenerate_samples.py` でのみ行うこと**。
+- **`test/fixture/` 配下のディレクトリ構造を勝手に作らないこと**。既存のディレクトリ構成（`source/py/`, `east1/py/`, `east2/`, `east3/`, `east3-opt/`, `linked/`）に従う。
+- **`test/` 直下に新しいサブディレクトリを作らないこと**（`test/fixtures/` のような typo ディレクトリを防ぐ）。
+
 ## 参照先
 
 - Codex 運用ルール本体: `docs/ja/spec/spec-codex.md`
