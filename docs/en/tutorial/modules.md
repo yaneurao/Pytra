@@ -102,7 +102,74 @@ write_rgb_png("output.png", 256, 256, pixels)
 
 Many samples use these helpers to generate PNG/GIF images.
 
+## argparse — Command line argument parsing
+
+```python
+from pytra.std import argparse
+
+parser: argparse.ArgumentParser = argparse.ArgumentParser()
+parser.add_argument("--name", default="world")
+parser.add_argument("--count", type=int, default=1)
+args: argparse.Namespace = parser.parse_args()
+
+i: int = 0
+while i < args.count:
+    print("hello " + args.name)
+    i += 1
+```
+
+## glob — File pattern matching
+
+```python
+from pytra.std import glob
+
+files: list[str] = glob.glob("data/*.txt")
+for f in files:
+    print(f)
+```
+
+## re — Regular expressions
+
+```python
+from pytra.std import re
+
+m: re.Match = re.match("([0-9]+)", "abc123def")
+if m is not None:
+    print(m.group(1))  # "123"
+
+result: str = re.sub("[0-9]+", "NUM", "abc123def456")
+print(result)  # "abcNUMdefNUM"
+```
+
+## enum — Enumerations
+
+```python
+from pytra.std.enum import IntEnum
+
+class Color(IntEnum):
+    RED = 0
+    GREEN = 1
+    BLUE = 2
+
+c: Color = Color.RED
+print(c)  # 0
+```
+
+`Enum`, `IntEnum`, and `IntFlag` are available.
+
+## timeit — Simple timer
+
+```python
+from pytra.std import timeit
+
+start: float = timeit.default_timer()
+# ... processing ...
+elapsed: float = timeit.default_timer() - start
+print(str(elapsed) + " sec")
+```
+
+Similar to `perf_counter()`, for when you prefer the `timeit` module interface.
+
 ## Full module list
 
-Beyond the above, `argparse`, `glob`, `re`, `enum`, `timeit` and more are available.
 For the complete list of all modules and functions, see the [pylib module list (spec)](../spec/spec-pylib-modules.md).

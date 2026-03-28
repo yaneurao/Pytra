@@ -102,7 +102,74 @@ write_rgb_png("output.png", 256, 256, pixels)
 
 サンプルの多くがこのヘルパーを使って PNG/GIF を生成しています。
 
+## argparse — コマンドライン引数の解析
+
+```python
+from pytra.std import argparse
+
+parser: argparse.ArgumentParser = argparse.ArgumentParser()
+parser.add_argument("--name", default="world")
+parser.add_argument("--count", type=int, default=1)
+args: argparse.Namespace = parser.parse_args()
+
+i: int = 0
+while i < args.count:
+    print("hello " + args.name)
+    i += 1
+```
+
+## glob — ファイルパターン検索
+
+```python
+from pytra.std import glob
+
+files: list[str] = glob.glob("data/*.txt")
+for f in files:
+    print(f)
+```
+
+## re — 正規表現
+
+```python
+from pytra.std import re
+
+m: re.Match = re.match("([0-9]+)", "abc123def")
+if m is not None:
+    print(m.group(1))  # "123"
+
+result: str = re.sub("[0-9]+", "NUM", "abc123def456")
+print(result)  # "abcNUMdefNUM"
+```
+
+## enum — 列挙型
+
+```python
+from pytra.std.enum import IntEnum
+
+class Color(IntEnum):
+    RED = 0
+    GREEN = 1
+    BLUE = 2
+
+c: Color = Color.RED
+print(c)  # 0
+```
+
+`Enum`, `IntEnum`, `IntFlag` が使えます。
+
+## timeit — 簡易タイマー
+
+```python
+from pytra.std import timeit
+
+start: float = timeit.default_timer()
+# ... 処理 ...
+elapsed: float = timeit.default_timer() - start
+print(str(elapsed) + " sec")
+```
+
+`perf_counter()` と同様ですが、`timeit` モジュール経由で使いたい場合に。
+
 ## 全モジュール一覧
 
-上記以外にも `argparse`, `glob`, `re`, `enum`, `timeit` 等が使えます。
-全モジュール・全関数の一覧は [pylib モジュール一覧（仕様書）](../spec/spec-pylib-modules.md) を参照してください。
+全モジュール・全関数の完全な一覧は [pylib モジュール一覧（仕様書）](../spec/spec-pylib-modules.md) を参照してください。
