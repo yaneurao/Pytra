@@ -5003,6 +5003,111 @@ def _emit_error_handlers(
 
 
 def _emit_error_catch(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
+    if ctx.current_return_type.startswith("multi_return["):
+        parts = _split_generic_args(ctx.current_return_type[len("multi_return["):-1])
+        ok_type = parts[0] if len(parts) >= 1 else "any"
+        ok_gt = _go_signature_type(ctx, ok_type)
+        body_has_return = _function_has_return(_list(node, "body"))
+        handler_has_return = False
+        for handler in _list(node, "handlers"):
+            if isinstance(handler, dict) and _function_has_return(_list(handler, "body")):
+                handler_has_return = True
+                break
+        result_tmp = _next_temp(ctx, "try_result")
+        _emit(ctx, result_tmp + " := func() (__try_result " + ok_gt + ") {")
+        ctx.indent_level += 1
+        finalbody = _list(node, "finalbody")
+        if len(finalbody) > 0:
+            _emit(ctx, "defer func() {")
+            ctx.indent_level += 1
+            _emit_body(ctx, finalbody)
+            ctx.indent_level -= 1
+            _emit(ctx, "}()")
+        handlers = _list(node, "handlers")
+        if len(handlers) > 0:
+            recovered_name = _next_temp(ctx, "recovered")
+            err_name = _next_temp(ctx, "err")
+            _emit(ctx, "defer func() {")
+            ctx.indent_level += 1
+            _emit(ctx, recovered_name + " := recover()")
+            _emit(ctx, "if " + recovered_name + " == nil {")
+            ctx.indent_level += 1
+            _emit(ctx, "return")
+            ctx.indent_level -= 1
+            _emit(ctx, "}")
+            _emit(ctx, err_name + " := pytraEnsureRecoveredError(" + recovered_name + ")")
+            _emit(ctx, "__handled := false")
+            first = True
+            for handler in handlers:
+                if not isinstance(handler, dict):
+                    continue
+                cond = _exception_match_condition(ctx, err_name, _handler_type_name(handler))
+                if first:
+                    _emit(ctx, "if !__handled && " + cond + " {")
+                else:
+                    _emit(ctx, "} else if !__handled && " + cond + " {")
+                first = False
+                ctx.indent_level += 1
+                handler_name = _str(handler, "name")
+                saved_type = ""
+                if handler_name != "":
+                    safe_name = _safe_go_ident(handler_name)
+                    saved_type = ctx.var_types.get(safe_name, "")
+                    handler_type_name = _handler_type_name(handler)
+                    bound_type = "*PytraErrorCarrier"
+                    if (
+                        handler_type_name != ""
+                        and _is_nominal_type_name(ctx, handler_type_name)
+                        and not _is_builtin_exception_type_name(handler_type_name)
+                    ):
+                        bound_type = _go_signature_type(ctx, handler_type_name)
+                        _emit(ctx, safe_name + " := " + err_name + ".Value.(" + bound_type + ")")
+                    else:
+                        _emit(ctx, safe_name + " := " + err_name)
+                    ctx.var_types[safe_name] = bound_type
+                    _emit(ctx, "_ = " + safe_name)
+                _emit(ctx, "__handled = true")
+                _emit(ctx, "__try_result = func() " + ok_gt + " {")
+                ctx.indent_level += 1
+                saved_exc_var = ctx.current_exception_var
+                saved_ret = ctx.current_return_type
+                ctx.current_exception_var = err_name
+                ctx.current_return_type = ok_type
+                _emit_body(ctx, _list(handler, "body"))
+                ctx.current_exception_var = saved_exc_var
+                ctx.current_return_type = saved_ret
+                _emit(ctx, "return __try_result")
+                ctx.indent_level -= 1
+                _emit(ctx, "}()")
+                if handler_name != "":
+                    safe_name2 = _safe_go_ident(handler_name)
+                    if saved_type != "":
+                        ctx.var_types[safe_name2] = saved_type
+                    elif safe_name2 in ctx.var_types:
+                        del ctx.var_types[safe_name2]
+                ctx.indent_level -= 1
+            if not first:
+                _emit(ctx, "}")
+            _emit(ctx, "if !__handled {")
+            ctx.indent_level += 1
+            _emit(ctx, "panic(" + err_name + ")")
+            ctx.indent_level -= 1
+            _emit(ctx, "}")
+            ctx.indent_level -= 1
+            _emit(ctx, "}()")
+        saved_ret = ctx.current_return_type
+        ctx.current_return_type = ok_type
+        _emit_body(ctx, _list(node, "body"))
+        ctx.current_return_type = saved_ret
+        _emit(ctx, "return __try_result")
+        ctx.indent_level -= 1
+        _emit(ctx, "}()")
+        if body_has_return or handler_has_return:
+            _emit(ctx, "return " + result_tmp + ", nil")
+        else:
+            _emit(ctx, "_ = " + result_tmp)
+        return
+
     if ctx.current_return_type == "Exception":
         _emit(ctx, "return func() *PytraErrorCarrier {")
     else:
