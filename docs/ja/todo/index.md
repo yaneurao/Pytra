@@ -20,28 +20,6 @@
 
 ## 未完了タスク
 
-### P0-EXCEPTION-GO: Go backend の例外処理実装
-
-文脈: [docs/ja/plans/p0-exception-go.md](../plans/p0-exception-go.md)
-仕様: [docs/ja/spec/spec-exception.md](../spec/spec-exception.md)
-
-1. [x] [ID: P0-EXCEPTION-GO-S1] Go runtime の例外 carrier と `pytraErrorIsInstance(err, tidMin, tidMax)` を整備し、builtin exception は `src/pytra/built_in/error.py` から emit する — `pytra.built_in.error` を native skip 対象から外し、Go smoke で generated `error.go` 同梱 compile/run を確認
-2. [x] [ID: P0-EXCEPTION-GO-S2] linker に `can_raise_v1` マーカーの推移的付与を実装する — call graph 走査で raise を含む関数を特定
-3. [x] [ID: P0-EXCEPTION-GO-S3] EAST3 言語別 lowering で `Raise` → `ErrorReturn`、`ErrorCheck`、`ErrorCatch` ノードを生成する
-4. [x] [ID: P0-EXCEPTION-GO-S4] Go emitter で `ErrorReturn` / `ErrorCheck` / `ErrorCatch` を写像する — `(T, *PytraError)` 戻り値、type_id range check isinstance、defer finally
-5. [x] [ID: P0-EXCEPTION-GO-S5] fixture 追加（raise/try/except/finally、ユーザー定義例外、複数 handler）+ Go parity 確認
-
-### P0-EXCEPTION-CPP: C++ backend の例外処理実装（CommonRenderer 連携）
-
-文脈: [docs/ja/plans/p0-exception-cpp.md](../plans/p0-exception-cpp.md)
-仕様: [docs/ja/spec/spec-exception.md](../spec/spec-exception.md)
-
-1. [x] [ID: P0-EXCEPTION-CPP-S1] CommonRenderer に `emit_raise` / `emit_try` の共通骨格を実装する
-2. [x] [ID: P0-EXCEPTION-CPP-S2] C++ emitter で `Raise` → `throw ExceptionType("msg")` の写像を override する
-3. [x] [ID: P0-EXCEPTION-CPP-S3] C++ emitter で `Try` → `try { } catch (ExceptionType& e) { }` の写像を override する
-4. [x] [ID: P0-EXCEPTION-CPP-S4] C++ emitter で `finally` を RAII スコープガードに写像する
-5. [x] [ID: P0-EXCEPTION-CPP-S5] fixture 追加（raise/try/except/finally、ユーザー定義例外、複数 handler）+ C++ parity 確認
-
 ### P2-SELFHOST: toolchain2 自身の変換テスト
 
 文脈: `docs/ja/plans/plan-pipeline-redesign.md` §3.5
