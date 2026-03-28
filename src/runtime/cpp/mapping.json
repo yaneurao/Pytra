@@ -76,8 +76,7 @@
   "skip_modules": [
     "pytra.built_in.",
     "pytra.core.",
-    "pytra.std.",
-    "pytra.utils."
+    "pytra.std."
   ],
   "implicit_promotions": [
     ["uint8", "int64"],

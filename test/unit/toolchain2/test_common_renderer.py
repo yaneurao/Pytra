@@ -165,6 +165,24 @@ class CommonRendererTests(unittest.TestCase):
 
         self.assertEqual(rendered, "(int64(1) + int64(2))")
 
+    def test_cpp_emitter_binop_keeps_explicit_numeric_promotion_casts(self) -> None:
+        rendered = emit_cpp_expr(
+            CppEmitContext(),
+            {
+                "kind": "BinOp",
+                "left": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+                "op": "Div",
+                "right": {"kind": "Name", "id": "d", "resolved_type": "int64"},
+                "resolved_type": "float64",
+                "casts": [
+                    {"on": "left", "from": "int64", "to": "float64", "reason": "numeric_promotion"},
+                    {"on": "right", "from": "int64", "to": "float64", "reason": "numeric_promotion"},
+                ],
+            },
+        )
+
+        self.assertEqual(rendered, "(static_cast<float64>(n) / static_cast<float64>(d))")
+
     def test_go_emitter_common_return_hook_preserves_multi_return(self) -> None:
         ctx = EmitContext(current_return_type="multi_return[int64, int64]")
         emit_go_stmt(
@@ -232,9 +250,25 @@ class CommonRendererTests(unittest.TestCase):
 
         rendered = "\n".join(ctx.lines)
 
-        self.assertIn("if ((ready)) {", rendered)
-        self.assertIn("} else if ((retry)) {", rendered)
+        self.assertIn("if (ready) {", rendered)
+        self.assertIn("} else if (retry) {", rendered)
         self.assertIn("return int64(3);", rendered)
+
+    def test_cpp_emitter_stmt_dispatch_preserves_container_truthiness_hook(self) -> None:
+        ctx = CppEmitContext()
+        ctx.var_types["stack"] = "list[int64]"
+        emit_cpp_stmt(
+            ctx,
+            {
+                "kind": "While",
+                "test": {"kind": "Name", "id": "stack", "resolved_type": "list[int64]"},
+                "body": [{"kind": "Pass"}],
+            },
+        )
+
+        rendered = "\n".join(ctx.lines)
+
+        self.assertIn("while (py_to_bool(stack)) {", rendered)
 
     def test_common_renderer_emits_raise_and_try_skeleton_for_native_throw(self) -> None:
         renderer = DummyRenderer("cpp")

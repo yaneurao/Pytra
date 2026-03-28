@@ -139,6 +139,9 @@ class CommonRenderer(ABC):
     def render_assign_stmt(self, node: dict[str, JsonVal]) -> str:
         raise RuntimeError("common renderer requires assign override for " + self.language)
 
+    def render_condition_expr(self, node: JsonVal) -> str:
+        return self._format_condition(self.render_expr(node))
+
     def emit_return_stmt(self, node: dict[str, JsonVal]) -> None:
         value = node.get("value")
         if isinstance(value, dict):
@@ -298,7 +301,7 @@ class CommonRenderer(ABC):
             self.emit_stmt(stmt)
 
     def _emit_if_chain(self, node: dict[str, JsonVal], *, is_elif: bool = False) -> None:
-        test = self._format_condition(self.render_expr(node.get("test")))
+        test = self.render_condition_expr(node.get("test"))
         syntax_key = "elif" if is_elif else "if"
         default_open = "} else if ({cond}) {" if is_elif else "if ({cond}) {"
         self._emit(self._syntax_text(syntax_key, default_open).replace("{cond}", test))
@@ -348,7 +351,7 @@ class CommonRenderer(ABC):
             self._emit_if_chain(node)
             return
         if kind == "While":
-            test = self._format_condition(self.render_expr(node.get("test")))
+            test = self.render_condition_expr(node.get("test"))
             self._emit(self._syntax_text("while", "while ({cond}) {").replace("{cond}", test))
             self.state.indent_level += 1
             self.emit_body(self._list(node, "body"))

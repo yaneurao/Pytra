@@ -101,6 +101,9 @@ class _CppStmtCommonRenderer(CommonRenderer):
     def render_call(self, node: dict[str, JsonVal]) -> str:
         return _emit_call(self.ctx, node)
 
+    def render_condition_expr(self, node: JsonVal) -> str:
+        return _emit_condition_expr(self.ctx, node)
+
     def render_assign_stmt(self, node: dict[str, JsonVal]) -> str:
         raise RuntimeError("cpp common renderer assign string hook is not used directly")
 
@@ -212,6 +215,18 @@ class _CppExprCommonRenderer(CommonRenderer):
 
     def render_call(self, node: dict[str, JsonVal]) -> str:
         return _emit_call(self.ctx, node)
+
+    def render_binop(self, node: dict[str, JsonVal]) -> str:
+        return _emit_binop(self.ctx, node)
+
+    def render_unaryop(self, node: dict[str, JsonVal]) -> str:
+        return _emit_unaryop(self.ctx, node)
+
+    def render_compare(self, node: dict[str, JsonVal]) -> str:
+        return _emit_compare(self.ctx, node)
+
+    def render_boolop(self, node: dict[str, JsonVal]) -> str:
+        return _emit_boolop(self.ctx, node)
 
     def render_assign_stmt(self, node: dict[str, JsonVal]) -> str:
         raise RuntimeError("cpp common renderer assign hook is not used in expr adapter")
@@ -754,11 +769,8 @@ def _emit_binop(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     for cast in _list(node, "casts"):
         if isinstance(cast, dict):
             on = _str(cast, "on")
-            from_type = _str(cast, "from")
             to_type = _str(cast, "to")
             to = cpp_type(to_type)
-            if ctx.mapping.is_implicit_cast(from_type, to_type):
-                continue
             if on == "left":
                 left = "static_cast<" + to + ">(" + left + ")"
             elif on == "right":
