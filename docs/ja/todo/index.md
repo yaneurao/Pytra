@@ -31,18 +31,18 @@
 5. [x] [ID: P2-SELFHOST-S5] Go emitter の unsupported expr/stmt を fail-fast に変更し、プレースホルダ出力を禁止する — `nil /* unsupported */` / `// unsupported stmt` を廃止し、spec-emitter-guide.md の fail-closed 契約に合わせる（Go focused regression 2 件追加）
 6. [x] [ID: P2-SELFHOST-S6] Go emitter が `yields_dynamic` を正本として container getter/pop の型アサーションを判断するよう修正する — `resolved_type` / owner 文字列ベースの分岐をやめ、`Call.yields_dynamic` を使用（Go focused regression 2 件追加）
 7. [x] [ID: P2-SELFHOST-S7] Go emitter の container 既定表現を spec 準拠に修正する — list/dict/set を既定で参照型ラッパーにし、`meta.linked_program_v1.container_ownership_hints_v1.container_value_locals_v1` がある局所のみ値型縮退を許可する（Go focused regression 3 件追加）
-8. [ ] [ID: P2-SELFHOST-S8] Go emitter の runtime call 名解決を mapping.json に一本化する — emitter が mapping.json を迂回して `list_ctor` / `list.append` / `dict.get` / `set_ctor` / `sorted` などを個別 lower している箇所を mapping.json 経由へ寄せ、backend 内の runtime call 意味論の二重管理を解消する
+8. [x] [ID: P2-SELFHOST-S8] Go emitter の runtime call 名解決を mapping.json に一本化する — emitter が mapping.json を迂回して `list_ctor` / `list.append` / `dict.get` / `set_ctor` / `sorted` などを個別 lower している箇所を mapping.json 経由へ寄せ、backend 内の runtime call 意味論の二重管理を解消する
 
 ### P2-LOWERING-PROFILE-GO: Go backend の Lowering プロファイル適用
 
 文脈: [docs/ja/plans/p2-lowering-profile-go.md](../plans/p2-lowering-profile-go.md)
 仕様: [docs/ja/spec/spec-language-profile.md](../spec/spec-language-profile.md) §7
 
-1. [ ] [ID: P2-LOWERING-GO-S1] Go の `tuple_unpack_style: "multi_return"` を EAST3 lowering に適用する
-2. [ ] [ID: P2-LOWERING-GO-S2] Go の `container_covariance: false` を適用する（CovariantCopy ノード展開）
-3. [ ] [ID: P2-LOWERING-GO-S3] Go の `with_style: "defer"` を適用する
-4. [ ] [ID: P2-LOWERING-GO-S4] Go の `property_style: "method_call"` を適用する
-5. [ ] [ID: P2-LOWERING-GO-S5] Go の既存 fixture + sample parity 維持確認
+1. [x] [ID: P2-LOWERING-GO-S1] Go の `tuple_unpack_style: "multi_return"` を EAST3 lowering に適用する
+2. [x] [ID: P2-LOWERING-GO-S2] Go の `container_covariance: false` を適用する（CovariantCopy ノード展開）
+3. [x] [ID: P2-LOWERING-GO-S3] Go の `with_style: "defer"` を適用する
+4. [x] [ID: P2-LOWERING-GO-S4] Go の `property_style: "method_call"` を適用する
+5. [x] [ID: P2-LOWERING-GO-S5] Go の既存 fixture + sample parity 維持確認
 
 ### P3-COMMON-RENDERER-CPP: C++ emitter の CommonRenderer 移行 + fixture parity
 

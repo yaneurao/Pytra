@@ -61,6 +61,7 @@ class ProfileLoweringSemanticsTests(unittest.TestCase):
             with_style="try_finally",
             property_style="method_call",
             swap_style="temp_var",
+            exception_style="native_throw",
         )
 
         with patch("toolchain2.compile.lower.load_lowering_profile", return_value=profile):
@@ -111,6 +112,7 @@ class ProfileLoweringSemanticsTests(unittest.TestCase):
             with_style="try_finally",
             property_style="field_access",
             swap_style="temp_var",
+            exception_style="native_throw",
         )
 
         with patch("toolchain2.compile.lower.load_lowering_profile", return_value=profile):

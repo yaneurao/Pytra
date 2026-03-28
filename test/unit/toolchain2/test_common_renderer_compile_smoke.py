@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+import os
 
 from toolchain2.compile.lower import lower_east2_to_east3
 from toolchain2.emit.cpp.emitter import emit_cpp_module
@@ -138,6 +139,8 @@ def _assert_go_compiles(source: str) -> None:
         go_path = Path(tmp) / "app.go"
         runtime_path = ROOT / "src" / "runtime" / "go" / "built_in" / "py_runtime.go"
         bundled_runtime = Path(tmp) / "py_runtime.go"
+        env = dict(os.environ)
+        env["PATH"] = "/home/node/.local/go/bin:" + env.get("PATH", "")
         go_path.write_text(go_code, encoding="utf-8")
         bundled_runtime.write_text(runtime_path.read_text(encoding="utf-8"), encoding="utf-8")
         proc = subprocess.run(
@@ -145,6 +148,7 @@ def _assert_go_compiles(source: str) -> None:
             cwd=tmp,
             capture_output=True,
             text=True,
+            env=env,
         )
 
     if proc.returncode != 0:
@@ -188,6 +192,8 @@ def _run_go(source: str) -> str:
         runtime_path = ROOT / "src" / "runtime" / "go" / "built_in" / "py_runtime.go"
         bundled_runtime = Path(tmp) / "py_runtime.go"
         out_path = Path(tmp) / "app"
+        env = dict(os.environ)
+        env["PATH"] = "/home/node/.local/go/bin:" + env.get("PATH", "")
         go_path.write_text(go_code, encoding="utf-8")
         bundled_runtime.write_text(runtime_path.read_text(encoding="utf-8"), encoding="utf-8")
         build = subprocess.run(
@@ -195,10 +201,11 @@ def _run_go(source: str) -> str:
             cwd=tmp,
             capture_output=True,
             text=True,
+            env=env,
         )
         if build.returncode != 0:
             raise AssertionError(f"{build.stdout}\n{build.stderr}")
-        run = subprocess.run([str(out_path)], cwd=tmp, capture_output=True, text=True)
+        run = subprocess.run([str(out_path)], cwd=tmp, capture_output=True, text=True, env=env)
 
     if run.returncode != 0:
         raise AssertionError(f"{run.stdout}\n{run.stderr}")
@@ -255,6 +262,8 @@ def _assert_go_doc_compiles(doc: dict) -> None:
         go_path = Path(tmp) / "app.go"
         runtime_path = ROOT / "src" / "runtime" / "go" / "built_in" / "py_runtime.go"
         bundled_runtime = Path(tmp) / "py_runtime.go"
+        env = dict(os.environ)
+        env["PATH"] = "/home/node/.local/go/bin:" + env.get("PATH", "")
         go_path.write_text(go_code, encoding="utf-8")
         bundled_runtime.write_text(runtime_path.read_text(encoding="utf-8"), encoding="utf-8")
         proc = subprocess.run(
@@ -262,6 +271,7 @@ def _assert_go_doc_compiles(doc: dict) -> None:
             cwd=tmp,
             capture_output=True,
             text=True,
+            env=env,
         )
 
     if proc.returncode != 0:

@@ -367,12 +367,18 @@ def _wrap_ref_container_value_code(ctx: EmitContext, value_code: str, resolved_t
     if value_code.startswith("NewPySet[") or value_code.startswith("PySetFromMap["):
         return value_code
     if resolved_type == "list":
+        if value_code == "[]any{}":
+            return "NewPyList[any]()"
         return "PyListFromSlice[any](" + value_code + ")"
     if resolved_type.startswith("list[") and resolved_type.endswith("]"):
         inner = resolved_type[5:-1]
         elem_gt = _go_type_with_ctx(ctx, inner)
+        if value_code == "[]" + elem_gt + "{}":
+            return "NewPyList[" + elem_gt + "]()"
         return "PyListFromSlice[" + elem_gt + "](" + value_code + ")"
     if resolved_type == "dict":
+        if value_code == "map[string]any{}":
+            return "NewPyDict[string, any]()"
         return "PyDictFromMap[string, any](" + value_code + ")"
     if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
         inner2 = resolved_type[5:-1]
@@ -380,14 +386,40 @@ def _wrap_ref_container_value_code(ctx: EmitContext, value_code: str, resolved_t
         if len(parts) == 2:
             key_gt = _go_type_with_ctx(ctx, parts[0])
             val_gt = _go_type_with_ctx(ctx, parts[1])
+            if value_code == "map[" + key_gt + "]" + val_gt + "{}":
+                return "NewPyDict[" + key_gt + ", " + val_gt + "]()"
             return "PyDictFromMap[" + key_gt + ", " + val_gt + "](" + value_code + ")"
     if resolved_type == "set":
+        if value_code == "map[any]struct{}{}":
+            return "NewPySet[any]()"
         return "PySetFromMap[any](" + value_code + ")"
     if resolved_type.startswith("set[") and resolved_type.endswith("]"):
         inner3 = resolved_type[4:-1]
         elem_gt2 = _go_type_with_ctx(ctx, inner3)
+        if value_code == "map[" + elem_gt2 + "]struct{}{}":
+            return "NewPySet[" + elem_gt2 + "]()"
         return "PySetFromMap[" + elem_gt2 + "](" + value_code + ")"
     return value_code
+
+
+def _assign_uses_ref_container_decl(
+    ctx: EmitContext,
+    name: str,
+    decl_type: str,
+    value: JsonVal,
+) -> bool:
+    if not _is_container_resolved_type(decl_type):
+        return False
+    if _prefer_value_container_local(ctx, name, decl_type):
+        return False
+    if not isinstance(value, dict):
+        return False
+    kind = _str(value, "kind")
+    if kind in ("List", "Dict", "Set"):
+        return True
+    if kind != "Call":
+        return False
+    return _str(value, "lowered_kind") == "BuiltinCall"
 
 
 def _go_symbol_name(ctx: EmitContext, name: str) -> str:
@@ -1837,6 +1869,9 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if isinstance(func, dict) and _str(func, "kind") == "Attribute":
         method_owner = _emit_expr(ctx, func.get("value"))
         call_arg_strs = [method_owner] + arg_strs
+    adapter = _str(node, "runtime_call_adapter_kind")
+    resolved = resolve_runtime_call(rc, bn, adapter, ctx.mapping)
+    dispatch = resolved if resolved != "" else rc
 
     # Type cast builtins
     if rc in ("static_cast", "int", "float", "bool"):
@@ -1869,11 +1904,11 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return "\"\""
 
     # print
-    if rc == "py_print" or bn == "print":
+    if dispatch == "py_print" or bn == "print":
         return "py_print(" + ", ".join(arg_strs) + ")"
 
     # len — use Go native len() for type safety
-    if rc == "py_len" or bn == "len":
+    if dispatch == "py_len" or bn == "len":
         if len(arg_strs) >= 1:
             arg0 = args[0] if isinstance(args[0], dict) else None
             arg0_rt = _str(arg0, "resolved_type") if isinstance(arg0, dict) else ""
@@ -1889,7 +1924,7 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return "int64(" + arg_strs[0] + ".__len__())"
 
     # Container constructors: bytes(N)/bytearray(N) → make([]byte, N)
-    if rc == "bytearray_ctor" or rc == "bytes_ctor":
+    if dispatch == "__MAKE_BYTES__":
         if len(args) >= 1 and isinstance(args[0], dict):
             a0_kind = _str(args[0], "kind")
             a0_rt = _str(args[0], "resolved_type")
@@ -1905,7 +1940,7 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return "[]byte(" + arg_strs[0] + ")"
         return "[]byte{}"
 
-    if rc == "set_ctor":
+    if dispatch == "py_set":
         if len(args) == 0:
             result_gt = _go_signature_type(ctx, _str(node, "resolved_type"))
             if result_gt.startswith("map["):
@@ -1914,7 +1949,7 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return "py_set_str(" + arg_strs[0] + ")"
         return "py_set(" + ", ".join(arg_strs) + ")"
 
-    if rc == "tuple_ctor":
+    if dispatch == "__TUPLE_CTOR__":
         if len(args) == 0:
             return "[]any{}"
         if len(args) >= 1 and isinstance(args[0], dict):
@@ -1923,7 +1958,7 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return arg_strs[0]
         return "[]any{}"
 
-    if rc == "py_sorted" or bn == "sorted":
+    if dispatch == "py_sorted" or bn == "sorted":
         if len(args) >= 1 and isinstance(args[0], dict):
             src_node = args[0]
             src_code = arg_strs[0]
@@ -1990,7 +2025,7 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 )
         return "py_sorted(" + ", ".join(arg_strs) + ")"
 
-    if rc == "list_ctor":
+    if dispatch == "__LIST_CTOR__":
         if len(args) == 0:
             result_gt = go_type(_str(node, "resolved_type"))
             if result_gt.startswith("[]"):
@@ -2007,7 +2042,7 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return "[]any{}"
 
     # Container methods
-    if rc == "list.append":
+    if dispatch == "__LIST_APPEND__":
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
             owner_node = func.get("value")
@@ -2025,14 +2060,14 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                         arg_code = "byte(" + arg_strs[0] + ")"
                 return owner + " = append(" + owner + ", " + arg_code + ")"
 
-    if rc == "set.add":
+    if dispatch == "__SET_ADD__":
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
             if len(arg_strs) >= 1:
                 return owner + "[" + arg_strs[0] + "] = struct{}{}"
 
     # list.pop
-    if rc == "list.pop":
+    if dispatch == "__LIST_POP__":
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
             owner_node = func.get("value")
@@ -2070,13 +2105,13 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return "py_list_pop(&" + owner + ", " + arg_strs[0] + ")"
             return "py_list_pop(&" + owner + ")"
 
-    if rc == "list.clear":
+    if dispatch == "__LIST_CLEAR__":
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
             return owner + " = " + owner + "[:0]"
 
     # dict.get
-    if rc == "dict.get":
+    if dispatch == "__DICT_GET__":
         if isinstance(func, dict):
             owner_node = func.get("value")
             owner = _emit_expr(ctx, owner_node)
@@ -2123,24 +2158,24 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                             + "}()"
                         )
                 return owner + "[" + arg_strs[0] + "]"
-    if rc == "dict.items" and isinstance(func, dict):
+    if dispatch == "__DICT_ITEMS__" and isinstance(func, dict):
         owner = _emit_expr(ctx, func.get("value"))
         return "py_items(" + owner + ")"
-    if rc in ("dict.keys", "dict.values") and isinstance(func, dict):
+    if dispatch in ("__DICT_KEYS__", "__DICT_VALUES__") and isinstance(func, dict):
         owner = _emit_expr(ctx, func.get("value"))
         owner_node = func.get("value")
         owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
         if owner_rt.startswith("dict[") and owner_rt.endswith("]"):
             parts = _split_generic_args(owner_rt[5:-1])
             if len(parts) == 2:
-                item_type = parts[0] if rc == "dict.keys" else parts[1]
+                item_type = parts[0] if dispatch == "__DICT_KEYS__" else parts[1]
                 item_go_type = go_type(item_type)
                 out_name = _next_temp(ctx, "dict_builtin")
                 key_name = _next_temp(ctx, "k")
                 val_name = _next_temp(ctx, "v")
                 range_line = "for " + key_name + " := range " + owner + " {"
                 append_value = key_name
-                if rc == "dict.values":
+                if dispatch == "__DICT_VALUES__":
                     range_line = "for _, " + val_name + " := range " + owner + " {"
                     append_value = val_name
                 return (
@@ -2154,9 +2189,9 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 )
 
     # enumerate / reversed
-    if rc == "py_enumerate" or bn == "enumerate":
+    if dispatch == "py_enumerate" or bn == "enumerate":
         return "py_enumerate(" + ", ".join(arg_strs) + ")"
-    if rc == "py_reversed" or bn == "reversed":
+    if dispatch == "py_reversed" or bn == "reversed":
         return "py_reversed(" + ", ".join(arg_strs) + ")"
 
     # abs / min / max / sum
@@ -2193,19 +2228,19 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if len(arg_strs) >= 1:
             return _exception_ctor_expr(bn, arg_strs[0])
         return _exception_ctor_expr(bn, _go_string_literal(bn))
-    if rc == "std::runtime_error":
+    if dispatch == "__PANIC__":
         if len(arg_strs) >= 1:
             return _exception_ctor_expr("RuntimeError", arg_strs[0])
         return _exception_ctor_expr("RuntimeError", _go_string_literal("runtime error"))
 
     # py_int_from_str / py_float_from_str
-    if rc == "py_int_from_str" and len(arg_strs) >= 1:
+    if dispatch == "py_str_to_int64" and len(arg_strs) >= 1:
         return "py_str_to_int64(" + arg_strs[0] + ")"
-    if rc == "py_float_from_str" and len(arg_strs) >= 1:
+    if dispatch == "py_str_to_float64" and len(arg_strs) >= 1:
         return "py_str_to_float64(" + arg_strs[0] + ")"
 
     # py_to_string
-    if rc == "py_to_string":
+    if dispatch == "py_str":
         if len(arg_strs) >= 1:
             return "py_str(" + arg_strs[0] + ")"
         return "\"\""
@@ -2224,8 +2259,6 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return _STR_METHOD_HELPERS[bn] + "(" + ", ".join(call_arg_strs) + ")"
 
     # Use runtime mapping for generic resolution
-    adapter = _str(node, "runtime_call_adapter_kind")
-    resolved = resolve_runtime_call(rc, bn, adapter, ctx.mapping)
     if resolved != "":
         return _safe_go_ident(resolved) + "(" + ", ".join(call_arg_strs) + ")"
 
@@ -2381,8 +2414,6 @@ def _emit_list_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     gt = go_type(rt)
     parts = [_emit_expr(ctx, e) for e in elements]
     literal = gt + "{" + ", ".join(parts) + "}"
-    if _is_container_resolved_type(rt):
-        return _go_ref_container_ctor(ctx, rt, "{" + ", ".join(parts) + "}")
     return literal
 
 
@@ -2431,10 +2462,7 @@ def _emit_dict_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     v = _wrap_optional_value_code(ctx, v, val_type, value_node2)
             parts.append(k + ": " + v)
 
-    literal = gt + "{" + ", ".join(parts) + "}"
-    if _is_container_resolved_type(rt):
-        return _go_ref_container_ctor(ctx, rt, "{" + ", ".join(parts) + "}")
-    return literal
+    return gt + "{" + ", ".join(parts) + "}"
 
 
 def _emit_set_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -2442,10 +2470,7 @@ def _emit_set_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     parts = [_emit_expr(ctx, e) + ": {}" for e in elements]
     rt = _str(node, "resolved_type")
     gt = go_type(rt)
-    literal = gt + "{" + ", ".join(parts) + "}"
-    if _is_container_resolved_type(rt):
-        return _go_ref_container_ctor(ctx, rt, "{" + ", ".join(parts) + "}")
-    return literal
+    return gt + "{" + ", ".join(parts) + "}"
 
 
 def _emit_tuple_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -2937,11 +2962,16 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     if value is not None:
         val_code = _emit_expr(ctx, value)
         val_code = _maybe_coerce_expr_to_type(ctx, value, val_code, rt)
-        if _is_container_resolved_type(rt) and not _prefer_value_container_local(ctx, name, rt):
+        use_ref_decl = _assign_uses_ref_container_decl(ctx, name, rt, value)
+        if use_ref_decl:
             val_code = _wrap_ref_container_value_code(ctx, val_code, rt)
         if not declare_new:
             _emit(ctx, name + " = " + val_code)
         else:
+            if use_ref_decl:
+                gt = _decl_go_type(ctx, rt, name)
+            else:
+                gt = _go_signature_type(ctx, rt)
             if gt != "":
                 _emit(ctx, "var " + name + " " + gt + " = " + val_code)
             elif at_module_scope:
@@ -3011,7 +3041,8 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                                 decl_type = tuple_args[idx_value]
                 decl_type = _prefer_value_type_for_none_decl(decl_type, value)
                 val_code = _maybe_coerce_expr_to_type(ctx, value, val_code, decl_type)
-                if _is_container_resolved_type(decl_type) and not _prefer_value_container_local(ctx, gn, decl_type):
+                use_ref_decl = _assign_uses_ref_container_decl(ctx, gn, decl_type, value)
+                if use_ref_decl:
                     val_code = _wrap_ref_container_value_code(ctx, val_code, decl_type)
                 if (
                     isinstance(value, dict)
@@ -3033,7 +3064,10 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                             _emit(ctx, "_ = " + gn)
                         return
                 ctx.var_types[gn] = decl_type
-                gt = _decl_go_type(ctx, decl_type, gn)
+                if use_ref_decl:
+                    gt = _decl_go_type(ctx, decl_type, gn)
+                else:
+                    gt = _go_signature_type(ctx, decl_type)
                 if gt != "":
                     _emit(ctx, "var " + gn + " " + gt + " = " + val_code)
                 else:

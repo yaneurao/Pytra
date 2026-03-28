@@ -40,6 +40,7 @@ from toolchain2.emit.cpp.runtime_paths import collect_cpp_dependency_module_ids
 from toolchain2.emit.cpp.runtime_paths import cpp_include_for_module
 from toolchain2.emit.cpp.runtime_paths import runtime_rel_tail_for_module
 from toolchain2.emit.common.code_emitter import RuntimeMapping
+from toolchain2.emit.common.code_emitter import load_runtime_mapping
 
 
 def _module_doc(
@@ -993,6 +994,20 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn('j := py_str_join(":", parts)', go_code)
         self.assertIn("str a = py_str_strip(s);", cpp_code)
         self.assertIn('str j = py_str_join(str(":"), parts);', cpp_code)
+
+    def test_go_runtime_mapping_declares_container_dispatch_placeholders(self) -> None:
+        mapping = load_runtime_mapping(ROOT / "src" / "runtime" / "go" / "mapping.json")
+
+        self.assertEqual(mapping.calls.get("list_ctor"), "__LIST_CTOR__")
+        self.assertEqual(mapping.calls.get("list.append"), "__LIST_APPEND__")
+        self.assertEqual(mapping.calls.get("list.pop"), "__LIST_POP__")
+        self.assertEqual(mapping.calls.get("list.clear"), "__LIST_CLEAR__")
+        self.assertEqual(mapping.calls.get("dict.get"), "__DICT_GET__")
+        self.assertEqual(mapping.calls.get("dict.items"), "__DICT_ITEMS__")
+        self.assertEqual(mapping.calls.get("dict.keys"), "__DICT_KEYS__")
+        self.assertEqual(mapping.calls.get("dict.values"), "__DICT_VALUES__")
+        self.assertEqual(mapping.calls.get("set.add"), "__SET_ADD__")
+        self.assertEqual(mapping.calls.get("sorted"), "py_sorted")
 
     def test_go_emitter_handles_plain_set_constructor_without_link_normalization(self) -> None:
         doc = _fixture_doc("test/fixture/east3-opt/collections/nested_types.east3")
