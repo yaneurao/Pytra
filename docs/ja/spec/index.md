@@ -14,6 +14,7 @@
 - type_id 仕様: [type_id 仕様](./spec-type_id.md)
 - tagged union 仕様: [tagged union 仕様](./spec-tagged-union.md)
 - Trait 仕様: [Trait 仕様（pure interface・多重実装）](./spec-trait.md)
+- 例外処理仕様: [例外処理仕様](./spec-exception.md)
 - GC 仕様: [GC 仕様](./spec-gc.md)
 - 言語プロファイル仕様: [言語プロファイル仕様](./spec-language-profile.md)
 - フォルダ責務マップ仕様: [フォルダ責務マップ仕様](./spec-folder.md)

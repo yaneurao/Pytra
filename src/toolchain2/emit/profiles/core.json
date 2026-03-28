@@ -106,6 +106,6 @@
     "block_braces": "braces",
     "stmt_terminator": ";",
     "string_type_owned": true,
-    "has_explicit_error_return": false
+    "exception_style": "native_throw"
   }
 }

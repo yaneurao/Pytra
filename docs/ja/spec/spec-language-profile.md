@@ -477,16 +477,17 @@ emitter は `VarDecl` / `Assign(declare=true)` ノードに対してこのスタ
 
 `false` の場合、emitter は文字列リテラルの Constant ノードに対して所有型変換を出力する。
 
-### 7.16 `has_explicit_error_return`
+### 7.16 `exception_style`
 
-エラー処理が例外か明示的戻り値か。
+例外処理の写像方式。詳細仕様は [spec-exception.md](./spec-exception.md) を参照。
 
 | 値 | 説明 | 言語 |
 |---|---|---|
-| `false` | 例外（`throw` / `raise`） | C++, Java, C#, Kotlin, Swift, JS, TS, Dart, PHP, Ruby, Nim |
-| `true` | 明示的エラー戻り値 | Go (`val, err := f()`), Rust (`Result<T, E>`) |
+| `"native_throw"` | ネイティブ例外（`throw` / `try-catch`）。EAST3 の `Raise` / `Try` をそのまま emitter に渡す | C++, Java, C#, Kotlin, Swift, JS, TS, Dart, PHP, Ruby, Nim, Scala, Julia, Lua |
+| `"union_return"` | 例外を戻り値 union に変換。linker が raise しうる関数をマーカーし、EAST3 lowering が `ErrorReturn` / `ErrorCheck` / `ErrorCatch` ノードを生成する | Go, Rust, Zig |
 
-`true` の場合、EAST3 の `Raise` / `Try` ノードは lowering で `if err != nil { return ..., err }` パターンに展開される。
+`"native_throw"` の言語では `Raise` / `Try` ノードが EAST3 にそのまま残り、emitter が `throw` / `try-catch` に写像する。
+`"union_return"` の言語では `Raise` / `Try` ノードは EAST3 lowering で `ErrorReturn` / `ErrorCheck` / `ErrorCatch` に変換され、emitter はこれらを言語固有のエラー戻り値構文に写像する。
 
 ### 7.17 全言語のプロファイル一覧
 
@@ -510,7 +511,7 @@ emitter は `VarDecl` / `Assign(declare=true)` ノードに対してこのスタ
 | block_braces | braces | braces | braces | braces | braces | braces | braces | braces | braces |
 | stmt_terminator | ; | (none) | ; | ; | ; | (none) | (none) | ; | ; |
 | string_type_owned | false | true | false | true | true | true | true | true | true |
-| has_explicit_error_return | false | true | true | false | false | false | false | false | false |
+| exception_style | native_throw | union_return | union_return | native_throw | native_throw | native_throw | native_throw | native_throw | native_throw |
 
 **グループ B: Dart, Lua, Ruby, PHP, Nim, Scala, Julia, PowerShell, Zig**
 
@@ -530,7 +531,7 @@ emitter は `VarDecl` / `Assign(declare=true)` ノードに対してこのスタ
 | block_braces | braces | end | end | braces | indent | braces | end | braces | braces |
 | stmt_terminator | ; | (none) | (none) | ; | (none) | (none) | (none) | (none) | ; |
 | string_type_owned | true | true | true | true | true | true | true | true | false |
-| has_explicit_error_return | false | false | false | false | false | false | false | false | true |
+| exception_style | native_throw | native_throw | native_throw | native_throw | native_throw | native_throw | native_throw | native_throw | union_return |
 
 ## 8. 共通 Renderer（CommonRenderer）
 

@@ -100,23 +100,28 @@ Full data for all languages and all samples: [Sample page](sample/README.md#runt
 </td>
 </tr></table>
 
-## Python vs Pytra
+## Python vs C++ vs Rust vs Pytra
 
-|Aspect|Python|Pytra|
-|-|-|-|
-|Execution|Runs on the Python interpreter|Runs in each backend language|
-|Integers|Arbitrary precision|`int64`, `uint64`, ..., `int8`, `uint8`|
-|Floating point|64-bit|64-bit / 32-bit|
-|Runtime speed|x1|x10 to x100 when transpiled to C++ or Rust|
-|Backend optimization|Limited|Extensive|
-|Multi-language deployment|❌|✅|
-|Typing|Dynamic typing|Static typing|
-|Bounds checks|Always enabled|Customizable|
-|Platform integration|Python-centric|Fits each language's SDKs and tools|
-|Distribution|Requires Python runtime|Uses each language's native distribution model|
-|Multiple inheritance|✅|❌, single inheritance only|
-|Mix-ins|✅|✅|
-|Self-hosting|❌|✅|
+Legend: ✅ = Good / 🔶 = Partial / ❌ = Unsupported or difficult
+
+| Aspect | Python | C++ | Rust | Pytra |
+|-|-|-|-|-|
+| Syntax | ✅ Simple | ❌ Complex | 🔶 Ownership/<br>lifetimes | ✅ Same as<br>Python |
+| Type safety | ❌ Dynamic | ✅ Static | ✅ Static | ✅ Static<br>(Python-style) |
+| Speed | ❌ Slow | ✅ Fast | ✅ Fast | ✅ Fast<br>(depends on target) |
+| Memory | ✅ GC<br>(easy but heavy) | ❌ Manual/<br>shared_ptr | 🔶 Ownership<br>(safe but hard) | ✅ RC-based<br>automatic |
+| Integers | 🔶 Arbitrary<br>only | ✅ int8–64 | ✅ i8–i64 | ✅ int8–64 |
+| Float | 🔶 64 only | ✅ 32/64 | ✅ f32/f64 | ✅ 32/64 |
+| Build | ✅ Not needed | ❌ CMake etc. | 🔶 cargo | ✅ `./pytra`<br>`--build --run` |
+| Multi-lang<br>deploy | ❌ | ❌ | ❌ | ✅ 18 languages |
+| Optimization | ❌ Limited | ✅ Extensive | ✅ Extensive | ✅ Leverages<br>target |
+| Distribution | 🔶 Requires<br>runtime | ✅ Binary | ✅ Binary | ✅ Each lang's<br>native |
+| Single<br>inheritance | ✅ | ✅ | ❌ Traits only | ✅ |
+| Multiple<br>inheritance | ✅ | 🔶 Complex | ❌ | ❌ |
+| Traits/<br>Interfaces | 🔶 Protocol | 🔶 virtual base | ✅ Native | ✅ `@trait` |
+| Exceptions | ✅ | ✅ | ❌ Result/panic | ✅ All languages |
+| Templates/<br>Generics | ❌ | 🔶 Unreadable<br>errors | ✅ | ✅ `@template` |
+| Self-hosting | ❌ | ❌ | ❌ | ✅ |
 
 ⚠ This project is still under active development and may be far from practical use. Review the sample code and use it at your own risk.
 
