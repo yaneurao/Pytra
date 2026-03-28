@@ -616,7 +616,7 @@ def _emit_expr_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if kind == "DictComp":
         return _emit_dict_comp(ctx, node)
 
-    return "nil /* unsupported expr: " + kind + " */"
+    raise RuntimeError("unsupported_expr_kind: " + kind)
 
 
 def _emit_constant(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -2641,7 +2641,7 @@ def _emit_stmt(ctx: EmitContext, node: JsonVal) -> None:
     elif kind == "blank":
         _emit_blank(ctx)
     else:
-        _emit(ctx, "// unsupported stmt: " + kind)
+        raise RuntimeError("unsupported_stmt_kind: " + kind)
 
 
 def _emit_body(ctx: EmitContext, body: list[JsonVal]) -> None:

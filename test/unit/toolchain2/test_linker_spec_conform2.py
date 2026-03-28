@@ -4209,6 +4209,22 @@ def has_key(env: dict[str, int], name: str) -> bool:
         with self.assertRaisesRegex(RuntimeError, "unsupported_expr_kind"):
             emit_cpp_module(doc)
 
+    def test_go_emitter_fails_fast_on_unsupported_expr_kind(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "MysteryExpr",
+                    },
+                }
+            ],
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "unsupported_expr_kind"):
+            emit_go_module(doc)
+
     def test_cpp_emitter_fails_fast_on_unknown_builtin_without_symbol(self) -> None:
         doc = _module_doc(
             "app.main",
@@ -4275,6 +4291,20 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         with self.assertRaisesRegex(RuntimeError, "unsupported_stmt_kind"):
             emit_cpp_module(doc)
+
+    def test_go_emitter_fails_fast_on_unknown_statement_kind(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "For",
+                    "body": [],
+                }
+            ],
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "unsupported_stmt_kind"):
+            emit_go_module(doc)
 
     def test_cpp_emitter_fails_fast_on_unsupported_slice_shape(self) -> None:
         doc = _module_doc(
