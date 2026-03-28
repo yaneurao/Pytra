@@ -55,15 +55,16 @@
 7. [ ] [ID: P2-SELFHOST-S7] Go emitter の container 既定表現を spec 準拠に修正する — list/dict/set を既定で参照型ラッパーにし、`meta.linked_program_v1.container_ownership_hints_v1.container_value_locals_v1` がある局所のみ値型縮退を許可する
 8. [ ] [ID: P2-SELFHOST-S8] Go emitter の runtime call 名解決を mapping.json に一本化する — emitter が mapping.json を迂回して `list_ctor` / `list.append` / `dict.get` / `set_ctor` / `sorted` などを個別 lower している箇所を mapping.json 経由へ寄せ、backend 内の runtime call 意味論の二重管理を解消する
 
-### P2-LOWERING-PROFILE: Lowering プロファイル + CommonRenderer 導入
+### P2-LOWERING-PROFILE-GO: Go backend の Lowering プロファイル適用
 
-文脈: [docs/ja/plans/p2-lowering-profile-common-renderer.md](../plans/p2-lowering-profile-common-renderer.md)
-仕様: [docs/ja/spec/spec-language-profile.md](../spec/spec-language-profile.md) §7〜§8
+文脈: [docs/ja/plans/p2-lowering-profile-go.md](../plans/p2-lowering-profile-go.md)
+仕様: [docs/ja/spec/spec-language-profile.md](../spec/spec-language-profile.md) §7
 
-1. [x] [ID: P2-LOWERING-PROFILE-S1] lowering プロファイルのスキーマを確定し、C++ / Go のプロファイル JSON を作成する — `src/toolchain2/emit/profiles/core.json`, `src/toolchain2/emit/profiles/cpp.json`, `src/toolchain2/emit/profiles/go.json` を正本とし、`toolchain2.emit.common.profile_loader` と focused unittest で schema validation / core merge / C++ / Go profile 読込を確認
-2. [x] [ID: P2-LOWERING-PROFILE-S2] EAST3 lowering が lowering プロファイルを読み、`tuple_unpack_style` に従って tuple unpack を展開するようにする — `lower_east2_to_east3(..., target_language=...)` で profile を読み、`core=individual_temps`, `cpp=TupleUnpack`, `go=MultiAssign` へ分岐し、Go は `multi_return[...]` の関数署名/return/multi-assign を consume できるところまで接続する
-3. [x] [ID: P2-LOWERING-PROFILE-S3] `container_covariance` / `with_style` / `property_style` を lowering に反映する — `container_covariance=false` では `list[T] -> list[U]` を `CovariantCopy` に lower し、`with_style=try_finally` では `With` を bind+`Try(finally close)` に lower、`property_style=field_access` では `property_getter` を field access へ正規化する。C++ / Go emitter には `CovariantCopy` 消費を追加
-— S4〜S7（CommonRenderer 実装 + emitter 移行 + parity）は P3-COMMON-RENDERER に統合済み
+1. [ ] [ID: P2-LOWERING-GO-S1] Go の `tuple_unpack_style: "multi_return"` を EAST3 lowering に適用する
+2. [ ] [ID: P2-LOWERING-GO-S2] Go の `container_covariance: false` を適用する（CovariantCopy ノード展開）
+3. [ ] [ID: P2-LOWERING-GO-S3] Go の `with_style: "defer"` を適用する
+4. [ ] [ID: P2-LOWERING-GO-S4] Go の `property_style: "method_call"` を適用する
+5. [ ] [ID: P2-LOWERING-GO-S5] Go の既存 fixture + sample parity 維持確認
 
 ### P3-COMMON-RENDERER: CommonRenderer 導入 + C++/Go emitter 移行 + fixture parity
 
