@@ -1759,11 +1759,17 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             # .append() on non-BuiltinCall (plain method call)
             if attr == "append" and len(arg_strs) >= 1:
                 owner_storage = _wrapper_container_storage_expr(ctx, owner_node, owner)
+                arg_code = arg_strs[0]
+                arg_node = args[0] if len(args) >= 1 and isinstance(args[0], dict) else None
                 # If owner is bytes/bytearray or unknown bytes-like, use append_byte
                 if owner_rt in ("bytes", "bytearray", "list[uint8]", "unknown"):
-                    return owner_storage + " = py_append_byte(" + owner_storage + ", " + arg_strs[0] + ")"
+                    return owner_storage + " = py_append_byte(" + owner_storage + ", " + arg_code + ")"
                 if owner_rt.startswith("list["):
-                    return owner_storage + " = append(" + owner_storage + ", " + arg_strs[0] + ")"
+                    elem_type = owner_rt[5:-1]
+                    if _is_container_resolved_type(elem_type) and isinstance(arg_node, dict):
+                        if not _is_wrapper_container_expr(ctx, arg_node, arg_code):
+                            arg_code = _wrap_ref_container_value_code(ctx, arg_code, elem_type)
+                    return owner_storage + " = append(" + owner_storage + ", " + arg_code + ")"
             if attr in ("keys", "values") and ((owner_rt.startswith("dict[") and owner_rt.endswith("]")) or owner_rt in ("Node", "dict[str,Any]")):
                 if owner_rt in ("Node", "dict[str,Any]"):
                     if attr == "keys":
@@ -2277,9 +2283,15 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
             if len(arg_strs) >= 1:
                 arg_code = arg_strs[0]
+                arg_node = args[0] if len(args) >= 1 and isinstance(args[0], dict) else None
                 # Type coerce element if needed (e.g., int64 → byte for []byte)
                 if owner_rt in ("list[uint8]", "bytes", "bytearray"):
                     arg_code = "byte(" + arg_code + ")"
+                elif owner_rt.startswith("list["):
+                    elem_type = owner_rt[5:-1]
+                    if _is_container_resolved_type(elem_type) and isinstance(arg_node, dict):
+                        if not _is_wrapper_container_expr(ctx, arg_node, arg_code):
+                            arg_code = _wrap_ref_container_value_code(ctx, arg_code, elem_type)
                 # Also detect via var_types
                 owner_id = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
                 if owner_id != "" and owner_id in ctx.var_types:
