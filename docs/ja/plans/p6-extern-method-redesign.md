@@ -150,11 +150,37 @@ runtime 側の関数名変換（`list.extend` → `py_list_extend_mut` 等）は
 - `@abi` は廃止（未実装・未使用なので影響ゼロ）
 - `@extern_method` は `@method` + `@namespace` に置き換え
 
+### 引数の渡し方（arg mode）
+
+ref / value の軸と readonly / mutable の軸の直交で4種類:
+
+| mode | rc | 変更 | 用途 |
+|---|---|---|---|
+| `ref`（既定） | rc のまま | 可 | 通常の引数。Python の参照渡しと同じ |
+| `ref_readonly` | rc のまま | 不可 | escape しない（escape 解析ヒント）。`extend(x)` の `x` 等 |
+| `value` | 剥がす | 可 | FFI で可変な値渡しが必要な場合 |
+| `value_readonly` | 剥がす | 不可 | FFI で読み取り専用の値渡しが必要な場合 |
+
+デフォルトは `ref`。指定なし = `ref` なので、大半のメソッドは `@method` だけで済む:
+
+```python
+@method                           # 全引数 ref（既定）
+def append(self, x: T) -> None: ...
+
+@method(x="ref_readonly")         # x だけ ref_readonly
+def extend(self, x: list[T]) -> None: ...
+```
+
+`self` は常に `ref`（mutable）。明示不要。
+
+旧 `@abi` との対応:
+- `@abi(args={"x": "value"})` → `@method(x="value")`
+- `@abi(args={"x": "value_readonly"})` → `@method(x="value_readonly")`
+- `@abi` は廃止
+
 注意:
 - `@namespace` はファイル冒頭に1回だけ書く
 - parser が `@namespace` + class名 + メソッド名から module / symbol / tag を自動導出する実装が必要
-- `self` はデフォルト mutable。明示不要。
-- arg_usage を指定しない引数はデフォルト「escape する（mutable）」として扱う（安全側）
 
 ## @abi の廃止
 
