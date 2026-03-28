@@ -141,6 +141,22 @@ linker は type_id の割り当てが完了した後、仮想モジュール `py
 - 配列の並び順は linker の DFS 割り当て順と一致させる。
 - emitter はこのモジュールを通常の EAST3 として写像する。特別なロジックは不要。
 
+import 挿入規則:
+
+- linker が `isinstance` を `pytra_isinstance(x.type_id, VALUE_ERROR_TID)` に lower したモジュールには、`pytra.built_in.type_id_table` からの import binding を `meta.import_bindings` に追加する。
+- 追加する binding の例:
+  ```json
+  {
+    "module_id": "pytra.built_in.type_id_table",
+    "export_name": "VALUE_ERROR_TID",
+    "local_name": "VALUE_ERROR_TID",
+    "binding_kind": "symbol"
+  }
+  ```
+- `pytra_isinstance` 関数自体の import も同様に追加する（定義元は `pytra/built_in/` の pure Python モジュール）。
+- emitter は `meta.import_bindings` を見て各言語の import/include を生成する。これは既存の import 解決の仕組みと同じであり、type_id 固有の特別処理は不要。
+- linker がこの import 挿入を忘れると、emitter が未定義シンボルを参照するコードを生成し、コンパイルエラーになる。
+
 ## 7. 入出力契約
 
 ### 7.1 raw `EAST3` document の前提
