@@ -26,6 +26,7 @@
 | built-in 関数 | [spec-builtin-functions.md](./spec-builtin-functions.md) | built-in 関数の宣言仕様 |
 | @template | [spec-template.md](./spec-template.md) | テンプレート（ジェネリクス）仕様 |
 | Iterable/Iterator | [spec-iterable.md](./spec-iterable.md) | for 文の反復契約、動的プロトコル |
+| @runtime / @extern | [spec-runtime-decorator.md](./spec-runtime-decorator.md) | `@runtime` と `@extern` の仕様、自動導出ルール、引数の渡し方 |
 | Opaque 型 | [spec-opaque-type.md](./spec-opaque-type.md) | `@extern class` の型契約（rc なし、boxing なし） |
 | GC | [spec-gc.md](./spec-gc.md) | RC ベースの GC 方針 |
 
