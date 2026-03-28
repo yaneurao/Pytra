@@ -42,7 +42,7 @@ To transpile to Rust instead:
 4. [Exception handling](./exception.md) — raise / try / except / finally
 5. [Traits (interfaces)](./trait.md) — Attaching multiple behavioral contracts to a type
 6. [Union types and isinstance narrowing](./union-and-narrowing.md) — Handling multiple types and automatic type refinement
-7. [Python compatibility guide](../spec/spec-python-compat.md) — Differences from Python, unsupported syntax
+7. [Differences from Python](./python-differences.md) — Type annotations, imports, unsupported syntax
 
 That should be enough to use Pytra. The following are for when you need them:
 

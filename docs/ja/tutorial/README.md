@@ -42,7 +42,7 @@ Rust に変換するなら:
 4. [例外処理](./exception.md) — raise / try / except / finally の使い方
 5. [Trait（インターフェース）](./trait.md) — 複数の振る舞い契約を型に付与する
 6. [Union 型と isinstance ナローイング](./union-and-narrowing.md) — 複数の型を扱う方法と型の自動絞り込み
-7. [Python 互換性ガイド](../spec/spec-python-compat.md) — Python との違い、使えない構文
+7. [Python との違い](./python-differences.md) — 型注釈、import、使えない構文など
 
 ここまで読めば普通に使えます。以下は必要に応じて:
 
