@@ -14,7 +14,7 @@
         "lineno": 2,
         "col": 0,
         "end_lineno": 2,
-        "end_col": 25
+        "end_col": 116
       },
       "value": {
         "kind": "Constant",
@@ -22,34 +22,12 @@
           "lineno": 2,
           "col": 0,
           "end_lineno": 2,
-          "end_col": 25
+          "end_col": 116
         },
         "casts": [],
         "borrow_kind": "value",
-        "repr": "\"\"\"Python built-in 関数の宣言。",
-        "value": "Python built-in 関数の"
-      }
-    },
-    {
-      "kind": "Expr",
-      "source_span": {
-        "lineno": 7,
-        "col": 0,
-        "end_lineno": 7,
-        "end_col": 3
-      },
-      "value": {
-        "kind": "Constant",
-        "source_span": {
-          "lineno": 7,
-          "col": 0,
-          "end_lineno": 7,
-          "end_col": 3
-        },
-        "casts": [],
-        "borrow_kind": "value",
-        "repr": "\"\"\"",
-        "value": ""
+        "repr": "\"\"\"Python built-in 関数の宣言。\\n\\nresolve がシグネチャを参照して型解決する。emit 対象外。\\n\\nspec: docs/ja/spec/spec-builtin-functions.md\\n\"\"\"",
+        "value": "Python built-in 関数の宣言。\n\nresolve がシグネチャを参照して型解決する。emit 対象外。\n\nspec: docs/ja/spec/spec-builtin-functions.md\n"
       }
     },
     {
@@ -58,12 +36,12 @@
         "lineno": 9,
         "col": 0,
         "end_lineno": 9,
-        "end_col": 41
+        "end_col": 39
       },
       "module": "pytra.std",
       "names": [
         {
-          "name": "extern_fn",
+          "name": "runtime",
           "asname": null
         },
         {
@@ -116,6 +94,9 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.core.py_runtime\", tag=\"core.len\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.core.py_runtime",
@@ -129,6 +110,26 @@
         "---------------------------------------------------------------------------"
       ],
       "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
         {
           "kind": "blank",
           "count": 1
@@ -173,6 +174,9 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.core.py_runtime\", tag=\"cast.str\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.core.py_runtime",
@@ -209,6 +213,9 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.core.py_runtime\", tag=\"cast.bool\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.core.py_runtime",
@@ -245,6 +252,9 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.core.py_runtime\", tag=\"cast.int\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.core.py_runtime",
@@ -281,6 +291,9 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.core.py_runtime\", tag=\"cast.float\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.core.py_runtime",
@@ -317,6 +330,9 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.core.py_runtime\", tag=\"cast.repr\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.core.py_runtime",
@@ -349,6 +365,9 @@
       "yield_value_type": "unknown",
       "vararg_name": "args",
       "vararg_type": "Obj",
+      "decorators": [
+        "runtime(\"pytra.built_in.io_ops\", symbol=\"py_print\", tag=\"core.print\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.built_in.io_ops",
@@ -405,6 +424,9 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.core.py_runtime\", tag=\"type.isinstance\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.core.py_runtime",
@@ -444,6 +466,9 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.core.py_runtime\", tag=\"type.issubclass\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.core.py_runtime",
@@ -497,6 +522,9 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.core.py_runtime\", symbol=\"py_round\", tag=\"math.round\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.core.py_runtime",
@@ -533,6 +561,9 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.core.py_runtime\", symbol=\"py_abs\", tag=\"math.abs\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.core.py_runtime",
@@ -569,6 +600,9 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.built_in.scalar_ops\", symbol=\"py_ord\", tag=\"cast.ord\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.built_in.scalar_ops",
@@ -605,6 +639,9 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.built_in.scalar_ops\", symbol=\"py_chr\", tag=\"cast.chr\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.built_in.scalar_ops",
@@ -637,6 +674,10 @@
       "yield_value_type": "unknown",
       "vararg_name": "args",
       "vararg_type": "T",
+      "decorators": [
+        "template(\"T\")",
+        "runtime(\"pytra.built_in.numeric_ops\", symbol=\"py_min\", tag=\"math.min\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.built_in.numeric_ops",
@@ -686,6 +727,10 @@
       "yield_value_type": "unknown",
       "vararg_name": "args",
       "vararg_type": "T",
+      "decorators": [
+        "template(\"T\")",
+        "runtime(\"pytra.built_in.numeric_ops\", symbol=\"py_max\", tag=\"math.max\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.built_in.numeric_ops",
@@ -722,6 +767,10 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "template(\"T\")",
+        "runtime(\"pytra.built_in.iter_ops\", symbol=\"py_sorted\", tag=\"iter.sorted\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.built_in.iter_ops",
@@ -758,6 +807,10 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "template(\"T\")",
+        "runtime(\"pytra.built_in.iter_ops\", symbol=\"py_reversed_object\", tag=\"iter.reversed\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.built_in.iter_ops",
@@ -811,6 +864,10 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "template(\"T\")",
+        "runtime(\"pytra.built_in.iter_ops\", symbol=\"py_enumerate_object\", tag=\"iter.enumerate\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.built_in.iter_ops",
@@ -850,6 +907,10 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "template(\"T\", \"U\")",
+        "runtime(\"pytra.built_in.zip_ops\", symbol=\"zip\", tag=\"iter.zip\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.built_in.zip_ops",
@@ -886,6 +947,9 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.built_in.sequence\", symbol=\"py_range\", tag=\"iter.range\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.built_in.sequence",
@@ -942,6 +1006,9 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.built_in.sequence\", symbol=\"py_range\", tag=\"iter.range\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.built_in.sequence",
@@ -984,6 +1051,9 @@
       "body": [],
       "is_generator": 0,
       "yield_value_type": "unknown",
+      "decorators": [
+        "runtime(\"pytra.built_in.sequence\", symbol=\"py_range\", tag=\"iter.range\")"
+      ],
       "meta": {
         "extern_v2": {
           "module": "pytra.built_in.sequence",
@@ -1002,8 +1072,8 @@
       "bindings": [
         {
           "module_id": "pytra.std",
-          "export_name": "extern_fn",
-          "local_name": "extern_fn",
+          "export_name": "runtime",
+          "local_name": "runtime",
           "binding_kind": "symbol",
           "source_file": "src/include/py/pytra/built_in/builtins.py",
           "source_line": 9
@@ -1028,8 +1098,8 @@
       "qualified_refs": [
         {
           "module_id": "pytra.std",
-          "symbol": "extern_fn",
-          "local_name": "extern_fn"
+          "symbol": "runtime",
+          "local_name": "runtime"
         },
         {
           "module_id": "pytra.std",
@@ -1046,8 +1116,8 @@
     "import_bindings": [
       {
         "module_id": "pytra.std",
-        "export_name": "extern_fn",
-        "local_name": "extern_fn",
+        "export_name": "runtime",
+        "local_name": "runtime",
         "binding_kind": "symbol",
         "source_file": "src/include/py/pytra/built_in/builtins.py",
         "source_line": 9
@@ -1072,8 +1142,8 @@
     "qualified_symbol_refs": [
       {
         "module_id": "pytra.std",
-        "symbol": "extern_fn",
-        "local_name": "extern_fn"
+        "symbol": "runtime",
+        "local_name": "runtime"
       },
       {
         "module_id": "pytra.std",
@@ -1088,9 +1158,9 @@
     ],
     "import_modules": {},
     "import_symbols": {
-      "extern_fn": {
+      "runtime": {
         "module": "pytra.std",
-        "name": "extern_fn"
+        "name": "runtime"
       },
       "template": {
         "module": "pytra.std",

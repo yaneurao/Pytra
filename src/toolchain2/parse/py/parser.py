@@ -124,12 +124,80 @@ def _parse_extern_kwargs(text: str) -> Optional[dict[str, str]]:
 
 
 def _parse_extern_v2_decorator(s: str) -> Optional[dict[str, str]]:
-    """@extern_fn/extern_method/extern_class(...) からキーワード引数を抽出。"""
-    for prefix in ("@extern_fn(", "@extern_method(", "@extern_class("):
+    """@extern(...)/@extern_fn(...)/@extern_class(...) からキーワード引数を抽出。"""
+    for prefix in ("@extern(", "@extern_fn(", "@extern_class("):
         if s.startswith(prefix) and s.endswith(")"):
             inner = s[len(prefix):-1]
             return _parse_extern_kwargs(inner)
     return None
+
+
+def _parse_runtime_decorator(s: str) -> tuple[str, str, str]:
+    """@runtime("namespace") または @runtime("namespace", symbol="...", tag="...") をパース。
+    成功時は (namespace, symbol_override, tag_override)。失敗時は ("", "", "")。
+    """
+    if not s.startswith("@runtime(") or not s.endswith(")"):
+        return "", "", ""
+    inner = s[len("@runtime("):-1].strip()
+    # First arg must be a quoted namespace string
+    if not inner:
+        return "", "", ""
+    quote = inner[0]
+    if quote not in ('"', "'"):
+        return "", "", ""
+    end_quote = inner.find(quote, 1)
+    if end_quote < 0:
+        return "", "", ""
+    namespace = inner[1:end_quote]
+    if namespace == "":
+        return "", "", ""
+    rest = inner[end_quote + 1:].strip()
+    symbol_override = ""
+    tag_override = ""
+    if rest.startswith(","):
+        for part in rest[1:].split(","):
+            part = part.strip()
+            if "=" not in part:
+                continue
+            eq = part.index("=")
+            key = part[:eq].strip()
+            val = part[eq + 1:].strip()
+            if len(val) >= 2 and val[0] in ('"', "'") and val[-1] == val[0]:
+                val = val[1:-1]
+            if key == "symbol":
+                symbol_override = val
+            elif key == "tag":
+                tag_override = val
+    return namespace, symbol_override, tag_override
+
+
+def _runtime_fn_extern_v2(namespace: str, fn_name: str, symbol_override: str, tag_override: str) -> dict[str, str]:
+    symbol = symbol_override if symbol_override != "" else fn_name
+    tag = tag_override if tag_override != "" else "stdlib.fn." + fn_name
+    return {"module": namespace, "symbol": symbol, "tag": tag}
+
+
+def _runtime_class_extern_v2(namespace: str, class_name: str) -> dict[str, str]:
+    return {
+        "module": namespace + "." + class_name,
+        "symbol": class_name,
+        "tag": "container." + class_name,
+    }
+
+
+def _runtime_method_tag(method_name: str) -> str:
+    if method_name.startswith("__") and method_name.endswith("__") and len(method_name) > 4:
+        return "dunder." + method_name[2:-2]
+    return "stdlib.method." + method_name
+
+
+def _runtime_method_extern_v2(namespace: str, class_name: str, method_name: str) -> dict[str, str]:
+    return {
+        "module": namespace + "." + class_name,
+        "symbol": class_name + "." + method_name,
+        "tag": _runtime_method_tag(method_name),
+        "kind": "method",
+    }
 
 
 def _parse_extern_var_call(value_text: str) -> Optional[dict[str, str]]:
@@ -1306,6 +1374,9 @@ def _parse_module_body(
     leading_file_trivia_done = False
     pending_dataclass = False
     pending_extern_v2: Optional[dict[str, str]] = None
+    pending_runtime_ns = ""
+    pending_runtime_symbol = ""
+    pending_runtime_tag = ""
     skip_next_blanks = False  # import/def/class 直後の空行を蓄積しないためのフラグ
     first_nonimport_done = False  # 最初の non-import body item かどうか
 
@@ -1341,6 +1412,10 @@ def _parse_module_body(
 
         # Decorator at module level
         if s_clean.startswith("@"):
+            if s_clean.startswith("@extern_method("):
+                raise RuntimeError("extern_method is removed; use @runtime(...) or @extern(...)")
+            if s_clean.startswith("@abi(") or s_clean == "@abi":
+                raise RuntimeError("abi decorator is removed")
             pending_decorators.append(_decorator_text(s_clean))
             if s_clean == "@dataclass" or s_clean.startswith("@dataclass("):
                 pending_dataclass = True
@@ -1348,6 +1423,11 @@ def _parse_module_body(
             extern_v2 = _parse_extern_v2_decorator(s_clean)
             if extern_v2 is not None:
                 pending_extern_v2 = extern_v2
+            rt_ns, rt_sym, rt_tag = _parse_runtime_decorator(s_clean)
+            if rt_ns != "":
+                pending_runtime_ns = rt_ns
+                pending_runtime_symbol = rt_sym
+                pending_runtime_tag = rt_tag
             ln_no += 1
             continue
 
@@ -1514,6 +1594,12 @@ def _parse_module_body(
             if pending_extern_v2 is not None:
                 fn_stmt.node_meta = {"extern_v2": pending_extern_v2}
                 pending_extern_v2 = None
+            elif pending_runtime_ns != "":
+                fn_stmt.node_meta = {"extern_v2": _runtime_fn_extern_v2(
+                    pending_runtime_ns, fn_name, pending_runtime_symbol, pending_runtime_tag)}
+                pending_runtime_ns = ""
+                pending_runtime_symbol = ""
+                pending_runtime_tag = ""
             body_items.append(fn_stmt)
             first_nonimport_done = True
             pending_trivia = []
@@ -1537,9 +1623,21 @@ def _parse_module_body(
                 force_leading=force_cls_leading,
             )
             pending_decorators = []
+            cls_meta: dict[str, JsonVal] = {}
             if pending_extern_v2 is not None:
-                cls_stmt.node_meta = {"extern_v2": pending_extern_v2}
+                cls_meta["extern_v2"] = pending_extern_v2
                 pending_extern_v2 = None
+            if pending_runtime_ns != "":
+                cls_meta["runtime_v1"] = {
+                    "schema_version": 1,
+                    "namespace": pending_runtime_ns,
+                }
+                cls_meta["extern_v2"] = _runtime_class_extern_v2(pending_runtime_ns, cls_name)
+                pending_runtime_ns = ""
+                pending_runtime_symbol = ""
+                pending_runtime_tag = ""
+            if len(cls_meta) > 0:
+                cls_stmt.node_meta = cls_meta
             first_nonimport_done = True
             pending_dataclass = False
             body_items.append(cls_stmt)
@@ -1836,6 +1934,24 @@ def _parse_class_def(
     block_lines, end_ln = _collect_block(lines, start_ln + 1, 0)
     name_types: dict[str, str] = {}
     body_stmts = _parse_block_lines(ctx, block_lines, name_types, cls_name, start_hint=start_ln)
+    runtime_ns = ""
+    if decorators is not None:
+        for deco in decorators:
+            _rt_ns, _rt_sym, _rt_tag = _parse_runtime_decorator("@" + deco)
+            if _rt_ns != "":
+                runtime_ns = _rt_ns
+                break
+    if runtime_ns != "":
+        for stmt in body_stmts:
+            if not isinstance(stmt, FunctionDef):
+                continue
+            if stmt.node_meta is None:
+                stmt.node_meta = {}
+            meta = stmt.node_meta
+            assert isinstance(meta, dict)
+            if "extern_v2" in meta:
+                continue
+            meta["extern_v2"] = _runtime_method_extern_v2(runtime_ns, cls_name, stmt.name)
 
     # Collect field types from annotated assignments and __init__ self.attr assignments
     field_types: dict[str, str] = {}
@@ -2145,8 +2261,12 @@ def _parse_block_lines(
 
         # Decorator: @name — accumulate for next def
         if s_clean.startswith("@"):
+            if s_clean.startswith("@extern_method("):
+                raise RuntimeError("extern_method is removed; use @runtime(...) or @extern(...)")
+            if s_clean.startswith("@abi(") or s_clean == "@abi":
+                raise RuntimeError("abi decorator is removed")
             deco_name = _decorator_text(s_clean)
-            # Check for v2 extern decorator (extern_fn/extern_method/extern_class)
+            # Check for v2 extern decorator
             block_extern_v2 = _parse_extern_v2_decorator(s_clean)
             if block_extern_v2 is not None:
                 pending_block_extern_v2 = block_extern_v2

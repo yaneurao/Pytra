@@ -1,11 +1,18 @@
-"""Pytra stdlib declarations (v2 extern)."""
+"""Pytra stdlib declarations."""
+
+
+def extern(obj=None, *, module: str = "", symbol: str = "", tag: str = ""):
+    """外部実装宣言または no-op wrapper。"""
+    if module != "" or symbol != "" or tag != "":
+        def deco(fn):
+            return fn
+        return deco
+    return obj
 
 
 def extern_fn(*, module: str, symbol: str, tag: str):
     """外部関数宣言。decorator として使う。"""
-    def deco(fn):
-        return fn
-    return deco
+    return extern(module=module, symbol=symbol, tag=tag)
 
 
 def extern_var(*, module: str, symbol: str, tag: str):
@@ -20,16 +27,10 @@ def extern_class(*, module: str, symbol: str, tag: str):
     return deco
 
 
-def extern_method(*, module: str, symbol: str, tag: str):
-    """外部メソッド宣言。クラス内メソッドの decorator として使う。"""
-    def deco(fn):
-        return fn
-    return deco
-
-
-def abi(*, args=None, ret="default"):
-    def deco(fn):
-        return fn
+def runtime(namespace: str, *, symbol: str = "", tag: str = ""):
+    """runtime 実装クラス・関数宣言。decorator として使う。"""
+    def deco(obj):
+        return obj
     return deco
 
 
