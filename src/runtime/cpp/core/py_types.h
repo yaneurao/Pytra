@@ -5,6 +5,7 @@
 #include <any>
 #include <cctype>
 #include <deque>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -145,39 +146,39 @@ inline const T& Object<void>::unbox() const {
 }
 
 inline Object<void>::Object(int64 v) : cb(nullptr) {
-    auto* boxed = new PyBoxedValue<int64>(v);
-    try { cb = new ControlBlock{0, PYTRA_TID_INT, boxed}; }
-    catch (...) { delete boxed; throw; }
+    auto boxed = std::make_unique<PyBoxedValue<int64>>(v);
+    cb = new ControlBlock{0, PYTRA_TID_INT, boxed.get()};
+    boxed.release();
     retain();
 }
 
 inline Object<void>::Object(int v) : Object(static_cast<int64>(v)) {}
 
 inline Object<void>::Object(const char* v) : cb(nullptr) {
-    auto* boxed = new PyBoxedValue<str>(str(v));
-    try { cb = new ControlBlock{0, PYTRA_TID_STR, boxed}; }
-    catch (...) { delete boxed; throw; }
+    auto boxed = std::make_unique<PyBoxedValue<str>>(str(v));
+    cb = new ControlBlock{0, PYTRA_TID_STR, boxed.get()};
+    boxed.release();
     retain();
 }
 
 inline Object<void>::Object(float64 v) : cb(nullptr) {
-    auto* boxed = new PyBoxedValue<float64>(v);
-    try { cb = new ControlBlock{0, PYTRA_TID_FLOAT, boxed}; }
-    catch (...) { delete boxed; throw; }
+    auto boxed = std::make_unique<PyBoxedValue<float64>>(v);
+    cb = new ControlBlock{0, PYTRA_TID_FLOAT, boxed.get()};
+    boxed.release();
     retain();
 }
 
 inline Object<void>::Object(bool v) : cb(nullptr) {
-    auto* boxed = new PyBoxedValue<bool>(v);
-    try { cb = new ControlBlock{0, PYTRA_TID_BOOL, boxed}; }
-    catch (...) { delete boxed; throw; }
+    auto boxed = std::make_unique<PyBoxedValue<bool>>(v);
+    cb = new ControlBlock{0, PYTRA_TID_BOOL, boxed.get()};
+    boxed.release();
     retain();
 }
 
 inline Object<void>::Object(const str& v) : cb(nullptr) {
-    auto* boxed = new PyBoxedValue<str>(v);
-    try { cb = new ControlBlock{0, PYTRA_TID_STR, boxed}; }
-    catch (...) { delete boxed; throw; }
+    auto boxed = std::make_unique<PyBoxedValue<str>>(v);
+    cb = new ControlBlock{0, PYTRA_TID_STR, boxed.get()};
+    boxed.release();
     retain();
 }
 
