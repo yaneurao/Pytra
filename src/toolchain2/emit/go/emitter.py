@@ -4030,51 +4030,6 @@ def _zero_return_values(return_type: str) -> str:
     return go_zero_value(return_type)
 
 
-def _emit_if(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
-    test_node = node.get("test")
-    test = _emit_expr(ctx, test_node)
-    # Go requires bool in if condition; int→bool: != 0
-    test_rt = _str(test_node, "resolved_type") if isinstance(test_node, dict) else ""
-    if test_rt in ("int64", "int32", "int", "uint8"):
-        test = "(" + test + " != 0)"
-    elif test_rt.startswith("list[") or test_rt in ("str", "bytes", "bytearray"):
-        test = "len(" + test + ") > 0"
-    elif test_rt != "bool":
-        test = "py_truthy(" + test + ")"
-    _emit(ctx, "if " + test + " {")
-    ctx.indent_level += 1
-    _emit_body(ctx, _list(node, "body"))
-    ctx.indent_level -= 1
-    orelse = _list(node, "orelse")
-    if len(orelse) > 0:
-        if len(orelse) == 1 and isinstance(orelse[0], dict) and _str(orelse[0], "kind") == "If":
-            _emit(ctx, "} else ")
-            # Inline the else-if without extra brace
-            ctx.lines[-1] = ctx.lines[-1].rstrip()  # remove trailing newline
-            _emit_if(ctx, orelse[0])
-            return
-        _emit(ctx, "} else {")
-        ctx.indent_level += 1
-        _emit_body(ctx, orelse)
-        ctx.indent_level -= 1
-    _emit(ctx, "}")
-
-
-def _emit_while(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
-    test_node = node.get("test")
-    test = _emit_expr(ctx, test_node)
-    test_rt = _str(test_node, "resolved_type") if isinstance(test_node, dict) else ""
-    if test_rt in ("int64", "int32", "int", "uint8"):
-        test = "(" + test + " != 0)"
-    elif test_rt.startswith("list[") or test_rt in ("str", "bytes", "bytearray"):
-        test = "len(" + test + ") > 0"
-    _emit(ctx, "for " + test + " {")
-    ctx.indent_level += 1
-    _emit_body(ctx, _list(node, "body"))
-    ctx.indent_level -= 1
-    _emit(ctx, "}")
-
-
 def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     body = _list(node, "body")
 

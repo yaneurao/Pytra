@@ -39,8 +39,10 @@
 文脈: [docs/ja/plans/p2-lowering-profile-common-renderer.md](../plans/p2-lowering-profile-common-renderer.md)
 仕様: [docs/ja/spec/spec-language-profile.md](../spec/spec-language-profile.md) §8
 
-1. [ ] [ID: P5-CR-GO-S1] Go emitter を CommonRenderer + override 構成に移行する — `src/toolchain2/emit/profiles/go.json` のプロファイルに従い、CommonRenderer の共通ノード走査を使う構成にする。Go 固有のノード（FunctionDef のレシーバー、ForCore、multi_return 等）だけ override として残す
-2. [ ] [ID: P5-CR-GO-S2] fixture 132 件 + sample 18 件の Go compile + run parity を通す
+1. [x] [ID: P5-CR-GO-S1] Go emitter を CommonRenderer + override 構成に移行する — `src/toolchain2/emit/profiles/go.json` のプロファイルに従い、CommonRenderer の共通ノード走査を使う構成にする。Go 固有のノード（FunctionDef のレシーバー、ForCore、multi_return 等）だけ override として残す
+   - 完了: `_GoStmtCommonRenderer` / `_GoExprCommonRenderer` 実装済み (commit 5611cc447 等)。`_emit_if` / `_emit_while` dead code を除去（2026-03-30）
+2. [x] [ID: P5-CR-GO-S2] fixture 132 件 + sample 18 件の Go compile + run parity を通す
+   - 完了: fixture 147 件全 PASS、sample 18 件全 PASS（P1-GO-CONTAINER-S4 で確認済み）
 
 ### P6-GO-SELFHOST: Go emitter で toolchain2 を Go に変換し go build を通す
 
