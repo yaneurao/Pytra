@@ -35,6 +35,19 @@
 7. [x] [ID: P10-REORG-S7] CI で台帳突合チェックを追加（tools/check/check_tools_ledger.py、run_local_ci.py 組み込み済み）
 8. [x] [ID: P10-REORG-S8] AGENTS.md に tools/ 直下禁止・台帳同時更新ルールを追加（spec-agent-coder.md §2）
 
+### P6-EMITTER-LINT: emitter 責務違反チェッカーの新設
+
+1. [ ] [ID: P6-EMITTER-LINT-S1] `tools/check/check_emitter_hardcode_lint.py` を作成する — 全言語の `src/toolchain2/emit/*/` を対象に、以下のカテゴリの禁止パターンを grep で検出する:
+   - モジュール名のハードコード（`"math"`, `"pathlib"`, `"json"`, `"sys"`, `"os"`, `"glob"`, `"time"`, `"subprocess"`, `"re"`, `"argparse"` 等）
+   - runtime 関数名のハードコード（`"perf_counter"`, `"py_len"`, `"write_rgb_png"`, `"save_gif"` 等）
+   - ターゲット言語の定数/関数名のハードコード（`"M_PI"`, `"M_E"`, `"std::sqrt"`, `"math.Sqrt"` 等）
+   - runtime プレフィックスマッチ（`"pytra.std."`, `"pytra.core."`, `"pytra.built_in."` の文字列直書き）
+   - クラス名のハードコード（`"Path"`, `"ArgumentParser"`, `"Exception"` 等）
+   - Python 構文の残留（`"__main__"`, `"super()"` 等）
+2. [ ] [ID: P6-EMITTER-LINT-S2] allowlist 機構を用意する — C++ emitter は歴史的にハードコードが多いので、既存違反を allowlist に入れて新規増分だけ FAIL にする
+3. [ ] [ID: P6-EMITTER-LINT-S3] 結果を言語 × カテゴリのマトリクスとして出力する（進捗ページの一部として利用可能にする）
+4. [ ] [ID: P6-EMITTER-LINT-S4] `tools/run/run_local_ci.py` に組み込む
+
 ### P11-VERSION-GATE: toolchain2 用バージョンチェッカーの新設
 
 前提: toolchain2 への完全移行後に着手。
