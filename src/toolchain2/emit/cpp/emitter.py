@@ -1520,8 +1520,19 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 
 def _emit_attribute(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     owner_node = node.get("value")
-    owner = _emit_expr(ctx, owner_node)
     attr = _str(node, "attr")
+    # Specialize type(v).__name__ → string literal when type is statically known
+    if attr == "__name__" and isinstance(owner_node, dict):
+        if _str(owner_node, "kind") == "Call":
+            func = owner_node.get("func")
+            args = owner_node.get("args")
+            if (isinstance(func, dict) and _str(func, "id") == "type"
+                    and isinstance(args, list) and len(args) == 1):
+                arg_type = _str(args[0], "resolved_type") if isinstance(args[0], dict) else ""
+                if arg_type not in ("", "unknown"):
+                    bare = arg_type.split(".")[-1]
+                    return 'str("' + bare + '")'
+    owner = _emit_expr(ctx, owner_node)
     access_kind = _str(node, "attribute_access_kind")
     owner_id = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
     runtime_module_id = _str(node, "runtime_module_id")
@@ -1946,13 +1957,15 @@ def _emit_box(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     class_type_id = _lookup_class_type_id(ctx, value_type)
     if class_type_id is not None:
         cpp_value_type = cpp_signature_type(value_type)
+        # "this" is a raw pointer; dereference to copy-construct the value
+        ctor_arg = ("*" + value_expr) if value_expr == "this" else value_expr
         return (
             "object(make_object<"
             + cpp_value_type
             + ">("
             + str(class_type_id)
             + ", "
-            + value_expr
+            + ctor_arg
             + "))"
         )
     # Handle optional (T | None) types → box ::std::optional<T> to object
@@ -2110,8 +2123,24 @@ def _emit_fstring(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     return " + ".join(parts)
 
 
+_CPP_INT_TYPES: set[str] = {"int64", "int32", "int16", "int8", "int", "int64_t"}
+_CPP_FLOAT_TYPES: set[str] = {"float64", "float32", "double", "float"}
+
+
 def _emit_formatted_value(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
-    return "str(py_to_string(" + _emit_expr(ctx, node.get("value")) + "))"
+    value_node = node.get("value")
+    expr = _emit_expr(ctx, value_node)
+    fmt_spec = _str(node, "format_spec")
+    if fmt_spec != "":
+        vtype = _effective_resolved_type(value_node) if isinstance(value_node, dict) else "unknown"
+        ctx.includes_needed.add("built_in/format_ops.h")
+        spec_lit = '"' + fmt_spec + '"'
+        if vtype in _CPP_INT_TYPES:
+            return "py_fmt_int(" + expr + ", " + spec_lit + ")"
+        if vtype in _CPP_FLOAT_TYPES:
+            return "py_fmt_float(" + expr + ", " + spec_lit + ")"
+        return "py_fmt_str(str(py_to_string(" + expr + ")), " + spec_lit + ")"
+    return "str(py_to_string(" + expr + "))"
 
 
 def _emit_lambda(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
@@ -2813,6 +2842,33 @@ def _function_template_params(node: dict[str, JsonVal]) -> list[str]:
     return out
 
 
+_BUILTIN_RESOLVED_TYPE_NAMES: frozenset[str] = frozenset({
+    "int", "int8", "int16", "int32", "int64",
+    "uint8", "uint16", "uint32", "uint64",
+    "float", "float32", "float64",
+    "bool", "str", "bytes", "bytearray",
+    "None", "none", "object", "Any", "Obj",
+    "JsonVal", "Callable", "callable", "type",
+    "unknown", "PyFile",
+})
+
+
+def _is_user_class_param_type(resolved_type: str) -> bool:
+    """Return True if the type is a user-defined class (needs mutable C++ ref)."""
+    if resolved_type in _BUILTIN_RESOLVED_TYPE_NAMES:
+        return False
+    if is_container_resolved_type(resolved_type):
+        return False
+    if resolved_type.startswith("tuple[") or resolved_type.startswith("callable["):
+        return False
+    if "|" in resolved_type:
+        return False
+    # Single uppercase letter = template parameter (A, B, T, etc.)
+    if len(resolved_type) == 1 and resolved_type.isupper():
+        return False
+    return True
+
+
 def _function_param_meta(node: dict[str, JsonVal]) -> list[tuple[str, str, bool]]:
     arg_types = _dict(node, "arg_types")
     arg_order = _list(node, "arg_order")
@@ -2827,7 +2883,14 @@ def _function_param_meta(node: dict[str, JsonVal]) -> list[tuple[str, str, bool]
             continue
         arg_type = arg_types.get(arg_name, "")
         arg_type_str = arg_type if isinstance(arg_type, str) else "object"
-        out.append((arg_name, arg_type_str, arg_usage.get(arg_name) == "reassigned"))
+        mutable = (arg_usage.get(arg_name) == "reassigned"
+                   or _is_user_class_param_type(arg_type_str))
+        out.append((arg_name, arg_type_str, mutable))
+    vararg_name = node.get("vararg_name")
+    if isinstance(vararg_name, str) and vararg_name != "":
+        vararg_type = arg_types.get(vararg_name, "")
+        vararg_type_str = vararg_type if isinstance(vararg_type, str) else "object"
+        out.append((vararg_name, vararg_type_str, False))
     return out
 
 
@@ -3233,6 +3296,8 @@ def emit_cpp_module(
         header.append('#include "built_in/error.h"')
     if "functional" in ctx.includes_needed:
         header.insert(6, "#include <functional>")
+    if "built_in/format_ops.h" in ctx.includes_needed:
+        header.append('#include "built_in/format_ops.h"')
 
     seen_includes: set[str] = {"core/py_runtime.h"}
     if needs_class_type_registration:

@@ -180,6 +180,14 @@ static inline int64 py_index(const Object<list<T>>& v, const T& item) {
     return py_index(*v, item);
 }
 
+// py_index for str list with char (string iteration over str yields char in C++)
+static inline int64 py_index(const list<str>& v, char ch) {
+    return v.index(str(1, (unsigned char)ch));
+}
+static inline int64 py_index(const Object<list<str>>& v, char ch) {
+    return py_index(*v, ch);
+}
+
 // py_at for tuple (runtime index → object conversion)
 template <class... Ts>
 static inline object py_at(const ::std::tuple<Ts...>& t, int64 idx) {
