@@ -28,7 +28,7 @@
    - sample parity マトリクス: 同上
    - selfhost マトリクス: selfhost 言語 × emit 先言語。状態は ⬜ 未着手 / 🟨 emit OK / 🟧 build OK / 🟩 parity PASS
    - 古い結果（例: 7日以上前）には警告マークを付与
-3. [ ] [ID: P5-PROGRESS-S3] 生成先を `docs/ja/backend-progress.md` とし、README.md からリンクする
+3. [ ] [ID: P5-PROGRESS-S3] 生成先を `docs/ja/language/backend-progress.md` とし、README.md からリンクする
 4. [ ] [ID: P5-PROGRESS-S4] selfhost 結果の書き出し形式を定義する — `work/parity-results/selfhost_<lang>.json` に emit/build/parity の段階と成否を記録する
 
 ### P10-REORG: tools/ と test/unit/ の棚卸し・統合・管理台帳
