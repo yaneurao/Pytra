@@ -17,13 +17,6 @@ from toolchain2.emit.cpp.types import collect_cpp_type_vars
 
 _RUNTIME_CPP_ROOT = Path(__file__).resolve().parents[3] / "runtime" / "cpp"
 
-# Modules whose generated code depends on a core .cpp that is NOT auto-discovered
-# via native_companion_source_path() (because the rel path differs).
-# Key: module_id, Value: runtime-relative path tail (without .cpp extension).
-_CORE_COMPANION_SOURCES: dict[str, str] = {
-    "pytra.built_in.io_ops": "core/io",
-}
-
 
 def _is_extern_decorator_name(name: str) -> bool:
     n = name.strip()
@@ -239,18 +232,9 @@ def emit_runtime_module_artifacts(
 
     cpp_text = ""
     source_out = ""
-    native_source = native_companion_source_path(module_id)
-    has_native_companion = native_companion_header_path(module_id).exists() or native_source.exists()
+    has_native_companion = native_companion_header_path(module_id).exists() or native_companion_source_path(module_id).exists()
     header_only_templates = _runtime_module_is_header_only_template_lane(emit_doc)
-    if has_native_companion and native_source.exists():
-        # Copy native .cpp implementation to output directory so the caller
-        # can compile it as part of the generated project.
-        import shutil as _shutil
-        dest = output_dir / (rel + ".cpp")
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        _shutil.copy2(native_source, dest)
-        source_out = str(dest)
-    elif (not has_native_companion) and _has_cpp_emit_definitions(emit_doc):
+    if (not has_native_companion) and _has_cpp_emit_definitions(emit_doc):
         cpp_text = emit_cpp_module(
             emit_doc,
             allow_runtime_module=True,
@@ -261,17 +245,6 @@ def emit_runtime_module_artifacts(
             source_path_out.parent.mkdir(parents=True, exist_ok=True)
             source_path_out.write_text(cpp_text, encoding="utf-8")
             source_out = str(source_path_out)
-
-    # Copy core companion .cpp if this module requires one.
-    core_companion_rel = _CORE_COMPANION_SOURCES.get(module_id, "")
-    if core_companion_rel != "":
-        import shutil as _shutil2
-        core_src = _RUNTIME_CPP_ROOT / (core_companion_rel + ".cpp")
-        if core_src.exists():
-            core_dest = output_dir / (core_companion_rel + ".cpp")
-            core_dest.parent.mkdir(parents=True, exist_ok=True)
-            if not core_dest.exists():
-                _shutil2.copy2(core_src, core_dest)
 
     native_include = ""
     native_header = native_companion_header_path(module_id)
