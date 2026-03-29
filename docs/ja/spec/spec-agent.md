@@ -29,7 +29,7 @@
 - `docs/ja/todo/index.md` には未完了タスクのみを置き、セクション単位で完了（全項目 `[x]`）した内容は `docs/ja/todo/archive/index.md`（索引）と `docs/ja/todo/archive/YYYYMMDD.md`（本文）へ移管します。
 - 優先度上書きは `docs/ja/todo2.md` ではなく、チャット指示で `対象ID` / `完了条件` / `非対象` を明示して行います（テンプレート: `docs/ja/plans/instruction-template.md`）。
 - 各領域の agent は自分の領域ファイル（`docs/ja/todo/{cpp,go,rust,ts,infra}.md`）内で優先度順に着手します。
-- P0 は緊急タスクです。領域を問わず空いている agent（主にインフラ担当）が対応します。P0 が他領域の作業をブロックすることはありません。
+- P0 は緊急タスクです。`docs/ja/todo/infra.md` に積み、インフラ担当 agent が対応します。他の領域 agent は P0 に着手しません（重複着手を防止）。P0 が他領域の作業をブロックすることはありません。
 - `docs/ja/todo/index.md` の進捗メモは 1 行要約に留め、詳細な判断・検証ログは文脈ファイル（`docs/ja/plans/*.md`）の `決定ログ` へ追記します。
 - 大きいタスクは文脈ファイルで `-S1` / `-S2` 形式の子タスクへ分割してよく、`tools/check_todo_priority.py` は最上位未完了 `ID` とその子 `ID` を許可します。
 - `docs/ja/todo/index.md` または `docs/ja/plans/*.md` に進捗ログを追加したターンでは、`python3 tools/check_todo_priority.py` を通過させます（`plans` 側は `決定ログ` の日付行のみが進捗判定対象）。
