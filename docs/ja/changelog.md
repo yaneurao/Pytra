@@ -4,6 +4,24 @@
 
 # 更新履歴
 
+## 2026-03-29
+
+- **Go fixture 全件 PASS**: Go emitter の container 既定表現を参照型ラッパー（`*PyList[T]`, `*PyDict[K,V]`, `*PySet[T]`）に統一（P1-GO-CONTAINER-WRAPPER S1〜S3）。fixture 全 147 件 + stdlib 16/16 PASS。
+- **Rust emitter 新規実装 (P7-RS-EMITTER)**: `src/toolchain2/emit/rs/` に CommonRenderer + override 構成で Rust emitter を新規実装。mapping.json 作成。fixture emit 成功。
+- **TypeScript emitter 新規実装 (P8-TS-EMITTER)**: `src/toolchain2/emit/ts/` に TS emitter を新規実装。JS は TS emitter の型注釈抑制フラグで対応する設計。mapping.json 作成。fixture 142 件 emit 成功。
+- **C++ emitter parity 改善 (P3-CR-CPP)**: 予約語エスケープ（`_safe_cpp_ident`）、optional dict.get、float/container printing を修正。oop 18/18, typing 22/22, signature 13/13 PASS。
+- **C++ runtime 例外安全性 (P3-CR-CPP-S4)**: py_types.h の `Object<void>` コンストラクタ5箇所を `make_unique` + `release` パターンに書き換え。
+- **runtime_parity_check 高速版**: `runtime_parity_check_fast.py` を新設。transpile 段を toolchain2 Python API のインメモリ呼び出しに置き換え、プロセス起動 + disk I/O を省略。
+- **runtime_parity_check に `--category` オプション追加**: fixture サブディレクトリ単位（oop, control, typing 等）で部分実行可能に。
+- **parity 結果の自動蓄積 + 進捗ページ自動生成 (P5-BACKEND-PROGRESS)**: parity check 実行時に `work/parity-results/` へ結果を自動蓄積（タイムスタンプ付きマージ）。`tools/gen_backend_progress.py` で fixture/sample/selfhost の3マトリクスを日英同時生成。
+- **mapping.json 妥当性チェッカー (P10.5-MAPPING-VALIDATE)**: `tools/check_mapping_json.py` を新設。全言語の mapping.json に対して必須エントリ（`env.target`）、フォーマット検証を実施。`run_local_ci.py` に組み込み。
+- **spec-runtime-decorator 拡張**: `extern_var` セクション追加、パイプライン解決フロー（parser → resolve → emitter の責務境界）追記、早見表追加。
+- **spec-emitter-guide 拡張**: §1.4 生成コード品質要件（例外安全性、予約語エスケープ、`rc_from_value<T>` 汎用化）、§7.1〜7.3 mapping.json の定数置換・リテラル埋め込み・`env.target` 必須エントリ。
+- **spec-tools 再編**: 索引 + 3詳細ページ（daily, parity, update-rules）に分割。unregistered 7本を削除。
+- **TODO 領域別分割**: `todo/index.md` を索引のみに縮退し、`cpp.md` / `go.md` / `rust.md` / `ts.md` / `infra.md` に分離。各 agent は自分の領域ファイルだけ読み書きする運用。P0 ブロッカールール撤去。
+- **旧 `@abi` 参照の一掃**: spec-east / spec-dev / spec-runtime / guide / tutorial から `@abi` / `runtime_abi_v1` を削除し `@runtime` / `@extern` に統一。
+- **PNG fixture パス修正**: `out/` → `test_png_out/` に変更し `os.makedirs` で自前作成。parity check の cwd 不一致を解消。
+
 ## 2026-03-28
 
 - **Go 例外処理完成 (P0-EXCEPTION-GO)**: typed catch、custom exception の正確な catch/rethrow、`raise ... from ...`、bare rethrow、union-return 垂直スライスを実装。builtin exception を `pytra.built_in.error` に統合。

@@ -4,6 +4,24 @@
 
 # Changelog
 
+## 2026-03-29
+
+- **Go fixture all PASS**: Unified Go emitter container types to reference wrappers (`*PyList[T]`, `*PyDict[K,V]`, `*PySet[T]`) (P1-GO-CONTAINER-WRAPPER S1-S3). All 147 fixtures + stdlib 16/16 PASS.
+- **Rust emitter new implementation (P7-RS-EMITTER)**: New Rust emitter in `src/toolchain2/emit/rs/` with CommonRenderer + override architecture. mapping.json created. Fixture emit success.
+- **TypeScript emitter new implementation (P8-TS-EMITTER)**: New TS emitter in `src/toolchain2/emit/ts/`. JS covered by type annotation stripping flag on the same emitter. mapping.json created. 142 fixtures emit success.
+- **C++ emitter parity improvements (P3-CR-CPP)**: Reserved word escaping (`_safe_cpp_ident`), optional dict.get, float/container printing fixes. oop 18/18, typing 22/22, signature 13/13 PASS.
+- **C++ runtime exception safety (P3-CR-CPP-S4)**: Rewrote 5 `Object<void>` constructors in py_types.h to use `make_unique` + `release` pattern.
+- **Fast parity check**: New `runtime_parity_check_fast.py` using in-memory toolchain2 API calls for transpile stage, eliminating subprocess startup and disk I/O.
+- **`--category` option for runtime_parity_check**: Run parity checks per fixture subdirectory (oop, control, typing, etc.) instead of all 146+ cases.
+- **Automatic parity result accumulation + progress page (P5-BACKEND-PROGRESS)**: Parity check auto-writes to `work/parity-results/` with per-case merge and timestamps. `tools/gen_backend_progress.py` generates fixture/sample/selfhost matrices in both Japanese and English.
+- **mapping.json validator (P10.5-MAPPING-VALIDATE)**: New `tools/check_mapping_json.py` validating required entries (`env.target`), format, and structure for all languages. Integrated into `run_local_ci.py`.
+- **spec-runtime-decorator expansion**: Added `extern_var` section, pipeline resolution flow (parser → resolve → emitter responsibilities), quick reference table.
+- **spec-emitter-guide expansion**: §1.4 generated code quality (exception safety, reserved word escaping, generic `rc_from_value<T>`), §7.1-7.3 mapping.json constant substitution, literal embedding, mandatory `env.target`.
+- **spec-tools reorganization**: Split into index + 3 detail pages (daily, parity, update-rules). Removed 7 unregistered tools.
+- **TODO per-area split**: Reduced `todo/index.md` to index only, split into `cpp.md` / `go.md` / `rust.md` / `ts.md` / `infra.md`. Each agent reads/writes only its own area file. Removed P0 global blocker rule.
+- **Legacy `@abi` reference cleanup**: Removed `@abi` / `runtime_abi_v1` from spec-east, spec-dev, spec-runtime, guide, and tutorial. Unified to `@runtime` / `@extern`.
+- **PNG fixture path fix**: Changed output from `out/` to `test_png_out/` with `os.makedirs`. Fixes parity check cwd mismatch.
+
 ## 2026-03-28
 
 - **Go exception handling completed (P0-EXCEPTION-GO)**: Typed catch, accurate catch/rethrow for custom exceptions, `raise ... from ...`, bare rethrow, and union-return vertical slice implemented. Builtin exceptions consolidated into `pytra.built_in.error`.

@@ -137,11 +137,11 @@ Legend: ✅ = Good / 🔶 = Partial / ❌ = Unsupported or difficult
 
 ## Changelog
 
+> **2026-03-29** - Go fixture all PASS. New Rust and TypeScript emitters for toolchain2. C++ parity improvements (reserved word escaping, exception safety). Automatic parity result accumulation + progress page generation. TODO split into per-area files.
+
 > **2026-03-28** - Go/C++ exception handling completed. `@runtime` / `@extern` decorator design finalized. Linker-generated type_id table implemented. Added 5 guide pages and 4 tutorial pages. Spec restructuring (12 legacy specs archived).
 
 > **2026-03-27** - C++ emitter spec compliance completed (S1-S15). Introduced Traits (pure interface, multiple implementation) with C++/Go parity. Completed isinstance narrowing (if/elif/early return guard/ternary), ternary Optional type inference, and pytra.std.json parser support. Started Lowering Profile + CommonRenderer design.
-
-> **2026-03-26** - Pipeline redesign completed. All six stages of the pipeline (`parse -> resolve -> compile -> optimize -> link -> emit`) now work end to end. The Go backend has been migrated to the new pipeline.
 
 Full history: [docs/en/changelog.md](docs/en/changelog.md)
 
