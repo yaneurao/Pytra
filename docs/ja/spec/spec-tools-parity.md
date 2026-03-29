@@ -25,7 +25,36 @@
 - `tools/export_backend_test_matrix.py`
   - 目的: `test/unit/toolchain/emit/**` と shared starred smoke を実行し、JA/EN の backend test matrix docs を再生成する。
 
-## 2. smoke テスト運用（`py2x` 共通化後）
+## 2. parity check の高速化: インメモリパイプライン
+
+### 現状の問題
+
+`runtime_parity_check.py` は各ケースで `python src/pytra-cli.py ...` をサブプロセスとして起動し、中間ファイル（`.east1` → `.east2` → `.east3` → linked JSON → emit）をディスク経由でやり取りする。132 fixture × 複数言語で数時間かかる主因はこのプロセス起動 + disk I/O のオーバーヘッドである。
+
+### 解決策
+
+toolchain2 の各段は dict in / dict out の Python API を持つ:
+
+```python
+from toolchain2.parse.py.parse_python import parse_python_file       # → dict (EAST1)
+from toolchain2.resolve.py.resolver import resolve_east1_to_east2     # → dict (EAST2)
+from toolchain2.optimize.optimizer import optimize_east3_document     # → dict (EAST3-opt)
+from toolchain2.link.linker import link_modules                       # → LinkResult
+from toolchain2.emit.go.emitter import emit_go_module                 # → str (Go source)
+from toolchain2.emit.cpp.emitter import emit_cpp_module               # → str (C++ source)
+```
+
+parity check で CLI サブプロセスの代わりにこれらの API を直接呼べば、中間ファイルのディスク書き出しを省略できる。1 プロセス内で parse → resolve → compile → optimize → link → emit をインメモリで回すことで大幅に高速化される。
+
+### 移行方針
+
+1. `runtime_parity_check.py` の transpile 段を CLI 呼び出しから Python API 直接呼び出しに変更する
+2. compile + run 段は引き続きサブプロセス（`g++`, `go run` 等）を使う（ターゲット言語のコンパイラはプロセス外）
+3. `--cli-mode` フラグで従来の CLI 経由実行も残し、API 呼び出しとの結果一致を検証可能にする
+
+参照: `docs/ja/plans/plan-pipeline-redesign.md` §3.5「パフォーマンスノウハウ: インメモリパイプライン」
+
+## 3. smoke テスト運用
 
 - 共通 smoke（CLI 成功、`--east-stage 2` 拒否、`load_east`、add fixture）は `test/unit/common/test_py2x_smoke_common.py` を正本とする。
 - 言語別 smoke（`test/unit/toolchain/emit/<lang>/test_py2*_smoke.py`）は言語固有の emitter/runtime 契約だけを保持し、共通ケースを再実装しない。
@@ -36,7 +65,7 @@
   - `python3 tools/check_noncpp_east3_contract.py --skip-transpile`
   - `python3 tools/check_py2x_transpile.py --target <lang>`（対象言語分）
 
-## 3. non-C++ backend health matrix（linked-program 後）
+## 4. non-C++ backend health matrix（linked-program 後）
 
 - non-C++ backend の recovery baseline は `static_contract -> common_smoke -> target_smoke -> transpile -> parity` の順で評価する。
 - `parity` は前段 gate をすべて通した target にだけ実行する。前段 failure がある target を parity failure として集計してはならない。
@@ -46,7 +75,7 @@
 - `tools/run_local_ci.py` は `python3 tools/check_noncpp_backend_health.py --family all --skip-parity` を含み、parity 非依存の smoke/transpile gate を日常回帰へ常設する。
 - `tools/run_local_ci.py` は `python3 tools/check_jsonvalue_decode_boundaries.py` も含み、selfhost/host の JSON artifact 境界が raw `json.loads(...)` へ戻る増分を local CI で止める。
 
-## 4. 全 target sample parity 完了条件
+## 5. 全 target sample parity 完了条件
 
 - canonical parity target order は `cpp,rs,cs,js,ruby,lua,php,ts,go,java,swift,kotlin,scala,nim` とする。これは `list_parity_targets()` の返却順と一致させる。
 - 「全target parity green」は `python3 tools/runtime_parity_check.py --targets cpp,rs,cs,js,ruby,lua,php,ts,go,java,swift,kotlin,scala,nim --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3` 実行時に、全 target / 全 18 sample case が `ok` のみで完了する状態を指す。
@@ -58,7 +87,7 @@
   - scripting / mixed target: `python3 tools/runtime_parity_check.py --targets ruby,lua,php,nim --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2`
 - 日常の full-target 再実行は `python3 tools/check_all_target_sample_parity.py --summary-dir work/logs/all_target_sample_parity` を canonical wrapper とする。wrapper は上記 4 group を順に実行し、`all-target-summary.json` に統合結果を書き出す。
 
-## 5. Debian 12 parity bootstrap snapshot
+## 6. Debian 12 parity bootstrap snapshot
 
 - 2026-03-08 時点の current machine は Debian 12 (`bookworm`) / `root` 前提で bootstrap を実施した。
 - compiled target の bootstrap command:
