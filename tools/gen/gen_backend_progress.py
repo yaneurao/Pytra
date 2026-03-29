@@ -188,11 +188,11 @@ def _build_parity_matrix(cases: list[tuple[str, str] | str], results: dict[str, 
             fail_cells.append(str(fail_count))
 
     if case_root == "fixture":
-        lines.append(f"| | **PASS 🟩** | {' | '.join(ok_cells)} |")
-        lines.append(f"| | **FAIL 🟥** | {' | '.join(fail_cells)} |")
+        lines.append(f"| | **🟩 PASS** | {' | '.join(ok_cells)} |")
+        lines.append(f"| | **🟥 FAIL** | {' | '.join(fail_cells)} |")
     else:
-        lines.append(f"| **PASS 🟩** | {' | '.join(ok_cells)} |")
-        lines.append(f"| **FAIL 🟥** | {' | '.join(fail_cells)} |")
+        lines.append(f"| **🟩 PASS** | {' | '.join(ok_cells)} |")
+        lines.append(f"| **🟥 FAIL** | {' | '.join(fail_cells)} |")
 
     return lines
 
@@ -248,11 +248,11 @@ def _build_parity_matrix_en(cases: list[tuple[str, str] | str], results: dict[st
             fail_cells.append(str(fail_count))
 
     if case_root == "fixture":
-        lines.append(f"| | **PASS 🟩** | {' | '.join(ok_cells)} |")
-        lines.append(f"| | **FAIL 🟥** | {' | '.join(fail_cells)} |")
+        lines.append(f"| | **🟩 PASS** | {' | '.join(ok_cells)} |")
+        lines.append(f"| | **🟥 FAIL** | {' | '.join(fail_cells)} |")
     else:
-        lines.append(f"| **PASS 🟩** | {' | '.join(ok_cells)} |")
-        lines.append(f"| **FAIL 🟥** | {' | '.join(fail_cells)} |")
+        lines.append(f"| **🟩 PASS** | {' | '.join(ok_cells)} |")
+        lines.append(f"| **🟥 FAIL** | {' | '.join(fail_cells)} |")
 
     return lines
 

@@ -5,7 +5,7 @@
 # Sample parity matrix
 
 > Machine-generated file. Run `python3 tools/gen/gen_backend_progress.py` to update.
-> Generated at: 2026-03-30T06:52:53
+> Generated at: 2026-03-30T06:56:24
 > [Links](./index.md)
 
 | Icon | Meaning |
@@ -34,5 +34,5 @@
 | 16_glass_sculpture_chaos | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | 17_monte_carlo_pi | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | 18_mini_language_interpreter | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| **PASS 🟩** | — | — | — | — | — | — | — | 18 | — | — | — | — | — | — | — | — | — | — |
-| **FAIL 🟥** | — | — | — | — | — | — | — | 0 | — | — | — | — | — | — | — | — | — | — |
+| **🟩 PASS** | — | — | — | — | — | — | — | 18 | — | — | — | — | — | — | — | — | — | — |
+| **🟥 FAIL** | — | — | — | — | — | — | — | 0 | — | — | — | — | — | — | — | — | — | — |

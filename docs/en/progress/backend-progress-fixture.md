@@ -5,7 +5,7 @@
 # Fixture parity matrix
 
 > Machine-generated file. Run `python3 tools/gen/gen_backend_progress.py` to update.
-> Generated at: 2026-03-30T06:52:53
+> Generated at: 2026-03-30T06:56:24
 > [Links](./index.md)
 
 | Icon | Meaning |
@@ -162,5 +162,5 @@
 | typing | starred_call_tuple_basic | ⬜ | 🟥 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | typing | type_alias_pep695 | ⬜ | 🟥 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | typing | union_return_errorcheck | ⬜ | 🟥 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| | **PASS 🟩** | 7 | 0 | — | — | — | — | — | 66 | — | — | — | — | — | — | — | — | — | — |
-| | **FAIL 🟥** | 17 | 146 | — | — | — | — | — | 2 | — | — | — | — | — | — | — | — | — | — |
+| | **🟩 PASS** | 7 | 0 | — | — | — | — | — | 66 | — | — | — | — | — | — | — | — | — | — |
+| | **🟥 FAIL** | 17 | 146 | — | — | — | — | — | 4 | — | — | — | — | — | — | — | — | — | — |
