@@ -6,7 +6,7 @@
 
 > `docs/ja/` が正（source of truth）です。`docs/en/` はその翻訳です。
 
-最終更新: 2026-03-27
+最終更新: 2026-03-29
 
 ## 文脈運用ルール
 
@@ -20,27 +20,14 @@
 
 ## 未完了タスク
 
-### P0-CPP-INCLUDE-PATH-FIX: C++ emitter の runtime include パス不整合を修正する
+### P0-FAST-PARITY-CPP-BUILD: 高速 parity check の C++ ビルドパスを修正する
 
-1. [x] [ID: P0-CPP-INCPATH-S1] 生成された `built_in/*.h` が `runtime/cpp/built_in/*.h` を参照しているが、メインの `.cpp` は `core/py_runtime.h` を参照しており、include ルートが不整合。全生成ファイルで include パスを統一する（完了: runtime_bundle.py の native_include パスを `_RUNTIME_CPP_ROOT` 基準に変更、py_runtime.h に `../built_in/contains.h` 等を相対パスで追加）
-2. [x] [ID: P0-CPP-INCPATH-S2] `set_wrapper_methods` と `dict_wrapper_methods` が g++ で compile + run できることを確認する（完了: runtime_parity_check.py で両ケース PASS）
+文脈: [docs/ja/spec/spec-tools-parity.md](../spec/spec-tools-parity.md) §2
 
-### P0-GO-PATHLIB-FIX: Go emitter の pathlib stdlib 署名崩れを修正する
-
-1. [x] [ID: P0-GO-PATHLIB-S1] Go emitter が `pathlib.joinpath` / `pathlib.read_text` / `pathlib.write_text` の署名を正しく写像するよう修正する
-2. [x] [ID: P0-GO-PATHLIB-S2] `pathlib_extended` fixture が Go で compile + run できることを確認する
-
-### P1-INCLUDE-RUNTIME-MIGRATION: include/ の旧デコレータを @runtime / runtime_var に書き換える
-
-文脈: [docs/ja/spec/spec-runtime-decorator.md](../spec/spec-runtime-decorator.md)
-
-1. [x] [ID: P1-INCLUDE-S1] `include/py/pytra/built_in/builtins.py` を `@runtime` 記法に書き換える
-2. [x] [ID: P1-INCLUDE-S2] `include/py/pytra/std/pathlib.py` を `@runtime` 記法に書き換える（`@extern_fn` / `@extern_class` を廃止）
-3. [x] [ID: P1-INCLUDE-S3] `include/py/pytra/std/math.py` を `@runtime` + `runtime_var` 記法に書き換える
-4. [x] [ID: P1-INCLUDE-S4] `include/py/pytra/std/sys.py`, `os.py`, `os_path.py`, `glob.py`, `time.py`, `subprocess.py` を書き換える
-5. [x] [ID: P1-INCLUDE-S5] `include/py/pytra/std/__init__.py` から `extern_fn`, `extern_class`, `extern_var` の定義を削除し、`runtime`, `runtime_var`, `extern` のみ残す
-6. [x] [ID: P1-INCLUDE-S6] include EAST1 を再生成し、resolve が新記法で型解決できることを確認する（全 EAST1 再生成済み、key fixtures PASS）
-7. [x] [ID: P1-INCLUDE-S7] fixture の C++/Go parity に影響がないことを確認する（Go pass=127 fail=19 変化なし、sys_extended は旧来からの run_failed で変化なし）
+1. [ ] [ID: P0-FAST-PARITY-S1] `runtime_parity_check_fast.py` のインメモリ emit が生成する C++ ディレクトリ構成で、`type_id_table.h` 等の linker 生成ヘッダが正しく配置されるよう修正する
+2. [ ] [ID: P0-FAST-PARITY-S2] `_run_cpp_emit_dir` の include パス（`-I`）が emit ディレクトリ構成と一致するよう調整する
+3. [ ] [ID: P0-FAST-PARITY-S3] `runtime_parity_check_fast.py --category oop --targets cpp` で 18 件全件 PASS を確認する
+4. [ ] [ID: P0-FAST-PARITY-S4] `runtime_parity_check_fast.py --targets cpp` で全 fixture の parity 結果が従来版（`runtime_parity_check.py`）と一致することを確認する
 
 ### P1-GO-CONTAINER-WRAPPER: Go emitter の container 既定表現を spec 準拠に修正する
 
