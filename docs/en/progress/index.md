@@ -28,6 +28,9 @@ An overview of Pytra's development status. Links to test results, tasks, changel
 [Selfhost matrix](./backend-progress-selfhost.md)
 — Transpile Pytra's own compiler (toolchain2) to each language and verify the resulting compiler can emit all targets.
 
+[Emitter hardcode violation matrix](./emitter-hardcode-lint.md)
+— Counts grep-detected violations where emitters hardcode module names, runtime symbols, or class names instead of using EAST3 data. Update with `python3 tools/check/check_emitter_hardcode_lint.py`.
+
 ## Task list
 
 [TODO index](../todo/index.md)

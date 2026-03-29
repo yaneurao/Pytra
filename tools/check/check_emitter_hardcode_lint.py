@@ -178,6 +178,114 @@ def print_verbose(
 
 
 # ---------------------------------------------------------------------------
+# Markdown ファイル出力
+# ---------------------------------------------------------------------------
+
+def _render_md(
+    mat: dict[str, dict[str, int]],
+    hits: list[tuple[str, str, Path, int, str]],
+    langs: list[str],
+    now: str,
+    lang: str,  # "ja" or "en"
+) -> str:
+    is_ja = lang == "ja"
+    other_lang = "en" if is_ja else "ja"
+    badge_label = "Read in English" if is_ja else "日本語で読む"
+    badge_color = "2563EB" if is_ja else "DC2626"
+    badge_text  = "English" if is_ja else "日本語"
+
+    lines: list[str] = []
+    lines.append(f'<a href="../../{other_lang}/progress/emitter-hardcode-lint.md">')
+    lines.append(f'  <img alt="{badge_label}" src="https://img.shields.io/badge/docs-{badge_text}-{badge_color}?style=flat-square">')
+    lines.append("</a>")
+    lines.append("")
+
+    if is_ja:
+        lines.append("# emitter ハードコード違反マトリクス")
+        lines.append("")
+        lines.append("> 機械生成ファイル。`python3 tools/check/check_emitter_hardcode_lint.py` で更新する。")
+        lines.append(f"> 生成日時: {now}")
+        lines.append("> [関連リンク](./index.md)")
+        lines.append("")
+        lines.append("emitter が EAST3 の情報を使わず、モジュール名・runtime 関数名・クラス名等を文字列で直書きしている箇所を grep で検出したマトリクス。")
+        lines.append("違反数が 0 に近づくほど emitter が EAST3 正本に従った実装になっている。")
+        lines.append("")
+        lines.append("| アイコン | 意味 |")
+        lines.append("|---|---|")
+        lines.append("| 🟩 | 違反なし（0件） |")
+        lines.append("| 🟥 | 違反あり（件数を表示） |")
+        lines.append("")
+        cat_header = "| カテゴリ"
+        cat_sep    = "|---"
+    else:
+        lines.append("# Emitter hardcode violation matrix")
+        lines.append("")
+        lines.append("> Machine-generated file. Run `python3 tools/check/check_emitter_hardcode_lint.py` to update.")
+        lines.append(f"> Generated at: {now}")
+        lines.append("> [Links](./index.md)")
+        lines.append("")
+        lines.append("Matrix of grep-detected violations where the emitter hardcodes module names, runtime symbols, or class names instead of using EAST3 data.")
+        lines.append("Fewer violations means the emitter is more faithfully following the EAST3 source of truth.")
+        lines.append("")
+        lines.append("| Icon | Meaning |")
+        lines.append("|---|---|")
+        lines.append("| 🟩 | No violations (0) |")
+        lines.append("| 🟥 | Violations found (count shown) |")
+        lines.append("")
+        cat_header = "| Category"
+        cat_sep    = "|---"
+
+    # マトリクステーブル
+    header = cat_header + " | " + " | ".join(langs) + " |"
+    sep    = cat_sep + " | " + " | ".join(["---"] * len(langs)) + " |"
+    lines.append(header)
+    lines.append(sep)
+    for cat, label in CATEGORY_LABELS.items():
+        cells = []
+        for l in langs:
+            n = mat[cat][l]
+            cells.append(f"🟥{n}" if n else "🟩0")
+        lines.append(f"| {label.strip()} | " + " | ".join(cells) + " |")
+    lines.append("")
+
+    # 詳細セクション
+    if is_ja:
+        lines.append("## 詳細")
+    else:
+        lines.append("## Details")
+    lines.append("")
+
+    from itertools import groupby
+    key = lambda h: (h[1], h[0])
+    for (cat, l), group in groupby(sorted(hits, key=key), key=key):
+        entries = list(group)
+        lines.append(f"### {cat} / {l} ({len(entries)})")
+        lines.append("")
+        lines.append("```")
+        for _lang, _cat, fpath, lineno, line in entries:
+            rel = fpath.relative_to(ROOT)
+            lines.append(f"{rel}:{lineno}: {line}")
+        lines.append("```")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def write_progress_pages(
+    mat: dict[str, dict[str, int]],
+    hits: list[tuple[str, str, Path, int, str]],
+    langs: list[str],
+    now: str,
+) -> None:
+    for lang_code in ("ja", "en"):
+        out_path = ROOT / "docs" / lang_code / "progress" / "emitter-hardcode-lint.md"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        content = _render_md(mat, hits, langs, now, lang_code)
+        out_path.write_text(content, encoding="utf-8")
+        print(f"  -> {out_path.relative_to(ROOT)}")
+
+
+# ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
 
@@ -189,6 +297,8 @@ def main() -> int:
                         help="対象言語を絞り込む（例: go, cpp, rs, ts）")
     parser.add_argument("--category", default=None,
                         help="対象カテゴリを絞り込む（例: module_name）")
+    parser.add_argument("--no-write", action="store_true",
+                        help="docs/progress/ への書き出しをスキップする")
     args = parser.parse_args()
 
     hits = collect_hits(args.lang, args.category)
@@ -201,6 +311,9 @@ def main() -> int:
     if args.lang:
         all_langs = [l for l in all_langs if l == args.lang]
 
+    import datetime
+    now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
     total = len(hits)
     print(f"\n=== emitter hardcode lint — {total} 件の違反 ===\n")
 
@@ -210,6 +323,11 @@ def main() -> int:
     if args.verbose and hits:
         print("\n--- 詳細 ---")
         print_verbose(hits, all_langs)
+
+    # --lang / --category で絞り込んでいる場合はファイル出力しない
+    if not args.no_write and not args.lang and not args.category:
+        print()
+        write_progress_pages(mat, hits, all_langs, now)
 
     print()
     return 0
