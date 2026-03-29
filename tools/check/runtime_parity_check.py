@@ -12,6 +12,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import time
 
 import zlib
 from dataclasses import dataclass
@@ -957,7 +958,27 @@ def main() -> int:
         out_path.write_text(json.dumps(summary_obj, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     _save_parity_results(records, args.case_root, enabled_targets)
+    _maybe_regenerate_progress()
     return exit_code
+
+
+def _maybe_regenerate_progress() -> None:
+    """Regenerate backend progress pages if the last generation was more than 10 minutes ago."""
+    marker = ROOT / "docs" / "ja" / "progress" / "backend-progress-fixture.md"
+    if marker.exists() and (time.time() - marker.stat().st_mtime) < 600:
+        return
+    gen_script = ROOT / "tools" / "gen" / "gen_backend_progress.py"
+    if not gen_script.exists():
+        return
+    try:
+        subprocess.run(
+            ["python3", str(gen_script)],
+            cwd=str(ROOT),
+            timeout=30,
+            capture_output=True,
+        )
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":
