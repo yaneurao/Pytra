@@ -1,9 +1,6 @@
 """Pure-Python source-of-truth for sequence helpers used by runtime built-ins."""
 
-from pytra.std import abi
 
-
-@abi(ret="value")
 def py_range(start: int, stop: int, step: int) -> list[int]:
     out: list[int] = []
     if step == 0:

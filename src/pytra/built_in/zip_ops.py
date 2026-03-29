@@ -1,11 +1,10 @@
 """Pure-Python source-of-truth for generic zip helpers."""
 
 
-from pytra.std import abi, template
+from pytra.std import template
 
 
 @template("A", "B")
-@abi(args={"lhs": "value", "rhs": "value"}, ret="value")
 def zip(lhs: list[A], rhs: list[B]) -> list[tuple[A, B]]:
     out: list[tuple[A, B]] = []
     i = 0

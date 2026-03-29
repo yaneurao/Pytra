@@ -1,9 +1,6 @@
 """アニメーションGIFを書き出すための最小ヘルパー。"""
 
 
-from pytra.std import abi
-
-
 def _gif_append(dst: bytearray, src: bytearray) -> None:
     i = 0
     n = len(src)
@@ -78,7 +75,6 @@ def grayscale_palette() -> bytes:
     return bytes(p)
 
 
-@abi(args={"frames": "value"})
 def save_gif(
     path: str,
     width: int,

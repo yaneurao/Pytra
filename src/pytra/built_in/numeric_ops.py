@@ -1,11 +1,10 @@
 """Pure-Python source-of-truth for numeric helper built-ins."""
 
 
-from pytra.std import abi, template
+from pytra.std import template
 
 
 @template("T")
-@abi(args={"values": "value"}, ret="value")
 def sum(values: list[T]) -> T:
     if len(values) == 0:
         return 0

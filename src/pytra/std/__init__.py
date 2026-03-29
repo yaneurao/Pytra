@@ -1,14 +1,17 @@
 """Python stdlib compatibility modules for Pytra."""
 
 
-def extern(fn):
-    return fn
+def extern(obj=None, *, module: str = "", symbol: str = "", tag: str = ""):
+    if module != "" or symbol != "" or tag != "":
+        def deco(fn):
+            return fn
+        return deco
+    return obj
 
 
-def abi(*, args=None, ret="default"):
-    def deco(fn):
-        return fn
-
+def runtime(namespace: str):
+    def deco(cls):
+        return cls
     return deco
 
 

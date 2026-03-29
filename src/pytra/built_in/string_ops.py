@@ -1,7 +1,5 @@
 """Pure-Python source-of-truth for string helper built-ins."""
 
-from pytra.std import abi
-
 
 def _is_space(ch: str) -> bool:
     return ch == " " or ch == "\t" or ch == "\n" or ch == "\r"
@@ -28,7 +26,6 @@ def _normalize_index(idx: int, n: int) -> int:
     return out
 
 
-@abi(args={"parts": "value"}, ret="value")
 def py_join(sep: str, parts: list[str]) -> str:
     n = len(parts)
     if n == 0:
@@ -43,7 +40,6 @@ def py_join(sep: str, parts: list[str]) -> str:
     return out
 
 
-@abi(ret="value")
 def py_split(s: str, sep: str, maxsplit: int) -> list[str]:
     out: list[str] = []
     if sep == "":
@@ -67,7 +63,6 @@ def py_split(s: str, sep: str, maxsplit: int) -> list[str]:
     return out
 
 
-@abi(ret="value")
 def py_splitlines(s: str) -> list[str]:
     out: list[str] = []
     n = len(s)
