@@ -16,6 +16,7 @@
 - **タスク完了時は `[ ]` を `[x]` に変更し、完了メモを追記してコミットすること。**
 - 完了済みタスクは定期的に `docs/ja/todo/archive/` へ移動する。
 - **parity テストは「emit + compile + run + stdout 一致」を完了条件とする。**
+- **[emitter 実装ガイドライン](../spec/spec-emitter-guide.md)を必ず読むこと。** parity check ツール、禁止事項、mapping.json の使い方が書いてある。
 
 ## 現状
 
