@@ -169,20 +169,30 @@ def _build_parity_matrix(cases: list[tuple[str, str] | str], results: dict[str, 
             lines.append(f"| {stem} | {' | '.join(cells)} |")
 
     # Summary row
-    summary_cells = []
+    ok_cells = []
+    fail_cells = []
     for lang in lang_list:
-        counts: dict[str, int] = {}
+        ok_count = 0
+        fail_count = 0
         for entry in results.get(lang, {}).values():
             cat = str(entry.get("category", "")) if isinstance(entry, dict) else ""
-            icon = _case_icon(cat)
-            counts[icon] = counts.get(icon, 0) + 1
-        parts = " ".join(f"{icon}{n}" for icon, n in sorted(counts.items()))
-        summary_cells.append(parts or "—")
+            if _case_icon(cat) == "🟩":
+                ok_count += 1
+            else:
+                fail_count += 1
+        if ok_count + fail_count == 0:
+            ok_cells.append("—")
+            fail_cells.append("—")
+        else:
+            ok_cells.append(f"🟩{ok_count}")
+            fail_cells.append(f"🟥{fail_count}")
 
     if case_root == "fixture":
-        lines.append(f"| | **合計** | {' | '.join(summary_cells)} |")
+        lines.append(f"| | **PASS** | {' | '.join(ok_cells)} |")
+        lines.append(f"| | **FAIL** | {' | '.join(fail_cells)} |")
     else:
-        lines.append(f"| **合計** | {' | '.join(summary_cells)} |")
+        lines.append(f"| **PASS** | {' | '.join(ok_cells)} |")
+        lines.append(f"| **FAIL** | {' | '.join(fail_cells)} |")
 
     return lines
 
@@ -221,13 +231,18 @@ def _build_parity_matrix_en(cases: list[tuple[str, str] | str], results: dict[st
 
     summary_cells = []
     for lang in lang_list:
-        counts: dict[str, int] = {}
+        ok_count = 0
+        fail_count = 0
         for entry in results.get(lang, {}).values():
             cat = str(entry.get("category", "")) if isinstance(entry, dict) else ""
-            icon = _case_icon(cat)
-            counts[icon] = counts.get(icon, 0) + 1
-        parts = " ".join(f"{icon}{n}" for icon, n in sorted(counts.items()))
-        summary_cells.append(parts or "—")
+            if _case_icon(cat) == "🟩":
+                ok_count += 1
+            else:
+                fail_count += 1
+        if ok_count + fail_count == 0:
+            summary_cells.append("—")
+        else:
+            summary_cells.append(f"🟩{ok_count} 🟥{fail_count}")
 
     if case_root == "fixture":
         lines.append(f"| | **Total** | {' | '.join(summary_cells)} |")
