@@ -195,16 +195,16 @@ def build_matrix(
 def _cell(n: int | None) -> str:
     if n is None:
         return "⬜"
-    return f"🟥{n}" if n else "🟩"
+    return "🟥" if n else "🟩"
 
 
 def print_matrix(mat: dict[str, dict[str, int | None]], langs: list[str]) -> None:
-    header = "| カテゴリ           | " + " | ".join(f"{l:<6}" for l in langs) + " |"
+    header = "| カテゴリ           | " + " | ".join(langs) + " |"
     sep    = "|" + "-" * (len(header) - 2) + "|"
     print(header)
     print(sep)
     for cat, label in CATEGORY_LABELS.items():
-        cells = [f"{_cell(mat[cat][l]):<6}" for l in langs]
+        cells = [_cell(mat[cat][l]) for l in langs]
         print(f"| {label} | " + " | ".join(cells) + " |")
 
 
@@ -258,7 +258,7 @@ def _render_md(
         lines.append("| アイコン | 意味 |")
         lines.append("|---|---|")
         lines.append("| 🟩 | 違反なし |")
-        lines.append("| 🟥 | 違反あり（件数を表示） |")
+        lines.append("| 🟥 | 違反あり（詳細は下の表を参照） |")
         lines.append("| ⬜ | 未実装（toolchain2 に emitter なし） |")
         lines.append("")
         cat_header = "| カテゴリ"
@@ -276,7 +276,7 @@ def _render_md(
         lines.append("| Icon | Meaning |")
         lines.append("|---|---|")
         lines.append("| 🟩 | No violations |")
-        lines.append("| 🟥 | Violations found (count shown) |")
+        lines.append("| 🟥 | Violations found (see details below) |")
         lines.append("| ⬜ | Not implemented (no emitter in toolchain2) |")
         lines.append("")
         cat_header = "| Category"

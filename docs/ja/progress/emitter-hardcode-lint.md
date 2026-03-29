@@ -5,7 +5,7 @@
 # emitter ハードコード違反マトリクス
 
 > 機械生成ファイル。`python3 tools/check/check_emitter_hardcode_lint.py` で更新する。
-> 生成日時: 2026-03-30T07:05:28
+> 生成日時: 2026-03-30T07:24:17
 > [関連リンク](./index.md)
 
 emitter が EAST3 の情報を使わず、モジュール名・runtime 関数名・クラス名等を文字列で直書きしている箇所を grep で検出したマトリクス。
@@ -14,16 +14,16 @@ emitter が EAST3 の情報を使わず、モジュール名・runtime 関数名
 | アイコン | 意味 |
 |---|---|
 | 🟩 | 違反なし |
-| 🟥 | 違反あり（件数を表示） |
+| 🟥 | 違反あり（詳細は下の表を参照） |
 | ⬜ | 未実装（toolchain2 に emitter なし） |
 
 | カテゴリ | cpp | rs | cs | ps1 | js | ts | dart | go | java | swift | kotlin | ruby | lua | scala | php | nim | julia | zig |
 |--- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| module name | 🟩 | 🟥2 | ⬜ | ⬜ | ⬜ | 🟥1 | ⬜ | 🟥6 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| runtime symbol | 🟥1 | 🟥3 | ⬜ | ⬜ | ⬜ | 🟥1 | ⬜ | 🟥2 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| module name | 🟩 | 🟥 | ⬜ | ⬜ | ⬜ | 🟥 | ⬜ | 🟥 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| runtime symbol | 🟥 | 🟥 | ⬜ | ⬜ | ⬜ | 🟥 | ⬜ | 🟥 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | target const | 🟩 | 🟩 | ⬜ | ⬜ | ⬜ | 🟩 | ⬜ | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | prefix match | 🟩 | 🟩 | ⬜ | ⬜ | ⬜ | 🟩 | ⬜ | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| class name | 🟥3 | 🟩 | ⬜ | ⬜ | ⬜ | 🟥4 | ⬜ | 🟥19 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| class name | 🟥 | 🟩 | ⬜ | ⬜ | ⬜ | 🟥 | ⬜ | 🟥 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Python syntax | 🟩 | 🟩 | ⬜ | ⬜ | ⬜ | 🟩 | ⬜ | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ## 詳細
@@ -32,8 +32,8 @@ emitter が EAST3 の情報を使わず、モジュール名・runtime 関数名
 
 ```
 src/toolchain2/emit/cpp/emitter.py:72: "BaseException", "Exception", "ValueError", "TypeError", "IndexError",
-src/toolchain2/emit/cpp/emitter.py:1277: if attr == "add_argument" and owner_type == "ArgumentParser":
-src/toolchain2/emit/cpp/emitter.py:2650: if bn in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError") or rc == "s
+src/toolchain2/emit/cpp/emitter.py:1288: if attr == "add_argument" and owner_type == "ArgumentParser":
+src/toolchain2/emit/cpp/emitter.py:2661: if bn in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError") or rc == "s
 ```
 
 ### class_name / go (19)
@@ -83,8 +83,8 @@ src/toolchain2/emit/go/emitter.py:4904: ctx.imports_needed.add("os")
 ### module_name / rs (2)
 
 ```
-src/toolchain2/emit/rs/emitter.py:3308: "math": "math_native.rs",
-src/toolchain2/emit/rs/emitter.py:3309: "time": "time_native.rs",
+src/toolchain2/emit/rs/emitter.py:3317: "math": "math_native.rs",
+src/toolchain2/emit/rs/emitter.py:3318: "time": "time_native.rs",
 ```
 
 ### module_name / ts (1)
@@ -96,7 +96,7 @@ src/toolchain2/emit/ts/emitter.py:122: "sys", "pyset_argv", "pyset_path",
 ### runtime_symbol / cpp (1)
 
 ```
-src/toolchain2/emit/cpp/emitter.py:1476: if rc in ("py_print", "py_len") and len(arg_strs) >= 1:
+src/toolchain2/emit/cpp/emitter.py:1487: if rc in ("py_print", "py_len") and len(arg_strs) >= 1:
 ```
 
 ### runtime_symbol / go (2)
@@ -109,9 +109,9 @@ src/toolchain2/emit/go/emitter.py:2387: if dispatch == "py_len" or bn == "len":
 ### runtime_symbol / rs (3)
 
 ```
-src/toolchain2/emit/rs/emitter.py:926: if mapped == "py_len" and len(rendered_args) == 1:
-src/toolchain2/emit/rs/emitter.py:954: if mapped == "py_print" and len(rendered_args) >= 1 and all(a.startswith("todo!(") for a in rendered_args):
-src/toolchain2/emit/rs/emitter.py:958: if mapped == "py_print" and len(rendered_args) > 1:
+src/toolchain2/emit/rs/emitter.py:935: if mapped == "py_len" and len(rendered_args) == 1:
+src/toolchain2/emit/rs/emitter.py:963: if mapped == "py_print" and len(rendered_args) >= 1 and all(a.startswith("todo!(") for a in rendered_args):
+src/toolchain2/emit/rs/emitter.py:967: if mapped == "py_print" and len(rendered_args) > 1:
 ```
 
 ### runtime_symbol / ts (1)
