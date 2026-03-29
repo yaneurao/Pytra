@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-03-29
+最終更新: 2026-03-29 (更新: 2026-03-29)
 
 ## 運用ルール
 
@@ -29,8 +29,10 @@
 
 前提: Go emitter（参照実装）と CommonRenderer が安定してから着手。
 
-1. [ ] [ID: P7-RS-EMITTER-S1] `src/toolchain2/emit/rs/` に Rust emitter を新規実装する — Go emitter を参考に CommonRenderer + override 構成で作成。Rust 固有のノード（所有権・ライフタイム・borrow、match、impl ブロック等）だけ override として残す
-2. [ ] [ID: P7-RS-EMITTER-S2] `src/runtime/rs/mapping.json` を作成し、runtime_call の写像を定義する
+1. [x] [ID: P7-RS-EMITTER-S1] `src/toolchain2/emit/rs/` に Rust emitter を新規実装する — Go emitter を参考に CommonRenderer + override 構成で作成。Rust 固有のノード（所有権・ライフタイム・borrow、match、impl ブロック等）だけ override として残す
+   - 完了: `src/toolchain2/emit/rs/{emitter.py,types.py,__init__.py}` と `src/toolchain2/emit/profiles/rs.json` を作成。全 1001 件 fixture エラーなし emit 成功。pytra-cli2.py に rs target を追加。
+2. [x] [ID: P7-RS-EMITTER-S2] `src/runtime/rs/mapping.json` を作成し、runtime_call の写像を定義する
+   - 完了: `src/runtime/rs/mapping.json` を作成。Go mapping.json を参考に Rust 向け関数名でマッピング定義。
 3. [ ] [ID: P7-RS-EMITTER-S3] fixture 132 件 + sample 18 件の Rust emit 成功を確認する
 4. [ ] [ID: P7-RS-EMITTER-S4] Rust runtime を toolchain2 の emit 出力と整合させる（旧 toolchain1 runtime の引き継ぎ or 再実装）
 5. [ ] [ID: P7-RS-EMITTER-S5] fixture + sample の Rust compile + run parity を通す
