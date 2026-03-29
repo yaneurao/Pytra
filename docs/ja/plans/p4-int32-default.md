@@ -2,10 +2,10 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-# P4-INT32: int のデフォルトサイズを int64 → int32 に変更
+# P20-INT32: int のデフォルトサイズを int64 → int32 に変更
 
-最終更新: 2026-03-26
-ステータス: 未着手
+最終更新: 2026-03-29
+ステータス: 未着手（P4 → P20 に降格。影響範囲が大きいため優先度を下げた）
 
 ## 背景
 
@@ -68,10 +68,10 @@ Go selfhost（P2-SELFHOST）完了後に着手する。
 
 ## サブタスク
 
-1. [ID: P4-INT32-S1] spec-east.md / spec-east2.md の `int` → `int32` 正規化ルール変更
-2. [ID: P4-INT32-S2] resolve の型正規化を修正
-3. [ID: P4-INT32-S3] sample 18 件のオーバーフロー確認 + 必要な箇所を `int64` に明示
-4. [ID: P4-INT32-S4] golden 再生成 + 全 emitter parity 確認
+1. [ID: P20-INT32-S1] spec-east.md / spec-east2.md の `int` → `int32` 正規化ルール変更
+2. [ID: P20-INT32-S2] resolve の型正規化を修正
+3. [ID: P20-INT32-S3] sample 18 件のオーバーフロー確認 + 必要な箇所を `int64` に明示
+4. [ID: P20-INT32-S4] golden 再生成 + 全 emitter parity 確認
 
 ## 受け入れ基準
 

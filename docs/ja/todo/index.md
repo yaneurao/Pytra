@@ -63,17 +63,6 @@
 5. [ ] [ID: P3-CR-CPP-S5] CommonRenderer の list/dict/tuple 出力で `source_span.lineno` を参照し、元ソースの改行を再現する
 6. [ ] [ID: P3-CR-CPP-S6] C++ runtime の旧 type_id ヘルパーを撤去する — `type_id_support.h` の `py_tid_is_subtype` / `py_tid_isinstance` / `py_runtime_value_type_id` 等の旧関数群、`object.h` の `g_type_table[4096]`、`PYTRA_TID_*` ハードコード定数を削除し、`pytra.built_in.type_id_table` の `pytra_isinstance` に一本化する — 現状の emitter は list リテラルを `", ".join(parts)` で1行に出力しており、元ソースの改行位置を無視している。前の要素と `source_span.lineno` が異なる場合に改行を入れる。synthetic module（type_id_table 等）は linker が適切な `source_span` を振ることで同じ仕組みで整形される
 
-### P4-INT32: int のデフォルトサイズを int64 → int32 に変更
-
-文脈: [docs/ja/plans/p4-int32-default.md](../plans/p4-int32-default.md)
-
-前提: Go selfhost 完了後に着手。
-
-1. [ ] [ID: P4-INT32-S1] spec-east.md / spec-east2.md の `int` → `int32` 正規化ルール変更
-2. [ ] [ID: P4-INT32-S2] resolve の型正規化を修正
-3. [ ] [ID: P4-INT32-S3] sample 18 件のオーバーフロー確認 + 必要な箇所を `int64` に明示
-4. [ ] [ID: P4-INT32-S4] golden 再生成 + 全 emitter parity 確認
-
 ### P5-COMMON-RENDERER-GO: Go emitter の CommonRenderer 移行 + fixture parity
 
 文脈: [docs/ja/plans/p2-lowering-profile-common-renderer.md](../plans/p2-lowering-profile-common-renderer.md)
@@ -114,5 +103,16 @@
 2. [ ] [ID: P11-VERGATE-S2] toolchain2 のディレクトリ構成に合わせた shared / 言語別の依存パスを定義する
 3. [ ] [ID: P11-VERGATE-S3] バージョンチェッカーを新しく書く（PATCH 以上の bump で OK とする。MINOR/MAJOR はユーザーの明示指示がある場合のみ）
 4. [ ] [ID: P11-VERGATE-S4] 旧チェッカー（`tools/check_transpiler_version_gate.py`）と旧バージョンファイルを廃止する
+
+### P20-INT32: int のデフォルトサイズを int64 → int32 に変更
+
+文脈: [docs/ja/plans/p4-int32-default.md](../plans/p4-int32-default.md)
+
+前提: Go selfhost 完了後に着手。影響範囲が大きいため P4 → P20 に降格。
+
+1. [ ] [ID: P20-INT32-S1] spec-east.md / spec-east2.md の `int` → `int32` 正規化ルール変更
+2. [ ] [ID: P20-INT32-S2] resolve の型正規化を修正
+3. [ ] [ID: P20-INT32-S3] sample 18 件のオーバーフロー確認 + 必要な箇所を `int64` に明示
+4. [ ] [ID: P20-INT32-S4] golden 再生成 + 全 emitter parity 確認
 
 注: 完了済みタスクは [アーカイブ](archive/index.md) に移動済み。
