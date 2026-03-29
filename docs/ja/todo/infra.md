@@ -47,8 +47,8 @@
    - クラス名のハードコード（`"Path"`, `"ArgumentParser"`, `"Exception"` 等）
    - Python 構文の残留（`"__main__"`, `"super()"` 等）
 2. ~~[ID: P6-EMITTER-LINT-S2] allowlist 機構を用意する~~ — **削除**: toolchain2 の C++ emitter は書き直しのため歴史的負債がなく、allowlist 不要。
-3. [ ] [ID: P6-EMITTER-LINT-S3] 結果を言語 × カテゴリのマトリクスとして出力する（進捗ページの一部として利用可能にする）
-4. [ ] [ID: P6-EMITTER-LINT-S4] `tools/run/run_local_ci.py` に組み込む
+3. [ ] [ID: P6-EMITTER-LINT-S3] 結果を言語 × カテゴリのマトリクスとして出力・蓄積する（進捗ページの一部として利用可能にする）
+4. [ ] [ID: P6-EMITTER-LINT-S4] `tools/check/runtime_parity_check.py` のついでに実行し、違反マトリクスを出力する（parity check の exit code には影響しない）
 
 ### P11-VERSION-GATE: toolchain2 用バージョンチェッカーの新設
 

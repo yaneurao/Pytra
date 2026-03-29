@@ -62,7 +62,7 @@ EAST3 では既に正規化済みの Python 構文が emitter に残っている
 
 ### allowlist
 
-~~C++ emitter の allowlist~~ — **不要**: toolchain2 の C++ emitter は書き直しのため既存違反がなく、allowlist は作成しない。チェッカーは全違反をそのまま FAIL にする。
+~~C++ emitter の allowlist~~ — **不要**: toolchain2 の C++ emitter は書き直しのため既存違反がなく、allowlist は作成しない。チェッカーは全違反を違反マトリクスに記録する（exit code には影響しない）。
 
 ### 出力形式
 
@@ -93,3 +93,4 @@ EAST3 では既に正規化済みの Python 構文が emitter に残っている
 ## 決定ログ
 
 - 2026-03-30: grep ベースで6カテゴリの責務違反を検出する方針に決定。型名の文字列マッチ（`resolved_type == "list"` 等）や属性名での分岐（`attr == "append"` 等）は誤検知が多いため、grep ベースの検出対象から除外。将来 AST ベースの lint に移行する候補とする。
+- 2026-03-30: `run_local_ci.py` への組み込みではなく、`runtime_parity_check.py` のついでに実行する方針に変更。違反は違反マトリクスに記録するだけで、parity check の exit code には影響しない。各 backend が parity check を日常的に回しているため、実質的なカバレッジが高い。
