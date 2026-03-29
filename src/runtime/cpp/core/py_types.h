@@ -85,6 +85,12 @@ static inline Object<dict<K, V>> rc_dict_from_value(dict<K, V> values) {
     return make_object<dict<K, V>>(PYTRA_TID_DICT, ::std::move(values));
 }
 
+// Identity overload: pass-through when already Object<dict<K,V>>.
+template <class K, class V>
+static inline Object<dict<K, V>> rc_dict_from_value(Object<dict<K, V>> v) {
+    return v;
+}
+
 template <class K, class V>
 static inline dict<K, V>& rc_dict_ref(Object<dict<K, V>>& values) {
     return *values;
@@ -111,6 +117,12 @@ static inline Object<set<T>> rc_set_new() {
 template <class T>
 static inline Object<set<T>> rc_set_from_value(set<T> values) {
     return make_object<set<T>>(PYTRA_TID_SET, ::std::move(values));
+}
+
+// Identity overload: pass-through when already Object<set<T>>.
+template <class T>
+static inline Object<set<T>> rc_set_from_value(Object<set<T>> v) {
+    return v;
 }
 
 template <class T>
