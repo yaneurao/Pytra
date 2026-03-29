@@ -143,7 +143,7 @@ def _build_parity_matrix(cases: list[tuple[str, str] | str], results: dict[str, 
 
     if case_root == "fixture":
         lines.append(f"| カテゴリ | ケース | {' | '.join(_col_name(l) for l in lang_list)} |")
-        lines.append(f"|{'|'.join(['---'] * (len(lang_list) + 2))}|")
+        lines.append(f"|---|---|{'|'.join(['---:'] * len(lang_list))}|")
         for item in cases:
             cat, stem = item  # type: ignore[misc]
             cells = []
@@ -156,7 +156,7 @@ def _build_parity_matrix(cases: list[tuple[str, str] | str], results: dict[str, 
             lines.append(f"| {cat} | {stem} | {' | '.join(cells)} |")
     else:
         lines.append(f"| ケース | {' | '.join(_col_name(l) for l in lang_list)} |")
-        lines.append(f"|{'|'.join(['---'] * (len(lang_list) + 1))}|")
+        lines.append(f"|---|{'|'.join(['---:'] * len(lang_list))}|")
         for item in cases:
             stem = item  # type: ignore[assignment]
             cells = []
@@ -184,15 +184,15 @@ def _build_parity_matrix(cases: list[tuple[str, str] | str], results: dict[str, 
             ok_cells.append("—")
             fail_cells.append("—")
         else:
-            ok_cells.append(f"🟩{ok_count}")
-            fail_cells.append(f"🟥{fail_count}")
+            ok_cells.append(str(ok_count))
+            fail_cells.append(str(fail_count))
 
     if case_root == "fixture":
-        lines.append(f"| | **PASS** | {' | '.join(ok_cells)} |")
-        lines.append(f"| | **FAIL** | {' | '.join(fail_cells)} |")
+        lines.append(f"| | **PASS 🟩** | {' | '.join(ok_cells)} |")
+        lines.append(f"| | **FAIL 🟥** | {' | '.join(fail_cells)} |")
     else:
-        lines.append(f"| **PASS** | {' | '.join(ok_cells)} |")
-        lines.append(f"| **FAIL** | {' | '.join(fail_cells)} |")
+        lines.append(f"| **PASS 🟩** | {' | '.join(ok_cells)} |")
+        lines.append(f"| **FAIL 🟥** | {' | '.join(fail_cells)} |")
 
     return lines
 
@@ -204,7 +204,7 @@ def _build_parity_matrix_en(cases: list[tuple[str, str] | str], results: dict[st
 
     if case_root == "fixture":
         lines.append(f"| Category | Case | {' | '.join(_col_name(l) for l in lang_list)} |")
-        lines.append(f"|{'|'.join(['---'] * (len(lang_list) + 2))}|")
+        lines.append(f"|---|---|{'|'.join(['---:'] * len(lang_list))}|")
         for item in cases:
             cat, stem = item  # type: ignore[misc]
             cells = []
@@ -217,7 +217,7 @@ def _build_parity_matrix_en(cases: list[tuple[str, str] | str], results: dict[st
             lines.append(f"| {cat} | {stem} | {' | '.join(cells)} |")
     else:
         lines.append(f"| Case | {' | '.join(_col_name(l) for l in lang_list)} |")
-        lines.append(f"|{'|'.join(['---'] * (len(lang_list) + 1))}|")
+        lines.append(f"|---|{'|'.join(['---:'] * len(lang_list))}|")
         for item in cases:
             stem = item  # type: ignore[assignment]
             cells = []
@@ -229,7 +229,8 @@ def _build_parity_matrix_en(cases: list[tuple[str, str] | str], results: dict[st
                     cells.append(_case_icon(str(entry.get("category", ""))))
             lines.append(f"| {stem} | {' | '.join(cells)} |")
 
-    summary_cells = []
+    ok_cells = []
+    fail_cells = []
     for lang in lang_list:
         ok_count = 0
         fail_count = 0
@@ -240,14 +241,18 @@ def _build_parity_matrix_en(cases: list[tuple[str, str] | str], results: dict[st
             else:
                 fail_count += 1
         if ok_count + fail_count == 0:
-            summary_cells.append("—")
+            ok_cells.append("—")
+            fail_cells.append("—")
         else:
-            summary_cells.append(f"🟩{ok_count} 🟥{fail_count}")
+            ok_cells.append(str(ok_count))
+            fail_cells.append(str(fail_count))
 
     if case_root == "fixture":
-        lines.append(f"| | **Total** | {' | '.join(summary_cells)} |")
+        lines.append(f"| | **PASS 🟩** | {' | '.join(ok_cells)} |")
+        lines.append(f"| | **FAIL 🟥** | {' | '.join(fail_cells)} |")
     else:
-        lines.append(f"| **Total** | {' | '.join(summary_cells)} |")
+        lines.append(f"| **PASS 🟩** | {' | '.join(ok_cells)} |")
+        lines.append(f"| **FAIL 🟥** | {' | '.join(fail_cells)} |")
 
     return lines
 
