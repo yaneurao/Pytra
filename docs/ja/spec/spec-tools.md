@@ -91,6 +91,8 @@
 ## 3. 言語間確認
 - `tools/runtime_parity_check.py`
   - 目的: 複数ターゲット言語でのランタイム平準化チェックを実行する。
+  - 主要オプション: `--targets <langs>`（カンマ区切り）, `--case-root {fixture,sample}`, `--category <subdir>`（fixture サブディレクトリで絞り込み。例: `oop`, `control`, `typing`）, `--all-samples`, `--east3-opt-level`, `--cpp-codegen-opt`, `--cmd-timeout-sec`, `--summary-json`
+  - 補足: `--category` を指定すると、`test/fixture/source/py/<category>/` 配下のケースのみ実行する。全 fixture（132+ 件）を回さず、カテゴリ単位で回帰を確認したい場合に使う。
   - 補足: `elapsed_sec` / `elapsed` / `time_sec` のような不安定な時間行は、既定で比較対象から除外する。
   - 補足: artifact 比較は `output:` で報告された生成物に対して `存在 + size + CRC32` を必須一致条件とする。
   - 補足: ケース実行前に `sample/out`, `test/out`, `out` の同名 artifact を削除し、前回実行物の取り違えを防止する。
