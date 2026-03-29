@@ -22,6 +22,10 @@ type pyListView interface {
 	pyListItemAny(i int) any
 }
 
+type pyDictView interface {
+	pyIsDictView()
+}
+
 func NewPyList[T any]() *PyList[T] {
 	return &PyList[T]{items: []T{}}
 }
@@ -64,6 +68,24 @@ func PyDictFromMap[K comparable, V any](items map[K]V) *PyDict[K, V] {
 		out[k] = v
 	}
 	return &PyDict[K, V]{items: out}
+}
+
+// pyIsDictView marks *PyDict[K,V] as a dict type for py_is_dict checks.
+func (d *PyDict[K, V]) pyIsDictView() {}
+
+// pyMapStringAny converts a PyDict with string-compatible keys to map[string]any.
+// Used by py_to_map_string_any to handle *PyDict[string, V] without external reflection.
+func (d *PyDict[K, V]) pyMapStringAny() map[string]any {
+	rv := goreflect.ValueOf(d.items)
+	if !rv.IsValid() || rv.Kind() != goreflect.Map || rv.Type().Key().Kind() != goreflect.String {
+		return nil
+	}
+	out := map[string]any{}
+	iter := rv.MapRange()
+	for iter.Next() {
+		out[iter.Key().String()] = iter.Value().Interface()
+	}
+	return out
 }
 
 type PySet[T comparable] struct {
@@ -622,6 +644,9 @@ func py_is_list(v any) bool {
 }
 
 func py_is_dict(v any) bool {
+	if _, ok := v.(pyDictView); ok {
+		return true
+	}
 	rv := goreflect.ValueOf(v)
 	return rv.IsValid() && rv.Kind() == goreflect.Map
 }
@@ -1139,6 +1164,14 @@ func py_to_map_string_any(v any) map[string]any {
 	if m, ok := v.(map[string]any); ok {
 		return m
 	}
+	// Handle *PyDict[string, V] via its pyMapStringAny() method.
+	type pyMapStringAnyer interface {
+		pyMapStringAny() map[string]any
+	}
+	if d, ok := v.(pyMapStringAnyer); ok {
+		return d.pyMapStringAny()
+	}
+	// Handle plain map[string]V via reflection
 	mv := goreflect.ValueOf(v)
 	if !mv.IsValid() || mv.Kind() != goreflect.Map || mv.Type().Key().Kind() != goreflect.String {
 		panic("py_to_map_string_any: expected map with string keys")

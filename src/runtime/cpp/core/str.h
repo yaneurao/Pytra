@@ -309,6 +309,14 @@ public:
     friend str operator+(const char* lhs, const str& rhs) { return str(::std::string(lhs) + rhs.data_); }
     friend str operator+(const str& lhs, char rhs) { return str(lhs.data_ + rhs); }
     friend str operator+(char lhs, const str& rhs) { return str(::std::string(1, lhs) + rhs.data_); }
+    friend str operator*(const str& lhs, int64 rhs) {
+        if (rhs <= 0 || lhs.data_.empty()) return str();
+        ::std::string out;
+        out.reserve(lhs.data_.size() * static_cast<::std::size_t>(rhs));
+        for (int64 i = 0; i < rhs; ++i) out += lhs.data_;
+        return str(::std::move(out));
+    }
+    friend str operator*(int64 lhs, const str& rhs) { return rhs * lhs; }
 
     friend bool operator==(const str& lhs, const str& rhs) { return lhs.data_ == rhs.data_; }
     friend bool operator==(const str& lhs, const char* rhs) { return lhs.data_ == rhs; }
