@@ -1,4 +1,4 @@
-<a href="../../ja/language/progress.md">
+<a href="../../ja/progress/index.md">
   <img alt="日本語で読む" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
 </a>
 

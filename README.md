@@ -133,7 +133,7 @@ Legend: ✅ = Good / 🔶 = Partial / ❌ = Unsupported or difficult
 | Getting started | [Tutorial](docs/en/tutorial/README.md) | [チュートリアル](docs/ja/tutorial/README.md) |
 | Guide | [Guides](docs/en/guide/README.md) | [ガイド](docs/ja/guide/README.md) |
 | Specification | [Spec index](docs/en/spec/index.md) | [仕様書](docs/ja/spec/index.md) |
-| Progress | [Project Progress](docs/en/language/progress.md) | [プロジェクト進捗](docs/ja/language/progress.md) |
+| Progress | [Project Progress](docs/en/progress/index.md) | [プロジェクト進捗](docs/ja/progress/index.md) |
 
 ## Changelog
 

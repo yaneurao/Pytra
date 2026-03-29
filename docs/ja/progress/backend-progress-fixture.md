@@ -5,8 +5,8 @@
 # fixture parity マトリクス
 
 > 機械生成ファイル。`python3 tools/gen/gen_backend_progress.py` で更新する。
-> 生成日時: 2026-03-30T05:30:11
-> [関連リンク](./progress.md)
+> 生成日時: 2026-03-30T05:38:09
+> [関連リンク](./index.md)
 
 | アイコン | 意味 |
 |---|---|

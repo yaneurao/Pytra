@@ -1,4 +1,4 @@
-<a href="../../en/language/progress.md">
+<a href="../../en/progress/index.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
