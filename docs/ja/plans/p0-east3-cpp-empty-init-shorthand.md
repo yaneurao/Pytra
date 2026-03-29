@@ -21,7 +21,7 @@
 対象:
 - `src/pytra/compiler/east_parts/east3_opt_passes/*`（新規 pass 追加または既存 pass 拡張）
 - `src/hooks/cpp/emitter/stmt.py` / `src/hooks/cpp/emitter/collection_expr.py`
-- `test/unit/test_east3_cpp_bridge.py` / `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_east3_cpp_bridge.py` / `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/18_mini_language_interpreter.cpp`（再生成確認）
 
 非対象:
@@ -36,11 +36,11 @@
 - `check_py2cpp_transpile.py` と関連 unit が通過し、`sample/cpp/18` で対象箇所の縮退を確認できる。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force`
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、EAST3 で安全性マーカーを付与し、C++ emitter 側で `= {};` へ縮退する方針で `P0` 起票。
@@ -50,8 +50,8 @@
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer.py' -v`（51 tests, OK）
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`（92 tests, OK）
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（98 tests, OK）
-  - `python3 tools/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force`（regen=1 fail=0）
-  - `python3 tools/check_py2cpp_transpile.py`（checked=136 ok=136 fail=0 skipped=6）
+  - `python3 tools/gen/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force`（regen=1 fail=0）
+  - `python3 tools/check/check_py2cpp_transpile.py`（checked=136 ok=136 fail=0 skipped=6）
 
 ## 分解
 

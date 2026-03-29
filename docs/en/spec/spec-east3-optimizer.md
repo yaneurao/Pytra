@@ -248,13 +248,13 @@ python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
 3. Compare compatibility among `O0`, `O1`, and `O2` using the same procedure through `runtime_parity_check.py --east3-opt-level`.
 
 ```bash
-python tools/runtime_parity_check.py --case-root sample --all-samples \
+python tools/check/runtime_parity_check.py --case-root sample --all-samples \
   --targets cpp,rs,cs,js,ts --ignore-unstable-stdout \
   --east3-opt-level 0 --summary-json work/logs/east3_opt_parity_o0.json
-python tools/runtime_parity_check.py --case-root sample --all-samples \
+python tools/check/runtime_parity_check.py --case-root sample --all-samples \
   --targets cpp,rs,cs,js,ts --ignore-unstable-stdout \
   --east3-opt-level 1 --summary-json work/logs/east3_opt_parity_o1.json
-python tools/runtime_parity_check.py --case-root sample --all-samples \
+python tools/check/runtime_parity_check.py --case-root sample --all-samples \
   --targets cpp,rs,cs,js,ts --ignore-unstable-stdout \
   --east3-opt-level 2 --summary-json work/logs/east3_opt_parity_o2.json
 ```

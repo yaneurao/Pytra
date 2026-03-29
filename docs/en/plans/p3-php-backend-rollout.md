@@ -23,11 +23,11 @@ Scope:
 - `src/py2php.py` (new)
 - `src/hooks/php/emitter/` (new)
 - `src/runtime/php/pytra/` (new runtime)
-- `tools/check_py2php_transpile.py` (new)
-- `tools/runtime_parity_check.py` (add PHP target)
-- `tools/regenerate_samples.py` (add php output path)
+- `tools/check/check_py2php_transpile.py` (new)
+- `tools/check/runtime_parity_check.py` (add PHP target)
+- `tools/gen/regenerate_samples.py` (add php output path)
 - `sample/php/*` (regeneration)
-- `test/unit/test_py2php_smoke.py` (new)
+- `tools/unittest/test_py2php_smoke.py` (new)
 - `docs/ja/how-to-use.md` / `docs/ja/spec/spec-user.md` (add guidance)
 
 Out of scope:
@@ -56,7 +56,7 @@ Runtime separation contract (fixed in S1-01):
   - `src/runtime/php/pytra/py_runtime.php` (common helpers)
   - `src/runtime/php/pytra/utils/png.php` / `gif.php` (I/O helpers)
   - `src/runtime/php/pytra/std/*.php` (`time`, `math`, `pathlib`)
-- `tools/regenerate_samples.py` synchronizes copy of `sample/php/pytra/**` when generating samples.
+- `tools/gen/regenerate_samples.py` synchronizes copy of `sample/php/pytra/**` when generating samples.
 - Keep helper-name semantics aligned across all backends (e.g., `py_truthy`, `py_len`, `py_str`).
 
 Acceptance criteria:
@@ -67,11 +67,11 @@ Acceptance criteria:
 - Docs reflect PHP backend usage and constraints.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2php_smoke.py' -v`
-- `python3 tools/check_py2php_transpile.py`
-- `python3 tools/regenerate_samples.py --langs php --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets php --ignore-unstable-stdout 01_mandelbrot 03_julia_set 06_julia_parameter_sweep 16_glass_sculpture_chaos 18_parser_combinator`
+- `python3 tools/check/check_py2php_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs php --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets php --ignore-unstable-stdout 01_mandelbrot 03_julia_set 06_julia_parameter_sweep 16_glass_sculpture_chaos 18_parser_combinator`
 
 Decision log:
 - 2026-03-02: Based on user direction, planned PHP support as `P3` and filed it as the next phase in the `Ruby -> Lua -> PHP` sequence.
@@ -80,8 +80,8 @@ Decision log:
 - 2026-03-02: [ID: P3-PHP-BACKEND-01-S2-01] Extended `php_native_emitter` to output `FunctionDef/If/While/ForCore(StaticRange, RuntimeIter)` and basic expressions (constant/binary/compare/call/container). Verified conversion of `core/add`, `control/if_else`, `control/for_range` with `py2php`, confirming for-range outputs as PHP `for`.
 - 2026-03-02: [ID: P3-PHP-BACKEND-01-S2-02] Added `ClassDef` output (`extends`, `__construct`, `parent::method`) and lowerings for `isinstance`/`dict.get`/`Unbox`. Verified conversion of `oop/inheritance.py`, `oop/inheritance_virtual_dispatch_multilang.py`, `oop/is_instance.py`, and `sample/py/18_mini_language_interpreter.py`, confirming class/container path generation issues were resolved.
 - 2026-03-02: [ID: P3-PHP-BACKEND-01-S2-03] Split runtime into `src/runtime/php/pytra/{py_runtime.php,runtime/{png,gif}.php,std/time.php}` and extended `py2php.py` to sync-copy into `output/pytra/**`. Unified emitter structure to reference `__pytra_perf_counter/__pytra_len/__pytra_str_*` with no helper-body embedding into generated code.
-- 2026-03-02: [ID: P3-PHP-BACKEND-01-S3-01] Added `test/unit/test_py2php_smoke.py` (11 cases) and `tools/check_py2php_transpile.py`. Confirmed pass for both `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2php_smoke.py' -v` and `python3 tools/check_py2php_transpile.py`.
-- 2026-03-02: [ID: P3-PHP-BACKEND-01-S3-02] Added `php` target to `tools/regenerate_samples.py` and `tools/runtime_parity_check.py`, and registered `php` version token in `transpiler_versions.json`. Regenerated 18 outputs under `sample/php` with `python3 tools/regenerate_samples.py --langs php --force`; `runtime_parity_check --targets php` in this environment was confirmed up to `toolchain_missing` skip because PHP toolchain is not installed.
+- 2026-03-02: [ID: P3-PHP-BACKEND-01-S3-01] Added `tools/unittest/test_py2php_smoke.py` (11 cases) and `tools/check/check_py2php_transpile.py`. Confirmed pass for both `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2php_smoke.py' -v` and `python3 tools/check/check_py2php_transpile.py`.
+- 2026-03-02: [ID: P3-PHP-BACKEND-01-S3-02] Added `php` target to `tools/gen/regenerate_samples.py` and `tools/check/runtime_parity_check.py`, and registered `php` version token in `transpiler_versions.json`. Regenerated 18 outputs under `sample/php` with `python3 tools/gen/regenerate_samples.py --langs php --force`; `runtime_parity_check --targets php` in this environment was confirmed up to `toolchain_missing` skip because PHP toolchain is not installed.
 - 2026-03-02: [ID: P3-PHP-BACKEND-01-S3-03] Updated doc paths. Added `py2php` and `work/transpile/php` / `sample/php` placement notes to `docs/{ja,en}/spec/spec-user.md`; added PHP run procedure and regression commands to `docs/{ja,en}/how-to-use.md`; reflected PHP link in sample-conversion code lists in `README.md` / `docs/ja/README.md`.
 
 ## Breakdown

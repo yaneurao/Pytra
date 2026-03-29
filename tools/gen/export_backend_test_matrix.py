@@ -11,7 +11,7 @@ import tempfile
 import time
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 DOC_JA = ROOT / "docs" / "ja" / "language" / "backend-test-matrix.md"
 DOC_EN = ROOT / "docs" / "en" / "language" / "backend-test-matrix.md"
 BACKEND_TEST_ROOT = ROOT / "test" / "unit" / "backends"
@@ -89,7 +89,7 @@ def _build_unittest_command(backend: BackendSpec, pattern: str) -> tuple[str, ..
         "unittest",
         "discover",
         "-s",
-        f"test/unit/toolchain/emit/{backend.suite_dir}",
+        f"tools/unittest/emit/{backend.suite_dir}",
         "-p",
         pattern,
     )
@@ -338,9 +338,9 @@ def _render_details(
             "scope": "## Scope",
             "scope_rows": (
                 "- overview matrix は `Primary Smoke` / `Backend Dir Discover` / `Shared Starred Smoke` の 3 行です。",
-                "- `Module Detail` は `test/unit/toolchain/emit/<backend>/test_*.py` を 1 module ずつ実行した結果です。",
-                "- `Shared Starred Smoke` は `test/unit/toolchain/emit/test_py2starred_smoke.py` と同じ fixture/assertion を backend ごとに再実行しています。",
-                "- `test/unit/toolchain/emit/` 直下の support helper (`*_support.py`) は実行対象に含めません。",
+                "- `Module Detail` は `tools/unittest/emit/<backend>/test_*.py` を 1 module ずつ実行した結果です。",
+                "- `Shared Starred Smoke` は `tools/unittest/emit/test_py2starred_smoke.py` と同じ fixture/assertion を backend ごとに再実行しています。",
+                "- `tools/unittest/emit/` 直下の support helper (`*_support.py`) は実行対象に含めません。",
             ),
         },
         "en": {
@@ -348,9 +348,9 @@ def _render_details(
             "scope": "## Scope",
             "scope_rows": (
                 "- The overview matrix uses three rows: `Primary Smoke`, `Backend Dir Discover`, and `Shared Starred Smoke`.",
-                "- `Module Detail` runs each `test/unit/toolchain/emit/<backend>/test_*.py` module individually.",
-                "- `Shared Starred Smoke` re-runs the same fixture and assertions as `test/unit/toolchain/emit/test_py2starred_smoke.py` for each backend.",
-                "- Support helpers under `test/unit/toolchain/emit/` (`*_support.py`) are excluded from execution.",
+                "- `Module Detail` runs each `tools/unittest/emit/<backend>/test_*.py` module individually.",
+                "- `Shared Starred Smoke` re-runs the same fixture and assertions as `tools/unittest/emit/test_py2starred_smoke.py` for each backend.",
+                "- Support helpers under `tools/unittest/emit/` (`*_support.py`) are excluded from execution.",
             ),
         },
     }[locale]

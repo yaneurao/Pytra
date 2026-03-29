@@ -13,8 +13,8 @@
 - **C++ runtime exception safety (P3-CR-CPP-S4)**: Rewrote 5 `Object<void>` constructors in py_types.h to use `make_unique` + `release` pattern.
 - **Fast parity check**: New `runtime_parity_check_fast.py` using in-memory toolchain2 API calls for transpile stage, eliminating subprocess startup and disk I/O.
 - **`--category` option for runtime_parity_check**: Run parity checks per fixture subdirectory (oop, control, typing, etc.) instead of all 146+ cases.
-- **Automatic parity result accumulation + progress page (P5-BACKEND-PROGRESS)**: Parity check auto-writes to `work/parity-results/` with per-case merge and timestamps. `tools/gen_backend_progress.py` generates fixture/sample/selfhost matrices in both Japanese and English.
-- **mapping.json validator (P10.5-MAPPING-VALIDATE)**: New `tools/check_mapping_json.py` validating required entries (`env.target`), format, and structure for all languages. Integrated into `run_local_ci.py`.
+- **Automatic parity result accumulation + progress page (P5-BACKEND-PROGRESS)**: Parity check auto-writes to `work/parity-results/` with per-case merge and timestamps. `tools/gen/gen_backend_progress.py` generates fixture/sample/selfhost matrices in both Japanese and English.
+- **mapping.json validator (P10.5-MAPPING-VALIDATE)**: New `tools/check/check_mapping_json.py` validating required entries (`env.target`), format, and structure for all languages. Integrated into `run_local_ci.py`.
 - **spec-runtime-decorator expansion**: Added `extern_var` section, pipeline resolution flow (parser → resolve → emitter responsibilities), quick reference table.
 - **spec-emitter-guide expansion**: §1.4 generated code quality (exception safety, reserved word escaping, generic `rc_from_value<T>`), §7.1-7.3 mapping.json constant substitution, literal embedding, mandatory `env.target`.
 - **spec-tools reorganization**: Split into index + 3 detail pages (daily, parity, update-rules). Removed 7 unregistered tools.
@@ -67,7 +67,7 @@
 
 - **All P0 tasks completed**: All stages (parse/resolve/compile/optimize/link/emit) match golden file tests.
 - **test/ directory reorganization**: Organized into 5 categories: fixture/sample/include/pytra/selfhost.
-- **Automatic golden file regeneration**: `tools/regenerate_golden.py` for batch regeneration of all golden files.
+- **Automatic golden file regeneration**: `tools/gen/regenerate_golden.py` for batch regeneration of all golden files.
 - **Go emitter**: Implemented as the reference emitter. fixture 132/132, sample 18/18 emit success.
 - **Go runtime + parity**: 18/18 samples pass `go run` + stdout match. Go is 63x faster than Python.
 - **Go runtime decomposition**: Split `pytra_runtime.go` monolith into `built_in/` + `std/` + `utils/`.

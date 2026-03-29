@@ -34,11 +34,11 @@
 - coverage inventory / backend parity docs の handoff が archive 済み first-wave plan ではなく、この live plan を参照する。
 
 確認コマンド:
-- `python3 tools/check_relative_import_secondwave_rollout_contract.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_secondwave_rollout_contract.py'`
-- `python3 tools/check_relative_import_backend_coverage.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_backend_coverage.py'`
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_relative_import_secondwave_rollout_contract.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_secondwave_rollout_contract.py'`
+- `python3 tools/check/check_relative_import_backend_coverage.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_backend_coverage.py'`
+- `python3 tools/check/check_todo_priority.py`
 - `git diff --check`
 
 決定ログ:

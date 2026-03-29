@@ -19,7 +19,7 @@
 対象:
 - `src/hooks/cpp/emitter/stmt.py` / `expr.py`（subscript 展開）
 - 必要に応じて `src/hooks/cpp/optimizer/passes/*`
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 
 非対象:
 - 全サンプル一括の CSE 最適化
@@ -31,9 +31,9 @@
 - 回帰テストと transpile check が通る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 決定ログ:
 - 2026-03-01: ユーザー要望により、sample/13 の row hoist を独立 P0 として起票。

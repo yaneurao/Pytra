@@ -34,9 +34,9 @@ Acceptance criteria:
 - Progress is recorded in this live plan rather than only in archived parity plans.
 
 Verification:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_backend_parity_matrix_contract.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_backend_parity_matrix_contract.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_backend_parity_matrix_contract.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_backend_parity_matrix_contract.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 
@@ -51,7 +51,7 @@ Verification:
 ## Locked Inventory / Rollout Order
 
 - Source of truth: [backend_parity_representative_rollout_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_representative_rollout_inventory.py)
-- Checker: [check_backend_parity_representative_rollout_inventory.py](/workspace/Pytra/tools/check_backend_parity_representative_rollout_inventory.py)
+- Checker: [check_backend_parity_representative_rollout_inventory.py](/workspace/Pytra/tools/check/check_backend_parity_representative_rollout_inventory.py)
 - The current residual backend set is empty; the representative residual inventory is closed
 - Fixed bundle order:
   - `cpp_locked_baseline`

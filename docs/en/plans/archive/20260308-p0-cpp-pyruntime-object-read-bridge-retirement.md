@@ -37,10 +37,10 @@
 - C++ parity が維持される。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py' -v`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_pylib_json.py' -v`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_iterable.py' -v`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_pylib_json.py' -v`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
 
 ## 1. 方針
 

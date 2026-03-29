@@ -10,21 +10,21 @@
 - `docs/ja/todo/index.md` の `ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01`
 
 背景:
-- `tools/runtime_parity_check.py` に artifact CRC32 比較を追加済み（size一致に加えて CRC32 も比較）。
+- `tools/check/runtime_parity_check.py` に artifact CRC32 比較を追加済み（size一致に加えて CRC32 も比較）。
 - Kotlin は `ignore_artifacts=True` で artifact 比較を明示スキップしていたため、比較対象として不完全だった。
 - `PyPy～Kotlin` / `Swift` の再検証要求に対し、最新実行では多言語で `artifact_missing / artifact_size_mismatch / artifact_crc32_mismatch / run_failed` が発生した。
 
 実測（2026-03-04）:
 - Kotlin（gate撤去後）:
-  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_20260304.json`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_20260304.json`
   - `cases=18 pass=2 fail=16`
   - `artifact_size_mismatch=4 (01..04)`, `artifact_missing=12 (05..16)`, `ok=2 (17,18)`
 - Kotlin（`save_gif` no-op 除去後）:
-  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_20260304_after_gif.json`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_20260304_after_gif.json`
   - `cases=18 pass=6 fail=12`
   - `artifact_missing=0` を確認（`artifact_size_mismatch=4 (01..04)`, `artifact_crc32_mismatch=8 (05,06,08,10,11,12,14,16)`）
 - Kotlin（PNG writer を Python stored-block zlib 仕様へ一致化後）:
-  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_20260304_after_png_store.json`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_20260304_after_png_store.json`
   - `cases=18 pass=10 fail=8`
   - `artifact_size_mismatch=0` を確認（残件は `artifact_crc32_mismatch=8` のみ）
 - PyPy:
@@ -43,26 +43,26 @@
   - `swiftly` で `Swift 6.2.4` を導入し `swiftc` を利用可能化。
   - `--targets swift` 再実行で、少なくとも `sample/01..06` は `run_failed`（関数呼び出し引数ラベル不整合）を再現。
 - Swift（`--all-samples` 完走ログ固定）:
-  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets swift --cmd-timeout-sec 90 --summary-json work/logs/runtime_parity_sample_swift_crc_20260304_all_timeout90.json`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets swift --cmd-timeout-sec 90 --summary-json work/logs/runtime_parity_sample_swift_crc_20260304_all_timeout90.json`
   - `cases=18 pass=0 fail=18`
   - `run_failed=17`, `artifact_missing=1`（`sample/11`）でカテゴリを固定。
 - 言語別 baseline lock（Kotlin/Swift 更新反映）:
   - `work/logs/runtime_parity_sample_baseline_lock_20260304.json`
   - `cpp/cs/go/java/js/kotlin/rs/swift/ts` のカテゴリ内訳を固定。
 - Java（image call runtime 接続後）:
-  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets java --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_java_crc_20260304_after_image_connect.json`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets java --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_java_crc_20260304_after_image_connect.json`
   - `cases=18 pass=2 fail=16`
   - `artifact_missing=0` を確認（残件: `artifact_size_mismatch=4`, `artifact_crc32_mismatch=7`, `run_failed=5`）
 - Java（compile fail 群修正後）:
-  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets java --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_java_crc_20260304_after_compile_fix4.json`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets java --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_java_crc_20260304_after_compile_fix4.json`
   - `cases=18 pass=6 fail=12`
   - `run_failed=0` を確認（残件: `artifact_size_mismatch=4`, `artifact_crc32_mismatch=8`）
 - Go（`__pytra_bytes` + typed演算戻り値修正後）:
-  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets go --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_go_crc_20260304_after_s205b.json`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets go --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_go_crc_20260304_after_s205b.json`
   - `cases=18 pass=16 fail=2`
   - `run_failed` は `sample/18` のみ（`TokenLike` 残件）へ縮退。`palette must be 256*3 bytes` と `ifexp/min/max` 系 compile fail は解消。
 - Go（`TokenLike` フィールドアクセス崩れ修正後）:
-  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets go --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_go_crc_20260304_after_s206.json`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets go --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_go_crc_20260304_after_s206.json`
   - `cases=18 pass=17 fail=1`
   - `run_failed=0` を確認（残件は `sample/16` の `artifact_crc32_mismatch=1` のみ）
 
@@ -96,10 +96,10 @@
 - fail中の backend/runtime を修正し、`sample` の artifact 生成ケースで size+CRC32 一致を達成する。
 
 対象:
-- `tools/runtime_parity_check.py`
+- `tools/check/runtime_parity_check.py`
 - `src/toolchain/emit/{kotlin,java,go,swift,js,ts,cs,cpp}/**`
 - `src/runtime/{kotlin,java,go,js,ts,cs,cpp}/**`
-- `test/unit/test_runtime_parity_check_cli.py`
+- `tools/unittest/test_runtime_parity_check_cli.py`
 - `docs/ja/todo/index.md` / 本計画書
 
 非対象:
@@ -118,18 +118,18 @@
 - 上記を `summary-json` ログとして保存し、再現手順が文書化される。
 
 確認コマンド（予定）:
-- `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_*.json`
-- `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets swift --summary-json work/logs/runtime_parity_sample_swift_crc_*.json`
-- `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets cpp,rs,cs,js,ts,go,java,swift,kotlin --summary-json work/logs/runtime_parity_sample_cpp_to_kotlin_crc_*.json`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_*.json`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets swift --summary-json work/logs/runtime_parity_sample_swift_crc_*.json`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets cpp,rs,cs,js,ts,go,java,swift,kotlin --summary-json work/logs/runtime_parity_sample_cpp_to_kotlin_crc_*.json`
 - `python3 -m unittest discover -s test/unit -p 'test_runtime_parity_check_cli.py' -v`
 
 決定ログ:
 - 2026-03-04: ユーザー指示により、Kotlin artifact スキップ撤去 + Kotlin再検証 + fail群原因調査 + Swift toolchain導入再実行を P0 起票。
-- 2026-03-04: Kotlin target の `ignore_artifacts=True` を `tools/runtime_parity_check.py` から撤去。
+- 2026-03-04: Kotlin target の `ignore_artifacts=True` を `tools/check/runtime_parity_check.py` から撤去。
 - 2026-03-04: `Swift 6.2.4` を `swiftly` で導入し、`swiftc` を有効化（`/usr/local/bin/swiftc` symlink）。
 - 2026-03-04: Kotlin emitter の `save_gif/grayscale_palette` を runtime helper 接続へ変更し、`src/runtime/kotlin/pytra/py_runtime.kt` に GIF writer（`__pytra_save_gif`）を追加。`artifact_missing` を解消した。
 - 2026-03-04: Kotlin `__pytra_write_rgb_png` を Python runtime と同じ stored-block zlib/chunk 構築へ変更し、01..04 の size/CRC mismatch を解消した。
-- 2026-03-04: `tools/runtime_parity_check.py` に `--cmd-timeout-sec` を追加し、Swift `sample/09` 長時間化で全体が停止しないようにした。`test_runtime_parity_check_cli.py` 全10件で回帰確認済み。
+- 2026-03-04: `tools/check/runtime_parity_check.py` に `--cmd-timeout-sec` を追加し、Swift `sample/09` 長時間化で全体が停止しないようにした。`test_runtime_parity_check_cli.py` 全10件で回帰確認済み。
 - 2026-03-04: Swift `--all-samples` を timeout 付きで完走し、`run_failed=17/artifact_missing=1` を baseline としてロックした。
 - 2026-03-04: 既存 `cpp..kotlin` ログに Kotlin 更新版と Swift 全件版を合成し、`runtime_parity_sample_baseline_lock_20260304.json` を生成して言語別カテゴリを固定した。
 - 2026-03-04: Java emitter の `write_rgb_png/save_gif/grayscale_palette` を `PyRuntime.pyWriteRGBPNG/pySaveGif/pyGrayscalePalette` へ接続し、`artifact_missing` を解消した。
@@ -144,7 +144,7 @@
 - 2026-03-04: Kotlin emitter で `keywords`（`save_gif(delay_cs, loop)`）を位置引数へ合流し、`BitAnd/BitOr/BitXor/LShift/RShift` の演算子マッピング欠落を修正。`shl/shr` 右辺を `.toInt()` へ正規化して compile fail を解消し、`--targets kotlin --all-samples` 18件 `ok` を確認（`work/logs/runtime_parity_sample_kotlin_after_shift_int_fix_20260304.json`）。
 - 2026-03-04: Java emitter で `keywords` 合流、単項 `-` の括弧崩れ（`-(a+b)`→`-a+b`）修正、`BitAnd/BitOr/BitXor/LShift/RShift` マッピング追加を実施。Java runtime の PNG writer を `Deflater` 依存から Python準拠 stored-block zlib + Adler32 実装へ置換し、`--targets java --all-samples` 18件 `ok` を確認（`work/logs/runtime_parity_sample_java_after_png_unary_fix_20260304.json`）。
 - 2026-03-04: `rs,cs,js,ts` を最新コードで再検証し、`--targets rs,cs,js,ts --all-samples` で 18件すべて `ok` を確認（`work/logs/runtime_parity_sample_rs_cs_js_ts_after_s301_20260304.json`）。`S3-01` の残件は Swift 全件完走と `cpp` 全件再実行のみ。
-- 2026-03-04: `tools/runtime_parity_check.py` の `run_shell` を `start_new_session=True` + `os.killpg(SIGKILL)` に変更し、timeout 時に子プロセス（`*_swift.out` など）が孤立しないよう修正。合わせて Swift 実行を `swiftc -O` へ変更。
+- 2026-03-04: `tools/check/runtime_parity_check.py` の `run_shell` を `start_new_session=True` + `os.killpg(SIGKILL)` に変更し、timeout 時に子プロセス（`*_swift.out` など）が孤立しないよう修正。合わせて Swift 実行を `swiftc -O` へ変更。
 - 2026-03-04: Swift 再検証として `01..04` を実行し、artifact parity が 4/4 `ok` を確認（`work/logs/runtime_parity_sample_swift_01_04_after_s301_progress_20260304.json`）。一方 `--all-samples --cmd-timeout-sec 300` では `05/06/07` が timeout で `run_failed` となることを再確認し、残件を「重いケースの実行戦略（timeout または Swift 側高速化）」へ整理した。
 - 2026-03-04: `S3-02` として `test_runtime_parity_check_cli.py` に `swiftc -O` 回帰と timeout 時 process-group kill 回帰を追加。`docs/ja/spec/spec-tools.md` / `docs/en/spec/spec-tools.md` に artifact parity の必須条件（exists+size+CRC32）、stale artifact purge、timeout kill の運用ルールを明記した。
 - 2026-03-04: Swift emitter に `Subscript` 代入 fast-path（`Name` への直接添字代入 + `grid[y][x]` write-back）を追加し、`__pytra_setIndex(Any, ...)` の値コピー経路を回避。`05..09` の timeout/CRC失敗が解消し、`--targets swift --all-samples --cmd-timeout-sec 300` は `case_pass=11` まで前進（`work/logs/runtime_parity_sample_swift_all_after_subscript_store_opt_20260304.json`）。

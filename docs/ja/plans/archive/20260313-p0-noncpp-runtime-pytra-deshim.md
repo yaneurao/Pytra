@@ -28,8 +28,8 @@
 - `src/toolchain/compiler/pytra_cli_profiles.py`
 - `src/toolchain/compiler/js_runtime_shims.py`
 - selfhost / packaging / transpile output / runtime copy 導線
-- `tools/check_noncpp_runtime_layout_contract.py`
-- `tools/check_noncpp_runtime_layout_rollout_remaining_contract.py`
+- `tools/check/check_noncpp_runtime_layout_contract.py`
+- `tools/check/check_noncpp_runtime_layout_rollout_remaining_contract.py`
 - runtime layout / marker / naming / SoT guard
 - representative backend smoke / tooling unit / docs / TODO
 
@@ -43,21 +43,21 @@
 受け入れ基準:
 - `find src/runtime -maxdepth 2 -type d -name pytra | sort` の結果が checked-in tree では `src/runtime/cpp/pytra` のみになる。
 - `src/runtime/{rs,go,java,kotlin,scala,swift,nim,js,ts,lua,ruby,php}/pytra/**` は file だけでなく directory ごと存在しない。
-- `tools/check_noncpp_runtime_layout_contract.py` と `tools/check_noncpp_runtime_layout_rollout_remaining_contract.py` は、対象 backend の checked-in `pytra/` を compat lane と見なさず、再出現を fail-fast にする。
+- `tools/check/check_noncpp_runtime_layout_contract.py` と `tools/check/check_noncpp_runtime_layout_rollout_remaining_contract.py` は、対象 backend の checked-in `pytra/` を compat lane と見なさず、再出現を fail-fast にする。
 - repo-tree direct-load / source-reexport smoke は `src/runtime/<lang>/pytra/**` を前提にしない。
 - backend registry / selfhost / packaging / transpile output contract は `generated/native` 直参照、または output-side staging artifact で完結する。
 - 旧 `pytra/` compat lane 前提は archive 文書にのみ残り、active plan / TODO / spec / checker wording からは除去される。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `find src/runtime -maxdepth 2 -type d -name pytra | sort`
-- `python3 tools/check_noncpp_runtime_layout_contract.py`
-- `python3 tools/check_noncpp_runtime_layout_rollout_remaining_contract.py`
-- `python3 tools/check_runtime_core_gen_markers.py`
-- `python3 tools/check_runtime_pytra_gen_naming.py`
-- `python3 tools/check_runtime_std_sot_guard.py`
-- `python3 tools/check_multilang_selfhost_stage1.py`
-- `python3 tools/check_multilang_selfhost_multistage.py`
+- `python3 tools/check/check_noncpp_runtime_layout_contract.py`
+- `python3 tools/check/check_noncpp_runtime_layout_rollout_remaining_contract.py`
+- `python3 tools/check/check_runtime_core_gen_markers.py`
+- `python3 tools/check/check_runtime_pytra_gen_naming.py`
+- `python3 tools/check/check_runtime_std_sot_guard.py`
+- `python3 tools/check/check_multilang_selfhost_stage1.py`
+- `python3 tools/check/check_multilang_selfhost_multistage.py`
 - `git diff --check`
 
 実施方針:

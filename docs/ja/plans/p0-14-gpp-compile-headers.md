@@ -26,9 +26,9 @@ fatal error: built_in/string_ops.h: No such file or directory
 
 ## 対象
 
-- `test/unit/backends/cpp/test_cpp_runtime_iterable.py` — コンパイル用 `-I` フラグ追加または stub ヘッダー生成
-- `test/unit/backends/cpp/test_cpp_runtime_type_id.py` — 同上
-- `test/unit/backends/cpp/test_py2cpp_features.py` の `_compile_and_run_fixture` 系
+- `tools/unittest/emit/cpp/test_cpp_runtime_iterable.py` — コンパイル用 `-I` フラグ追加または stub ヘッダー生成
+- `tools/unittest/emit/cpp/test_cpp_runtime_type_id.py` — 同上
+- `tools/unittest/emit/cpp/test_py2cpp_features.py` の `_compile_and_run_fixture` 系
 
 ## 受け入れ基準
 

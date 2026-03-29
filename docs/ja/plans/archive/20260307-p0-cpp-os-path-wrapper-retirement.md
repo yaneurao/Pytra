@@ -27,10 +27,10 @@
 - `src/runtime/cpp/std/os_path.ext.cpp`
 - `src/runtime/cpp/pytra/std/os_path.h`
 - `src/backends/cpp/cli.py`
-- `test/unit/backends/cpp/test_py2cpp_features.py`
-- `test/unit/backends/cpp/test_cpp_runtime_symbol_index_integration.py`
-- `test/unit/pylib/test_pylib_os_glob.py`
-- `tools/gen_runtime_symbol_index.py`
+- `tools/unittest/emit/cpp/test_py2cpp_features.py`
+- `tools/unittest/emit/cpp/test_cpp_runtime_symbol_index_integration.py`
+- `tools/unittest/pylib/test_pylib_os_glob.py`
+- `tools/gen/gen_runtime_symbol_index.py`
 
 非対象:
 - `os.py` の Python fallback alias (`from pytra.std import os_path as path`) の削除
@@ -114,7 +114,7 @@
   - `src/runtime/cpp/std/os_path.ext.h` の `py_os_path_*` 宣言
   - `src/runtime/cpp/std/os_path.ext.cpp` の `py_os_path_*` wrapper 定義
 - test 依存:
-  - `test/unit/backends/cpp/test_py2cpp_features.py::test_os_path_calls_use_runtime_helpers`
+  - `tools/unittest/emit/cpp/test_py2cpp_features.py::test_os_path_calls_use_runtime_helpers`
 - 退役対象ではない維持経路:
   - `src/pytra/std/os.py` の `os_path as path`
   - `CppModuleEmitter._collect_runtime_modules_from_node()` による module attr からの実 runtime module 回収
@@ -136,7 +136,7 @@
 
 ### Phase 4: compile-source / symbol index / import 経路の非退行確認
 
-- `tools/gen_runtime_symbol_index.py --check` が通ることを確認する。
+- `tools/gen/gen_runtime_symbol_index.py --check` が通ることを確認する。
 - `test_cpp_runtime_symbol_index_integration.py` と `test_pylib_os_glob.py` で、public header / compile-source 追跡が wrapper なしでも壊れないことを確認する。
 - `os_glob_extended_runtime` を再確認し、2026-03-06 に止血した regressions が再発していないことを確認する。
 
@@ -153,16 +153,16 @@
 - `src/runtime/cpp/pytra/std/os_path.h` は `os_path.gen.h` だけを public include として forward する。
 - `test_os_path_calls_use_runtime_helpers` 相当の codegen test が `pytra::std::os_path::*` を期待して通る。
 - `test_os_glob_extended_runtime` と `test_pylib_os_glob.py` が通り、2026-03-06 の compile break が再発しない。
-- `python3 tools/check_todo_priority.py` が通る。
+- `python3 tools/check/check_todo_priority.py` が通る。
 
 ## 検証コマンド
 
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/gen_runtime_symbol_index.py --check`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k os_path`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k os_glob_extended_runtime`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_symbol_index_integration.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/pylib -p 'test_pylib_os_glob.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/gen/gen_runtime_symbol_index.py --check`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k os_path`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k os_glob_extended_runtime`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_symbol_index_integration.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/pylib -p 'test_pylib_os_glob.py'`
 
 ## 分解
 
@@ -188,4 +188,4 @@
 - 2026-03-07: ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S1-02 2026-03-06 の暫定復旧で本当に必要だったのは `os.path -> pytra.std.os_path` の module owner 固定と public header から compile source を辿る導線だけであり、`py_os_path_*` free function ABI は止血用の暫定措置として退役可能と判断した。
 - 2026-03-07: ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S2-01 `src/backends/cpp/profiles/runtime_calls.json` の `pytra.std.os.path` / `os.path` / `pytra.std.os_path` を `pytra::std::os_path::*` へ切り替えた。`CppCallEmitter` 側は `ns::func` 文字列をそのまま runtime function 名として扱えるため、backend 実装追加は不要だった。
 - 2026-03-07: ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S3-01 `src/runtime/cpp/std/os_path.ext.h` を削除し、`src/runtime/cpp/std/os_path.ext.cpp` は `os_path.gen.h` を直接 include して namespace 実装だけを残した。`python3 src/py2x.py --target cpp src/pytra/std/os_path.py --emit-runtime-cpp` を再実行し、`src/runtime/cpp/pytra/std/os_path.h` が `os_path.gen.h` のみを forward する状態へ戻した。
-- 2026-03-07: ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S4-01 `python3 tools/gen_runtime_symbol_index.py --check`、`PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k os_path`、`... -k os_glob_extended_runtime`、`PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_symbol_index_integration.py'`、`PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_pylib_os_glob.py'` を実行し通過した。`rg -n "py_os_path_" src test tools -g '!sample/cpp/**'` は非 docs の一致 0 件だった。
+- 2026-03-07: ID: P0-CPP-OSPATH-WRAPPER-RETIRE-01-S4-01 `python3 tools/gen/gen_runtime_symbol_index.py --check`、`PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k os_path`、`... -k os_glob_extended_runtime`、`PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_symbol_index_integration.py'`、`PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_pylib_os_glob.py'` を実行し通過した。`rg -n "py_os_path_" src test tools -g '!sample/cpp/**'` は非 docs の一致 0 件だった。

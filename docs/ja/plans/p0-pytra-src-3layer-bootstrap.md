@@ -40,22 +40,22 @@
 - 境界ガードが追加され、`frontends` と `ir` の逆流 import を検知できる。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_noncpp_east3_contract.py --skip-transpile`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_noncpp_east3_contract.py --skip-transpile`
 - `python3 -m unittest discover -s test/unit -p test_py2x_cli.py`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_py2rs_transpile.py`
-- `python3 tools/check_py2js_transpile.py`
-- `python3 tools/check_py2ts_transpile.py`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/check_py2java_transpile.py`
-- `python3 tools/check_py2kotlin_transpile.py`
-- `python3 tools/check_py2swift_transpile.py`
-- `python3 tools/check_py2rb_transpile.py`
-- `python3 tools/check_py2lua_transpile.py`
-- `python3 tools/check_py2php_transpile.py`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/check_py2nim_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2js_transpile.py`
+- `python3 tools/check/check_py2ts_transpile.py`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/check/check_py2java_transpile.py`
+- `python3 tools/check/check_py2kotlin_transpile.py`
+- `python3 tools/check/check_py2swift_transpile.py`
+- `python3 tools/check/check_py2rb_transpile.py`
+- `python3 tools/check/check_py2lua_transpile.py`
+- `python3 tools/check/check_py2php_transpile.py`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/check/check_py2nim_transpile.py`
 
 ## 分解
 
@@ -113,7 +113,7 @@ S1-02 で固定した境界ルール:
 - 2026-03-03: `git ls-files src/pytra/compiler` で追跡対象を棚卸しし、`transpile_cli/stdlib/east1_build` を frontends 候補、EAST本体・lower・optimizer・human/io を ir 候補、registry/wrapper/version/shim を互換層として分類した。
 - 2026-03-03: 移行中の責務衝突を避けるため、`compiler/east_parts/cli.py` は当面互換層に残して `pytra.ir` 参照のみを許可する方針を採用した。
 - 2026-03-03: `src/pytra/frontends/__init__.py`, `src/pytra/frontends/python_frontend.py`, `src/pytra/ir/__init__.py`, `src/pytra/ir/pipeline.py` を追加し、既存 `pytra.compiler.*` 実装へ委譲する最小 bootstrap 導線を導入した。
-- 2026-03-03: `test/unit/test_pytra_layer_bootstrap.py` を追加し、`pytra.frontends` と `pytra.ir` の公開 API（import 可能性）を固定した。`test_py2x_cli.py` と主要 transpile check（rs/js）および version gate で非退行を確認した。
+- 2026-03-03: `tools/unittest/test_pytra_layer_bootstrap.py` を追加し、`pytra.frontends` と `pytra.ir` の公開 API（import 可能性）を固定した。`test_py2x_cli.py` と主要 transpile check（rs/js）および version gate で非退行を確認した。
 - 2026-03-03: `src/pytra/frontends/{east1_build.py,frontend_semantics.py,signature_registry.py}` へ実体を移設し、旧 `src/pytra/compiler/east_parts/east1_build.py` と `src/pytra/compiler/stdlib/{frontend_semantics.py,signature_registry.py}` は互換 shim 化した。
 - 2026-03-03: `src/pytra/compiler/east_parts/core.py` の stdlib 参照を `pytra.frontends.*` へ切替し、`py2cpp`/`multifile_writer`/`transpile_cli` の `East1BuildHelpers` 参照を新経路へ更新した。
 - 2026-03-03: `pytra.frontends.__init__` は package import 時循環を避けるため lazy 委譲実装へ変更した。`test_stdlib_signature_registry.py`, `test_east1_build.py`, `test_pytra_layer_bootstrap.py`, `check_py2{cpp,rs,js}_transpile.py`, `check_noncpp_east3_contract.py --skip-transpile`, `check_transpiler_version_gate.py --base-ref HEAD` の通過を確認した。
@@ -122,7 +122,7 @@ S1-02 で固定した境界ルール:
 - 2026-03-03: IR移設後の回帰として `test_east{2_to_east3_lowering,3_optimizer,3_non_escape_interprocedural_pass,3_lifetime_analysis_pass}`、`check_py2{cpp,rs,js}_transpile.py`、`check_noncpp_east3_contract --skip-transpile`、`check_transpiler_version_gate --base-ref HEAD` を実行し通過を確認した。
 - 2026-03-03: `src/pytra/frontends/transpile_cli.py` へ `transpile_cli` 実体を移設し、旧 `src/pytra/compiler/transpile_cli.py` は互換 shim 化した。`python_frontend` は新経路（`pytra.frontends.transpile_cli`）参照へ切替した。
 - 2026-03-03: 互換導線検証として `test_py2x_cli.py`, `test_pytra_layer_bootstrap.py`, `test_stdlib_signature_registry.py`, `check_py2{cpp,rs,js}_transpile.py`, `check_noncpp_east3_contract --skip-transpile`, `check_transpiler_version_gate --base-ref HEAD` を再実行し通過を確認した。
-- 2026-03-03: 境界ガードとして `tools/check_pytra_layer_boundaries.py` を追加し、`frontends -> backends` / `ir -> backends` / `backends -> frontends` を禁止、`ir -> frontends` は `ir/core.py` のみ許可する静的 import 監視を導入した。
+- 2026-03-03: 境界ガードとして `tools/check/check_pytra_layer_boundaries.py` を追加し、`frontends -> backends` / `ir -> backends` / `backends -> frontends` を禁止、`ir -> frontends` は `ir/core.py` のみ許可する静的 import 監視を導入した。
 - 2026-03-03: ガード追加時に `toolchain/emit/cpp/emitter/multifile_writer.py` が `pytra.frontends.east1_build` を直参照していたため、互換 shim 経由（`pytra.compiler.east_parts.east1_build`）へ戻して逆流依存を解消した。
 - 2026-03-03: 境界ガード導入後の回帰として `check_pytra_layer_boundaries.py`, `test_py2x_cli.py`, `check_py2{cpp,rs,js}_transpile.py`, `check_noncpp_east3_contract --skip-transpile`, `check_transpiler_version_gate --base-ref HEAD` を通過確認した。
 - 2026-03-03: S3-02 の主要回帰として `check_pytra_layer_boundaries`, `check_noncpp_east3_contract --skip-transpile`, `test_py2x_cli`, `check_py2{cpp,rs,js,ts,go,java,kotlin,swift,rb,lua,php,scala,nim}_transpile`, `check_transpiler_version_gate --base-ref HEAD` を一括実行し全通過を確認した。

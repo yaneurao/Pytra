@@ -62,5 +62,5 @@ Acceptance criteria:
 - 2026-03-08 [ID: P4-NONCPP-BACKEND-RECOVERY-01-S3-01]: Rust’s representative post-linked-program regression around return-context rendering was fixed, and Wave 1 reached a stable green contract baseline.
 - 2026-03-08 [ID: P4-NONCPP-BACKEND-RECOVERY-01-S4-01]: Wave 2’s main failures were reduced to path-constructor source-origin metadata and `src.*` import path issues, which were then fixed target by target.
 - 2026-03-08 [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-01]: Wave 3 mainly required import-path cleanup for `ruby/php/nim` and stale smoke expectations for `lua`.
-- 2026-03-08 [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-01]: Local CI was updated to run `tools/check_noncpp_backend_health.py --family all --skip-parity`.
+- 2026-03-08 [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-01]: Local CI was updated to run `tools/check/check_noncpp_backend_health.py --family all --skip-parity`.
 - 2026-03-08 [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-02]: Specs and how-to-use docs were synchronized to the new non-C++ backend recovery workflow.

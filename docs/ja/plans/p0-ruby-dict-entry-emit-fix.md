@@ -21,7 +21,7 @@
 対象:
 - `src/toolchain/emit/ruby/emitter/ruby_native_emitter.py`
 - `test/fixtures` または `test/unit` の Ruby 回帰ケース（dict literal）
-- `tools/runtime_parity_check.py` を使った `sample/18` Ruby 再検証
+- `tools/check/runtime_parity_check.py` を使った `sample/18` Ruby 再検証
 
 非対象:
 - Ruby backend 全体最適化
@@ -31,12 +31,12 @@
 受け入れ基準:
 - Ruby emitter が EAST3 `Dict(entries=...)` を正しく `{ k => v, ... }` へ出力する。
 - dict literal 最小再現ケースで Ruby 出力が `{}` へ崩れないことをテストで検出できる。
-- `python3 tools/runtime_parity_check.py --case-root sample --targets ruby 18_mini_language_interpreter` が pass する。
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby 18_mini_language_interpreter` が pass する。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2rb_smoke.py`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets ruby 18_mini_language_interpreter`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2rb_smoke.py`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby 18_mini_language_interpreter`
 
 決定ログ:
 - 2026-03-04: `P0-RUBY-S18-TOKENIZE-INVEST-01` の後続実装として起票。修正焦点は `_render_dict_expr` の `entries` 対応に限定する。

@@ -22,7 +22,7 @@
 対象:
 - `src/pytra/compiler/east_parts/east2_to_east3_lowering.py`
 - `src/hooks/cpp/emitter/stmt.py`
-- `test/unit/test_east3_cpp_bridge.py`（必要に応じて関連 smoke）
+- `tools/unittest/test_east3_cpp_bridge.py`（必要に応じて関連 smoke）
 
 非対象:
 - 全面的な型推論エンジンの再設計
@@ -37,10 +37,10 @@
 - `check_py2cpp_transpile.py` と `sample/18` の変換・コンパイルが通る。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 -m unittest discover -s test/unit -p 'test_east2_to_east3_lowering.py' -v`
 - `python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `python3 src/py2cpp.py sample/py/18_mini_language_interpreter.py -o /tmp/18.cpp --dump-east3-before-opt /tmp/18.east3.before.json`
 - `RUNTIME_SRCS=$(python3 - <<'PY'`<br>`from pathlib import Path`<br>`root = Path('/workspace/Pytra')`<br>`paths = [p.as_posix() for p in sorted((root/'src'/'runtime'/'cpp'/'base').glob('*.cpp'))]`<br>`paths += [p.as_posix() for p in sorted((root/'src'/'runtime'/'cpp'/'pytra').rglob('*.cpp'))]`<br>`print(' '.join(paths))`<br>`PY`<br>`) ; g++ -std=c++20 -O2 -I src/runtime/cpp -I src /tmp/18.cpp $RUNTIME_SRCS -o /tmp/pytra_sample18_cpp`
 
@@ -49,10 +49,10 @@
 - 2026-02-27: [ID: `P0-FORCORE-TYPE-01-S1-01`] `east2_to_east3_lowering` に tuple 型分解（`tuple[...] -> elements[]`）を実装し、`For` lowering で `target_type=unknown` のとき `iter_element_type` を補助利用して `TupleTarget.elements[].target_type` を埋めるよう更新した。
 - 2026-02-27: [ID: `P0-FORCORE-TYPE-01-S1-02`] C++ `stmt.py` の `ForCore` tuple unpack で、要素 `target_type` が unknown の場合は親 `target_type=tuple[...]` から要素型を復元して `int64/str/...` 束縛を選び、復元不能時のみ `auto/object` にフォールバックするよう更新した。
 - 2026-02-27: [ID: `P0-FORCORE-TYPE-01-S2-01`] `test_east2_to_east3_lowering.py` に tuple target 型伝播テスト 2件、`test_east3_cpp_bridge.py` に `ForCore` tuple unpack（既知型束縛 / unknown フォールバック）テスト 2件を追加した。
-- 2026-02-27: [ID: `P0-FORCORE-TYPE-01-S2-02`] `python3 -m unittest discover -s test/unit -p 'test_east2_to_east3_lowering.py' -v`（`22/22`）/ `python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`（`80/80`）/ `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）を確認。`py2cpp` で `sample/18` を `/tmp/18.cpp` へ生成し、`tokenize` で `int64 line_index` / `str source` が出ることと、`/tmp/pytra_sample18_cpp` コンパイル・実行成功を確認した。
+- 2026-02-27: [ID: `P0-FORCORE-TYPE-01-S2-02`] `python3 -m unittest discover -s test/unit -p 'test_east2_to_east3_lowering.py' -v`（`22/22`）/ `python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`（`80/80`）/ `python3 tools/check/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）を確認。`py2cpp` で `sample/18` を `/tmp/18.cpp` へ生成し、`tokenize` で `int64 line_index` / `str source` が出ることと、`/tmp/pytra_sample18_cpp` コンパイル・実行成功を確認した。
 - 2026-02-27: [ID: `P0-FORCORE-TYPE-01-S3-01`] ユーザー要望に基づき、`enumerate(list[T])` など既知型 runtime iterable で loop header が `object` になる問題を最優先で解消する方針を追加した。
 - 2026-02-27: [ID: P0-FORCORE-TYPE-01-S3-01] `stmt.py` に runtime iterable 要素型推定（`_forcore_runtime_iter_item_type`）を追加し、`ForCore(RuntimeIterForPlan)` + `TupleTarget` で iterable 要素型が既知（例: `list[tuple[int64, str]]`）の場合は `for (::std::tuple<int64, str> __itobj : ...)` の typed loop header を出力する fastpath を実装した。未知型は従来どおり `object + py_dyn_range(...)` へフォールバックする。
-- 2026-02-27: [ID: P0-FORCORE-TYPE-01-S3-02] `test_east3_cpp_bridge.py` に typed header fastpath 回帰テストを追加し、`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`（`81/81`）と `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）を確認。`py2cpp` で `sample/18` を再生成し `for (::std::tuple<int64, str> __itobj_1 : py_enumerate(lines))` を確認、`/tmp/pytra_sample18_cpp` のコンパイル・実行成功（`elapsed_sec: 0.398722`）を確認した。
+- 2026-02-27: [ID: P0-FORCORE-TYPE-01-S3-02] `test_east3_cpp_bridge.py` に typed header fastpath 回帰テストを追加し、`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`（`81/81`）と `python3 tools/check/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）を確認。`py2cpp` で `sample/18` を再生成し `for (::std::tuple<int64, str> __itobj_1 : py_enumerate(lines))` を確認、`/tmp/pytra_sample18_cpp` のコンパイル・実行成功（`elapsed_sec: 0.398722`）を確認した。
 
 ## 分解
 

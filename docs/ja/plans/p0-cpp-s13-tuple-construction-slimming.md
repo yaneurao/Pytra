@@ -22,7 +22,7 @@
 対象:
 - `src/hooks/cpp/emitter/collection_expr.py`
 - `src/hooks/cpp/emitter/stmt.py`
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/13_maze_generation_steps.cpp`（再生成確認）
 
 非対象:
@@ -37,16 +37,16 @@
 - `sample/cpp/13` 再生成で対象断片の冗長ラップ削減を確認できる。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force`
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、sample/13 の tuple 二重ラップ削減を P0 として起票。
 - 2026-03-02: `list<tuple[...]>.append(...)` で引数が `::std::make_tuple(...)` の場合は追加 cast を省略し、`::std::tuple<...>(::std::make_tuple(...))` 二重ラップを回避する経路を `src/hooks/cpp/emitter/call.py` へ追加した。
 - 2026-03-02: `test_py2cpp_codegen_issues.py` の sample/13 回帰に `tuple(make_tuple)` 非出力断片を追加し、再発検知を固定した。
-- 2026-03-02: `python3 tools/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force` / `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` / `python3 tools/check_py2cpp_transpile.py` を実行し、すべて通過を確認した。
+- 2026-03-02: `python3 tools/gen/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force` / `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` / `python3 tools/check/check_py2cpp_transpile.py` を実行し、すべて通過を確認した。
 
 ## 分解
 

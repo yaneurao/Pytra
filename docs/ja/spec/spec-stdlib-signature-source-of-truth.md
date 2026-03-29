@@ -51,5 +51,5 @@
 
 ## 6. 検証
 
-- `test/unit/common/test_stdlib_signature_registry.py` で参照層の解決結果を固定する。
-- `test/unit/ir/test_east_core.py` で `perf_counter` call の `resolved_type` を固定する。
+- `tools/unittest/common/test_stdlib_signature_registry.py` で参照層の解決結果を固定する。
+- `tools/unittest/ir/test_east_core.py` で `perf_counter` call の `resolved_type` を固定する。

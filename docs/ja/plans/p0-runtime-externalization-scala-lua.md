@@ -25,9 +25,9 @@
 - `src/py2lua.py`
 - `src/runtime/scala/pytra/*`（新設）
 - `src/runtime/lua/pytra/*`（新設）
-- `tools/check_py2scala_transpile.py`
-- `tools/check_py2lua_transpile.py`
-- `tools/runtime_parity_check.py`（必要時）
+- `tools/check/check_py2scala_transpile.py`
+- `tools/check/check_py2lua_transpile.py`
+- `tools/check/runtime_parity_check.py`（必要時）
 
 非対象:
 - runtime API 仕様の全面変更
@@ -41,11 +41,11 @@
 - `sample` の parity チェック（最低 `01_mandelbrot`）で非退行を確認できる。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/check_py2lua_transpile.py`
-- `python3 tools/regenerate_samples.py --langs scala,lua --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets scala,lua 01_mandelbrot --ignore-unstable-stdout`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/check/check_py2lua_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs scala,lua --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets scala,lua 01_mandelbrot --ignore-unstable-stdout`
 
 分解:
 - [x] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S1-01] Scala/Lua の inline helper 出力箇所と runtime API 依存を棚卸しし、外出し境界を確定する。

@@ -31,10 +31,10 @@ Scope:
 - `src/runtime/cs/pytra-core/built_in/py_runtime.cs`
 - `src/backends/rs/emitter/rs_emitter.py`
 - `src/backends/cs/emitter/cs_emitter.py`
-- `test/unit/backends/cpp/test_cpp_runtime_iterable.py`
-- `test/unit/backends/cpp/test_cpp_runtime_type_id.py`
-- `test/unit/backends/cpp/test_py2cpp_codegen_issues.py`
-- `test/unit/backends/cpp/test_east3_cpp_bridge.py`
+- `tools/unittest/emit/cpp/test_cpp_runtime_iterable.py`
+- `tools/unittest/emit/cpp/test_cpp_runtime_type_id.py`
+- `tools/unittest/emit/cpp/test_py2cpp_codegen_issues.py`
+- `tools/unittest/emit/cpp/test_east3_cpp_bridge.py`
 - Rust/C# smoke tests when needed
 
 Out of scope:
@@ -51,16 +51,16 @@ Acceptance criteria:
 - `test_cpp_runtime_iterable.py`, `test_cpp_runtime_type_id.py`, `test_east3_cpp_bridge.py`, `test_py2cpp_codegen_issues.py`, relevant Rust/C# smoke tests, and `build_selfhost.py` pass.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_type_id.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_east3_cpp_bridge.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_codegen_issues.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/rs -p 'test_py2rs_smoke.py' -k type_id`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cs -p 'test_py2cs_smoke.py' -k type_id`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_iterable.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_type_id.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_east3_cpp_bridge.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_codegen_issues.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/rs -p 'test_py2rs_smoke.py' -k type_id`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cs -p 'test_py2cs_smoke.py' -k type_id`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_transpiler_version_gate.py`
-- `python3 tools/run_regen_on_version_bump.py --dry-run`
+- `python3 tools/check/check_transpiler_version_gate.py`
+- `python3 tools/run/run_regen_on_version_bump.py --dry-run`
 - `git diff --check`
 
 Breakdown:
@@ -76,7 +76,7 @@ Decision log:
 - 2026-03-11: After transitive-include cleanup and typed-dict / typed-mutation upstreaming, the remaining `py_runtime.h` shrink work was reduced to two pillars: mutation helpers and the shared `type_id` contract.
 - 2026-03-11: This task intentionally excludes physical header splitting and focuses only on contract shrinkage that reduces burden for other-language runtime implementations.
 - 2026-03-11: `S1` is limited to inventory plus target-end-state locking before implementation, and work should proceed in bundle-sized slices rather than helper-by-helper micro-commits.
-- 2026-03-11: As `S1-01`, added `tools/check_cpp_pyruntime_contract_inventory.py` and locked the remaining `symbol × path` callers into three buckets: `typed_lane_removable`, `object_bridge_required`, and `shared_runtime_contract`. This now guards native compiler wrappers, generated `json/type_id`, and the C++ emitter mutation lane against unclassified reintroduction.
+- 2026-03-11: As `S1-01`, added `tools/check/check_cpp_pyruntime_contract_inventory.py` and locked the remaining `symbol × path` callers into three buckets: `typed_lane_removable`, `object_bridge_required`, and `shared_runtime_contract`. This now guards native compiler wrappers, generated `json/type_id`, and the C++ emitter mutation lane against unclassified reintroduction.
 - 2026-03-11: As `S1-02`, expanded `test_cpp_runtime_iterable.py` and `test_check_cpp_pyruntime_contract_inventory.py` so the mutation-helper end state is fixed as `typed=container overload / compat=object overload`, and the `type_id` end state is fixed as `py_tid_*` delegation plus the generated `type_id.h` include.
 - 2026-03-11: As `S2-01`, removed `py_append/extend/pop/clear/reverse/sort/set_at` wrapper calls from the C++ emitter / stmt lane and lowered user-emitted C++ directly to `py_list_*_mut(obj_to_list_ref_or_raise(...))`. The `typed_lane_removable` bucket is now intentionally empty; residual callers are limited to generated runtime code and the shared `type_id` contract.
 - 2026-03-11: As `S2-02`, removed the `rc<list<T>>` mutation wrappers from `py_runtime.h`, leaving `py_append` only for generated-runtime local-list compatibility plus the object-bridge seam, and leaving `py_extend/pop/clear/reverse/sort/set_at` only as the object-bridge seam. Typed lanes now canonically call `py_list_*_mut` directly, and the source guards lock that end state.

@@ -33,11 +33,11 @@ Acceptance criteria:
 - A representative C++ multi-file smoke using `from .controller import (BUTTON_A as BUTTON, Pad as ControllerPad)` must build and run.
 - The generated consumer module must accept alias local names while still resolving the imported origins correctly.
 - Existing non-alias sibling relative-import smoke tests must keep passing.
-- `python3 tools/check_todo_priority.py`, focused C++ regressions, `python3 tools/build_selfhost.py`, and `git diff --check` must pass.
+- `python3 tools/check/check_todo_priority.py`, focused C++ regressions, `python3 tools/build_selfhost.py`, and `git diff --check` must pass.
 
 Verification:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/toolchain/emit/cpp -p 'test_py2cpp_features.py' -k sibling_relative_import`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k sibling_relative_import`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

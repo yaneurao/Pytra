@@ -44,6 +44,7 @@ class RuntimeMapping:
     builtin_prefix: str = "__pytra_"
     calls: dict[str, str] = field(default_factory=dict)
     skip_module_prefixes: list[str] = field(default_factory=list)
+    skip_module_exact: set[str] = field(default_factory=set)
     implicit_promotions: set[str] = field(default_factory=set)
 
     def is_implicit_cast(self, from_type: str, to_type: str) -> bool:
@@ -85,6 +86,15 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
                 skip_item = str(item)
                 skip.append(skip_item)
 
+    skip_exact_raw: JsonVal = None
+    if "skip_modules_exact" in raw:
+        skip_exact_raw = raw["skip_modules_exact"]
+    skip_exact: set[str] = set()
+    if isinstance(skip_exact_raw, list):
+        for item in skip_exact_raw:
+            if isinstance(item, str):
+                skip_exact.add(str(item))
+
     implicit_promotions_raw: JsonVal = None
     if "implicit_promotions" in raw:
         implicit_promotions_raw = raw["implicit_promotions"]
@@ -103,6 +113,7 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
         builtin_prefix=prefix_str,
         calls=calls,
         skip_module_prefixes=skip,
+        skip_module_exact=skip_exact,
         implicit_promotions=implicit_promotions,
     )
 
@@ -230,12 +241,16 @@ def build_runtime_import_map(
             )
         )
         if is_native_runtime:
-            resolved_symbol = resolve_runtime_symbol_name(symbol_name, mapping)
-            if (
-                symbol_name not in mapping.calls
-                and not symbol_name.startswith(mapping.builtin_prefix)
-            ):
+            if symbol_name in mapping.calls:
+                # Use explicit mapping.calls entry (highest priority)
+                mapped = mapping.calls[symbol_name]
+                resolved_symbol = mapped if isinstance(mapped, str) and mapped != "" else symbol_name
+            elif not symbol_name.startswith(mapping.builtin_prefix):
+                # No prefix → use as-is
                 resolved_symbol = symbol_name
+            else:
+                # Has prefix → resolve (may strip prefix)
+                resolved_symbol = resolve_runtime_symbol_name(symbol_name, mapping)
         else:
             resolved_symbol = symbol_name
         runtime_imports[local_name] = resolved_symbol
@@ -288,6 +303,8 @@ def should_skip_module(module_id: str, mapping: RuntimeMapping) -> bool:
     """Check if a module should be skipped (provided by native runtime)."""
     if module_id == "pytra.built_in.error" or module_id == "pytra.built_in.type_id_table":
         return False
+    if module_id in mapping.skip_module_exact:
+        return True
     for prefix in mapping.skip_module_prefixes:
         if module_id.startswith(prefix):
             return True

@@ -39,9 +39,9 @@
 - 可能なら helper 自体が削除され、inventory guard で再侵入を防いでいる。
 
 確認コマンド:
-- `PYTHONPATH=src python3 test/unit/backends/cpp/test_cpp_runtime_iterable.py`
-- `PYTHONPATH=src python3 test/unit/backends/cpp/test_py2cpp_codegen_issues.py`
-- `python3 tools/check_todo_priority.py`
+- `PYTHONPATH=src python3 tools/unittest/emit/cpp/test_cpp_runtime_iterable.py`
+- `PYTHONPATH=src python3 tools/unittest/emit/cpp/test_py2cpp_codegen_issues.py`
+- `python3 tools/check/check_todo_priority.py`
 
 ## フェーズ
 

@@ -40,7 +40,7 @@ EAST2→EAST3 lowering で import モジュール属性 Call に runtime annotat
 1. `math.sqrt(x)` (x: int64) の EAST3 Call ノードに `runtime_module_id: "pytra.std.math"`, `runtime_symbol: "sqrt"`, `semantic_tag: "stdlib.method.sqrt"` が設定される
 2. 全 math 関数（sin, cos, tan, sqrt, exp, log, log10, fabs, floor, ceil, pow）で同様に設定される
 3. int 引数に対する cast 挿入が `_FLOAT_STDLIB_SEMANTIC_TAGS` チェック経由でも機能する
-4. `python3 tools/check_py2cpp_transpile.py` が通る
+4. `python3 tools/check/check_py2cpp_transpile.py` が通る
 5. 既存テストにリグレッションがない
 
 ## 子タスク

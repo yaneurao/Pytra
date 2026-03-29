@@ -685,9 +685,9 @@ pytra-cli2 -golden --stage=east3-opt -o test/east3-opt/
 pytra-cli2 -golden --stage=emit --target=cpp -o test/emit/cpp/
 ```
 
-- golden file 生成は `tools/generate_golden.py`（selfhost 非対象）に分離する。`pytra-cli2.py` の `-golden` サブコマンドは廃止予定。
+- golden file 生成は `tools/gen/generate_golden.py`（selfhost 非対象）に分離する。`pytra-cli2.py` の `-golden` サブコマンドは廃止予定。
 - `pytra-cli2.py` は selfhost 対象とし、`toolchain/` への依存を持たない。
-- `tools/generate_golden.py` は内部で現行 `toolchain/` を呼んでよい。
+- `tools/gen/generate_golden.py` は内部で現行 `toolchain/` を呼んでよい。
 - 入力は `sample/py/*.py`（全 sample を自動列挙）
 - 出力先を `-o` で指定。省略時はデフォルトの `test/<stage>/` に出力
 - `toolchain2/` の自前実装が完成したら、golden file は回帰テスト用として維持する
@@ -886,7 +886,7 @@ include/
 
 - `toolchain/unused/` を削除
 - `pytra-cli-legacy.py` を削除
-- `tools/generate_golden.py` を toolchain2 ベース（toolchain/ の新実装）に切り替え
+- `tools/gen/generate_golden.py` を toolchain2 ベース（toolchain/ の新実装）に切り替え
 - `src/pytra/` の残骸を除去
 
 ## 8. 未決事項

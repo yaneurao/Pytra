@@ -21,8 +21,8 @@ Goal:
 In scope:
 - `src/pytra/compiler/east_parts/east3_opt_passes/*` (if needed)
 - `src/hooks/cpp/emitter/*.py` (for/call/stmt/expr/type_bridge)
-- `test/unit/test_east3_cpp_bridge.py`
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_east3_cpp_bridge.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/18_mini_language_interpreter.cpp` (regeneration check)
 
 Out of scope:
@@ -41,8 +41,8 @@ Acceptance criteria:
 - `check_py2cpp_transpile.py`, `test_east3_cpp_bridge.py`, and `test_py2cpp_codegen_issues.py` pass.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
 - `python3 src/py2cpp.py sample/py/18_mini_language_interpreter.py -o sample/cpp/18_mini_language_interpreter.cpp`
@@ -51,7 +51,7 @@ Decision log:
 - 2026-03-01: Per user instruction, we decomposed the 6 optimization opportunities for sample/18 C++ at P0 and created the implementation plan.
 - 2026-03-01: Under `cpp_list_model=pyobj`, `enumerate(lines)` resolves to `py_enumerate(object)` and cannot proceed to typed direct unpack. Adopted policy: choose typed enumerate only when `iter_item_type=tuple[int64, str]` and `lines:list[str]`, via `py_to_str_list_from_object(lines)`.
 - 2026-03-01: Added sample/18 regression under `cpp_list_model="pyobj"` in `test_py2cpp_codegen_issues.py`, pinning `for (const auto& [line_index, source] : py_enumerate(py_to_str_list_from_object(lines)))`.
-- 2026-03-01: Passed `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` (75), `test_east3_cpp_bridge.py` (90), and `python3 tools/check_py2cpp_transpile.py` (`checked=134 ok=134 fail=0 skipped=6`).
+- 2026-03-01: Passed `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` (75), `test_east3_cpp_bridge.py` (90), and `python3 tools/check/check_py2cpp_transpile.py` (`checked=134 ok=134 fail=0 skipped=6`).
 - 2026-03-01: Confirmed that the main cause of `tokens` degradation is a type boundary where `_cpp_type_text(list[T]) -> object` under `cpp_list_model=pyobj`. Since `tokenize()` return and `Parser.tokens` are lists crossing function boundaries, they are outside current stack-list (non-escape) collapse scope.
 - 2026-03-01: Fixed `S2-02` policy to add a sample/18-first `list[Token]` specialized unbox-once path (`tokenize -> Parser` boundary), and progressively collapse `py_append(make_object(...))` and chained `py_at + obj_to_rc_or_raise`.
 - 2026-03-01: Inventoried token access in `Parser`, confirming repeated `py_at(this->tokens, this->pos)` at `peek_kind` (1), `expect` (2), and `parse_primary` (1). Fixed `S3-02` policy: synthesize `_current_token()` / `_previous_token()` helpers on the emitter side to reduce duplicate unboxing at the same index.
@@ -59,14 +59,14 @@ Decision log:
 - 2026-03-01: Since `NUMBER` already slices `text` in tokenize, fixed `S5-02` policy to add `int64 number_value` to `Token` (`0` for non-NUMBER), convert once with `py_to_int64` in lexical phase, and eliminate reconversion in parse phase.
 - 2026-03-01: To connect to typed loop in `execute`, fixed `S6-02` policy to change `parse_program`/`execute` boundary to prefer `list<rc<StmtNode>>`, allowing `object` boxing only at external boundaries (main call, and runtime API only if needed).
 - 2026-03-01: Implemented `S6-02` by adding `py_to_rc_list_from_object<T>()` to runtime, restoring typed iteration fastpath in `list[RefClass]` iteration for `ForCore(NameTarget)` where `pyobj` would otherwise force runtime path. Confirmed sample/18 `execute` collapses to `for (rc<StmtNode> stmt : py_to_rc_list_from_object<StmtNode>(stmts, ...))`.
-- 2026-03-01: Re-ran `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` (76) / `test_east3_cpp_bridge.py` (90) / `python3 tools/check_py2cpp_transpile.py` (`checked=134 ok=134 fail=0 skipped=6`) and confirmed no regression.
-- 2026-03-01: Ran `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout` and confirmed `[PASS] 18_mini_language_interpreter`.
+- 2026-03-01: Re-ran `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` (76) / `test_east3_cpp_bridge.py` (90) / `python3 tools/check/check_py2cpp_transpile.py` (`checked=134 ok=134 fail=0 skipped=6`) and confirmed no regression.
+- 2026-03-01: Ran `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout` and confirmed `[PASS] 18_mini_language_interpreter`.
 - 2026-03-01: Implemented `S3-02` by reorganizing sample/18 `Parser` through helper methods `current_token()/previous_token()`, reducing same-index token retrieval in generated C++ `expect` to once. Added regression in `test_py2cpp_codegen_issues.py` and confirmed behavior parity in `runtime_parity_check`.
 - 2026-03-01: Implemented `S5-02` by adding `number_value` to sample/18 `Token`, predecoding `int(text)` for NUMBER in `tokenize`, and switching `parse_primary` to use `token_num.number_value`. Confirmed no regression with `test_py2cpp_codegen_issues.py`, `runtime_parity_check`, and `check_py2cpp_transpile`.
 - 2026-03-01: Implemented `S4-02` by adding `kind_tag/op_tag` to `ExprNode/StmtNode` and moving eval/execute branches to integer comparison. To avoid top-level constant initialization being shadowed during module init, tag values were fixed as literals.
 - 2026-03-01: Implemented `S2-02` by extending policy so `list[RefClass]` uses typed containers even with `cpp_list_model=pyobj`, and updated emitter to keep `Token/ExprNode/StmtNode` lists as `list<rc<...>>`. In sample/18, `tokenize`/`Parser.tokens`/`parse_program`/`execute` moved from `object` path to typed-container path.
 - 2026-03-01: Implemented `S7-01` by adding sample/18 typed-token-container regressions in `test_py2cpp_codegen_issues.py` (`tokenize` signature / `Parser.tokens` field / `current_token` access), and pinned regenerated diffs of `sample/cpp/18_mini_language_interpreter.cpp`.
-- 2026-03-01: Re-ran `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` (80) / `test_east3_cpp_bridge.py` (90) / `python3 tools/check_py2cpp_transpile.py` (`checked=134 ok=134 fail=0 skipped=6`) / `runtime_parity_check` (sample/18 cpp PASS), and marked parent `P0-CPP-S18-OPT-01` complete.
+- 2026-03-01: Re-ran `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` (80) / `test_east3_cpp_bridge.py` (90) / `python3 tools/check/check_py2cpp_transpile.py` (`checked=134 ok=134 fail=0 skipped=6`) / `runtime_parity_check` (sample/18 cpp PASS), and marked parent `P0-CPP-S18-OPT-01` complete.
 
 ## Breakdown
 

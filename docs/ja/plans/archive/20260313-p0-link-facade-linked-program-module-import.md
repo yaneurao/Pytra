@@ -11,7 +11,7 @@
 
 背景:
 - `toolchain.link` facade はすでに `LinkedProgramModule` を export している。
-- それにもかかわらず、[`test/unit/tooling/test_py2x_cli.py`](/workspace/Pytra/test/unit/tooling/test_py2x_cli.py) は `src.toolchain.link.program_model` を直接 import している。
+- それにもかかわらず、[`tools/unittest/tooling/test_py2x_cli.py`](/workspace/Pytra/tools/unittest/tooling/test_py2x_cli.py) は `src.toolchain.link.program_model` を直接 import している。
 - 同じ consumer lane でも [`src/ir2lang.py`](/workspace/Pytra/src/ir2lang.py) はすでに facade import へ揃っており、`py2x` tooling test だけが reach-through import を残している。
 
 目的:
@@ -19,8 +19,8 @@
 - source contract を追加し、`program_model` への direct reach-through が戻ったら fail-fast にする。
 
 対象:
-- `test/unit/tooling/test_py2x_cli.py`
-- `test/unit/common/test_py2x_entrypoints_contract.py`
+- `tools/unittest/tooling/test_py2x_cli.py`
+- `tools/unittest/common/test_py2x_entrypoints_contract.py`
 - `docs/ja/todo/index.md` と英語ミラー
 
 非対象:
@@ -34,9 +34,9 @@
 - focused unit が green になる。
 
 確認コマンド:
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 /workspace/Pytra/test/unit/common/test_py2x_entrypoints_contract.py`
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 /workspace/Pytra/test/unit/tooling/test_py2x_cli.py`
-- `python3 /workspace/Pytra/tools/check_todo_priority.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 /workspace/Pytra/tools/unittest/common/test_py2x_entrypoints_contract.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 /workspace/Pytra/tools/unittest/tooling/test_py2x_cli.py`
+- `python3 /workspace/Pytra/tools/check/check_todo_priority.py`
 - `git -C /workspace/Pytra diff --check`
 
 分解:

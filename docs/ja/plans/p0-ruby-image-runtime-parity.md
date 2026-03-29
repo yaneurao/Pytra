@@ -35,11 +35,11 @@
 - `runtime_parity_check --targets ruby --all-samples` が非退行で通る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets ruby --all-samples --ignore-unstable-stdout`
-- `python3 tools/regenerate_samples.py --langs ruby --force`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby --all-samples --ignore-unstable-stdout`
+- `python3 tools/gen/regenerate_samples.py --langs ruby --force`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2rb_smoke.py' -v`
-- `python3 tools/check_py2rb_transpile.py`
+- `python3 tools/check/check_py2rb_transpile.py`
 
 決定ログ:
 - 2026-02-28: ユーザー指示により、Ruby 画像出力の no-op 経路を最優先（P0）で修正する計画を起票した。

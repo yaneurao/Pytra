@@ -29,8 +29,8 @@ Acceptance criteria:
 - No selfhost regressions
 
 Validation commands:
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_selfhost_cpp_diff.py --mode allow-not-implemented`
 
 Decision log:
 - 2026-02-22: Initial draft.

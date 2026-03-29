@@ -20,7 +20,7 @@ Goal:
 - Keep the smoke strong enough to prove that `field(...)` does not leak into generated C++ and `deque[float]` lowers to `::std::deque<float64>`.
 
 In scope:
-- `test/unit/backends/cpp/test_py2cpp_features.py`
+- `tools/unittest/emit/cpp/test_py2cpp_features.py`
 - Representative C++ emitter / runtime drift guards when needed
 - TODO / plan / support docs
 
@@ -37,9 +37,9 @@ Acceptance criteria:
 - Representative runtime output is fixed in regression form.
 
 Verification commands:
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src:/workspace/Pytra/test/unit/backends python3 test/unit/backends/cpp/test_py2cpp_features.py -k pytra_nes`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src:/workspace/Pytra/tools/unittest/backends python3 tools/unittest/emit/cpp/test_py2cpp_features.py -k pytra_nes`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `git diff --check`
 
 Breakdown:

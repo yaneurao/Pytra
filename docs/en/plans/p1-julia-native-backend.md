@@ -25,7 +25,7 @@
 
 受け入れ基準:
 - `transpile_to_julia_native(east_doc)` が EAST3 JSON → Julia ソースを生成できる。
-- `test/unit/backends/julia/test_py2julia_smoke.py` の基本テストが通る。
+- `tools/unittest/emit/julia/test_py2julia_smoke.py` の基本テストが通る。
 - `transpiler_versions.json` に `"julia": "0.1.0"` が登録されている。
 - `check_py2x_profiles.json` に Julia プロファイルが登録されている。
 

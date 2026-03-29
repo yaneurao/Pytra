@@ -31,8 +31,8 @@
 - checked-in code が explicit decode / typed comparison で通る。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py' -v`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_iterable.py' -v`
 
 ## 1. 方針
 

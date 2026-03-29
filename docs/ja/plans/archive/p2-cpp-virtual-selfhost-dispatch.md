@@ -13,7 +13,7 @@
 
 - selfhost 生成 C++ 側（`sample/` 系の再変換含む）で、同一メソッド呼び出しを `virtual` 経由へ置換して、`type_id` 分岐が不要な箇所を減らせること。
 - `py2cpp.py` と `CppEmitter` が、`override` が付与される基底メソッドと同名呼び出しを前提に最小限の分岐で生成できること。
-- `tools/check_selfhost_cpp_diff.py` / `tools/verify_selfhost_end_to_end.py` で回帰が発生しないこと。
+- `tools/check/check_selfhost_cpp_diff.py` / `tools/verify_selfhost_end_to_end.py` で回帰が発生しないこと。
 
 ## 子タスク
 
@@ -73,10 +73,10 @@
   - `_render_call_class_method()` は mode に応じて `_render_virtual_class_method_call()` / `_render_direct_class_method_call()` を選択し、`fallback` は `None` を返す。
 - class method 候補探索ロジックを `_collect_class_method_candidates()` へ共通化し、`_class_method_sig` / `_has_class_method` / `_class_method_name_sig` の重複を削減した。
 - 回帰検証:
-  - `python3 -m py_compile src/hooks/cpp/emitter/call.py test/unit/test_east3_cpp_bridge.py`
+  - `python3 -m py_compile src/hooks/cpp/emitter/call.py tools/unittest/test_east3_cpp_bridge.py`
   - `python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'class_method_dispatch_mode_routes_virtual_direct_and_fallback'`
   - `python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -k 'render_call_class_method_uses_dispatch_mode_table'`
-  - `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
+  - `python3 tools/check/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
 
 `P2-CPP-SELFHOST-VIRTUAL-01-S2-03` 確定内容（2026-02-26）:
 - `S2-01/S2-02` の分岐整理に合わせて、virtual 化の対象/非対象を固定した。
@@ -102,7 +102,7 @@
 
 `P2-CPP-SELFHOST-VIRTUAL-01-S3-02` 確定内容（2026-02-26）:
 - `S3-01` の no-op 判定を前提に selfhost 再変換成功率を再評価した。
-  - `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented --skip-east3-contract-tests`
+  - `python3 tools/check/check_selfhost_cpp_diff.py --mode allow-not-implemented --skip-east3-contract-tests`
     - 結果: `mismatches=0 known_diffs=2 skipped=0`
   - `python3 tools/verify_selfhost_end_to_end.py`
     - 結果: `build_selfhost` 失敗（`Traceback ...`）
@@ -123,22 +123,22 @@
 ### S4: 回帰固定と仕様反映
 
 10. `P2-CPP-SELFHOST-VIRTUAL-01-S4-01`: 差分固定のため `test/unit`（selfhost 関連）と `sample` 再生成 golden 的比較を追加/更新する。
-11. `P2-CPP-SELFHOST-VIRTUAL-01-S4-02`: `tools/check_selfhost_cpp_diff.py` / `tools/verify_selfhost_end_to_end.py` を実行して回帰条件を更新し、再現性を検証する。
+11. `P2-CPP-SELFHOST-VIRTUAL-01-S4-02`: `tools/check/check_selfhost_cpp_diff.py` / `tools/verify_selfhost_end_to_end.py` を実行して回帰条件を更新し、再現性を検証する。
 12. `P2-CPP-SELFHOST-VIRTUAL-01-S4-03`: 進捗を `docs/ja/spec/spec-dev.md`（必要なら `docs/ja/spec/spec-type_id.md`）へ短く反映し、次段の実施基準に接続する。
 
 `P2-CPP-SELFHOST-VIRTUAL-01-S4-01` 確定内容（2026-02-26）:
 - selfhost virtual dispatch 回帰を固定する単体テストを追加:
-  - `test/unit/test_selfhost_virtual_dispatch_regression.py`
+  - `tools/unittest/test_selfhost_virtual_dispatch_regression.py`
     - `sample/cpp/*.cpp` に `type_id()` 比較/switch ベース dispatch が再流入していないことを検証。
     - `src/runtime/cpp/pytra-gen/**/*.cpp` でも同様に検証（`built_in/type_id.cpp` は registry 管理なので除外）。
 - 検証:
-  - `python3 -m py_compile test/unit/test_selfhost_virtual_dispatch_regression.py`
+  - `python3 -m py_compile tools/unittest/test_selfhost_virtual_dispatch_regression.py`
   - `python3 -m unittest discover -s test/unit -p 'test_selfhost_virtual_dispatch_regression.py'`
-  - `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented --skip-east3-contract-tests`（`mismatches=0 known_diffs=2 skipped=0`）
+  - `python3 tools/check/check_selfhost_cpp_diff.py --mode allow-not-implemented --skip-east3-contract-tests`（`mismatches=0 known_diffs=2 skipped=0`）
 
 `P2-CPP-SELFHOST-VIRTUAL-01-S4-02` 確定内容（2026-02-26）:
 - 回帰条件の再確認として以下を再実行した。
-  - `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented --skip-east3-contract-tests`
+  - `python3 tools/check/check_selfhost_cpp_diff.py --mode allow-not-implemented --skip-east3-contract-tests`
     - 結果: `mismatches=0 known_diffs=2 skipped=0`
   - `python3 tools/verify_selfhost_end_to_end.py`
     - 結果: `[FAIL build_selfhost] ['Traceback (most recent call last):']`
@@ -157,23 +157,23 @@
 
 ### S5: テスト追加（最優先）
 
-13. `P2-CPP-SELFHOST-VIRTUAL-01-S5-01`: `test/unit/test_py2cpp_codegen_issues.py` に、`Child.f` から `Base.f` 呼び出し（`Base.f` 参照 + `super().f`）の 2 パターンで `virtual/override` と `type_id` 分岐除去を検証するケースを追加する。
-14. `P2-CPP-SELFHOST-VIRTUAL-01-S5-02`: `test/unit/test_py2cpp_codegen_issues.py` か新規 selfhost 系テストに、`Base`/`Child` が混在する `test/unit` + `sample` 再変換で、`type_id` スイッチが残る/消える境界ケース（`staticmethod` 風・`cls` method・`object` レシーバ）を分離して検証する。
+13. `P2-CPP-SELFHOST-VIRTUAL-01-S5-01`: `tools/unittest/test_py2cpp_codegen_issues.py` に、`Child.f` から `Base.f` 呼び出し（`Base.f` 参照 + `super().f`）の 2 パターンで `virtual/override` と `type_id` 分岐除去を検証するケースを追加する。
+14. `P2-CPP-SELFHOST-VIRTUAL-01-S5-02`: `tools/unittest/test_py2cpp_codegen_issues.py` か新規 selfhost 系テストに、`Base`/`Child` が混在する `test/unit` + `sample` 再変換で、`type_id` スイッチが残る/消える境界ケース（`staticmethod` 風・`cls` method・`object` レシーバ）を分離して検証する。
 15. `P2-CPP-SELFHOST-VIRTUAL-01-S5-03`: `tools/verify_selfhost_end_to_end.py` が対象の `sample`（少なくとも 2 件）を再変換しても `sample` 本体の意味論を壊さないことを確認するテストを追加し、生成コードの簡略化が再帰呼び出しと衝突しないことを固定する。
 
 `P2-CPP-SELFHOST-VIRTUAL-01-S5-01` 確定内容（2026-02-26）:
-- `test/unit/test_py2cpp_codegen_issues.py` に以下を追加した。
+- `tools/unittest/test_py2cpp_codegen_issues.py` に以下を追加した。
   - `test_base_qualified_call_keeps_virtual_path_without_type_id_dispatch`
   - `test_super_method_call_lowers_to_base_qualified_call_without_type_id_dispatch`
 - 併せて `src/hooks/cpp/emitter/call.py` に `super().method(...)` 専用経路を追加し、`Base::method(*this, ...)` へ lower するよう修正した。
 - 検証:
-  - `python3 -m py_compile src/hooks/cpp/emitter/call.py test/unit/test_py2cpp_codegen_issues.py`
+  - `python3 -m py_compile src/hooks/cpp/emitter/call.py tools/unittest/test_py2cpp_codegen_issues.py`
   - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -k 'base_qualified_call_keeps_virtual_path_without_type_id_dispatch'`
   - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -k 'super_method_call_lowers_to_base_qualified_call_without_type_id_dispatch'`
-  - `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
+  - `python3 tools/check/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
 
 `P2-CPP-SELFHOST-VIRTUAL-01-S5-02` 確定内容（2026-02-26）:
-- `test/unit/test_py2cpp_codegen_issues.py` に境界ケース回帰を追加した。
+- `tools/unittest/test_py2cpp_codegen_issues.py` に境界ケース回帰を追加した。
   - `test_staticmethod_boundary_uses_class_call_without_type_id_switch`
   - `test_classmethod_boundary_keeps_class_call_without_type_id_switch`
   - 既存 `test_method_call_after_runtime_unbox_is_rendered_with_dynamic_dispatch` に `type_id` 比較/switch 不在の検証を追記。
@@ -182,22 +182,22 @@
   - `classmethod`: `Child::cm(...)` 経路を維持し、dispatch 用 `type_id` 分岐を持たない。
   - `object` レシーバ: `obj_to_rc_or_raise<Base>(...)` による明示 unbox 後に仮想呼び出しし、dispatch 用 `type_id` 分岐を持たない。
 - 検証:
-  - `python3 -m py_compile test/unit/test_py2cpp_codegen_issues.py`
+  - `python3 -m py_compile tools/unittest/test_py2cpp_codegen_issues.py`
   - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -k 'staticmethod_boundary_uses_class_call_without_type_id_switch'`
   - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -k 'classmethod_boundary_keeps_class_call_without_type_id_switch'`
   - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -k 'method_call_after_runtime_unbox_is_rendered_with_dynamic_dispatch'`
-  - `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
+  - `python3 tools/check/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
 
 `P2-CPP-SELFHOST-VIRTUAL-01-S5-03` 確定内容（2026-02-26）:
-- `test/unit/test_selfhost_virtual_dispatch_regression.py` に selfhost e2e 検証ケースを追加:
+- `tools/unittest/test_selfhost_virtual_dispatch_regression.py` に selfhost e2e 検証ケースを追加:
   - `test_verify_selfhost_end_to_end_two_cases_skip_build`
   - `tools/verify_selfhost_end_to_end.py --skip-build` を使って以下2ケースの stdout parity を固定。
     - `test/fixtures/core/fib.py`（再帰呼び出しを含む）
     - `sample/py/17_monte_carlo_pi.py`
 - 検証:
-  - `python3 -m py_compile src/py2cpp.py tools/prepare_selfhost_source.py test/unit/test_selfhost_virtual_dispatch_regression.py`
+  - `python3 -m py_compile src/py2cpp.py tools/prepare_selfhost_source.py tools/unittest/test_selfhost_virtual_dispatch_regression.py`
   - `python3 -m unittest discover -s test/unit -p 'test_selfhost_virtual_dispatch_regression.py' -k 'verify_selfhost_end_to_end_two_cases_skip_build'`
-  - `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
+  - `python3 tools/check/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）
 - 備考:
   - `tools/build_selfhost.py` は依然として selfhost 生成導線の制約（hooks import 解決）で失敗するため、当面の回帰固定は `--skip-build` 経路で実施する。
 

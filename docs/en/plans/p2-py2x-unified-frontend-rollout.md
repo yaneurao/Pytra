@@ -38,22 +38,22 @@ Acceptance criteria:
 - Major transpile checks and unit tests pass without regression.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 src/pytra-cli.py --help`
 - `python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o out/tmp_01.cpp`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_py2rs_transpile.py`
-- `python3 tools/check_py2cs_transpile.py`
-- `python3 tools/check_py2js_transpile.py`
-- `python3 tools/check_py2ts_transpile.py`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/check_py2java_transpile.py`
-- `python3 tools/check_py2swift_transpile.py`
-- `python3 tools/check_py2kotlin_transpile.py`
-- `python3 tools/check_py2rb_transpile.py`
-- `python3 tools/check_py2lua_transpile.py`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/check_py2php_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2cs_transpile.py`
+- `python3 tools/check/check_py2js_transpile.py`
+- `python3 tools/check/check_py2ts_transpile.py`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/check/check_py2java_transpile.py`
+- `python3 tools/check/check_py2swift_transpile.py`
+- `python3 tools/check/check_py2kotlin_transpile.py`
+- `python3 tools/check/check_py2rb_transpile.py`
+- `python3 tools/check/check_py2lua_transpile.py`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/check/check_py2php_transpile.py`
 
 ## Breakdown
 
@@ -223,27 +223,27 @@ Each target must define the following in `BackendSpec` (tentative name).
   - Switched existing frontend `main` into thin wrappers delegating to `run_py2x_for_target("<lang>")`.
   - Targets: `py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,php,scala,nim}.py`
   - `py2cs.py` keeps existing `main(argv)` call shape and delegates via `argv_override`.
-  - Updated `tools/check_noncpp_east3_contract.py` for wrapper contract and made static checks accept both `legacy implementation` and `py2x thin wrapper`.
+  - Updated `tools/check/check_noncpp_east3_contract.py` for wrapper contract and made static checks accept both `legacy implementation` and `py2x thin wrapper`.
   - Added `pytra/std/time.php` copy in `py2x` PHP runtime hook to preserve existing contracts after `py2php` wrapper conversion.
 - Execution checks:
-  - `python3 tools/check_noncpp_east3_contract.py --skip-transpile`
+  - `python3 tools/check/check_noncpp_east3_contract.py --skip-transpile`
   - `python3 -m unittest discover -s test/unit -p test_east2_to_east3_lowering.py`
-  - `python3 tools/check_py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,php,scala,nim}_transpile.py`
+  - `python3 tools/check/check_py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,php,scala,nim}_transpile.py`
 
 ## S2-04 Implementation (2026-03-03)
 
 - Implemented:
   - Unified runtime/packaging in `backend_registry.runtime_hook`, and degraded non-C++ frontends to `run_py2x_for_target` only.
-  - Added wrapper-oriented static guards to `tools/check_noncpp_east3_contract.py`, making reintroduction of legacy runtime-copy calls in `py2*.py` fail (e.g., `_copy_*_runtime(output_path)`, `write_js_runtime_shims(output_path.parent)`).
+  - Added wrapper-oriented static guards to `tools/check/check_noncpp_east3_contract.py`, making reintroduction of legacy runtime-copy calls in `py2*.py` fail (e.g., `_copy_*_runtime(output_path)`, `write_js_runtime_shims(output_path.parent)`).
   - Included `pytra/std/time.php` in PHP runtime hook placement on `py2x` side to preserve legacy CLI contract.
 - Execution checks:
-  - `python3 tools/check_noncpp_east3_contract.py --skip-transpile`
-  - `python3 tools/check_py2php_transpile.py`
+  - `python3 tools/check/check_noncpp_east3_contract.py --skip-transpile`
+  - `python3 tools/check/check_py2php_transpile.py`
 
 ## S3-01 Implementation (2026-03-03)
 
 - Added:
-  - `test/unit/test_py2x_cli.py`
+  - `tools/unittest/test_py2x_cli.py`
 - Test coverage:
   - Locks fail-fast for missing `--target` (`SystemExit(2)`).
   - Locks rejection of `--east-stage 2` before entering backend pipeline.
@@ -257,20 +257,20 @@ Each target must define the following in `BackendSpec` (tentative name).
 - Implemented:
   - Ran all existing transpile checks through `py2x` path (`py2*.py` thin-wrapper route) and confirmed cross-language non-regression.
 - Execution checks:
-  - `python3 tools/check_py2cpp_transpile.py`
-  - `python3 tools/check_py2rs_transpile.py`
-  - `python3 tools/check_py2cs_transpile.py`
-  - `python3 tools/check_py2js_transpile.py`
-  - `python3 tools/check_py2ts_transpile.py`
-  - `python3 tools/check_py2go_transpile.py`
-  - `python3 tools/check_py2java_transpile.py`
-  - `python3 tools/check_py2swift_transpile.py`
-  - `python3 tools/check_py2kotlin_transpile.py`
-  - `python3 tools/check_py2rb_transpile.py`
-  - `python3 tools/check_py2lua_transpile.py`
-  - `python3 tools/check_py2scala_transpile.py`
-  - `python3 tools/check_py2php_transpile.py`
-  - `python3 tools/check_py2nim_transpile.py`
+  - `python3 tools/check/check_py2cpp_transpile.py`
+  - `python3 tools/check/check_py2rs_transpile.py`
+  - `python3 tools/check/check_py2cs_transpile.py`
+  - `python3 tools/check/check_py2js_transpile.py`
+  - `python3 tools/check/check_py2ts_transpile.py`
+  - `python3 tools/check/check_py2go_transpile.py`
+  - `python3 tools/check/check_py2java_transpile.py`
+  - `python3 tools/check/check_py2swift_transpile.py`
+  - `python3 tools/check/check_py2kotlin_transpile.py`
+  - `python3 tools/check/check_py2rb_transpile.py`
+  - `python3 tools/check/check_py2lua_transpile.py`
+  - `python3 tools/check/check_py2scala_transpile.py`
+  - `python3 tools/check/check_py2php_transpile.py`
+  - `python3 tools/check/check_py2nim_transpile.py`
 
 ## S3-03 Implementation (2026-03-03)
 

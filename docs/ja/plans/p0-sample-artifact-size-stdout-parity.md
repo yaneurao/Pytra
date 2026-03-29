@@ -18,7 +18,7 @@
 - 画像出力ケースで `runtime_parity_check` が artifact サイズを直接比較し、stdout だけでは検出できない回帰を fail として検知できるようにする。
 
 対象:
-- `tools/runtime_parity_check.py` の artifact 比較仕様（`output:` からの実ファイルサイズ比較）
+- `tools/check/runtime_parity_check.py` の artifact 比較仕様（`output:` からの実ファイルサイズ比較）
 - 関連 smoke/parity テスト
 
 非対象:
@@ -32,10 +32,10 @@
 - `runtime_parity_check --case-root sample --all-samples` が既存 pass 範囲で非退行。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_runtime_parity_check_cli.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets ruby --all-samples --ignore-unstable-stdout`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout`
 
 決定ログ:
 - 2026-02-28: ユーザー指示により、バイナリ比較の代替として `artifact_size` stdout 出力を `P0` で導入する計画を起票した。

@@ -30,7 +30,7 @@
   - `src/pytra/compiler/east_parts/`
   - `src/py2cpp.py`
   - `src/hooks/cpp/`
-  - `test/unit/`
+  - `tools/unittest/`
 - 非対象:
   - 新規最適化器の導入
   - 全言語 backend の同時全面書き換え
@@ -104,8 +104,8 @@
 3. `--object-dispatch-mode` が `EAST2 -> EAST3` でのみ反映されることをテスト化。
 
 完了条件:
-- `test/unit/test_east3_lowering.py`
-- `test/unit/test_east3_cpp_bridge.py`
+- `tools/unittest/test_east3_lowering.py`
+- `tools/unittest/test_east3_cpp_bridge.py`
 が常時グリーン。
 
 ## Phase 1: API 分離（無挙動変更）
@@ -198,10 +198,10 @@
 ## 9. 最低確認コマンド
 
 ```bash
-python3 tools/check_py2cpp_transpile.py
-python3 tools/check_py2js_transpile.py
-python3 tools/check_py2ts_transpile.py
-python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented
+python3 tools/check/check_py2cpp_transpile.py
+python3 tools/check/check_py2js_transpile.py
+python3 tools/check/check_py2ts_transpile.py
+python3 tools/check/check_selfhost_cpp_diff.py --mode allow-not-implemented
 ```
 
 ### 9.1 EAST3 主経路の標準回帰導線（P0-EASTMIG-05-S2）

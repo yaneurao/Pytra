@@ -36,12 +36,12 @@
 - representative CLI / metadata regression と selfhost build が通ること。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 test/unit/tooling/test_py2x_cli.py -k relative_import -v`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k relative_import`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 tools/unittest/tooling/test_py2x_cli.py -k relative_import -v`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k relative_import`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_transpiler_version_gate.py`
-- `python3 tools/run_regen_on_version_bump.py --dry-run`
+- `python3 tools/check/check_transpiler_version_gate.py`
+- `python3 tools/run/run_regen_on_version_bump.py --dry-run`
 - `git diff --check`
 
 決定ログ:

@@ -19,7 +19,7 @@ Goal:
 Scope:
 - `src/hooks/cpp/emitter/type_bridge.py` (pyobj list decision)
 - `src/hooks/cpp/emitter/stmt.py` / `collection_expr.py` (typed list generation/iteration)
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 
 Out of scope:
 - Design changes that fully migrate lists to PyObj-based model
@@ -31,10 +31,10 @@ Acceptance criteria:
 - `check_py2cpp_transpile` and unit tests pass.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --force`
 
 Decision log:
 - 2026-03-01: Opened this P0 item for pyobj-list typed expansion to improve redundancy in sample/13 based on user request.

@@ -108,12 +108,12 @@ def build_east1_from_source(
 ## 9. 最低確認コマンド
 
 ```bash
-python3 -m pytest -q test/unit/test_east3_lowering.py
-python3 -m pytest -q test/unit/test_east3_cpp_bridge.py
-python3 tools/check_py2cpp_transpile.py
-python3 tools/check_py2js_transpile.py
-python3 tools/check_py2ts_transpile.py
-python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented
+python3 -m pytest -q tools/unittest/test_east3_lowering.py
+python3 -m pytest -q tools/unittest/test_east3_cpp_bridge.py
+python3 tools/check/check_py2cpp_transpile.py
+python3 tools/check/check_py2js_transpile.py
+python3 tools/check/check_py2ts_transpile.py
+python3 tools/check/check_selfhost_cpp_diff.py --mode allow-not-implemented
 ```
 
 ## 10. リスクと対策

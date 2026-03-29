@@ -37,9 +37,9 @@ spec-folder.md §2.8 で定義された標準ビルド出力構造に、linker /
 | `src/toolchain/emit/*.py` (全 15 emitter) | docstring / ヘルプの `link-output.json` → `manifest.json` |
 | `src/toolchain/emit/loader.py` | コメント更新 |
 | `src/pytra-cli.py` | `.pytra_linked` 廃止、`emit/` サブディレクトリ導入 |
-| `tools/check_py2x_transpile.py` | `linked_dir` → `build_dir`, `manifest.json` 参照 |
+| `tools/check/check_py2x_transpile.py` | `linked_dir` → `build_dir`, `manifest.json` 参照 |
 | `tools/build_selfhost.py` | `linked_dir` → `build_dir`, `manifest.json` 参照 |
-| `test/unit/link/test_*.py` | `link-output.json` → `manifest.json`, `linked/` → `east3/` |
+| `tools/unittest/link/test_*.py` | `link-output.json` → `manifest.json`, `linked/` → `east3/` |
 | `docs/ja/spec/spec-linker.md` | `link-output.json` → `manifest.json` |
 
 ## 非対象

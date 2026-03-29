@@ -26,7 +26,7 @@ RELATIVE_IMPORT_PHP_SUPPORT_BACKEND_V1: Final[dict[str, object]] = {
 }
 
 RELATIVE_IMPORT_PHP_SUPPORT_SMOKE_V1: Final[dict[str, object]] = {
-    "smoke_test_file": "test/unit/backends/php/test_py2php_smoke.py",
+    "smoke_test_file": "tools/unittest/emit/php/test_py2php_smoke.py",
     "focused_tests": (
         "test_cli_relative_import_support_rollout_scenarios_transpile_for_php",
         "test_cli_relative_import_support_rollout_fail_closed_for_wildcard_on_php",

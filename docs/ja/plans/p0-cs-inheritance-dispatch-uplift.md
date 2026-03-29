@@ -29,7 +29,7 @@
 
 確認コマンド:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v`
-- `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets cs`
+- `PYTHONPATH=src python3 tools/check/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets cs`
 
 分解:
 - [x] 基底メソッドオーバーライド関係を事前解析し、メソッド宣言へ `virtual/override` を付与する。
@@ -42,4 +42,4 @@
 - 2026-03-01: `super().method(...)` を `base.method(...)` へ lower、`super().__init__(...)` は constructor initializer `: base(...)` へ lower する対応を追加した。
 - 2026-03-01: `py_assert_stdout` / `py_assert_eq` / `py_assert_true` / `py_assert_all` の C# 側最小マッピングを追加し、fixture compile blocker を解消した。
 - 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v` は pass（46 tests, 0 fail）。
-- 2026-03-01: `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets cs --ignore-unstable-stdout` は pass（1/1）。
+- 2026-03-01: `PYTHONPATH=src python3 tools/check/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets cs --ignore-unstable-stdout` は pass（1/1）。

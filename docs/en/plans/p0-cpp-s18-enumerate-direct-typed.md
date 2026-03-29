@@ -19,8 +19,8 @@ Goal:
 Scope:
 - `src/hooks/cpp/emitter/stmt.py`
 - `src/hooks/cpp/emitter/expr.py` (if needed)
-- `test/unit/test_east3_cpp_bridge.py`
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_east3_cpp_bridge.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/18_mini_language_interpreter.cpp`
 
 Out of scope:
@@ -33,16 +33,16 @@ Acceptance criteria:
 - Unit/transpile checks pass with no regression.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 Decision log:
 - 2026-03-01: Filed as P0 for additional sample/18 optimization to lock direct unpack for `enumerate(lines)`.
 - 2026-03-01: In typed enumerate restoration for `ForCore`, fixed the condition to prefer `py_enumerate(lines)` when the typed `list[str]` parameter name is available, avoiding fallback to the `object __itobj` + `py_at` path.
 - 2026-03-01: Updated sample/18 regression expectations in `test_py2cpp_codegen_issues.py` to `for (const auto& [line_index, source] : py_enumerate(lines))`, and fixed non-emission of `object __itobj` and `py_at(__itobj, ...)`.
-- 2026-03-01: Confirmed non-regression with `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` (80 tests) and `python3 tools/check_py2cpp_transpile.py` (`checked=134 ok=134 fail=0 skipped=6`).
+- 2026-03-01: Confirmed non-regression with `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` (80 tests) and `python3 tools/check/check_py2cpp_transpile.py` (`checked=134 ok=134 fail=0 skipped=6`).
 
 ## Breakdown
 

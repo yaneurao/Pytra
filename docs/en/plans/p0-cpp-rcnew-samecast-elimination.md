@@ -22,7 +22,7 @@ Scope:
 - `src/pytra/compiler/east_parts/code_emitter.py` (strengthen rendered-expression type inference)
 - `src/hooks/cpp/emitter/analysis.py` (same-type cast omission decision)
 - `src/hooks/cpp/emitter/call.py` (cast application on append path)
-- Regression tests in `test/unit/test_py2cpp_codegen_issues.py` / `test/unit/test_east3_cpp_bridge.py`
+- Regression tests in `tools/unittest/test_py2cpp_codegen_issues.py` / `tools/unittest/test_east3_cpp_bridge.py`
 - `sample/cpp/18_mini_language_interpreter.cpp` (verify after regeneration)
 
 Out of scope:
@@ -33,19 +33,19 @@ Out of scope:
 Acceptance criteria:
 - `rc<Token>(::rc_new<Token>(` does not remain in sample/18.
 - Add regression tests that treat return type of `::rc_new<T>(...)` as `rc<T>` so same-type casts do not recur.
-- `python3 tools/check_py2cpp_transpile.py` and target unit/smoke pass.
+- `python3 tools/check/check_py2cpp_transpile.py` and target unit/smoke pass.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_smoke.py' -v`
-- `python3 tools/regenerate_samples.py --langs cpp --force`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --force`
 
 Decision log:
 - 2026-02-28: By user instruction, confirmed policy to prioritize removing redundant same-type cast in `rc<T>(::rc_new<T>(...))` at P0, rather than moving to `Token::rc_new` style.
 - 2026-02-28: Added inference for `::rc_new<T>(...)` form to `infer_rendered_arg_type()`, and updated `should_skip_same_type_cast` to normalize `rc<T>` wrapper differences for same-type judgment.
 - 2026-02-28: Applied same-type cast omission on typed `list.append` path, reducing `tokens.append(rc<Token>(::rc_new<Token>(...)))` in sample/18 to `tokens.append(::rc_new<Token>(...))`.
-- 2026-02-28: Passed validation runs `test_py2cpp_codegen_issues.py` / `test_east3_cpp_bridge.py` / `tools/check_py2cpp_transpile.py` / `tools/regenerate_samples.py --langs cpp --force` / `tools/runtime_parity_check.py --targets cpp 18_mini_language_interpreter`.
+- 2026-02-28: Passed validation runs `test_py2cpp_codegen_issues.py` / `test_east3_cpp_bridge.py` / `tools/check/check_py2cpp_transpile.py` / `tools/gen/regenerate_samples.py --langs cpp --force` / `tools/check/runtime_parity_check.py --targets cpp 18_mini_language_interpreter`.
 
 ## Breakdown
 

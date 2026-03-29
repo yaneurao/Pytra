@@ -22,8 +22,8 @@
 対象:
 - `src/backends/cpp/emitter/`（subscript index 生成箇所）
 - EAST3 で確定型を付与できている tuple subscript 経路
-- `test/unit/backends/cpp/test_east3_cpp_bridge.py`
-- `test/unit/backends/cpp/test_py2cpp_codegen_issues.py`
+- `tools/unittest/emit/cpp/test_east3_cpp_bridge.py`
+- `tools/unittest/emit/cpp/test_py2cpp_codegen_issues.py`
 
 非対象:
 - `object`/`Any`/`unknown` 型の subscript index（安全変換を維持）
@@ -39,10 +39,10 @@
 - `check_py2cpp_transpile` と関連 unit が通り、非退行を確認する。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_east3_cpp_bridge.py' -v`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_east3_cpp_bridge.py' -v`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_codegen_issues.py' -v`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `python3 tools/build_selfhost.py`
 
 ## 分解

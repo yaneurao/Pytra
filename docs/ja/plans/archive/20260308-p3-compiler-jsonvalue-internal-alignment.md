@@ -51,12 +51,12 @@
 - docs に「artifact 境界だけでなく compiler/backend 内部 JSON loader も `JsonValue` 正本」と明記される。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `git diff --check`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_py2x_cli.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_ir2lang_cli.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_runtime_symbol_index.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends -p 'test_*js*'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_py2x_cli.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_ir2lang_cli.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_runtime_symbol_index.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/backends -p 'test_*js*'`
 
 ## 1. 基本方針
 
@@ -123,4 +123,4 @@
 - 2026-03-08: `transpile_cli.py` の `.json` root unwrap は `json.loads_obj(...)` + `JsonObj.get_bool/get_obj/get_str` に寄せ、`dict[str, object]` 化は wrapper/module 判定後の `east_obj.raw` / `payload.raw` に限定した。これで frontend entrypoint の raw `json.loads(...)` は 1 件減った。
 - 2026-03-08: `runtime_symbol_index.py` の cache loader と `CodeEmitter._load_json_dict()` は `json.loads_obj(...)` ベースへ移し、raw root 判定を `JsonObj` に統一した。内部保持は引き続き `dict[str, Any]` だが、parse 直後の raw `json.loads(...)` は消えた。
 - 2026-03-08: `js_emitter.py` の private profile loader も `json.loads_obj(...)` ベースへ揃え、`CodeEmitter` と同じ decode-first 境界にそろえた。JS smoke の `load_js_profile()` 回帰と、`CodeEmitter` / `runtime_symbol_index` の non-object root regression を追加して representative coverage を固定した。
-- 2026-03-08: `tools/check_jsonvalue_decode_boundaries.py` の対象へ `transpile_cli.py` / `runtime_symbol_index.py` / `code_emitter.py` / `js_emitter.py` を追加し、artifact 境界だけでなく compiler/backend 内部 JSON loader も raw `json.loads(...)` 再侵入禁止の対象に広げた。
+- 2026-03-08: `tools/check/check_jsonvalue_decode_boundaries.py` の対象へ `transpile_cli.py` / `runtime_symbol_index.py` / `code_emitter.py` / `js_emitter.py` を追加し、artifact 境界だけでなく compiler/backend 内部 JSON loader も raw `json.loads(...)` 再侵入禁止の対象に広げた。

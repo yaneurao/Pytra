@@ -16,7 +16,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 FIXTURE_ROOT = ROOT / "test" / "fixture" / "source" / "py"
 SAMPLE_ROOT = ROOT / "sample" / "py"
 PARITY_DIR = ROOT / "work" / "parity-results"

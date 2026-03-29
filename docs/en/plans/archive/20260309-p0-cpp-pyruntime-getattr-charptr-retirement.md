@@ -35,9 +35,9 @@
 - representative C++ regression と fixture parity が維持される。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 test/unit/backends/cpp/test_cpp_runtime_iterable.py`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 tools/unittest/emit/cpp/test_cpp_runtime_iterable.py`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture`
 
 ## フェーズ
 

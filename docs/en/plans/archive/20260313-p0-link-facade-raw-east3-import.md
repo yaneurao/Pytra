@@ -11,7 +11,7 @@ Related TODO:
 
 Background:
 - The `toolchain.link` facade already exports `validate_raw_east3_doc`.
-- Even so, `src/toolchain/ir/east3.py` and the focused regression in [`test/unit/common/test_frontend_type_expr.py`](/workspace/Pytra/test/unit/common/test_frontend_type_expr.py) still import `toolchain.link.program_validator` directly.
+- Even so, `src/toolchain/ir/east3.py` and the focused regression in [`tools/unittest/common/test_frontend_type_expr.py`](/workspace/Pytra/tools/unittest/common/test_frontend_type_expr.py) still import `toolchain.link.program_validator` directly.
 - Leaving those external consumers on submodule reach-through keeps unnecessary coupling to the internal location of `program_validator` and conflicts with the facade policy reinforced by the previous task.
 
 Goal:
@@ -20,8 +20,8 @@ Goal:
 
 In scope:
 - `src/toolchain/ir/east3.py`
-- `test/unit/common/test_frontend_type_expr.py`
-- `test/unit/common/test_py2x_entrypoints_contract.py` if needed
+- `tools/unittest/common/test_frontend_type_expr.py`
+- `tools/unittest/common/test_py2x_entrypoints_contract.py` if needed
 
 Out of scope:
 - Reworking internal imports within the `toolchain.link` package
@@ -34,9 +34,9 @@ Acceptance criteria:
 - A source contract detects any re-entry of direct `toolchain.link.program_validator` imports for this external lane.
 
 Verification commands:
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 test/unit/common/test_frontend_type_expr.py`
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 test/unit/common/test_py2x_entrypoints_contract.py -k dynamic_carrier_seams_are_explicitly_isolated`
-- `python3 /workspace/Pytra/tools/check_todo_priority.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 tools/unittest/common/test_frontend_type_expr.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 tools/unittest/common/test_py2x_entrypoints_contract.py -k dynamic_carrier_seams_are_explicitly_isolated`
+- `python3 /workspace/Pytra/tools/check/check_todo_priority.py`
 - `git -C /workspace/Pytra diff --check`
 
 Breakdown:

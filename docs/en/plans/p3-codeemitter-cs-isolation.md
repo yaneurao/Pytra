@@ -21,7 +21,7 @@ Scope:
 - `src/pytra/compiler/east_parts/code_emitter.py`
 - `src/hooks/cs/emitter/cs_emitter.py`
 - `tools/prepare_selfhost_source_cs.py` / `src/runtime/cs/*` if needed
-- Regression checks: `test/unit/test_code_emitter.py` / `test/unit/test_py2cs_smoke.py` / `tools/check_multilang_selfhost_stage1.py` / `tools/check_multilang_selfhost_multistage.py`
+- Regression checks: `tools/unittest/test_code_emitter.py` / `tools/unittest/test_py2cs_smoke.py` / `tools/check/check_multilang_selfhost_stage1.py` / `tools/check/check_multilang_selfhost_multistage.py`
 
 Out of scope:
 - New C# backend features (optimization or syntax expansion)
@@ -37,8 +37,8 @@ Acceptance Criteria:
 Validation Commands:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_code_emitter.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v`
-- `python3 tools/check_multilang_selfhost_stage1.py`
-- `python3 tools/check_multilang_selfhost_multistage.py`
+- `python3 tools/check/check_multilang_selfhost_stage1.py`
+- `python3 tools/check/check_multilang_selfhost_multistage.py`
 
 Breakdown:
 - [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S1-01] Inventory `CodeEmitter` diffs since `v0.4.0` and classify into "common-required / C#-specific / pending judgment".

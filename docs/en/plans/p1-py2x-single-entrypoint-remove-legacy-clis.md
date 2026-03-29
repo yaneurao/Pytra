@@ -38,23 +38,23 @@ Acceptance criteria:
 - In final state, `src/py2cpp.py` is deleted and major regressions pass.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `rg -n "src/py2(?!x)\\w*\\.py" src tools test docs`
-- `python3 tools/check_py2x_transpile.py` (planned new)
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_py2rs_transpile.py`
-- `python3 tools/check_py2cs_transpile.py`
-- `python3 tools/check_py2js_transpile.py`
-- `python3 tools/check_py2ts_transpile.py`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/check_py2java_transpile.py`
-- `python3 tools/check_py2swift_transpile.py`
-- `python3 tools/check_py2kotlin_transpile.py`
-- `python3 tools/check_py2rb_transpile.py`
-- `python3 tools/check_py2lua_transpile.py`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/check_py2php_transpile.py`
-- `python3 tools/check_py2nim_transpile.py`
+- `python3 tools/check/check_py2x_transpile.py` (planned new)
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2cs_transpile.py`
+- `python3 tools/check/check_py2js_transpile.py`
+- `python3 tools/check/check_py2ts_transpile.py`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/check/check_py2java_transpile.py`
+- `python3 tools/check/check_py2swift_transpile.py`
+- `python3 tools/check/check_py2kotlin_transpile.py`
+- `python3 tools/check/check_py2rb_transpile.py`
+- `python3 tools/check/check_py2lua_transpile.py`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/check/check_py2php_transpile.py`
+- `python3 tools/check/check_py2nim_transpile.py`
 - `python3 tools/build_selfhost.py`
 - `python3 tools/build_selfhost_stage2.py`
 
@@ -84,7 +84,7 @@ Decision log:
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] Removed direct `src/py2cpp.py` references from selfhost scripts (`build_selfhost*` / `check_selfhost_cpp_diff` / `selfhost_transpile` / `check_selfhost_direct_compile` / `verify_selfhost_end_to_end`), introduced `src/pytra-cli.py`-based calls and `--selfhost-target auto` (legacy binary compatibility). Confirmed `check_selfhost_cpp_diff --skip-east3-contract-tests --cases test/fixtures/core/add.py` is runnable with `mismatches=0`.
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] After switching `tools/build_selfhost.py` to `py2x-selfhost`, generated `selfhost/py2cpp.cpp` still failed C++ compile (unresolved `pytra::compiler::ler::*` refs, help-string concatenation, missing local bindings), so selfhost path remained incomplete and `S2-05` stayed open.
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] Treated `toolchain.*` / `toolchain.emit.*` as known imports in `transpile_cli` import resolution and added self_hosted fallback for unlowered method calls (`str.startswith/endswith`, etc.) in the C++ emitter. This restored successful execution of `python3 tools/prepare_selfhost_source.py && python3 src/py2cpp.py selfhost/py2cpp.py -o /tmp/selfhost_py2cpp_oldpath.cpp`.
-- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] Added `tools/check_legacy_cli_references.py`, introducing a fail-fast guard for `src/py2*.py` string references and `import py2*` in `src/tools/test` outside allowlist. Integrated this check into `tools/run_local_ci.py` and confirmed pass with `python3 tools/check_legacy_cli_references.py`.
+- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] Added `tools/check/check_legacy_cli_references.py`, introducing a fail-fast guard for `src/py2*.py` string references and `import py2*` in `src/tools/test` outside allowlist. Integrated this check into `tools/run/run_local_ci.py` and confirmed pass with `python3 tools/check/check_legacy_cli_references.py`.
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] Fixed a bug in C++ emitter import resolution that cut `toolchain.compiler.` prefix at `15` characters (correct: `len("toolchain.compiler.")`). Initial `build_selfhost.py` failure progressed from `pytra::compiler::ler::*` to missing concrete `pytra::compiler::*`; `_print_help` string concatenation and layer-option variable-scope breakage were fixed on `src/pytra-cli.py`.
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] Aligned argument definitions in `pytra-cli.py` with runtime `ArgumentParser` contracts (resolved `add_argument` signature mismatch and const-reference issue in `_add_common_args`) and recovered selfhost transpile stage. Current `build_selfhost.py` failure is limited to missing concretions for `pytra::compiler::{transpile_cli,backend_registry_static}` (runtime C++ headers missing).
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] Added `src/runtime/cpp/pytra/compiler/{transpile_cli,backend_registry_static}.{h,cpp}` and resolved selfhost generated-C++ link failures. Runtime behavior is a minimum implementation returning `[not_implemented]`; `build_selfhost.py` now passes, and `build_selfhost_stage2.py` continues stage2 binary generation via fallback reusing `selfhost/py2cpp.cpp` when `[not_implemented]` occurs.

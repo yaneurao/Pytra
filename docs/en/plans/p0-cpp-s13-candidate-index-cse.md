@@ -18,7 +18,7 @@ Goal:
 
 Scope:
 - `src/hooks/cpp/emitter/stmt.py` / EAST3 optimizer pass if needed
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 
 Out of scope:
 - Full introduction of generic CSE
@@ -30,9 +30,9 @@ Acceptance criteria:
 - Existing regressions are not broken.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 Decision log:
 - 2026-03-01: Opened an independent P0 item for duplicate `candidates` selection expressions in sample/13 based on user request.

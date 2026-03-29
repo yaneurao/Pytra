@@ -52,11 +52,11 @@
 - non-JS/TS target では fail-closed（unsupported error）にする。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `git diff --check`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/js -p 'test_py2js_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/ts -p 'test_py2ts_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core.py' -k extern`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/js -p 'test_py2js_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/ts -p 'test_py2ts_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core.py' -k extern`
 
 ## 1. 基本方針
 
@@ -144,4 +144,4 @@ console.log(title);
 - 2026-03-08: parser/EAST の canonical marker は top-level `AnnAssign.meta.extern_var_v1` とし、shape は `schema_version`, `symbol`, `same_name` の 3 キーに固定する。v1 では plain `Assign` や non-`Any` 注釈へは広げない。
 - 2026-03-08: JS/TS emitter は top-level ambient global extern 宣言を `ambient_global_aliases` として先に収集し、対応する `AnnAssign` 自体は emit 対象から外す。Name / call の raw lowering はこの alias table にだけ反応し、一般の `Any` receiver 緩和には広げない。
 - 2026-03-08: unsupported backend guard は shared validator `toolchain.frontends.extern_var.validate_ambient_global_target_support(...)` に切り出し、`py2x.py` と `ir2lang.py` の両入口で early fail させる。single-module input と link-output restart の両方で backend dispatch 前に `RuntimeError` を返す。
-- 2026-03-08: representative verification は `test_py2js_smoke.py`, `test_py2ts_smoke.py`, `test_py2x_cli.py`, `test_ir2lang_cli.py`, `tools/check_todo_priority.py`, `git diff --check` を正本にした。JS/TS 以外の backend 自体には ambient global lowering を入れず、frontend guard だけで fail-closed に維持する。
+- 2026-03-08: representative verification は `test_py2js_smoke.py`, `test_py2ts_smoke.py`, `test_py2x_cli.py`, `test_ir2lang_cli.py`, `tools/check/check_todo_priority.py`, `git diff --check` を正本にした。JS/TS 以外の backend 自体には ambient global lowering を入れず、frontend guard だけで fail-closed に維持する。

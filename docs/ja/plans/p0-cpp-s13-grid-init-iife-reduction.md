@@ -22,7 +22,7 @@
 対象:
 - `src/hooks/cpp/emitter/stmt.py`
 - `src/hooks/cpp/emitter/collection_expr.py`
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/13_maze_generation_steps.cpp`（再生成確認）
 
 非対象:
@@ -36,15 +36,15 @@
 - 既存 transpile/unit テストが通り、挙動退行がない。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force`
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、sample/13 の `grid` 初期化 IIFE 縮退を P0 として起票。
 - 2026-03-02: 現行出力が `list<list<int64>>(cell_h, list<int64>(cell_w, 1))` であり、`[&]() -> list<list<int64>> { ... }()` IIFE が再出力されていないことを確認した。
-- 2026-03-02: `python3 tools/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force` / `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` / `python3 tools/check_py2cpp_transpile.py` を実行し、すべて通過を確認した。
+- 2026-03-02: `python3 tools/gen/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force` / `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` / `python3 tools/check/check_py2cpp_transpile.py` を実行し、すべて通過を確認した。
 
 ## 分解
 

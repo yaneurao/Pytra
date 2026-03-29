@@ -26,7 +26,7 @@ Scope:
 - `src/hooks/swift/emitter/swift_native_emitter.py`
 - `src/hooks/ruby/emitter/ruby_native_emitter.py`
 - `src/runtime/go/pytra/*`, `src/runtime/java/pytra/*`, `src/runtime/swift/pytra/*`, `src/runtime/ruby/pytra/*`
-- `tools/runtime_parity_check.py`, `tools/regenerate_samples.py`, `test/unit/test_py2{go,java,swift,rb}_smoke.py`
+- `tools/check/runtime_parity_check.py`, `tools/gen/regenerate_samples.py`, `tools/unittest/test_py2{go,java,swift,rb}_smoke.py`
 
 Out of scope:
 - Runtime model changes for C++/Rust/C#/JS/TS backends
@@ -40,13 +40,13 @@ Acceptance Criteria:
 - Regeneration of `sample/{go,java,swift,ruby}` does not break runtime execution paths.
 
 Validation Commands:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2java_smoke.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2swift_smoke.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2rb_smoke.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets go,java,swift,ruby --all-samples --ignore-unstable-stdout`
-- `python3 tools/regenerate_samples.py --langs go,java,swift,ruby --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets go,java,swift,ruby --all-samples --ignore-unstable-stdout`
+- `python3 tools/gen/regenerate_samples.py --langs go,java,swift,ruby --force`
 
 Decision Log:
 - 2026-02-27: Per user request, filed policy as `P1-RUNTIME-EXT-01` to avoid embedding inline runtime helpers in Go/Java/Swift/Ruby.
@@ -55,7 +55,7 @@ Decision Log:
 - 2026-02-28: As `S2-02`, removed helper body definitions from Java emitter and migrated calls to `PyRuntime.__pytra_*`. Consolidated compatible helpers in `src/runtime/java/pytra/built_in/PyRuntime.java`, switched `py2java.py` to place `PyRuntime.java` at output target, and confirmed non-regression with `test_py2java_smoke.py` and `runtime_parity_check --targets java` (`sample/18`).
 - 2026-02-28: As `S2-03`, stopped helper inline emission in Swift emitter and consolidated helper set in `src/runtime/swift/pytra/py_runtime.swift`. Switched `py2swift.py` to place `py_runtime.swift` at output target and passed `test_py2swift_smoke.py`. For `runtime_parity_check --targets swift`, confirmed `toolchain_missing` due to no `swiftc` in environment.
 - 2026-02-28: As `S2-04`, removed inline helper bodies from Ruby emitter and switched generated code to `require_relative "py_runtime"` references. Added `src/runtime/ruby/pytra/py_runtime.rb` and added path in `py2rb.py` to place `py_runtime.rb` at output target. Confirmed non-regression with `test_py2rb_smoke.py` and `runtime_parity_check --targets ruby` (`sample/18`).
-- 2026-02-28: As `S3-01`, re-ran `test_py2{go,java,swift,rb}_smoke.py` and confirmed all pass. On `runtime_parity_check --case-root sample --targets go,java,swift,ruby --all-samples --ignore-unstable-stdout`, confirmed `cases=18 pass=18 fail=0` (`swift` is `toolchain_missing`). Added `ruby` to `tools/regenerate_samples.py`, ran `--langs go,java,swift,ruby --force` (`total=72 regen=72 fail=0`), and locked sample-regeneration path.
+- 2026-02-28: As `S3-01`, re-ran `test_py2{go,java,swift,rb}_smoke.py` and confirmed all pass. On `runtime_parity_check --case-root sample --targets go,java,swift,ruby --all-samples --ignore-unstable-stdout`, confirmed `cases=18 pass=18 fail=0` (`swift` is `toolchain_missing`). Added `ruby` to `tools/gen/regenerate_samples.py`, ran `--langs go,java,swift,ruby --force` (`total=72 regen=72 fail=0`), and locked sample-regeneration path.
 
 ## S1-01 Inventory Results (2026-02-28)
 

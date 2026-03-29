@@ -176,7 +176,7 @@ src/toolchain/
   - `emitter/`: rendering from `<LangIR>` to final source text
 - New implementations must go into those three layers. Do not add semantic lowering or optimizer-equivalent logic to `emitter/`.
 - Existing backends may migrate in stages, but the final target layout must converge on the same convention.
-- The source of truth for preventing regression in non-C++ backend three-layer wiring and reverse-flow imports is `python3 tools/check_noncpp_east3_contract.py`.
+- The source of truth for preventing regression in non-C++ backend three-layer wiring and reverse-flow imports is `python3 tools/check/check_noncpp_east3_contract.py`.
 
 #### 3.3.2 Additional-feature directories, plan 2, and final target shape, plan 3
 

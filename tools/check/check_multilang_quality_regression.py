@@ -10,9 +10,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT / "tools") not in sys.path:
-    sys.path.insert(0, str(ROOT / "tools"))
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT / "tools" / "unregistered") not in sys.path:
+    sys.path.insert(0, str(ROOT / "tools" / "unregistered"))
 
 import measure_multilang_quality as mmq  # noqa: E402
 

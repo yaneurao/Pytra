@@ -37,15 +37,15 @@
 - `py_runtime.h` に残る seam が object-bridge mutation と shared `type_id` thin seam に分類され、縮退順が docs/tooling に固定されていること。
 - C++ / Rust / C# emitter の residual caller が bucket 単位で整理されていること。
 - final shrink に進む前提条件と blocker が明文化されていること。
-- `python3 tools/check_todo_priority.py` と `git diff --check` が通ること。
+- `python3 tools/check/check_todo_priority.py` と `git diff --check` が通ること。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_cpp_pyruntime_header_surface.py`
-- `python3 tools/check_cpp_pyruntime_contract_inventory.py`
-- `python3 tools/check_crossruntime_pyruntime_emitter_inventory.py`
-- `python3 tools/check_cpp_pyruntime_residual_thin_seam_contract.py`
-- `python3 tools/check_cpp_pyruntime_residual_thin_seam_handoff_contract.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_cpp_pyruntime_header_surface.py`
+- `python3 tools/check/check_cpp_pyruntime_contract_inventory.py`
+- `python3 tools/check/check_crossruntime_pyruntime_emitter_inventory.py`
+- `python3 tools/check/check_cpp_pyruntime_residual_thin_seam_contract.py`
+- `python3 tools/check/check_cpp_pyruntime_residual_thin_seam_handoff_contract.py`
 - `git diff --check`
 
 決定ログ:

@@ -38,13 +38,13 @@ Acceptance criteria:
 - Docs clearly describe normal/self-host entrypoint usage split.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 -m unittest discover -s test/unit -p test_py2x_cli.py`
-- `python3 tools/check_py2rs_transpile.py`
-- `python3 tools/check_py2js_transpile.py`
-- `python3 tools/check_py2php_transpile.py`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/check_py2nim_transpile.py`
+- `python3 tools/check/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2js_transpile.py`
+- `python3 tools/check/check_py2php_transpile.py`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/check/check_py2nim_transpile.py`
 
 ## Breakdown
 
@@ -64,6 +64,6 @@ Decision log:
 - 2026-03-03: Replaced `src/pytra/compiler/backend_registry.py` with host-lazy registry using `importlib.import_module` + target-specific loader + `_SPEC_CACHE` to lazy-load only required backend. Separated prior eager registry as `src/pytra/compiler/backend_registry_static.py`.
 - 2026-03-03: Added `src/pytra-cli.py` and introduced self-host-only entrypoint referencing `backend_registry_static`. Fixed `src/pytra-cli.py` to normal path using `backend_registry` (host-lazy).
 - 2026-03-03: To avoid import cycles, removed package-level re-export of `east1_build` from `src/pytra/compiler/east_parts/__init__.py` and allowed explicit imports only.
-- 2026-03-03: Added `test/unit/test_py2x_entrypoints_contract.py` for boundary-violation detection, and locked unit checks for `py2x`/`py2x-selfhost` registry binding, host-registry lazy import behavior, target-limited import, and spec cache usage.
+- 2026-03-03: Added `tools/unittest/test_py2x_entrypoints_contract.py` for boundary-violation detection, and locked unit checks for `py2x`/`py2x-selfhost` registry binding, host-registry lazy import behavior, target-limited import, and spec cache usage.
 - 2026-03-03: Ran and passed the following regressions: `test_py2x_cli.py`, `test_py2x_entrypoints_contract.py`, `check_py2{rs,js,php,scala,nim}_transpile.py`, `check_noncpp_east3_contract.py --skip-transpile`, `check_transpiler_version_gate.py --base-ref HEAD`.
 - 2026-03-03: Added usage split for `pytra-cli.py` / `pytra-cli.py` (normal=host-lazy, self-host=static eager) to `docs/ja/how-to-use.md` and `docs/en/how-to-use.md`.

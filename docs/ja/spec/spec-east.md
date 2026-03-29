@@ -560,11 +560,11 @@ EAST3 -> backend の解決済み呼び出し契約（固定）:
 
 運用上の強制（CI）:
 
-- `python3 tools/check_emitter_runtimecall_guardrails.py`
+- `python3 tools/check/check_emitter_runtimecall_guardrails.py`
   - non-C++ emitter の runtime/stdlib 直書き分岐増分を fail にする。
-- `python3 tools/check_emitter_forbidden_runtime_symbols.py`
+- `python3 tools/check/check_emitter_forbidden_runtime_symbols.py`
   - emitter への runtime 実装シンボル（`__pytra_write_rgb_png` 等）の再混入増分を fail にする。
-- `python3 tools/check_noncpp_east3_contract.py`
+- `python3 tools/check/check_noncpp_east3_contract.py`
   - 言語別 smoke の責務境界コメントや EAST3 契約逸脱を静的検知する。
 
 `dict[str, Any]` の `.get(...).items()` について:
@@ -760,8 +760,8 @@ linked-program optimizer が生成した synthetic helper module は、上記に
 1. `EAST1` build は `east_stage=1` 付与までに限定し、`EAST1 -> EAST2` を行わない。  
 2. `load_east_document_compat` のエラー契約（`input_invalid` 系）を維持する。  
 3. `compiler/transpile_cli.py` は build 本体ロジックを持たず、`frontends/transpile_cli.py` への委譲中心とする。  
-4. `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` を回帰導線に含め、差分発生時は `todo` へ切り出して追跡する。  
-5. `test/unit/ir/test_east1_build.py` と `test/unit/toolchain/emit/cpp/test_py2cpp_east1_build_bridge.py` で、`EAST1` 入口契約と `py2cpp` 委譲経路を固定する。  
+4. `python3 tools/check/check_selfhost_cpp_diff.py --mode allow-not-implemented` を回帰導線に含め、差分発生時は `todo` へ切り出して追跡する。  
+5. `tools/unittest/ir/test_east1_build.py` と `tools/unittest/emit/cpp/test_py2cpp_east1_build_bridge.py` で、`EAST1` 入口契約と `py2cpp` 委譲経路を固定する。  
 6. import graph 解析本体は `src/toolchain/frontends/east1_build.py`（`_analyze_import_graph_impl`）を正本とし、`compiler/transpile_cli.py` の `analyze_import_graph` / `build_module_east_map` は互換公開用 thin wrapper のみを保持する。  
 
 <a id="east-migration-phases"></a>
@@ -788,9 +788,9 @@ linked-program optimizer が生成した synthetic helper module は、上記に
 ## 22. 最低確認コマンド
 
 ```bash
-python3 tools/check_py2cpp_transpile.py
-python3 tools/check_noncpp_east3_contract.py
-python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented
+python3 tools/check/check_py2cpp_transpile.py
+python3 tools/check/check_noncpp_east3_contract.py
+python3 tools/check/check_selfhost_cpp_diff.py --mode allow-not-implemented
 ```
 
 ## 23. 将来拡張（方針）

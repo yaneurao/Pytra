@@ -22,7 +22,7 @@ Scope:
 - `src/pytra/compiler/east_parts/east3_opt_passes/*` (identity-conversion collapse pass)
 - `src/pytra/compiler/east_parts/east3_optimizer.py` (pass order/enabling)
 - `src/hooks/cpp/emitter/*` (minimize final guards/prevent reintroduction)
-- `test/unit/test_east3_optimizer.py` / `test/unit/test_east3_cpp_bridge.py` / `tools/check_py2cpp_transpile.py`
+- `tools/unittest/test_east3_optimizer.py` / `tools/unittest/test_east3_cpp_bridge.py` / `tools/check/check_py2cpp_transpile.py`
 
 Out of scope:
 - Conversion-spec changes for dynamic paths such as `object`/`Any`/`unknown`
@@ -36,17 +36,17 @@ Acceptance criteria:
 - `check_py2cpp_transpile` and related units pass with no regression.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --force`
 
 Decision log:
 - 2026-02-28: By user instruction, policy was fixed to make identity-conversion reduction such as `py_to<float64>(x)` primarily handled by the EAST3 optimization layer, with C++ emitter as safety net.
 - 2026-03-01: Added `IdentityPyToElisionPass` and implemented EAST3-side collapse rules for identity conversions of `py_to_string/py_to_bool/py_to_int64/py_to_float64/static_cast` and `Unbox/CastOrRaise` (excluding `object/Any/unknown`).
 - 2026-03-01: Added the new pass to `build_default_passes()`, and added pass enable/disable tests plus `py_to_string` / `Unbox` collapse regressions in `test_east3_optimizer.py`.
-- 2026-03-01: Confirmed non-regression by running `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer.py' -v`, `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`, `python3 tools/check_py2cpp_transpile.py`, and `python3 tools/regenerate_samples.py --langs cpp --force`.
+- 2026-03-01: Confirmed non-regression by running `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer.py' -v`, `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`, `python3 tools/check/check_py2cpp_transpile.py`, and `python3 tools/gen/regenerate_samples.py --langs cpp --force`.
 
 ## Breakdown
 

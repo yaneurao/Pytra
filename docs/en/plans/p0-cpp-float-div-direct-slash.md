@@ -22,7 +22,7 @@ Goal:
 Scope:
 - `src/hooks/cpp/emitter/operator.py` (`Div` lower decision)
 - `src/hooks/cpp/optimizer/passes/*` if needed (downstream support)
-- `test/unit/test_py2cpp_smoke.py` / `test/unit/test_east3_cpp_bridge.py` / `tools/check_py2cpp_transpile.py`
+- `tools/unittest/test_py2cpp_smoke.py` / `tools/unittest/test_east3_cpp_bridge.py` / `tools/check/check_py2cpp_transpile.py`
 - Regenerated `sample/cpp` outputs (especially `01_mandelbrot.cpp`)
 
 Out of scope:
@@ -38,11 +38,11 @@ Acceptance criteria:
 - Target lines in `sample/cpp/01_mandelbrot.cpp` (`t` computation) change to `/` notation.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_smoke.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --force`
 - `rg -n "py_div\\(| / " sample/cpp/01_mandelbrot.cpp`
 
 Decision log:

@@ -40,7 +40,7 @@
 ## Emitter Handoff Snapshot
 
 - 前段 [20260312-p4-crossruntime-pyruntime-emitter-shrink.md](./archive/20260312-p4-crossruntime-pyruntime-emitter-shrink.md) で emitter 起因の `typed_collection_compat` と `shared_type_id_compat` は空になった。
-- この task が引き取る header residual bucket は `object_bridge_mutation` のみで、header surface 正本は [check_cpp_pyruntime_header_surface.py](/workspace/Pytra/tools/check_cpp_pyruntime_header_surface.py) にある。
+- この task が引き取る header residual bucket は `object_bridge_mutation` のみで、header surface 正本は [check_cpp_pyruntime_header_surface.py](/workspace/Pytra/tools/check/check_cpp_pyruntime_header_surface.py) にある。
 - したがって本 task の inventory は `object_bridge_mutation` を維持している non-emitter caller に集中し、emitter 再流入の有無は前段 task の inventory tool が引き続き監視する。
 
 ## 現在の residual caller inventory（S1-01）
@@ -76,8 +76,8 @@
   - `cs_runtime_builtin_shared_type_id_residual`
 
 inventory 正本:
-- [check_crossruntime_pyruntime_residual_caller_inventory.py](/workspace/Pytra/tools/check_crossruntime_pyruntime_residual_caller_inventory.py)
-- [test_check_crossruntime_pyruntime_residual_caller_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_crossruntime_pyruntime_residual_caller_inventory.py)
+- [check_crossruntime_pyruntime_residual_caller_inventory.py](/workspace/Pytra/tools/check/check_crossruntime_pyruntime_residual_caller_inventory.py)
+- [test_check_crossruntime_pyruntime_residual_caller_inventory.py](/workspace/Pytra/tools/unittest/tooling/test_check_crossruntime_pyruntime_residual_caller_inventory.py)
 
 generated C++ runtime policy（S2-02）:
 - `must remain`
@@ -103,16 +103,16 @@ Rust/C# runtime builtin policy（S2-03）:
 
 Representative smoke lanes（S3-01）:
 - native wrapper residual
-  - `test/unit/common/test_py2x_entrypoints_contract.py`
+  - `tools/unittest/common/test_py2x_entrypoints_contract.py`
   - `py_runtime_object_isinstance` count guard in `transpile_cli.cpp` / `backend_registry_static.cpp`
 - generated C++ residual
-  - `test/unit/backends/cpp/test_cpp_runtime_iterable.py`
-  - `test/unit/backends/cpp/test_cpp_runtime_type_id.py`
+  - `tools/unittest/emit/cpp/test_cpp_runtime_iterable.py`
+  - `tools/unittest/emit/cpp/test_cpp_runtime_type_id.py`
 - Rust runtime builtin residual
-  - `test/unit/backends/rs/test_py2rs_smoke.py`
+  - `tools/unittest/emit/rs/test_py2rs_smoke.py`
   - `type_predicate` lowering must stay on runtime builtin thin helpers
 - C# residual
-  - `test/unit/backends/cs/test_py2cs_smoke.py`
+  - `tools/unittest/emit/cs/test_py2cs_smoke.py`
   - `type_predicate` lowering and `pytra.utils.gif` runtime import helper lane stay explicit
 
 ## 決定ログ

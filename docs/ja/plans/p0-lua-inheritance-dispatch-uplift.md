@@ -27,7 +27,7 @@
 
 確認コマンド:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua_smoke.py' -v`
-- `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets lua`
+- `PYTHONPATH=src python3 tools/check/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets lua`
 
 分解:
 - [x] `super` 呼び出しを親テーブル明示呼び出しへ lower する。

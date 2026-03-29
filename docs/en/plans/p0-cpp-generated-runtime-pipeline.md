@@ -61,7 +61,7 @@ fatal error: runtime/cpp/generated/built_in/string_ops.h: No such file or direct
 ## 対象
 
 - `tools/runtime_generation_manifest.json` — `built_in/*` と `std/*` の C++ ターゲット追加
-- `tools/gen_runtime_from_manifest.py` — C++ ヘッダー生成の `postprocess` 対応（`.east` → `.h`）
+- `tools/gen/gen_runtime_from_manifest.py` — C++ ヘッダー生成の `postprocess` 対応（`.east` → `.h`）
 - `src/runtime/cpp/generated/` — 生成先ディレクトリ（`.gitignore` 管理 or git 管理）
 
 ## 非対象

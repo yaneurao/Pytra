@@ -20,7 +20,7 @@ In scope:
 - CLI: `src/py2{rs,cs,js,ts,go,java,swift,kotlin}.py`
 - Emitters: `src/hooks/{rs,cs,js,ts,go,java,swift,kotlin}/emitter/*.py`
 - Compiler shared: `src/pytra/compiler/transpile_cli.py`, `src/pytra/compiler/east_parts/east3_legacy_compat.py`
-- Tests/docs: `test/unit/test_py2*_smoke.py`, `tools/check_py2*_transpile.py`, `docs/ja/plans/plan-east123-migration.md`, and related specs
+- Tests/docs: `tools/unittest/test_py2*_smoke.py`, `tools/check/check_py2*_transpile.py`, `docs/ja/plans/plan-east123-migration.md`, and related specs
 
 Out of scope:
 - Main `EAST3` path changes for C++ backend
@@ -42,7 +42,7 @@ Decision log:
 - 2026-02-26: `S2-02` implemented direct rendering of `ObjBool/ObjLen/ObjStr/ObjIterInit/ObjIterNext/ObjTypeId` in `js_emitter` (with `pyBool/pyLen/pyStr/pyTypeId` import collection; iter/next lowered to JS iterator calls). Added object-boundary direct-node regressions to `test_py2js_smoke.py`; JS+TS smoke passed.
 - 2026-02-26: `S2-03` added direct rendering for `IsInstance/IsSubtype/IsSubclass`, implementing type-id resolution from `PYTRA_TID_*`/type names to JS runtime constants and collecting `pyIsSubtype` imports. Added type-predicate direct-node regressions; JS+TS smoke passed.
 - 2026-02-26: `S2-04` directly accepted `Box/Unbox` in `render_expr`, unifying to transparent no-op lowering. Added Box/Unbox direct-node regressions; JS+TS smoke passed.
-- 2026-02-26: `S2-05` passed JS/TS smoke and `check_py2{js,ts}_transpile.py`. Also updated static contract checks in `tools/check_noncpp_east3_contract.py` to EAST3-only (stage2 warning expectation -> stage2 unsupported expectation; forbidden compat imports). Synced `test_east3_cpp_bridge.py` expected values for `py_to<int64>/py_to<bool>` to current implementation and resolved east3-contract premise failures.
+- 2026-02-26: `S2-05` passed JS/TS smoke and `check_py2{js,ts}_transpile.py`. Also updated static contract checks in `tools/check/check_noncpp_east3_contract.py` to EAST3-only (stage2 warning expectation -> stage2 unsupported expectation; forbidden compat imports). Synced `test_east3_cpp_bridge.py` expected values for `py_to<int64>/py_to<bool>` to current implementation and resolved east3-contract premise failures.
 - 2026-02-26: `S2-06` passed Go/Java/Swift/Kotlin sidecar-path smoke tests (`test_py2{go,java,swift,kotlin}_smoke.py`) and `check_py2{go,java,swift,kotlin}_transpile.py`, confirming no wave regressions from JS-emitter direct handling.
 - 2026-02-26: `S3-01` added `ForCore` direct handling to `rs_emitter`, mapping `iter_plan=StaticRangeForPlan/RuntimeIterForPlan` to `ForRange/For`. Added ForCore direct-node regressions (range/runtime tuple target) to `test_py2rs_smoke.py`; all passed.
 - 2026-02-26: `S3-02` added direct rendering of `ObjBool/ObjLen/ObjStr/ObjIterInit/ObjIterNext/ObjTypeId`, `IsInstance/IsSubtype/IsSubclass`, and `Box/Unbox` to `rs_emitter`. Extended pre-detection for type-id helpers (`_doc_mentions_isinstance`) to direct-node forms and added regressions for object boundary / type predicates / box-unbox. All passed.
@@ -50,7 +50,7 @@ Decision log:
 - 2026-02-26: `S4-01` added `ForCore` direct handling to `cs_emitter`, mapping `iter_plan=StaticRangeForPlan/RuntimeIterForPlan` to `ForRange/For`. Added regressions for range/runtime tuple target to `test_py2cs_smoke.py`; all passed.
 - 2026-02-26: `S4-02` added direct rendering of `ObjBool/ObjLen/ObjStr/ObjIterInit/ObjIterNext/ObjTypeId`, `IsInstance/IsSubtype/IsSubclass`, and `Box/Unbox` in `cs_emitter`. Added corresponding regressions; all passed.
 - 2026-02-26: `S4-03` ran C# smoke (`test_py2cs_smoke.py`) and `check_py2cs_transpile.py`; verified all transpile checks passing (`132`, `skip 6`).
-- 2026-02-26: `S5-01` removed `normalize_east3_to_legacy` import/call from all 8 CLIs and unified `load_east` to return EAST3 documents. Updated smoke `east_stage` expectations from `2 -> 3`; all 8 smoke suites passed. Updated `tools/check_noncpp_east3_contract.py` with the `normalize_east3_to_legacy` ban and new smoke name (`returns_east3_shape`).
+- 2026-02-26: `S5-01` removed `normalize_east3_to_legacy` import/call from all 8 CLIs and unified `load_east` to return EAST3 documents. Updated smoke `east_stage` expectations from `2 -> 3`; all 8 smoke suites passed. Updated `tools/check/check_noncpp_east3_contract.py` with the `normalize_east3_to_legacy` ban and new smoke name (`returns_east3_shape`).
 - 2026-02-26: `S5-02` deleted `src/pytra/compiler/east_parts/east3_legacy_compat.py`. Confirmed `rg -n "from .*east3_legacy_compat|normalize_east3_to_legacy\(" src test tools` returns 0 matches, and `check_noncpp_east3_contract.py --skip-transpile` passes.
 - 2026-02-26: `S6-01` updated the current-operation section in `docs/ja/plans/plan-east123-migration.md` to `EAST3 only`, removing non-C++ `stage2` compatibility assumptions (compat-mode warning / compat loader dependency). Moved old assumptions into historical notes.
 - 2026-02-26: `S6-02` synced `docs/en/plans/plan-east123-migration.md` to the same content as `docs-ja`, aligning JA/EN docs on `EAST3 only` contract and notes.

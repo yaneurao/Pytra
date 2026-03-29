@@ -22,8 +22,8 @@
 - `src/hooks/cpp/emitter/stmt.py`
 - `src/hooks/cpp/emitter/expr.py`
 - `src/hooks/cpp/emitter/*`（必要な範囲）
-- `test/unit/test_east3_cpp_bridge.py`
-- `test/unit/test_py2cpp_smoke.py`
+- `tools/unittest/test_east3_cpp_bridge.py`
+- `tools/unittest/test_py2cpp_smoke.py`
 - `sample/cpp/18_mini_language_interpreter.cpp`（再生成結果確認）
 
 非対象:
@@ -38,10 +38,10 @@
 - `P0-FORCORE-TYPE-01-S3-01` と競合せず、#1 の適用状態が文書で追跡できる。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_smoke.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `python3 src/py2cpp.py sample/py/18_mini_language_interpreter.py -o /tmp/18.cpp`
 
 決定ログ:

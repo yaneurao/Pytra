@@ -21,7 +21,7 @@
 対象:
 - `src/hooks/scala/emitter/scala_native_emitter.py`
 - `src/hooks/code_emitter.py`（Scala 共通規則の利用範囲のみ）
-- `tools/check_py2scala_transpile.py`
+- `tools/check/check_py2scala_transpile.py`
 - `sample/scala/01_mandelbrot.scala`（再生成で反映）
 
 非対象:
@@ -33,13 +33,13 @@
 - `sample/scala/01_mandelbrot.scala` のホットパスで `mutable.ArrayBuffer[Any]` が typed container に置換される。
 - 単純 while/for 相当経路で不要な `boundary.Label` が出力されない。
 - 同型変換連鎖（`__pytra_int(0L)` など）が削減され、型既知経路は直接式で出力される。
-- `tools/check_py2scala_transpile.py` と sample parity（`01_mandelbrot`）が非退行で通る。
+- `tools/check/check_py2scala_transpile.py` と sample parity（`01_mandelbrot`）が非退行で通る。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/regenerate_samples.py --langs scala --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets scala 01_mandelbrot --ignore-unstable-stdout`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs scala --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets scala 01_mandelbrot --ignore-unstable-stdout`
 
 分解:
 - [x] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-01] `sample/cpp/01` と `sample/scala/01` を比較し、runtime外の品質差分（型退化/冗長cast/制御構文）を断片で固定する。

@@ -34,9 +34,9 @@
 - representative test / build graph が非退行で通る。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_*.py' -v`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_*.py' -v`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture`
 
 ## 1. 方針
 

@@ -776,7 +776,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
 ] = (
     {
         "backend": "go",
-        "test_path": "test/unit/backends/go/test_py2go_smoke.py",
+        "test_path": "tools/unittest/emit/go/test_py2go_smoke.py",
         "required_tests": (
             "test_go_runtime_source_path_is_migrated",
             "test_go_generated_built_in_compare_lane_compiles_with_runtime_bundle",
@@ -784,7 +784,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
     },
     {
         "backend": "java",
-        "test_path": "test/unit/backends/java/test_py2java_smoke.py",
+        "test_path": "tools/unittest/emit/java/test_py2java_smoke.py",
         "required_tests": (
             "test_java_runtime_source_path_is_migrated",
             "test_java_generated_built_in_compare_lane_compiles_with_runtime_bundle",
@@ -792,7 +792,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
     },
     {
         "backend": "kotlin",
-        "test_path": "test/unit/backends/kotlin/test_py2kotlin_smoke.py",
+        "test_path": "tools/unittest/emit/kotlin/test_py2kotlin_smoke.py",
         "required_tests": (
             "test_kotlin_runtime_source_path_is_migrated",
             "test_kotlin_generated_built_in_compare_lane_compiles_with_runtime_bundle",
@@ -800,7 +800,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
     },
     {
         "backend": "scala",
-        "test_path": "test/unit/backends/scala/test_py2scala_smoke.py",
+        "test_path": "tools/unittest/emit/scala/test_py2scala_smoke.py",
         "required_tests": (
             "test_scala_runtime_source_path_is_migrated",
             "test_scala_generated_built_in_compare_lane_is_materialized",
@@ -808,7 +808,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
     },
     {
         "backend": "swift",
-        "test_path": "test/unit/backends/swift/test_py2swift_smoke.py",
+        "test_path": "tools/unittest/emit/swift/test_py2swift_smoke.py",
         "required_tests": (
             "test_swift_runtime_source_path_is_migrated",
             "test_swift_generated_built_in_compare_lane_compiles_with_runtime_bundle",
@@ -816,7 +816,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
     },
     {
         "backend": "nim",
-        "test_path": "test/unit/backends/nim/test_py2nim_smoke.py",
+        "test_path": "tools/unittest/emit/nim/test_py2nim_smoke.py",
         "required_tests": (
             "test_nim_runtime_source_path_is_migrated",
             "test_nim_generated_built_in_compare_lane_compiles_with_runtime_bundle",
@@ -824,7 +824,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
     },
     {
         "backend": "js",
-        "test_path": "test/unit/backends/js/test_py2js_smoke.py",
+        "test_path": "tools/unittest/emit/js/test_py2js_smoke.py",
         "required_tests": (
             "test_js_cli_staged_runtime_bundle_resolves_runtime_helpers",
             "test_js_generated_built_in_compare_lane_resolves_native_runtime",
@@ -832,7 +832,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
     },
     {
         "backend": "ts",
-        "test_path": "test/unit/backends/ts/test_py2ts_smoke.py",
+        "test_path": "tools/unittest/emit/ts/test_py2ts_smoke.py",
         "required_tests": (
             "test_ts_cli_staged_runtime_bundle_resolves_runtime_helpers",
             "test_ts_generated_built_in_compare_lane_rehomes_native_runtime_import",
@@ -840,7 +840,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
     },
     {
         "backend": "lua",
-        "test_path": "test/unit/backends/lua/test_py2lua_smoke.py",
+        "test_path": "tools/unittest/emit/lua/test_py2lua_smoke.py",
         "required_tests": (
             "test_lua_runtime_source_path_is_migrated",
             "test_lua_cli_staged_runtime_lane_resolves_runtime_helpers",
@@ -848,7 +848,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
     },
     {
         "backend": "ruby",
-        "test_path": "test/unit/backends/rb/test_py2rb_smoke.py",
+        "test_path": "tools/unittest/emit/rb/test_py2rb_smoke.py",
         "required_tests": (
             "test_ruby_runtime_source_path_is_migrated",
             "test_ruby_cli_staged_runtime_lane_resolves_runtime_helpers",
@@ -856,7 +856,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
     },
     {
         "backend": "php",
-        "test_path": "test/unit/backends/php/test_py2php_smoke.py",
+        "test_path": "tools/unittest/emit/php/test_py2php_smoke.py",
         "required_tests": (
             "test_php_runtime_source_path_is_migrated",
             "test_php_generated_math_runtime_owner_is_live_wrapper_shaped",

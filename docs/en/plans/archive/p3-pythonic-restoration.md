@@ -28,8 +28,8 @@ Acceptance criteria:
 - Required verification commands pass for each patch
 
 Validation commands:
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_selfhost_cpp_diff.py --mode allow-not-implemented`
 
 Decision log:
 - 2026-02-22: Initial draft created.
@@ -42,4 +42,4 @@ Decision log:
 - 2026-02-22: `P3-PY-01` continued in many small steps, converting selected index-based `while` loops to `for`/`range`/`enumerate` while keeping index-style where selfhost type inference is fragile.
 - 2026-02-22: `P3-PY-03` continued with staged dict-literal rewrites across `py2cpp.py` (`_parse_user_error`, `_prepare_call_parts`, module index/schema/manifest paths, etc.) while preserving selfhost-safe exceptions.
 - 2026-02-22: `P3-PY-05` continued to reduce temporary `obj -> isinstance -> assign` patterns by introducing helper-based extraction (`_dict_any_get_str`, `_dict_any_get_dict`) and applying it incrementally across import/deps/meta paths.
-- 2026-02-22: Regression checks were executed at each patch unit, with known selfhost diff baseline kept at `mismatches=3` (allow-not-implemented mode), and transpiler version updates tracked through `tools/check_transpiler_version_gate.py`.
+- 2026-02-22: Regression checks were executed at each patch unit, with known selfhost diff baseline kept at `mismatches=3` (allow-not-implemented mode), and transpiler version updates tracked through `tools/check/check_transpiler_version_gate.py`.

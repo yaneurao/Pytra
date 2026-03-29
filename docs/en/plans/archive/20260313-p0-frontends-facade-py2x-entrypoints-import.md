@@ -23,8 +23,8 @@ In scope:
 - `src/toolchain/frontends/__init__.py`
 - `src/py2x.py`
 - `src/py2x-selfhost.py`
-- `test/unit/common/test_py2x_entrypoints_contract.py`
-- `test/unit/tooling/test_py2x_cli.py` if needed
+- `tools/unittest/common/test_py2x_entrypoints_contract.py`
+- `tools/unittest/tooling/test_py2x_cli.py` if needed
 
 Out of scope:
 - Changing behavior inside `toolchain.frontends.transpile_cli`
@@ -37,9 +37,9 @@ Acceptance criteria:
 - A source contract detects any regression back to direct `toolchain.compiler.transpile_cli` imports, and the focused tests are green.
 
 Verification commands:
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 /workspace/Pytra/test/unit/common/test_py2x_entrypoints_contract.py -k dynamic_carrier`
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 /workspace/Pytra/test/unit/tooling/test_py2x_cli.py`
-- `python3 /workspace/Pytra/tools/check_todo_priority.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 /workspace/Pytra/tools/unittest/common/test_py2x_entrypoints_contract.py -k dynamic_carrier`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 /workspace/Pytra/tools/unittest/tooling/test_py2x_cli.py`
+- `python3 /workspace/Pytra/tools/check/check_todo_priority.py`
 - `git -C /workspace/Pytra diff --check`
 
 Breakdown:

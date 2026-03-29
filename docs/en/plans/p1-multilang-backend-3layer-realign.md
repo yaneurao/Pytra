@@ -48,19 +48,19 @@ Recommended migration order:
 - Wave 4: `ruby`, `lua`, `php` (with runtime/support-layer differences)
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2rs_transpile.py`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/check_py2js_transpile.py`
-- `python3 tools/check_py2ts_transpile.py`
-- `python3 tools/check_py2cs_transpile.py`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/check_py2java_transpile.py`
-- `python3 tools/check_py2kotlin_transpile.py`
-- `python3 tools/check_py2swift_transpile.py`
-- `python3 tools/check_py2rb_transpile.py`
-- `python3 tools/check_py2lua_transpile.py`
-- `python3 tools/check_py2php_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/check/check_py2js_transpile.py`
+- `python3 tools/check/check_py2ts_transpile.py`
+- `python3 tools/check/check_py2cs_transpile.py`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/check/check_py2java_transpile.py`
+- `python3 tools/check/check_py2kotlin_transpile.py`
+- `python3 tools/check/check_py2swift_transpile.py`
+- `python3 tools/check/check_py2rb_transpile.py`
+- `python3 tools/check/check_py2lua_transpile.py`
+- `python3 tools/check/check_py2php_transpile.py`
 
 ## Breakdown
 
@@ -161,5 +161,5 @@ Decision log:
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] Wave 3 sample parity (`runtime_parity_check --case-root sample --targets go,java,kotlin,swift --ignore-unstable-stdout`) showed `cases=18 pass=1 fail=17` (`go: run_failed=11`, `java: run_failed=5 + artifact_missing=12`, `swift: toolchain_missing=18`, `kotlin: no failures`). Transpile checks confirmed no regression from 3-layer wiring changes; execution-level gaps remain tracked as wave-specific issues.
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] Added `lower` and `optimizer` to `toolchain/emit/{ruby,lua,php}` and switched `py2{rb,lua,php}.py` to `lower -> optimizer -> emitter` wiring. Passed `check_py2rb_transpile` (`checked=132 ok=132 fail=0 skipped=10`), `check_py2lua_transpile` (`checked=89 ok=89 fail=0 skipped=53`), and `check_py2php_transpile` (`checked=10 ok=10 fail=0 skipped=0`).
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] Wave 4 sample parity (`runtime_parity_check --case-root sample --targets ruby,lua,php --ignore-unstable-stdout`) showed `cases=18 pass=14 fail=4`. Breakdown: for `php`, `output_mismatch=2` (`12/13`) and `run_failed=1` (`16`); for `ruby`, `run_failed=1` (`18`); `lua` had no failures. Transpile regression from 3-layer wiring changes was already confirmed non-regressive.
-- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-01] Expanded `tools/check_noncpp_east3_contract.py` to 12 backends (`rs/cs/js/ts/go/java/kotlin/swift/ruby/lua/php/scala`), adding static checks for required `lower/optimizer` wiring patterns/order in `py2<lang>.py` and banning reverse imports between `lower/optimizer` and `emitter`. Both `python3 tools/check_noncpp_east3_contract.py --skip-transpile` and `python3 tools/check_noncpp_east3_contract.py` (with 12 transpile checks) passed.
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-01] Expanded `tools/check/check_noncpp_east3_contract.py` to 12 backends (`rs/cs/js/ts/go/java/kotlin/swift/ruby/lua/php/scala`), adding static checks for required `lower/optimizer` wiring patterns/order in `py2<lang>.py` and banning reverse imports between `lower/optimizer` and `emitter`. Both `python3 tools/check/check_noncpp_east3_contract.py --skip-transpile` and `python3 tools/check/check_noncpp_east3_contract.py` (with 12 transpile checks) passed.
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-02] Updated `docs/ja/spec/{spec-dev,spec-folder}.md` and `docs/en/spec/{spec-dev,spec-folder}.md` to formalize non-C++ backend 3-layer standards (applicable backends, layer responsibilities, reverse-flow prohibition, check path). This completes all breakdown tasks for `P1-MULTILANG-BACKEND-3LAYER-01`.

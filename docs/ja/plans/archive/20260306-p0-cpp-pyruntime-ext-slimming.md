@@ -41,15 +41,15 @@
 - 上記機能は対応する `src/pytra/*` 正本から生成された `*.gen.*` 側にのみ存在する。
 - `py_runtime.ext.h` には、上記 generated runtime を呼ぶための薄い adapter だけが残るか、または call site が直接 generated runtime を参照する。
 - 第二段階として `py_enumerate` / `py_reversed` / `py_contains` について、pure Python 正本 + typed adapter 分離方針が確定している。
-- `python3 tools/check_runtime_cpp_layout.py` と `python3 tools/check_runtime_std_sot_guard.py` が通る。
-- `python3 tools/verify_image_runtime_parity.py` が通る。
+- `python3 tools/check/check_runtime_cpp_layout.py` と `python3 tools/check/check_runtime_std_sot_guard.py` が通る。
+- `python3 tools/check/verify_image_runtime_parity.py` が通る。
 - 少なくとも runtime smoke として `--emit-runtime-cpp` で `predicates/sequence/string_ops/re/argparse` の生成が崩れない。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_runtime_cpp_layout.py`
-- `python3 tools/check_runtime_std_sot_guard.py`
-- `python3 tools/verify_image_runtime_parity.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_runtime_cpp_layout.py`
+- `python3 tools/check/check_runtime_std_sot_guard.py`
+- `python3 tools/check/verify_image_runtime_parity.py`
 - `PYTHONPATH=src python3 src/backends/cpp/cli.py src/pytra/built_in/predicates.py --emit-runtime-cpp`
 - `PYTHONPATH=src python3 src/backends/cpp/cli.py src/pytra/built_in/sequence.py --emit-runtime-cpp`
 - `PYTHONPATH=src python3 src/backends/cpp/cli.py src/pytra/built_in/string_ops.py --emit-runtime-cpp`
@@ -102,9 +102,9 @@
 - 2026-03-06: `PyObj` 派生クラス、`make_object`, `py_to<T>`, `obj_to_*`, `py_iter_or_raise`, `py_slice`, `py_at`, `py_dict_get` は ABI/typed helper のため本計画の非対象に固定した。
 - 2026-03-06: 第一波を実装し、`py_runtime.ext.h` から `sub`, `ArgumentParser`, `py_any`, `py_all`, string helper 群, `py_range`, `py_repeat(str, int)` の本体を撤去した。`predicates.py` / `string_ops.py` は public runtime 名に合わせて再生成し、`py_repeat(list<T>, int64)` だけを `src/runtime/cpp/built_in/sequence.ext.h` へ薄い typed adapter として残した。
 - 2026-03-06: C++ backend 側は `any/all` を `make_object(...)` 経由で `predicates.gen.*` へ接続し、`find/rfind` の window 付き呼び出しは `py_find_window` / `py_rfind_window` へ寄せた。`pytra.std.argparse.ArgumentParser` と `pytra.std.re.sub` の runtime call mapping も namespaced generated runtime へ更新した。
-- 2026-03-06: `tools/check_runtime_cpp_layout.py` に `py_runtime.ext.h` への高レベル重複実装再混入ガードを追加した。`check_runtime_cpp_layout.py`, `check_runtime_std_sot_guard.py`, `verify_image_runtime_parity.py`, built_in+`re` の syntax-only compile, `predicates/sequence/string_ops/re/argparse` の `--emit-runtime-cpp` smoke は通過した。
+- 2026-03-06: `tools/check/check_runtime_cpp_layout.py` に `py_runtime.ext.h` への高レベル重複実装再混入ガードを追加した。`check_runtime_cpp_layout.py`, `check_runtime_std_sot_guard.py`, `verify_image_runtime_parity.py`, built_in+`re` の syntax-only compile, `predicates/sequence/string_ops/re/argparse` の `--emit-runtime-cpp` smoke は通過した。
 - 2026-03-06: `src/runtime/cpp/std/argparse.gen.cpp` には本タスク以前から存在する C++ emission 問題（`default` 識別子、`setattr`/`SystemExit`、`optional<list<str>>` など）が残っており、これは `py_runtime.ext.h` 縮退とは別件として扱う。今回の S2-02 は「導線の差し替えと ext 側重複実装の除去」に限定して完了扱いとする。
 - 2026-03-06: 第二波の先行分として `src/pytra/built_in/iter_ops.py` を追加し、`py_reversed` / `py_enumerate` の object 経路本体を generated runtime (`iter_ops.gen.*`) へ移した。`py_runtime.ext.h` には typed `list<T>` / `str` / `any` adapter と `py_enumerate_list_as<T>` だけを残し、object overload は `src/runtime/cpp/built_in/iter_ops.ext.h` の薄い wrapper に置き換えた。
 - 2026-03-06: `py_reversed` / `py_enumerate` の typed `list<T>` / `str` / `any` adapter と `py_enumerate_list_as<T>` も `src/runtime/cpp/built_in/iter_ops.ext.h` へ移し、`py_runtime.ext.h` から iterator helper 本体を除去した。第二波の残件は `py_contains` の pure Python 正本化と adapter 分離に絞られた。
 - 2026-03-06: `src/pytra/built_in/contains.py` を追加し、`py_contains` の object 経路（`dict/list/set/str`）を `src/runtime/cpp/built_in/contains.gen.*` へ移した。typed `dict/list/set/str/tuple` fastpath と object dispatch は `src/runtime/cpp/built_in/contains.ext.h` へ分離し、`py_runtime.ext.h` から `py_contains` 本体を撤去した。
-- 2026-03-06: `test/unit/common/test_pytra_built_in_{predicates,string_ops,contains}.py` を更新し、public 名で pure Python 正本の観測を固定した。`check_runtime_cpp_layout.py`, `check_runtime_std_sot_guard.py`, `verify_image_runtime_parity.py`, built_in/re の syntax-only compile は継続通過した。
+- 2026-03-06: `tools/unittest/common/test_pytra_built_in_{predicates,string_ops,contains}.py` を更新し、public 名で pure Python 正本の観測を固定した。`check_runtime_cpp_layout.py`, `check_runtime_std_sot_guard.py`, `verify_image_runtime_parity.py`, built_in/re の syntax-only compile は継続通過した。

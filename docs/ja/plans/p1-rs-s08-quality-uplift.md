@@ -23,8 +23,8 @@
 対象:
 - `src/hooks/rs/emitter/rs_emitter.py`
 - `src/pytra/compiler/east_parts/east3_opt_passes/*`（必要時）
-- `test/unit/test_py2rs_smoke.py`
-- `test/unit/test_py2rs_codegen_issues.py`（必要なら新設）
+- `tools/unittest/test_py2rs_smoke.py`
+- `tools/unittest/test_py2rs_codegen_issues.py`（必要なら新設）
 - `sample/rs/08_langtons_ant.rs`（再生成確認）
 
 非対象:
@@ -43,11 +43,11 @@
 - Rust transpile/smoke/parity が非退行で通る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2rs_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2rs_transpile.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2rs_smoke.py' -v`
-- `python3 tools/regenerate_samples.py --langs rs --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets rs 08_langtons_ant --ignore-unstable-stdout`
+- `python3 tools/gen/regenerate_samples.py --langs rs --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets rs 08_langtons_ant --ignore-unstable-stdout`
 
 分解:
 - [x] [ID: P1-RS-S08-QUALITY-01-S1-01] `sample/rs/08` の冗長箇所（clone/添字正規化/loop/分岐/capture判定/capacity）をコード断片で固定する。

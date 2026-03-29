@@ -26,7 +26,7 @@ Scope:
 - `src/runtime/{rs,cs,go,java,kotlin,scala,swift,nim,js,ts,lua,ruby,php}/generated/{built_in,std,utils}/**`
 - ownership cleanup under `src/runtime/<lang>/native/{built_in,std,utils}/**`
 - `tools/runtime_generation_manifest.json`
-- `tools/gen_runtime_from_manifest.py`
+- `tools/gen/gen_runtime_from_manifest.py`
 - non-C++ runtime contracts / checkers / allowlists / inventory
 - backend build profile / packaging / selfhost / smoke / runtime copy wiring
 - docs / TODO / spec wording
@@ -92,15 +92,15 @@ Acceptance criteria:
 - Docs / checker wording fix the end state as `generated = baseline`, not `generated ∪ blocked = baseline`.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_noncpp_runtime_generated_cpp_baseline_contract.py`
-- `python3 tools/check_noncpp_runtime_layout_contract.py`
-- `python3 tools/check_noncpp_runtime_layout_rollout_remaining_contract.py`
-- `python3 tools/check_runtime_core_gen_markers.py`
-- `python3 tools/check_runtime_pytra_gen_naming.py`
-- `python3 tools/check_runtime_std_sot_guard.py`
-- `python3 tools/check_multilang_selfhost_stage1.py`
-- `python3 tools/check_multilang_selfhost_multistage.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_noncpp_runtime_generated_cpp_baseline_contract.py`
+- `python3 tools/check/check_noncpp_runtime_layout_contract.py`
+- `python3 tools/check/check_noncpp_runtime_layout_rollout_remaining_contract.py`
+- `python3 tools/check/check_runtime_core_gen_markers.py`
+- `python3 tools/check/check_runtime_pytra_gen_naming.py`
+- `python3 tools/check/check_runtime_std_sot_guard.py`
+- `python3 tools/check/check_multilang_selfhost_stage1.py`
+- `python3 tools/check/check_multilang_selfhost_multistage.py`
 - `find src/runtime -path '*/generated/*' -type f | sort`
 - `git diff --check`
 
@@ -169,7 +169,7 @@ Decision log:
 - 2026-03-13: The current `S2-02` bundle synced the Kotlin / Scala / Swift / Nim `generated/utils/{gif,png}` rename through the contract, test, and smoke expectations, updating `current_inventory`, `target_inventory`, `module_buckets`, `wave_a_generated_compare`, and `wave_a_generated_smoke` to canonical basenames. `utils/image_runtime` remains the only helper artifact in this group, and the next bundle moves on to the remaining static-family full-baseline gaps starting with `go`.
 - 2026-03-13: The `S2-02` third bundle materialized Go's 17 missing modules (`built_in/{predicates,sequence,string_ops,type_id}`, `std/{argparse,glob,json,math,os,os_path,pathlib,random,re,sys,time,timeit}`, and `utils/assertions`) into `generated/` from the SoT and promoted Go to a materialized backend in the baseline-debt contract. The runtime hook copy set intentionally stays on the existing substrate / image-helper subset for now, while the legacy rollout contract, representative smoke, and tooling unit tests are synchronized to the full generated inventory. The remaining static-family full-baseline debt is now concentrated in Kotlin / Scala / Swift / Nim.
 - 2026-03-13: The `S2-02` fourth bundle materialized Swift's 17 missing modules (`built_in/{numeric_ops,scalar_ops,string_ops,type_id}`, `std/{argparse,glob,json,math,os,os_path,pathlib,random,re,sys,time,timeit}`, and `utils/assertions`) into `generated/` from the SoT and promoted Swift to a materialized backend in the baseline-debt contract. It also added the `generated/std` lane mapping, synchronized current/target inventory plus module buckets and Wave-A generated compare/smoke expectations to the full generated inventory, and expanded the Swift runtime path smoke accordingly. The runtime hook copy set intentionally remains on the substrate subset (`py_runtime.swift` plus `utils/image_runtime.swift`) for now, and the remaining static-family full-baseline debt is now concentrated in Kotlin / Scala / Nim.
-- 2026-03-13: The `S2-02` fifth bundle materialized Nim's 18 missing modules (`built_in/{io_ops,scalar_ops,sequence,string_ops,type_id}`, `std/{argparse,glob,json,math,os,os_path,pathlib,random,re,sys,time,timeit}`, and `utils/assertions`) into `generated/` from the SoT and promoted Nim to a materialized backend in the baseline-debt contract. It also added the `generated/std` lane mapping, synchronized current/target inventory plus module buckets and Wave-A generated compare/smoke expectations to the full generated inventory, and expanded the Nim runtime path smoke accordingly. The runtime hook copy set intentionally remains on the substrate subset (`py_runtime.nim` plus `utils/image_runtime.nim`) for now. In parallel, `tools/gen_runtime_from_manifest.py` switched its current-file read path to `newline=\"\"` so the raw carriage-return literal embedded in Nim `string_ops.nim` no longer produces false stale detections under `--check`. The remaining static-family full-baseline debt is now concentrated in Kotlin / Scala.
+- 2026-03-13: The `S2-02` fifth bundle materialized Nim's 18 missing modules (`built_in/{io_ops,scalar_ops,sequence,string_ops,type_id}`, `std/{argparse,glob,json,math,os,os_path,pathlib,random,re,sys,time,timeit}`, and `utils/assertions`) into `generated/` from the SoT and promoted Nim to a materialized backend in the baseline-debt contract. It also added the `generated/std` lane mapping, synchronized current/target inventory plus module buckets and Wave-A generated compare/smoke expectations to the full generated inventory, and expanded the Nim runtime path smoke accordingly. The runtime hook copy set intentionally remains on the substrate subset (`py_runtime.nim` plus `utils/image_runtime.nim`) for now. In parallel, `tools/gen/gen_runtime_from_manifest.py` switched its current-file read path to `newline=\"\"` so the raw carriage-return literal embedded in Nim `string_ops.nim` no longer produces false stale detections under `--check`. The remaining static-family full-baseline debt is now concentrated in Kotlin / Scala.
 - 2026-03-13: The `S2-02` sixth bundle materialized Kotlin's 18 missing modules (`built_in/{io_ops,numeric_ops,scalar_ops,string_ops,type_id}`, `std/{argparse,glob,json,math,os,os_path,pathlib,random,re,sys,time,timeit}`, and `utils/assertions`) into `generated/` from the SoT and promoted Kotlin to a materialized backend in the baseline-debt contract. It also added the `generated/std` lane mapping, synchronized current/target inventory plus module buckets and Wave-A generated compare/smoke expectations to the full generated inventory, and expanded the Kotlin runtime path smoke accordingly. The runtime hook copy set intentionally remains on the substrate subset (`py_runtime.kt` plus `utils/image_runtime.kt`) for now, and the remaining static-family full-baseline debt is now limited to Scala.
 - 2026-03-13: The `S2-02` seventh bundle materialized Scala's 18 missing modules (`built_in/{io_ops,numeric_ops,scalar_ops,string_ops,type_id}`, `std/{argparse,glob,json,math,os,os_path,pathlib,random,re,sys,time,timeit}`, and `utils/assertions`) into `generated/` from the SoT and promoted Scala to a materialized backend in the baseline-debt contract. It also added the `generated/std` lane mapping, synchronized current/target inventory plus module buckets and Wave-A generated compare/smoke expectations to the full generated inventory, and expanded the Scala runtime path smoke accordingly. This clears the remaining static-family full-baseline debt and leaves `S2-02` ready to close.
 - 2026-03-13: The first `S2-03` bundle materialized PHP's 9 missing modules (`std/{argparse,glob,os,os_path,random,re,sys,timeit}` plus `utils/assertions`) into `generated/` from the SoT, then synchronized `current_inventory`, `target_inventory`, `module_buckets`, the manifest unit tests, and PHP smoke coverage to the full generated inventory. The generated-cpp baseline checker now treats PHP as a materialized backend, but the legacy rollout-remaining Wave-B compare baseline still stays on the older 16-module set, so the newly added PHP modules are tracked as generated artifacts outside that compare baseline.

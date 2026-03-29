@@ -18,7 +18,7 @@ Goal:
 - Enable `runtime_parity_check` to directly compare artifact sizes in image-output cases, so regressions that stdout-only checks miss can fail.
 
 In scope:
-- Artifact comparison spec in `tools/runtime_parity_check.py` (real file-size comparison from `output:`)
+- Artifact comparison spec in `tools/check/runtime_parity_check.py` (real file-size comparison from `output:`)
 - Related smoke/parity tests
 
 Out of scope:
@@ -32,10 +32,10 @@ Acceptance criteria:
 - `runtime_parity_check --case-root sample --all-samples` remains non-regressive in existing pass scope.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_runtime_parity_check_cli.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets ruby --all-samples --ignore-unstable-stdout`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout`
 
 Decision log:
 - 2026-02-28: Per user instruction, opened a P0 plan to introduce `artifact_size` stdout output as an alternative to full binary comparison.

@@ -7,7 +7,7 @@ import argparse
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 TOOLS_DIR = ROOT / "tools"
 LEGACY_PATTERN = "gen_*_from_canonical.py"
 

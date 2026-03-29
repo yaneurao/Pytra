@@ -36,8 +36,8 @@ Acceptance criteria:
 - Existing transpile/smoke tests do not regress.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `python3 -m unittest discover -s test/unit -p 'test_*core*.py' -v`
 - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_smoke.py' -v`
 

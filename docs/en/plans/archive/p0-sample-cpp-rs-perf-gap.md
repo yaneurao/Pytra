@@ -53,7 +53,7 @@ Acceptance criteria:
 - Update README tables (JA/EN) with latest values.
 
 Reference commands:
-- `python3 tools/runtime_parity_check.py --case-root sample --targets cpp,rs --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp,rs --all-samples --ignore-unstable-stdout`
 - `python3 tools/verify_sample_outputs.py --targets cpp,rs`
 - `python3 tools/benchmark_sample_cpp_rs.py --repeat 5 --warmup 1 --emit-json ...`
 

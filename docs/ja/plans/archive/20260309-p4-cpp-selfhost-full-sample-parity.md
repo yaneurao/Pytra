@@ -16,7 +16,7 @@
 - [tools/build_selfhost.py](../../tools/build_selfhost.py)
 - [tools/build_selfhost_stage2.py](../../tools/build_selfhost_stage2.py)
 - [tools/verify_selfhost_end_to_end.py](../../tools/verify_selfhost_end_to_end.py)
-- [tools/check_selfhost_stage2_cpp_diff.py](../../tools/check_selfhost_stage2_cpp_diff.py)
+- [tools/check/check_selfhost_stage2_cpp_diff.py](../../tools/check/check_selfhost_stage2_cpp_diff.py)
 
 背景:
 - `P4-CPP-SELFHOST-ROLLOUT-01` で、stage1 build、direct `.py` route、representative diff/e2e、stage2 build、stage2 strict diff までは復旧済みである。
@@ -32,7 +32,7 @@
 対象:
 - `tools/build_selfhost_stage2.py`
 - `tools/verify_selfhost_end_to_end.py`
-- 必要なら新設する `tools/check_selfhost_stage2_sample_parity.py` または同等 wrapper
+- 必要なら新設する `tools/check/check_selfhost_stage2_sample_parity.py` または同等 wrapper
 - `sample/py/*.py`
 - selfhost stage2 binary (`selfhost/py2cpp_stage2.out`)
 
@@ -52,7 +52,7 @@
 確認コマンド:
 - `python3 tools/build_selfhost_stage2.py`
 - `python3 tools/verify_selfhost_end_to_end.py --skip-build --selfhost-bin selfhost/py2cpp_stage2.out --cases sample/py/01_mandelbrot.py ... sample/py/18_mini_language_interpreter.py`
-- `python3 tools/check_selfhost_stage2_cpp_diff.py --mode strict`
+- `python3 tools/check/check_selfhost_stage2_cpp_diff.py --mode strict`
 
 ## 1. 基本方針
 
@@ -108,4 +108,4 @@
 ## 5. 決定ログ
 
 - 2026-03-09: 起票時点では representative selfhost checks（direct compile / representative e2e / representative strict diff / stage2 strict diff）は green だが、`selfhost/py2cpp_stage2.out` を使った full sample parity の実行記録は無い。したがって本計画は stage2 binary に限定した full corpus parity を対象にする。
-- 2026-03-09: canonical command は `python3 tools/check_selfhost_stage2_sample_parity.py [--skip-build]` とし、実体は `verify_selfhost_end_to_end.py --skip-build --selfhost-bin selfhost/py2cpp_stage2.out --cases sample/py/*.py` を呼ぶ thin wrapper で統一する。full sample 列挙と stage2 binary 固定だけを wrapper 側で持ち、e2e 実装は重複させない。
+- 2026-03-09: canonical command は `python3 tools/check/check_selfhost_stage2_sample_parity.py [--skip-build]` とし、実体は `verify_selfhost_end_to_end.py --skip-build --selfhost-bin selfhost/py2cpp_stage2.out --cases sample/py/*.py` を呼ぶ thin wrapper で統一する。full sample 列挙と stage2 binary 固定だけを wrapper 側で持ち、e2e 実装は重複させない。

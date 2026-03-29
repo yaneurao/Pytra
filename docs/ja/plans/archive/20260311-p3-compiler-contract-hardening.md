@@ -11,7 +11,7 @@
 
 背景:
 - `P1-EAST-TYPEEXPR-01` と `P2-COMPILER-TYPED-BOUNDARY-01` で型意味論と carrier 境界を引き上げても、compiler 内部の handoff 契約が弱いままだと、崩れ方が backend 個別 crash や silent fallback として後段へ漏れる。
-- 現状のガードは存在するが十分ではない。たとえば `tools/check_east_stage_boundary.py` は stage 越境 import / call を防ぐが、node shape や `meta` / `source_span` / type 契約までは見ていない。
+- 現状のガードは存在するが十分ではない。たとえば `tools/check/check_east_stage_boundary.py` は stage 越境 import / call を防ぐが、node shape や `meta` / `source_span` / type 契約までは見ていない。
 - `toolchain/link/program_validator.py` の `validate_raw_east3_doc(...)` も、`kind` / `east_stage` / `schema_version` / `dispatch_mode` のような coarse 契約が中心で、node-level invariant や pass 後整合までは保証していない。
 - その結果、optimizer / lowering / backend が暗黙に期待する field を局所的に仮定しがちで、仕様変更や selfhost 移行時に「どこで壊れたか」が遅く見つかる。
 - Pytra を内部から改良していくなら、language feature を増やす前に「各 stage が何を受け取り、何を返してよいか」を machine-checkable にする必要がある。
@@ -25,7 +25,7 @@
 対象:
 - `toolchain/ir/east3.py` / `toolchain/link/program_validator.py` / `toolchain/link/global_optimizer.py`
 - `toolchain/ir/east2_to_east3_lowering.py` と representative EAST3 optimize pass
-- `tools/check_east_stage_boundary.py` および compiler contract guard
+- `tools/check/check_east_stage_boundary.py` および compiler contract guard
 - representative backend entry（まず C++）で受ける IR/EAST 契約
 - diagnostics / regression test / selfhost 向け guard
 
@@ -55,16 +55,16 @@
 受け入れ基準:
 - raw EAST3 / linked output / representative backend input に対する validator があり、node-level invariant の最低限を検証できる。
 - `TypeExpr` / `resolved_type` / `source_span` / `meta` の代表的整合崩れが、backend crash ではなく structured diagnostic で止まる。
-- `tools/check_east_stage_boundary.py` または等価 guard が stage semantic contract まで監視する。
+- `tools/check/check_east_stage_boundary.py` または等価 guard が stage semantic contract まで監視する。
 - representative optimize/lowering/backend entry が validator hook を通し、invalid document を黙って通さない。
 - 今後の P4/P5 で contract drift が再混入しにくい回帰テストが入る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_east_stage_boundary.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/link -p 'test_program_validator.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east3*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_east3_cpp_bridge.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_east_stage_boundary.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/link -p 'test_program_validator.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east3*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_east3_cpp_bridge.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 
@@ -85,7 +85,7 @@
 
 | 系統 | 現在見ているもの | いま見ていないもの |
 | --- | --- | --- |
-| `tools/check_east_stage_boundary.py` | `east2.py` と `code_emitter.py` に対する import / call の stage 越境 | document shape、`type_expr` / `resolved_type` mirror、`source_span` / `repr`、helper metadata、pass / backend entry の semantic drift |
+| `tools/check/check_east_stage_boundary.py` | `east2.py` と `code_emitter.py` に対する import / call の stage 越境 | document shape、`type_expr` / `resolved_type` mirror、`source_span` / `repr`、helper metadata、pass / backend entry の semantic drift |
 | `validate_raw_east3_doc(...)` | top-level `kind=Module`、`east_stage=3`、`body` list、`schema_version>=1`、`meta.dispatch_mode`、`meta.linked_program_v1` 禁止、`sync_type_expr_mirrors(...)` | 再帰的 node shape、node-level `source_span` / `repr` 必須性、helper metadata category、`dispatch_mode` の node/meta 整合、pass 後 drift |
 | `validate_link_input_doc(...)` | manifest-level schema、`target` / `dispatch_mode` / `entry_modules` / `modules` の required field | 各 module の EAST3 payload shape、options payload の semantic 契約 |
 | `validate_link_output_doc(...)` | manifest-level schema、helper module metadata の有無、`global` / `diagnostics` の top-level required key | `global` payload の内部 shape、embedded IR/EAST artifact の invariant、diagnostic item schema |
@@ -148,7 +148,7 @@
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-01] `toolchain/link/program_validator.py` と周辺に central validator primitive を追加し、raw EAST3 / linked output の coarse check を representative な node/meta invariant まで拡張した。
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-02] representative pass / lowering / linker entry に pre/post validation hook を導入し、invalid node の透過搬送を止めた。
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-01] representative backend（まず C++）の入口で compiler contract validator を通し、backend-local crash や silent fallback を structured diagnostic へ置き換える。
-- [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-02] `tools/check_east_stage_boundary.py` または後継 guard を拡張し、stage semantic contract の drift も検出できるようにする。
+- [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-02] `tools/check/check_east_stage_boundary.py` または後継 guard を拡張し、stage semantic contract の drift も検出できるようにする。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S5-01] representative unit/selfhost 回帰を追加し、契約違反が expected failure として再現できるようにする。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S5-02] docs / TODO / archive / migration note を更新し、今後 node/meta 追加時に validator 更新が必須であることを固定する。
 

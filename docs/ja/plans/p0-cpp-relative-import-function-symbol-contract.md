@@ -34,11 +34,11 @@
 - `from .controller import (BUTTON_A as BUTTON, make_pad as make_pad_fn, Pad as ControllerPad)` を使う representative C++ multi-file smoke が build/run で通ること。
 - generated consumer module が imported function / constant / class-type の origin を正しく resolve すること。
 - 既存の non-function sibling relative import smoke を壊さないこと。
-- `python3 tools/check_todo_priority.py`、focused C++ regression、`python3 tools/build_selfhost.py`、`git diff --check` が通ること。
+- `python3 tools/check/check_todo_priority.py`、focused C++ regression、`python3 tools/build_selfhost.py`、`git diff --check` が通ること。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/toolchain/emit/cpp -p 'test_py2cpp_features.py' -k sibling_relative_import`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k sibling_relative_import`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

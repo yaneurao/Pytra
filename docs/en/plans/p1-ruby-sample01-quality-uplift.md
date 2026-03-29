@@ -24,7 +24,7 @@ Scope:
 - `src/hooks/ruby/emitter/*`
 - `src/hooks/common/*` (as needed)
 - `src/runtime/ruby/py_runtime.rb` (as needed)
-- `test/unit/test_py2ruby_*`
+- `tools/unittest/test_py2ruby_*`
 - Regenerate `sample/ruby/01_mandelbrot.rb`
 
 Out of scope:
@@ -41,9 +41,9 @@ Acceptance Criteria:
 
 Validation Commands:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2ruby*.py' -v`
-- `python3 tools/check_py2ruby_transpile.py`
-- `python3 tools/regenerate_samples.py --langs ruby --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets ruby 01_mandelbrot`
+- `python3 tools/check/check_py2ruby_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs ruby --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby 01_mandelbrot`
 
 Breakdown:
 - [x] [ID: P1-RUBY-SAMPLE01-QUALITY-01-S1-01] Inventory quality gaps in `sample/ruby/01` (redundant cast / loop / truthy / temporary initialization) and lock improvement priority.

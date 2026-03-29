@@ -25,10 +25,10 @@
 - 必要に応じて `src/runtime/rs/pytra*/built_in/py_runtime.rs`
 - 必要に応じて `src/runtime/cs/pytra*/built_in/py_runtime.cs`
 - `tools/*pyruntime*inventory*.py`
-- `test/unit/tooling/*inventory*.py`
-- `test/unit/backends/cpp/test_east3_cpp_bridge.py`
-- `test/unit/backends/rs/test_py2rs_smoke.py`
-- `test/unit/backends/cs/test_py2cs_smoke.py`
+- `tools/unittest/tooling/*inventory*.py`
+- `tools/unittest/emit/cpp/test_east3_cpp_bridge.py`
+- `tools/unittest/emit/rs/test_py2rs_smoke.py`
+- `tools/unittest/emit/cs/test_py2cs_smoke.py`
 
 非対象:
 - `py_runtime.h` 自体の追加削減
@@ -48,15 +48,15 @@ residual bucket の end state:
 - `crossruntime_object_bridge_residual`: C++ 以外の emitter に残る object bridge mutation helper を隔離する bucket とし、現時点では C# の `py_append` / `py_pop` だけを許容する。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_crossruntime_pyruntime_emitter_inventory.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_crossruntime_pyruntime_emitter_inventory.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_east3_cpp_bridge.py'`
-- `PYTHONPATH=src:test/unit python3 -m unittest discover -s test/unit/backends/rs -p 'test_py2rs_smoke.py' -k type_predicate`
-- `PYTHONPATH=src:test/unit python3 -m unittest discover -s test/unit/backends/cs -p 'test_py2cs_smoke.py' -k type_predicate`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_crossruntime_pyruntime_emitter_inventory.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_crossruntime_pyruntime_emitter_inventory.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_east3_cpp_bridge.py'`
+- `PYTHONPATH=src:test/unit python3 -m unittest discover -s tools/unittest/emit/rs -p 'test_py2rs_smoke.py' -k type_predicate`
+- `PYTHONPATH=src:test/unit python3 -m unittest discover -s tools/unittest/emit/cs -p 'test_py2cs_smoke.py' -k type_predicate`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_transpiler_version_gate.py`
-- `python3 tools/run_regen_on_version_bump.py --dry-run`
+- `python3 tools/check/check_transpiler_version_gate.py`
+- `python3 tools/run/run_regen_on_version_bump.py --dry-run`
 - `git diff --check`
 
 分解:
@@ -68,7 +68,7 @@ residual bucket の end state:
 
 決定ログ:
 - 2026-03-11: `P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01` 完了後の follow-up として起票した。`py_runtime.h` 自体の削減ではなく、cross-runtime emitter が要求する residual contract の可視化と整列をこの P4 の責務にする。
-- 2026-03-11: `S1-01` として `tools/check_crossruntime_pyruntime_emitter_inventory.py` と unit test を追加し、emitters の residual `py_runtime` symbol を `cpp_object_bridge_residual` / `shared_type_id_contract` / `crossruntime_object_bridge_residual` に bucket 化した。
+- 2026-03-11: `S1-01` として `tools/check/check_crossruntime_pyruntime_emitter_inventory.py` と unit test を追加し、emitters の residual `py_runtime` symbol を `cpp_object_bridge_residual` / `shared_type_id_contract` / `crossruntime_object_bridge_residual` に bucket 化した。
 - 2026-03-11: `S1-02` として 3 bucket の end state を docs に固定した。C++ object fallback は `cpp_object_bridge_residual` へ、cross-language type predicate / type id helper は `shared_type_id_contract` へ、C# の list bridge 残存は `crossruntime_object_bridge_residual` へ隔離する。
 - 2026-03-11: `S2-01` として C++ emitter の object-bridge helper 名を `CppCallEmitter` の canonical map に集約し、`py_append/extend/pop/clear/reverse/sort/set_at` の residual symbol は `call.py` 1 箇所にだけ残る状態へ寄せた。inventory guard もこの end state に更新した。
 - 2026-03-11: `S2-02` として Rust/C# emitter の `py_runtime_type_id` / `py_isinstance` / `py_is_subtype` / `py_issubclass` lowering を per-emitter helper seam に集約し、代表的な `isinstance(...)` lane と EAST3 `ObjTypeId/IsInstance/IsSubtype/IsSubclass` lane が同じ shared contract を使う形に揃えた。

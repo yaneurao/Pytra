@@ -18,7 +18,7 @@
 - lane seed contract: [backend_contract_coverage_matrix_contract.py](/workspace/Pytra/src/toolchain/misc/backend_contract_coverage_matrix_contract.py)
 - suite attachment contract: [backend_contract_coverage_suite_attachment_contract.py](/workspace/Pytra/src/toolchain/misc/backend_contract_coverage_suite_attachment_contract.py)
 - unpublished fixture contract: [backend_contract_coverage_unpublished_fixture_contract.py](/workspace/Pytra/src/toolchain/misc/backend_contract_coverage_unpublished_fixture_contract.py)
-- exporter: [export_backend_contract_coverage_docs.py](/workspace/Pytra/tools/export_backend_contract_coverage_docs.py)
+- exporter: [export_backend_contract_coverage_docs.py](/workspace/Pytra/tools/gen/export_backend_contract_coverage_docs.py)
 
 ## Coverage Bundle Taxonomy
 
@@ -26,11 +26,11 @@
 
 | bundle | suite_ids | harness_kinds | source_roots |
 | --- | --- | --- | --- |
-| frontend | unit_common, unit_ir | frontend_parse_diagnostic, east_document_compare, east3_document_compare | test/unit/common<br>test/unit/ir |
-| emit | unit_backends, unit_common | backend_emit_compare | test/unit/backends<br>test/unit/common/test_py2x_smoke_common.py |
-| runtime | transpile_artifact | runtime_parity_compare | work/transpile<br>tools/runtime_parity_check.py |
-| import_package | unit_backends, unit_common | package_graph_transpile | test/unit/toolchain/emit/relative_import_native_path_smoke_support.py<br>test/unit/toolchain/emit/relative_import_jvm_package_smoke_support.py<br>tools/check_relative_import_backend_coverage.py |
-| east2x | ir_fixture | ir_json_emit_compare | test/ir<br>tools/check_east2x_smoke.py |
+| frontend | unit_common, unit_ir | frontend_parse_diagnostic, east_document_compare, east3_document_compare | tools/unittest/common<br>tools/unittest/ir |
+| emit | unit_backends, unit_common | backend_emit_compare | tools/unittest/backends<br>tools/unittest/common/test_py2x_smoke_common.py |
+| runtime | transpile_artifact | runtime_parity_compare | work/transpile<br>tools/check/runtime_parity_check.py |
+| import_package | unit_backends, unit_common | package_graph_transpile | tools/unittest/emit/relative_import_native_path_smoke_support.py<br>tools/unittest/emit/relative_import_jvm_package_smoke_support.py<br>tools/check/check_relative_import_backend_coverage.py |
+| east2x | ir_fixture | ir_json_emit_compare | test/ir<br>tools/check/check_east2x_smoke.py |
 | integration | integration | native_compile_run | test/integration |
 
 <!-- END BACKEND COVERAGE TAXONOMY TABLE -->

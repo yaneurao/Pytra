@@ -38,12 +38,12 @@ Acceptance criteria:
 - The C++ backend no longer emits invalid types such as `::std::tuple<int64, ...>`.
 - The representative v1 lanes (constants, locals, function args, returns, read-only index access) emit according to target policy.
 - Unsupported backends or lanes fail closed instead of silently falling back.
-- `python3 tools/check_todo_priority.py`, focused unit tests, `python3 tools/build_selfhost.py`, and `git diff --check` all pass.
+- `python3 tools/check/check_todo_priority.py`, focused unit tests, `python3 tools/build_selfhost.py`, and `git diff --check` all pass.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k tuple`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k tuple`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

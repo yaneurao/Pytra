@@ -19,7 +19,7 @@ Goal:
 In scope:
 - `src/hooks/cpp/emitter/expr.py`
 - `src/hooks/cpp/emitter/stmt.py`
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/13_maze_generation_steps.cpp` (regeneration check)
 
 Out of scope:
@@ -33,16 +33,16 @@ Acceptance criteria:
 - Transpile/unit checks pass with no behavior regressions.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force`
 
 Decision log:
 - 2026-03-02: Based on the user instruction "Add #6 to TODO as P0 as well", item #6 for sample/13 was filed as a rerun task.
 - 2026-03-02: Added an emitter path (`src/hooks/cpp/emitter/stmt.py`) that hoists complex indexes into `auto __idx_* = ...;` and rewrites to `candidates[__idx_*]` when `Assign(Name = Subscript(...))` has a `Name` owner and a complex index.
 - 2026-03-02: Updated sample/13 regression cases in `test_py2cpp_codegen_issues.py` and locked in `__idx_*` hoist output.
-- 2026-03-02: Ran `python3 tools/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force` / `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` / `python3 tools/check_py2cpp_transpile.py`; confirmed all passed.
+- 2026-03-02: Ran `python3 tools/gen/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force` / `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` / `python3 tools/check/check_py2cpp_transpile.py`; confirmed all passed.
 
 ## Breakdown
 

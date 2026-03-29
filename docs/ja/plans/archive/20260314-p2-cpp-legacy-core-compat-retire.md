@@ -13,7 +13,7 @@
 - 現行の C++ runtime ownership は `src/runtime/cpp/native/core/` と `src/runtime/cpp/generated/core/` に分離されており、`src/runtime/cpp/core/` 自体は既に存在しない。
 - それでも live tree には、削除済み `src/runtime/cpp/core/**` を現役 surface と誤認しやすい残滓がまだ残っている。
 - 代表例だった [docs/ja/plans/archive/20260306-p0-runtime-root-reset-cpp-parity.md](./archive/20260306-p0-runtime-root-reset-cpp-parity.md) は完了済み plan なのに live `plans/` に残り、`src/runtime/cpp/core` + `src/runtime/cpp/gen` を canonical layout として記述していた。
-- 一方で `tools/check_runtime_cpp_layout.py` や `test_runtime_symbol_index.py` のように、legacy `src/runtime/cpp/core/**` の再出現を fail-fast に検知する負の guard は現役 contract として必要である。
+- 一方で `tools/check/check_runtime_cpp_layout.py` や `test_runtime_symbol_index.py` のように、legacy `src/runtime/cpp/core/**` の再出現を fail-fast に検知する負の guard は現役 contract として必要である。
 
 目的:
 - 削除済み `src/runtime/cpp/core/**` を live docs / tooling / tests の「現役 layout 前提」から完全に外す。
@@ -37,11 +37,11 @@
 - related checker / unit test / docs wording が current ownership contract に同期する。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `rg -n "src/runtime/cpp/core|runtime/cpp/core/" src tools test docs -g '!**/archive/**'`
-- `python3 tools/check_runtime_cpp_layout.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_runtime_cpp_layout.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_runtime_symbol_index.py'`
+- `python3 tools/check/check_runtime_cpp_layout.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_runtime_cpp_layout.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_runtime_symbol_index.py'`
 - `git diff --check`
 
 ## 分解

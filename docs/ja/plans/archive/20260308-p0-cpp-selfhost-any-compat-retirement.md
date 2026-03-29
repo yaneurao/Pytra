@@ -49,12 +49,12 @@
 - fixture/sample parity を維持する。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `git diff --check`
-- `PYTHONPATH=src python3 test/unit/backends/cpp/test_cpp_runtime_iterable.py`
-- `PYTHONPATH=src python3 test/unit/backends/cpp/test_cpp_runtime_boxing.py`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
+- `PYTHONPATH=src python3 tools/unittest/emit/cpp/test_cpp_runtime_iterable.py`
+- `PYTHONPATH=src python3 tools/unittest/emit/cpp/test_cpp_runtime_boxing.py`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
 
 ## 1. 基本方針
 

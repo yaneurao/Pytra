@@ -9,7 +9,7 @@ Measurement date: 2026-03-01
 Command:
 
 ```bash
-python3 tools/check_cs_single_source_selfhost_compile.py
+python3 tools/check/check_cs_single_source_selfhost_compile.py
 ```
 
 ## Summary

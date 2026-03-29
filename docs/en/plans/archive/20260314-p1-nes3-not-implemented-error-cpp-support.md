@@ -34,7 +34,7 @@ Acceptance criteria:
 - The fixed lane is recorded in regressions, the plan, and TODO.
 
 Validation commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `bash ./pytra materials/refs/from-Pytra-NES3/not_implemented_error.py --target cpp --output-dir /tmp/pytra_nes3_not_implemented_error`
 - `g++ -std=c++20 -O0 -c /tmp/pytra_nes3_not_implemented_error/src/not_implemented_error.cpp -I /tmp/pytra_nes3_not_implemented_error/include -I /workspace/Pytra/src -I /workspace/Pytra/src/runtime/cpp`
 - `git diff --check`

@@ -11,7 +11,7 @@ use std::io::Write;
 use std::path::{Path as StdPath, PathBuf};
 use std::rc::Rc;
 use std::sync::Once;
-use std::{collections::BTreeMap, collections::BTreeSet, collections::HashMap, collections::HashSet};
+use std::{collections::BTreeMap, collections::BTreeSet, collections::HashMap, collections::HashSet, collections::VecDeque};
 
 // ---------------------------------------------------------------------------
 // PyList<T> — Python list の参照セマンティクスラッパー (spec-emitter-guide §10)
@@ -94,8 +94,67 @@ impl<T: Clone> PyList<T> {
     }
 }
 
+// PyList + PyList — Python list concatenation
+impl<T: Clone> std::ops::Add for PyList<T> {
+    type Output = PyList<T>;
+    fn add(self, rhs: PyList<T>) -> PyList<T> {
+        let mut result = self.py_borrow().clone();
+        result.extend(rhs.py_borrow().iter().cloned());
+        PyList::<T>::from_vec(result)
+    }
+}
+
+// PyList * n — Python list repeat
+impl<T: Clone> std::ops::Mul<i64> for PyList<T> {
+    type Output = PyList<T>;
+    fn mul(self, rhs: i64) -> PyList<T> {
+        let inner = self.py_borrow();
+        let n = rhs.max(0) as usize;
+        let mut result = Vec::with_capacity(inner.len() * n);
+        for _ in 0..n { result.extend(inner.iter().cloned()); }
+        PyList::<T>::from_vec(result)
+    }
+}
+
+// n * PyList — allow reversed operand order
+impl<T: Clone> std::ops::Mul<PyList<T>> for i64 {
+    type Output = PyList<T>;
+    fn mul(self, rhs: PyList<T>) -> PyList<T> { rhs * self }
+}
+
 pub trait PyStringify {
     fn py_stringify(&self) -> String;
+}
+
+impl<T: PyStringify> PyStringify for PyList<T> {
+    fn py_stringify(&self) -> String {
+        let inner = self.py_borrow();
+        let items: Vec<String> = inner.iter().map(|x| x.py_stringify()).collect();
+        "[".to_string() + &items.join(", ") + "]"
+    }
+}
+
+impl<T: PyStringify> PyStringify for Option<T> {
+    fn py_stringify(&self) -> String {
+        match self {
+            Some(v) => v.py_stringify(),
+            None => "None".to_string(),
+        }
+    }
+}
+
+impl<T: PyStringify> PyStringify for Vec<T> {
+    fn py_stringify(&self) -> String {
+        let items: Vec<String> = self.iter().map(|x| x.py_stringify()).collect();
+        "[".to_string() + &items.join(", ") + "]"
+    }
+}
+
+impl<K: PyStringify, V: PyStringify> PyStringify for HashMap<K, V> {
+    fn py_stringify(&self) -> String {
+        let items: Vec<String> = self.iter().map(|(k, v)| k.py_stringify() + ": " + &v.py_stringify()).collect();
+        "{".to_string() + &items.join(", ") + "}"
+    }
 }
 
 impl PyStringify for bool {
@@ -171,6 +230,26 @@ impl PyStringify for PyPath {
 impl PyStringify for &str {
     fn py_stringify(&self) -> String {
         (*self).to_string()
+    }
+}
+impl PyStringify for usize {
+    fn py_stringify(&self) -> String {
+        format!("{}", self)
+    }
+}
+impl PyStringify for isize {
+    fn py_stringify(&self) -> String {
+        format!("{}", self)
+    }
+}
+impl<T: PyStringify + Copy> PyStringify for &T {
+    fn py_stringify(&self) -> String {
+        (**self).py_stringify()
+    }
+}
+impl PyStringify for () {
+    fn py_stringify(&self) -> String {
+        "None".to_string()
     }
 }
 
@@ -269,6 +348,7 @@ pub fn py_isdigit(v: &str) -> bool {
     }
     v.chars().all(|c| c.is_ascii_digit())
 }
+pub fn py_str_isdigit(s: &str) -> bool { py_isdigit(s) }
 
 pub fn py_isalpha(v: &str) -> bool {
     if v.is_empty() {
@@ -276,6 +356,102 @@ pub fn py_isalpha(v: &str) -> bool {
     }
     v.chars().all(|c| c.is_ascii_alphabetic())
 }
+pub fn py_str_isalpha(s: &str) -> bool { py_isalpha(s) }
+
+pub fn py_str_isalnum(s: &str) -> bool {
+    !s.is_empty() && s.chars().all(|c| c.is_alphanumeric())
+}
+
+pub fn py_str_isspace(s: &str) -> bool {
+    !s.is_empty() && s.chars().all(|c| c.is_whitespace())
+}
+
+pub fn py_str_char_at(s: &str, i: i64) -> i64 {
+    let idx = if i < 0 { (s.chars().count() as i64 + i) as usize } else { i as usize };
+    s.chars().nth(idx).map(|c| c as i64).unwrap_or(0)
+}
+pub fn py_str_get_at(s: &str, i: i64) -> String {
+    let idx = if i < 0 { (s.chars().count() as i64 + i) as usize } else { i as usize };
+    s.chars().nth(idx).map(|c| c.to_string()).unwrap_or_default()
+}
+pub fn py_str_strip(s: &str) -> String { s.trim().to_string() }
+pub fn py_str_lstrip(s: &str) -> String { s.trim_start().to_string() }
+pub fn py_str_rstrip(s: &str) -> String { s.trim_end().to_string() }
+pub fn py_str_upper(s: &str) -> String { s.to_uppercase() }
+pub fn py_str_lower(s: &str) -> String { s.to_lowercase() }
+
+pub fn py_str_startswith(s: &str, prefix: &str) -> bool { s.starts_with(prefix) }
+pub fn py_str_endswith(s: &str, suffix: &str) -> bool { s.ends_with(suffix) }
+
+pub fn py_str_replace(s: &str, old: &str, new: &str) -> String { s.replace(old, new) }
+
+pub fn py_str_find(s: &str, sub: &str) -> i64 {
+    s.find(sub).map(|i| i as i64).unwrap_or(-1_i64)
+}
+pub fn py_str_rfind(s: &str, sub: &str) -> i64 {
+    s.rfind(sub).map(|i| i as i64).unwrap_or(-1_i64)
+}
+pub fn py_str_index(s: &str, sub: &str) -> i64 {
+    s.find(sub).map(|i| i as i64).expect("substring not found")
+}
+pub fn py_str_count(s: &str, sub: &str) -> i64 {
+    if sub.is_empty() { return (s.chars().count() + 1) as i64; }
+    let mut count: i64 = 0;
+    let mut pos = 0_usize;
+    while let Some(idx) = s[pos..].find(sub) {
+        count += 1;
+        pos += idx + sub.len();
+    }
+    count
+}
+pub fn py_str_split(s: &str, sep: &str) -> PyList<String> {
+    PyList::<String>::from_vec(s.split(sep).map(|x| x.to_string()).collect())
+}
+pub fn py_str_join(sep: &str, items: &PyList<String>) -> String {
+    items.py_borrow().join(sep)
+}
+
+/// Python `int(s)` from string — parse decimal integer.
+pub fn py_str_to_i64(s: &str) -> i64 { s.trim().parse::<i64>().unwrap_or(0) }
+/// Python `float(s)` from string — parse float.
+pub fn py_str_to_f64(s: &str) -> f64 { s.trim().parse::<f64>().unwrap_or(0.0) }
+
+/// Python `int(v)` — convert string or numeric to i64.
+pub fn py_int<T: PyAnyToI64Arg + ?Sized>(v: &T) -> i64 { py_any_to_i64(v) }
+/// Python `float(v)` — convert to f64.
+pub fn py_float<T: PyAnyToF64Arg + ?Sized>(v: &T) -> f64 { py_any_to_f64(v) }
+/// Python `str(v)` alias (already defined as py_str above but add py_to_string alias).
+pub fn py_to_string<T: PyStringify>(v: T) -> String { v.py_stringify() }
+
+/// Python `enumerate(iterable)` — returns PyList of (index, value) pairs as PyList.
+pub fn py_enumerate<T: Clone>(items: &PyList<T>) -> PyList<(i64, T)> {
+    let inner = items.py_borrow();
+    PyList::<(i64, T)>::from_vec(
+        inner.iter().enumerate().map(|(i, v)| (i as i64, v.clone())).collect()
+    )
+}
+
+/// Python `sorted(iterable)` — returns new sorted PyList.
+pub fn py_sorted<T: Ord + Clone>(items: &PyList<T>) -> PyList<T> {
+    let mut v = items.py_borrow().clone();
+    v.sort();
+    PyList::<T>::from_vec(v)
+}
+
+/// Python `reversed(iterable)` — returns new reversed PyList.
+pub fn py_reversed<T: Clone>(items: &PyList<T>) -> PyList<T> {
+    let mut v = items.py_borrow().clone();
+    v.reverse();
+    PyList::<T>::from_vec(v)
+}
+
+/// Python `set(iterable)` constructor.
+pub fn py_set<T: Eq + Hash + Clone>(items: &PyList<T>) -> HashSet<T> {
+    items.py_borrow().iter().cloned().collect()
+}
+
+/// Python `list(iterable)` constructor.
+pub fn py_list<T: Clone>(items: &PyList<T>) -> PyList<T> { items.clone() }
 
 pub fn py_str_at(s: &str, index: i64) -> String {
     let n = if s.is_ascii() { s.len() as i64 } else { s.chars().count() as i64 };
@@ -355,7 +531,7 @@ pub fn py_print<T: PyStringify>(v: T) {
     println!("{}", v.py_stringify());
 }
 
-pub trait PyContains<K> {
+pub trait PyContains<K: ?Sized> {
     fn py_contains(&self, key: &K) -> bool;
 }
 
@@ -377,7 +553,35 @@ impl<K: Eq + Hash, V> PyContains<K> for HashMap<K, V> {
     }
 }
 
-pub fn py_in<C, K>(container: &C, key: &K) -> bool
+impl<T: PartialEq> PyContains<T> for PyList<T> {
+    fn py_contains(&self, key: &T) -> bool {
+        self.py_borrow().contains(key)
+    }
+}
+
+impl PyContains<str> for String {
+    fn py_contains(&self, key: &str) -> bool {
+        self.contains(key)
+    }
+}
+
+// Tuple `in` support (common sizes)
+impl<T: PartialEq> PyContains<T> for (T, T) {
+    fn py_contains(&self, key: &T) -> bool { &self.0 == key || &self.1 == key }
+}
+impl<T: PartialEq> PyContains<T> for (T, T, T) {
+    fn py_contains(&self, key: &T) -> bool { &self.0 == key || &self.1 == key || &self.2 == key }
+}
+impl<T: PartialEq> PyContains<T> for (T, T, T, T) {
+    fn py_contains(&self, key: &T) -> bool { &self.0 == key || &self.1 == key || &self.2 == key || &self.3 == key }
+}
+
+// VecDeque support
+impl<T> PyLen for VecDeque<T> {
+    fn py_len(&self) -> usize { self.len() }
+}
+
+pub fn py_in<C, K: ?Sized>(container: &C, key: &K) -> bool
 where
     C: PyContains<K>,
 {
@@ -856,6 +1060,12 @@ impl PyRuntimeTypeId for PyAny {
     }
 }
 
+impl<T: PyRuntimeTypeId> PyRuntimeTypeId for Box<T> {
+    fn py_runtime_type_id(&self) -> i64 {
+        (**self).py_runtime_type_id()
+    }
+}
+
 pub fn py_runtime_value_type_id<T: PyRuntimeTypeId>(value: &T) -> i64 {
     value.py_runtime_type_id()
 }
@@ -1147,6 +1357,36 @@ pub fn open(path: &str, _mode: String) -> PyFile {
     }
     let file = fs::File::create(path).expect("open failed");
     PyFile { inner: file }
+}
+
+/// Python `str(v)` — convert any PyStringify value to String.
+pub fn py_str<T: PyStringify>(v: T) -> String {
+    v.py_stringify()
+}
+
+/// Python `repr(v)` — same as str for most types in Pytra.
+pub fn py_repr<T: PyStringify>(v: T) -> String {
+    v.py_stringify()
+}
+
+/// Python `assert_true(cond, label)`.
+pub fn py_assert_true(cond: bool, _label: String) -> bool {
+    cond
+}
+
+/// Python `assert_eq(actual, expected, label)` — compare via string representation.
+pub fn py_assert_eq<A: PyStringify, B: PyStringify>(actual: A, expected: B, _label: String) -> bool {
+    actual.py_stringify() == expected.py_stringify()
+}
+
+/// Python `assert_all(results, label)` — all booleans must be true.
+pub fn py_assert_all(results: PyList<bool>, _label: String) -> bool {
+    for v in results.py_borrow().iter() {
+        if !v {
+            return false;
+        }
+    }
+    true
 }
 
 /// Python `py_assert_stdout(expected_lines, fn)` — stub for self-hosted compatibility.

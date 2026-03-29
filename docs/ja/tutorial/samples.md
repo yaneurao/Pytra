@@ -84,7 +84,7 @@ cat sample/go/01_mandelbrot.go
 ## 全サンプルを一括変換する
 
 ```bash
-python3 tools/regenerate_samples.py
+python3 tools/gen/regenerate_samples.py
 ```
 
 全 18 件を全言語（18 言語）に変換します。

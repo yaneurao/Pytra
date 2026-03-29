@@ -30,8 +30,8 @@ Acceptance criteria:
 - Branching inside `py2cpp.py` is reduced incrementally
 
 Validation commands:
-- `python3 tools/check_selfhost_cpp_diff.py`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_selfhost_cpp_diff.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 Decision log:
 - 2026-02-22: Initial draft.

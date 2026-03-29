@@ -22,8 +22,8 @@
 対象:
 - `src/toolchain/link/__init__.py`
 - `src/toolchain/compiler/typed_boundary.py`
-- `test/unit/link/test_program_loader.py`
-- 必要なら `test/unit/common/test_py2x_entrypoints_contract.py`
+- `tools/unittest/link/test_program_loader.py`
+- 必要なら `tools/unittest/common/test_py2x_entrypoints_contract.py`
 
 非対象:
 - validator 実装そのものの仕様変更
@@ -36,9 +36,9 @@
 - representative link test / source contract が green になる。
 
 確認コマンド:
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 -m unittest discover -s /workspace/Pytra/test/unit/link -p 'test_program_loader.py'`
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 -m unittest discover -s /workspace/Pytra/test/unit/common -p 'test_py2x_entrypoints_contract.py'`
-- `python3 /workspace/Pytra/tools/check_todo_priority.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 -m unittest discover -s /workspace/Pytra/tools/unittest/link -p 'test_program_loader.py'`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 -m unittest discover -s /workspace/Pytra/tools/unittest/common -p 'test_py2x_entrypoints_contract.py'`
+- `python3 /workspace/Pytra/tools/check/check_todo_priority.py`
 - `git -C /workspace/Pytra diff --check`
 
 分解:

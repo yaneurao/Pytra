@@ -23,7 +23,7 @@ In scope:
 - `src/pytra/compiler/east_parts/east3_optimizer.py`
 - `src/pytra/compiler/east_parts/east3_opt_passes/*` (add new `NonEscapeInterproceduralPass`)
 - `src/pytra/compiler/east_parts/east3_optimizer_cli.py` (extend trace/dump if needed)
-- `test/unit/test_east3_optimizer*.py` (pin analysis-result regressions)
+- `tools/unittest/test_east3_optimizer*.py` (pin analysis-result regressions)
 - If needed, minimal reflection in `docs/ja/spec/spec-east3-optimizer.md`
 
 Out of scope:
@@ -48,9 +48,9 @@ Acceptance criteria:
 - Existing `east3 optimizer` regressions are non-regressive.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer*.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 Decision log:
 - 2026-02-28: Per user instruction, fixed policy to introduce interprocedural non-escape analysis (SCC + fixed point) on EAST3 as a pre-stage to RAII replacement.
@@ -62,7 +62,7 @@ Decision log:
 - 2026-02-28: In `test_east3_non_escape_interprocedural_pass.py`, pinned regressions for summary propagation (`sink->wrap`), return-origin propagation (`identity->wrap2`), and policy override.
 - 2026-02-28: Added implementation that annotates converged summaries onto function-node `meta.escape_summary` and call-expression `meta.non_escape_callsite`, and added regression assertions for annotation payloads in unit tests.
 - 2026-02-28: Added summary-propagation tests for mixed mutual-recursion + external-call cases (`a <-> b` with `unknown_sink`), plus determinism tests where second run yields `changed=False`.
-- 2026-02-28: Re-ran `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer*.py' -v` (42 OK) and `python3 tools/check_py2cpp_transpile.py` (`checked=133 ok=133 fail=0 skipped=6`), confirming no regression.
+- 2026-02-28: Re-ran `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer*.py' -v` (42 OK) and `python3 tools/check/check_py2cpp_transpile.py` (`checked=133 ok=133 fail=0 skipped=6`), confirming no regression.
 
 ## Breakdown
 

@@ -59,7 +59,7 @@ Prohibited:
 
 - `py2lua.py` can generate `.lua` from EAST3.
 - Conversion does not fail on minimal fixtures (`add` / `if_else` / `for_range`).
-- Pin regressions with `tools/check_py2lua_transpile.py` and `test/unit/toolchain/emit/lua/test_py2lua_smoke.py`.
+- Pin regressions with `tools/check/check_py2lua_transpile.py` and `tools/unittest/emit/lua/test_py2lua_smoke.py`.
 
 ## 7. Container Reference Management Boundary (v1)
 
@@ -70,4 +70,4 @@ Prohibited:
 - When classification is ambiguous, fail closed to the ref-boundary side.
 - Rollback:
   - On problematic cases, move input Python annotations to `Any/object`, or switch to explicit copies (`list(...)` / `dict(...)`).
-  - Verify with both `python3 tools/check_py2lua_transpile.py` and `python3 tools/runtime_parity_check.py --case-root sample --targets lua --ignore-unstable-stdout 18_mini_language_interpreter`.
+  - Verify with both `python3 tools/check/check_py2lua_transpile.py` and `python3 tools/check/runtime_parity_check.py --case-root sample --targets lua --ignore-unstable-stdout 18_mini_language_interpreter`.

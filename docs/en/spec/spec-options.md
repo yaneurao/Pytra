@@ -163,4 +163,4 @@ When adding/changing options, update all of the following at the same time:
 After updates, verify:
 
 1. output of `python3 src/pytra-cli.py INPUT.py --target cpp --dump-options` matches specification
-2. relevant option regressions in `test/unit/toolchain/emit/cpp/test_py2cpp_features.py` pass
+2. relevant option regressions in `tools/unittest/emit/cpp/test_py2cpp_features.py` pass

@@ -23,11 +23,11 @@ Scope:
 - `src/backends/cpp/emitter/stmt.py`
 - `src/backends/rs/emitter/rs_emitter.py`
 - `src/backends/cs/emitter/cs_emitter.py`
-- `tools/check_crossruntime_pyruntime_thincompat_inventory.py`
-- `test/unit/tooling/test_check_crossruntime_pyruntime_thincompat_inventory.py`
-- As needed, `test/unit/backends/cpp/test_east3_cpp_bridge.py`
-- As needed, `test/unit/backends/rs/test_py2rs_smoke.py`
-- As needed, `test/unit/backends/cs/test_py2cs_smoke.py`
+- `tools/check/check_crossruntime_pyruntime_thincompat_inventory.py`
+- `tools/unittest/tooling/test_check_crossruntime_pyruntime_thincompat_inventory.py`
+- As needed, `tools/unittest/emit/cpp/test_east3_cpp_bridge.py`
+- As needed, `tools/unittest/emit/rs/test_py2rs_smoke.py`
+- As needed, `tools/unittest/emit/cs/test_py2cs_smoke.py`
 
 Out of scope:
 - Immediately removing more code from `py_runtime.h` itself
@@ -46,11 +46,11 @@ End state:
 - `crossruntime_shared_type_id_api`: Rust/C# emitters should no longer emit the generic names directly. Instead they should use the thin helper naming `py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass`. The generic `py_runtime_type_id` / `py_isinstance` / `py_is_subtype` / `py_issubclass` names may remain only as internal runtime aliases.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_crossruntime_pyruntime_thincompat_inventory.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_crossruntime_pyruntime_thincompat_inventory.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/selfhost -p 'test_prepare_selfhost_source.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_crossruntime_pyruntime_thincompat_inventory.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_crossruntime_pyruntime_thincompat_inventory.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/selfhost -p 'test_prepare_selfhost_source.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 
@@ -63,7 +63,7 @@ Breakdown:
 
 Decision log:
 - 2026-03-11: Opened immediately after archiving `P1-CPP-PYRUNTIME-HEADER-SHRINK-01`, once the C++ header was down to object-bridge helpers plus the final thin `py_runtime_type_id` / `py_isinstance` compatibility surface.
-- 2026-03-11: As `S1-01`, added `tools/check_crossruntime_pyruntime_thincompat_inventory.py` plus unit coverage and bucketed the two C++ `py_isinstance` blockers separately from the Rust/C# shared `type_id` API residuals.
+- 2026-03-11: As `S1-01`, added `tools/check/check_crossruntime_pyruntime_thincompat_inventory.py` plus unit coverage and bucketed the two C++ `py_isinstance` blockers separately from the Rust/C# shared `type_id` API residuals.
 - 2026-03-11: As `S1-02`, fixed the end state as “`cpp_header_thincompat_blocker` should become an empty bucket, while Rust/C# remain isolated in `crossruntime_shared_type_id_api` until the naming/bridge follow-up.”
 - 2026-03-11: As `S2-01`, retargeted the two generic C++ `py_isinstance` sites in `runtime_expr.py` and `stmt.py` onto `py_runtime_object_isinstance`, leaving `cpp_header_thincompat_blocker` empty.
 - 2026-03-11: As `S2-02`, aligned the Rust/C# renderer surface to `py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass`, and switched the inventory from raw file-wide regex matching to render-surface helper classification. The old generic names remain only as internal runtime aliases and are treated as non-blockers.

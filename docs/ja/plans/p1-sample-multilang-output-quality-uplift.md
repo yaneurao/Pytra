@@ -40,8 +40,8 @@
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2rs*' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2js*' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2ts*' -v`
-- `python3 tools/regenerate_samples.py --langs go,java,kotlin,swift,scala,rs,js,ts --stems 01_mandelbrot,18_mini_language_interpreter --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets go,java,kotlin,swift,scala,rs,js,ts --ignore-unstable-stdout 01_mandelbrot 18_mini_language_interpreter`
+- `python3 tools/gen/regenerate_samples.py --langs go,java,kotlin,swift,scala,rs,js,ts --stems 01_mandelbrot,18_mini_language_interpreter --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets go,java,kotlin,swift,scala,rs,js,ts --ignore-unstable-stdout 01_mandelbrot 18_mini_language_interpreter`
 
 分解:
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-01] `go/java` の `Any/Object` 退化 hotspot（`sample/18`）を棚卸しし、typed fastpath の適用境界を固定する。

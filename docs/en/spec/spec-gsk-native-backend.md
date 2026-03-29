@@ -66,8 +66,8 @@ Forbidden in default path:
 
 ## 6. Migration Verification Focus
 
-- `tools/check_py2go_transpile.py`, `tools/check_py2swift_transpile.py`, and `tools/check_py2kotlin_transpile.py` pass with native-by-default behavior.
-- `tools/runtime_parity_check.py --case-root sample --targets go,swift,kotlin --all-samples --ignore-unstable-stdout` keeps parity against Python baseline.
+- `tools/check/check_py2go_transpile.py`, `tools/check/check_py2swift_transpile.py`, and `tools/check/check_py2kotlin_transpile.py` pass with native-by-default behavior.
+- `tools/check/runtime_parity_check.py --case-root sample --targets go,swift,kotlin --all-samples --ignore-unstable-stdout` keeps parity against Python baseline.
 - Regenerated `sample/go`, `sample/swift`, and `sample/kotlin` contain no stale sidecar `.js` outputs.
 
 ## 7. Sidecar Retirement Policy (S1-02)

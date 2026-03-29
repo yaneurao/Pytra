@@ -50,8 +50,8 @@
   - matrix contract: [backend_parity_matrix_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_matrix_contract.py)
   - row/state seed: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py) の `iter_representative_support_matrix_handoff()` / `SUPPORT_STATE_ORDER`
   - conformance summary seed contract: [backend_conformance_summary_handoff_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_summary_handoff_contract.py)
-  - CLI/export seam: [export_backend_parity_matrix_manifest.py](/workspace/Pytra/tools/export_backend_parity_matrix_manifest.py), [export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/export_backend_conformance_summary_handoff_manifest.py)
-  - validation: [check_backend_parity_matrix_contract.py](/workspace/Pytra/tools/check_backend_parity_matrix_contract.py), [test_check_backend_parity_matrix_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_matrix_contract.py), [check_backend_conformance_summary_handoff_contract.py](/workspace/Pytra/tools/check_backend_conformance_summary_handoff_contract.py), [test_check_backend_conformance_summary_handoff_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_summary_handoff_contract.py), [test_export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_conformance_summary_handoff_manifest.py)
+  - CLI/export seam: [export_backend_parity_matrix_manifest.py](/workspace/Pytra/tools/gen/export_backend_parity_matrix_manifest.py), [export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/gen/export_backend_conformance_summary_handoff_manifest.py)
+  - validation: [check_backend_parity_matrix_contract.py](/workspace/Pytra/tools/check/check_backend_parity_matrix_contract.py), [test_check_backend_parity_matrix_contract.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_parity_matrix_contract.py), [check_backend_conformance_summary_handoff_contract.py](/workspace/Pytra/tools/check/check_backend_conformance_summary_handoff_contract.py), [test_check_backend_conformance_summary_handoff_contract.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_conformance_summary_handoff_contract.py), [test_export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/unittest/tooling/test_export_backend_conformance_summary_handoff_manifest.py)
 - source manifest rule:
   - `feature_contract_seed`: `backend_feature_contract_inventory.build_feature_contract_handoff_manifest`
   - `conformance_summary_seed`: `backend_conformance_summary_handoff_contract.build_backend_conformance_summary_handoff_manifest`
@@ -62,7 +62,7 @@
 - publish path rule:
   - 日本語 docs publish path は `docs/ja/language/backend-parity-matrix.md`
   - 英語 docs publish path は `docs/en/language/backend-parity-matrix.md`
-  - tooling publish seam は `tools/export_backend_parity_matrix_manifest.py`
+  - tooling publish seam は `tools/gen/export_backend_parity_matrix_manifest.py`
   - conformance summary handoff の publish target order は `support_matrix -> docs -> tooling` に固定する。
 - downstream rule:
   - downstream task / plan は `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01` と `docs/ja/plans/p7-backend-parity-rollout-and-matrix.md` に固定する。
@@ -73,8 +73,8 @@
 
 - source of truth:
   - rollout tier contract: [backend_parity_rollout_tier_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_rollout_tier_contract.py)
-  - validation: [check_backend_parity_rollout_tier_contract.py](/workspace/Pytra/tools/check_backend_parity_rollout_tier_contract.py), [test_check_backend_parity_rollout_tier_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_rollout_tier_contract.py)
-  - export seam: [export_backend_parity_rollout_tier_manifest.py](/workspace/Pytra/tools/export_backend_parity_rollout_tier_manifest.py), [test_export_backend_parity_rollout_tier_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_parity_rollout_tier_manifest.py)
+  - validation: [check_backend_parity_rollout_tier_contract.py](/workspace/Pytra/tools/check/check_backend_parity_rollout_tier_contract.py), [test_check_backend_parity_rollout_tier_contract.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_parity_rollout_tier_contract.py)
+  - export seam: [export_backend_parity_rollout_tier_manifest.py](/workspace/Pytra/tools/gen/export_backend_parity_rollout_tier_manifest.py), [test_export_backend_parity_rollout_tier_manifest.py](/workspace/Pytra/tools/unittest/tooling/test_export_backend_parity_rollout_tier_manifest.py)
 - tier rule:
   - `representative`: `cpp -> rs -> cs`
   - `secondary`: `go -> java -> kt -> scala -> swift -> nim`
@@ -91,8 +91,8 @@
 
 - source of truth:
   - review checklist contract: [backend_parity_review_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_review_contract.py)
-  - validation: [check_backend_parity_review_contract.py](/workspace/Pytra/tools/check_backend_parity_review_contract.py), [test_check_backend_parity_review_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_review_contract.py)
-  - export seam: [export_backend_parity_review_manifest.py](/workspace/Pytra/tools/export_backend_parity_review_manifest.py), [test_export_backend_parity_review_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_parity_review_manifest.py)
+  - validation: [check_backend_parity_review_contract.py](/workspace/Pytra/tools/check/check_backend_parity_review_contract.py), [test_check_backend_parity_review_contract.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_parity_review_contract.py)
+  - export seam: [export_backend_parity_review_manifest.py](/workspace/Pytra/tools/gen/export_backend_parity_review_manifest.py), [test_export_backend_parity_review_manifest.py](/workspace/Pytra/tools/unittest/tooling/test_export_backend_parity_review_manifest.py)
 - checklist rule:
   - review checklist order は `feature_inventory -> matrix_state_recorded -> representative_tier_recorded -> later_tier_state_recorded -> unsupported_lanes_fail_closed -> docs_mirror` に固定する。
   - `feature_inventory` と `unsupported_lanes_fail_closed` は `backend_feature_contract_inventory.NEW_FEATURE_ACCEPTANCE_RULES` を seed にする。
@@ -107,8 +107,8 @@
 
 - source of truth:
   - handoff contract: [backend_parity_handoff_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_handoff_contract.py)
-  - validation: [check_backend_parity_handoff_contract.py](/workspace/Pytra/tools/check_backend_parity_handoff_contract.py), [test_check_backend_parity_handoff_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_handoff_contract.py)
-  - export seam: [export_backend_parity_handoff_manifest.py](/workspace/Pytra/tools/export_backend_parity_handoff_manifest.py), [test_export_backend_parity_handoff_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_parity_handoff_manifest.py)
+  - validation: [check_backend_parity_handoff_contract.py](/workspace/Pytra/tools/check/check_backend_parity_handoff_contract.py), [test_check_backend_parity_handoff_contract.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_parity_handoff_contract.py)
+  - export seam: [export_backend_parity_handoff_manifest.py](/workspace/Pytra/tools/gen/export_backend_parity_handoff_manifest.py), [test_export_backend_parity_handoff_manifest.py](/workspace/Pytra/tools/unittest/tooling/test_export_backend_parity_handoff_manifest.py)
 - docs handoff rule:
   - matrix publish target は `docs/ja|en/language/backend-parity-matrix.md`
   - docs entrypoint は `docs/ja|en/index.md` と `docs/ja|en/language/index.md`
@@ -126,8 +126,8 @@
 
 - source of truth:
   - operations contract: [backend_parity_operations_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_operations_contract.py)
-  - validation: [check_backend_parity_operations_contract.py](/workspace/Pytra/tools/check_backend_parity_operations_contract.py), [test_check_backend_parity_operations_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_operations_contract.py)
-  - export seam: [export_backend_parity_operations_manifest.py](/workspace/Pytra/tools/export_backend_parity_operations_manifest.py), [test_export_backend_parity_operations_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_parity_operations_manifest.py)
+  - validation: [check_backend_parity_operations_contract.py](/workspace/Pytra/tools/check/check_backend_parity_operations_contract.py), [test_check_backend_parity_operations_contract.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_parity_operations_contract.py)
+  - export seam: [export_backend_parity_operations_manifest.py](/workspace/Pytra/tools/gen/export_backend_parity_operations_manifest.py), [test_export_backend_parity_operations_manifest.py](/workspace/Pytra/tools/unittest/tooling/test_export_backend_parity_operations_manifest.py)
 - operations rule:
   - maintenance order は `contract_seed -> docs_publish -> docs_entrypoints -> release_note_link -> tooling_export -> archive_handoff`
   - docs / README / news の parity matrix link は checker で固定し、publish target drift を fail-closed にする

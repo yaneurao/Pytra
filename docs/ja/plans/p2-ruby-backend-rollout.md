@@ -26,7 +26,7 @@
 - `src/py2rb.py`
 - `src/hooks/ruby/emitter/`
 - `src/runtime/ruby/pytra/`（必要最小限）
-- `tools/check_py2rb_transpile.py` / `test/unit/test_py2rb_smoke.py` / parity 導線
+- `tools/check/check_py2rb_transpile.py` / `tools/unittest/test_py2rb_smoke.py` / parity 導線
 - `sample/ruby` と関連ドキュメント
 
 非対象:
@@ -37,14 +37,14 @@
 受け入れ基準:
 - `py2rb.py` で EAST3 から Ruby コードを生成できる。
 - 最小 fixture（`add` / `if_else` / `for_range`）の変換・実行が通る。
-- `tools/check_py2rb_transpile.py` と smoke/parity 回帰導線が用意される。
+- `tools/check/check_py2rb_transpile.py` と smoke/parity 回帰導線が用意される。
 - `sample/ruby` と `docs/ja/docs` の利用手順・対応表が同期される。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2rb_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2rb_transpile.py`
 - `python3 -m unittest discover -s test/unit -p 'test_py2rb_smoke.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets ruby --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby --all-samples --ignore-unstable-stdout`
 
 決定ログ:
 - 2026-02-27: ユーザー指示により、Ruby backend 追加タスクを `P2` 優先度で TODO 管理する方針を確定した。
@@ -53,7 +53,7 @@
 - 2026-02-27: [ID: `P2-RUBY-BACKEND-01-S1-02`] `src/py2rb.py` と `src/hooks/ruby/emitter/`（`ruby_native_emitter.py`）を追加し、`add/if_else/for_range` を変換できる最小骨格を実装した。`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2rb_smoke.py' -v` は `Ran 9 tests ... OK (skipped=1)`（`ruby` toolchain 未導入で実行系テストを skip）を確認した。
 - 2026-02-27: [ID: `P2-RUBY-BACKEND-01-S2-01`] `ruby_native_emitter.py` に `ListComp/RangeExpr/Slice/ObjLen/ObjStr/Unbox` と `bytearray/bytes/enumerate/range/list/dict/abs` の最小 lower/runtime helper を追加し、`sample/py` 18件の変換通過と `Ran 11 tests ... OK (skipped=1)` を確認した。
 - 2026-02-27: [ID: `P2-RUBY-BACKEND-01-S2-02`] class/instance 系を拡張し、`self` 引数除去、`attr_accessor` 生成、dataclass `initialize` 合成、`isinstance` の `is_a?` lower、`png|gif` 属性呼び出しの runtime hook 化を実装した。`Ran 14 tests ... OK (skipped=1)` と `test/fixtures/oop` 12件変換通過を確認した。
-- 2026-02-27: [ID: `P2-RUBY-BACKEND-01-S3-01`] `tools/check_py2rb_transpile.py` を追加し、`checked=133 ok=133 fail=0 skipped=6` を確認した。あわせて `runtime_parity_check.py` へ `ruby` target を追加し、`--targets ruby` 導線と `test_runtime_parity_check_cli.py` の Ruby エントリ検証を追加した。
+- 2026-02-27: [ID: `P2-RUBY-BACKEND-01-S3-01`] `tools/check/check_py2rb_transpile.py` を追加し、`checked=133 ok=133 fail=0 skipped=6` を確認した。あわせて `runtime_parity_check.py` へ `ruby` target を追加し、`--targets ruby` 導線と `test_runtime_parity_check_cli.py` の Ruby エントリ検証を追加した。
 - 2026-02-27: [ID: `P2-RUBY-BACKEND-01-S3-02`] `sample/ruby` を `sample/py` 18件から再生成し、`docs/ja/README.md/README.md` の Ruby バッジ・対応言語記載・サンプルリンクを更新した。`docs/ja/how-to-use.md` と `docs/en/how-to-use.md` に Ruby 実行手順と回帰チェック導線を追記した。
 
 ## 分解

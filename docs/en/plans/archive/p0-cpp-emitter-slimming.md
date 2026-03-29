@@ -21,7 +21,7 @@ In scope:
 - `src/hooks/cpp/emitter/cpp_emitter.py`
 - `src/hooks/cpp/emitter/` modules (`call.py`, `expr.py`, `stmt.py`, `operator.py`, `tmp.py`, `trivia.py`, plus newly split modules)
 - When needed: `src/pytra/compiler/east_parts/code_emitter.py` (commonizable parts only)
-- Validation: `test/unit/test_py2cpp_*.py`, `tools/check_py2cpp_transpile.py`, `tools/check_selfhost_cpp_diff.py`, `tools/verify_selfhost_end_to_end.py`
+- Validation: `tools/unittest/test_py2cpp_*.py`, `tools/check/check_py2cpp_transpile.py`, `tools/check/check_selfhost_cpp_diff.py`, `tools/verify_selfhost_end_to_end.py`
 
 Out of scope:
 - C++ runtime API spec changes
@@ -56,7 +56,7 @@ Acceptance criteria:
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S5-03] Remove (or no-op) `_render_repr_expr` and eliminate `repr`-string dependency.
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S6-01] Inventory Rust/C++ commonization candidates (conditions/cast helpers/loop skeleton) and lock `CodeEmitter` migration set.
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S6-02] Move 1-2 common candidate groups into `CodeEmitter` and reduce C++/Rust duplication.
-- [x] [ID: P0-CPP-EMITTER-SLIM-01-S7-01] Lock regressions via `test/unit/test_py2cpp_*.py` and `tools/check_py2cpp_transpile.py`.
+- [x] [ID: P0-CPP-EMITTER-SLIM-01-S7-01] Lock regressions via `tools/unittest/test_py2cpp_*.py` and `tools/check/check_py2cpp_transpile.py`.
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S7-02] Confirm selfhost regressions via `check_selfhost_cpp_diff.py` / `verify_selfhost_end_to_end.py`.
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S7-03] Re-measure final metrics and record completion decision.
 - [x] [ID: P0-CPP-EMITTER-SLIM-01-S8-01] Move assign-family statement methods into `stmt.py`.

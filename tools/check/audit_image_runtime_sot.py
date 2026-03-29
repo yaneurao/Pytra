@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 GEN_IMAGE_SYMBOL_RE = re.compile(
     r"(write_rgb_png|save_gif|grayscale_palette|py_write_rgb_png|py_save_gif|py_grayscale_palette|pyWriteRGBPNG|pySaveGIF|pySaveGif|pyGrayscalePalette|__pytra_write_rgb_png|__pytra_save_gif|__pytra_grayscale_palette)"

@@ -36,10 +36,10 @@ Acceptance criteria:
 - `check_py2rb_transpile.py` and `runtime_parity_check --targets ruby --case 03_julia_set` pass.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2rb_transpile.py`
-- `python3 tools/regenerate_samples.py --langs ruby --stems 03_julia_set --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets ruby --case 03_julia_set --ignore-unstable-stdout`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2rb_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs ruby --stems 03_julia_set --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby --case 03_julia_set --ignore-unstable-stdout`
 
 Decision log:
 - 2026-03-02: Filed a P1 plan for improvements in `sample/ruby/03` based on user direction.
@@ -51,7 +51,7 @@ Decision log:
 - 2026-03-02: Added peephole for consecutive `append` and degraded to `owner.concat([..])` when same owner + safe args (Name/Constant/Attribute/Subscript) appear in runs of 2+.
 - 2026-03-02: Confirmed `pixels.concat([r, g, b])` in `sample/ruby/01` / `sample/ruby/03`. Re-passed `test_py2rb_smoke` and `03_julia_set` parity.
 - 2026-03-02: Added `test_sample03_reduces_redundant_parentheses_in_binop_and_conditions` and locked regression detection for parenthesis degradation + `concat` degradation (`S3-01`).
-- 2026-03-02: Re-ran `tools/regenerate_samples.py --langs ruby --stems 01_mandelbrot,03_julia_set --force` and `runtime_parity_check ... 03_julia_set`, completing `S3-02`.
+- 2026-03-02: Re-ran `tools/gen/regenerate_samples.py --langs ruby --stems 01_mandelbrot,03_julia_set --force` and `runtime_parity_check ... 03_julia_set`, completing `S3-02`.
 - 2026-03-02: Added direct `/` fastpath for `Div` only when "RHS is non-zero numeric constant," reducing `__pytra_div` dependency without breaking divide-by-zero contracts (`S2-01`).
 - 2026-03-02: `t = __pytra_div((i - 1), 254.0)` in `sample/ruby/06` degraded to `(__pytra_float(i - 1)) / 254.0`. Confirmed parity pass for `03/06`.
 - 2026-03-02: Added numeric-constant fastpath for `_render_float_cast` (`int -> <n>.0`, `float -> literal`) to suppress same-type cast helper calls (`S2-05`).

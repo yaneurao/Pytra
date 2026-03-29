@@ -231,9 +231,9 @@ Resolution priority, backend API usage, and forbidden direct-symbol branching ar
 
 Guardrail commands:
 
-- `python3 tools/check_emitter_runtimecall_guardrails.py`
-- `python3 tools/check_emitter_forbidden_runtime_symbols.py`
-- `python3 tools/check_noncpp_east3_contract.py`
+- `python3 tools/check/check_emitter_runtimecall_guardrails.py`
+- `python3 tools/check/check_emitter_forbidden_runtime_symbols.py`
+- `python3 tools/check/check_noncpp_east3_contract.py`
 
 ## 10. Casts and Argument Usage
 
@@ -355,10 +355,10 @@ A stage is accepted only when:
 
 Minimum verification commands for EAST boundary work:
 
-- `python3 tools/check_emitter_runtimecall_guardrails.py`
-- `python3 tools/check_emitter_forbidden_runtime_symbols.py`
-- `python3 tools/check_noncpp_east3_contract.py`
-- `python3 tools/check_east3_golden.py`
+- `python3 tools/check/check_emitter_runtimecall_guardrails.py`
+- `python3 tools/check/check_emitter_forbidden_runtime_symbols.py`
+- `python3 tools/check/check_noncpp_east3_contract.py`
+- `python3 tools/check/check_east3_golden.py`
 
 ## 23. Future Extensions
 

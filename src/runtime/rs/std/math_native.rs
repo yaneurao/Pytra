@@ -1,5 +1,5 @@
 pub const pi: f64 = ::std::f64::consts::PI;
-pub const e: f64 = ::std::f64::consts::E;
+pub const math_e: f64 = ::std::f64::consts::E;
 
 pub trait ToF64 {
     fn to_f64(self) -> f64;

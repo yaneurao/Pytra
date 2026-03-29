@@ -37,8 +37,8 @@
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2rb*' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua*' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2java*' -v`
-- `python3 tools/regenerate_samples.py --langs js,ts,ruby,lua,java --stems 01_mandelbrot,18_mini_language_interpreter --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets js,ts,ruby,lua,java --ignore-unstable-stdout 01_mandelbrot 18_mini_language_interpreter`
+- `python3 tools/gen/regenerate_samples.py --langs js,ts,ruby,lua,java --stems 01_mandelbrot,18_mini_language_interpreter --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets js,ts,ruby,lua,java --ignore-unstable-stdout 01_mandelbrot 18_mini_language_interpreter`
 
 分解:
 - [x] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S1-01] 各言語の冗長構文パターン（不要括弧/補助変数/append連鎖）を棚卸しし、適用境界を定義する。
@@ -56,6 +56,6 @@
 - 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-02] Ruby は既存実装で `append` 連鎖を `owner.concat([..])` へ縮退済みであることを確認。Lua へ同等規則を追加し、`owner.append(x)` 連鎖（owner=Name, arg=副作用なし式）を `table.move({..}, 1, n, #(owner)+1, owner)` 1行へ縮退した。
 - 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-02] 検証: 追加した `test_append_chain_is_compacted_with_table_move` は pass。`test_py2lua*` 全体は既知ベースライン失敗（runtime 分離期待値の旧前提）を含むため fail 継続、`test_py2rb*` は pass。
 - 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] Java emitter の `ForCore` / listcomp range に「定数 step fastpath」を追加し、`step=±1` を含む定数 step で `__step_N` 変数を生成しない出力へ変更した。step が非定数または 0 の場合は既存の動的 ternary 条件経路を維持（fail-closed）。
-- 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] 検証: `test_py2java_smoke.py` に `for_range` と `range_downcount_len_minus1` の回帰を追加し pass。`tools/regenerate_samples.py --langs java --stems 01_mandelbrot,18_mini_language_interpreter --force` で `sample/java` へ反映済み。
+- 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] 検証: `test_py2java_smoke.py` に `for_range` と `range_downcount_len_minus1` の回帰を追加し pass。`tools/gen/regenerate_samples.py --langs java --stems 01_mandelbrot,18_mini_language_interpreter --force` で `sample/java` へ反映済み。
 - 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-01] 回帰確認: `test_py2{js,ts,rb,java}_smoke.py` は pass。`test_py2lua_smoke.py` は runtime 分離契約移行に追随していない既知期待値（helper内包前提）7件が fail のまま（本タスク変更とは独立）。
-- 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-02] `tools/regenerate_samples.py --langs js,ts,ruby,lua,java --stems 01_mandelbrot,18_mini_language_interpreter --force` を実行して再生成。`runtime_parity_check --targets js,ts,ruby,lua,java --ignore-unstable-stdout 01,18` を実行し、`lua` は両case OK、`js/ts` は `01` artifact size mismatch、`java` は `01` artifact missing と `18` compile/run fail、`ruby` は `18` tokenize run fail を確認（既知の別系統課題として継続管理）。
+- 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-02] `tools/gen/regenerate_samples.py --langs js,ts,ruby,lua,java --stems 01_mandelbrot,18_mini_language_interpreter --force` を実行して再生成。`runtime_parity_check --targets js,ts,ruby,lua,java --ignore-unstable-stdout 01,18` を実行し、`lua` は両case OK、`js/ts` は `01` artifact size mismatch、`java` は `01` artifact missing と `18` compile/run fail、`ruby` は `18` tokenize run fail を確認（既知の別系統課題として継続管理）。

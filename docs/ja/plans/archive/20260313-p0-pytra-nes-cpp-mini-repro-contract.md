@@ -20,7 +20,7 @@
 - `field(...)` が generated C++ に漏れないこと、`deque[float]` が `::std::deque<float64>` に lower されることを representative smoke に含める。
 
 対象:
-- `test/unit/backends/cpp/test_py2cpp_features.py`
+- `tools/unittest/emit/cpp/test_py2cpp_features.py`
 - 必要なら C++ emitter / runtime の representative drift guard
 - TODO / plan / support docs
 
@@ -37,9 +37,9 @@
 - representative runtime output が固定される。
 
 確認コマンド:
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src:/workspace/Pytra/test/unit/backends python3 test/unit/backends/cpp/test_py2cpp_features.py -k pytra_nes`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src:/workspace/Pytra/tools/unittest/backends python3 tools/unittest/emit/cpp/test_py2cpp_features.py -k pytra_nes`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `git diff --check`
 
 分解:

@@ -13,8 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SMOKE_PYTHONPATH = "src:.:test/unit"
+ROOT = Path(__file__).resolve().parents[2]
+SMOKE_PYTHONPATH = "src:.:tools/unittest"
 FAMILY_ORDER: tuple[str, ...] = ("wave1", "wave2", "wave3")
 
 
@@ -57,29 +57,29 @@ class FamilyHealth:
 
 
 TARGET_SPECS: dict[str, TargetSpec] = {
-    "rs": TargetSpec("rs", "wave1", "test/unit/toolchain/emit/rs/test_py2rs_smoke.py"),
-    "cs": TargetSpec("cs", "wave1", "test/unit/toolchain/emit/cs/test_py2cs_smoke.py"),
+    "rs": TargetSpec("rs", "wave1", "tools/unittest/emit/rs/test_py2rs_smoke.py"),
+    "cs": TargetSpec("cs", "wave1", "tools/unittest/emit/cs/test_py2cs_smoke.py"),
     "js": TargetSpec(
         "js",
         "wave1",
-        "test/unit/toolchain/emit/js/test_py2js_smoke.py",
+        "tools/unittest/emit/js/test_py2js_smoke.py",
         ("--skip-east3-contract-tests",),
     ),
     "ts": TargetSpec(
         "ts",
         "wave1",
-        "test/unit/toolchain/emit/ts/test_py2ts_smoke.py",
+        "tools/unittest/emit/ts/test_py2ts_smoke.py",
         ("--skip-east3-contract-tests",),
     ),
-    "go": TargetSpec("go", "wave2", "test/unit/toolchain/emit/go/test_py2go_smoke.py"),
-    "java": TargetSpec("java", "wave2", "test/unit/toolchain/emit/java/test_py2java_smoke.py"),
-    "kotlin": TargetSpec("kotlin", "wave2", "test/unit/toolchain/emit/kotlin/test_py2kotlin_smoke.py"),
-    "swift": TargetSpec("swift", "wave2", "test/unit/toolchain/emit/swift/test_py2swift_smoke.py"),
-    "scala": TargetSpec("scala", "wave2", "test/unit/toolchain/emit/scala/test_py2scala_smoke.py"),
-    "ruby": TargetSpec("ruby", "wave3", "test/unit/toolchain/emit/rb/test_py2rb_smoke.py"),
-    "lua": TargetSpec("lua", "wave3", "test/unit/toolchain/emit/lua/test_py2lua_smoke.py"),
-    "php": TargetSpec("php", "wave3", "test/unit/toolchain/emit/php/test_py2php_smoke.py"),
-    "nim": TargetSpec("nim", "wave3", "test/unit/toolchain/emit/nim/test_py2nim_smoke.py"),
+    "go": TargetSpec("go", "wave2", "tools/unittest/emit/go/test_py2go_smoke.py"),
+    "java": TargetSpec("java", "wave2", "tools/unittest/emit/java/test_py2java_smoke.py"),
+    "kotlin": TargetSpec("kotlin", "wave2", "tools/unittest/emit/kotlin/test_py2kotlin_smoke.py"),
+    "swift": TargetSpec("swift", "wave2", "tools/unittest/emit/swift/test_py2swift_smoke.py"),
+    "scala": TargetSpec("scala", "wave2", "tools/unittest/emit/scala/test_py2scala_smoke.py"),
+    "ruby": TargetSpec("ruby", "wave3", "tools/unittest/emit/rb/test_py2rb_smoke.py"),
+    "lua": TargetSpec("lua", "wave3", "tools/unittest/emit/lua/test_py2lua_smoke.py"),
+    "php": TargetSpec("php", "wave3", "tools/unittest/emit/php/test_py2php_smoke.py"),
+    "nim": TargetSpec("nim", "wave3", "tools/unittest/emit/nim/test_py2nim_smoke.py"),
 }
 
 FAMILY_TARGETS: dict[str, tuple[str, ...]] = {
@@ -115,7 +115,7 @@ def _run_command(cmd: list[str], *, env: dict[str, str] | None = None) -> StepRe
 
 
 def _run_static_contract() -> StepResult:
-    return _run_command(["python3", "tools/check_noncpp_east3_contract.py", "--skip-transpile"])
+    return _run_command(["python3", "tools/check/check_noncpp_east3_contract.py", "--skip-transpile"])
 
 
 def _run_common_smoke() -> StepResult:
@@ -126,7 +126,7 @@ def _run_common_smoke() -> StepResult:
             "unittest",
             "discover",
             "-s",
-            "test/unit/common",
+            "tools/unittest/common",
             "-p",
             "test_py2x_smoke*.py",
         ],
@@ -155,7 +155,7 @@ def _run_target_transpile(spec: TargetSpec) -> StepResult:
     return _run_command(
         [
             "python3",
-            "tools/check_py2x_transpile.py",
+            "tools/check/check_py2x_transpile.py",
             "--target",
             spec.target,
             *spec.transpile_extra_flags,
@@ -209,7 +209,7 @@ def _run_target_parity(spec: TargetSpec) -> StepResult:
         cp = subprocess.run(
             [
                 "python3",
-                "tools/runtime_parity_check.py",
+                "tools/check/runtime_parity_check.py",
                 "--targets",
                 spec.target,
                 "--case-root",

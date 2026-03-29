@@ -40,7 +40,7 @@
 - 使い方が `docs/ja/how-to-use.md`（必要なら `docs/en/how-to-use.md`）に追記される。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 src/ir2lang.py --help`
 - `python3 src/ir2lang.py --input sample/ir/01_mandelbrot.json --target cpp --output out/ir2lang_cpp_01.cpp`
 - `python3 src/ir2lang.py --input sample/ir/01_mandelbrot.json --target rs --output out/ir2lang_rs_01.rs`
@@ -96,5 +96,5 @@
 - 2026-03-03: `ir2lang.py` の入力は `EAST3 JSON` 専用とし、`east_stage==3` を必須化する方針を確定。
 - 2026-03-03: CLI は `pytra-cli.py` と同様の layer option 文法を採用し、`--no-runtime-hook` で backend 単体検証を可能にする方針を確定。
 - 2026-03-03: `src/ir2lang.py` を追加し、`backend_registry` の lazy dispatch・層別 option pass-through・`EAST3` 契約 fail-fast を実装。
-- 2026-03-03: `sample/ir/01_mandelbrot.east3.json` と `test/ir/core_add.east3.json` を fixture 化し、`tools/check_ir2lang_smoke.py`（`cpp/rs/js`）で backend-only 回帰導線を固定。
+- 2026-03-03: `sample/ir/01_mandelbrot.east3.json` と `test/ir/core_add.east3.json` を fixture 化し、`tools/check/check_ir2lang_smoke.py`（`cpp/rs/js`）で backend-only 回帰導線を固定。
 - 2026-03-03: `docs/ja/how-to-use.md` / `docs/en/how-to-use.md` に `ir2lang.py` 手順（fixture作成・直接変換・smoke実行）を追記。

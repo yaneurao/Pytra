@@ -28,8 +28,8 @@ Scope:
 - `src/toolchain/compiler/pytra_cli_profiles.py`
 - `src/toolchain/compiler/js_runtime_shims.py`
 - selfhost / packaging / transpile output / runtime copy flows
-- `tools/check_noncpp_runtime_layout_contract.py`
-- `tools/check_noncpp_runtime_layout_rollout_remaining_contract.py`
+- `tools/check/check_noncpp_runtime_layout_contract.py`
+- `tools/check/check_noncpp_runtime_layout_rollout_remaining_contract.py`
 - runtime layout / marker / naming / SoT guards
 - representative backend smoke / tooling unit / docs / TODO
 
@@ -43,21 +43,21 @@ Out of scope:
 Acceptance criteria:
 - `find src/runtime -maxdepth 2 -type d -name pytra | sort` returns only `src/runtime/cpp/pytra` in the checked-in tree.
 - `src/runtime/{rs,go,java,kotlin,scala,swift,nim,js,ts,lua,ruby,php}/pytra/**` no longer exists, including directories.
-- `tools/check_noncpp_runtime_layout_contract.py` and `tools/check_noncpp_runtime_layout_rollout_remaining_contract.py` no longer treat checked-in `pytra/**` as compat lanes for these backends and fail fast if they reappear.
+- `tools/check/check_noncpp_runtime_layout_contract.py` and `tools/check/check_noncpp_runtime_layout_rollout_remaining_contract.py` no longer treat checked-in `pytra/**` as compat lanes for these backends and fail fast if they reappear.
 - Repo-tree direct-load / source-reexport smoke no longer assumes `src/runtime/<lang>/pytra/**`.
 - Backend registry / selfhost / packaging / transpile output contracts are resolved through `generated/native` or output-side staging artifacts only.
 - Old `pytra/` compat-lane wording remains only in archived documents, not in active plans, TODO, specs, or checkers.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `find src/runtime -maxdepth 2 -type d -name pytra | sort`
-- `python3 tools/check_noncpp_runtime_layout_contract.py`
-- `python3 tools/check_noncpp_runtime_layout_rollout_remaining_contract.py`
-- `python3 tools/check_runtime_core_gen_markers.py`
-- `python3 tools/check_runtime_pytra_gen_naming.py`
-- `python3 tools/check_runtime_std_sot_guard.py`
-- `python3 tools/check_multilang_selfhost_stage1.py`
-- `python3 tools/check_multilang_selfhost_multistage.py`
+- `python3 tools/check/check_noncpp_runtime_layout_contract.py`
+- `python3 tools/check/check_noncpp_runtime_layout_rollout_remaining_contract.py`
+- `python3 tools/check/check_runtime_core_gen_markers.py`
+- `python3 tools/check/check_runtime_pytra_gen_naming.py`
+- `python3 tools/check/check_runtime_std_sot_guard.py`
+- `python3 tools/check/check_multilang_selfhost_stage1.py`
+- `python3 tools/check/check_multilang_selfhost_multistage.py`
 - `git diff --check`
 
 Implementation policy:

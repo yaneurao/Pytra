@@ -25,10 +25,10 @@ Scope:
 - As needed, `src/runtime/rs/pytra*/built_in/py_runtime.rs`
 - As needed, `src/runtime/cs/pytra*/built_in/py_runtime.cs`
 - `tools/*pyruntime*inventory*.py`
-- `test/unit/tooling/*inventory*.py`
-- `test/unit/backends/cpp/test_east3_cpp_bridge.py`
-- `test/unit/backends/rs/test_py2rs_smoke.py`
-- `test/unit/backends/cs/test_py2cs_smoke.py`
+- `tools/unittest/tooling/*inventory*.py`
+- `tools/unittest/emit/cpp/test_east3_cpp_bridge.py`
+- `tools/unittest/emit/rs/test_py2rs_smoke.py`
+- `tools/unittest/emit/cs/test_py2cs_smoke.py`
 
 Out of scope:
 - Further shrinking `py_runtime.h` itself
@@ -48,15 +48,15 @@ Residual-bucket end state:
 - `crossruntime_object_bridge_residual`: isolate non-C++ emitter mutation helpers that still need object-bridge behavior; for now this bucket allows only C# `py_append` / `py_pop`.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_crossruntime_pyruntime_emitter_inventory.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_crossruntime_pyruntime_emitter_inventory.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_east3_cpp_bridge.py'`
-- `PYTHONPATH=src:test/unit python3 -m unittest discover -s test/unit/backends/rs -p 'test_py2rs_smoke.py' -k type_predicate`
-- `PYTHONPATH=src:test/unit python3 -m unittest discover -s test/unit/backends/cs -p 'test_py2cs_smoke.py' -k type_predicate`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_crossruntime_pyruntime_emitter_inventory.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_crossruntime_pyruntime_emitter_inventory.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_east3_cpp_bridge.py'`
+- `PYTHONPATH=src:test/unit python3 -m unittest discover -s tools/unittest/emit/rs -p 'test_py2rs_smoke.py' -k type_predicate`
+- `PYTHONPATH=src:test/unit python3 -m unittest discover -s tools/unittest/emit/cs -p 'test_py2cs_smoke.py' -k type_predicate`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_transpiler_version_gate.py`
-- `python3 tools/run_regen_on_version_bump.py --dry-run`
+- `python3 tools/check/check_transpiler_version_gate.py`
+- `python3 tools/run/run_regen_on_version_bump.py --dry-run`
 - `git diff --check`
 
 Breakdown:
@@ -68,7 +68,7 @@ Breakdown:
 
 Decision log:
 - 2026-03-11: Opened as the post-`P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01` follow-up. This P4 is about making the cross-runtime emitter contract explicit and aligned, not about directly shrinking `py_runtime.h` again.
-- 2026-03-11: As `S1-01`, we added `tools/check_crossruntime_pyruntime_emitter_inventory.py` and its unit test, then bucketed emitter-side residual `py_runtime` symbols into `cpp_object_bridge_residual`, `shared_type_id_contract`, and `crossruntime_object_bridge_residual`.
+- 2026-03-11: As `S1-01`, we added `tools/check/check_crossruntime_pyruntime_emitter_inventory.py` and its unit test, then bucketed emitter-side residual `py_runtime` symbols into `cpp_object_bridge_residual`, `shared_type_id_contract`, and `crossruntime_object_bridge_residual`.
 - 2026-03-11: As `S1-02`, we fixed the end state of those three buckets in the docs. C++ object fallback stays isolated in `cpp_object_bridge_residual`, cross-language type-predicate / type-id helpers stay in `shared_type_id_contract`, and the remaining C# list bridge stays isolated in `crossruntime_object_bridge_residual`.
 - 2026-03-11: As `S2-01`, we centralized the C++ emitter object-bridge helper names into `CppCallEmitter`'s canonical map, so the residual `py_append/extend/pop/clear/reverse/sort/set_at` symbols remain in `call.py` only. The inventory guard was updated to lock that end state.
 - 2026-03-11: As `S2-02`, we centralized Rust/C# `py_runtime_type_id` / `py_isinstance` / `py_is_subtype` / `py_issubclass` lowering behind per-emitter helper seams, so representative `isinstance(...)` lowering and EAST3 `ObjTypeId/IsInstance/IsSubtype/IsSubclass` lowering now share the same contract entrypoints.

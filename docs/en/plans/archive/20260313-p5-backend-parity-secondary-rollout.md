@@ -32,11 +32,11 @@ Acceptance criteria:
 - The plan is ready to receive handoff immediately after representative-tier work is done.
 
 Verification:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_backend_parity_matrix_contract.py`
-- `python3 tools/check_backend_parity_secondary_rollout_inventory.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_backend_parity_matrix_contract.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_backend_parity_secondary_rollout_inventory.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_backend_parity_matrix_contract.py`
+- `python3 tools/check/check_backend_parity_secondary_rollout_inventory.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_backend_parity_matrix_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_backend_parity_secondary_rollout_inventory.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

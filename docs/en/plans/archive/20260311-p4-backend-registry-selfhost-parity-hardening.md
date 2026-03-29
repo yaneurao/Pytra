@@ -29,7 +29,7 @@ Scope:
 - `toolchain/compiler/backend_registry_static.py`
 - Shared backend spec / runtime-copy / option-schema / writer metadata
 - `tools/build_selfhost.py` / `build_selfhost_stage2.py` / `verify_selfhost_end_to_end.py`
-- `tools/check_multilang_selfhost_stage1.py` / `check_multilang_selfhost_multistage.py` / `check_multilang_selfhost_suite.py`
+- `tools/check/check_multilang_selfhost_stage1.py` / `check_multilang_selfhost_multistage.py` / `check_multilang_selfhost_suite.py`
 - Selfhost parity docs / reports / guards
 
 Out of scope:
@@ -63,12 +63,12 @@ Acceptance criteria:
 - Docs / reports / archive make selfhost readiness and known blocks traceable.
 
 Planned verification commands:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 tools/build_selfhost.py`
 - `python3 tools/build_selfhost_stage2.py --skip-stage1-build`
 - `python3 tools/verify_selfhost_end_to_end.py --skip-build`
-- `python3 tools/check_multilang_selfhost_suite.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/selfhost -p 'test_*selfhost*.py'`
+- `python3 tools/check/check_multilang_selfhost_suite.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/selfhost -p 'test_*selfhost*.py'`
 - `git diff --check`
 
 ## Implementation Order
@@ -171,9 +171,9 @@ Decision log:
 - 2026-03-11: In the next `S5-01` slice, the docs index and `plans/README.md` gained explicit readiness-report guidance. Reports are treated as supporting documents hanging off the main plan, and the P4 readiness entry can now be reached directly from `docs/ja/index.md`.
 - 2026-03-11: In the final `S5-01` slice, the readiness report also gained an archive handoff section. It now states that the plan, report, and TODO archive updates must be tied to the same completion date, and it points to `archive/index.md` plus the dated archive note as the canonical completion trail.
 - 2026-03-11: As the first `S5-02` slice, `test_backend_registry_selfhost_contract_guard.py` was added to lock representative shared-diagnostic cases (`unsupported_by_design`, `preview_only`, `toolchain_missing`) across the host registry plus direct e2e, stage2 diff, and multilang summary lanes in one guard.
-- 2026-03-11: The next `S5-02` slice added `tools/check_selfhost_contract_reentry_guard.py`, bundling the representative host lane (`test_py2x_entrypoints_contract.py`) and selfhost lanes (`test_prepare_selfhost_source.py`, `test_selfhost_build_verify_tools.py`, `test_check_selfhost_cpp_diff.py`, `test_check_selfhost_stage2_cpp_diff.py`) behind one command. `run_local_ci.py` and the readiness report now point at the same command.
+- 2026-03-11: The next `S5-02` slice added `tools/check/check_selfhost_contract_reentry_guard.py`, bundling the representative host lane (`test_py2x_entrypoints_contract.py`) and selfhost lanes (`test_prepare_selfhost_source.py`, `test_selfhost_build_verify_tools.py`, `test_check_selfhost_cpp_diff.py`, `test_check_selfhost_stage2_cpp_diff.py`) behind one command. `run_local_ci.py` and the readiness report now point at the same command.
 - 2026-03-11: The next `S5-02` slice folded `test_backend_registry_selfhost_contract_guard.py` into the host side of `check_selfhost_contract_reentry_guard.py`, and expanded coverage from known-block cases to representative regression cases (`unsupported backend symbol ref` / `unsupported runtime hook key`) across host registry, direct e2e, stage2 diff, and multilang summary lanes.
 - 2026-03-11: The next `S5-02` slice extended representative regression coverage further to `unsupported program writer key` / `unsupported emit kind` / `unsupported runtime hook kind`. Shared registry diagnostic message-builder changes now trip the same host/selfhost guard on regression lanes as well as known-block lanes.
 - 2026-03-11: The same `S5-02` line also expanded `unsupported_by_design` coverage beyond plain `unsupported target` to include `unsupported target profile` and `unsupported non-cpp build target`. Host-side message builders and selfhost parity-note normalization now fail together for profile/build-target drift as well.
-- 2026-03-11: The next `S5-02` slice added `build_steps()` to `tools/run_local_ci.py` and `test_run_local_ci.py` to lock that `check_selfhost_contract_reentry_guard.py` remains immediately after the multilang suite and before the strict selfhost build/diff gates. The representative guard tool now fails fast if it drops out of the local-CI route.
+- 2026-03-11: The next `S5-02` slice added `build_steps()` to `tools/run/run_local_ci.py` and `test_run_local_ci.py` to lock that `check_selfhost_contract_reentry_guard.py` remains immediately after the multilang suite and before the strict selfhost build/diff gates. The representative guard tool now fails fast if it drops out of the local-CI route.
 - 2026-03-11: A follow-up `S5-01` slice re-ran the representative gates and fixed the `direct_e2e=pass` / `stage2_diff=pass` plus multilang `stage1_transpile_fail` snapshot into both the readiness report and `todo/archive/20260311.md`, so the current representative status is traceable from both the docs path and the archive path.

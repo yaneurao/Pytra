@@ -24,8 +24,8 @@ In scope:
 - `src/runtime/php/pytra/runtime/gif.php`
 - `src/toolchain/emit/php/lower/**`
 - `src/toolchain/emit/php/emitter/**`
-- `tools/runtime_parity_check.py`
-- `test/unit/test_runtime_parity_check_cli.py` (if needed)
+- `tools/check/runtime_parity_check.py`
+- `tools/unittest/test_runtime_parity_check_cli.py` (if needed)
 
 Out of scope:
 - PHP execution-speed optimization
@@ -33,16 +33,16 @@ Out of scope:
 - Backend changes outside PHP
 
 Acceptance criteria:
-- `python3 tools/runtime_parity_check.py --case-root sample --targets php --all-samples --summary-json work/logs/runtime_parity_sample_php_all_pass_20260304.json` yields `case_pass=18`, `case_fail=0`.
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets php --all-samples --summary-json work/logs/runtime_parity_sample_php_all_pass_20260304.json` yields `case_pass=18`, `case_fail=0`.
 - In that log, `category_counts` contains only `ok` (`output_mismatch` / `artifact_*` / `run_failed` are 0).
 - Minimal regression checks corresponding to the fixes (unit or parity path) are added so the same class of regression is detectable.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/regenerate_samples.py --langs php --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets php --all-samples --summary-json work/logs/runtime_parity_sample_php_rebaseline_20260304.json`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets php 05_mandelbrot_zoom 06_julia_parameter_sweep 08_langtons_ant 10_plasma_effect 11_lissajous_particles 12_sorting_visualization 14_simple_raymarching 16_glass_sculpture_chaos --summary-json work/logs/runtime_parity_sample_php_crc_focus_20260304.json`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets php --all-samples --summary-json work/logs/runtime_parity_sample_php_all_pass_20260304.json`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/gen/regenerate_samples.py --langs php --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets php --all-samples --summary-json work/logs/runtime_parity_sample_php_rebaseline_20260304.json`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets php 05_mandelbrot_zoom 06_julia_parameter_sweep 08_langtons_ant 10_plasma_effect 11_lissajous_particles 12_sorting_visualization 14_simple_raymarching 16_glass_sculpture_chaos --summary-json work/logs/runtime_parity_sample_php_crc_focus_20260304.json`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets php --all-samples --summary-json work/logs/runtime_parity_sample_php_all_pass_20260304.json`
 
 Decision log:
 - 2026-03-04: Per user instruction, reopened as P0 to complete PHP parity for all samples. Adopted unmet items in existing logs (`artifact_crc32_mismatch` in 8 cases) as the baseline.

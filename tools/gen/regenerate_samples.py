@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CACHE_FILE = ROOT / "work" / "sample_regen_cache.json"
 DEFAULT_VERSIONS_FILE = ROOT / "src" / "toolchain" / "compiler" / "transpiler_versions.json"
 CACHE_VERSION = 1
@@ -199,7 +199,7 @@ def _verify_cpp_outputs(changed_cpp_stems: set[str], compile_flags: str) -> tupl
     stems = sorted(changed_cpp_stems)
     cmd = [
         "python3",
-        "tools/runtime_parity_check.py",
+        "tools/check/runtime_parity_check.py",
         "--targets", "cpp",
         "--case-root", "sample",
         *stems,

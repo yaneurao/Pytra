@@ -23,16 +23,16 @@
 
 ### 正本ツール
 
-**`tools/runtime_parity_check.py` が全 backend 共通テストの実行基盤** である。pytest ラッパーは作成しない。
+**`tools/check/runtime_parity_check.py` が全 backend 共通テストの実行基盤** である。pytest ラッパーは作成しない。
 
 ```bash
 # 全 fixture × 全言語の共通テスト
-python3 tools/runtime_parity_check.py \
+python3 tools/check/runtime_parity_check.py \
   --case-root fixture --all-samples \
   --targets cpp,rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,php,scala,nim
 
 # 全 sample × 全言語の parity check
-python3 tools/runtime_parity_check.py \
+python3 tools/check/runtime_parity_check.py \
   --case-root sample --all-samples \
   --targets cpp,rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,php,scala,nim
 ```

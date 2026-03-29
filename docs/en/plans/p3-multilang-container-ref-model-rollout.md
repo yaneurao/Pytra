@@ -23,8 +23,8 @@ Scope:
 - Backends: `src/hooks/{rs,cs,js,ts,go,java,kotlin,swift,ruby,lua}/emitter/*`
 - Runtime support: `src/runtime/{rs,cs,go,java,kotlin,swift,ruby,lua}/**` (only where needed)
 - Validation:
-  - `test/unit/test_*emitter*.py`
-  - `tools/runtime_parity_check.py` (with target backend selection)
+  - `tools/unittest/test_*emitter*.py`
+  - `tools/check/runtime_parity_check.py` (with target backend selection)
   - Regenerated diffs in `sample/*`
 
 Out of scope:
@@ -40,8 +40,8 @@ Acceptance Criteria:
 
 Validation Commands:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_*emitter*.py' -v`
-- `PYTHONPATH=src python3 tools/runtime_parity_check.py --case-root sample --targets rs,cs,go,java,kotlin,swift,ruby,lua`
-- `python3 tools/check_todo_priority.py`
+- `PYTHONPATH=src python3 tools/check/runtime_parity_check.py --case-root sample --targets rs,cs,go,java,kotlin,swift,ruby,lua`
+- `python3 tools/check/check_todo_priority.py`
 
 ## S1-01 Current Model Audit (Gap Matrix)
 
@@ -124,8 +124,8 @@ Validation Commands:
   - Prevent breakage where `&[T]` / `&BTreeMap<...>` would be assigned directly to value variables on `typed_non_escape_value_path`, and materialize values in line with Rust ownership rules.
 - Regression lock:
   - `test_py2rs_smoke.py::test_ref_container_args_materialize_value_path_with_to_vec_or_clone`
-  - `tools/check_py2rs_transpile.py`
-  - `tools/runtime_parity_check.py --case-root sample --targets rs --ignore-unstable-stdout 18_mini_language_interpreter`
+  - `tools/check/check_py2rs_transpile.py`
+  - `tools/check/runtime_parity_check.py --case-root sample --targets rs --ignore-unstable-stdout 18_mini_language_interpreter`
 
 ## S3-02 Kotlin Pilot Implementation Notes (GC backend)
 
@@ -147,8 +147,8 @@ Validation Commands:
     - Locks behavior that `a: list[int] = xs`, `b: dict[str, int] = ys` become `toMutableList()/toMutableMap()` and not alias assignment.
 - Execution checks:
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin_smoke.py' -v`
-  - `python3 tools/check_py2kotlin_transpile.py`
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets kotlin --ignore-unstable-stdout 18_mini_language_interpreter`
+  - `python3 tools/check/check_py2kotlin_transpile.py`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --targets kotlin --ignore-unstable-stdout 18_mini_language_interpreter`
 
 ## S4-01 C# Rollout Notes (S4-01-S1-01)
 
@@ -163,8 +163,8 @@ Validation Commands:
   - Added `test_ref_container_args_materialize_value_path_with_copy_ctor` to `test_py2cs_smoke` to detect alias-assignment recurrence.
 - Validation:
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v` (PASS)
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets cs --ignore-unstable-stdout 18_mini_language_interpreter` (PASS)
-  - `python3 tools/check_py2cs_transpile.py` still fails on 2 known unsupported fixtures (`Yield` / `Swap`) (no new regression from this change).
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --targets cs --ignore-unstable-stdout 18_mini_language_interpreter` (PASS)
+  - `python3 tools/check/check_py2cs_transpile.py` still fails on 2 known unsupported fixtures (`Yield` / `Swap`) (no new regression from this change).
 
 ## S4-01 JS/TS Rollout Notes (S4-01-S2-01)
 
@@ -179,8 +179,8 @@ Validation Commands:
 - Validation:
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2js_smoke.py' -v` (PASS)
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2ts_smoke.py' -v` (PASS)
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets js,ts --ignore-unstable-stdout 18_mini_language_interpreter` (PASS)
-  - `python3 tools/check_py2js_transpile.py` / `check_py2ts_transpile.py` stop at pre-step `east3-contract` with `FAIL cs: src/py2cs.py missing ['choices=["2", "3"]']` (common blocker outside JS/TS implementation diffs).
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --targets js,ts --ignore-unstable-stdout 18_mini_language_interpreter` (PASS)
+  - `python3 tools/check/check_py2js_transpile.py` / `check_py2ts_transpile.py` stop at pre-step `east3-contract` with `FAIL cs: src/py2cs.py missing ['choices=["2", "3"]']` (common blocker outside JS/TS implementation diffs).
 
 ## S4-01 Go Rollout Notes (S4-01-S3-01)
 
@@ -193,8 +193,8 @@ Validation Commands:
   - Added `test_ref_container_args_materialize_value_path_with_copy_expr` to `test_py2go_smoke` to detect alias-assignment recurrence.
 - Validation:
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v` (PASS)
-  - `python3 tools/check_py2go_transpile.py` (PASS)
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets go --ignore-unstable-stdout 18_mini_language_interpreter` remains `run_failed` on existing Go-generated `TokenLike` field resolution failure (blocker outside this task).
+  - `python3 tools/check/check_py2go_transpile.py` (PASS)
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --targets go --ignore-unstable-stdout 18_mini_language_interpreter` remains `run_failed` on existing Go-generated `TokenLike` field resolution failure (blocker outside this task).
 
 Breakdown:
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-01] Inventory current container ownership models by backend (value/reference/GC/ARC) and create a gap matrix.

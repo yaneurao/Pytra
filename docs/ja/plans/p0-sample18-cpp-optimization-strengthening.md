@@ -21,8 +21,8 @@
 対象:
 - `src/pytra/compiler/east_parts/east3_opt_passes/*`（必要時）
 - `src/hooks/cpp/emitter/*.py`（for/call/stmt/expr/type_bridge）
-- `test/unit/test_east3_cpp_bridge.py`
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_east3_cpp_bridge.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/18_mini_language_interpreter.cpp`（再生成確認）
 
 非対象:
@@ -41,8 +41,8 @@
 - `check_py2cpp_transpile.py`、`test_east3_cpp_bridge.py`、`test_py2cpp_codegen_issues.py` が通る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
 - `python3 src/py2cpp.py sample/py/18_mini_language_interpreter.py -o sample/cpp/18_mini_language_interpreter.cpp`
@@ -51,7 +51,7 @@
 - 2026-03-01: ユーザー指示により、sample/18 C++ の最適化余地6項目を P0 として詳細分解し、実装計画を作成した。
 - 2026-03-01: `cpp_list_model=pyobj` では `enumerate(lines)` が `py_enumerate(object)` 解決になって typed direct unpack へ進めないため、`iter_item_type=tuple[int64, str]` かつ `lines:list[str]` の場合のみ `py_to_str_list_from_object(lines)` を経由して typed enumerate を選ぶ方針を採用した。
 - 2026-03-01: `test_py2cpp_codegen_issues.py` に `cpp_list_model="pyobj"` 前提の sample/18 回帰を追加し、`for (const auto& [line_index, source] : py_enumerate(py_to_str_list_from_object(lines)))` を固定した。
-- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（75件）、`test_east3_cpp_bridge.py`（90件）、`python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）を通過した。
+- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（75件）、`test_east3_cpp_bridge.py`（90件）、`python3 tools/check/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）を通過した。
 - 2026-03-01: `tokens` 退化の主因は `cpp_list_model=pyobj` で `_cpp_type_text(list[T]) -> object` になる型境界にある。`tokenize()` 戻り値と `Parser.tokens` は関数境界を越える list のため、現行 stack-list（non-escape）縮退の対象外であることを確認した。
 - 2026-03-01: `S2-02` は sample/18 先行で `list[Token]` 専用 unbox-once 経路（`tokenize -> Parser` 境界）を追加し、`py_append(make_object(...))` と `py_at + obj_to_rc_or_raise` 連鎖を段階縮退する方針に固定した。
 - 2026-03-01: `Parser` の token access を棚卸しし、`py_at(this->tokens, this->pos)` 形が `peek_kind`（1箇所）/`expect`（2箇所）/`parse_primary`（1箇所）で重複することを確認した。`S3-02` は emitter 側で `_current_token()` / `_previous_token()` helper を合成し、同一 index の unbox 重複を削減する方針に固定した。
@@ -59,14 +59,14 @@
 - 2026-03-01: `NUMBER` は tokenize で既に `text` を切り出しているため、`S5-02` は `Token` に `int64 number_value`（非 NUMBER は 0）を追加し、字句段で1回だけ `py_to_int64` して parse 時再変換をなくす方針に固定した。
 - 2026-03-01: `execute` typed loop へ接続するため、`S6-02` は `parse_program`/`execute` 境界を `list<rc<StmtNode>>` 優先に変更し、外部境界（main 呼び出し、必要なら runtime API）でのみ `object` boxing を許可する方針に固定した。
 - 2026-03-01: `S6-02` として runtime に `py_to_rc_list_from_object<T>()` を追加し、ForCore(NameTarget) の `list[RefClass]` 反復で `pyobj` 強制 runtime path を typed 反復へ戻す fastpath を実装した。sample/18 の `execute` は `for (rc<StmtNode> stmt : py_to_rc_list_from_object<StmtNode>(stmts, ...))` へ縮退することを確認した。
-- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（76件）/`test_east3_cpp_bridge.py`（90件）/`python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）を再実行し非退行を確認した。
-- 2026-03-01: `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout` を実行し、`[PASS] 18_mini_language_interpreter` を確認した。
+- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（76件）/`test_east3_cpp_bridge.py`（90件）/`python3 tools/check/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）を再実行し非退行を確認した。
+- 2026-03-01: `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout` を実行し、`[PASS] 18_mini_language_interpreter` を確認した。
 - 2026-03-01: `S3-02` として sample/18 の `Parser` 実装を `current_token()/previous_token()` 補助メソッド経由に整理し、生成 C++ の `expect` で同一 index の token 取得を 1 回化した。`test_py2cpp_codegen_issues.py` に回帰を追加し、`runtime_parity_check` で挙動一致を確認した。
 - 2026-03-01: `S5-02` として sample/18 の `Token` に `number_value` を追加し、`tokenize` で NUMBER のみ `int(text)` を predecode、`parse_primary` を `token_num.number_value` 参照へ切り替えた。`test_py2cpp_codegen_issues.py` と `runtime_parity_check`、`check_py2cpp_transpile` で非退行を確認した。
 - 2026-03-01: `S4-02` として `ExprNode/StmtNode` へ `kind_tag/op_tag` を追加し、eval/execute の分岐を整数比較へ移行した。トップレベル定数の初期化が module init で shadow される問題を回避するため、tag 値は literal で固定した。
 - 2026-03-01: `S2-02` として `cpp_list_model=pyobj` でも `list[RefClass]` は typed container を使う方針へ拡張し、`Token/ExprNode/StmtNode` 系 list を `list<rc<...>>` で保持するよう emitter を更新した。sample/18 では `tokenize`/`Parser.tokens`/`parse_program`/`execute` が `object` 経路から typed container 経路へ移行した。
 - 2026-03-01: `S7-01` として `test_py2cpp_codegen_issues.py` に sample/18 typed token container 回帰（`tokenize` signature / `Parser.tokens` field / `current_token` access）を追加し、`sample/cpp/18_mini_language_interpreter.cpp` 再生成差分を固定した。
-- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（80件）/`test_east3_cpp_bridge.py`（90件）/`python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）/`runtime_parity_check`（sample/18 cpp PASS）を再実行し、親 `P0-CPP-S18-OPT-01` を完了扱いにした。
+- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（80件）/`test_east3_cpp_bridge.py`（90件）/`python3 tools/check/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）/`runtime_parity_check`（sample/18 cpp PASS）を再実行し、親 `P0-CPP-S18-OPT-01` を完了扱いにした。
 
 ## 分解
 

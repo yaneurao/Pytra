@@ -37,11 +37,11 @@ Acceptance criteria:
 - The generated consumer module must render imported classes/types as namespace-qualified C++ types in type position.
 - The generated multi-file layout must include enough declaration/include surface to compile imported classes/types within the current storage contract.
 - Existing imported function / global relative-import smoke tests must keep passing.
-- `python3 tools/check_todo_priority.py`, focused C++ regressions, `python3 tools/build_selfhost.py`, and `git diff --check` must pass.
+- `python3 tools/check/check_todo_priority.py`, focused C++ regressions, `python3 tools/build_selfhost.py`, and `git diff --check` must pass.
 
 Verification:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/toolchain/emit/cpp -p 'test_py2cpp_features.py' -k relative_import`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k relative_import`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

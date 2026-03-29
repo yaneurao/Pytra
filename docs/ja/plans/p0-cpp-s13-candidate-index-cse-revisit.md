@@ -21,7 +21,7 @@
 対象:
 - `src/hooks/cpp/emitter/expr.py`
 - `src/hooks/cpp/emitter/stmt.py`
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/13_maze_generation_steps.cpp`（再生成確認）
 
 非対象:
@@ -35,16 +35,16 @@
 - transpile/unit チェックが通り、挙動退行がない。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force`
 
 決定ログ:
 - 2026-03-02: ユーザー指示「6.もP0としてTODOに積む」に基づき、sample/13 改善項目 #6 を再実施タスクとして起票。
 - 2026-03-02: `Assign(Name = Subscript(...))` で owner が `Name` かつ複雑 index の場合に `auto __idx_* = ...;` を先行生成し、`candidates[__idx_*]` へ縮退する emitter 経路を追加した（`src/hooks/cpp/emitter/stmt.py`）。
 - 2026-03-02: `test_py2cpp_codegen_issues.py` の sample/13 回帰を更新し、`__idx_*` hoist 出力を固定した。
-- 2026-03-02: `python3 tools/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force` / `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` / `python3 tools/check_py2cpp_transpile.py` を実行し、すべて通過を確認した。
+- 2026-03-02: `python3 tools/gen/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force` / `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` / `python3 tools/check/check_py2cpp_transpile.py` を実行し、すべて通過を確認した。
 
 ## 分解
 

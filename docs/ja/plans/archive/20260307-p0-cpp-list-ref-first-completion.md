@@ -37,8 +37,8 @@
   - `src/runtime/cpp/built_in/*`
   - `src/runtime/cpp/std/*`
 - C++ tests / parity
-  - `test/unit/backends/cpp/*`
-  - `tools/runtime_parity_check.py`
+  - `tools/unittest/emit/cpp/*`
+  - `tools/check/runtime_parity_check.py`
 
 非対象:
 - `dict/set/bytearray` の同時 ref-first 化
@@ -193,19 +193,19 @@
 
 - `cpp_list_model=pyobj` のもとで、mutable list の既定内部表現が `rc<list<T>>` になる。
 - emitter に「typed list だから value を優先する」分岐が残らない。
-- `python3 -m unittest discover -s test/unit/backends/cpp -p 'test_*.py'` が通る。
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture` が通る。
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples` が通る。
+- `python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_*.py'` が通る。
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture` が通る。
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples` が通る。
 - `optimizer off` 相当でも correctness が壊れない。
 - `sample/18` を含む representative case で list alias が Python と一致する。
 
 ## 検証コマンド
 
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_*.py'`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
-- `PYTHONPATH=src python3 test/unit/backends/cpp/test_py2cpp_list_pyobj_model.py`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_*.py'`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
+- `PYTHONPATH=src python3 tools/unittest/emit/cpp/test_py2cpp_list_pyobj_model.py`
 
 ## 分解
 
@@ -240,14 +240,14 @@
 - 2026-03-07: optimizer 側には list value-lowering pass が未実装であることを確認し、現状の value 縮退は emitter 内の暫定実装として扱う方針を固定した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S1-03` として、typed list でも alias 経路は `rc<list<T>>` を維持し、typed call 境界でのみ `rc_list_ref(...)` へ落とす representative codegen test を追加した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-01` として、`py_runtime.h` の list helper を共通 helper 経由へ整理し、`py_slice / py_at / py_append / py_set_at / py_extend / py_pop / py_clear / py_reverse / py_sort` の typed canonical path を `rc<list<T>>` overload から呼ぶ構成へ揃えた。`object` / `list<T>` 側は同じ list helper 本体を通る adapter として扱う。
-- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-01` の検証として `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py`, `test_cpp_runtime_type_id.py`, `tools/check_runtime_cpp_layout.py` を実行し通過した。`test_cpp_runtime_iterable.py` には `rc<list<int64>>` の slice/set_at/append/extend/pop/reverse/sort/clear smoke を追加した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-01` の検証として `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py`, `test_cpp_runtime_type_id.py`, `tools/check/check_runtime_cpp_layout.py` を実行し通過した。`test_cpp_runtime_iterable.py` には `rc<list<int64>>` の slice/set_at/append/extend/pop/reverse/sort/clear smoke を追加した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-02` として、`contains.ext.h` / `iter_ops.ext.h` / `sequence.ext.h` に list 共通 helper と `rc<list<T>>` overload を追加し、`py_contains` / `py_reversed` / `py_enumerate` / `py_repeat` を typed handle から直接呼べるようにした。加えて `py_runtime.h` で `make_object(const rc<list<T>>& )` と `obj_to_rc_list<T>` / `py_to_typed_list_from_object<T>` を共有 helper 経由へ整理し、`py_is_list(const rc<list<T>>& )` を追加した。
-- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-02` の検証として `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py`, `test_cpp_runtime_type_id.py`, `tools/check_runtime_cpp_layout.py` を再実行し通過した。`test_cpp_runtime_iterable.py` には `rc<list<int64>>` の contains/reversed/enumerate/repeat/object roundtrip/`py_to<rc<list<int64>>>` smoke を追加した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-02` の検証として `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py`, `test_cpp_runtime_type_id.py`, `tools/check/check_runtime_cpp_layout.py` を再実行し通過した。`test_cpp_runtime_iterable.py` には `rc<list<int64>>` の contains/reversed/enumerate/repeat/object roundtrip/`py_to<rc<list<int64>>>` smoke を追加した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-03` として、`py_runtime.h` から value-list mutable public overload `py_at(list<T>&)` / `py_set_at(list<T>&)` を撤去した。plain `list<T>` で残すのは、Phase 3 まで selfhost/generated C++ value-path が読んでいる read-only overload（例: `selfhost/py2cpp.cpp` の `py_slice(py_runtime_argv(), ...)`, `test/transpile/cpp/13_maze_generation_steps.cpp` の `py_at(stack, -(1))`, `test/transpile/cpp/18_mini_language_interpreter.cpp` の `py_enumerate(lines)` / `py_contains(env, ...)`）、および runtime 生成コードの local builder が使う `py_append(list<T>&)`、さらに `make_object(list<T>)` / `py_to_typed_list_from_object<T>` / `obj_to_rc_list<T>` などの boxing / rollback adapter に限定する方針を固定した。
-- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-03` の検証として `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py`, `test_cpp_runtime_type_id.py`, `tools/check_runtime_cpp_layout.py`, `tools/check_todo_priority.py` を実行し通過した。`test_cpp_runtime_iterable.py` には plain `list<T>` read-only smoke と runtime overload inventory guard を追加した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S2-03` の検証として `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py`, `test_cpp_runtime_type_id.py`, `tools/check/check_runtime_cpp_layout.py`, `tools/check/check_todo_priority.py` を実行し通過した。`test_cpp_runtime_iterable.py` には plain `list<T>` read-only smoke と runtime overload inventory guard を追加した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S3-01` として、関数/ラムダ/メソッドの list 型描画を `cpp_signature_type(...)` 基準へ切り替え、`cpp_list_model=pyobj` の typed mutable list を `const rc<list<T>>&` / `rc<list<T>>&` / `rc<list<T>>` で出力するようにした。typed handle call/return は `rc_list_ref(...)` を経由せずそのまま共有し、stack-local value list から ref-first 境界へ出る箇所だけ `rc_list_from_value(...)` を残す構成へ整理した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S3-01` として、旧 `_is_pyobj_forced_typed_list_type` を retire し、関数境界の ref-first 判定を `_is_pyobj_ref_first_list_type`、stack-local / bytearray / collection builder など value-model 判定を `_is_pyobj_value_model_list_type` へ分離した。これにより、型描画の正本は ref-first へ固定しつつ、Phase 3 後続で残る local value-lowering の責務境界を helper 名の上でも分離した。
-- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S3-01` の検証として `test_py2cpp_codegen_issues.py`, `test_py2cpp_list_pyobj_model.py`, `test_east3_cpp_bridge.py`, `test_cpp_type.py`, `tools/check_todo_priority.py` を実行し通過した。representative codegen assert は sample12/sample13/sample18、tuple unpack、nested subscript assign、len-empty fastpath、list comprehension を ref-first 契約へ更新した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S3-01` の検証として `test_py2cpp_codegen_issues.py`, `test_py2cpp_list_pyobj_model.py`, `test_east3_cpp_bridge.py`, `test_cpp_type.py`, `tools/check/check_todo_priority.py` を実行し通過した。representative codegen assert は sample12/sample13/sample18、tuple unpack、nested subscript assign、len-empty fastpath、list comprehension を ref-first 契約へ更新した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S3-02` として、`_collect_pyobj_runtime_list_alias_names` を「alias 名」から「stack-local でない typed list local 名」の収集へ広げ、`annassign/assign` の typed list local を empty init・list literal・list comprehension を含めて handle-backed `rc<list<T>>` 宣言へ倒した。これにより、sample08/sample13/sample18 や escaping local builder は `rc_list_from_value(...)` / `py_append(...)` / `py_extend(...)` 正本へ切り替わり、stack-local optimization は empty annotated non-escape local に限定された。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S3-02` として、EAST3 reserve hint が handle-backed list local に対しても成立するよう `reserve` 出力を `rc_list_ref(owner).reserve(...)` へ調整した。`test_py2cpp_codegen_issues.py` には local list comprehension handle test を追加し、`test_py2cpp_codegen_issues.py`, `test_py2cpp_list_pyobj_model.py`, `test_east3_cpp_bridge.py`, `test_cpp_type.py` を再実行して通過した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S3-03` として、subscript / list method dispatch / for lowering の ref-first list 判定を `Name` 限定 helper から分離し、`py_*` helper 用には call-returned handle と nested subscript を受ける `ref-first list ops` 判定、`rc_list_ref(...)` 用には temporary を避ける `lvalue-only` 判定を導入した。これにより `make()[0]` は `py_at(make(), ...)`、`make().append(...)` は `py_append(make(), ...)`、`for x in xs` は `rc_list_ref(xs)`、`for x in make()` は一時 handle hoist 後の typed loop、`enumerate(make())` / `reversed(make())` は `py_enumerate(...)` / `py_reversed(...)` ベースの typed loop へ戻る。
@@ -258,10 +258,10 @@
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S4-02` として、known-function path には `extern_function_names` を導入し、`@extern` function のときだけ `list<T>` target を value ABI として扱うようにした。これにより internal function は引き続き ref-first signature を正本としつつ、`@extern` / runtime module 境界では lvalue handle を `rc_list_ref(...)`、temporary handle を `rc_list_copy_value(...)` へ落とせるようになった。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-01` として、`toolchain/ir/east3_opt_passes/cpp_list_value_local_hint_pass.py` を追加し、C++ target に限って `FunctionDef.meta.cpp_value_list_locals_v1` を付与する common EAST3 optimizer pass を導入した。`cpp_emitter.py::_collect_stack_list_locals` はこの hint を読むだけの fail-closed helper へ縮退し、local non-escape の再証明ロジックを emitter から撤去した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-01` では `_collect_assigned_name_types(...)` の loop 再帰を追加し、optimizer hint を持たない block-local typed list は alias 集合に入り ref-first handle へ倒れるよう修正した。これにより sample13 `candidates` は `rc<list<tuple[...]>>` となり、`py_at(candidates, ...)` / `py_append(candidates, ...)` 正本を通る。
-- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-01` の検証として `test_east3_optimizer.py`, `test_cpp_non_escape_bridge.py`, `test_py2cpp_codegen_issues.py`, `test_east3_cpp_bridge.py`, `test_py2cpp_list_pyobj_model.py`, `test_cpp_type.py`, `tools/check_todo_priority.py` を実行し通過した。optimizer hint 単体、emitter bridge、sample12/sample13 の fail-closed/ref-first codegen expectation を更新して固定した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-01` の検証として `test_east3_optimizer.py`, `test_cpp_non_escape_bridge.py`, `test_py2cpp_codegen_issues.py`, `test_east3_cpp_bridge.py`, `test_py2cpp_list_pyobj_model.py`, `test_cpp_type.py`, `tools/check/check_todo_priority.py` を実行し通過した。optimizer hint 単体、emitter bridge、sample12/sample13 の fail-closed/ref-first codegen expectation を更新して固定した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-02` として、optimizer off (`east3_opt_level=0`) でも safe local list が value 縮退しない regression を `test_py2cpp_codegen_issues.py` に追加し、`test_cpp_non_escape_bridge.py` には malformed `cpp_value_list_locals_v1` を emitter が無視する fail-closed test を追加した。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-02` では opt0 representative parity で露出した nested list 問題を修正した。`_render_pyobj_alias_list_value(...)` は object-returning list comprehension を `py_to<rc<list<T>>>(...)` 経由へ倒し、nested mutable subscript lvalue は `py_list_at_ref(py_at(...), ...)` を使うようにした。runtime 側も `py_to(const object&)` に plain `list<T>` 復元を追加し、nested typed list の object roundtrip を `test_cpp_runtime_iterable.py` で固定した。
-- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-02` の検証として `test_py2cpp_codegen_issues.py`, `test_cpp_non_escape_bridge.py`, `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py` を実行し通過した。representative parity は `tools/runtime_parity_check.py --targets cpp --case-root fixture --east3-opt-level 0 collections/list_alias_shared_mutation stdlib/os_glob_extended` と `tools/runtime_parity_check.py --targets cpp --case-root sample --east3-opt-level 0 08_langtons_ant 12_sort_visualizer 13_maze_generation_steps 18_mini_language_interpreter` を実行し、どちらも全件通過した。
-- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S6-01` として、runtime module list signature の repo-root 依存と `random.choices` / `dict.keys` / `dict.values` の list unbox adapter を修正し、nested list append では `py_append(out, rc_list_copy_value(row))` を使うようにした。fresh rerun の `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 -m unittest discover -s /workspace/Pytra/test/unit/backends/cpp -p 'test_*.py'` は `Ran 505 tests in 1091.285s` で `OK` を確認した。
-- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S6-02` として、`python3 tools/runtime_parity_check.py --targets cpp --case-root fixture` は `cases=3 pass=3 fail=0`、`python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples` は `cases=18 pass=18 fail=0` を確認した。sample parity 中に露出した `07_game_of_life_loop` の nested list append 退行も `ID: P0-CPP-LIST-REFFIRST-01-S6-02` 内で修正し、単体 parity を通した上で全 sample rerun を完了している。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S5-02` の検証として `test_py2cpp_codegen_issues.py`, `test_cpp_non_escape_bridge.py`, `test_cpp_runtime_iterable.py`, `test_cpp_runtime_boxing.py` を実行し通過した。representative parity は `tools/check/runtime_parity_check.py --targets cpp --case-root fixture --east3-opt-level 0 collections/list_alias_shared_mutation stdlib/os_glob_extended` と `tools/check/runtime_parity_check.py --targets cpp --case-root sample --east3-opt-level 0 08_langtons_ant 12_sort_visualizer 13_maze_generation_steps 18_mini_language_interpreter` を実行し、どちらも全件通過した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S6-01` として、runtime module list signature の repo-root 依存と `random.choices` / `dict.keys` / `dict.values` の list unbox adapter を修正し、nested list append では `py_append(out, rc_list_copy_value(row))` を使うようにした。fresh rerun の `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 -m unittest discover -s /workspace/Pytra/tools/unittest/emit/cpp -p 'test_*.py'` は `Ran 505 tests in 1091.285s` で `OK` を確認した。
+- 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S6-02` として、`python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture` は `cases=3 pass=3 fail=0`、`python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples` は `cases=18 pass=18 fail=0` を確認した。sample parity 中に露出した `07_game_of_life_loop` の nested list append 退行も `ID: P0-CPP-LIST-REFFIRST-01-S6-02` 内で修正し、単体 parity を通した上で全 sample rerun を完了している。
 - 2026-03-07: `ID: P0-CPP-LIST-REFFIRST-01-S6-03` として、plan を `docs/ja/plans/archive/20260307-p0-cpp-list-ref-first-completion.md` へ移し、`docs/ja/todo/archive/20260307.md` / `docs/ja/todo/archive/index.md` / `docs/ja/todo/index.md` を更新して ref-first 契約を完了扱いで閉じた。

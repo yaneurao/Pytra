@@ -38,14 +38,14 @@
 - unsupported lane（非 tuple / dynamic tuple / `**kwargs`）は silent fallback せず fail-closed を維持すること。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core_parser_behavior_exprs.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east2_to_east3_lowering.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends -p 'test_py2*_smoke.py' -k starred_call_tuple`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k starred_call_tuple`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core_parser_behavior_exprs.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east2_to_east3_lowering.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/backends -p 'test_py2*_smoke.py' -k starred_call_tuple`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k starred_call_tuple`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_transpiler_version_gate.py`
-- `python3 tools/run_regen_on_version_bump.py --dry-run`
+- `python3 tools/check/check_transpiler_version_gate.py`
+- `python3 tools/run/run_regen_on_version_bump.py --dry-run`
 - `git diff --check`
 
 決定ログ:

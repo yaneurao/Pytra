@@ -33,10 +33,10 @@
 - representative C++ runtime / backend test が非退行で通る。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py' -v`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_east3_cpp_bridge.py' -v`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_iterable.py' -v`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_east3_cpp_bridge.py' -v`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture`
 
 ## 1. 方針
 
@@ -72,4 +72,4 @@
 - 2026-03-09: checked-in `py_dict_value_cast(...)` callsite は `src/runtime/cpp/native/core/py_runtime.h` 内の `py_at(dict<K, V>&, ...)`, `py_at(const dict<K, V>&, ...)`, `py_set_at(dict<K, V>&, ...)` だけで、generated runtime / emitter / tests / sample からの direct use は存在しなかった。
 - 2026-03-09: canonical rule は helper 名を残さず、dict key/value coercion を `py_at/py_set_at` 内の local conversion expression に直接展開する形へ固定した。`object`, `const char*`, same-type, convertible, fallback-constructor の既存挙動は維持する。
 - 2026-03-09: `src/runtime/cpp/native/core/py_runtime.h` から `py_dict_value_cast` 3 本を削除し、`test_cpp_runtime_iterable.py` に removed inventory guard を追加した。
-- 2026-03-09: verification は `test_cpp_runtime_iterable.py`, `test_east3_cpp_bridge.py`, `tools/runtime_parity_check.py --targets cpp --case-root fixture`, `tools/check_todo_priority.py`, `git diff --check` を基準とする。
+- 2026-03-09: verification は `test_cpp_runtime_iterable.py`, `test_east3_cpp_bridge.py`, `tools/check/runtime_parity_check.py --targets cpp --case-root fixture`, `tools/check/check_todo_priority.py`, `git diff --check` を基準とする。

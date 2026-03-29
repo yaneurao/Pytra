@@ -54,9 +54,9 @@ ID: `TG-P0-ITER`
   - 直接影響: `For`（新規メタデータ利用）
   - 隣接影響: `ForRange`（`for range(...)` lower の分岐点だが `iter_mode` 非依存）
 - 既存回帰テスト:
-  - `test/unit/test_east_core.py::test_for_iter_mode_and_iterable_traits_are_annotated`
-  - `test/unit/test_py2cpp_codegen_issues.py::test_for_object_uses_runtime_protocol_py_dyn_range`
-  - `test/unit/test_py2cpp_codegen_issues.py::test_for_list_keeps_static_fastpath`
+  - `tools/unittest/test_east_core.py::test_for_iter_mode_and_iterable_traits_are_annotated`
+  - `tools/unittest/test_py2cpp_codegen_issues.py::test_for_object_uses_runtime_protocol_py_dyn_range`
+  - `tools/unittest/test_py2cpp_codegen_issues.py::test_for_list_keeps_static_fastpath`
 
 ## 受け入れ基準
 
@@ -71,9 +71,9 @@ ID: `TG-P0-ITER`
 - 2026-02-23: Phase 1 として C++ runtime に `PyObj::py_iter_or_raise` / `PyObj::py_next_or_stop` と `py_iter_or_raise(...)` / `py_next_or_stop(...)` / `py_dyn_range(...)` を導入し、`PyListObj` / `PyDictObj` / `PyStrObj` は iterator object を返す実装へ更新した。non-iterable は `TypeError` 相当（`runtime_error`）で fail-fast とする。
 - 2026-02-23: `py2cpp` の `For` 生成は `iter_mode`（`static_fastpath` / `runtime_protocol`）で分岐する。`runtime_protocol` は `for (object ... : py_dyn_range(iterable))` を生成し、tuple unpack は `py_at(...)` で展開する。
 - 2026-02-23: selfhost 安定性のため、`iter_mode` 未付与の既存 EAST は `unknown` を既定 `static_fastpath` として扱う（互換優先）。`object/Any` は parser 側で明示 `runtime_protocol` を付与して切り替える。
-- 2026-02-23: C++ runtime の object iterable 経路で `set` を扱えるようにした。`PySetObj`（`PYTRA_TID_SET`）と `make_object(const set<T>&)` を追加し、`py_dyn_range(make_object(set<...>))` が反復可能であること、`py_isinstance(make_object(set<...>), PYTRA_TID_SET)` が成立することを `test/unit/test_cpp_runtime_iterable.py` / `test/unit/test_cpp_runtime_type_id.py` で固定した。
+- 2026-02-23: C++ runtime の object iterable 経路で `set` を扱えるようにした。`PySetObj`（`PYTRA_TID_SET`）と `make_object(const set<T>&)` を追加し、`py_dyn_range(make_object(set<...>))` が反復可能であること、`py_isinstance(make_object(set<...>), PYTRA_TID_SET)` が成立することを `tools/unittest/test_cpp_runtime_iterable.py` / `tools/unittest/test_cpp_runtime_type_id.py` で固定した。
 - 2026-02-23: docs/ja/todo/index.md の P0-ITER-01 を -S1 〜 -S4 へ分割したため、本 plan 側にも同粒度の実行順を追記した。
-- 2026-02-23: `P0-ITER-01-S1` を完了。`EAST` の必須 trait（`iter_mode` / `iter_source_type` / `iter_element_type` / `iterable_trait` / `iter_protocol`）と影響ノード（`For` / `ForRange`）を棚卸しし、producer（`core.py`）と consumer（`py2cpp.py`）の責務境界を固定した。回帰として `python3 test/unit/test_east_core.py`、`python3 test/unit/test_py2cpp_codegen_issues.py` を実行して既存契約が維持されることを確認した。
-- 2026-02-23: `P0-ITER-01-S2` を完了。`core.py` の `For` 生成で trait 供給済みであることを維持しつつ、`test/unit/test_py2cpp_codegen_issues.py::test_for_without_iter_mode_keeps_legacy_static_fastpath` を追加して「`iter_mode` 欠落の旧 EAST は static 側へフォールバックする」互換契約を固定した。`python3 test/unit/test_py2cpp_codegen_issues.py`（42件成功）で回帰なしを確認した。
-- 2026-02-23: `P0-ITER-01-S3` を完了。C++ runtime の `py_iter_or_raise` / `py_next_or_stop` / `py_dyn_range` 実装と non-iterable fail-fast 契約を `python3 test/unit/test_cpp_runtime_iterable.py`（1件成功、compile+run）で再確認した。
-- 2026-02-23: `P0-ITER-01-S4` を完了。`py2cpp` の `emit_for_each` / `_resolve_for_iter_mode` / `_emit_for_each_runtime` が `static_fastpath` / `runtime_protocol` を切替える実装であることを固定し、`python3 test/unit/test_py2cpp_codegen_issues.py`（42件成功）と `python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）で回帰なしを確認した。
+- 2026-02-23: `P0-ITER-01-S1` を完了。`EAST` の必須 trait（`iter_mode` / `iter_source_type` / `iter_element_type` / `iterable_trait` / `iter_protocol`）と影響ノード（`For` / `ForRange`）を棚卸しし、producer（`core.py`）と consumer（`py2cpp.py`）の責務境界を固定した。回帰として `python3 tools/unittest/test_east_core.py`、`python3 tools/unittest/test_py2cpp_codegen_issues.py` を実行して既存契約が維持されることを確認した。
+- 2026-02-23: `P0-ITER-01-S2` を完了。`core.py` の `For` 生成で trait 供給済みであることを維持しつつ、`tools/unittest/test_py2cpp_codegen_issues.py::test_for_without_iter_mode_keeps_legacy_static_fastpath` を追加して「`iter_mode` 欠落の旧 EAST は static 側へフォールバックする」互換契約を固定した。`python3 tools/unittest/test_py2cpp_codegen_issues.py`（42件成功）で回帰なしを確認した。
+- 2026-02-23: `P0-ITER-01-S3` を完了。C++ runtime の `py_iter_or_raise` / `py_next_or_stop` / `py_dyn_range` 実装と non-iterable fail-fast 契約を `python3 tools/unittest/test_cpp_runtime_iterable.py`（1件成功、compile+run）で再確認した。
+- 2026-02-23: `P0-ITER-01-S4` を完了。`py2cpp` の `emit_for_each` / `_resolve_for_iter_mode` / `_emit_for_each_runtime` が `static_fastpath` / `runtime_protocol` を切替える実装であることを固定し、`python3 tools/unittest/test_py2cpp_codegen_issues.py`（42件成功）と `python3 tools/check/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）で回帰なしを確認した。

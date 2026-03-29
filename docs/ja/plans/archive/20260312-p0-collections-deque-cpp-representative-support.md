@@ -37,9 +37,9 @@
 - 後続 bundle が `type lowering` と `zero-arg ctor/member lane` を順に進められる粒度になっている。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k deque`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core_parser_behavior_classes.py' -k deque`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k deque`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core_parser_behavior_classes.py' -k deque`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

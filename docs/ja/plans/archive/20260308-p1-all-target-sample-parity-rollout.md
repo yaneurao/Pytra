@@ -22,7 +22,7 @@
 対象:
 - parity target 全体:
   - `cpp`, `rs`, `cs`, `js`, `ts`, `go`, `java`, `kotlin`, `swift`, `scala`, `ruby`, `lua`, `php`, `nim`
-- `tools/runtime_parity_check.py`
+- `tools/check/runtime_parity_check.py`
 - `src/toolchain/compiler/pytra_cli_profiles.py` が返す target profile / runner needs
 - target ごとの runtime/build/run 導線
 - 必要な `docs/ja/spec` / `docs/en/spec` / `docs/ja/how-to-use.md`
@@ -37,7 +37,7 @@
 - parity target 全体について、sample parity 実行時に `toolchain_missing` が 0 件になる。
 - `cpp/js/ts` は引き続き `18/18 ok` を維持する。
 - `rs/cs/go/java/kotlin/swift/scala/ruby/lua/php/nim` も、sample parity 18 ケースを `run_failed=0`, `output_mismatch=0`, `artifact_*_mismatch=0` で完了する。
-- `tools/runtime_parity_check.py --case-root sample --targets <all-targets> --all-samples` 相当の実行手順が docs に固定される。
+- `tools/check/runtime_parity_check.py --case-root sample --targets <all-targets> --all-samples` 相当の実行手順が docs に固定される。
 - target ごとの必要 toolchain と bootstrap 手順が明文化され、`toolchain_missing` が新しい常態にならない。
 - full green 判定では `ok` 以外の parity category を 1 件も許容しない。具体的には `case_missing`, `python_failed`, `python_artifact_missing`, `toolchain_missing`, `transpile_failed`, `run_failed`, `output_mismatch`, `artifact_presence_mismatch`, `artifact_missing`, `artifact_size_mismatch`, `artifact_crc32_mismatch` をすべて 0 件にする。
 
@@ -90,13 +90,13 @@ Post-bootstrap snapshot:
 - `toolchain_missing` は current machine baseline から除去された。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/runtime_parity_check.py --targets cpp,rs,cs,js,ruby,lua,php,ts,go,java,swift,kotlin,scala,nim --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples --east3-opt-level 2 --cpp-codegen-opt 3`
-- `python3 tools/runtime_parity_check.py --targets js,ts --case-root sample --ignore-unstable-stdout --all-samples --east3-opt-level 2`
-- `python3 tools/runtime_parity_check.py --targets rs,cs,go,java,kotlin,swift,scala --case-root sample --ignore-unstable-stdout --all-samples --east3-opt-level 2`
-- `python3 tools/runtime_parity_check.py --targets ruby,lua,php,nim --case-root sample --ignore-unstable-stdout --all-samples --east3-opt-level 2`
-- `python3 tools/check_noncpp_backend_health.py --family all`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/runtime_parity_check.py --targets cpp,rs,cs,js,ruby,lua,php,ts,go,java,swift,kotlin,scala,nim --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples --east3-opt-level 2 --cpp-codegen-opt 3`
+- `python3 tools/check/runtime_parity_check.py --targets js,ts --case-root sample --ignore-unstable-stdout --all-samples --east3-opt-level 2`
+- `python3 tools/check/runtime_parity_check.py --targets rs,cs,go,java,kotlin,swift,scala --case-root sample --ignore-unstable-stdout --all-samples --east3-opt-level 2`
+- `python3 tools/check/runtime_parity_check.py --targets ruby,lua,php,nim --case-root sample --ignore-unstable-stdout --all-samples --east3-opt-level 2`
+- `python3 tools/check/check_noncpp_backend_health.py --family all`
 
 ## 分解
 
@@ -163,12 +163,12 @@ Post-bootstrap snapshot:
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S1-02]: full parity green は `runtime_parity_check.py` の category が `ok` のみである状態と定義し、canonical command を `--targets cpp,rs,cs,js,ruby,lua,php,ts,go,java,swift,kotlin,scala,nim --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3` に固定した。
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-01]: compiled target 向けに `rustc`, `mono-mcs/mono`, `go`, `openjdk-17-jdk`, `kotlin`, `scala`, `nim` を apt で導入し、`swiftc` は official `swift-6.2.2-RELEASE-debian12` tarball を `/opt` へ展開して `/usr/local/bin/swiftc` へ symlink した。
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S2-02]: scripting / mixed target 向けに `ruby`, `lua5.4`, `php-cli` を apt で導入し、導入後の `runner_needs` 実測で parity target 14 件すべてが `OK` になったことを確認した。
-- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-01]: `python3 tools/runtime_parity_check.py --targets cpp,js,ts --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3` を current machine で実行し、`SUMMARY cases=18 pass=18 fail=0 targets=cpp,js,ts east3_opt_level=2` を確認した。
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-01]: `python3 tools/check/runtime_parity_check.py --targets cpp,js,ts --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3` を current machine で実行し、`SUMMARY cases=18 pass=18 fail=0 targets=cpp,js,ts east3_opt_level=2` を確認した。
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-02]: Rust は `pytra::std::{math,time}` を runtime surface に再 export しつつ、non-aliased `import math` / `import time` で `use crate::pytra::std::{math,time};` を重複 emit しないよう emitter 側で compat path を抑止した。これで `02_raytrace_spheres` の duplicate import が解消した。
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-02]: Scala target は Debian package の `scala` 2.11 ではなく Scala CLI を `/usr/local/bin/scala` に入れる前提へ切り替えた。`scala run ...` を使う current runner 契約と一致するためである。
-- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-02]: `python3 tools/runtime_parity_check.py --targets rs --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2`、`--targets cs`、`--targets go`、`--targets java`、`--targets kotlin`、`--targets swift`、`--targets scala` を個別実行し、compiled target 7 件すべてで `SUMMARY cases=18 pass=18 fail=0` を確認した。一括 `--targets rs,cs,go,java,kotlin,swift,scala` 実行は parent process が終了待ちで詰まったため、結果確定は per-target 実行を正本とした。
-- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-03]: `python3 tools/runtime_parity_check.py --targets ruby --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2`、`--targets lua`、`--targets php`、`--targets nim` を個別実行し、scripting / mixed target 4 件すべてで `SUMMARY cases=18 pass=18 fail=0` を確認した。
-- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-01]: full-target 再実行の canonical wrapper として `tools/check_all_target_sample_parity.py` を追加した。wrapper は `cpp` / `js_ts` / `compiled` / `scripting_mixed` の 4 group を順に実行し、`--summary-dir` 指定時に group JSON と merged `all-target-summary.json` を書く。
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-02]: `python3 tools/check/runtime_parity_check.py --targets rs --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2`、`--targets cs`、`--targets go`、`--targets java`、`--targets kotlin`、`--targets swift`、`--targets scala` を個別実行し、compiled target 7 件すべてで `SUMMARY cases=18 pass=18 fail=0` を確認した。一括 `--targets rs,cs,go,java,kotlin,swift,scala` 実行は parent process が終了待ちで詰まったため、結果確定は per-target 実行を正本とした。
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-03]: `python3 tools/check/runtime_parity_check.py --targets ruby --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2`、`--targets lua`、`--targets php`、`--targets nim` を個別実行し、scripting / mixed target 4 件すべてで `SUMMARY cases=18 pass=18 fail=0` を確認した。
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-01]: full-target 再実行の canonical wrapper として `tools/check/check_all_target_sample_parity.py` を追加した。wrapper は `cpp` / `js_ts` / `compiled` / `scripting_mixed` の 4 group を順に実行し、`--summary-dir` 指定時に group JSON と merged `all-target-summary.json` を書く。
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-01]: `docs/ja/spec/spec-tools.md` と `docs/ja/how-to-use.md` は wrapper 前提の再実行手順へ更新した。`runtime_parity_check.py` 一括直叩きは定義レベルに残し、日常運用は group wrapper を正本とする。
-- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-02]: full parity 結果は canonical subgroup 実行の総和で記録した。baseline は `python3 tools/runtime_parity_check.py --targets cpp,js,ts --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3` で `SUMMARY cases=18 pass=18 fail=0 targets=cpp,js,ts`、compiled は `rs/cs/go/java/kotlin/swift/scala` の各 target 個別実行で全件 `18/18`、scripting / mixed は `ruby/lua/php/nim` の各 target 個別実行で全件 `18/18` を確認した。
-- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-02]: `tools/check_all_target_sample_parity.py` は unit test と `cpp` group smoke 起動で検証した。full-target wrapper 自体は C++ sample compile が長いためこの時点では group-level verified state とし、完了判定は既に green の canonical subgroup 結果を正本とした。
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-02]: full parity 結果は canonical subgroup 実行の総和で記録した。baseline は `python3 tools/check/runtime_parity_check.py --targets cpp,js,ts --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3` で `SUMMARY cases=18 pass=18 fail=0 targets=cpp,js,ts`、compiled は `rs/cs/go/java/kotlin/swift/scala` の各 target 個別実行で全件 `18/18`、scripting / mixed は `ruby/lua/php/nim` の各 target 個別実行で全件 `18/18` を確認した。
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-02]: `tools/check/check_all_target_sample_parity.py` は unit test と `cpp` group smoke 起動で検証した。full-target wrapper 自体は C++ sample compile が長いためこの時点では group-level verified state とし、完了判定は既に green の canonical subgroup 結果を正本とした。

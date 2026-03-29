@@ -22,8 +22,8 @@
 - `src/toolchain/frontends/transpile_cli.py`
 - `src/toolchain/ir/core.py`
 - `src/toolchain/ir/core_entrypoints.py`
-- representative test/backend importers (`test/unit/common/*`, `test/unit/backends/*`, `test/unit/ir/test_east2_to_east3_lowering.py`)
-- `test/unit/ir/test_east_core_source_contract_import_surface.py`
+- representative test/backend importers (`tools/unittest/common/*`, `tools/unittest/emit/*`, `tools/unittest/ir/test_east2_to_east3_lowering.py`)
+- `tools/unittest/ir/test_east_core_source_contract_import_surface.py`
 - `docs/ja/todo/index.md` / `docs/en/todo/index.md`
 - `docs/ja/plans/p1-ir-entrypoint-facade-pruning.md` / `docs/en/plans/p1-ir-entrypoint-facade-pruning.md`
 
@@ -39,12 +39,12 @@
 - representative regression (`test_east_core*.py`, `test_prepare_selfhost_source.py`, `build_selfhost.py`) が通る。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/selfhost -p 'test_prepare_selfhost_source.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/selfhost -p 'test_prepare_selfhost_source.py'`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_transpiler_version_gate.py`
-- `python3 tools/run_regen_on_version_bump.py --dry-run`
+- `python3 tools/check/check_transpiler_version_gate.py`
+- `python3 tools/run/run_regen_on_version_bump.py --dry-run`
 - `git diff --check`
 
 分解:
@@ -55,7 +55,7 @@
 - [x] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S3-01] representative regression と version gate を通して安定化し、完了後は archive へ移す。
 
 決定ログ:
-- 2026-03-11: 初版作成。現時点の residual importer は `src/toolchain/frontends/transpile_cli.py`、`test/unit/common/test_self_hosted_signature.py`、backend smoke 11 本、`test/unit/backends/cpp/test_east3_cpp_bridge.py`、`test/unit/ir/test_east2_to_east3_lowering.py` である。
+- 2026-03-11: 初版作成。現時点の residual importer は `src/toolchain/frontends/transpile_cli.py`、`tools/unittest/common/test_self_hosted_signature.py`、backend smoke 11 本、`tools/unittest/emit/cpp/test_east3_cpp_bridge.py`、`tools/unittest/ir/test_east2_to_east3_lowering.py` である。
 - 2026-03-11: `toolchain.ir.core` は public compatibility facade として維持するが、internal compiler と representative regression lane は canonical に `toolchain.ir.core_entrypoints` を使う。`core.py` への依存は external user compatibility のみを想定し、internal source-contract からは再流入を禁止する。
 - 2026-03-11: `S2-01` として `src/toolchain/frontends/transpile_cli.py`、`test_self_hosted_signature.py`、backend smoke 11 本、`test_east3_cpp_bridge.py`、`test_east2_to_east3_lowering.py` の import を `toolchain.ir.core_entrypoints` へ寄せた。
 - 2026-03-11: `S2-02` として `test_east_core_source_contract_import_surface.py` を更新し、`src` 側の `toolchain.ir.core` importer は 0 件、representative test/backend lane の facade importer も 0 件で固定した。

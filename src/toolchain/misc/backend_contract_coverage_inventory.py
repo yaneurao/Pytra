@@ -76,20 +76,20 @@ UNPUBLISHED_FIXTURE_TARGET_ORDER: Final[tuple[str, ...]] = (
 LIVE_SUITE_ROLE_ORDER: Final[tuple[str, ...]] = ("direct_matrix_input", "supporting_only")
 
 SMOKE_TEST_PATH_BY_BACKEND: Final[dict[str, str]] = {
-    "cpp": "test/unit/backends/cpp/test_py2cpp_features.py",
-    "rs": "test/unit/backends/rs/test_py2rs_smoke.py",
-    "cs": "test/unit/backends/cs/test_py2cs_smoke.py",
-    "go": "test/unit/backends/go/test_py2go_smoke.py",
-    "java": "test/unit/backends/java/test_py2java_smoke.py",
-    "kt": "test/unit/backends/kotlin/test_py2kotlin_smoke.py",
-    "scala": "test/unit/backends/scala/test_py2scala_smoke.py",
-    "swift": "test/unit/backends/swift/test_py2swift_smoke.py",
-    "nim": "test/unit/backends/nim/test_py2nim_smoke.py",
-    "js": "test/unit/backends/js/test_py2js_smoke.py",
-    "ts": "test/unit/backends/ts/test_py2ts_smoke.py",
-    "lua": "test/unit/backends/lua/test_py2lua_smoke.py",
-    "rb": "test/unit/backends/rb/test_py2rb_smoke.py",
-    "php": "test/unit/backends/php/test_py2php_smoke.py",
+    "cpp": "tools/unittest/emit/cpp/test_py2cpp_features.py",
+    "rs": "tools/unittest/emit/rs/test_py2rs_smoke.py",
+    "cs": "tools/unittest/emit/cs/test_py2cs_smoke.py",
+    "go": "tools/unittest/emit/go/test_py2go_smoke.py",
+    "java": "tools/unittest/emit/java/test_py2java_smoke.py",
+    "kt": "tools/unittest/emit/kotlin/test_py2kotlin_smoke.py",
+    "scala": "tools/unittest/emit/scala/test_py2scala_smoke.py",
+    "swift": "tools/unittest/emit/swift/test_py2swift_smoke.py",
+    "nim": "tools/unittest/emit/nim/test_py2nim_smoke.py",
+    "js": "tools/unittest/emit/js/test_py2js_smoke.py",
+    "ts": "tools/unittest/emit/ts/test_py2ts_smoke.py",
+    "lua": "tools/unittest/emit/lua/test_py2lua_smoke.py",
+    "rb": "tools/unittest/emit/rb/test_py2rb_smoke.py",
+    "php": "tools/unittest/emit/php/test_py2php_smoke.py",
 }
 
 CPP_RUNTIME_NEEDLE_BY_FIXTURE_STEM: Final[dict[str, str]] = {
@@ -183,7 +183,7 @@ def feature_backend_order() -> tuple[str, ...]:
 COVERAGE_BUNDLE_TAXONOMY_V1: Final[tuple[CoverageBundleTaxonomyEntry, ...]] = (
     {
         "bundle_id": "frontend",
-        "source_roots": ("test/unit/common", "test/unit/ir"),
+        "source_roots": ("tools/unittest/common", "tools/unittest/ir"),
         "suite_ids": ("unit_common", "unit_ir"),
         "harness_kinds": (
             "frontend_parse_diagnostic",
@@ -194,7 +194,7 @@ COVERAGE_BUNDLE_TAXONOMY_V1: Final[tuple[CoverageBundleTaxonomyEntry, ...]] = (
     },
     {
         "bundle_id": "emit",
-        "source_roots": ("test/unit/backends", "test/unit/common/test_py2x_smoke_common.py"),
+        "source_roots": ("test/unit/backends", "tools/unittest/common/test_py2x_smoke_common.py"),
         "suite_ids": ("unit_backends", "unit_common"),
         "harness_kinds": ("backend_emit_compare",),
         "notes": "Backend emitter smoke and compare coverage.",
@@ -209,8 +209,8 @@ COVERAGE_BUNDLE_TAXONOMY_V1: Final[tuple[CoverageBundleTaxonomyEntry, ...]] = (
     {
         "bundle_id": "import_package",
         "source_roots": (
-            "test/unit/backends/relative_import_native_path_smoke_support.py",
-            "test/unit/backends/relative_import_jvm_package_smoke_support.py",
+            "tools/unittest/emit/relative_import_native_path_smoke_support.py",
+            "tools/unittest/emit/relative_import_jvm_package_smoke_support.py",
             "tools/check_relative_import_backend_coverage.py",
         ),
         "suite_ids": ("unit_backends", "unit_common"),
@@ -238,7 +238,7 @@ LIVE_SUITE_FAMILY_INVENTORY_V1: Final[tuple[LiveSuiteFamilyEntry, ...]] = (
     {
         "suite_id": "unit_common",
         "suite_kind": "test_unit",
-        "source_roots": ("test/unit/common",),
+        "source_roots": ("tools/unittest/common",),
         "coverage_role": "direct_matrix_input",
         "bundle_candidates": ("frontend", "emit", "import_package"),
         "notes": "Shared frontend/backend smoke helpers and CLI-facing tests.",
@@ -254,7 +254,7 @@ LIVE_SUITE_FAMILY_INVENTORY_V1: Final[tuple[LiveSuiteFamilyEntry, ...]] = (
     {
         "suite_id": "unit_ir",
         "suite_kind": "test_unit",
-        "source_roots": ("test/unit/ir",),
+        "source_roots": ("tools/unittest/ir",),
         "coverage_role": "direct_matrix_input",
         "bundle_candidates": ("frontend",),
         "notes": "Parser/EAST/EAST3-lowering contracts.",
@@ -316,14 +316,14 @@ COVERAGE_BUNDLES_V1: Final[tuple[CoverageBundleEntry, ...]] = (
         "bundle_kind": "frontend",
         "suite_kind": "test_unit",
         "harness_kind": "unittest_discover",
-        "source_paths": ("test/unit/ir", "test/unit/common"),
+        "source_paths": ("tools/unittest/ir", "tools/unittest/common"),
         "evidence_refs": (
             {
-                "relpath": "test/unit/ir/test_east_core_parser_behavior_runtime.py",
+                "relpath": "tools/unittest/ir/test_east_core_parser_behavior_runtime.py",
                 "needle": "class EastCoreParserBehaviorRuntimeTest(unittest.TestCase):",
             },
             {
-                "relpath": "test/unit/ir/test_east2_to_east3_source_contract.py",
+                "relpath": "tools/unittest/ir/test_east2_to_east3_source_contract.py",
                 "needle": "class East2ToEast3SourceContractTest(unittest.TestCase):",
             },
         ),
@@ -336,15 +336,15 @@ COVERAGE_BUNDLES_V1: Final[tuple[CoverageBundleEntry, ...]] = (
         "harness_kind": "unittest_discover",
         "source_paths": (
             "test/unit/backends",
-            "test/unit/common/test_py2x_smoke_common.py",
+            "tools/unittest/common/test_py2x_smoke_common.py",
         ),
         "evidence_refs": (
             {
-                "relpath": "test/unit/common/test_py2x_smoke_common.py",
+                "relpath": "tools/unittest/common/test_py2x_smoke_common.py",
                 "needle": "def test_add_fixture_transpile_via_py2x_for_non_cpp_targets(self) -> None:",
             },
             {
-                "relpath": "test/unit/backends/js/test_py2js_smoke.py",
+                "relpath": "tools/unittest/emit/js/test_py2js_smoke.py",
                 "needle": "def test_representative_property_method_call_fixture_transpiles(self) -> None:",
             },
         ),
@@ -374,22 +374,22 @@ COVERAGE_BUNDLES_V1: Final[tuple[CoverageBundleEntry, ...]] = (
         "suite_kind": "test_unit",
         "harness_kind": "unittest_discover",
         "source_paths": (
-            "test/unit/common/test_relative_import_semantics.py",
-            "test/unit/backends/relative_import_native_path_smoke_support.py",
-            "test/unit/backends/relative_import_jvm_package_smoke_support.py",
+            "tools/unittest/common/test_relative_import_semantics.py",
+            "tools/unittest/emit/relative_import_native_path_smoke_support.py",
+            "tools/unittest/emit/relative_import_jvm_package_smoke_support.py",
             "tools/check_relative_import_backend_coverage.py",
         ),
         "evidence_refs": (
             {
-                "relpath": "test/unit/common/test_relative_import_semantics.py",
+                "relpath": "tools/unittest/common/test_relative_import_semantics.py",
                 "needle": "class RelativeImportSemanticsTest(unittest.TestCase):",
             },
             {
-                "relpath": "test/unit/backends/go/test_py2go_smoke.py",
+                "relpath": "tools/unittest/emit/go/test_py2go_smoke.py",
                 "needle": "def test_cli_relative_import_native_path_bundle_scenarios_transpile_for_go(self) -> None:",
             },
             {
-                "relpath": "test/unit/backends/java/test_py2java_smoke.py",
+                "relpath": "tools/unittest/emit/java/test_py2java_smoke.py",
                 "needle": "def test_cli_relative_import_jvm_package_bundle_scenarios_transpile_for_java(self) -> None:",
             },
             {

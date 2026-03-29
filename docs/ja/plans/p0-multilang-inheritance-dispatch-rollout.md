@@ -20,7 +20,7 @@
 対象:
 - fixture: `test/fixtures/oop/inheritance_virtual_dispatch_multilang.py`
 - backend: `src/hooks/{cs,go,java,js,ts,kotlin,swift,rs,ruby,lua}/emitter/*`
-- 検証: `tools/runtime_parity_check.py` / `test/unit/test_py2*_smoke.py`
+- 検証: `tools/check/runtime_parity_check.py` / `tools/unittest/test_py2*_smoke.py`
 
 非対象:
 - C++ backend の再設計
@@ -33,8 +33,8 @@
 
 確認コマンド:
 - `PYTHONPATH=src python3 test/fixtures/oop/inheritance_virtual_dispatch_multilang.py`
-- `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua`
-- `python3 tools/check_todo_priority.py`
+- `PYTHONPATH=src python3 tools/check/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua`
+- `python3 tools/check/check_todo_priority.py`
 
 分解:
 - [x] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S1-01] 追加 fixture を backend smoke/parity 導線へ接続し、回帰検知対象へ昇格する。
@@ -52,9 +52,9 @@
 
 決定ログ:
 - 2026-03-01: 非C++ backend の継承メソッド動的ディスパッチ改善を P0 で計画化した。
-- 2026-03-01: `tools/runtime_parity_check.py` の fixture 既定ケースに `inheritance_virtual_dispatch_multilang` を追加し、回帰導線へ接続した。
+- 2026-03-01: `tools/check/runtime_parity_check.py` の fixture 既定ケースに `inheritance_virtual_dispatch_multilang` を追加し、回帰導線へ接続した。
 - 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_runtime_parity_check_cli.py' -v` は pass（7 tests, 0 fail）。
-- 2026-03-01: `python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua --ignore-unstable-stdout --summary-json out/inherit_dispatch_multilang_summary.json` を実行し、S2 実装前のベースラインを固定した（`run_failed=10`, `toolchain_missing=1`）。
+- 2026-03-01: `python3 tools/check/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua --ignore-unstable-stdout --summary-json out/inherit_dispatch_multilang_summary.json` を実行し、S2 実装前のベースラインを固定した（`run_failed=10`, `toolchain_missing=1`）。
 - 2026-03-01: C#（`S2-CS`）を実施し、`virtual/override` 付与・`super` lower・assertion 関数マッピングを追加。`--targets cs` の fixture parity は pass（1/1）。
 - 2026-03-01: Go（`S2-GO`）を実施し、class interface 導入 + `super` lower を追加。`--targets go` の fixture parity は pass（1/1）。
 - 2026-03-01: Java（`S2-JAVA`）を実施し、`super().method(...)` を `super.method(...)` へ lower 修正。`test_py2java_smoke.py`（23 tests）と `runtime_parity_check --targets java`（1/1 pass）を確認した。

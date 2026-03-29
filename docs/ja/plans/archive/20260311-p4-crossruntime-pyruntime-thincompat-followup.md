@@ -23,11 +23,11 @@
 - `src/backends/cpp/emitter/stmt.py`
 - `src/backends/rs/emitter/rs_emitter.py`
 - `src/backends/cs/emitter/cs_emitter.py`
-- `tools/check_crossruntime_pyruntime_thincompat_inventory.py`
-- `test/unit/tooling/test_check_crossruntime_pyruntime_thincompat_inventory.py`
-- 必要に応じて `test/unit/backends/cpp/test_east3_cpp_bridge.py`
-- 必要に応じて `test/unit/backends/rs/test_py2rs_smoke.py`
-- 必要に応じて `test/unit/backends/cs/test_py2cs_smoke.py`
+- `tools/check/check_crossruntime_pyruntime_thincompat_inventory.py`
+- `tools/unittest/tooling/test_check_crossruntime_pyruntime_thincompat_inventory.py`
+- 必要に応じて `tools/unittest/emit/cpp/test_east3_cpp_bridge.py`
+- 必要に応じて `tools/unittest/emit/rs/test_py2rs_smoke.py`
+- 必要に応じて `tools/unittest/emit/cs/test_py2cs_smoke.py`
 
 非対象:
 - `py_runtime.h` 自体の直ちの追加削減
@@ -46,11 +46,11 @@ end state:
 - `crossruntime_shared_type_id_api`: Rust/C# emitter では generic 名を直接 emit せず、`py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass` の thin helper naming に揃える。generic `py_runtime_type_id` / `py_isinstance` / `py_is_subtype` / `py_issubclass` は runtime 内部 alias としてのみ残ってよい。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_crossruntime_pyruntime_thincompat_inventory.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_crossruntime_pyruntime_thincompat_inventory.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/selfhost -p 'test_prepare_selfhost_source.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_crossruntime_pyruntime_thincompat_inventory.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_crossruntime_pyruntime_thincompat_inventory.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/selfhost -p 'test_prepare_selfhost_source.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 
@@ -63,7 +63,7 @@ end state:
 
 決定ログ:
 - 2026-03-11: `P1-CPP-PYRUNTIME-HEADER-SHRINK-01` を archive した時点で、header に残る final thin compat は template `py_runtime_type_id` / `py_isinstance` の 2 本だけになった。次段階は header 単体の掃除ではなく、C++/Rust/C# emitter 側の blocker と shared API residual の分離になる。
-- 2026-03-11: `S1-01` として `tools/check_crossruntime_pyruntime_thincompat_inventory.py` と unit test を追加し、C++ emitter の `py_isinstance` blocker 2 箇所と Rust/C# emitter の shared `type_id` API residual を bucket 化した。
+- 2026-03-11: `S1-01` として `tools/check/check_crossruntime_pyruntime_thincompat_inventory.py` と unit test を追加し、C++ emitter の `py_isinstance` blocker 2 箇所と Rust/C# emitter の shared `type_id` API residual を bucket 化した。
 - 2026-03-11: `S1-02` として end state を「`cpp_header_thincompat_blocker` は空 bucket が目標、Rust/C# 側は `crossruntime_shared_type_id_api` へ隔離したまま naming/bridge follow-up を待つ」に固定した。
 - 2026-03-11: `S2-01` として C++ emitter の `runtime_expr.py` / `stmt.py` に残っていた generic `py_isinstance` 2 箇所を `py_runtime_object_isinstance` へ寄せ、`cpp_header_thincompat_blocker` bucket を空にした。
 - 2026-03-11: `S2-02` として Rust/C# emitter の render surface を `py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass` に揃え、inventory は raw file-wide regex ではなく renderer end-state helper 専用の classifier に切り替えた。runtime 内部の generic 名は alias として残し、non-blocker として扱う。

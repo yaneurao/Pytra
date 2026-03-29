@@ -20,9 +20,9 @@ Goal:
 - Besides stdout match, continuously verify artifact size matching for image-output cases.
 
 Scope:
-- `tools/runtime_parity_check.py`
-- `test/unit/test_runtime_parity_check_cli.py` (if needed)
-- `test/unit/test_py2lua_smoke.py`
+- `tools/check/runtime_parity_check.py`
+- `tools/unittest/test_runtime_parity_check_cli.py` (if needed)
+- `tools/unittest/test_py2lua_smoke.py`
 - `src/hooks/lua/emitter/lua_native_emitter.py` (fixes for parity mismatches)
 - `src/runtime/lua/*` (if needed)
 - `sample/lua/*.lua` (regeneration checks)
@@ -40,12 +40,12 @@ Acceptance criteria:
 - Record results in the plan decision log and lock recurrence-detection pipeline (unit/CLI).
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2lua_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2lua_transpile.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua*.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root fixture --targets lua --ignore-unstable-stdout`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout`
-- `python3 tools/regenerate_samples.py --langs lua --force`
+- `python3 tools/check/runtime_parity_check.py --case-root fixture --targets lua --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout`
+- `python3 tools/gen/regenerate_samples.py --langs lua --force`
 
 Breakdown:
 - [x] [ID: P0-LUA-PARITY-ALL-01-S1-01] Finalize Lua parity scope (fixture target cases / all 18 samples) and lock execution procedure.
@@ -65,8 +65,8 @@ Decision log:
   - Added minimal `pathlib.Path` runtime (`/`, `mkdir`, `exists`, `write_text`, `read_text`, `name/stem/parent`).
   - Adjusted `print` to Python-compatible representation (`True/False/None`).
   - Added `break/continue` lowering (`break` / `goto continue_label`), fixed attribute `AnnAssign`, and corrected `main` guard call.
-- 2026-03-01: `python3 tools/runtime_parity_check.py --case-root fixture --targets lua --ignore-unstable-stdout` passed (2/2).
-- 2026-03-01: `python3 tools/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout` was incomplete (pass=3, fail=15).
+- 2026-03-01: `python3 tools/check/runtime_parity_check.py --case-root fixture --targets lua --ignore-unstable-stdout` passed (2/2).
+- 2026-03-01: `python3 tools/check/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout` was incomplete (pass=3, fail=15).
   - Incomplete breakdown: 12 transpile failures due to unimplemented `pytra.runtime/pytra.utils gif`, and run failures for `18_mini_language_interpreter` due to missing Lua features (`enumerate`, etc.).
 - 2026-03-01: Updated Lua emitter and resolved sample parity blockers:
   - Unified Python truthiness (`while xs:`/`if xs:`) to `__pytra_truthy(...)`.
@@ -76,8 +76,8 @@ Decision log:
   - Normalized constant/dynamic negative indexing (including `[-1]`) into Lua indexing.
   - Initialized fields in dataclass (`ClassDef(dataclass=True)`) `new(args)`.
   - Lowered `str + str` to Lua concatenation `..`.
-- 2026-03-01: `python3 tools/runtime_parity_check.py --case-root fixture --targets lua --ignore-unstable-stdout` passed (2/2, fail=0).
-- 2026-03-01: `python3 tools/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout` passed (18/18, fail=0).
+- 2026-03-01: `python3 tools/check/runtime_parity_check.py --case-root fixture --targets lua --ignore-unstable-stdout` passed (2/2, fail=0).
+- 2026-03-01: `python3 tools/check/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout` passed (18/18, fail=0).
 - 2026-03-01: Confirmed `category_counts={'ok': 18}` in summary JSON (`out/lua_sample_parity_summary.json`), satisfying `artifact_size_mismatch=0`.
 - 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua_smoke.py' -v` passed (32 tests, 0 fail).
-- 2026-03-01: `python3 tools/check_py2lua_transpile.py` returned `checked=103 ok=89 fail=14 skipped=39` (known stdlib/imports failures), with no new failures introduced by these changes.
+- 2026-03-01: `python3 tools/check/check_py2lua_transpile.py` returned `checked=103 ok=89 fail=14 skipped=39` (known stdlib/imports failures), with no new failures introduced by these changes.

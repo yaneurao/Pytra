@@ -41,7 +41,7 @@
 ## S1-01 Representative Inventory
 
 - source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
-- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py)
+- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_feature_contract_inventory.py)
 - category rule:
   - `syntax`: `syntax.<area>.<feature>`
   - `builtin`: `builtin.<domain>.<feature>`
@@ -71,7 +71,7 @@
 ## S1-02 Support-state Taxonomy
 
 - source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
-- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py)
+- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_feature_contract_inventory.py)
 - support states:
   - `supported`: representative fixture / regression lane が preview caveat なしで通る。
   - `fail_closed`: feature は未実装でも、silent fallback せず `unsupported_syntax` / `not_implemented` 系で止まる。
@@ -100,7 +100,7 @@
 ## S2-02 New-feature Acceptance Rule
 
 - source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
-- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py)
+- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_feature_contract_inventory.py)
 - fixed acceptance rules:
   - `feature_id_required`: 新 feature は representative scope 外と明示しない限り feature ID を持つ。
   - `inventory_or_followup_required`: representative fixture entry か parity follow-up task のどちらかを merge 前に持つ。
@@ -112,8 +112,8 @@
 ## S3-01 Representative Handoff
 
 - source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
-- export seam: [export_backend_feature_contract_manifest.py](/workspace/Pytra/tools/export_backend_feature_contract_manifest.py)
-- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py), [test_export_backend_feature_contract_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_feature_contract_manifest.py)
+- export seam: [export_backend_feature_contract_manifest.py](/workspace/Pytra/tools/gen/export_backend_feature_contract_manifest.py)
+- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_feature_contract_inventory.py), [test_export_backend_feature_contract_manifest.py](/workspace/Pytra/tools/unittest/tooling/test_export_backend_feature_contract_manifest.py)
 - P6 conformance handoff:
   - exported inventory: `iter_representative_conformance_handoff()`
   - downstream task: `P6-BACKEND-CONFORMANCE-SUITE-01`

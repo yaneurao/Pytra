@@ -34,7 +34,7 @@ Acceptance criteria:
 - The next rollout task can attach without disturbing the current `cpp=build_run_locked` baseline.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `git diff --check`
 
 Decision log:
@@ -45,7 +45,7 @@ Decision log:
 
 Handoff references:
 - coverage inventory: [relative_import_backend_coverage.py](/workspace/Pytra/src/toolchain/compiler/relative_import_backend_coverage.py)
-- coverage checker: [check_relative_import_backend_coverage.py](/workspace/Pytra/tools/check_relative_import_backend_coverage.py)
+- coverage checker: [check_relative_import_backend_coverage.py](/workspace/Pytra/tools/check/check_relative_import_backend_coverage.py)
 - backend parity docs: [backend-parity-matrix.md](../language/backend-parity-matrix.md)
 
 ## Breakdown

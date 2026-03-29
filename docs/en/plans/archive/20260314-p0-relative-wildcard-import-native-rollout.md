@@ -34,12 +34,12 @@ Acceptance criteria:
 - Representative smoke tests for the target backends must transpile `from .helper import *` or `from ..helper import *`.
 - Duplicate binding, unresolved wildcard, and root-escape cases must remain fail-closed.
 - Existing non-wildcard relative-import smoke tests must keep passing.
-- `python3 tools/check_todo_priority.py`, focused backend smoke tests, `python3 tools/build_selfhost.py`, and `git diff --check` must pass.
+- `python3 tools/check/check_todo_priority.py`, focused backend smoke tests, `python3 tools/build_selfhost.py`, and `git diff --check` must pass.
 
 Verification:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_relative_wildcard_import_native_rollout_contract.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_wildcard_import_native_rollout_contract.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_relative_wildcard_import_native_rollout_contract.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_wildcard_import_native_rollout_contract.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

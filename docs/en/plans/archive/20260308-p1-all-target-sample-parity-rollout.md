@@ -41,11 +41,11 @@ Acceptance criteria:
 - Baseline targets `cpp/js/ts` stayed green.
 - Compiled targets `rs/cs/go/java/kotlin/swift/scala` all reached `18/18`.
 - Scripting/mixed targets `ruby/lua/php/nim` also reached `18/18`.
-- A canonical wrapper, `tools/check_all_target_sample_parity.py`, was introduced to run the target groups in a stable order.
+- A canonical wrapper, `tools/check/check_all_target_sample_parity.py`, was introduced to run the target groups in a stable order.
 
 ## Decision Log
 
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-02]: After toolchain bootstrap on the current Debian 12 machine, Rust runtime import compatibility was fixed and the full compiled-target family was confirmed green target by target.
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S3-03]: `ruby/lua/php/nim` also reached `SUMMARY cases=18 pass=18 fail=0` each, eliminating both `toolchain_missing` and backend/runtime parity gaps on the current machine.
-- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-01]: `tools/check_all_target_sample_parity.py` was established as the canonical all-target runner, grouping targets into `cpp`, `js_ts`, `compiled`, and `scripting_mixed`.
+- 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-01]: `tools/check/check_all_target_sample_parity.py` was established as the canonical all-target runner, grouping targets into `cpp`, `js_ts`, `compiled`, and `scripting_mixed`.
 - 2026-03-08 [ID: P1-ALLTARGET-SAMPLE-PARITY-01-S4-02]: The final recorded state was “14 targets green,” with baseline and grouped runs documented in `spec-tools` and `how-to-use`.

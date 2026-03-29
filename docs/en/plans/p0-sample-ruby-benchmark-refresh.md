@@ -33,15 +33,15 @@ Acceptance criteria:
 - Measurement conditions (fresh transpile / warmup / repeat / median) are documented, and reproducible steps are retained.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/regenerate_samples.py --langs ruby --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets ruby --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/gen/regenerate_samples.py --langs ruby --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby --all-samples --ignore-unstable-stdout`
 - `python3 -m unittest discover -s test/unit -p 'test_py2rb_smoke.py' -v`
 
 Decision log:
 - 2026-02-27: Based on user request, opened `P0-SAMPLE-RUBY-BENCH-01` to add Ruby sample runtime as a right-edge column in `docs/ja/README.md` comparison table.
 - 2026-02-27: Measurement could not start because `ruby` was not installed, so Ruby 3.1.2 was installed in the environment and re-measurement was performed.
-- 2026-02-27: Fixed an issue in Ruby execution of `sample/18` where `in/not in` comparison collapsed to `==` and a `main` call mismatch, then confirmed `test/unit/test_py2rb_smoke.py` passed (14 cases).
+- 2026-02-27: Fixed an issue in Ruby execution of `sample/18` where `in/not in` comparison collapsed to `==` and a `main` call mismatch, then confirmed `tools/unittest/test_py2rb_smoke.py` passed (14 cases).
 - 2026-02-27: Measured all 18 `sample/py` cases for Ruby with fresh transpile + `warmup=1` + `repeat=5`, and recorded medians in `work/logs/bench_ruby_sample_20260227.json`.
 - 2026-02-27: Added rightmost Ruby column to the execution-speed comparison table in `docs/ja/README.md` and reflected all 18 medians. Also appended a note pointing to the Ruby re-measurement log.
 

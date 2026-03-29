@@ -52,10 +52,10 @@
 - parity 回帰（artifact サイズ/CRC32 含む）で runtime 差由来 fail が追跡可能になる。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/audit_image_runtime_sot.py --fail-on-core-mix --fail-on-gen-markers --fail-on-non-compliant`
-- `python3 tools/check_emitter_runtimecall_guardrails.py`
-- `python3 tools/runtime_parity_check.py --case-root sample --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/audit_image_runtime_sot.py --fail-on-core-mix --fail-on-gen-markers --fail-on-non-compliant`
+- `python3 tools/check/check_emitter_runtimecall_guardrails.py`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --ignore-unstable-stdout`
 
 ## 分解
 
@@ -99,12 +99,12 @@
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S1-01`] 旧P2の未完了残置（`docs/en/todo/index.md` / `docs/en/plans/p2-runtime-parity-with-cpp.md`）を新P2構成へ置換し、旧IDの未完了一覧参照を解消した。
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S1-02`] `docs/ja/spec/spec-runtime.md` に「SoT / pytra-core / pytra-gen の責務境界」節を追加し、全言語共通の必須事項（生成優先、marker 必須、EAST3 解決済み描画）と禁止事項（core 再実装、特別命名、emitter 直書き分岐）を明文化。あわせて監査コマンドを固定した。
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S1-03`] `docs/ja/spec/spec-runtime.md` に `std/utils` 分類表を追記し、`argparse..typing` と `assertions/gif/png` を生成必須、`dataclasses_impl/math_impl/time_impl` を `pytra-core` 許可（impl境界）として明示した。
-- 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S2-01`] `tools/check_runtime_pytra_gen_naming.py` を追加し、`pytra-gen` 配下の `std|utils` 素通し命名/配置違反を静的検出可能にした。既存負債は `tools/runtime_pytra_gen_naming_allowlist.txt`（11件）で明示し、`test/unit/tooling/test_check_runtime_pytra_gen_naming.py` と本体チェックの通過を確認した。
-- 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S2-02`] `tools/check_runtime_core_gen_markers.py` を追加し、全言語 `pytra-gen` の `source/generated-by` marker 必須と `pytra-core` への generated marker 混在禁止を静的監査化。`tools/run_local_ci.py` へ `check_runtime_core_gen_markers.py` と `check_runtime_pytra_gen_naming.py` を組み込み、`test_check_runtime_core_gen_markers.py` / `test_check_runtime_pytra_gen_naming.py` と本体チェックの通過を確認した。
+- 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S2-01`] `tools/check/check_runtime_pytra_gen_naming.py` を追加し、`pytra-gen` 配下の `std|utils` 素通し命名/配置違反を静的検出可能にした。既存負債は `tools/runtime_pytra_gen_naming_allowlist.txt`（11件）で明示し、`tools/unittest/tooling/test_check_runtime_pytra_gen_naming.py` と本体チェックの通過を確認した。
+- 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S2-02`] `tools/check/check_runtime_core_gen_markers.py` を追加し、全言語 `pytra-gen` の `source/generated-by` marker 必須と `pytra-core` への generated marker 混在禁止を静的監査化。`tools/run/run_local_ci.py` へ `check_runtime_core_gen_markers.py` と `check_runtime_pytra_gen_naming.py` を組み込み、`test_check_runtime_core_gen_markers.py` / `test_check_runtime_pytra_gen_naming.py` と本体チェックの通過を確認した。
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S2-03`] `work/logs/runtime_core_sot_reimpl_inventory_20260305_s2_03.tsv` で `pytra-core` 再実装痕跡を棚卸し（10ファイル）。JSON系（8言語）と画像系（`rs/go`）へ分類し、`pytra-gen` 移管の Wave-A/B/C を計画へ反映した。
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S3-01`] Java 先行移行の再監査として `check_emitter_runtimecall_guardrails.py`（strict backend=`java`）と `test_py2java_smoke.py`（25件）を実行し、直書き runtime 分岐の再流入がないことを確認。`_render_resolved_runtime_call` 経路と `resolved_runtime_call` 契約を維持しているため `S3-01` を完了扱いへ更新した。
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S3-02`] 非Java backend 展開の再検証として `check_emitter_runtimecall_guardrails.py`（全backend no findings）と `test_py2{rs,rb,lua,scala,swift,ts}_smoke.py`（127件）を再通過。あわせて本ターンで実施済み `go/php/kotlin/js/nim/cs` smoke（117件）を合算し、対象 12 backend で IR解決経路 + fail-closed 方針の非退行を確認した。
-- 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S3-03`] lint/fail-fast 導線として `check_emitter_runtimecall_guardrails.py` と `check_emitter_forbidden_runtime_symbols.py` が `tools/run_local_ci.py` 必須ステップで常時実行されることを再確認。strict backend（`java`）は allowlist 非依存で即 fail するため、PR/CI 上の禁止ルールを固定できる状態にした。
+- 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S3-03`] lint/fail-fast 導線として `check_emitter_runtimecall_guardrails.py` と `check_emitter_forbidden_runtime_symbols.py` が `tools/run/run_local_ci.py` 必須ステップで常時実行されることを再確認。strict backend（`java`）は allowlist 非依存で即 fail するため、PR/CI 上の禁止ルールを固定できる状態にした。
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S4-01`] sample parity 再実行を開始し、`01_mandelbrot` と `02_raytrace_spheres` の全14target結果を `work/logs/runtime_parity_sample01_multilang_20260305.json` / `work/logs/runtime_parity_sample02_multilang_20260305.json` に固定。主要failカテゴリは `js/ts: png runtime export mismatch`, `go: generated png/gif compile errors + main衝突`, `nim: module名(先頭数字)不正`, `cpp(02): gif/png object link main重複 + write_rgb_png未解決`, `java(02): math.java class/file名不一致`。
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S4-01`] `nim` の `run_failed`（invalid module name）を修正。`pytra_cli_profiles.py` で nim 出力名を `main.nim` 固定化し、`runtime_parity_check.py` で nim 実行出力の `stderr` フォールバック + warning除外を追加。`01_mandelbrot` / `02_raytrace_spheres` の nim parity は artifact size+CRC32 一致で通過（`work/logs/runtime_parity_sample0{1,2}_nim_after_stderr_fallback_20260305.json`）。
 - 2026-03-05: [ID: `P2-RUNTIME-PARITY-CPP-02-S4-01`] `runtime_parity_check.py --case-root sample --targets cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua,scala,php,nim --all-samples --ignore-unstable-stdout` を再実行し、`01` で `js/ts/go/nim`、`02/03` で追加の `java/cpp` 失敗を確認。主因は `js/png.js` の f-string 残存、`go/png.go` 文字列生成崩れ、Nim 実行モジュール名制約、Java runtime class 命名崩れ（`tmp`）、C++ runtime 側の `main` 重複 + `write_rgb_png` 未解決。`rs/cs/ruby/lua/php/swift/kotlin/scala` は少なくとも `01-03` で artifact size/CRC32 一致を確認。

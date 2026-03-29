@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 VERSIONS_FILE = ROOT / "src" / "toolchain" / "misc" / "transpiler_versions.json"
 VERSIONS_REL = VERSIONS_FILE.relative_to(ROOT).as_posix()
 

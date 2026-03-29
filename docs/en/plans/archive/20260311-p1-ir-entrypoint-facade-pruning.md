@@ -22,8 +22,8 @@ Scope:
 - `src/toolchain/frontends/transpile_cli.py`
 - `src/toolchain/ir/core.py`
 - `src/toolchain/ir/core_entrypoints.py`
-- representative test/backend importers (`test/unit/common/*`, `test/unit/backends/*`, `test/unit/ir/test_east2_to_east3_lowering.py`)
-- `test/unit/ir/test_east_core_source_contract_import_surface.py`
+- representative test/backend importers (`tools/unittest/common/*`, `tools/unittest/emit/*`, `tools/unittest/ir/test_east2_to_east3_lowering.py`)
+- `tools/unittest/ir/test_east_core_source_contract_import_surface.py`
 - `docs/ja/todo/index.md` / `docs/en/todo/index.md`
 - `docs/ja/plans/p1-ir-entrypoint-facade-pruning.md` / `docs/en/plans/p1-ir-entrypoint-facade-pruning.md`
 
@@ -39,12 +39,12 @@ Acceptance criteria:
 - Representative regressions (`test_east_core*.py`, `test_prepare_selfhost_source.py`, `build_selfhost.py`) pass.
 
 Checks:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/selfhost -p 'test_prepare_selfhost_source.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/selfhost -p 'test_prepare_selfhost_source.py'`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_transpiler_version_gate.py`
-- `python3 tools/run_regen_on_version_bump.py --dry-run`
+- `python3 tools/check/check_transpiler_version_gate.py`
+- `python3 tools/run/run_regen_on_version_bump.py --dry-run`
 - `git diff --check`
 
 Breakdown:
@@ -55,7 +55,7 @@ Breakdown:
 - [x] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S3-01] Run representative regressions and version gates, then archive the task.
 
 Decision log:
-- 2026-03-11: Initial draft. The current residual importers are `src/toolchain/frontends/transpile_cli.py`, `test/unit/common/test_self_hosted_signature.py`, 11 backend smoke tests, `test/unit/backends/cpp/test_east3_cpp_bridge.py`, and `test/unit/ir/test_east2_to_east3_lowering.py`.
+- 2026-03-11: Initial draft. The current residual importers are `src/toolchain/frontends/transpile_cli.py`, `tools/unittest/common/test_self_hosted_signature.py`, 11 backend smoke tests, `tools/unittest/emit/cpp/test_east3_cpp_bridge.py`, and `tools/unittest/ir/test_east2_to_east3_lowering.py`.
 - 2026-03-11: `toolchain.ir.core` stays as a public compatibility facade, but internal compiler code and representative regression lanes must canonically use `toolchain.ir.core_entrypoints`. Dependence on `core.py` is treated as external-user compatibility only and is forbidden again by internal source-contract tests.
 - 2026-03-11: `S2-01` moved `src/toolchain/frontends/transpile_cli.py`, `test_self_hosted_signature.py`, 11 backend smoke tests, `test_east3_cpp_bridge.py`, and `test_east2_to_east3_lowering.py` onto `toolchain.ir.core_entrypoints`.
 - 2026-03-11: `S2-02` updated `test_east_core_source_contract_import_surface.py` so source-side `toolchain.ir.core` importers are fixed at zero and the representative test/backend lanes also fail fast if they regress to the facade.

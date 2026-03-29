@@ -31,11 +31,11 @@
 - `src/runtime/cs/pytra-core/built_in/py_runtime.cs`
 - `src/backends/rs/emitter/rs_emitter.py`
 - `src/backends/cs/emitter/cs_emitter.py`
-- `test/unit/backends/cpp/test_cpp_runtime_iterable.py`
-- `test/unit/backends/cpp/test_cpp_runtime_type_id.py`
-- `test/unit/backends/cpp/test_py2cpp_codegen_issues.py`
-- `test/unit/backends/cpp/test_east3_cpp_bridge.py`
-- 必要に応じて `test/unit/backends/rs/test_py2rs_smoke.py` / `test/unit/backends/cs/test_py2cs_smoke.py`
+- `tools/unittest/emit/cpp/test_cpp_runtime_iterable.py`
+- `tools/unittest/emit/cpp/test_cpp_runtime_type_id.py`
+- `tools/unittest/emit/cpp/test_py2cpp_codegen_issues.py`
+- `tools/unittest/emit/cpp/test_east3_cpp_bridge.py`
+- 必要に応じて `tools/unittest/emit/rs/test_py2rs_smoke.py` / `tools/unittest/emit/cs/test_py2cs_smoke.py`
 
 非対象:
 - `py_runtime.h` の物理分割だけで行数を見かけ上減らすこと。
@@ -51,16 +51,16 @@
 - `test_cpp_runtime_iterable.py`、`test_cpp_runtime_type_id.py`、`test_east3_cpp_bridge.py`、`test_py2cpp_codegen_issues.py`、必要な Rust/C# smoke、`build_selfhost.py` が通る。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_type_id.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_east3_cpp_bridge.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_codegen_issues.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/rs -p 'test_py2rs_smoke.py' -k type_id`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cs -p 'test_py2cs_smoke.py' -k type_id`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_iterable.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_type_id.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_east3_cpp_bridge.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_codegen_issues.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/rs -p 'test_py2rs_smoke.py' -k type_id`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cs -p 'test_py2cs_smoke.py' -k type_id`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_transpiler_version_gate.py`
-- `python3 tools/run_regen_on_version_bump.py --dry-run`
+- `python3 tools/check/check_transpiler_version_gate.py`
+- `python3 tools/run/run_regen_on_version_bump.py --dry-run`
 - `git diff --check`
 
 分解:
@@ -76,7 +76,7 @@
 - 2026-03-11: `py_runtime.h` は transitive include 整理と typed dict / typed mutation upstream 後の段階に入り、残タスクの本丸は `mutation helper` と `type_id` shared contract の 2 本柱と整理した。
 - 2026-03-11: このタスクでは header の物理分割を目的にせず、他言語 runtime 実装者の負担軽減につながる契約縮小のみを対象にする。
 - 2026-03-11: `S1` は実装前提の棚卸しと target end state 固定に限定し、helper 単位の小分けではなく bundle 単位で進める。
-- 2026-03-11: `S1-01` として `tools/check_cpp_pyruntime_contract_inventory.py` を追加し、残る `symbol × path` caller を `typed_lane_removable` / `object_bridge_required` / `shared_runtime_contract` の 3 bucket で固定した。native compiler wrapper と generated `json/type_id`、C++ emitter mutation lane の残存理由を未分類再流入なしで監視する。
+- 2026-03-11: `S1-01` として `tools/check/check_cpp_pyruntime_contract_inventory.py` を追加し、残る `symbol × path` caller を `typed_lane_removable` / `object_bridge_required` / `shared_runtime_contract` の 3 bucket で固定した。native compiler wrapper と generated `json/type_id`、C++ emitter mutation lane の残存理由を未分類再流入なしで監視する。
 - 2026-03-11: `S1-02` として `test_cpp_runtime_iterable.py` と `test_check_cpp_pyruntime_contract_inventory.py` を拡張し、mutation helper の end state を `typed=container overload / compat=object overload`、`type_id` の end state を `py_tid_*` delegate + generated `type_id.h` include に固定した。
 - 2026-03-11: `S2-01` として C++ emitter / stmt から `py_append/extend/pop/clear/reverse/sort/set_at` wrapper 呼び出しを हटし、user-emitted C++ は `py_list_*_mut(obj_to_list_ref_or_raise(...))` へ直接 lower する形に寄せた。これで `typed_lane_removable` bucket は空になり、残 caller は generated runtime と shared `type_id` contract のみになった。
 - 2026-03-11: `S2-02` として `py_runtime.h` から `rc<list<T>>` mutation wrapper を削除し、`py_append` は generated runtime local list compat と object bridge seam のみ、`py_extend/pop/clear/reverse/sort/set_at` は object bridge seam のみ残す形に縮退させた。typed lane は `py_list_*_mut` 直接呼びを正本とし、source guard でもこの end state を固定した。

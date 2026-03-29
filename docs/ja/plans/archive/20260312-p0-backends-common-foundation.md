@@ -37,19 +37,19 @@
 - `docs/ja/spec`（必要に応じて `docs/en/spec`）に `backends/common` と profile 配置ルールが反映される。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `rg -n "pytra\\.compiler\\.east_parts\\.code_emitter|src/profiles/" src tools test`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_py2rs_transpile.py`
-- `python3 tools/check_py2cs_transpile.py`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/check_py2java_transpile.py`
-- `python3 tools/check_py2swift_transpile.py`
-- `python3 tools/check_py2kotlin_transpile.py`
-- `python3 tools/check_py2rb_transpile.py`
-- `python3 tools/check_py2lua_transpile.py`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/check_py2nim_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2cs_transpile.py`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/check/check_py2java_transpile.py`
+- `python3 tools/check/check_py2swift_transpile.py`
+- `python3 tools/check/check_py2kotlin_transpile.py`
+- `python3 tools/check/check_py2rb_transpile.py`
+- `python3 tools/check/check_py2lua_transpile.py`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/check/check_py2nim_transpile.py`
 
 ## 分解
 

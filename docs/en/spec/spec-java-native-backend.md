@@ -65,6 +65,6 @@ Forbidden:
 
 ## 6. Migration Verification Focus
 
-- `tools/check_py2java_transpile.py` passes on the native path.
-- `test/unit/test_py2java_*.py` locks native-only behavior.
-- `tools/runtime_parity_check.py --targets java` keeps output parity against Python baseline.
+- `tools/check/check_py2java_transpile.py` passes on the native path.
+- `tools/unittest/test_py2java_*.py` locks native-only behavior.
+- `tools/check/runtime_parity_check.py --targets java` keeps output parity against Python baseline.

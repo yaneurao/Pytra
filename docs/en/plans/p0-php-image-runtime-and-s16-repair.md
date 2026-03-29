@@ -24,7 +24,7 @@ In scope:
 - `src/runtime/php/pytra/runtime/gif.php`
 - Image-save lowering in PHP backend (remove `__pytra_noop` path)
 - Tuple/multi-return receive lowering in PHP backend (root cause of unbound vars in `sample/16`)
-- Artifact cleanup in `tools/runtime_parity_check.py`
+- Artifact cleanup in `tools/check/runtime_parity_check.py`
 
 Out of scope:
 - Overall PHP backend performance optimization
@@ -38,10 +38,10 @@ Acceptance criteria:
 - `runtime_parity_check --case-root sample --targets php --all-samples` is evaluated without artifact false positives at minimum.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/regenerate_samples.py --langs php --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets php --all-samples`
-- `python3 tools/check_py2php_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/gen/regenerate_samples.py --langs php --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets php --all-samples`
+- `python3 tools/check/check_py2php_transpile.py`
 
 Decision log:
 - 2026-03-03: Per user instruction, opened this as P0 for missing PHP image runtime implementation and `sample/16` execution failure.

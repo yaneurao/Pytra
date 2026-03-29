@@ -28,7 +28,7 @@ Acceptance criteria:
 
 Verification commands:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2rs_smoke.py' -v`
-- `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets rs`
+- `PYTHONPATH=src python3 tools/check/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets rs`
 
 Breakdown:
 - [ ] Narrow inheritance emulation in Rust to one approach.

@@ -33,8 +33,8 @@
 - JSON / selfhost loader は `JsonObj` helper または explicit default へ移行する。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/link -p 'test_*.py' -v`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/link -p 'test_*.py' -v`
 
 ## 1. 方針
 

@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 TODO_PATH = ROOT / "docs" / "ja" / "todo" / "index.md"
 PLANS_DIR = ROOT / "docs" / "ja" / "plans"
 

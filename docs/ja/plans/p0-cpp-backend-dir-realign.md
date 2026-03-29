@@ -53,10 +53,10 @@
 - `multifile/` -> `emitter/multifile_writer.py`
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_cpp_*' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --force`
 
 ## 分解
 
@@ -109,5 +109,5 @@
 - 2026-03-03: [ID: P0-CPP-DIR-REALIGN-01-S2-04] `src/toolchain/emit/cpp/header/cpp_header.py` を `src/toolchain/emit/cpp/emitter/header_builder.py` へ移設し、`py2cpp` の import を新パスへ更新。
 - 2026-03-03: [ID: P0-CPP-DIR-REALIGN-01-S2-05] `src/toolchain/emit/cpp/multifile/cpp_multifile.py` を `src/toolchain/emit/cpp/emitter/multifile_writer.py` へ移設し、multi-file 出力導線 import を新パスへ更新。
 - 2026-03-03: [ID: P0-CPP-DIR-REALIGN-01-S2-06] `src/toolchain/emit/cpp/{hooks,header,multifile,profile,runtime_emit}` の Python 実体を削除し、旧 import 参照を撤去。
-- 2026-03-03: [ID: P0-CPP-DIR-REALIGN-01-S3-01] `tools/check_cpp_backend_layout.py` を追加し、旧5フォルダ残存と旧 import の再発を fail-closed で検査可能にした。
+- 2026-03-03: [ID: P0-CPP-DIR-REALIGN-01-S3-01] `tools/check/check_cpp_backend_layout.py` を追加し、旧5フォルダ残存と旧 import の再発を fail-closed で検査可能にした。
 - 2026-03-03: [ID: P0-CPP-DIR-REALIGN-01-S3-02] `check_cpp_backend_layout.py` / `check_py2cpp_boundary.py` / `check_py2cpp_transpile.py` / `sample/py/01 -> py2cpp` を実行し、移設範囲の非退行を確認。

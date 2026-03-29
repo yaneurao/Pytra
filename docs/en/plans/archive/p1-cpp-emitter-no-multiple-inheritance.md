@@ -24,7 +24,7 @@ This reduces hierarchical type-check dependencies on the emitter side and simpli
 ## Acceptance criteria
 - `CppEmitter` no longer uses multiple inheritance.
 - The change stays consistent with responsibility split progress in `docs/ja/plans/p1-cpp-emitter-reduce.md`.
-- `python3 test/unit/test_py2cpp_smoke.py` and `python3 tools/check_py2cpp_transpile.py` pass.
+- `python3 tools/unittest/test_py2cpp_smoke.py` and `python3 tools/check/check_py2cpp_transpile.py` pass.
 - Readability and regression quality of generated outputs are preserved.
 
 ## References
@@ -43,9 +43,9 @@ This reduces hierarchical type-check dependencies on the emitter side and simpli
 - [2026-02-25] [ID: P1-CPP-EMIT-NOMI-01-S1]
   - Work done: changed `src/hooks/cpp/emitter/cpp_emitter.py` to single inheritance (`CodeEmitter` only).
   - Implementation: injected delegation from `CppCallEmitter`/`CppStatementEmitter`/`CppExpressionEmitter`/`CppBinaryOperatorEmitter`/`CppTriviaEmitter`/`CppTemporaryEmitter` into `CppEmitter` via class-external attach wiring.
-  - Validation: `PYTHONPATH=src python3 tools/check_py2cpp_transpile.py` verified `checked=132 ok=132 fail=0 skipped=6`.
+  - Validation: `PYTHONPATH=src python3 tools/check/check_py2cpp_transpile.py` verified `checked=132 ok=132 fail=0 skipped=6`.
 
 - [2026-02-25] [ID: P1-CPP-EMIT-NOMI-01-S2]
   - Work done: explicitly classified `isinstance`/type-check-related type-id name-call branches with `_type_id_name_call_kind`, simplifying branching in `_build_type_id_expr_from_call_name` / `render_call` / `_render_repr_expr`.
   - Change details: unified flag-based classification of `isinstance/issubclass` and `py_*` type-id calls; clarified non-lowered-case detection routes and error construction.
-  - Validation: `PYTHONPATH=src python3 tools/check_py2cpp_transpile.py` verified `checked=131 ok=131 fail=0 skipped=6`.
+  - Validation: `PYTHONPATH=src python3 tools/check/check_py2cpp_transpile.py` verified `checked=131 ok=131 fail=0 skipped=6`.

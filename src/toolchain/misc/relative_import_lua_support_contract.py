@@ -26,7 +26,7 @@ RELATIVE_IMPORT_LUA_SUPPORT_BACKEND_V1: Final[dict[str, object]] = {
 }
 
 RELATIVE_IMPORT_LUA_SUPPORT_SMOKE_V1: Final[dict[str, object]] = {
-    "smoke_test_file": "test/unit/backends/lua/test_py2lua_smoke.py",
+    "smoke_test_file": "tools/unittest/emit/lua/test_py2lua_smoke.py",
     "focused_tests": (
         "test_cli_relative_import_support_rollout_scenarios_transpile_for_lua",
         "test_cli_relative_import_support_rollout_fail_closed_for_wildcard_on_lua",

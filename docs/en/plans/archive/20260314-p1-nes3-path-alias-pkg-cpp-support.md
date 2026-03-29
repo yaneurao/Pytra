@@ -34,7 +34,7 @@ Acceptance criteria:
 - The representative reuse lane for `Path` re-exported through a user module is locked in regressions.
 
 Validation commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `bash ./pytra materials/refs/from-Pytra-NES3/path_alias_pkg/entry.py --target cpp --output-dir /tmp/pytra_nes3_path_alias_pkg`
 - `for f in /tmp/pytra_nes3_path_alias_pkg/src/*.cpp; do g++ -std=c++20 -O0 -c "$f" -I /tmp/pytra_nes3_path_alias_pkg/include -I /workspace/Pytra/src -I /workspace/Pytra/src/runtime/cpp; done`
 - `git diff --check`

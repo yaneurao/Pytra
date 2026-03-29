@@ -36,11 +36,11 @@
 - 回帰テストで「未使用 import を出さない」「必要 import は欠けない」を検知できる。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_py2java_transpile.py`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2java_transpile.py`
 
 決定ログ:
 - 2026-02-28: ユーザー指示により、import 依存確定を「EAST 解決情報 + CodeEmitter 基底集約」で行う `P2` 計画を起票した。

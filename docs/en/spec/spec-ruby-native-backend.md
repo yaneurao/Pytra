@@ -58,7 +58,7 @@ Forbidden:
 
 - `py2rb.py` generates `.rb` from EAST3 input.
 - minimal fixtures (`add` / `if_else` / `for_range`) transpile without failure.
-- `test/unit/toolchain/emit/rb/test_py2rb_smoke.py` locks CLI/emitter skeleton behavior.
+- `tools/unittest/emit/rb/test_py2rb_smoke.py` locks CLI/emitter skeleton behavior.
 
 ## 7. Container Reference Management Boundary (v1)
 
@@ -69,4 +69,4 @@ Forbidden:
 - When classification is ambiguous, fail closed to the ref-boundary side.
 - Rollback:
   - On problematic cases, move input Python annotations to `Any/object`, or switch to explicit copies (`list(...)` / `dict(...)`).
-  - Verify with both `python3 tools/check_py2rb_transpile.py` and `python3 tools/runtime_parity_check.py --case-root sample --targets ruby --ignore-unstable-stdout 18_mini_language_interpreter`.
+  - Verify with both `python3 tools/check/check_py2rb_transpile.py` and `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby --ignore-unstable-stdout 18_mini_language_interpreter`.

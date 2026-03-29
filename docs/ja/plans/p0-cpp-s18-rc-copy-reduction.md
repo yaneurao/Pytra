@@ -32,10 +32,10 @@
 - 既存の意味（寿命・参照整合）を壊さず、unit/transpile 回帰が通る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force --verbose`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force --verbose`
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、sample/18 の `rc` 不要コピー削減を `P0` で起票した。

@@ -31,9 +31,9 @@ Acceptance criteria:
 - Selfhost / C++ transpile regression tests pass.
 
 Verification commands:
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_todo_priority.py` (when updated)
-- `python3 test/unit/test_unit_runtime.py` (or corresponding runtime test set)
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_todo_priority.py` (when updated)
+- `python3 tools/unittest/test_unit_runtime.py` (or corresponding runtime test set)
 
 Execution policy:
 1) Define `py_to<T>` skeleton in runtime headers (`enable_if` / SFINAE / dedicated overloads for `object` and `std::any`).
@@ -51,24 +51,24 @@ Note:
 - Added `py_to<T>` templates (`object` / `std::any` / value types) in `src/runtime/cpp/pytra-core/built_in/py_runtime.h`, unifying major destinations (`int64` / `float64` / `bool` / `str` / `object`).
 - Kept existing APIs (`py_to_int64` / `py_to_float64` / `py_to_bool`) as compatibility wrappers and moved arithmetic/object routes through `py_to<T>`.
 - Validation:
-  - `python3 tools/check_py2cpp_transpile.py` (`checked=131 ok=131 fail=0 skipped=6`)
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout` (`SUMMARY cases=1 pass=1 fail=0 targets=cpp`)
+  - `python3 tools/check/check_py2cpp_transpile.py` (`checked=131 ok=131 fail=0 skipped=6`)
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout` (`SUMMARY cases=1 pass=1 fail=0 targets=cpp`)
 
 `P1-CPP-PYTO-01-S2` finalized (2026-02-25):
 - Migrated cast lowering in `src/hooks/cpp/emitter/expr.py` to `py_to<float64>` / `py_to<int64>` / `py_to<bool>` style.
 - Replaced direct `py_to_int64/py_to_float64/py_to_bool` calls in `src/hooks/cpp/emitter/cpp_emitter.py` in phases (`dict` default retrieval, indexing, truthy checks, `range/enumerate` args, etc.) with `py_to<...>` style.
 - Validation:
-  - `python3 test/unit/test_py2cpp_smoke.py` (3 passed)
-  - `python3 tools/check_py2cpp_transpile.py` (`checked=131 ok=131 fail=0 skipped=6`)
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout` (`SUMMARY cases=1 pass=1 fail=0 targets=cpp`)
+  - `python3 tools/unittest/test_py2cpp_smoke.py` (3 passed)
+  - `python3 tools/check/check_py2cpp_transpile.py` (`checked=131 ok=131 fail=0 skipped=6`)
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout` (`SUMMARY cases=1 pass=1 fail=0 targets=cpp`)
 
 `P1-CPP-PYTO-01-S3` finalized (2026-02-25):
-- Added runtime smoke checks in `test/unit/test_cpp_runtime_boxing.py` for `py_to_int64(object/any)` and `py_to<int64>(object/any)` behavior, fixing the contract difference: non-convertible values return `0`; strict validation uses `obj_to_int64_or_raise`.
+- Added runtime smoke checks in `tools/unittest/test_cpp_runtime_boxing.py` for `py_to_int64(object/any)` and `py_to<int64>(object/any)` behavior, fixing the contract difference: non-convertible values return `0`; strict validation uses `obj_to_int64_or_raise`.
 - Added note to `docs/ja/README.md` / `readme.md` describing C++ runtime conversion policy (`py_to_int64` family prioritizes compatibility and returns `0`; strict mode uses `_or_raise`).
 - Validation:
-  - `python3 test/unit/test_cpp_runtime_boxing.py` (1 passed)
-  - `python3 tools/check_py2cpp_transpile.py` (`checked=131 ok=131 fail=0 skipped=6`)
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout` (`SUMMARY cases=1 pass=1 fail=0 targets=cpp`)
+  - `python3 tools/unittest/test_cpp_runtime_boxing.py` (1 passed)
+  - `python3 tools/check/check_py2cpp_transpile.py` (`checked=131 ok=131 fail=0 skipped=6`)
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout` (`SUMMARY cases=1 pass=1 fail=0 targets=cpp`)
 
 Decision log:
 - [2026-02-25] [ID: P1-CPP-PYTO-01]

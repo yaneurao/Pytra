@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if str(ROOT / "src") not in sys.path:
@@ -558,7 +558,7 @@ def build_runtime_symbol_index() -> dict[str, Any]:
 
     return {
         "schema_version": SCHEMA_VERSION,
-        "generated_by": "tools/gen_runtime_symbol_index.py",
+        "generated_by": "tools/gen/gen_runtime_symbol_index.py",
         "modules": modules,
         "targets": targets,
     }

@@ -24,7 +24,7 @@
 - `src/hooks/cpp/emitter/type_bridge.py`
 - `src/hooks/cpp/emitter/builtin_runtime.py`
 - 必要なら `src/pytra/compiler/east_parts/core.py`（EAST3 型付与）
-- `test/unit/test_py2cpp_smoke.py` / `test/unit/test_east3_cpp_bridge.py`
+- `tools/unittest/test_py2cpp_smoke.py` / `tools/unittest/test_east3_cpp_bridge.py`
 - `sample/cpp/18_mini_language_interpreter.cpp`
 
 非対象:
@@ -39,10 +39,10 @@
 - `sample/cpp` 再生成後に `sample/18` の compile/run が通る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_smoke.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout`
 
 決定ログ:
 - 2026-02-28: ユーザー指示により、`isdigit` 個別対応ではなく「str を含む同型 cast 全体の除去」を P0 で実施する方針を確定した。
@@ -51,7 +51,7 @@
 - 2026-02-28: [ID: `P0-CPP-SAMECAST-01-S1-03`] `StrCharClassOp` で型既知 `str` は `receiver.isdigit()/isalpha()` を直接出力し、unknown/object 経路のみ `str(...)` defensive cast を維持する方針へ更新した。
 - 2026-02-28: [ID: `P0-CPP-SAMECAST-01-S2-01`] `apply_cast` と `_render_unbox_target_cast` に同型 no-op 判定を追加し、描画済み式から推論できる同型 cast（非 Any/object/unknown）を省略するようにした。
 - 2026-02-28: [ID: `P0-CPP-SAMECAST-01-S2-02`] `sample/18` を対象に char-class 回帰を追加（`test_sample18_charclass_avoids_redundant_str_cast`）。併せて `test_east3_cpp_bridge.py` の期待値を更新し、型既知 `str` での no-cast 出力を固定した。
-- 2026-02-28: [ID: `P0-CPP-SAMECAST-01-S3-01`] `python3 tools/regenerate_samples.py --langs cpp --force`（`summary: total=18 skip=0 regen=18 fail=0`）と `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout`（`[PASS] 18_mini_language_interpreter`）を再実行し、sample 再生成と parity 通過を確認した。
+- 2026-02-28: [ID: `P0-CPP-SAMECAST-01-S3-01`] `python3 tools/gen/regenerate_samples.py --langs cpp --force`（`summary: total=18 skip=0 regen=18 fail=0`）と `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout`（`[PASS] 18_mini_language_interpreter`）を再実行し、sample 再生成と parity 通過を確認した。
 
 ## 分解
 

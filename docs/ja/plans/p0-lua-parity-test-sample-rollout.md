@@ -20,9 +20,9 @@
 - stdout 一致に加えて、画像出力ケースの artifact サイズ一致も継続的に検証する。
 
 対象:
-- `tools/runtime_parity_check.py`
-- `test/unit/test_runtime_parity_check_cli.py`（必要時）
-- `test/unit/test_py2lua_smoke.py`
+- `tools/check/runtime_parity_check.py`
+- `tools/unittest/test_runtime_parity_check_cli.py`（必要時）
+- `tools/unittest/test_py2lua_smoke.py`
 - `src/hooks/lua/emitter/lua_native_emitter.py`（parity 不一致時の修正）
 - `src/runtime/lua/*`（必要時）
 - `sample/lua/*.lua`（再生成確認）
@@ -40,12 +40,12 @@
 - 結果を plan の決定ログへ記録し、再発検知の導線（unit/CLI）を固定する。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2lua_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2lua_transpile.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua*.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root fixture --targets lua --ignore-unstable-stdout`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout`
-- `python3 tools/regenerate_samples.py --langs lua --force`
+- `python3 tools/check/runtime_parity_check.py --case-root fixture --targets lua --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout`
+- `python3 tools/gen/regenerate_samples.py --langs lua --force`
 
 分解:
 - [x] [ID: P0-LUA-PARITY-ALL-01-S1-01] Lua parity 対象範囲（fixture 対象ケース / sample 全18件）を確定し、実行手順を固定する。
@@ -65,8 +65,8 @@
   - `pathlib.Path` 最小 runtime（`/`, `mkdir`, `exists`, `write_text`, `read_text`, `name/stem/parent`）を追加。
   - `print` を Python 互換表記（`True/False/None`）へ調整。
   - `break/continue` lowering（`break` / `goto continue_label`）と属性 `AnnAssign` 修正、`main` guard 呼び出し補正を追加。
-- 2026-03-01: `python3 tools/runtime_parity_check.py --case-root fixture --targets lua --ignore-unstable-stdout` は pass（2/2）。
-- 2026-03-01: `python3 tools/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout` は未達（pass=3, fail=15）。
+- 2026-03-01: `python3 tools/check/runtime_parity_check.py --case-root fixture --targets lua --ignore-unstable-stdout` は pass（2/2）。
+- 2026-03-01: `python3 tools/check/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout` は未達（pass=3, fail=15）。
   - 未達内訳: `pytra.runtime/pytra.utils gif` 未実装に起因する transpile failed（12件）、
     `18_mini_language_interpreter` の Lua 機能不足（`enumerate` 等）による run failed。
 - 2026-03-01: Lua emitter を以下の観点で修正し、sample parity blocker を解消した。
@@ -77,8 +77,8 @@
   - 定数/動的の負添字（`[-1]` 含む）を Lua 添字へ正規化。
   - dataclass（`ClassDef(dataclass=True)`）の `new(args)` でフィールドを初期化。
   - `str + str` を Lua 連結 `..` へ lowering。
-- 2026-03-01: `python3 tools/runtime_parity_check.py --case-root fixture --targets lua --ignore-unstable-stdout` は pass（2/2, fail=0）。
-- 2026-03-01: `python3 tools/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout` は pass（18/18, fail=0）。
+- 2026-03-01: `python3 tools/check/runtime_parity_check.py --case-root fixture --targets lua --ignore-unstable-stdout` は pass（2/2, fail=0）。
+- 2026-03-01: `python3 tools/check/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout` は pass（18/18, fail=0）。
 - 2026-03-01: summary JSON（`out/lua_sample_parity_summary.json`）で `category_counts={'ok': 18}` を確認し、`artifact_size_mismatch=0` を満たした。
 - 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua_smoke.py' -v` は pass（32 tests, 0 fail）。
-- 2026-03-01: `python3 tools/check_py2lua_transpile.py` は `checked=103 ok=89 fail=14 skipped=39`（既知の stdlib/imports 系失敗）で、今回変更で新規 failure 増加は確認されなかった。
+- 2026-03-01: `python3 tools/check/check_py2lua_transpile.py` は `checked=103 ok=89 fail=14 skipped=39`（既知の stdlib/imports 系失敗）で、今回変更で新規 failure 増加は確認されなかった。

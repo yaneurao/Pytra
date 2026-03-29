@@ -11,7 +11,7 @@ Related TODO:
 
 Background:
 - The current `docs/ja/language/backend-parity-matrix.md` is the canonical support matrix for representative features. It is not a full inventory of every test suite.
-- The support matrix rows come from a curated `feature_id + representative_fixture` inventory, while `test/unit/backends/*` already exercises fixtures such as `property_method_call` and `list_bool_index` across many backends. That leaves a gap between real coverage and what the docs show.
+- The support matrix rows come from a curated `feature_id + representative_fixture` inventory, while `tools/unittest/emit/*` already exercises fixtures such as `property_method_call` and `list_bool_index` across many backends. That leaves a gap between real coverage and what the docs show.
 - `test/ir` is an EAST3(JSON)-driven backend-only smoke suite, `test/integration` is a backend-specific integration suite, and `test/transpile` contains artifact-comparison fixtures, but those suites are not directly attached to the parity-matrix row taxonomy.
 - As a result, the current docs/tooling cannot answer, in one place, which large test bundles verify which `feature/lane/backend` cells, which already-tested fixtures are still unpublished, or how close coverage is to 100%.
 
@@ -23,7 +23,7 @@ Objective:
 In scope:
 - Representative feature/lane contracts in `backend_feature_contract_inventory.py` and `backend_conformance_inventory.py`
 - `docs/ja|en/language/backend-parity-matrix.md` plus future coverage docs/exports
-- `test/unit/common`, `test/unit/backends`, `test/ir`, `test/integration`, and `test/transpile`
+- `tools/unittest/common`, `tools/unittest/backends`, `test/ir`, `test/integration`, and `test/transpile`
 - Coverage bundle taxonomy, manifest, checker, export tooling, and mirrored docs
 - Inventorying fixtures that already have multi-backend smoke coverage but are not yet promoted into the representative inventory
 
@@ -42,11 +42,11 @@ Acceptance criteria:
 - A checker fails when a new feature or suite lands without a coverage-bundle mapping for the required `feature/lane/backend` cells.
 
 Validation commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `rg -n "property_method_call|list_bool_index|test/ir|test/integration|test/transpile|support matrix|coverage matrix" src tools test docs -g '!**/archive/**'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_backend_*coverage*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends -p 'test_py2*_smoke.py'`
-- `python3 tools/check_ir2lang_smoke.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_backend_*coverage*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/backends -p 'test_py2*_smoke.py'`
+- `python3 tools/check/check_ir2lang_smoke.py`
 - `git diff --check`
 
 ## Coverage Bundle Policy
@@ -79,7 +79,7 @@ Validation commands (planned):
 
 Decision log:
 - 2026-03-14: Opened after confirming that `backend-parity-matrix` is a representative support-claim page rather than a full suite inventory, so bundle-based coverage tracking needs to exist as a separate canonical surface.
-- 2026-03-14: Added `backend_contract_coverage_inventory.py`, its checker, and a unit test to lock a first-pass machine-readable inventory for representative seed sources, coverage-bundle taxonomy, live suite families, and unpublished multi-backend fixture seeds (`property_method_call`, `list_bool_index`). `test/unit/link|selfhost|tooling` are currently classified as supporting-only, while `test/unit/common|backends|ir`, `test/ir`, `test/integration`, and `test/transpile` are classified as direct matrix-input candidates.
+- 2026-03-14: Added `backend_contract_coverage_inventory.py`, its checker, and a unit test to lock a first-pass machine-readable inventory for representative seed sources, coverage-bundle taxonomy, live suite families, and unpublished multi-backend fixture seeds (`property_method_call`, `list_bool_index`). `tools/unittest/link|selfhost|tooling` are currently classified as supporting-only, while `tools/unittest/common|backends|ir`, `test/ir`, `test/integration`, and `test/transpile` are classified as direct matrix-input candidates.
 - 2026-03-14: Added `backend_contract_coverage_contract.py`, its checker, and a unit test to lock the role split between the support matrix, the future coverage matrix, and the backend test matrix, together with the definition of 100% contract coverage for `feature x required_lane x backend`. Mirrored the same wording into `docs/ja|en/language/backend-parity-matrix.md` and `backend-test-matrix.md`, and verified it with doc needles so suite health cannot be confused with contract coverage.
 - 2026-03-14: Added `backend_contract_coverage_matrix_contract.py`, its checker, and a unit test to lock machine-readable seed ownership rows for `required_lane x backend` on every representative feature. `parse/east/east3_lowering/emit` now seed bundle ownership directly, while `runtime` is seeded as explicit `case_runtime_followup` / `module_runtime_strategy_followup` rules so unmapped bundle work stays visible.
 - 2026-03-14: Added `backend_contract_coverage_suite_attachment_contract.py`, its checker, and a unit test to lock bundle attachments versus explicit exclusions for every live suite family. `unit_common`, `unit_backends`, `unit_ir`, `ir_fixture`, `integration`, and `transpile_artifact` are now required to carry direct bundle attachments, while `unit_link`, `unit_selfhost`, and `unit_tooling` must carry supporting-only exclusion reasons so unmapped suites stay visible in the checker.

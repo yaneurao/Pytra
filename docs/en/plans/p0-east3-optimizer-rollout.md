@@ -35,9 +35,9 @@ Acceptance criteria:
 - Fail-closed behavior is confirmed in inapplicable cases (side effects, uncertain evaluation order).
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 -m unittest discover -s test/unit -p 'test_east3_*optimizer*.py'`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets cpp,rs,cs,js,ts --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp,rs,cs,js,ts --all-samples --ignore-unstable-stdout`
 
 Decision log:
 - 2026-02-26: Initial draft created. Based on `spec-east3-optimizer`, implementation rollout is split into S1/S2/S3.

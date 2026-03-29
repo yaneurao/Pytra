@@ -19,7 +19,7 @@
 
 対象:
 - `src/hooks/java/emitter/java_native_emitter.py` の式出力（特に `BinOp` 周辺）
-- `test/unit/test_py2java_smoke.py` と Java codegen 回帰テスト
+- `tools/unittest/test_py2java_smoke.py` と Java codegen 回帰テスト
 - `sample/java` 再生成結果
 
 非対象:
@@ -33,9 +33,9 @@
 - 既存 Java smoke/変換回帰が通過し、`sample/java` 再生成で過剰括弧が縮退すること。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2java_smoke.py' -v`
-- `python3 tools/regenerate_samples.py --langs java --force`
+- `python3 tools/gen/regenerate_samples.py --langs java --force`
 - `rg -n \"\\(x \\* x\\)\" sample/java`
 
 決定ログ:
@@ -43,7 +43,7 @@
 - 2026-03-01: 最小括弧化ルールを `BinOp` に限定して適用し、`RHS` が同一優先順位の `BinOp` の場合は必ず括弧を維持する fail-closed 方針とした（`a - (b - c)` 等のグルーピング保持）。
 - 2026-03-01: `java_native_emitter.py` の `BinOp` 出力を優先順位ベースへ変更し、不要な全体括弧を削減した。
 - 2026-03-01: `test_py2java_smoke.py` に `BinOp` 最小括弧化と `RHS` グルーピング保持の回帰を追加し、既存期待値も新表記へ更新した。
-- 2026-03-01: `tools/regenerate_samples.py --langs java --force` を実行し、`sample/java` 18件へ反映した。`rg` で `"(x * x)"` と `"(2.0 * Math.PI)"` の残存がないことを確認した。
+- 2026-03-01: `tools/gen/regenerate_samples.py --langs java --force` を実行し、`sample/java` 18件へ反映した。`rg` で `"(x * x)"` と `"(2.0 * Math.PI)"` の残存がないことを確認した。
 - 2026-03-01: `check_py2java_transpile.py` は既知の `Try/Yield/Swap` 未対応4件で fail のまま（本タスク非対象）を確認した。
 
 ## 分解

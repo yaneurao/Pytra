@@ -32,8 +32,8 @@
 - archive 履歴（旧ID）と再開タスク（新ID）の対応が文書で追える。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
 - `python3 src/py2cpp.py materials/refs/microgpt/microgpt-20260222.py -o work/out/microgpt_revival.cpp`
 
 決定ログ:
@@ -66,13 +66,13 @@
 ## 障害分類ログテンプレート（S2-02）
 
 実行コマンド:
-- `python3 tools/check_microgpt_original_py2cpp_regression.py`
+- `python3 tools/check/check_microgpt_original_py2cpp_regression.py`
 
 記録テンプレート（`決定ログ` 追記時に使用）:
 
 | 日付 | command | result | phase | stage | owner | first_error | 次アクション |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| YYYY-MM-DD | `python3 tools/check_microgpt_original_py2cpp_regression.py` | `ok/fail` | `transpile/syntax-check/...` | `A..F/SUCCESS` | `parser/lower/runtime/success` | 先頭エラー1行 | 追跡する TODO ID |
+| YYYY-MM-DD | `python3 tools/check/check_microgpt_original_py2cpp_regression.py` | `ok/fail` | `transpile/syntax-check/...` | `A..F/SUCCESS` | `parser/lower/runtime/success` | 先頭エラー1行 | 追跡する TODO ID |
 
 運用ルール:
 - `owner=parser` は parser 受理/構文系、`owner=lower` は EAST/lower/emitter 系、`owner=runtime` は runtime/compile 互換系として扱う。
@@ -82,7 +82,7 @@
 ## 完了判定（S3-02）
 
 archive へ戻す条件:
-1. `python3 tools/check_microgpt_original_py2cpp_regression.py` が既定（`stage=F`, `phase=syntax-check`）で成功し、`owner=runtime` を出力する。
+1. `python3 tools/check/check_microgpt_original_py2cpp_regression.py` が既定（`stage=F`, `phase=syntax-check`）で成功し、`owner=runtime` を出力する。
 2. `python3 -m unittest discover -s test/unit -p 'test_check_microgpt_original_py2cpp_regression.py' -v` が成功する。
 3. `python3 -m unittest discover -s test/unit -p 'test_microgpt_revival_smoke.py' -v` が成功する。
 4. `docs/ja/todo/index.md` の進捗メモに直近の `stage/phase/owner/first_error` が残っている。

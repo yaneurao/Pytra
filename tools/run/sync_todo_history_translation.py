@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 JP_DIR = ROOT / "docs" / "ja" / "todo" / "archive"
 EN_DIR = ROOT / "docs" / "en" / "todo" / "archive"
 DATE_FILE_RE = re.compile(r"^[0-9]{8}\.md$")

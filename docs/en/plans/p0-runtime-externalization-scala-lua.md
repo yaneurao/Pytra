@@ -25,9 +25,9 @@ In scope:
 - `src/py2lua.py`
 - `src/runtime/scala/pytra/*` (new)
 - `src/runtime/lua/pytra/*` (new)
-- `tools/check_py2scala_transpile.py`
-- `tools/check_py2lua_transpile.py`
-- `tools/runtime_parity_check.py` (if needed)
+- `tools/check/check_py2scala_transpile.py`
+- `tools/check/check_py2lua_transpile.py`
+- `tools/check/runtime_parity_check.py` (if needed)
 
 Out of scope:
 - Full runtime API redesign
@@ -41,11 +41,11 @@ Acceptance criteria:
 - Sample parity checks (at minimum `01_mandelbrot`) confirm no regression.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/check_py2lua_transpile.py`
-- `python3 tools/regenerate_samples.py --langs scala,lua --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets scala,lua 01_mandelbrot --ignore-unstable-stdout`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/check/check_py2lua_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs scala,lua --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets scala,lua 01_mandelbrot --ignore-unstable-stdout`
 
 Breakdown:
 - [x] [ID: P0-RUNTIME-EXT-SCALA-LUA-01-S1-01] Inventory Scala/Lua inline helper emission points and runtime API dependencies, and finalize the externalization boundary.

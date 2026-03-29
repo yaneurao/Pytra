@@ -35,18 +35,18 @@ Acceptance criteria:
 - `lua/php/ruby` remain under `defer_until_jvm_package_bundle_complete`.
 
 Verification commands:
-- `python3 tools/check_relative_import_backend_coverage.py`
-- `python3 tools/check_relative_import_secondwave_rollout_contract.py`
-- `python3 tools/check_relative_import_native_path_bundle_contract.py`
-- `python3 tools/check_relative_import_jvm_package_bundle_contract.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_backend_coverage.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_secondwave_rollout_contract.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_native_path_bundle_contract.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_jvm_package_bundle_contract.py'`
-- `PYTHONPATH=src:test/unit:test/unit/backends python3 -m unittest discover -s test/unit/backends/go -p 'test_py2go_smoke.py' -k relative_import_native_path_bundle -v`
-- `PYTHONPATH=src:test/unit:test/unit/backends python3 -m unittest discover -s test/unit/backends/nim -p 'test_py2nim_smoke.py' -k relative_import_native_path_bundle -v`
-- `PYTHONPATH=src:test/unit:test/unit/backends python3 -m unittest discover -s test/unit/backends/swift -p 'test_py2swift_smoke.py' -k relative_import_native_path_bundle -v`
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_relative_import_backend_coverage.py`
+- `python3 tools/check/check_relative_import_secondwave_rollout_contract.py`
+- `python3 tools/check/check_relative_import_native_path_bundle_contract.py`
+- `python3 tools/check/check_relative_import_jvm_package_bundle_contract.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_backend_coverage.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_secondwave_rollout_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_native_path_bundle_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_jvm_package_bundle_contract.py'`
+- `PYTHONPATH=src:test/unit:tools/unittest/backends python3 -m unittest discover -s tools/unittest/emit/go -p 'test_py2go_smoke.py' -k relative_import_native_path_bundle -v`
+- `PYTHONPATH=src:test/unit:tools/unittest/backends python3 -m unittest discover -s tools/unittest/emit/nim -p 'test_py2nim_smoke.py' -k relative_import_native_path_bundle -v`
+- `PYTHONPATH=src:test/unit:tools/unittest/backends python3 -m unittest discover -s tools/unittest/emit/swift -p 'test_py2swift_smoke.py' -k relative_import_native_path_bundle -v`
+- `python3 tools/check/check_todo_priority.py`
 - `git diff --check`
 
 Decision log:

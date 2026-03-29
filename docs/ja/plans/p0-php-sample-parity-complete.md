@@ -24,8 +24,8 @@
 - `src/runtime/php/pytra/runtime/gif.php`
 - `src/toolchain/emit/php/lower/**`
 - `src/toolchain/emit/php/emitter/**`
-- `tools/runtime_parity_check.py`
-- `test/unit/test_runtime_parity_check_cli.py`（必要時）
+- `tools/check/runtime_parity_check.py`
+- `tools/unittest/test_runtime_parity_check_cli.py`（必要時）
 
 非対象:
 - PHP 実行速度の最適化
@@ -33,16 +33,16 @@
 - PHP 以外の backend 改修
 
 受け入れ基準:
-- `python3 tools/runtime_parity_check.py --case-root sample --targets php --all-samples --summary-json work/logs/runtime_parity_sample_php_all_pass_20260304.json` で `case_pass=18`, `case_fail=0`。
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets php --all-samples --summary-json work/logs/runtime_parity_sample_php_all_pass_20260304.json` で `case_pass=18`, `case_fail=0`。
 - 上記ログで `category_counts` が `ok` のみ（`output_mismatch` / `artifact_*` / `run_failed` が 0）。
 - 失敗修正に対応する最小回帰（unit または parity 導線）が追加され、同系統の退行を検知できる。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/regenerate_samples.py --langs php --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets php --all-samples --summary-json work/logs/runtime_parity_sample_php_rebaseline_20260304.json`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets php 05_mandelbrot_zoom 06_julia_parameter_sweep 08_langtons_ant 10_plasma_effect 11_lissajous_particles 12_sorting_visualization 14_simple_raymarching 16_glass_sculpture_chaos --summary-json work/logs/runtime_parity_sample_php_crc_focus_20260304.json`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets php --all-samples --summary-json work/logs/runtime_parity_sample_php_all_pass_20260304.json`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/gen/regenerate_samples.py --langs php --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets php --all-samples --summary-json work/logs/runtime_parity_sample_php_rebaseline_20260304.json`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets php 05_mandelbrot_zoom 06_julia_parameter_sweep 08_langtons_ant 10_plasma_effect 11_lissajous_particles 12_sorting_visualization 14_simple_raymarching 16_glass_sculpture_chaos --summary-json work/logs/runtime_parity_sample_php_crc_focus_20260304.json`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets php --all-samples --summary-json work/logs/runtime_parity_sample_php_all_pass_20260304.json`
 
 決定ログ:
 - 2026-03-04: ユーザー指示により、PHP parity 全件完了を P0 で再起票。既存ログ上の未達（`artifact_crc32_mismatch` 8件）を baseline として採用。
@@ -50,7 +50,7 @@
 - 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S1-02] `out/diag_php/05_{py,php}.gif` の先頭差分が byte 804（GCE delay）であることを確認し、`save_gif(delay_cs=..., loop=...)` の keyword が PHP 出力で欠落していると特定。
 - 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-03] `src/toolchain/emit/php/emitter/php_native_emitter.py` に `_render_image_runtime_call` を追加し、`save_gif`/`write_rgb_png` の keyword/引数検証と `delay_cs`,`loop` の正規化を実装。
 - 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-04] 再検証で残件 `sample/16` のみ不一致となり、GIF先頭差分が byte 13（palette）であることを確認。`palette_332` のビット演算が PHP emitter で `+` に崩れていたため、`BitAnd/BitOr/BitXor/LShift/RShift` を演算子マップへ追加。
-- 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-02] `test/unit/test_py2php_smoke.py` に `save_gif` keyword 引数順序と `sample/16` ビット演算維持の回帰テストを追加。`python3 -m unittest discover -s test/unit -p 'test_py2php_smoke.py'` で 9 件 pass。
+- 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-02] `tools/unittest/test_py2php_smoke.py` に `save_gif` keyword 引数順序と `sample/16` ビット演算維持の回帰テストを追加。`python3 -m unittest discover -s test/unit -p 'test_py2php_smoke.py'` で 9 件 pass。
 - 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-01] `work/logs/runtime_parity_sample_php_case16_after_bitops_20260304.json` で `sample/16` 単独 pass を確認後、`work/logs/runtime_parity_sample_php_all_pass_20260304.json` で `case_pass=18` / `case_fail=0` / `category_counts={ok:18}` を達成。
 
 ## 分解

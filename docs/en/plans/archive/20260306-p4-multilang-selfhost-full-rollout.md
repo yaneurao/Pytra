@@ -19,7 +19,7 @@ Goal:
 - Gradually satisfy selfhost conditions for `py2<lang>.py` (`cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala/php/nim`) and converge to full multistage monitoring coverage across all languages.
 
 In scope:
-- `tools/check_multilang_selfhost_stage1.py` / `tools/check_multilang_selfhost_multistage.py` / `tools/check_multilang_selfhost_suite.py`
+- `tools/check/check_multilang_selfhost_stage1.py` / `tools/check/check_multilang_selfhost_multistage.py` / `tools/check/check_multilang_selfhost_suite.py`
 - Each language `py2*.py` and corresponding emitter/runtime
 - Update path for selfhost verification reports (`docs/ja/plans/p1-multilang-selfhost-*.md`)
 
@@ -29,14 +29,14 @@ Out of scope:
 - Starting this ahead of existing P0/P1/P3 tasks
 
 Acceptance criteria:
-- All languages are `stage1 pass` in `tools/check_multilang_selfhost_suite.py`.
+- All languages are `stage1 pass` in `tools/check/check_multilang_selfhost_suite.py`.
 - Multistage reports show `stage2 pass` and `stage3 pass` for all languages (or explicit permanent exclusions).
 - Persistent dependence on `runner_not_defined` / `preview_only` / `toolchain_missing` is eliminated.
 
 Verification commands:
-- `python3 tools/check_multilang_selfhost_suite.py`
-- `python3 tools/check_multilang_selfhost_stage1.py`
-- `python3 tools/check_multilang_selfhost_multistage.py`
+- `python3 tools/check/check_multilang_selfhost_suite.py`
+- `python3 tools/check/check_multilang_selfhost_stage1.py`
+- `python3 tools/check/check_multilang_selfhost_multistage.py`
 - `python3 tools/build_selfhost.py`
 
 Decision log:
@@ -52,7 +52,7 @@ Decision log:
 - 2026-03-02: [ID: `P4-MULTILANG-SH-01-S2-03`] Added source-side reductions for `raw[qpos:]` / `txt in {"",...}`, ESM-ized and re-applied JS selfhost shim/runtime, argparse map-tag compatibility, `.py -> EAST3(JSON)` input switching, and staged relaxation of `JsEmitter` profile-loader selfhost dependencies (`EmitterHooks`/`__file__`/`CodeEmitter`). `ReferenceError/SyntaxError` classes were cleared; first failure moved to `TypeError: CodeEmitter._dict_copy_str_object is not a function`.
 - 2026-03-02: [ID: `P4-MULTILANG-SH-01-S2-03`] Made `.get` paths in `CodeEmitter.load_type_map` and `profile/operators/syntax` references in `JsEmitter.__init__` object-safe, and added `set/list/dict` polyfills plus `CodeEmitter` static alias completion in selfhost rewrite. Resolved `dict is not defined`; first failure moved to `TypeError: module.get is not a function`.
 - 2026-03-02: [ID: `P4-MULTILANG-SH-01-S2-03`] Unified `.get(...)` to `__pytra_dict_get(...)` in selfhost rewrite and resolved descriptor collisions from `Object.prototype.get`. Also added `parent/name/stem` property compatibility and default-idempotent `mkdir` in the `Path` shim. Re-check reached `js stage1 pass / stage2 pass`, and multistage first failure advanced to `sample_transpile_fail: stage3 sample output missing`.
-- 2026-03-02: [ID: `P4-MULTILANG-SH-01-S2-03`] Further reinforced CodeEmitter/JsEmitter selfhost compatibility: reduced dynamic-value dependencies for `startswith/strip/find` through helpers, replaced `next_tmp` f-string path (`self` resolution break) with concatenation, removed `ord/chr` dependency from ASCII helpers, and added String polyfills (`strip/lstrip/rstrip/startswith/endswith/find/lower/upper/map`) in stage-checker JS rewrite. Re-passed `python3 tools/check_multilang_selfhost_stage1.py --strict-stage1` / `python3 tools/check_multilang_selfhost_multistage.py`; `js` kept `stage1/native pass` and `multistage stage2 pass`; first failure updated to `stage3 sample_transpile_fail (SyntaxError: Invalid or unexpected token)`.
+- 2026-03-02: [ID: `P4-MULTILANG-SH-01-S2-03`] Further reinforced CodeEmitter/JsEmitter selfhost compatibility: reduced dynamic-value dependencies for `startswith/strip/find` through helpers, replaced `next_tmp` f-string path (`self` resolution break) with concatenation, removed `ord/chr` dependency from ASCII helpers, and added String polyfills (`strip/lstrip/rstrip/startswith/endswith/find/lower/upper/map`) in stage-checker JS rewrite. Re-passed `python3 tools/check/check_multilang_selfhost_stage1.py --strict-stage1` / `python3 tools/check/check_multilang_selfhost_multistage.py`; `js` kept `stage1/native pass` and `multistage stage2 pass`; first failure updated to `stage3 sample_transpile_fail (SyntaxError: Invalid or unexpected token)`.
 - 2026-03-02: [ID: `P4-MULTILANG-SH-01-S2-03`] Traced stage3 failure with minimal repro and confirmed `py2js_stage2.js` header collapse (`0import ...` / `undefined...`). Replaced string-multiplication dependency in `CodeEmitter.emit` with `_indent_padding` loop, added non-string guard for `quote_string_literal` `quote`, and switched `JsEmitter._emit_function` `in_class` check to empty-string sentinel to partially resolve stage2 output corruption. Latest re-check kept `js: stage1/native pass`, `multistage stage2 pass`; first failure updated to `stage3 sample_transpile_fail (SyntaxError: Unexpected token '{')` (stage2 output corruption including unresolved placeholders like `return {value};`).
 
 ## Current Snapshot (S1-01)

@@ -62,16 +62,16 @@
 - `@abi` は helper 境界の補助として維持するが、本計画では generic helper の primary mechanism にはしない。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_runtime_cpp_layout.py`
-- `python3 tools/check_runtime_core_gen_markers.py`
-- `python3 tools/gen_runtime_symbol_index.py --check`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_*template*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/link -p 'test_*template*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_*.py'`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_runtime_cpp_layout.py`
+- `python3 tools/check/check_runtime_core_gen_markers.py`
+- `python3 tools/gen/gen_runtime_symbol_index.py --check`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_*template*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/link -p 'test_*template*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_*.py'`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
 
 ## 1. 問題の本質
 
@@ -186,9 +186,9 @@
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S3-02]: 第二波の `sorted` family はこの tranche では見送った。builtin lowering が `zip` ほど明示されておらず、`zip` だけで第二の generic helper family と header-only generated module lane を成立できたため、残りは `S4` 以降の regression/guard 同期を優先する。
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-01]: `test_runtime_symbol_index.py` に `pytra.built_in.numeric_ops` / `pytra.built_in.zip_ops` の header-only generated contract を追加し、`companions=["generated"]`, `public_headers=pytra/.../*.h`, `compile_sources=[]` を固定した。header-only template helper は runtime symbol index 上も `.cpp` を持たない canonical module として扱う。
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-01]: `test_cpp_runtime_build_graph.py` で `runtime/cpp/core/py_runtime.h` から collect される runtime source 集合に `generated/built_in/numeric_ops.cpp` / `zip_ops.cpp` が再侵入しないことを固定した。header-only generated helper は build graph 上でも phantom compile source を持たない。
-- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-02]: `tools/check_runtime_cpp_layout.py` に `sum/min/max/zip` の hand-written template helper body が `native/core/py_runtime.h` へ再侵入したら fail する guard を追加し、`test_check_runtime_cpp_layout.py` で `zip(const list<A>& lhs, const list<B>& rhs)` の duplicate 検出を固定した。template helper lane を導入した後に core header へ逆流させないことを stop-ship にした。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-02]: `tools/check/check_runtime_cpp_layout.py` に `sum/min/max/zip` の hand-written template helper body が `native/core/py_runtime.h` へ再侵入したら fail する guard を追加し、`test_check_runtime_cpp_layout.py` で `zip(const list<A>& lhs, const list<B>& rhs)` の duplicate 検出を固定した。template helper lane を導入した後に core header へ逆流させないことを stop-ship にした。
 - 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-02]: `docs/ja/spec/spec-runtime.md` と `docs/ja/how-to-use.md` を同期し、`numeric_ops` / `zip_ops` は header-only generated module なので `compile_sources=[]` が canonical であり、空の `.cpp` を作らないことを明記した。runtime symbol index / build graph / C++ runtime docs の説明を同じ契約へ揃えた。
-- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-02]: `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture` で `cases=3 pass=3 fail=0`、`python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples` で `cases=18 pass=18 fail=0` を確認し、本計画を archive へ移した。
+- 2026-03-08 [ID: P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01-S4-02]: `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture` で `cases=3 pass=3 fail=0`、`python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples` で `cases=18 pass=18 fail=0` を確認し、本計画を archive へ移した。
 
 ## 7. `S1-01` 棚卸し結果
 

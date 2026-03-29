@@ -26,7 +26,7 @@ Objective:
 In scope:
 - `src/backends/**`
 - `src/toolchain/frontends/runtime_symbol_index.py`
-- `tools/gen_runtime_symbol_index.py`
+- `tools/gen/gen_runtime_symbol_index.py`
 - IR metadata and semantic tags where needed
 - representative backend tests, tooling tests, and spec updates
 
@@ -44,10 +44,10 @@ Acceptance criteria:
 - `spec-runtime`, `spec-dev`, and related plan docs document both the banned knowledge leaks and the canonical resolution path
 
 Planned verification:
-- `python3 tools/check_todo_priority.py`
-- `python3 -m unittest discover -s test/unit/tooling -p 'test_runtime_symbol_index.py'`
-- `python3 -m unittest discover -s test/unit/common -p 'test_py2x_entrypoints_contract.py'`
-- `python3 -m unittest discover -s test/unit/backends -p 'test_*.py' -k runtime`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 -m unittest discover -s tools/unittest/tooling -p 'test_runtime_symbol_index.py'`
+- `python3 -m unittest discover -s tools/unittest/common -p 'test_py2x_entrypoints_contract.py'`
+- `python3 -m unittest discover -s tools/unittest/backends -p 'test_*.py' -k runtime`
 
 ## 1. Problem Breakdown
 

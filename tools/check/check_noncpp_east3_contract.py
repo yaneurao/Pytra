@@ -10,7 +10,7 @@ import subprocess
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 @dataclass(frozen=True)
 class Target:
@@ -22,20 +22,20 @@ class Target:
 TARGETS: list[Target] = [
     Target(
         "rs",
-        "test/unit/toolchain/emit/rs/test_py2rs_smoke.py",
-        ["python3", "tools/check_py2x_transpile.py", "--target", "rs"],
+        "tools/unittest/emit/rs/test_py2rs_smoke.py",
+        ["python3", "tools/check/check_py2x_transpile.py", "--target", "rs"],
     ),
     Target(
         "cs",
-        "test/unit/toolchain/emit/cs/test_py2cs_smoke.py",
-        ["python3", "tools/check_py2x_transpile.py", "--target", "cs"],
+        "tools/unittest/emit/cs/test_py2cs_smoke.py",
+        ["python3", "tools/check/check_py2x_transpile.py", "--target", "cs"],
     ),
     Target(
         "js",
-        "test/unit/toolchain/emit/js/test_py2js_smoke.py",
+        "tools/unittest/emit/js/test_py2js_smoke.py",
         [
             "python3",
-            "tools/check_py2x_transpile.py",
+            "tools/check/check_py2x_transpile.py",
             "--target",
             "js",
             "--skip-east3-contract-tests",
@@ -43,10 +43,10 @@ TARGETS: list[Target] = [
     ),
     Target(
         "ts",
-        "test/unit/toolchain/emit/ts/test_py2ts_smoke.py",
+        "tools/unittest/emit/ts/test_py2ts_smoke.py",
         [
             "python3",
-            "tools/check_py2x_transpile.py",
+            "tools/check/check_py2x_transpile.py",
             "--target",
             "ts",
             "--skip-east3-contract-tests",
@@ -54,48 +54,48 @@ TARGETS: list[Target] = [
     ),
     Target(
         "go",
-        "test/unit/toolchain/emit/go/test_py2go_smoke.py",
-        ["python3", "tools/check_py2x_transpile.py", "--target", "go"],
+        "tools/unittest/emit/go/test_py2go_smoke.py",
+        ["python3", "tools/check/check_py2x_transpile.py", "--target", "go"],
     ),
     Target(
         "java",
-        "test/unit/toolchain/emit/java/test_py2java_smoke.py",
-        ["python3", "tools/check_py2x_transpile.py", "--target", "java"],
+        "tools/unittest/emit/java/test_py2java_smoke.py",
+        ["python3", "tools/check/check_py2x_transpile.py", "--target", "java"],
     ),
     Target(
         "kotlin",
-        "test/unit/toolchain/emit/kotlin/test_py2kotlin_smoke.py",
-        ["python3", "tools/check_py2x_transpile.py", "--target", "kotlin"],
+        "tools/unittest/emit/kotlin/test_py2kotlin_smoke.py",
+        ["python3", "tools/check/check_py2x_transpile.py", "--target", "kotlin"],
     ),
     Target(
         "swift",
-        "test/unit/toolchain/emit/swift/test_py2swift_smoke.py",
-        ["python3", "tools/check_py2x_transpile.py", "--target", "swift"],
+        "tools/unittest/emit/swift/test_py2swift_smoke.py",
+        ["python3", "tools/check/check_py2x_transpile.py", "--target", "swift"],
     ),
     Target(
         "ruby",
-        "test/unit/toolchain/emit/rb/test_py2rb_smoke.py",
-        ["python3", "tools/check_py2x_transpile.py", "--target", "ruby"],
+        "tools/unittest/emit/rb/test_py2rb_smoke.py",
+        ["python3", "tools/check/check_py2x_transpile.py", "--target", "ruby"],
     ),
     Target(
         "lua",
-        "test/unit/toolchain/emit/lua/test_py2lua_smoke.py",
-        ["python3", "tools/check_py2x_transpile.py", "--target", "lua"],
+        "tools/unittest/emit/lua/test_py2lua_smoke.py",
+        ["python3", "tools/check/check_py2x_transpile.py", "--target", "lua"],
     ),
     Target(
         "php",
-        "test/unit/toolchain/emit/php/test_py2php_smoke.py",
-        ["python3", "tools/check_py2x_transpile.py", "--target", "php"],
+        "tools/unittest/emit/php/test_py2php_smoke.py",
+        ["python3", "tools/check/check_py2x_transpile.py", "--target", "php"],
     ),
     Target(
         "scala",
-        "test/unit/toolchain/emit/scala/test_py2scala_smoke.py",
-        ["python3", "tools/check_py2x_transpile.py", "--target", "scala"],
+        "tools/unittest/emit/scala/test_py2scala_smoke.py",
+        ["python3", "tools/check/check_py2x_transpile.py", "--target", "scala"],
     ),
     Target(
         "nim",
-        "test/unit/toolchain/emit/nim/test_py2nim_smoke.py",
-        ["python3", "tools/check_py2x_transpile.py", "--target", "nim"],
+        "tools/unittest/emit/nim/test_py2nim_smoke.py",
+        ["python3", "tools/check/check_py2x_transpile.py", "--target", "nim"],
     ),
 ]
 
@@ -113,7 +113,7 @@ PY2X_REQUIRED_PATTERNS = [
     "get_program_writer_typed(",
 ]
 
-COMMON_SMOKE_PATH = "test/unit/common/test_py2x_smoke_common.py"
+COMMON_SMOKE_PATH = "tools/unittest/common/test_py2x_smoke_common.py"
 
 COMMON_SMOKE_REQUIRED_PATTERNS = [
     "test_cli_smoke_generates_output_for_all_targets",

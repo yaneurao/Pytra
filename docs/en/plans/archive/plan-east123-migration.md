@@ -29,7 +29,7 @@
 - `src/pytra/compiler/east_parts/`
 - `src/py2cpp.py`
 - `src/hooks/cpp/`
-- `test/unit/`
+- `tools/unittest/`
 
 非対象:
 - 新規最適化器の導入
@@ -44,18 +44,18 @@
 5. 主要回帰コマンドが継続して成功する。
 
 確認コマンド（最低）:
-- `python3 -m pytest -q test/unit/test_east3_lowering.py`
-- `python3 -m pytest -q test/unit/test_east3_cpp_bridge.py`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_py2js_transpile.py`
-- `python3 tools/check_py2ts_transpile.py`
-- `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`
+- `python3 -m pytest -q tools/unittest/test_east3_lowering.py`
+- `python3 -m pytest -q tools/unittest/test_east3_cpp_bridge.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2js_transpile.py`
+- `python3 tools/check/check_py2ts_transpile.py`
+- `python3 tools/check/check_selfhost_cpp_diff.py --mode allow-not-implemented`
 
 標準回帰導線（`P0-EASTMIG-05-S2`）:
-1. `python3 tools/check_py2cpp_transpile.py`
-2. `python3 tools/check_py2js_transpile.py`
-3. `python3 tools/check_py2ts_transpile.py`
-4. `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`
+1. `python3 tools/check/check_py2cpp_transpile.py`
+2. `python3 tools/check/check_py2js_transpile.py`
+3. `python3 tools/check/check_py2ts_transpile.py`
+4. `python3 tools/check/check_selfhost_cpp_diff.py --mode allow-not-implemented`
 
 判定基準:
 - `check_py2*` 系は `fail=0`。
@@ -73,24 +73,24 @@ EAST2 互換撤去方針（2026-02-26 更新）:
 - 非 C++ 8本 CLI は `load_east3_document` 単一路線に統一済み。
 - `src/pytra/compiler/east_parts/east3_legacy_compat.py` は削除済み。
 - `js/rs/cs` emitter は `ForCore` / `Obj*` / `Is*` / `Box/Unbox` の `EAST3` ノードを直接受理する。
-- `tools/check_noncpp_east3_contract.py` は非 C++ 8本に対し以下を静的契約として検査する。
+- `tools/check/check_noncpp_east3_contract.py` は非 C++ 8本に対し以下を静的契約として検査する。
   - `--east-stage 2` 拒否（エラー）
   - `load_east_document_compat` 非依存
   - `normalize_east3_to_legacy` 非依存
 
 ## 回帰導線（EAST3 only）
 
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_noncpp_east3_contract.py`
-- `python3 tools/check_py2rs_transpile.py`
-- `python3 tools/check_py2cs_transpile.py`
-- `python3 tools/check_py2js_transpile.py`
-- `python3 tools/check_py2ts_transpile.py`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/check_py2java_transpile.py`
-- `python3 tools/check_py2kotlin_transpile.py`
-- `python3 tools/check_py2swift_transpile.py`
-- `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_noncpp_east3_contract.py`
+- `python3 tools/check/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2cs_transpile.py`
+- `python3 tools/check/check_py2js_transpile.py`
+- `python3 tools/check/check_py2ts_transpile.py`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/check/check_py2java_transpile.py`
+- `python3 tools/check/check_py2kotlin_transpile.py`
+- `python3 tools/check/check_py2swift_transpile.py`
+- `python3 tools/check/check_selfhost_cpp_diff.py --mode allow-not-implemented`
 
 ## 注記
 
@@ -114,8 +114,8 @@ EAST2 互換撤去方針（2026-02-26 更新）:
 - 2026-02-24: [ID: `P0-EASTMIG-06-S7`] `render_human_east3_cpp.py` を追加し、`render_east_human_cpp` 互換 wrapper から `east_stage=3` で自動委譲する経路を導入。`test_render_human_east3_cpp` を追加して ForCore/Obj*/type_id ノードの可視化を固定した。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S6`] `spec-east#east1-build-boundary` の受け入れ基準へ selfhost diff 実行を明記した。現時点の実行結果は `mismatches=2`（`sample/py/01_mandelbrot.py`, `sample/py/17_monte_carlo_pi.py`）で、差分は継続追跡対象とする。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S5`] `spec-east` / `spec-dev` を更新し、`EAST3` 既定・`EAST2` 互換モード（`--east-stage 2` 警告付き）の現行運用と回帰導線を仕様へ同期した。
-- 2026-02-24: [ID: `P0-EASTMIG-06-S4`] `test_east3_lowering` に non-cpp 契約ガード実行テストを追加し、`tools/check_py2*_transpile.py` で既定実行時の stage2 互換警告を失敗扱いに統一した。`check_py2cpp_transpile` と `check_noncpp_east3_contract`、`test_east3_*` の回帰が通過。
-- 2026-02-24: [ID: `P0-EASTMIG-06-S3-S9`] `tools/check_noncpp_east3_contract.py` と `test_noncpp_east3_contract_guard.py` を追加し、非 C++ 8変換器の `--east-stage` 既定値・警告文言・回帰導線を統一した。`run_local_ci` の非 C++ 導線は同スクリプトへ統合。
+- 2026-02-24: [ID: `P0-EASTMIG-06-S4`] `test_east3_lowering` に non-cpp 契約ガード実行テストを追加し、`tools/check/check_py2*_transpile.py` で既定実行時の stage2 互換警告を失敗扱いに統一した。`check_py2cpp_transpile` と `check_noncpp_east3_contract`、`test_east3_*` の回帰が通過。
+- 2026-02-24: [ID: `P0-EASTMIG-06-S3-S9`] `tools/check/check_noncpp_east3_contract.py` と `test_noncpp_east3_contract_guard.py` を追加し、非 C++ 8変換器の `--east-stage` 既定値・警告文言・回帰導線を統一した。`run_local_ci` の非 C++ 導線は同スクリプトへ統合。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S3-S8`] `py2swift.py` に `--east-stage` / `--object-dispatch-mode` を追加し、既定を `EAST3` に切替えた。`stage=2` は警告付き互換モードへ縮退。`EAST3` ノード互換は `east3_legacy_compat` を利用し、`test_py2swift_smoke` と `check_py2swift_transpile` を通過させた。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S3-S7`] `py2kotlin.py` に `--east-stage` / `--object-dispatch-mode` を追加し、既定を `EAST3` に切替えた。`stage=2` は警告付き互換モードへ縮退。`EAST3` ノード互換は `east3_legacy_compat` を利用し、`test_py2kotlin_smoke` と `check_py2kotlin_transpile` を通過させた。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S3-S6`] `py2java.py` に `--east-stage` / `--object-dispatch-mode` を追加し、既定を `EAST3` に切替えた。`stage=2` は警告付き互換モードへ縮退。`EAST3` ノード互換は `east3_legacy_compat` を利用し、`test_py2java_smoke` と `check_py2java_transpile` を通過させた。
@@ -128,7 +128,7 @@ EAST2 互換撤去方針（2026-02-26 更新）:
 - 2026-02-24: [ID: `P0-EASTMIG-06-S2`] `py2cpp` の既定 `east_stage` を `3` へ切替え、`stage=2` は互換警告付き運用へ縮退した。`parse_py2cpp_argv` 初期値・`load_east`/`build_module_east_map`/`main` 既定を更新し、`check_py2cpp_transpile`（131件）と境界ガード通過を確認した。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S1`] 全 `py2*.py`（`py2cpp` + 非 C++ 8変換器）の EAST 読み込み経路を棚卸しし、`load_east_document_compat` 依存と `east_stage="2"` 既定値の残存箇所を表形式で固定した。後続は `S2`（cpp 既定切替）と `S3-*`（非 cpp 主経路化）へ受け渡す。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S5`] `S0-S1` から `S0-S4` の成果物を本計画へ集約し、`P0-EASTMIG-06-S0` を `P0` 先行ゲートとして確定した。以降の `S1` 以降は境界契約を破壊しないことを受け入れ条件とする。
-- 2026-02-24: [ID: `P0-EASTMIG-06-S0-S4`] `tools/check_east_stage_boundary.py` と `test/unit/test_east_stage_boundary_guard.py` を追加し、`east2.py` での `EAST3` lower 流入と `code_emitter.py` での stage 再解釈 API 流入を静的検査で拒否するガードを導入した。`tools/run_local_ci.py` に同ガードを組み込んだ。
+- 2026-02-24: [ID: `P0-EASTMIG-06-S0-S4`] `tools/check/check_east_stage_boundary.py` と `tools/unittest/test_east_stage_boundary_guard.py` を追加し、`east2.py` での `EAST3` lower 流入と `code_emitter.py` での stage 再解釈 API 流入を静的検査で拒否するガードを導入した。`tools/run/run_local_ci.py` に同ガードを組み込んだ。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S3`] `transpile_cli.py` / `east_parts` の段階横断残存を棚卸しし、`load_east_document` の `EAST1->EAST2` 即時正規化、`east_stage=2` 既定補完、`load_east_document_compat` 依存、`render_human_east2_cpp` 専用実装などを一覧化して後続タスクへの受け渡しを固定した。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S2`] `docs/ja/spec/spec-dev.md` の責務境界へ「CodeEmitter は EAST3 以降の構文写像専任」「意味論 lower 禁止」「backend/hook 側の再解釈禁止」を明記した。
 - 2026-02-24: [ID: `P0-EASTMIG-06-S0-S1`] `docs/ja/spec/spec-east.md` の `16.1.1` に段階境界表（入力/出力/禁止事項/担当ファイル）を追加し、`EAST1/EAST2/EAST3` の責務固定を仕様として明文化した。
@@ -142,11 +142,11 @@ EAST2 互換撤去方針（2026-02-26 更新）:
 - 2026-02-24: `P0-EASTMIG-03-S1` として `py2cpp.py` の loop 分岐を棚卸しし、`ForRange` と runtime `For` を `ForCore` bridge（`_forrange_stmt_to_forcore`, `_for_stmt_to_forcore`）経由へ置換した。`For` static-fastpath は既存 C++ range-for を維持し、次段 (`P0-EASTMIG-03-S2/S3`) で縮退を継続する。
 - 2026-02-24: `P0-EASTMIG-03-S2` として Any/object 境界の型付き変換（AnnAssign/Assign/Return/Yield）を `Unbox` 命令写像優先へ切り替え、`_coerce_any_expr_to_target_via_unbox` を追加した。source node が存在する経路では legacy 文字列キャスト再判断を通らず、`EAST3` ノード経由で backend 生成する。
 - 2026-02-24: `P0-EASTMIG-03-S3` として `type_id` / built-in lower の未 lower fallback を `EAST3` 主経路で fail-fast 化した。`east_stage=3` では `isinstance`/`issubclass` Name-call と `runtime_call` 未設定 BuiltinCall を拒否し、`east_stage=2` + selfhost 互換のみ legacy fallback を残す。
-- 2026-02-24: P0-EASTMIG-03-S4 として回帰基線を固定した。`python3 test/unit/test_east3_cpp_bridge.py`（71件）/ `python3 tools/check_py2cpp_transpile.py`（checked=131, fail=0）/ `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`（mismatches=0）/ `python3 tools/check_todo_priority.py` を通過し、P0-EASTMIG-03 をクローズ。
+- 2026-02-24: P0-EASTMIG-03-S4 として回帰基線を固定した。`python3 tools/unittest/test_east3_cpp_bridge.py`（71件）/ `python3 tools/check/check_py2cpp_transpile.py`（checked=131, fail=0）/ `python3 tools/check/check_selfhost_cpp_diff.py --mode allow-not-implemented`（mismatches=0）/ `python3 tools/check/check_todo_priority.py` を通過し、P0-EASTMIG-03 をクローズ。
 - 2026-02-24: `P0-EASTMIG-04-S1` として `src/hooks/cpp/hooks/cpp_hooks.py` の hook 5件を分類し、意味論 3件（`on_render_module_method`, `on_render_class_method`, `on_render_expr_leaf`）と構文差分 2件（`on_stmt_omit_braces`, `on_render_expr_complex`）の棚卸し表を本計画へ記録した。
 - 2026-02-24: `P0-EASTMIG-04-S2` として `src/hooks/cpp/hooks/cpp_hooks.py` から意味論 hook（`on_render_module_method`, `on_render_class_method`, `on_render_expr_leaf`）を撤去し、hooks を構文差分（`on_stmt_omit_braces`, `on_render_expr_complex`）専任へ縮退した。
-- 2026-02-24: P0-EASTMIG-04-S3 として hooks 回帰ガードを `test/unit/test_cpp_hooks.py` へ追加し、`build_cpp_hooks()` が構文差分 hook のみ（`on_stmt_omit_braces`, `on_render_expr_complex`）を登録することを固定した。P0-EASTMIG-04 をクローズ。
-- 2026-02-24: `P0-EASTMIG-05-S1` として `test/unit/test_east3_lowering.py` / `test/unit/test_east3_cpp_bridge.py` を拡充し、既存 `ForCore` 入力に対しても `RuntimeIterForPlan.dispatch_mode` を `object_dispatch_mode` へ正規化する契約を追加した（lowering 19件 / bridge 72件とも通過）。
+- 2026-02-24: P0-EASTMIG-04-S3 として hooks 回帰ガードを `tools/unittest/test_cpp_hooks.py` へ追加し、`build_cpp_hooks()` が構文差分 hook のみ（`on_stmt_omit_braces`, `on_render_expr_complex`）を登録することを固定した。P0-EASTMIG-04 をクローズ。
+- 2026-02-24: `P0-EASTMIG-05-S1` として `tools/unittest/test_east3_lowering.py` / `tools/unittest/test_east3_cpp_bridge.py` を拡充し、既存 `ForCore` 入力に対しても `RuntimeIterForPlan.dispatch_mode` を `object_dispatch_mode` へ正規化する契約を追加した（lowering 19件 / bridge 72件とも通過）。
 - 2026-02-24: `P0-EASTMIG-05-S2` として `check_py2{cpp,js,ts}_transpile` + `check_selfhost_cpp_diff --mode allow-not-implemented` を `EAST3` 主経路の標準回帰導線として固定し、実測結果（各 `checked=131 fail=0`、`mismatches=0`）を確認した。
 - 2026-02-24: P0-EASTMIG-05-S3 として `--east-stage 2` を移行互換モードに位置づける縮退手順（互換維持 -> 警告 -> 撤去判定）を plan/spec に固定し、P0-EASTMIG-05 をクローズ。
 - 2026-02-24: `P0-EASTMIG-06` を再オープンした。`py2cpp.py` の既定 stage と非 C++ 変換器の `EAST2` 既定経路が残存しており、全変換器での `EAST3` 主経路統一が未完了のため。

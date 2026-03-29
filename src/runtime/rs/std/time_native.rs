@@ -1,8 +1,7 @@
-use std::sync::Once;
 use std::time::Instant;
 
 pub fn perf_counter() -> f64 {
-    static INIT: Once = Once::new();
+    static INIT: std::sync::Once = std::sync::Once::new();
     static mut START: Option<Instant> = None;
     INIT.call_once(|| unsafe {
         START = Some(Instant::now());

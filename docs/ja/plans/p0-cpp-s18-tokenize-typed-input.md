@@ -18,7 +18,7 @@
 
 対象:
 - `src/hooks/cpp/emitter/*`（関数シグネチャ/型橋渡し/呼び出し側整合）
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/18_mini_language_interpreter.cpp`（再生成確認）
 
 非対象:
@@ -31,9 +31,9 @@
 - 生成結果・単体テスト・transpile check が非退行で通る。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `python3 src/py2cpp.py sample/py/18_mini_language_interpreter.py -o sample/cpp/18_mini_language_interpreter.cpp`
 
 決定ログ:
@@ -41,7 +41,7 @@
 - 2026-03-01: `emit_function` に `pyobj + list[str]` 引数の typed 署名出力（`const list<str>&`）を追加し、`tokenize` 引数を `object` から `list<str>` へ変更した。
 - 2026-03-01: `ForCore` の typed enumerate 復元で「typed `list[str]` パラメータ名」のときは `py_enumerate(lines)` を優先し、`py_to_str_list_from_object(lines)` を関数内から撤去した。
 - 2026-03-01: callsite coercion に `list[str]` 専用の `py_to_str_list_from_object(...)` 変換を追加し、`pyobj` 由来 `object` 変数（`demo_lines`/`source_lines`）から typed `tokenize` へ安全に接続する方針へ固定した。
-- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（80件）、`python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）、`python3 tools/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout`（PASS）で非退行を確認した。
+- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（80件）、`python3 tools/check/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）、`python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout`（PASS）で非退行を確認した。
 
 ## 分解
 

@@ -24,7 +24,7 @@ Goal:
 Scope:
 - `src/hooks/cpp/emitter/*` (around stmt/expr/forcore/call)
 - `src/pytra/compiler/east_parts/east3_opt_passes/*` (when needed)
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/08_langtons_ant.cpp` (verify after regeneration)
 
 Out of scope:
@@ -42,9 +42,9 @@ Acceptance criteria:
 - `check_py2cpp_transpile` and related unit tests pass.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `python3 src/py2cpp.py sample/py/08_langtons_ant.py -o sample/cpp/08_langtons_ant.cpp`
 
 Breakdown:
@@ -65,6 +65,6 @@ Decision log:
 - 2026-03-01: As S2-01, added typed fill-constructor fast path for `[[seed] * cols for _ in range(rows)]` in `src/hooks/cpp/emitter/collection_expr.py`, reducing `grid` initialization in `sample/cpp/08` to `list<list<int64>>(h, list<int64>(w, 0))` (also applied to same-type initialization in sample13).
 - 2026-03-01: As S2-03, in `ForCore(StaticRangeForPlan)` of `src/hooks/cpp/emitter/stmt.py`, detected trailing `if i % k == 0` guard and added fast path replacement to `if (i == __next_capture_*)` using `int64 __next_capture_*`.
 - 2026-03-01: As S2-05, added rules on the same fast path to pre-emit `frames.reserve((steps_total + capture_every - 1) / capture_every);`.
-- 2026-03-01: As S3-01, added two sample08 regressions to `test/unit/test_py2cpp_codegen_issues.py` (`else if` chain, `return frame;`).
+- 2026-03-01: As S3-01, added two sample08 regressions to `tools/unittest/test_py2cpp_codegen_issues.py` (`else if` chain, `return frame;`).
 - 2026-03-01: Extended S3-01 regressions and added unit checks that pin sample08 output for `grid` typed fill ctor / capture counter / reserve.
-- 2026-03-01: As S3-02, verified `python3 src/py2cpp.py sample/py/08_langtons_ant.py -o sample/cpp/08_langtons_ant.cpp`, `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` (94 tests, OK), and `python3 tools/check_py2cpp_transpile.py` (checked=135, ok=135).
+- 2026-03-01: As S3-02, verified `python3 src/py2cpp.py sample/py/08_langtons_ant.py -o sample/cpp/08_langtons_ant.cpp`, `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` (94 tests, OK), and `python3 tools/check/check_py2cpp_transpile.py` (checked=135, ok=135).

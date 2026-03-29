@@ -53,10 +53,10 @@ Placement policy (draft):
 - `multifile/` -> `emitter/multifile_writer.py`
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_cpp_*' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --force`
 
 ## Breakdown
 
@@ -109,5 +109,5 @@ Decision log:
 - 2026-03-03: [ID: P0-CPP-DIR-REALIGN-01-S2-04] Moved `src/toolchain/emit/cpp/header/cpp_header.py` to `src/toolchain/emit/cpp/emitter/header_builder.py` and updated imports in `py2cpp`.
 - 2026-03-03: [ID: P0-CPP-DIR-REALIGN-01-S2-05] Moved `src/toolchain/emit/cpp/multifile/cpp_multifile.py` to `src/toolchain/emit/cpp/emitter/multifile_writer.py` and updated imports in the multi-file output path.
 - 2026-03-03: [ID: P0-CPP-DIR-REALIGN-01-S2-06] Removed Python implementations under `src/toolchain/emit/cpp/{hooks,header,multifile,profile,runtime_emit}` and removed legacy import references.
-- 2026-03-03: [ID: P0-CPP-DIR-REALIGN-01-S3-01] Added `tools/check_cpp_backend_layout.py`, enabling fail-closed checks for remaining legacy folders and old imports.
+- 2026-03-03: [ID: P0-CPP-DIR-REALIGN-01-S3-01] Added `tools/check/check_cpp_backend_layout.py`, enabling fail-closed checks for remaining legacy folders and old imports.
 - 2026-03-03: [ID: P0-CPP-DIR-REALIGN-01-S3-02] Ran `check_cpp_backend_layout.py` / `check_py2cpp_boundary.py` / `check_py2cpp_transpile.py` / `sample/py/01 -> py2cpp` and confirmed no regressions in the relocated scope.

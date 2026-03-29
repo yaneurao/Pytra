@@ -38,11 +38,11 @@
 - `python3 tools/build_selfhost.py` が通ること。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_import_graph_issue_structure.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_py2x_cli.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_relative_import_normalization_source_contract.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/selfhost -p 'test_prepare_selfhost_source.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_import_graph_issue_structure.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_py2x_cli.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_relative_import_normalization_source_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/selfhost -p 'test_prepare_selfhost_source.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

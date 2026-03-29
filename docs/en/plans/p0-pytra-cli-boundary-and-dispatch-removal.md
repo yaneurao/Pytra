@@ -26,8 +26,8 @@
 対象:
 - `src/pytra-cli.py`
 - ルートランチャー `./pytra`
-- `tools/runtime_parity_check.py` の CLI 呼び出し経路
-- `test/unit/tooling/test_pytra_cli.py`
+- `tools/check/runtime_parity_check.py` の CLI 呼び出し経路
+- `tools/unittest/tooling/test_pytra_cli.py`
 - 関連ドキュメント（`docs/ja|en/how-to-use.md`, `docs/ja|en/spec/spec-make.md`）
 
 非対象:
@@ -39,14 +39,14 @@
 - `src/pytra-cli.py` が唯一の CLI 実装ファイルであり、`src/pytra_cli.py` は存在しない。
 - `src/pytra-cli.py` に target ごとの build/run 実装分岐（`if target == "..."` 群）が残らない。
 - target 固有情報は backend プロファイル（外部定義）として管理し、CLI は共通ディスパッチのみを担う。
-- `tools/runtime_parity_check.py` が `pytra-cli` 経由で実行でき、少なくとも `cpp/java` の sample parity が非退行。
-- `test/unit/tooling/test_pytra_cli.py` が新構成で通過する。
+- `tools/check/runtime_parity_check.py` が `pytra-cli` 経由で実行でき、少なくとも `cpp/java` の sample parity が非退行。
+- `tools/unittest/tooling/test_pytra_cli.py` が新構成で通過する。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 -m py_compile src/pytra-cli.py tools/runtime_parity_check.py`
-- `python3 -m unittest discover -s test/unit/tooling -p 'test_pytra_cli.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets cpp,java 01_mandelbrot`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 -m py_compile src/pytra-cli.py tools/check/runtime_parity_check.py`
+- `python3 -m unittest discover -s tools/unittest/tooling -p 'test_pytra_cli.py' -v`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp,java 01_mandelbrot`
 
 ## 分解
 
@@ -64,5 +64,5 @@
 - 2026-03-05: [ID: `P0-PYTRA-CLI-REALIGN-01-S2-01`] `src/toolchain/misc/pytra_cli_profiles.py` を新設し、target 固有の出力拡張子・出力パス決定・non-cpp build/run コマンド契約を CLI 本体から抽出。`src/pytra-cli.py` は契約参照へ切替え、`test_pytra_cli.py` / `test_pytra_cli_profiles.py` を通過。
 - 2026-03-05: [ID: `P0-PYTRA-CLI-REALIGN-01-S2-02`] `src/pytra-cli.py` の `target == ...` 分岐を撤去し、`TargetProfile.build_driver` を使った共通ディスパッチへ移行。transpile/build の target 依存は `pytra_cli_profiles.py` に集約。
 - 2026-03-05: [ID: `P0-PYTRA-CLI-REALIGN-01-S2-03`] `validate_profile_option_compatibility()` を追加して profile ベース fail-fast を導入し、`--codegen-opt` の non-cpp 禁止と non-cpp `--build` 時の `--compiler/--std/--opt/--exe` 禁止を固定。`test_pytra_cli.py` / `test_pytra_cli_profiles.py` を拡張して回帰を追加。
-- 2026-03-05: [ID: `P0-PYTRA-CLI-REALIGN-01-S3-01`] `tools/runtime_parity_check.py` の target order/needs の直書きを `pytra_cli_profiles` 参照へ置換し、parity の target 契約重複を削減。`test_runtime_parity_check_cli.py` を新CLI契約期待値へ更新し、tooling unit が通過。
-- 2026-03-05: [ID: `P0-PYTRA-CLI-REALIGN-01-S3-02`] non-cpp `run_cmd` が stderr へ誤転送される不具合を修正し、`test_pytra_cli.py` に stdout 保持回帰を追加。`python3 tools/runtime_parity_check.py --case-root sample --targets cpp,java 01_mandelbrot` を再実行して `cpp/java` とも artifact size/CRC32 一致を確認。
+- 2026-03-05: [ID: `P0-PYTRA-CLI-REALIGN-01-S3-01`] `tools/check/runtime_parity_check.py` の target order/needs の直書きを `pytra_cli_profiles` 参照へ置換し、parity の target 契約重複を削減。`test_runtime_parity_check_cli.py` を新CLI契約期待値へ更新し、tooling unit が通過。
+- 2026-03-05: [ID: `P0-PYTRA-CLI-REALIGN-01-S3-02`] non-cpp `run_cmd` が stderr へ誤転送される不具合を修正し、`test_pytra_cli.py` に stdout 保持回帰を追加。`python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp,java 01_mandelbrot` を再実行して `cpp/java` とも artifact size/CRC32 一致を確認。

@@ -19,7 +19,7 @@ Goal:
 Scope:
 - `src/hooks/cpp/emitter/stmt.py` / `expr.py` (subscript expansion)
 - `src/hooks/cpp/optimizer/passes/*` if needed
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 
 Out of scope:
 - Bulk CSE optimization for all samples
@@ -31,9 +31,9 @@ Acceptance criteria:
 - Regression tests and transpile check pass.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 Decision log:
 - 2026-03-01: Opened an independent P0 item for sample/13 row hoist based on user request.

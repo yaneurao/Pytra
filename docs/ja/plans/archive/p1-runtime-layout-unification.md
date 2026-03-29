@@ -41,8 +41,8 @@
 - `src/*_module/` 直下への新規 runtime 追加が止まる。
 
 確認コマンド:
-- `python3 tools/check_py2cpp_transpile.py`
-- 言語別 smoke tests（`test/unit/test_py2*_smoke.py`）
+- `python3 tools/check/check_py2cpp_transpile.py`
+- 言語別 smoke tests（`tools/unittest/test_py2*_smoke.py`）
 
 サブタスク実行順（todo 同期）:
 
@@ -87,7 +87,7 @@
 | 参照元 | 参照内容 | 廃止可否判定 | 条件/備考 |
 |---|---|---|---|
 | `src/rs_module/py_runtime.rs` | 互換 shim 本体 | 削除済み（`P1-RUNTIME-03-S2`） | 旧参照 fallback を終了し削除 |
-| `tools/check_rs_runtime_layout.py` | Rust runtime レイアウト検証 | 更新済み（`P1-RUNTIME-03-S2`） | `src/rs_module` ソース禁止 + `src/runtime/rs/pytra/` 必須を検証 |
+| `tools/check/check_rs_runtime_layout.py` | Rust runtime レイアウト検証 | 更新済み（`P1-RUNTIME-03-S2`） | `src/rs_module` ソース禁止 + `src/runtime/rs/pytra/` 必須を検証 |
 | `docs/ja/how-to-use.md` / `docs/en/how-to-use.md` | `src/rs_module` を runtime 配置として案内 | `P1-RUNTIME-03-S2` で更新対象 | 新配置 `src/runtime/rs/pytra/` へ文言置換 |
 | `docs/ja/plans/pytra-wip.md` / `docs/en/plans/pytra-wip.md` | 旧配置参照の移行注記 | `P1-RUNTIME-03-S2` で更新対象 | 旧配置記述を互換終了済みへ変更 |
 | `docs/ja/spec/spec-dev.md` | `src/rs_module` を移行中として言及 | `P1-RUNTIME-03-S2` で更新対象 | 「非依存」の最終状態へ更新 |
@@ -117,7 +117,7 @@
   - `src/py2{cs,js,ts,go,java,kotlin,swift}.py`
   - `src/hooks/{cs,js,ts,go,java,kotlin,swift}/`
   - 生成確認用: `sample/{cs,js,ts,go,java,kotlin,swift}/`
-  - 連動箇所（S2 で同時更新が必要）: `src/common2/js_ts_native_transpiler.py`, `test/unit/test_py2js_smoke.py`, `test/unit/test_js_ts_runtime_dispatch.py`, `docs/ja/how-to-use.md`
+  - 連動箇所（S2 で同時更新が必要）: `src/common2/js_ts_native_transpiler.py`, `tools/unittest/test_py2js_smoke.py`, `tools/unittest/test_js_ts_runtime_dispatch.py`, `docs/ja/how-to-use.md`
 
 | 言語 | runtime 実体（現行） | path 解決の実装箇所（現行） | 現行状態 | S2 の更新方針 |
 |---|---|---|---|---|
@@ -141,15 +141,15 @@
 1. `src/hooks/js/emitter/js_emitter.py` の `py_runtime` require を `src/runtime/js/pytra/py_runtime.js` へ更新した。
 2. `src/common2/js_ts_native_transpiler.py` の runtime require 先を `src/runtime/js/pytra/*` / `src/runtime/ts/pytra/*` へ統一した。
 3. `src/runtime/js/pytra/` と `src/runtime/ts/pytra/` を新設し、既存 `src/js_module/*.js` / `src/ts_module/*.ts` と同名 runtime を複製配置して新参照先を有効化した。
-4. 回帰テストを新パスへ合わせて更新した（`test/unit/test_py2js_smoke.py`, `test/unit/test_js_ts_runtime_dispatch.py`）。
+4. 回帰テストを新パスへ合わせて更新した（`tools/unittest/test_py2js_smoke.py`, `tools/unittest/test_js_ts_runtime_dispatch.py`）。
 5. `Go/Java/Kotlin/Swift` は preview backend で runtime path 直書きが存在しないため、S2 では参照更新対象なしとした（S3 で旧配置縮退を扱う）。
 
 `P1-RUNTIME-05-S3` 実装結果（多言語 smoke + 旧パス互換レイヤ段階撤去）:
 
-1. 多言語 smoke として `tools/check_py2{cpp,rs,cs,js,ts,go,java,swift,kotlin}_transpile.py` を実行し、全ターゲットで `checked=131 ok=131 fail=0 skipped=6` を確認した。
+1. 多言語 smoke として `tools/check/check_py2{cpp,rs,cs,js,ts,go,java,swift,kotlin}_transpile.py` を実行し、全ターゲットで `checked=131 ok=131 fail=0 skipped=6` を確認した。
 2. `src/js_module/*.js` と `src/ts_module/*.ts` を「新配置参照のみ」の legacy shim に縮退し、実体ロジックの重複管理を解消した。
 3. `sample/js/*.js` と `sample/ts/*.ts` の runtime require を `src/runtime/{js,ts}/pytra/` 基準へ置換し、生成物側の旧パス依存を撤去した。
-4. `tools/check_runtime_legacy_shims.py` を追加し、`src/{js,ts}_module` が shim であること、および `src/hooks` / `src/common2` / `test/unit` / `sample/{js,ts}` に旧パス文字列が残っていないことを CI で検証可能にした（`tools/run_local_ci.py` に組み込み）。
+4. `tools/check/check_runtime_legacy_shims.py` を追加し、`src/{js,ts}_module` が shim であること、および `src/hooks` / `src/common2` / `test/unit` / `sample/{js,ts}` に旧パス文字列が残っていないことを CI で検証可能にした（`tools/run/run_local_ci.py` に組み込み）。
 
 運用ルール:
 
@@ -167,21 +167,21 @@
 - 2026-02-23: `P0-RUNTIME-SEP-01-S2` を実施し、`src/runtime/cpp/pytra-gen/` と `src/runtime/cpp/pytra-core/` を新設した。両ディレクトリに `README.md` を配置し、責務境界（生成専用/手書き専用）と禁止事項を固定した。
 - 2026-02-23: `P0-RUNTIME-SEP-01-S3` を実施し、生成物38ファイルを `src/runtime/cpp/pytra-gen/` へ移動した。`src/runtime/cpp/pytra/` 側には同名フォワーダー（`.h/.cpp`）を配置して既存ビルド参照を互換維持した。合わせて `src/py2cpp.py --emit-runtime-cpp` は `pytra-gen` へ出力し、`pytra/` 側フォワーダーを自動更新するよう変更した。
 - 2026-02-23: `P0-RUNTIME-SEP-01-S4` を実施し、手書き19ファイル（`built_in/*`, `std/*-impl.*`）を `src/runtime/cpp/pytra-core/` へ移動した。これにより `src/runtime/cpp/pytra/` は全57ファイルが公開フォワーダー層となり、実体は `pytra-gen`（生成）と `pytra-core`（手書き）へ分離された。
-- 2026-02-23: `P0-RUNTIME-SEP-01-S5` を実施し、`tools/check_runtime_cpp_layout.py` を追加した。`pytra-gen` は `AUTO-GENERATED FILE. DO NOT EDIT.` 必須、`pytra-core` は同マーカー禁止を検証し、`tools/run_local_ci.py` に組み込んで常時ガード化した。
+- 2026-02-23: `P0-RUNTIME-SEP-01-S5` を実施し、`tools/check/check_runtime_cpp_layout.py` を追加した。`pytra-gen` は `AUTO-GENERATED FILE. DO NOT EDIT.` 必須、`pytra-core` は同マーカー禁止を検証し、`tools/run/run_local_ci.py` に組み込んで常時ガード化した。
 - 2026-02-24: `P1-RUNTIME-01-S1` として `src/rs_module/` の棚卸しを実施し、`py_runtime.rs` に混在している責務を `src/runtime/rs/pytra/{built_in,std,utils,compiler}` へ分割する対応表を本ファイルへ追加した。
-- 2026-02-24: `P1-RUNTIME-01-S2` として `src/runtime/rs/pytra/` 配下（`built_in/std/utils/compiler`）を新設し、`src/rs_module/py_runtime.rs` の実体を `src/runtime/rs/pytra/built_in/py_runtime.rs` へ移動した。`src/rs_module/py_runtime.rs` は `include!(\"../runtime/rs/pytra/built_in/py_runtime.rs\")` の互換 shim へ置換し、既存 `#[path = \"../../src/rs_module/py_runtime.rs\"]` 参照を維持したまま新配置を正本化した。`python3 tools/check_py2rs_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）で回帰がないことを確認した。
-- 2026-02-24: ID: P1-RUNTIME-01-S3 として `src/rs_module` 依存縮退の固定化を実施した。`tools/check_rs_runtime_layout.py` を追加し、`src/rs_module/` 直下は互換 shim (`py_runtime.rs`) のみ許可、実体は `src/runtime/rs/pytra/built_in/py_runtime.rs` 必須とするガードを導入した。`tools/run_local_ci.py` に同チェックを組み込み、`python3 tools/check_py2rs_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）で回帰なしを確認した。
+- 2026-02-24: `P1-RUNTIME-01-S2` として `src/runtime/rs/pytra/` 配下（`built_in/std/utils/compiler`）を新設し、`src/rs_module/py_runtime.rs` の実体を `src/runtime/rs/pytra/built_in/py_runtime.rs` へ移動した。`src/rs_module/py_runtime.rs` は `include!(\"../runtime/rs/pytra/built_in/py_runtime.rs\")` の互換 shim へ置換し、既存 `#[path = \"../../src/rs_module/py_runtime.rs\"]` 参照を維持したまま新配置を正本化した。`python3 tools/check/check_py2rs_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）で回帰がないことを確認した。
+- 2026-02-24: ID: P1-RUNTIME-01-S3 として `src/rs_module` 依存縮退の固定化を実施した。`tools/check/check_rs_runtime_layout.py` を追加し、`src/rs_module/` 直下は互換 shim (`py_runtime.rs`) のみ許可、実体は `src/runtime/rs/pytra/built_in/py_runtime.rs` 必須とするガードを導入した。`tools/run/run_local_ci.py` に同チェックを組み込み、`python3 tools/check/check_py2rs_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）で回帰なしを確認した。
 - 2026-02-24: ID: P1-RUNTIME-01（親タスク）を完了として履歴へ移管した。残作業は `P1-RUNTIME-02` 以降（参照パス切替と `src/rs_module` 最終撤去）へ移行する。
 - 2026-02-24: ID: P1-RUNTIME-02-S1 として Rust path 解決箇所を棚卸しした。`py2rs.py` は runtime パス非依存、`rs_emitter.py` は `module_id -> use crate::...` の変換責務、既存生成物の旧 `src/rs_module` 参照は shim で吸収する互換方針を確定した。
 - 2026-02-24: ID: P1-RUNTIME-02-S2 として生成物参照先を新パスへ切替した。`sample/rs/*.rs` の `#[path = "../../src/rs_module/py_runtime.rs"]` を `#[path = "../../src/runtime/rs/pytra/built_in/py_runtime.rs"]` へ一括更新し、コード側の旧パス依存を撤去した。旧参照 fallback は `src/rs_module/py_runtime.rs` shim のみ維持する。
 - 2026-02-24: ID: P1-RUNTIME-02（親タスク）を完了として履歴へ移管した。次段は `P1-RUNTIME-03`（`src/rs_module` 廃止）へ進む。
-- 2026-02-24: ID: P1-RUNTIME-03-S1 として `src/rs_module` 参照元を全件棚卸しし、コード側は `src/rs_module/py_runtime.rs` shim と `tools/check_rs_runtime_layout.py` のみが直接依存、残りは docs 記述であることを確認した。`P1-RUNTIME-03-S2` では shim 削除 + ガード更新 + docs 置換を同時実施する方針を確定した。
-- 2026-02-24: ID: P1-RUNTIME-03-S2 として `src/rs_module/py_runtime.rs` を削除し、`tools/check_rs_runtime_layout.py` を「`src/rs_module` ソース禁止」ルールへ更新した。`docs/ja/how-to-use.md`、`docs/ja/spec/spec-dev.md`、`docs/ja/plans/pytra-wip.md` の旧参照を `src/runtime/rs/pytra/` 基準へ置換した。
+- 2026-02-24: ID: P1-RUNTIME-03-S1 として `src/rs_module` 参照元を全件棚卸しし、コード側は `src/rs_module/py_runtime.rs` shim と `tools/check/check_rs_runtime_layout.py` のみが直接依存、残りは docs 記述であることを確認した。`P1-RUNTIME-03-S2` では shim 削除 + ガード更新 + docs 置換を同時実施する方針を確定した。
+- 2026-02-24: ID: P1-RUNTIME-03-S2 として `src/rs_module/py_runtime.rs` を削除し、`tools/check/check_rs_runtime_layout.py` を「`src/rs_module` ソース禁止」ルールへ更新した。`docs/ja/how-to-use.md`、`docs/ja/spec/spec-dev.md`、`docs/ja/plans/pytra-wip.md` の旧参照を `src/runtime/rs/pytra/` 基準へ置換した。
 - 2026-02-24: ID: P1-RUNTIME-03（親タスク）を完了として履歴へ移管した。Rust runtime の旧配置依存は解消し、残タスクは `P1-RUNTIME-05`（他言語統一）へ移行する。
 - 2026-02-24: ID: `P1-RUNTIME-05-S1` として Rust 以外（`cs/js/ts/go/java/kotlin/swift`）の runtime 解決パスを棚卸しした。`py2<lang>.py` 本体は path 非依存、直書き参照は `src/hooks/js/emitter/js_emitter.py` と `src/common2/js_ts_native_transpiler.py` に集中すること、`Go/Java/Kotlin/Swift` は preview backend のため path 解決実装未着手であることを確定した。
-- 2026-02-24: ID: `P1-RUNTIME-05-S2` として `JS/TS` runtime 参照を `src/runtime/{js,ts}/pytra/` へ切替した。`js_emitter.py` と `js_ts_native_transpiler.py` の require 先更新、`src/runtime/js/pytra` と `src/runtime/ts/pytra` の runtime 複製配置、関連テスト更新（`test_py2js_smoke.py`, `test_js_ts_runtime_dispatch.py`）を実施し、`python3 tools/check_py2js_transpile.py` / `python3 tools/check_py2ts_transpile.py` / ユニットテストで回帰なしを確認した。
-- 2026-02-24: ID: P1-RUNTIME-05-S3 として多言語 smoke（`check_py2{cpp,rs,cs,js,ts,go,java,swift,kotlin}_transpile.py`）を実施し、全ターゲット回帰なしを確認した。`src/{js,ts}_module` は legacy shim へ縮退し、`sample/{js,ts}` 生成物の旧 `src/*_module` 参照を `src/runtime/{js,ts}/pytra` へ置換、さらに `tools/check_runtime_legacy_shims.py` を追加して旧パス再流入防止を CI へ組み込んだ。
+- 2026-02-24: ID: `P1-RUNTIME-05-S2` として `JS/TS` runtime 参照を `src/runtime/{js,ts}/pytra/` へ切替した。`js_emitter.py` と `js_ts_native_transpiler.py` の require 先更新、`src/runtime/js/pytra` と `src/runtime/ts/pytra` の runtime 複製配置、関連テスト更新（`test_py2js_smoke.py`, `test_js_ts_runtime_dispatch.py`）を実施し、`python3 tools/check/check_py2js_transpile.py` / `python3 tools/check/check_py2ts_transpile.py` / ユニットテストで回帰なしを確認した。
+- 2026-02-24: ID: P1-RUNTIME-05-S3 として多言語 smoke（`check_py2{cpp,rs,cs,js,ts,go,java,swift,kotlin}_transpile.py`）を実施し、全ターゲット回帰なしを確認した。`src/{js,ts}_module` は legacy shim へ縮退し、`sample/{js,ts}` 生成物の旧 `src/*_module` 参照を `src/runtime/{js,ts}/pytra` へ置換、さらに `tools/check/check_runtime_legacy_shims.py` を追加して旧パス再流入防止を CI へ組み込んだ。
 - 2026-02-24: 旧タスクの完了判定が「参照パス統一」止まりで、`src/{cs,go,java,kotlin,swift}_module/` の runtime 実体移行完了条件を満たしていないことを確認。残作業を `P1-RUNTIME-06`（再オープン）として `todo` へ復帰した。
-- 2026-02-25: ID: `P1-RUNTIME-06-S4` を実施し、`src/kotlin_module/py_runtime.kt` を `src/runtime/kotlin/pytra/py_runtime.kt` へ移行した。`test/unit/test_py2kotlin_smoke.py` に移行検証を追加し、`src/kotlin_module` の実体ファイルを削除対象扱いにした。
-- 2026-02-25: ID: `P1-RUNTIME-06-S5` を実施し、`src/swift_module/py_runtime.swift` を `src/runtime/swift/pytra/py_runtime.swift` へ移行した。`test/unit/test_py2swift_smoke.py` に移行検証を追加し、`src/swift_module` の実体ファイルを削除対象扱いにした。
-- 2026-02-25: legacy runtime guard を実施し、`tools/check_runtime_legacy_shims.py` を更新して `cs/go/java/kotlin/swift` legacy module の再流入（存在・参照）を検知するガードを追加した。
+- 2026-02-25: ID: `P1-RUNTIME-06-S4` を実施し、`src/kotlin_module/py_runtime.kt` を `src/runtime/kotlin/pytra/py_runtime.kt` へ移行した。`tools/unittest/test_py2kotlin_smoke.py` に移行検証を追加し、`src/kotlin_module` の実体ファイルを削除対象扱いにした。
+- 2026-02-25: ID: `P1-RUNTIME-06-S5` を実施し、`src/swift_module/py_runtime.swift` を `src/runtime/swift/pytra/py_runtime.swift` へ移行した。`tools/unittest/test_py2swift_smoke.py` に移行検証を追加し、`src/swift_module` の実体ファイルを削除対象扱いにした。
+- 2026-02-25: legacy runtime guard を実施し、`tools/check/check_runtime_legacy_shims.py` を更新して `cs/go/java/kotlin/swift` legacy module の再流入（存在・参照）を検知するガードを追加した。

@@ -19,10 +19,10 @@
 - 画像 runtime の出自を機械可読にし、手書き混入を回帰で検知できる状態にする。
 
 対象:
-- `tools/audit_image_runtime_sot.py`
+- `tools/check/audit_image_runtime_sot.py`
 - `src/runtime/<lang>/...` の PNG/GIF helper 実装
 - `src/toolchain/emit/<lang>/...` の正本変換に必要な lower/emitter 修正
-- `tools/runtime_parity_check.py`（必要最小限）
+- `tools/check/runtime_parity_check.py`（必要最小限）
 
 非対象:
 - 画像以外 runtime API の全面改修
@@ -31,13 +31,13 @@
 
 受け入れ基準:
 - 画像 helper を持つ全 target（`cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala/php/nim`）で、runtime 実装が正本由来であることを示すヘッダ/メタ情報を保持する。
-- `tools/audit_image_runtime_sot.py --probe-transpile` の最新ログで、言語別ステータスと未解決要因が追跡可能である。
+- `tools/check/audit_image_runtime_sot.py --probe-transpile` の最新ログで、言語別ステータスと未解決要因が追跡可能である。
 - 各言語で `sample/01`（PNG）と `sample/05`（GIF）の parity（stdout + artifact size + CRC32）が壊れていないことを確認する。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/audit_image_runtime_sot.py --probe-transpile --summary-json work/logs/image_runtime_sot_audit_20260304.json`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets <lang> --samples 01,05 --check-artifacts --summary-json <log>`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/audit_image_runtime_sot.py --probe-transpile --summary-json work/logs/image_runtime_sot_audit_20260304.json`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets <lang> --samples 01,05 --check-artifacts --summary-json <log>`
 
 言語別ベースライン（2026-03-04 監査）:
 
@@ -83,13 +83,13 @@
 
 決定ログ:
 - 2026-03-04: ユーザー指示「言語別にTODOにP0で積んで実施」に基づき、本計画を新規起票。
-- 2026-03-04: `tools/audit_image_runtime_sot.py --probe-transpile` を実行し、`work/logs/image_runtime_sot_audit_20260304.json` で `languages=14, compliant=1, non_compliant=13` を固定。
+- 2026-03-04: `tools/check/audit_image_runtime_sot.py --probe-transpile` を実行し、`work/logs/image_runtime_sot_audit_20260304.json` で `languages=14, compliant=1, non_compliant=13` を固定。
 - 2026-03-04: 監査結果から `probe ok` 群（`cs/js/ts/scala/nim`）を先行着手、`probe fail` 群（`rs/go/java/swift/kotlin/ruby/lua/php`）を阻害要因解消フェーズへ分離した。
 - 2026-03-04: 運用是正。`src/pytra/utils/png.py` / `gif.py` のターゲット都合変更は規約違反のため取り消し、`S1-04` は未完了へ戻した。以後は正本不変で backend 側修正のみを許可する。
-- 2026-03-04: 巻き戻し後に `tools/audit_image_runtime_sot.py --probe-transpile` を再実行し、`work/logs/image_runtime_sot_audit_20260304_after_revert.json` で baseline（`probe ok: cs/js/ts/scala/nim`, `probe fail: rs/go/java/swift/kotlin/ruby/lua/php`）へ復帰したことを確認。
-- 2026-03-04: `S2-CS` 着手として backend 側の受け皿を実装（`CSharpEmitter` に `bytes literal` / `list.extend` / `int.to_bytes` / module alias shadow 回避を追加、`py_runtime.cs` に `py_int_to_bytes` を追加）。さらに `tools/gen_cs_image_runtime_from_canonical.py` を追加して正本から C# helper 生成を試行。
+- 2026-03-04: 巻き戻し後に `tools/check/audit_image_runtime_sot.py --probe-transpile` を再実行し、`work/logs/image_runtime_sot_audit_20260304_after_revert.json` で baseline（`probe ok: cs/js/ts/scala/nim`, `probe fail: rs/go/java/swift/kotlin/ruby/lua/php`）へ復帰したことを確認。
+- 2026-03-04: `S2-CS` 着手として backend 側の受け皿を実装（`CSharpEmitter` に `bytes literal` / `list.extend` / `int.to_bytes` / module alias shadow 回避を追加、`py_runtime.cs` に `py_int_to_bytes` を追加）。さらに `tools/gen/gen_cs_image_runtime_from_canonical.py` を追加して正本から C# helper 生成を試行。
 - 2026-03-04: 生成 helper への実差し替えは compile fail で未完了。主因は C# emitter 由来の追加未対応（`List<byte> + List<byte>`、`long` と shift 演算の型整合、`PyFile/open` 経路）。差し替えは巻き戻し済みで、`work/logs/runtime_parity_sample_cs_0105_after_restore_20260304.json` で `01/05` parity pass を確認。
-- 2026-03-04: `S2-CS` 完了。`CSharpEmitter` に `list+list` concat / `open()` / shift-cast / compare 括弧を追加し、`py_runtime.cs` に `PyFile`, `open`, `py_bytes(object)`, `py_concat` を追加。`tools/gen_cs_image_runtime_from_canonical.py` 再生成後、`work/logs/runtime_parity_sample_cs_0105_canonical_retry_20260304.json` で `sample/01,05` pass、`work/logs/image_runtime_sot_audit_20260304_after_cs_s2.json` で `cs: compliant_marker_present` を確認。
+- 2026-03-04: `S2-CS` 完了。`CSharpEmitter` に `list+list` concat / `open()` / shift-cast / compare 括弧を追加し、`py_runtime.cs` に `PyFile`, `open`, `py_bytes(object)`, `py_concat` を追加。`tools/gen/gen_cs_image_runtime_from_canonical.py` 再生成後、`work/logs/runtime_parity_sample_cs_0105_canonical_retry_20260304.json` で `sample/01,05` pass、`work/logs/image_runtime_sot_audit_20260304_after_cs_s2.json` で `cs: compliant_marker_present` を確認。
 - 2026-03-04: `S1-04` 前進。Rust emitter の未対応 `Try` を backend 側で縮退実装し、`src/pytra/utils/png.py` / `gif.py` の Rust transpile probe を green 化。`work/logs/image_runtime_sot_audit_20260304_after_rs_try.json` で `probe ok` が `cpp/cs/js/ts/scala/nim/rs` まで拡大したことを確認。
 - 2026-03-04: `S1-04` 追加前進。`go/java/swift/kotlin/ruby/php` native emitter に `Try` 縮退出力を追加し、`work/logs/image_runtime_sot_audit_20260304_after_try_wave1.json` で `probe fail` を `lua` のみへ縮小。`Try` 非対応起因の fail は解消済み。
 - 2026-03-04: `S1-04` 完了。Lua emitter に `Try` 縮退と table/bytes slice 出力を追加し、`work/logs/image_runtime_sot_audit_20260304_after_lua_try_slice.json` で全14言語 `probe(png/gif)=ok` を確認。

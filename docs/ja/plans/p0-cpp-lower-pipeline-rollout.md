@@ -33,16 +33,16 @@
 受け入れ基準:
 - `py2cpp` 実行時に `CppLower -> CppIrOptimizer -> CppEmitter` の順で必ず処理される。
 - `CppEmitter` の migrated 範囲で EAST3 `kind` 分岐依存がなくなり、C++ IR ノード描画に一本化される。
-- 既存の C++ transpile 回帰（`tools/check_py2cpp_transpile.py`）が非退行で通る。
+- 既存の C++ transpile 回帰（`tools/check/check_py2cpp_transpile.py`）が非退行で通る。
 - `sample/01,08,18` の C++ 再生成でコンパイル可能性と parity を維持する。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_cpp_*lower*.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_*.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --stems 01_mandelbrot,08_langtons_ant,18_mini_language_interpreter --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets cpp --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --stems 01_mandelbrot,08_langtons_ant,18_mini_language_interpreter --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp --all-samples --ignore-unstable-stdout`
 
 ## 分解
 
@@ -71,7 +71,7 @@
 - 2026-03-02: `CppLower` が文ノードへ `cpp_stmt_kind_v1` を付与し、`CppEmitter.emit_stmt` は hint 優先で dispatch する構成へ更新。S3-03 の「EAST3 生 kind 直参照削減」を開始（未完）。
 - 2026-03-02: `CppLower` が式ノードにも `cpp_expr_kind_v1` を付与し、`CppEmitter.render_expr` も hint 優先 dispatch へ移行。`_emit_stmt_kind_fallback` をテーブル駆動化し、S3-03 を完了扱いへ更新。
 - 2026-03-02: 境界テストとして `test_cpp_optimizer.py` に `CppLower` / `CppIrOptimizer` / `emit_cpp_from_east` の接続検証を追加し、unit 回帰を固定（S4-01）。
-- 2026-03-02: `tools/check_py2cpp_transpile.py`（136/136 pass, skip6）、`tools/regenerate_samples.py --langs cpp --stems 01_mandelbrot,08_langtons_ant,18_mini_language_interpreter --force`、`tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot 08_langtons_ant 18_mini_language_interpreter --ignore-unstable-stdout`（3/3 pass）で非退行を確認（S4-02）。
+- 2026-03-02: `tools/check/check_py2cpp_transpile.py`（136/136 pass, skip6）、`tools/gen/regenerate_samples.py --langs cpp --stems 01_mandelbrot,08_langtons_ant,18_mini_language_interpreter --force`、`tools/check/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot 08_langtons_ant 18_mini_language_interpreter --ignore-unstable-stdout`（3/3 pass）で非退行を確認（S4-02）。
 
 ## C++ IR v0 契約（S1-01）
 

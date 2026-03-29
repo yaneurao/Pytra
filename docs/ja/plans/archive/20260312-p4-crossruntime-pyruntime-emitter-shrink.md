@@ -66,14 +66,14 @@
   - どちらも `src/backends/cs/emitter/cs_emitter.py`
 
 代表 guard:
-- inventory 正本: [check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/check_crossruntime_pyruntime_emitter_inventory.py)
-- unit guard: [test_check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_crossruntime_pyruntime_emitter_inventory.py)
+- inventory 正本: [check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/check/check_crossruntime_pyruntime_emitter_inventory.py)
+- unit guard: [test_check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/unittest/tooling/test_check_crossruntime_pyruntime_emitter_inventory.py)
 - representative manifest:
   - bucket ごとに `smoke_file + smoke_tests + source_guard_paths` を inventory tool 内で固定する。
 - representative smoke:
-  - C++: [test_east3_cpp_bridge.py](/workspace/Pytra/test/unit/backends/cpp/test_east3_cpp_bridge.py)
-  - Rust: [test_py2rs_smoke.py](/workspace/Pytra/test/unit/backends/rs/test_py2rs_smoke.py)
-  - C#: [test_py2cs_smoke.py](/workspace/Pytra/test/unit/backends/cs/test_py2cs_smoke.py)
+  - C++: [test_east3_cpp_bridge.py](/workspace/Pytra/tools/unittest/emit/cpp/test_east3_cpp_bridge.py)
+  - Rust: [test_py2rs_smoke.py](/workspace/Pytra/tools/unittest/emit/rs/test_py2rs_smoke.py)
+  - C#: [test_py2cs_smoke.py](/workspace/Pytra/tools/unittest/emit/cs/test_py2cs_smoke.py)
 - source guard:
   - Rust/C# thin seam と C# bytes/bytearray residual lane は inventory tool の source guard pattern で固定する。
 
@@ -93,8 +93,8 @@
 - emitter shrink 完了時点で、header surface tool 上の `typed_collection_compat` と `shared_type_id_compat` は空である。
 - emitter 観点で最後まで残る header bucket は `object_bridge_mutation` のみで、これは次段 [20260312-p4-crossruntime-pyruntime-residual-caller-shrink.md](./20260312-p4-crossruntime-pyruntime-residual-caller-shrink.md) が引き取る。
 - handoff 正本:
-  - header surface: [check_cpp_pyruntime_header_surface.py](/workspace/Pytra/tools/check_cpp_pyruntime_header_surface.py)
-  - header unit guard: [test_check_cpp_pyruntime_header_surface.py](/workspace/Pytra/test/unit/tooling/test_check_cpp_pyruntime_header_surface.py)
+  - header surface: [check_cpp_pyruntime_header_surface.py](/workspace/Pytra/tools/check/check_cpp_pyruntime_header_surface.py)
+  - header unit guard: [test_check_cpp_pyruntime_header_surface.py](/workspace/Pytra/tools/unittest/tooling/test_check_cpp_pyruntime_header_surface.py)
   - follow-up task: `P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01`
 
 ## 決定ログ

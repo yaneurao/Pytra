@@ -10,7 +10,7 @@ Related TODO:
 - `docs/ja/todo/index.md` `ID: P1-IR-CORE-DECOMPOSITION-01`
 
 Background:
-- `src/toolchain/ir/core.py` is 10,081 lines and `test/unit/ir/test_east_core.py` is 3,912 lines, making review and navigation expensive.
+- `src/toolchain/ir/core.py` is 10,081 lines and `tools/unittest/ir/test_east_core.py` is 3,912 lines, making review and navigation expensive.
 - `P2-COMPILER-TYPED-BOUNDARY-01-S3-02` did make progress on helper extraction, but the work regressed into one-helper-per-commit micro-slices.
 - `test_east_core.py` mixes source-contract guards and parser behavior tests, so the next split boundary is no longer obvious.
 
@@ -22,8 +22,8 @@ Goal:
 In scope:
 - `src/toolchain/ir/core.py`
 - `src/toolchain/ir/core_expr_*.py`
-- `test/unit/ir/test_east_core.py`
-- `test/unit/ir/test_east_core*.py`
+- `tools/unittest/ir/test_east_core.py`
+- `tools/unittest/ir/test_east_core*.py`
 - `docs/ja/todo/index.md`, `docs/en/todo/index.md`
 - `docs/ja/plans/*.md`, `docs/en/plans/*.md`
 
@@ -39,9 +39,9 @@ Acceptance criteria:
 - TODO / plan progress notes are compressed to cluster-level summaries.
 
 Validation commands:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/selfhost -p 'test_prepare_selfhost_source.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/selfhost -p 'test_prepare_selfhost_source.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 
@@ -59,17 +59,17 @@ Decision log:
 - 2026-03-11: Created this task using `core.py=10081 lines` and `test_east_core.py=3912 lines` as the baseline. The first slice will extract the leading source-contract builder cluster from `test_east_core.py` into a shared support module and a dedicated test file.
 - 2026-03-11: Future splits should operate on bundles of roughly 5-10 helpers or test clusters, not one-helper-per-commit micro-slices. TODO / plan notes should stay at the same bundle-level granularity.
 - 2026-03-11: Keep only one-line cluster-level progress notes in TODO, and record verification logs or rationale in this plan's decision log. All later `S2+` slices should keep that convention.
-- 2026-03-11: Added `test/unit/ir/_east_core_test_support.py` plus `test/unit/ir/test_east_core_source_contract_builders.py`, then moved the leading 10 builder source-contract guards out of `test_east_core.py`.
-- 2026-03-11: Added `test/unit/ir/test_east_core_source_contract_expr_suffix.py`, then moved 10 call/attr/subscript source-contract guards out of `test_east_core.py`. `S2-02` stays open because more source-contract clusters remain.
-- 2026-03-11: Added `test/unit/ir/test_east_core_source_contract_call_metadata.py`, then moved 10 method/named-call metadata source-contract guards out of `test_east_core.py`. `S2-02` remains open because call-suffix, parser-helper, and tuple-destructure clusters are still in the main file.
-- 2026-03-11: Added `test/unit/ir/test_east_core_source_contract_runtime_builtins.py` plus `test/unit/ir/test_east_core_source_contract_call_dispatch.py`, then moved the remaining 19 runtime-builtin / named-call / call-suffix source-contract guards out of `test_east_core.py`. The tuple-destructure and residual-inline-kind guards were folded into existing source-contract files, so `test_east_core.py` now focuses on parser behavior and representative regressions.
-- 2026-03-11: Added `test/unit/ir/test_east_core_parser_behavior_decorators.py`, then moved 10 representative extern / abi / template parser-behavior tests out of `test_east_core.py` to start `S2-03`.
-- 2026-03-11: Added `test/unit/ir/test_east_core_parser_behavior_types.py`, then moved 10 representative decode-first, type-expression, and `typing` / `__future__` parser-behavior tests out of `test_east_core.py`.
-- 2026-03-11: Added `test/unit/ir/test_east_core_parser_behavior_diagnostics.py`, then moved 3 object-receiver diagnostics out of `test_east_core.py`. The 7 decorator / abi / template negative cases were also moved into `test_east_core_parser_behavior_decorators.py`, removing the duplicate leading test and stray assertions from `test_east_core.py`.
-- 2026-03-11: Added `test/unit/ir/test_east_core_parser_behavior_exprs.py`, then moved 10 representative comprehension / lambda / fstring / yield / basic parser-acceptance tests out of `test_east_core.py`.
-- 2026-03-11: Added `test/unit/ir/test_east_core_parser_behavior_classes.py`, then moved 7 representative class-storage / dataclass / nominal-ADT / enum parser-behavior tests out of `test_east_core.py`.
-- 2026-03-11: Added `test/unit/ir/test_east_core_parser_behavior_runtime.py`, then moved 12 representative runtime-annotation / builtin-call / pathlib / json / iter-lowering parser-behavior tests out of `test_east_core.py`.
-- 2026-03-11: Added `test/unit/ir/test_east_core_parser_behavior_statements.py`, then moved 6 representative identifier/import ambiguity, `super()`, bare `return`, arg-usage, and trailing-semicolon parser-behavior tests out of `test_east_core.py`. Only 3 residual source-contract regressions remain in the main file.
+- 2026-03-11: Added `tools/unittest/ir/_east_core_test_support.py` plus `tools/unittest/ir/test_east_core_source_contract_builders.py`, then moved the leading 10 builder source-contract guards out of `test_east_core.py`.
+- 2026-03-11: Added `tools/unittest/ir/test_east_core_source_contract_expr_suffix.py`, then moved 10 call/attr/subscript source-contract guards out of `test_east_core.py`. `S2-02` stays open because more source-contract clusters remain.
+- 2026-03-11: Added `tools/unittest/ir/test_east_core_source_contract_call_metadata.py`, then moved 10 method/named-call metadata source-contract guards out of `test_east_core.py`. `S2-02` remains open because call-suffix, parser-helper, and tuple-destructure clusters are still in the main file.
+- 2026-03-11: Added `tools/unittest/ir/test_east_core_source_contract_runtime_builtins.py` plus `tools/unittest/ir/test_east_core_source_contract_call_dispatch.py`, then moved the remaining 19 runtime-builtin / named-call / call-suffix source-contract guards out of `test_east_core.py`. The tuple-destructure and residual-inline-kind guards were folded into existing source-contract files, so `test_east_core.py` now focuses on parser behavior and representative regressions.
+- 2026-03-11: Added `tools/unittest/ir/test_east_core_parser_behavior_decorators.py`, then moved 10 representative extern / abi / template parser-behavior tests out of `test_east_core.py` to start `S2-03`.
+- 2026-03-11: Added `tools/unittest/ir/test_east_core_parser_behavior_types.py`, then moved 10 representative decode-first, type-expression, and `typing` / `__future__` parser-behavior tests out of `test_east_core.py`.
+- 2026-03-11: Added `tools/unittest/ir/test_east_core_parser_behavior_diagnostics.py`, then moved 3 object-receiver diagnostics out of `test_east_core.py`. The 7 decorator / abi / template negative cases were also moved into `test_east_core_parser_behavior_decorators.py`, removing the duplicate leading test and stray assertions from `test_east_core.py`.
+- 2026-03-11: Added `tools/unittest/ir/test_east_core_parser_behavior_exprs.py`, then moved 10 representative comprehension / lambda / fstring / yield / basic parser-acceptance tests out of `test_east_core.py`.
+- 2026-03-11: Added `tools/unittest/ir/test_east_core_parser_behavior_classes.py`, then moved 7 representative class-storage / dataclass / nominal-ADT / enum parser-behavior tests out of `test_east_core.py`.
+- 2026-03-11: Added `tools/unittest/ir/test_east_core_parser_behavior_runtime.py`, then moved 12 representative runtime-annotation / builtin-call / pathlib / json / iter-lowering parser-behavior tests out of `test_east_core.py`.
+- 2026-03-11: Added `tools/unittest/ir/test_east_core_parser_behavior_statements.py`, then moved 6 representative identifier/import ambiguity, `super()`, bare `return`, arg-usage, and trailing-semicolon parser-behavior tests out of `test_east_core.py`. Only 3 residual source-contract regressions remain in the main file.
 - 2026-03-11: `S2-03` is complete now that `test_east_core.py` contains only the 3 residual source-contract regressions. The next bundle is `S3-01`, which will move the declaration / class-semantics cluster out of `core.py` into dedicated modules.
 - 2026-03-11: Added `core_class_semantics.py`, then moved `_sh_make_decl_meta`, `_sh_make_nominal_adt_v1_meta`, the dataclass value-safe checks, and nominal-ADT class metadata collection out of `core.py`. The remaining `core.py` side keeps only the decorator parser and class-parse orchestration.
 - 2026-03-11: Moved `_apply_attr_expr_annotation`, `_annotate_attr_expr`, and `_annotate_subscript_expr` into `core_expr_attr_subscript_annotation.py`, then updated `test_east_core_source_contract_expr_suffix.py` so the attr/subscript annotation cluster is read from the split module.

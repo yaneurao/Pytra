@@ -22,7 +22,7 @@ Goal:
 Scope:
 - `src/hooks/lua/emitter/lua_native_emitter.py`
 - `src/runtime/lua/*` (additions as needed)
-- `test/unit/test_py2lua_smoke.py` (or Lua-specific tests)
+- `tools/unittest/test_py2lua_smoke.py` (or Lua-specific tests)
 - Regeneration result of `sample/lua/01_mandelbrot.lua`
 
 Out of scope:
@@ -38,11 +38,11 @@ Acceptance criteria:
 - Transpile/smoke/parity pipelines pass.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua*.py' -v`
-- `python3 tools/check_py2lua_transpile.py`
-- `python3 tools/regenerate_samples.py --langs lua --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets lua 01_mandelbrot`
+- `python3 tools/check/check_py2lua_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs lua --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets lua 01_mandelbrot`
 
 Breakdown:
 - [x] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S1-01] Implement Lua runtime mapping for `time.perf_counter` and ban `not yet mapped` comment generation.
@@ -54,5 +54,5 @@ Decision log:
 - 2026-03-01: By user instruction, fixed policy to prioritize correcting runtime feature gaps in `sample/lua/01` (time/png no-op) under `P0`.
 - 2026-03-01: In `src/hooks/lua/emitter/lua_native_emitter.py`, connected `time.perf_counter` to `__pytra_perf_counter`, connected `pytra.runtime.png` / `pytra.utils.png` to `__pytra_write_rgb_png`-based implementation rather than no-op stubs, and changed unresolved `pytra.*` (especially `gif`) to fail-closed (`RuntimeError`).
 - 2026-03-01: Confirmed `output_mismatch` caused by Lua default print separators (tabs), and introduced `__pytra_print` helper to unify output with Python-compatible space-separated formatting.
-- 2026-03-01: Updated regression coverage in `test/unit/test_py2lua_smoke.py` and confirmed `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua_smoke.py' -v` (18 tests, OK).
-- 2026-03-01: Verified execution with `python3 src/py2lua.py sample/py/01_mandelbrot.py -o sample/lua/01_mandelbrot.lua && lua sample/lua/01_mandelbrot.lua`, and confirmed `python3 tools/runtime_parity_check.py --case-root sample --targets lua --ignore-unstable-stdout 01_mandelbrot` as PASS (`cases=1 pass=1 fail=0`).
+- 2026-03-01: Updated regression coverage in `tools/unittest/test_py2lua_smoke.py` and confirmed `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua_smoke.py' -v` (18 tests, OK).
+- 2026-03-01: Verified execution with `python3 src/py2lua.py sample/py/01_mandelbrot.py -o sample/lua/01_mandelbrot.lua && lua sample/lua/01_mandelbrot.lua`, and confirmed `python3 tools/check/runtime_parity_check.py --case-root sample --targets lua --ignore-unstable-stdout 01_mandelbrot` as PASS (`cases=1 pass=1 fail=0`).

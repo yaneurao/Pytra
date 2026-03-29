@@ -56,8 +56,8 @@ rc<list<int64>> picked = py_to<...>(random.choices(xs, ws));
 
 ## 対象
 
-- `test/unit/backends/cpp/test_east3_cpp_bridge.py` — 3 件
-- `test/unit/backends/cpp/test_py2cpp_codegen_issues.py` — 3 件
+- `tools/unittest/emit/cpp/test_east3_cpp_bridge.py` — 3 件
+- `tools/unittest/emit/cpp/test_py2cpp_codegen_issues.py` — 3 件
 
 ## 受け入れ基準
 

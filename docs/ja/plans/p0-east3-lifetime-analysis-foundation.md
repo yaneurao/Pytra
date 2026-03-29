@@ -23,8 +23,8 @@
 - `src/pytra/compiler/east_parts/east3_optimizer.py`
 - `src/pytra/compiler/east_parts/east3_opt_passes/*`（新規 lifetime pass 群を追加）
 - `src/pytra/compiler/east_parts/east3_opt_passes/non_escape_interprocedural_pass.py`（必要な接続のみ）
-- `test/unit/test_east3_optimizer*.py`
-- `test/unit/test_east3_lifetime_*.py`（新規）
+- `tools/unittest/test_east3_optimizer*.py`
+- `tools/unittest/test_east3_lifetime_*.py`（新規）
 - 必要最小限の `spec-east3-optimizer` 追記
 
 非対象:
@@ -39,11 +39,11 @@
 - 既存 optimizer 回帰と transpile smoke（`py2cpp`/`py2rs`）が非退行で通る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_lifetime_*.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer*.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2rs_transpile.py`
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、backend 側個別最適化より先に EAST3 で変数 lifetime 解析を共通化する方針を P0 で確定。

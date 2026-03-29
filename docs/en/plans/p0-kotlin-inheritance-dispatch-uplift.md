@@ -28,7 +28,7 @@ Acceptance criteria:
 
 Verification commands:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin_smoke.py' -v`
-- `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets kotlin`
+- `PYTHONPATH=src python3 tools/check/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets kotlin`
 
 Breakdown:
 - [ ] Add override-relation analysis and align declaration keywords.

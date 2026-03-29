@@ -6,7 +6,7 @@ from __future__ import annotations
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 FORBIDDEN_LEGACY_MODULE_DIRS = [
     "cs_module",
     "go_module",

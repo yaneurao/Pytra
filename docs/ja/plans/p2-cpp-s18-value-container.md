@@ -32,10 +32,10 @@
 - 段階導入後に unit/transpile/parity で非退行が確認できる。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、sample/18 の AST コンテナ値型化を `P2` 計画として起票した。

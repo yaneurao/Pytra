@@ -31,8 +31,8 @@ This document defines the operational rules Codex must follow while working on t
 - Execute unfinished items in priority order, the smallest `P<number>` first, and within the same priority use the first item from the top.
 - If even one `P0` task remains unfinished, do not start `P1` or below unless there is an explicit override instruction.
 - Keep progress notes in `docs/ja/todo/index.md` to one-line summaries. Write detailed decisions and verification logs into the `Decision log` of the context file under `docs/ja/plans/*.md`.
-- Large tasks may be split into child tasks of the form `-S1` and `-S2` in context files. `tools/check_todo_priority.py` allows the top unfinished `ID` and its child `ID`s.
-- In any turn that adds progress logs to `docs/ja/todo/index.md` or `docs/ja/plans/*.md`, pass `python3 tools/check_todo_priority.py`. On the `plans` side, only date lines inside `Decision log` count as progress entries.
+- Large tasks may be split into child tasks of the form `-S1` and `-S2` in context files. `tools/check/check_todo_priority.py` allows the top unfinished `ID` and its child `ID`s.
+- In any turn that adds progress logs to `docs/ja/todo/index.md` or `docs/ja/plans/*.md`, pass `python3 tools/check/check_todo_priority.py`. On the `plans` side, only date lines inside `Decision log` count as progress entries.
 - If uncommitted diffs remain due to interruption or similar causes, either finish the same `ID` or revert those diffs before moving to another `ID`.
 - Update the checklist state when a task is completed.
 
@@ -112,11 +112,11 @@ Alternatives:
 - `sample/out/` is reserved for sample output examples, PNG, GIF, and TXT, and must not be used for transpile output or temporary files.
 - `/tmp/` is a system-shared area that accumulates garbage and is therefore prohibited.
 - `tempfile.TemporaryDirectory()` is also prohibited because it uses `/tmp/`. Create subdirectories under `work/tmp/` instead.
-- If `src/toolchain/emit/common/emitter/code_emitter.py` changes, run `test/unit/common/test_code_emitter.py` first to verify common-utility regressions.
-- For `CodeEmitter` and `py2cpp` changes, at minimum both `python3 tools/check_py2cpp_transpile.py` and `python3 tools/build_selfhost.py` must pass before commit.
+- If `src/toolchain/emit/common/emitter/code_emitter.py` changes, run `tools/unittest/common/test_code_emitter.py` first to verify common-utility regressions.
+- For `CodeEmitter` and `py2cpp` changes, at minimum both `python3 tools/check/check_py2cpp_transpile.py` and `python3 tools/build_selfhost.py` must pass before commit.
 - Committing while either of those two commands is failing is prohibited.
-- When changing transpiler-related files, `src/py2*.py`, `src/pytra/**`, `src/toolchain/emit/**`, or `src/toolchain/emit/**/profiles/**`, update the corresponding version in `src/toolchain/misc/transpiler_versions.json` by at least a minor bump and pass `python3 tools/check_transpiler_version_gate.py`.
-- Use `python3 tools/run_regen_on_version_bump.py --verify-cpp-on-diff` for sample regeneration, and compile/run-check any C++ cases that changed due to the version bump.
+- When changing transpiler-related files, `src/py2*.py`, `src/pytra/**`, `src/toolchain/emit/**`, or `src/toolchain/emit/**/profiles/**`, update the corresponding version in `src/toolchain/misc/transpiler_versions.json` by at least a minor bump and pass `python3 tools/check/check_transpiler_version_gate.py`.
+- Use `python3 tools/run/run_regen_on_version_bump.py --verify-cpp-on-diff` for sample regeneration, and compile/run-check any C++ cases that changed due to the version bump.
 - For ad hoc C++ compile experiments, debugging or investigation, put both source and artifacts under `work/tmp/`, not in the repository root.
 - GCC dump flags such as `-fdump-tree-all` write into the current directory, so do not use them in the repository root. If necessary, specify `-dumpdir /tmp/`.
 - After any experiment involving compilation, confirm with `git status --short` that no unintended generated files remain in the repository root.
@@ -128,10 +128,10 @@ Alternatives:
 - For `#include "runtime/cpp/..."`, headers under `work/selfhost/` take precedence if they share the same name. Updating only `src/runtime/cpp` may therefore fail to fix the selfhost build.
 - Because selfhost build logs may appear on stdout, capture them together with `> work/selfhost/build.all.log 2>&1`.
 - In selfhost-target code, confirm that Python-only constructs do not leak into generated C++, for example `super().__init__` or Python-style inheritance syntax.
-- When runtime changes are made, verify not only `test/unit/toolchain/emit/cpp/test_py2cpp_features.py` but also selfhost regeneration and recompilation.
+- When runtime changes are made, verify not only `tools/unittest/emit/cpp/test_py2cpp_features.py` but also selfhost regeneration and recompilation.
 - Even for Python code that is a selfhost target, direct standard-library imports are prohibited. Use only shim modules under `src/pytra/std/`, for example `pytra.std.json`, `pytra.std.pathlib`, `pytra.std.sys`, `pytra.std.os`, `pytra.std.glob`, `pytra.std.argparse`, and `pytra.std.re`. Only `typing` may still be imported directly as an annotation-only no-op import.
 - In selfhost-critical areas where reliability has priority, avoid branches that depend on `continue` or literal-set membership such as `x in {"a", "b"}`. Prefer `if/elif` and explicit comparisons such as `x == "a" or x == "b"`.
-- For the daily minimum regression set, run `python3 tools/run_local_ci.py` and pass `check_py2cpp_transpile`, unit tests, selfhost build, and selfhost diff together.
+- For the daily minimum regression set, run `python3 tools/run/run_local_ci.py` and pass `check_py2cpp_transpile`, unit tests, selfhost build, and selfhost diff together.
 
 ## 8. External release-version operation
 

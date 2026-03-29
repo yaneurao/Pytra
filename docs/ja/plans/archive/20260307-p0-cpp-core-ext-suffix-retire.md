@@ -32,10 +32,10 @@
   - `src/backends/cpp/cli.py`
   - `src/backends/cpp/emitter/header_builder.py`
   - `src/backends/cpp/emitter/multifile_writer.py`
-  - `tools/gen_runtime_symbol_index.py`
+  - `tools/gen/gen_runtime_symbol_index.py`
   - `tools/cpp_runtime_deps.py`
-  - `tools/check_runtime_cpp_layout.py`
-  - `tools/check_runtime_core_gen_markers.py`
+  - `tools/check/check_runtime_cpp_layout.py`
+  - `tools/check/check_runtime_core_gen_markers.py`
   - core runtime 関連 unit/integration test
 
 非対象:
@@ -53,14 +53,14 @@
 - representative verification が green で、`rg -n 'core/.*\\.ext|native/core/.*\\.ext' src test tools docs` は archive/history 以外で一致 0 件になる。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_runtime_cpp_layout.py`
-- `python3 tools/check_runtime_core_gen_markers.py`
-- `python3 tools/gen_runtime_symbol_index.py --check`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_runtime_symbol_index.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_cpp_runtime_build_graph.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_symbol_index_integration.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_runtime_cpp_layout.py`
+- `python3 tools/check/check_runtime_core_gen_markers.py`
+- `python3 tools/gen/gen_runtime_symbol_index.py --check`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_runtime_symbol_index.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_cpp_runtime_build_graph.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_symbol_index_integration.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_iterable.py'`
 
 ## 先に固定する設計判断
 

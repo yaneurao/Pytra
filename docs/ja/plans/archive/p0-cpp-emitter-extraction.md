@@ -29,17 +29,17 @@
 受け入れ基準:
 - `CppEmitter` 本体は `src/hooks/cpp/emitter/cpp_emitter.py` に存在する。
 - `src/py2cpp.py` は CLI と公開 API の薄いラッパに縮退する。
-- 既存 `tools/check_py2cpp_transpile.py` / smoke が通り、出力回帰がない。
+- 既存 `tools/check/check_py2cpp_transpile.py` / smoke が通り、出力回帰がない。
 - `spec-dev` に C++ backend 構成（CLI と emitter 分離）が反映される。
 
 確認コマンド:
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `python3 -m unittest test.unit.test_py2cpp_smoke`
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 
 決定ログ:
 - 2026-02-24: ユーザー指示により、`py2cpp.py` から `CppEmitter` 本体を抽出する `P0` タスクを追加。
 - 2026-02-24: [ID: P0-CPP-EMITTER-01-S1] `src/hooks/cpp/emitter/cpp_emitter.py` へ `CppEmitter` クラスを移設し、`py2cpp.py` 側は import + `install_py2cpp_runtime_symbols(globals())` を経由する構成へ変更。
 - 2026-02-24: [ID: P0-CPP-EMITTER-01-S2] `src/hooks/cpp/emitter/__init__.py` を API 入口として整備し、`py2cpp.py` 側を `hooks.cpp.emitter` 経由で参照可能にした。
 - 2026-02-25: [ID: P0-CPP-EMITTER-01-S3] `src/py2cpp.py` 側を整理し、`CppEmitter` クラスが同居しないことを明確化。
-- 2026-02-25: [ID: P0-CPP-EMITTER-01-S4] 分離状態を固定するため、`test/unit/test_py2cpp_smoke.py` と `tools/check_py2cpp_helper_guard.py` を更新し、実装本体が `src/hooks/cpp/emitter/cpp_emitter.py` にのみ存在する回帰ガードを追加。
+- 2026-02-25: [ID: P0-CPP-EMITTER-01-S4] 分離状態を固定するため、`tools/unittest/test_py2cpp_smoke.py` と `tools/check/check_py2cpp_helper_guard.py` を更新し、実装本体が `src/hooks/cpp/emitter/cpp_emitter.py` にのみ存在する回帰ガードを追加。

@@ -66,8 +66,8 @@ native 生成物は次の runtime 境界のみを利用する。
 
 ## 6. 移行時の検証観点
 
-- `tools/check_py2go_transpile.py` / `tools/check_py2swift_transpile.py` / `tools/check_py2kotlin_transpile.py` が native 既定で通る。
-- `tools/runtime_parity_check.py --case-root sample --targets go,swift,kotlin --all-samples --ignore-unstable-stdout` で Python 基準との出力一致を監視する。
+- `tools/check/check_py2go_transpile.py` / `tools/check/check_py2swift_transpile.py` / `tools/check/check_py2kotlin_transpile.py` が native 既定で通る。
+- `tools/check/runtime_parity_check.py --case-root sample --targets go,swift,kotlin --all-samples --ignore-unstable-stdout` で Python 基準との出力一致を監視する。
 - `sample/go` / `sample/swift` / `sample/kotlin` 再生成時に sidecar `.js` が残らないことを確認する。
 
 ## 7. sidecar 撤去方針（S1-02）

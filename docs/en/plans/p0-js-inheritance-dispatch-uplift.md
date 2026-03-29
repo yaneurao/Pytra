@@ -28,7 +28,7 @@ Acceptance criteria:
 
 Verification commands:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2js_smoke.py' -v`
-- `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets js`
+- `PYTHONPATH=src python3 tools/check/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets js`
 
 Breakdown:
 - [ ] Introduce `extends` in class declarations.

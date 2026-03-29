@@ -33,8 +33,8 @@ Acceptance criteria:
 
 Verification commands:
 - `python3 -m unittest discover -s test/unit -p 'test_py2rb_smoke.py' -v`
-- `python3 tools/check_py2rb_transpile.py`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets ruby --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/check_py2rb_transpile.py`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby --all-samples --ignore-unstable-stdout`
 
 Decision log:
 - 2026-02-27: During analysis of `sample/05` slowdown factors, we confirmed `int/int` division semantic differences in Ruby-generated `sample/06`; opened this as a P0 fix task.

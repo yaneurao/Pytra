@@ -36,11 +36,11 @@ Acceptance Criteria:
 - Regression tests can detect both "no unused imports" and "no missing required imports."
 
 Validation Commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_py2java_transpile.py`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2java_transpile.py`
 
 Decision Log:
 - 2026-02-28: Per user instruction, filed P2 plan to determine import dependencies via "EAST resolution data + CodeEmitter base aggregation."

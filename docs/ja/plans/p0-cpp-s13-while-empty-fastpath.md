@@ -18,7 +18,7 @@
 
 対象:
 - `src/hooks/cpp/emitter/cpp_emitter.py` / `stmt.py`（条件式描画）
-- `test/unit/test_east3_cpp_bridge.py` / `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_east3_cpp_bridge.py` / `tools/unittest/test_py2cpp_codegen_issues.py`
 
 非対象:
 - object/Any 経路の条件式仕様変更
@@ -30,10 +30,10 @@
 - transpile/unit が通る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 決定ログ:
 - 2026-03-01: ユーザー要望により、sample/13 の `while stack` 表現縮退を独立 P0 として起票。

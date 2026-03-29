@@ -36,8 +36,8 @@
 確認コマンド:
 - `python3 -m unittest discover -s test/unit -p 'test_east3_optimizer.py' -v`
 - `python3 -m unittest discover -s test/unit -p 'test_east3_optimizer_cli.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets cpp --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp --all-samples --ignore-unstable-stdout`
 
 決定ログ:
 - 2026-02-27: `sample/cpp` 実出力レビューに基づき、EAST3最適化層で先に吸収すべき7項目（range正規化拡張、typed enumerate、cast-chain縮退、loop invariant hoist拡張、typed repeat、dict key cast削減、tuple unpack直展開）を P0 として起票。

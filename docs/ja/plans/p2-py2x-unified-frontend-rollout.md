@@ -38,22 +38,22 @@
 - 主要 transpile check と unit が非退行で通る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 src/pytra-cli.py --help`
 - `python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o out/tmp_01.cpp`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_py2rs_transpile.py`
-- `python3 tools/check_py2cs_transpile.py`
-- `python3 tools/check_py2js_transpile.py`
-- `python3 tools/check_py2ts_transpile.py`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/check_py2java_transpile.py`
-- `python3 tools/check_py2swift_transpile.py`
-- `python3 tools/check_py2kotlin_transpile.py`
-- `python3 tools/check_py2rb_transpile.py`
-- `python3 tools/check_py2lua_transpile.py`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/check_py2php_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2cs_transpile.py`
+- `python3 tools/check/check_py2js_transpile.py`
+- `python3 tools/check/check_py2ts_transpile.py`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/check/check_py2java_transpile.py`
+- `python3 tools/check/check_py2swift_transpile.py`
+- `python3 tools/check/check_py2kotlin_transpile.py`
+- `python3 tools/check/check_py2rb_transpile.py`
+- `python3 tools/check/check_py2lua_transpile.py`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/check/check_py2php_transpile.py`
 
 ## 分解
 
@@ -223,27 +223,27 @@ python3 src/pytra-cli.py INPUT.py --target <lang> -o OUTPUT
   - 既存 frontend の `main` を `run_py2x_for_target("<lang>")` へ委譲する thin wrapper へ切り替え。
   - 対象: `py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,php,scala,nim}.py`
   - `py2cs.py` は既存の `main(argv)` 呼び出し形を維持するため、`argv_override` 経由で委譲。
-  - `tools/check_noncpp_east3_contract.py` を wrapper 契約対応に更新し、`旧実装` と `py2x thin wrapper` の両方を静的検査で許容。
+  - `tools/check/check_noncpp_east3_contract.py` を wrapper 契約対応に更新し、`旧実装` と `py2x thin wrapper` の両方を静的検査で許容。
   - `py2x` の PHP runtime hook に `pytra/std/time.php` コピーを追加し、`py2php` ラッパ化後も既存契約を維持。
 - 実行確認:
-  - `python3 tools/check_noncpp_east3_contract.py --skip-transpile`
+  - `python3 tools/check/check_noncpp_east3_contract.py --skip-transpile`
   - `python3 -m unittest discover -s test/unit -p test_east2_to_east3_lowering.py`
-  - `python3 tools/check_py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,php,scala,nim}_transpile.py`
+  - `python3 tools/check/check_py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,php,scala,nim}_transpile.py`
 
 ## S2-04 実装（2026-03-03）
 
 - 実装内容:
   - runtime/packaging は `backend_registry` の `runtime_hook` に統一し、非C++ frontend は `run_py2x_for_target` のみを行う形へ縮退。
-  - `tools/check_noncpp_east3_contract.py` に wrapper 向け静的ガードを追加し、`py2*.py` で旧 runtime コピー呼び出し（例: `_copy_*_runtime(output_path)`, `write_js_runtime_shims(output_path.parent)`）の再導入を fail にした。
+  - `tools/check/check_noncpp_east3_contract.py` に wrapper 向け静的ガードを追加し、`py2*.py` で旧 runtime コピー呼び出し（例: `_copy_*_runtime(output_path)`, `write_js_runtime_shims(output_path.parent)`）の再導入を fail にした。
   - `py2x` 側の PHP runtime hook で `pytra/std/time.php` も配置対象に含め、旧 CLI 契約を維持。
 - 実行確認:
-  - `python3 tools/check_noncpp_east3_contract.py --skip-transpile`
-  - `python3 tools/check_py2php_transpile.py`
+  - `python3 tools/check/check_noncpp_east3_contract.py --skip-transpile`
+  - `python3 tools/check/check_py2php_transpile.py`
 
 ## S3-01 実装（2026-03-03）
 
 - 追加:
-  - `test/unit/test_py2x_cli.py`
+  - `tools/unittest/test_py2x_cli.py`
 - テスト内容:
   - `--target` 未指定時の fail-fast（`SystemExit(2)`）を固定。
   - `--east-stage 2` 指定時に backend pipeline へ入る前に拒否することを固定。
@@ -257,20 +257,20 @@ python3 src/pytra-cli.py INPUT.py --target <lang> -o OUTPUT
 - 実装内容:
   - 既存 transpile check 群を `py2x` 経由（`py2*.py` thin wrapper 導線）で全件実行し、言語横断の非退行を確認。
 - 実行確認:
-  - `python3 tools/check_py2cpp_transpile.py`
-  - `python3 tools/check_py2rs_transpile.py`
-  - `python3 tools/check_py2cs_transpile.py`
-  - `python3 tools/check_py2js_transpile.py`
-  - `python3 tools/check_py2ts_transpile.py`
-  - `python3 tools/check_py2go_transpile.py`
-  - `python3 tools/check_py2java_transpile.py`
-  - `python3 tools/check_py2swift_transpile.py`
-  - `python3 tools/check_py2kotlin_transpile.py`
-  - `python3 tools/check_py2rb_transpile.py`
-  - `python3 tools/check_py2lua_transpile.py`
-  - `python3 tools/check_py2scala_transpile.py`
-  - `python3 tools/check_py2php_transpile.py`
-  - `python3 tools/check_py2nim_transpile.py`
+  - `python3 tools/check/check_py2cpp_transpile.py`
+  - `python3 tools/check/check_py2rs_transpile.py`
+  - `python3 tools/check/check_py2cs_transpile.py`
+  - `python3 tools/check/check_py2js_transpile.py`
+  - `python3 tools/check/check_py2ts_transpile.py`
+  - `python3 tools/check/check_py2go_transpile.py`
+  - `python3 tools/check/check_py2java_transpile.py`
+  - `python3 tools/check/check_py2swift_transpile.py`
+  - `python3 tools/check/check_py2kotlin_transpile.py`
+  - `python3 tools/check/check_py2rb_transpile.py`
+  - `python3 tools/check/check_py2lua_transpile.py`
+  - `python3 tools/check/check_py2scala_transpile.py`
+  - `python3 tools/check/check_py2php_transpile.py`
+  - `python3 tools/check/check_py2nim_transpile.py`
 
 ## S3-03 実装（2026-03-03）
 

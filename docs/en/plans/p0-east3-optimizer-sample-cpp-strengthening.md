@@ -36,8 +36,8 @@ Acceptance criteria:
 Verification commands:
 - `python3 -m unittest discover -s test/unit -p 'test_east3_optimizer.py' -v`
 - `python3 -m unittest discover -s test/unit -p 'test_east3_optimizer_cli.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets cpp --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp --all-samples --ignore-unstable-stdout`
 
 Decision log:
 - 2026-02-27: Based on review of actual `sample/cpp` output, filed 7 P0 items to absorb first in EAST3 optimization layer: range normalization extension, typed enumerate, cast-chain collapse, loop-invariant hoist extension, typed repeat, dict key cast reduction, and direct tuple-unpack expansion.

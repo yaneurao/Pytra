@@ -12,7 +12,7 @@
 - `shared type_id thin seam` と `C# bytearray compat seam` のどこが backend local へ押し戻せるかを bundle 単位で決め、次の header shrink / runtime SoT task への handoff 条件を固定する。
 
 背景:
-- 既存の emitter shrink 系 `P4` は archive 済みで、current residual inventory は [check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/check_crossruntime_pyruntime_emitter_inventory.py) に固定されている。
+- 既存の emitter shrink 系 `P4` は archive 済みで、current residual inventory は [check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/check/check_crossruntime_pyruntime_emitter_inventory.py) に固定されている。
 - 現在の emitter residual は「未分類の負債」ではなく intentional seam だが、`py_runtime.h` をさらに縮めるには C++ / Rust / C# emitter 側の follow-up がなお必要である。
 - とくに C++ emitter の `py_runtime_value_*` / `py_runtime_type_id_is_*`、Rust/C# emitter の shared thin helper、C# `bytearray` mutation compat は、次段で local runtime trait / helper / backend-local lowering へ押し戻せる可能性がある。
 - ただし直近で優先すべき blocker ではないため、parser / lowering / runtime 本流より低い `P4` に置く。
@@ -67,7 +67,7 @@
 ## Future Representative Guard Baseline
 
 - `cpp_emitter_shared_type_id_residual`
-  - smoke: `test/unit/backends/cpp/test_east3_cpp_bridge.py`
+  - smoke: `tools/unittest/emit/cpp/test_east3_cpp_bridge.py`
   - representative tests:
     - `test_render_expr_supports_east3_obj_boundary_nodes`
     - `test_transpile_representative_nominal_adt_match_emits_if_else_chain`
@@ -76,19 +76,19 @@
     - `src/backends/cpp/emitter/runtime_expr.py`
     - `src/backends/cpp/emitter/stmt.py`
 - `rs_emitter_shared_type_id_residual`
-  - smoke: `test/unit/backends/rs/test_py2rs_smoke.py`
+  - smoke: `tools/unittest/emit/rs/test_py2rs_smoke.py`
   - representative tests:
     - `test_type_predicate_nodes_are_lowered_without_legacy_bridge`
   - source guard path:
     - `src/backends/rs/emitter/rs_emitter.py`
 - `cs_emitter_shared_type_id_residual`
-  - smoke: `test/unit/backends/cs/test_py2cs_smoke.py`
+  - smoke: `tools/unittest/emit/cs/test_py2cs_smoke.py`
   - representative tests:
     - `test_type_predicate_nodes_are_lowered_without_legacy_bridge`
   - source guard path:
     - `src/backends/cs/emitter/cs_emitter.py`
 - `crossruntime_mutation_helper_residual`
-  - smoke: `test/unit/backends/cs/test_py2cs_smoke.py`
+  - smoke: `tools/unittest/emit/cs/test_py2cs_smoke.py`
   - representative tests:
     - `test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not`
     - `test_bytearray_index_and_slice_compat_helpers_stay_explicit`

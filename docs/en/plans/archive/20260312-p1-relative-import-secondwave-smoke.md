@@ -34,11 +34,11 @@ Acceptance criteria:
 - The backend-parity docs and handoff metadata match the new `js/ts` baseline plus the remaining second-wave planning handoff.
 
 Verification commands:
-- `python3 tools/check_relative_import_secondwave_smoke_contract.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_secondwave_smoke_contract.py'`
-- `PYTHONPATH=src:test/unit python3 -m unittest discover -s test/unit/backends/js -p 'test_py2js_smoke.py' -k relative_import`
-- `PYTHONPATH=src:test/unit python3 -m unittest discover -s test/unit/backends/ts -p 'test_py2ts_smoke.py' -k relative_import`
-- `python3 tools/check_relative_import_backend_coverage.py`
+- `python3 tools/check/check_relative_import_secondwave_smoke_contract.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_secondwave_smoke_contract.py'`
+- `PYTHONPATH=src:test/unit python3 -m unittest discover -s tools/unittest/emit/js -p 'test_py2js_smoke.py' -k relative_import`
+- `PYTHONPATH=src:test/unit python3 -m unittest discover -s tools/unittest/emit/ts -p 'test_py2ts_smoke.py' -k relative_import`
+- `python3 tools/check/check_relative_import_backend_coverage.py`
 - `python3 tools/build_selfhost.py`
 
 Decision log:

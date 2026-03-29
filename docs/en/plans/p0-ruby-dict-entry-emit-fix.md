@@ -21,7 +21,7 @@ Goal:
 In scope:
 - `src/toolchain/emit/ruby/emitter/ruby_native_emitter.py`
 - Ruby regression cases for dict literal in `test/fixtures` or `test/unit`
-- Ruby revalidation for `sample/18` using `tools/runtime_parity_check.py`
+- Ruby revalidation for `sample/18` using `tools/check/runtime_parity_check.py`
 
 Out of scope:
 - Overall Ruby backend optimization
@@ -31,12 +31,12 @@ Out of scope:
 Acceptance criteria:
 - Ruby emitter correctly outputs EAST3 `Dict(entries=...)` as `{ k => v, ... }`.
 - A minimal dict-literal repro test can detect if Ruby output collapses to `{}`.
-- `python3 tools/runtime_parity_check.py --case-root sample --targets ruby 18_mini_language_interpreter` passes.
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby 18_mini_language_interpreter` passes.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2rb_smoke.py`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets ruby 18_mini_language_interpreter`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2rb_smoke.py`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby 18_mini_language_interpreter`
 
 Decision log:
 - 2026-03-04: Opened as follow-up implementation for `P0-RUBY-S18-TOKENIZE-INVEST-01`. Fix scope is limited to `entries` support in `_render_dict_expr`.

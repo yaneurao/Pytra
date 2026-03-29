@@ -31,10 +31,10 @@ Scope:
 - EAST3 optimizer:
   - Use annotations from `P1-EAST3-NONESCAPE-IPA-01`
 - Tests/validation:
-  - `test/unit/test_cpp_runtime_*`
-  - `test/unit/test_py2cpp_*`
-  - `tools/check_py2cpp_transpile.py`
-  - `tools/runtime_parity_check.py`
+  - `tools/unittest/test_cpp_runtime_*`
+  - `tools/unittest/test_py2cpp_*`
+  - `tools/check/check_py2cpp_transpile.py`
+  - `tools/check/runtime_parity_check.py`
 
 Out of scope:
 - Simultaneous PyObj migration of `str/dict/set` (not covered by this task)
@@ -119,17 +119,17 @@ Design Policy:
 
 ## Validation Commands (planned)
 
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_cpp_runtime_*.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_*.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets cpp --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp --all-samples --ignore-unstable-stdout`
 
 Decision Log:
 - 2026-02-28: Per user instruction, finalized policy to prioritize migrating `list` alone to the PyObj/RC model before expanding to `str/dict/set`.
 - 2026-02-28: Adopted staged switching based on `value/pyobj` dual model to reduce migration risk.
 - 2026-02-28: Added `docs/ja/spec/spec-cpp-list-reference-semantics.md` and documented current `value model` contract (copy assignment) and target `pyobj model` contract (shared aliases).
-- 2026-02-28: Added alias-expected fixture `test/fixtures/collections/list_alias_shared_mutation.py` and fixed the gap by confirming `output mismatch` with `python3 tools/runtime_parity_check.py --case-root fixture --targets cpp list_alias_shared_mutation` (Python=`True`, C++=`False`).
+- 2026-02-28: Added alias-expected fixture `test/fixtures/collections/list_alias_shared_mutation.py` and fixed the gap by confirming `output mismatch` with `python3 tools/check/runtime_parity_check.py --case-root fixture --targets cpp list_alias_shared_mutation` (Python=`True`, C++=`False`).
 - 2026-02-28: AST-scanned `sample/py` + `test/fixtures` for `name = name` assignments with list type annotations, and found only one candidate at this point: `test/fixtures/collections/list_alias_shared_mutation.py:7 (b = a)`.
 - 2026-02-28: Extended runtime `PyListIterObj` to owner-list reference mode, and changed `PyListObj::py_iter_or_raise()` to return an iterator that holds the owner entity instead of a snapshot.
 - 2026-02-28: Added regression in `test_cpp_runtime_iterable.py` where iterator observes elements appended by `py_append` during iteration, and confirmed runtime compile-run tests pass for both `test_cpp_runtime_iterable.py` and `test_cpp_runtime_boxing.py`.
@@ -138,7 +138,7 @@ Decision Log:
 - 2026-02-28: Fixed old value-model compatibility bridge behavior in `test_cpp_runtime_boxing.py` (`list<int64> legacy_list = list<int64>(as_list)` works and PyListObj-side size remains unchanged).
 - 2026-02-28: Added list-model regressions to runtime unit tests (owner-linked iterator / `obj_to_list_obj` / legacy bridge) and confirmed both `test_cpp_runtime_iterable.py` and `test_cpp_runtime_boxing.py` pass.
 - 2026-02-28: Added `cpp_list_model` (`value|pyobj`) in C++ emitter and consolidated `_cpp_type_text(list[...])` through model switch. In `pyobj` mode, list types render as `object`.
-- 2026-02-28: Added list model switch regression in `test_cpp_type.py`, and confirmed non-regression with `python3 tools/check_py2cpp_transpile.py` (`checked=134 ok=134 fail=0 skipped=6`).
+- 2026-02-28: Added list model switch regression in `test_cpp_type.py`, and confirmed non-regression with `python3 tools/check/check_py2cpp_transpile.py` (`checked=134 ok=134 fail=0 skipped=6`).
 - 2026-02-28: Added runtime helpers (`py_extend/py_pop/py_clear/py_reverse/py_sort`) for `pyobj` list mode, and switched emitter `ListAppend/ListExtend/ListPop/ListClear/ListReverse/ListSort` to object runtime calls.
 - 2026-02-28: Added branches that render list literals as `make_object(list<...>{...})`, `list(...)` ctor `pyobj` path, and list indexing in `Subscript` via `py_at(...)`.
 - 2026-02-28: Added `pyobj` list-mode regressions to `test_py2cpp_codegen_issues.py` and confirmed pass of `test_cpp_runtime_iterable.py` / `test_py2cpp_codegen_issues.py` / `check_py2cpp_transpile.py` (`checked=134 ok=134 fail=0 skipped=6`).
@@ -156,9 +156,9 @@ Decision Log:
 - 2026-02-28: Confirmed compile blocker in `12_sort_visualizer` where stack-reduced `list<int64>` was passed as-is to `render(const object&)`. Added correction in `type_bridge._coerce_call_arg` to shift effective target to `object` for list-annotated signatures when `cpp_list_model=pyobj`, boxing only stack lists via `make_object(...)`. Added regression `test_pyobj_list_model_boxes_stack_list_when_call_target_param_is_list_annotation` in `test_py2cpp_codegen_issues.py` and confirmed run success with `benchmark_cpp_list_models.py 12_sort_visualizer --warmup 0 --repeat 1 --allow-failures`.
 - 2026-02-28: Confirmed tuple/list runtime blocker in `13_maze_generation_steps` (`index access on non-indexable object`). Root causes: in `make_object(list<T>)`, `make_object(v)` missed tuple overload and collapsed tuple elements to `object()`, and tuple unboxing for pyobj-list subscript was missing. Fixed by placing tuple-boxing overload before `list<T>`, and adding `tuple[...]` conversion `::std::make_tuple(py_at(...))` in `_render_unbox_target_cast`. Confirmed tuple-subscript regression `test_pyobj_list_model_tuple_subscript_unboxes_to_make_tuple_before_destructure` and successful run of `benchmark_cpp_list_models.py 13_maze_generation_steps --warmup 0 --repeat 1 --allow-failures`.
 - 2026-02-28: Added additional compile/run verification for `pyobj` only on `05..16`, confirming all 12 succeed (`passed=12 failed=0`). Validation command was a one-shot script iterating per case with `python3 src/py2cpp.py ... --cpp-list-model pyobj` + `g++ -O0` + run. Marked `S4-02-S2` complete.
-- 2026-02-28: Switched default `cpp_list_model_opt` in `parse_py2cpp_argv` to `pyobj`, and unified fallback in `py2cpp` main to `pyobj`. Added rollback procedure (`--cpp-list-model value`) to C++ section in `docs/ja/how-to-use.md`, confirmed pass of `test_parse_py2cpp_argv_defaults_cpp_list_model_to_pyobj`, `python3 tools/check_todo_priority.py`, and `python3 tools/check_py2cpp_transpile.py`. Also compared `python3 src/py2cpp.py sample/py/18_mini_language_interpreter.py --single-file` vs `--cpp-list-model value`, confirming default switches to `object lines = make_object(list<object>{});` and rollback switches to `list<str> lines = ...;`. Marked `S4-02-S3` and parent `S4-02` complete.
+- 2026-02-28: Switched default `cpp_list_model_opt` in `parse_py2cpp_argv` to `pyobj`, and unified fallback in `py2cpp` main to `pyobj`. Added rollback procedure (`--cpp-list-model value`) to C++ section in `docs/ja/how-to-use.md`, confirmed pass of `test_parse_py2cpp_argv_defaults_cpp_list_model_to_pyobj`, `python3 tools/check/check_todo_priority.py`, and `python3 tools/check/check_py2cpp_transpile.py`. Also compared `python3 src/py2cpp.py sample/py/18_mini_language_interpreter.py --single-file` vs `--cpp-list-model value`, confirming default switches to `object lines = make_object(list<object>{});` and rollback switches to `list<str> lines = ...;`. Marked `S4-02-S3` and parent `S4-02` complete.
 - 2026-02-28: As `S4-03`, finalized old `value` compatibility-code removal targets (emitter branches / runtime bridge / CLI rollback) and staged removal (A-E). Also defined separate-ID filing conditions (parity/selfhost regression, spread beyond `list`, need to declare deprecation period), fixing this ID scope.
-- 2026-02-28: As `S4-04`, synchronized operation descriptions in `docs/ja/how-to-use.md` (default/rollback), `docs/ja/spec/spec-cpp-list-reference-semantics.md` (pyobj default + value rollback contract), and `docs/ja/todo/index.md` (parent/child completion). Re-ran `python3 tools/check_todo_priority.py` and confirmed TODO operation consistency remains valid.
+- 2026-02-28: As `S4-04`, synchronized operation descriptions in `docs/ja/how-to-use.md` (default/rollback), `docs/ja/spec/spec-cpp-list-reference-semantics.md` (pyobj default + value rollback contract), and `docs/ja/todo/index.md` (parent/child completion). Re-ran `python3 tools/check/check_todo_priority.py` and confirmed TODO operation consistency remains valid.
 
 ## Breakdown
 

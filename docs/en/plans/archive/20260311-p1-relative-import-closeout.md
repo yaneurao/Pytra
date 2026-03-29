@@ -19,7 +19,7 @@ Goal:
 - Remove stale “unsupported” claims and make regressions fail fast if relative import support breaks again.
 
 Scope:
-- `test/unit/tooling/test_py2x_cli.py`
+- `tools/unittest/tooling/test_py2x_cli.py`
 - `docs/ja/language/cpp/spec-support.md`
 - `docs/en/language/cpp/spec-support.md`
 - `docs/ja/todo/index.md`
@@ -38,9 +38,9 @@ Acceptance criteria:
 - Progress memos stay compressed to one-line cluster summaries.
 
 Checks:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_py2x_cli.py' -k relative_import`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k relative`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_py2x_cli.py' -k relative_import`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k relative`
 - `git diff --check`
 
 Breakdown:

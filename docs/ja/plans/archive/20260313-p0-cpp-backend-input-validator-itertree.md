@@ -21,7 +21,7 @@
 
 対象:
 - `src/toolchain/link/program_validator.py`
-- `test/unit/link/test_program_loader.py`
+- `tools/unittest/link/test_program_loader.py`
 - TODO / plan の進捗同期
 
 非対象:
@@ -35,8 +35,8 @@
 - targeted link regression が green になる。
 
 確認コマンド:
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 -m unittest discover -s /workspace/Pytra/test/unit/link -p 'test_program_loader.py'`
-- `python3 /workspace/Pytra/tools/check_todo_priority.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 -m unittest discover -s /workspace/Pytra/tools/unittest/link -p 'test_program_loader.py'`
+- `python3 /workspace/Pytra/tools/check/check_todo_priority.py`
 - `git -C /workspace/Pytra diff --check`
 
 分解:

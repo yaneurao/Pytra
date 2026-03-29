@@ -41,18 +41,18 @@ Acceptance criteria:
 
 Verification commands:
 - `python3 tools/measure_multilang_quality.py`
-- `python3 tools/check_py2rs_transpile.py`
-- `python3 tools/check_py2cs_transpile.py`
-- `python3 tools/check_py2js_transpile.py`
-- `python3 tools/check_py2ts_transpile.py`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/check_py2java_transpile.py`
-- `python3 tools/check_py2swift_transpile.py`
-- `python3 tools/check_py2kotlin_transpile.py`
-- `python3 tools/check_multilang_selfhost_stage1.py`
-- `python3 tools/check_multilang_selfhost_multistage.py`
-- `python3 tools/check_multilang_selfhost_suite.py`
-- `python3 tools/check_sample_regen_clean.py`
+- `python3 tools/check/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2cs_transpile.py`
+- `python3 tools/check/check_py2js_transpile.py`
+- `python3 tools/check/check_py2ts_transpile.py`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/check/check_py2java_transpile.py`
+- `python3 tools/check/check_py2swift_transpile.py`
+- `python3 tools/check/check_py2kotlin_transpile.py`
+- `python3 tools/check/check_multilang_selfhost_stage1.py`
+- `python3 tools/check/check_multilang_selfhost_multistage.py`
+- `python3 tools/check/check_multilang_selfhost_suite.py`
+- `python3 tools/check/check_sample_regen_clean.py`
 
 `P1-MQ-01` measurement results:
 
@@ -74,7 +74,7 @@ Verification commands:
   3. Stopped adding `let mut` uniformly and switched between `let` / `let mut` based on `write_count` and mutating-call information.
   4. Changed the Rust profile declaration templates (`annassign_decl_*`, `assign_decl_init`) to support `{mut_kw}`, so mutability is controlled on the emitter side.
 - Generated-artifact reflection:
-  - Regenerated `sample/rs` with `python3 tools/regenerate_samples.py --langs rs --force`.
+  - Regenerated `sample/rs` with `python3 tools/gen/regenerate_samples.py --langs rs --force`.
   - Confirmed that unnecessary `mut` was removed from `sample/rs/01_mandelbrot.rs` for `x2/y2/t/r/g/b/width/height/max_iter/...`.
 - Metric changes (raw counts vs `sample/cpp`):
   - `rs mut`: `711 -> 609`
@@ -90,7 +90,7 @@ Verification commands:
   2. Excluded unused identifiers based on `import_bindings` and AST traversal results, reducing over-generated `import` statements.
   3. Reduced expanded `py_runtime` symbols down to only the type-ID-related symbols actually needed, removing unnecessary destructuring.
 - Generated-artifact reflection:
-  - Regenerated `sample/js` / `sample/ts` with `python3 tools/regenerate_samples.py --langs js,ts --force`.
+  - Regenerated `sample/js` / `sample/ts` with `python3 tools/gen/regenerate_samples.py --langs js,ts --force`.
 - Metric changes (raw counts vs `sample/cpp`):
   - `js paren`: `2029 -> 148`
   - `ts paren`: `2029 -> 148`
@@ -108,7 +108,7 @@ Verification commands:
   3. Minimized parentheses in expression rendering for `BinOp` / `BoolOp` / `Compare` / `UnaryOp`, reducing `((` / `))`.
   4. Replaced direct `(long|double|int)` casts in `FloorDiv` and `Subscript` with `System.Convert`.
 - Generated-artifact reflection:
-  - Regenerated `sample/cs` with `python3 tools/regenerate_samples.py --langs cs --force`.
+  - Regenerated `sample/cs` with `python3 tools/gen/regenerate_samples.py --langs cs --force`.
 - Metric changes (raw counts vs `sample/cpp`):
   - `cs paren`: `1103 -> 215`
   - `cs cast`: `204 -> 0`
@@ -123,7 +123,7 @@ Verification commands:
   2. Introduced a filter that extracts only `public` signatures and comment lines, without embedding `using` lines or body statements.
   3. Updated the Go/Java transpiler minor version to `0.3.0` (`transpiler_versions.json`).
 - Generated-artifact reflection:
-  - Regenerated `sample/go` / `sample/java` with `python3 tools/regenerate_samples.py --langs go,java --force`.
+  - Regenerated `sample/go` / `sample/java` with `python3 tools/gen/regenerate_samples.py --langs go,java --force`.
 - Metric changes (raw counts vs `sample/cpp`):
   - `go paren`: `1572 -> 0`
   - `go cast`: `844 -> 0`
@@ -140,7 +140,7 @@ Verification commands:
   2. Removed Swift's default `import Foundation`, eliminating unused imports.
   3. Updated the Swift/Kotlin transpiler minor version to `0.3.0` (`transpiler_versions.json`).
 - Generated-artifact reflection:
-  - Regenerated `sample/swift` / `sample/kotlin` with `python3 tools/regenerate_samples.py --langs swift,kotlin --force`.
+  - Regenerated `sample/swift` / `sample/kotlin` with `python3 tools/gen/regenerate_samples.py --langs swift,kotlin --force`.
 - Metric changes (raw counts vs `sample/cpp`):
   - `swift paren`: `296 -> 0`
   - `swift imports`: `18 -> 0`
@@ -164,16 +164,16 @@ Verification commands:
 
 `P1-MQ-03` implementation results (quality-regression check path):
 
-- Targets: `tools/check_multilang_quality_regression.py`, `tools/run_local_ci.py`
+- Targets: `tools/check/check_multilang_quality_regression.py`, `tools/run/run_local_ci.py`
 - Changes:
   1. Added a script that checks whether quality metrics for non-C++ languages (`mut` / `paren` / `cast` / `clone` / `imports` / `unused_import_est`) have worsened, using the raw-count table in `docs/ja/plans/p1-multilang-output-quality-baseline.md` as the baseline.
-  2. Integrated that check into `tools/run_local_ci.py` so it is always run in the local-CI-equivalent path.
+  2. Integrated that check into `tools/run/run_local_ci.py` so it is always run in the local-CI-equivalent path.
 - Verification:
-  - Confirmed that `python3 tools/check_multilang_quality_regression.py` passes with `48 comparisons`.
+  - Confirmed that `python3 tools/check/check_multilang_quality_regression.py` passes with `48 comparisons`.
 
 `P1-MQ-04-S1` implementation results (stage1 selfhost inventory):
 
-- Targets: `tools/check_multilang_selfhost_stage1.py`, `docs/ja/plans/archive/p1-multilang-selfhost-status.md`
+- Targets: `tools/check/check_multilang_selfhost_stage1.py`, `docs/ja/plans/archive/p1-multilang-selfhost-status.md`
 - Changes:
   1. Added a script that batch-runs self-transpilation (stage1) for each non-C++ `py2<lang>.py` and collects the artifact mode (native / preview) and whether stage2 execution is possible.
   2. Fixed the initial status in `docs/ja/plans/archive/p1-multilang-selfhost-status.md`.
@@ -185,7 +185,7 @@ Verification commands:
 
 `P1-MQ-04-S2` implementation results (non-preview stage2 path setup):
 
-- Targets: `tools/check_multilang_selfhost_stage1.py`, `docs/ja/plans/archive/p1-multilang-selfhost-status.md`
+- Targets: `tools/check/check_multilang_selfhost_stage1.py`, `docs/ja/plans/archive/p1-multilang-selfhost-status.md`
 - Changes:
   1. Explicitly set `rs/cs/js` as stage2 target languages and added a path that automatically selects the per-language runner (`rustc` / `mcs+mono` / `node`).
   2. For `js`, to avoid missing dependent `.js` files, recursively scanned relative imports in artifacts generated from `src/py2js.py`, transpiled dependent `.py` files into a temporary `src/` tree in order, and then ran stage2.
@@ -199,7 +199,7 @@ Verification commands:
 
 `P1-MQ-05` implementation results (multi-stage selfhost feasibility and failure-category classification):
 
-- Targets: `tools/check_multilang_selfhost_multistage.py`, `docs/ja/plans/archive/p1-multilang-selfhost-multistage-status.md`
+- Targets: `tools/check/check_multilang_selfhost_multistage.py`, `docs/ja/plans/archive/p1-multilang-selfhost-multistage-status.md`
 - Changes:
   1. Added a multi-stage selfhost check that tries `stage1 -> stage2(self->self) -> stage3(sample)` under the same procedure for each non-C++ language.
   2. Classified failure causes as `stage1_transpile_fail` / `toolchain_missing` / `compile_fail` / `self_retranspile_fail` / `stage2_compile_fail` / `sample_transpile_fail` / `preview_only`, and fixed them in the report.
@@ -212,23 +212,23 @@ Verification commands:
 
 `P1-MQ-06` implementation results (periodic-execution path):
 
-- Targets: `tools/check_multilang_selfhost_suite.py`, `tools/run_local_ci.py`
+- Targets: `tools/check/check_multilang_selfhost_suite.py`, `tools/run/run_local_ci.py`
 - Changes:
   1. Added an integrated suite (`check_multilang_selfhost_suite.py`) that runs `check_multilang_selfhost_stage1.py` and `check_multilang_selfhost_multistage.py` together.
   2. After execution, the integrated suite regenerates `docs/ja/plans/*status.md` and prints summaries of stage1 / multistage failure causes to standard output.
-  3. Added the integrated suite to `tools/run_local_ci.py` so it can be run periodically from the normal CI-equivalent path.
+  3. Added the integrated suite to `tools/run/run_local_ci.py` so it can be run periodically from the normal CI-equivalent path.
 - Verification:
-  - Confirmed that `python3 tools/check_multilang_selfhost_suite.py` succeeds and prints summaries of known failure categories such as `stage1_transpile_fail` / `toolchain_missing` / `preview_only`.
+  - Confirmed that `python3 tools/check/check_multilang_selfhost_suite.py` succeeds and prints summaries of known failure categories such as `stage1_transpile_fail` / `toolchain_missing` / `preview_only`.
 
 `P1-MQ-07` implementation results (zero-diff operation for sample regeneration):
 
-- Targets: `tools/check_sample_regen_clean.py`, `tools/run_local_ci.py`
+- Targets: `tools/check/check_sample_regen_clean.py`, `tools/run/run_local_ci.py`
 - Changes:
   1. Added `check_sample_regen_clean.py`, which checks for remaining uncommitted diffs in `sample/{cpp,rs,cs,js,ts,go,java,swift,kotlin}`.
   2. Made `run_local_ci.py` run `check_sample_regen_clean.py` immediately after `run_regen_on_version_bump.py`, enforcing zero regeneration diffs in the CI path.
   3. Combined it with the existing `check_transpiler_version_gate.py` + `run_regen_on_version_bump.py` flow so a transpiler change becomes a single chain of version bump -> regeneration -> zero-diff verification.
 - Verification:
-  - Confirmed that `python3 tools/check_sample_regen_clean.py` returns `sample outputs are clean`.
+  - Confirmed that `python3 tools/check/check_sample_regen_clean.py` returns `sample outputs are clean`.
 
 Reason `P1-MQ-10` was reopened (exit from preview mode):
 
@@ -246,17 +246,17 @@ Decision log:
 - 2026-02-24: As `P1-MQ-02-S3-S2`, reduced Go/Java preview output to signature summaries and reduced `paren` / `cast` / `imports` for `sample/go` / `sample/java`.
 - 2026-02-24: As `P1-MQ-02-S3-S3`, reduced Swift/Kotlin preview output to signature summaries and reduced `paren` / `cast` / `imports` / `unused_import_est` for `sample/swift` / `sample/kotlin`.
 - 2026-02-24: As `P1-MQ-02-S4`, completed regeneration and remeasurement of multi-language samples, and fixed the improvement results in `docs/ja/plans/p1-multilang-output-quality-baseline.md`.
-- 2026-02-24: As `P1-MQ-03`, added a quality-regression check (`tools/check_multilang_quality_regression.py`) and integrated it into `tools/run_local_ci.py`.
-- 2026-02-24: As `P1-MQ-04-S1`, added the stage1 selfhost inventory script (`tools/check_multilang_selfhost_stage1.py`) and fixed per-language status in `docs/ja/plans/archive/p1-multilang-selfhost-status.md`.
+- 2026-02-24: As `P1-MQ-03`, added a quality-regression check (`tools/check/check_multilang_quality_regression.py`) and integrated it into `tools/run/run_local_ci.py`.
+- 2026-02-24: As `P1-MQ-04-S1`, added the stage1 selfhost inventory script (`tools/check/check_multilang_selfhost_stage1.py`) and fixed per-language status in `docs/ja/plans/archive/p1-multilang-selfhost-status.md`.
 - 2026-02-24: As pre-investigation for `P1-MQ-04-S2`, added `Slice` output (`out[:-3]` -> `.slice(...)`) to the JS emitter, resolving the stage2 `SyntaxError`, but confirmed that execution still fails in the next step because `src/hooks/js/emitter/js_emitter.js` is missing and Python hooks are still required.
 - 2026-02-24: As `P1-MQ-04-S2`, automated stage2 runners for non-preview languages (`rs/cs/js`) and fixed the `blocked` / `fail` reasons in `docs/ja/plans/archive/p1-multilang-selfhost-status.md`.
-- 2026-02-24: As `P1-MQ-05`, added the multi-stage selfhost check (`tools/check_multilang_selfhost_multistage.py`) and fixed the failure categories in `docs/ja/plans/archive/p1-multilang-selfhost-multistage-status.md`.
-- 2026-02-24: As `P1-MQ-06`, added the integrated selfhost suite (`tools/check_multilang_selfhost_suite.py`) and integrated it into `tools/run_local_ci.py`.
+- 2026-02-24: As `P1-MQ-05`, added the multi-stage selfhost check (`tools/check/check_multilang_selfhost_multistage.py`) and fixed the failure categories in `docs/ja/plans/archive/p1-multilang-selfhost-multistage-status.md`.
+- 2026-02-24: As `P1-MQ-06`, added the integrated selfhost suite (`tools/check/check_multilang_selfhost_suite.py`) and integrated it into `tools/run/run_local_ci.py`.
 - 2026-02-24: As `P1-MQ-07`, added `check_sample_regen_clean.py` and fixed the operation in `run_local_ci.py` so it verifies zero sample diffs after regeneration.
 - 2026-02-24: Confirmed that `sample/go`, `sample/kotlin`, and `sample/swift` were still left in preview summary output. Since the completion condition of `P1-MQ-02-S3-S2/S3` had been insufficient, `P1-MQ-10` (exit from preview mode) was reopened.
-- 2026-02-25: As `P1-MQ-10-S1`, changed `src/hooks/go/emitter/go_emitter.py` to C# body-delegation mode and removed summary-comment-only output from `sample/go`. Regenerated `sample/go/*.go` with `python3 tools/regenerate_samples.py --langs go --force --clear-cache --verify-cpp-on-diff`.
-- 2026-02-25: As `P1-MQ-10-S2`, changed `src/hooks/kotlin/emitter/kotlin_emitter.py` to temporary C# body delegation that removes preview mode, and regenerated `sample/kotlin` with `python3 tools/regenerate_samples.py --langs kotlin --force --clear-cache --verify-cpp-on-diff`. Removed `TODO: staged migration to a dedicated KotlinEmitter implementation.`
-- 2026-02-25: As `P1-MQ-10-S3`, changed `src/hooks/swift/emitter/swift_emitter.py` to temporary C# body delegation that removes preview mode, and regenerated `sample/swift` with `python3 tools/regenerate_samples.py --langs swift --force --clear-cache --verify-cpp-on-diff`. Removed `TODO: staged migration to a dedicated SwiftEmitter implementation.`
-- 2026-02-25: As `P1-MQ-10-S4`, added preview-reentry guards (fixed-phrase detection) to `tools/check_py2go_transpile.py` / `tools/check_py2kotlin_transpile.py` / `tools/check_py2swift_transpile.py` / `tools/check_multilang_quality_regression.py`. `sample/` outputs are also monitored there.
+- 2026-02-25: As `P1-MQ-10-S1`, changed `src/hooks/go/emitter/go_emitter.py` to C# body-delegation mode and removed summary-comment-only output from `sample/go`. Regenerated `sample/go/*.go` with `python3 tools/gen/regenerate_samples.py --langs go --force --clear-cache --verify-cpp-on-diff`.
+- 2026-02-25: As `P1-MQ-10-S2`, changed `src/hooks/kotlin/emitter/kotlin_emitter.py` to temporary C# body delegation that removes preview mode, and regenerated `sample/kotlin` with `python3 tools/gen/regenerate_samples.py --langs kotlin --force --clear-cache --verify-cpp-on-diff`. Removed `TODO: staged migration to a dedicated KotlinEmitter implementation.`
+- 2026-02-25: As `P1-MQ-10-S3`, changed `src/hooks/swift/emitter/swift_emitter.py` to temporary C# body delegation that removes preview mode, and regenerated `sample/swift` with `python3 tools/gen/regenerate_samples.py --langs swift --force --clear-cache --verify-cpp-on-diff`. Removed `TODO: staged migration to a dedicated SwiftEmitter implementation.`
+- 2026-02-25: As `P1-MQ-10-S4`, added preview-reentry guards (fixed-phrase detection) to `tools/check/check_py2go_transpile.py` / `tools/check/check_py2kotlin_transpile.py` / `tools/check/check_py2swift_transpile.py` / `tools/check/check_multilang_quality_regression.py`. `sample/` outputs are also monitored there.
 - 2026-02-25: Re-ran `python3 tools/measure_multilang_quality.py`, updated `docs/ja/plans/p1-multilang-output-quality-baseline.md`, and aligned the pass conditions of `check_multilang_quality_regression.py` to the current state.
-- 2026-02-25: [ID: P1-MQ-09] Changed `BinOp` rendering in `src/hooks/rs/emitter/rs_emitter.py` from a fixed-parenthesis style to a minimized-parenthesis style, then regenerated `sample/rs` and remeasured quality. Ran `python3 tools/regenerate_samples.py --langs rs --force --clear-cache --verify-cpp-on-diff` and `python3 tools/measure_multilang_quality.py`, updating `rs paren` to `164`.
+- 2026-02-25: [ID: P1-MQ-09] Changed `BinOp` rendering in `src/hooks/rs/emitter/rs_emitter.py` from a fixed-parenthesis style to a minimized-parenthesis style, then regenerated `sample/rs` and remeasured quality. Ran `python3 tools/gen/regenerate_samples.py --langs rs --force --clear-cache --verify-cpp-on-diff` and `python3 tools/measure_multilang_quality.py`, updating `rs paren` to `164`.

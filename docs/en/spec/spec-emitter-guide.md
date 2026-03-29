@@ -782,14 +782,14 @@ sample/py の全 18 ケースについて、Python 実行結果（stdout + artif
 
 ### 正本ツール
 
-**`tools/runtime_parity_check.py` が全言語共通の parity check 正本ツール** である。言語別に独自の検証スクリプトを作成してはならない。
+**`tools/check/runtime_parity_check.py` が全言語共通の parity check 正本ツール** である。言語別に独自の検証スクリプトを作成してはならない。
 
 ```bash
 # sample parity（単一言語）
-python3 tools/runtime_parity_check.py --targets <lang> --case-root sample --all-samples
+python3 tools/check/runtime_parity_check.py --targets <lang> --case-root sample --all-samples
 
 # sample parity（全言語一括）
-python3 tools/runtime_parity_check.py \
+python3 tools/check/runtime_parity_check.py \
   --targets cpp,rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,php,scala,nim \
   --case-root sample --all-samples
 ```
@@ -800,10 +800,10 @@ python3 tools/runtime_parity_check.py \
 
 ```bash
 # fixture parity（単一言語）
-python3 tools/runtime_parity_check.py --targets <lang> --case-root fixture --all-samples
+python3 tools/check/runtime_parity_check.py --targets <lang> --case-root fixture --all-samples
 
 # fixture parity（全言語一括）
-python3 tools/runtime_parity_check.py \
+python3 tools/check/runtime_parity_check.py \
   --targets cpp,rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,php,scala,nim \
   --case-root fixture --all-samples
 ```
@@ -838,9 +838,9 @@ _LANG_UNSUPPORTED_FIXTURES = {
 
 | ツール | 用途 | 正本か |
 |---|---|---|
-| `tools/runtime_parity_check.py` | 全言語 parity check（stdout + artifact） | **正本** |
+| `tools/check/runtime_parity_check.py` | 全言語 parity check（stdout + artifact） | **正本** |
 | `tools/benchmark_sample_cpp_rs.py` | C++/Rust 実行時間ベンチマーク | 別責務（parity ではない） |
-| `tools/regenerate_samples.py` | sample/py → sample/<lang> の再生成 | 再生成専用（実行しない） |
+| `tools/gen/regenerate_samples.py` | sample/py → sample/<lang> の再生成 | 再生成専用（実行しない） |
 
 emitter 開発時の parity 検証は `runtime_parity_check.py` を使うこと。独自スクリプトの作成は禁止。
 

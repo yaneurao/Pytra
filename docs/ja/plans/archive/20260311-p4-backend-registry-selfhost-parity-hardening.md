@@ -29,7 +29,7 @@
 - `toolchain/compiler/backend_registry_static.py`
 - backend spec / runtime copy / option schema / writer helper の共有化
 - `tools/build_selfhost.py` / `build_selfhost_stage2.py` / `verify_selfhost_end_to_end.py`
-- `tools/check_multilang_selfhost_stage1.py` / `check_multilang_selfhost_multistage.py` / `check_multilang_selfhost_suite.py`
+- `tools/check/check_multilang_selfhost_stage1.py` / `check_multilang_selfhost_multistage.py` / `check_multilang_selfhost_suite.py`
 - selfhost parity docs / reports / guard
 
 非対象:
@@ -63,12 +63,12 @@
 - docs / report / archive で selfhost readiness と known block の文脈が追跡可能になる。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 tools/build_selfhost.py`
 - `python3 tools/build_selfhost_stage2.py --skip-stage1-build`
 - `python3 tools/verify_selfhost_end_to_end.py --skip-build`
-- `python3 tools/check_multilang_selfhost_suite.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/selfhost -p 'test_*selfhost*.py'`
+- `python3 tools/check/check_multilang_selfhost_suite.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/selfhost -p 'test_*selfhost*.py'`
 - `git diff --check`
 
 ## 実装順
@@ -172,9 +172,9 @@
 - 2026-03-11: 続く `S5-01` で docs index と `plans/README.md` に readiness report 導線の規約を追加した。report は plan にぶら下がる補助文書として扱い、P4 の入口を `docs/ja/index.md` からも辿れるようにした。
 - 2026-03-11: `S5-01` の最後の slice で readiness report に archive handoff を明記した。P4 完了時は plan / report / todo archive を同じ完了日で結び直す前提を report 側にも残し、`archive/index.md` と日次 archive への追記先を固定した。
 - 2026-03-11: `S5-02` の最初の slice として `test_backend_registry_selfhost_contract_guard.py` を追加し、shared diagnostics の representative case（`unsupported_by_design` / `preview_only` / `toolchain_missing`）が host registry、direct e2e、stage2 diff、multilang summary の 4 lane で同じ contract に落ちることを 1 本の guard で固定する方針にした。
-- 2026-03-11: 続く `S5-02` で `tools/check_selfhost_contract_reentry_guard.py` を追加し、representative internal change で先に走らせる host lane (`test_py2x_entrypoints_contract.py`) と selfhost lane (`test_prepare_selfhost_source.py`, `test_selfhost_build_verify_tools.py`, `test_check_selfhost_cpp_diff.py`, `test_check_selfhost_stage2_cpp_diff.py`) を 1 コマンドへ束ねた。`run_local_ci.py` と readiness report もこの command を参照する形へ揃えた。
+- 2026-03-11: 続く `S5-02` で `tools/check/check_selfhost_contract_reentry_guard.py` を追加し、representative internal change で先に走らせる host lane (`test_py2x_entrypoints_contract.py`) と selfhost lane (`test_prepare_selfhost_source.py`, `test_selfhost_build_verify_tools.py`, `test_check_selfhost_cpp_diff.py`, `test_check_selfhost_stage2_cpp_diff.py`) を 1 コマンドへ束ねた。`run_local_ci.py` と readiness report もこの command を参照する形へ揃えた。
 - 2026-03-11: 次の `S5-02` slice では `test_backend_registry_selfhost_contract_guard.py` を `check_selfhost_contract_reentry_guard.py` の host lane に組み込み、known-block だけでなく representative regression case（`unsupported backend symbol ref` / `unsupported runtime hook key`）も host registry / direct e2e / stage2 diff / multilang summary で同時に固定する形へ広げた。
 - 2026-03-11: さらに `S5-02` で representative regression case を `unsupported program writer key` / `unsupported emit kind` / `unsupported runtime hook kind` まで拡張した。これで registry diagnostics の shared message builder 変更が known-block だけでなく regression lane でも host/selfhost 同時 guard に掛かる。
 - 2026-03-11: 同じ `S5-02` で `unsupported_by_design` 側も `unsupported target` だけでなく `unsupported target profile` / `unsupported non-cpp build target` を shared contract guard に含めた。host registry の message builder と selfhost parity note の正規化が profile/build-target 変更でも同時に崩れるようにした。
-- 2026-03-11: 続く `S5-02` で `tools/run_local_ci.py` に `build_steps()` を追加し、`test_run_local_ci.py` で `check_selfhost_contract_reentry_guard.py` が multilang suite の直後かつ selfhost build/diff strict gate より前に残ることを固定した。これで representative guard tool が local CI 導線から外れても fail-fast する。
+- 2026-03-11: 続く `S5-02` で `tools/run/run_local_ci.py` に `build_steps()` を追加し、`test_run_local_ci.py` で `check_selfhost_contract_reentry_guard.py` が multilang suite の直後かつ selfhost build/diff strict gate より前に残ることを固定した。これで representative guard tool が local CI 導線から外れても fail-fast する。
 - 2026-03-11: 同じ `S5-01` の follow-up として representative gate を再実行し、`direct_e2e=pass` / `stage2_diff=pass` と multilang `stage1_transpile_fail` snapshot を readiness report と `todo/archive/20260311.md` に固定した。これで gate 実行順だけでなく、その日の representative status も docs / archive の両方から追跡できる。

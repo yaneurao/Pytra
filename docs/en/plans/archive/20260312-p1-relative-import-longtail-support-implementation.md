@@ -37,15 +37,15 @@ Acceptance criteria:
 - The long-tail support contract, PHP support contract, and backend parity docs all record the current rollout state and the focused smoke lane correctly.
 
 Verification commands:
-- `python3 tools/check_relative_import_backend_coverage.py`
-- `python3 tools/check_relative_import_longtail_support_contract.py`
-- `python3 tools/check_relative_import_php_support_contract.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_backend_coverage.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_longtail_support_contract.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_php_support_contract.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/php -p 'test_py2php_smoke.py' -k relative_import`
+- `python3 tools/check/check_relative_import_backend_coverage.py`
+- `python3 tools/check/check_relative_import_longtail_support_contract.py`
+- `python3 tools/check/check_relative_import_php_support_contract.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_backend_coverage.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_longtail_support_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_php_support_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/php -p 'test_py2php_smoke.py' -k relative_import`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `git diff --check`
 
 Decision log:

@@ -15,7 +15,7 @@
 
 背景:
 - `P3-SD-01` は `spec-make.md` の照合作業（採用済み項目の仕様移管）として完了した。
-- そのため、`./pytra --build` / `src/pytra/cli.py` / `tools/gen_makefile_from_manifest.py` は未実装のまま残っている。
+- そのため、`./pytra --build` / `src/pytra/cli.py` / `tools/gen/gen_makefile_from_manifest.py` は未実装のまま残っている。
 - この未実装分を、草案照合タスクとは分離して実装タスクとして再登録する。
 
 目的:
@@ -23,7 +23,7 @@
 - `PYTHONPATH=src` 手動設定を不要化し、実行導線を標準化する。
 
 対象:
-- `tools/gen_makefile_from_manifest.py`
+- `tools/gen/gen_makefile_from_manifest.py`
 - `src/pytra/cli.py`
 - リポジトリ直下ランチャー `./pytra`
 - `spec-make.md` / `spec-dev.md` / `spec-tools.md` の同期
@@ -47,7 +47,7 @@
 
 決定ログ:
 - 2026-02-24: spec-make のランチャー/ビルド導線が未実装のまま `todo` から外れていたため、LB タスクとして再登録した。
-- 2026-02-24: tools/gen_makefile_from_manifest.py を追加し、`manifest.json` から Makefile を生成する導線を実装。
+- 2026-02-24: tools/gen/gen_makefile_from_manifest.py を追加し、`manifest.json` から Makefile を生成する導線を実装。
 - 2026-02-24: src/pytra/cli.py の --target cpp --build 導線を実装。
 - 2026-02-24: ./pytra ランチャーを追加し、`python3 -m pytra.cli` で起動可能にした。
-- 2026-02-24: test/unit/test_pytra_cli.py を追加・更新し、docs/ja/spec/spec-make.md / docs/ja/spec/spec-dev.md / docs/ja/spec/spec-tools.md を実装状態へ更新。
+- 2026-02-24: tools/unittest/test_pytra_cli.py を追加・更新し、docs/ja/spec/spec-make.md / docs/ja/spec/spec-dev.md / docs/ja/spec/spec-tools.md を実装状態へ更新。

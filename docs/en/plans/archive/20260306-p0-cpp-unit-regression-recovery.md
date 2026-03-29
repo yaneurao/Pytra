@@ -11,7 +11,7 @@ Related TODO:
 
 Background:
 - As of 2026-03-06, C++ sample parity and fixture parity were green.
-- However, `python3 -m unittest discover -s test/unit/backends/cpp -p test_*.py` was still failing.
+- However, `python3 -m unittest discover -s tools/unittest/emit/cpp -p test_*.py` was still failing.
 - The failures were concentrated in four categories:
   - generated runtime breakage (`json`, `argparse`)
   - import/include and runtime-module resolution

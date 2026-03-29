@@ -30,7 +30,7 @@ EAST3 IR には `ListAppend` / `ListPop` / `ListExtend` / `ListClear` / `ListRev
 
 - `src/toolchain/emit/cpp/emitter/cpp_emitter.py`（直接 emit の `py_list_*_mut` 箇所）
 - `src/runtime/cpp/native/core/py_runtime.h`（関数除去）
-- `test/unit/toolchain/emit/cpp/`（回帰テスト）
+- `tools/unittest/emit/cpp/`（回帰テスト）
 
 ## 非対象
 

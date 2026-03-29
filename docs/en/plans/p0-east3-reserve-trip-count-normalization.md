@@ -22,7 +22,7 @@ In scope:
 - `src/pytra/compiler/east_parts/east3_opt_passes/safe_reserve_hint_pass.py`
 - `src/pytra/compiler/east_parts/east3_opt_passes/*` (new pass if needed)
 - `src/hooks/cpp/emitter/stmt.py`
-- `test/unit/*` (EAST3 optimizer / C++ codegen regressions)
+- `tools/unittest/*` (EAST3 optimizer / C++ codegen regressions)
 - `sample/cpp/18_mini_language_interpreter.cpp` (regeneration result)
 
 Out of scope:
@@ -34,14 +34,14 @@ Acceptance criteria:
 - EAST3 `reserve_hints` stores count expressions (AST or equivalent structured representation), and C++ emitter renders them directly.
 - Remove StaticRange count-expression string assembly from C++ emitter or reduce it to a minimal fallback-only path.
 - `lines.reserve(...)` in `sample/cpp/18_mini_language_interpreter.cpp` is updated from old form with `- (0)` and excessive parentheses.
-- `tools/check_py2cpp_transpile.py` and related unit tests pass.
+- `tools/check/check_py2cpp_transpile.py` and related unit tests pass.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 Breakdown:
 - [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-01] Define `reserve_hints` extension spec (`count_expr` format / fail-closed conditions / compatibility handling).

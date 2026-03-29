@@ -19,7 +19,7 @@ Goal:
 Scope:
 - `src/pytra/compiler/east_parts/east3_opt_passes/*` (cast-reduction pass if needed)
 - `src/hooks/cpp/emitter/expr.py` / `type_bridge.py` (final guard)
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 
 Out of scope:
 - Cast contract changes on `object/Any/unknown` paths
@@ -31,9 +31,9 @@ Acceptance criteria:
 - `check_py2cpp_transpile` and unit tests pass.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 Decision log:
 - 2026-03-01: Opened an independent P0 item for same-type cast reduction in sample/13 based on user request.

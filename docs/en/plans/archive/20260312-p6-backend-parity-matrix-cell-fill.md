@@ -38,12 +38,12 @@ Acceptance criteria:
 - the docs publish target can emit a real `feature × backend` state table instead of just the row seed
 - each cell can export at least `support_state` and `evidence_kind`
 - the cross-backend matrix is explicitly documented as the canonical source, while the C++ matrix is treated as a drill-down
-- `python3 tools/check_todo_priority.py` and parity-matrix tooling tests pass
+- `python3 tools/check/check_todo_priority.py` and parity-matrix tooling tests pass
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_backend_parity_matrix*.py'`
-- `python3 tools/export_backend_parity_matrix_manifest.py`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_backend_parity_matrix*.py'`
+- `python3 tools/gen/export_backend_parity_matrix_manifest.py`
 - `git diff --check`
 
 Decision log:

@@ -35,9 +35,9 @@
 - helper 削除後の inventory guard がある。
 
 確認コマンド:
-- `PYTHONPATH=src python3 test/unit/backends/cpp/test_cpp_runtime_iterable.py`
-- `PYTHONPATH=src python3 test/unit/backends/cpp/test_py2cpp_codegen_issues.py`
-- `python3 tools/check_todo_priority.py`
+- `PYTHONPATH=src python3 tools/unittest/emit/cpp/test_cpp_runtime_iterable.py`
+- `PYTHONPATH=src python3 tools/unittest/emit/cpp/test_py2cpp_codegen_issues.py`
+- `python3 tools/check/check_todo_priority.py`
 
 ## タスク分解
 

@@ -10,7 +10,7 @@
 - `docs/ja/todo/index.md` の `ID: P0-PHP-S13-PARITY-INVEST-01`
 
 背景:
-- `tools/runtime_parity_check.py --case-root sample --all-samples --targets ruby,lua,scala,php` の最新実行で、失敗は `sample/13` の PHP 1件のみ。
+- `tools/check/runtime_parity_check.py --case-root sample --all-samples --targets ruby,lua,scala,php` の最新実行で、失敗は `sample/13` の PHP 1件のみ。
 - 失敗内容は stdout 不一致で、Python 期待値 `frames: 147` に対し PHP 実測値が `frames: 2`。
 - `sample/16` / `sample/18` の PHP 実行は通るため、PHP backend 全面障害ではなく `sample/13` 固有の変換経路不整合の可能性が高い。
 
@@ -38,14 +38,14 @@
 - 次段修正タスク（実装ID）を切れる状態まで調査結果を整理できる。
 
 確認コマンド（予定）:
-- `python3 tools/runtime_parity_check.py --case-root sample --targets php 13_maze_generation_steps`
-- `python3 tools/regenerate_samples.py --langs php --stems 13_maze_generation_steps --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets php 13_maze_generation_steps`
+- `python3 tools/gen/regenerate_samples.py --langs php --stems 13_maze_generation_steps --force`
 - `php sample/php/13_maze_generation_steps.php`
 - `python3 sample/py/13_maze_generation_steps.py`
 
 決定ログ:
 - 2026-03-04: ユーザー指示により、`sample/13` PHP parity 失敗（`frames: 147 -> 2`）の原因調査を P0 で起票。
-- 2026-03-04: `python3 tools/runtime_parity_check.py --case-root sample --targets php 13_maze_generation_steps` で `output mismatch (frames: 147 -> 2)` を再現し、失敗ログを `work/logs/runtime_parity_sample_php_13_invest_20260304.json` に固定。
+- 2026-03-04: `python3 tools/check/runtime_parity_check.py --case-root sample --targets php 13_maze_generation_steps` で `output mismatch (frames: 147 -> 2)` を再現し、失敗ログを `work/logs/runtime_parity_sample_php_13_invest_20260304.json` に固定。
 - 2026-03-04: 生成PHPを比較し、最初の乖離点を `stack[-1]` の負インデックス未対応（`$stack[-1]` 直出力）と特定。PHP実行時に `Undefined array key -1` が発生し、探索が即枯渇して `frames: 2` になることを確認。
 - 2026-03-04: 併発要因として `ListComp` 未対応（`_render_expr` fallback `null`）も確認。最小再現 `/tmp/php_s13_min_repro.py` では `grid = [[1] * w for _ in range(h)]` が `$grid = null` に落ちることを確認。
 - 2026-03-04: 修正方針を即時実装へ転換し、PHP emitter に `AnnAssign/Assign` の `ListComp(range)` 展開を追加、`BinOp Mult` に list repeat 経路（`__pytra_list_repeat`）を追加、runtime に `__pytra_index` / `__pytra_list_repeat` を追加。

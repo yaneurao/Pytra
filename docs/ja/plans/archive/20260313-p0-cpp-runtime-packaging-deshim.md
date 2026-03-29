@@ -22,7 +22,7 @@
 
 対象:
 - `src/toolchain/frontends/runtime_symbol_index.py`
-- `tools/gen_runtime_symbol_index.py`
+- `tools/gen/gen_runtime_symbol_index.py`
 - `tools/runtime_symbol_index.json`
 - `src/backends/cpp/emitter/runtime_paths.py`
 - `src/backends/cpp/emitter/module.py`
@@ -32,7 +32,7 @@
 - `src/backends/cpp/program_writer.py`
 - `src/backends/cpp/cli.py`
 - `tools/cpp_runtime_deps.py`
-- `tools/check_runtime_cpp_layout.py`
+- `tools/check/check_runtime_cpp_layout.py`
 - `src/runtime/cpp/generated/**`
 - 関連 docs / tests
 
@@ -47,14 +47,14 @@
 - C++ emitter / runtime emit / multi-file prelude / helper artifact は `pytra/**` や `core/**` ではなく compiler header を include する。
 - checked-in generated runtime (`src/runtime/cpp/generated/**`) は `pytra/**` と `runtime/cpp/core/**` を compiler path として使わず、必要な runtime 依存を `generated/**` と `runtime/cpp/native/core/**` へ直接張る。
 - `public_headers` は C++ では `compiler_headers` と同じ direct header を返し、repo 常設 shim へは戻らない。
-- `tools/check_runtime_cpp_layout.py` は `src/runtime/cpp/{pytra,core}` が再出現していないこと、そして generated/native/compiler lane だけが `native/core` を直接 include できることを監査する。
+- `tools/check/check_runtime_cpp_layout.py` は `src/runtime/cpp/{pytra,core}` が再出現していないこと、そして generated/native/compiler lane だけが `native/core` を直接 include できることを監査する。
 - first wave 完了時点で、transpiled user code / checked-in generated runtime / build graph が `pytra/**` と `core/**` に依存しなくても通る。
 - final wave 完了時点で、repo 本体の `src/runtime/cpp/{pytra,core}` は 0 file となり、`--emit-runtime-cpp` もそれらを再生成しない。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/gen_runtime_symbol_index.py --check`
-- `python3 tools/check_runtime_cpp_layout.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/gen/gen_runtime_symbol_index.py --check`
+- `python3 tools/check/check_runtime_cpp_layout.py`
 - `PYTHONPATH=src:. python3 -m unittest test.unit.tooling.test_runtime_symbol_index`
 - `PYTHONPATH=src:. python3 -m unittest test.unit.tooling.test_cpp_runtime_build_graph`
 - `PYTHONPATH=src:. python3 -m unittest test.unit.backends.cpp.test_cpp_runtime_symbol_index_integration`
@@ -87,11 +87,11 @@ compiler/build が見る面:
 ## 分解
 
 - [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S1-01] C++ runtime packaging の責務を docs/TODO に固定し、`compiler_headers` と `public_headers` の二面契約を導入する。
-- [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S1-02] `tools/gen_runtime_symbol_index.py` / loader / tests に `compiler_headers` を追加し、module は `generated/native`、core は `native/core` を返す contract を固定する。
+- [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S1-02] `tools/gen/gen_runtime_symbol_index.py` / loader / tests に `compiler_headers` を追加し、module は `generated/native`、core は `native/core` を返す contract を固定する。
 - [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S2-01] C++ emitter/runtime-path/helper include 解決を `compiler_headers` 基準へ切り替え、transpiled user code が `pytra/**` / `core/**` を include しないようにする。
 - [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S2-02] `emit-runtime-cpp` 生成物・multi-file prelude・helper artifact の core include を `runtime/cpp/native/core/**` へ切り替え、checked-in generated runtime を再生成する。
 - [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S3-01] `tools/cpp_runtime_deps.py` と build graph test を compiler-direct include 契約へ同期し、shim 非依存で compile source を回収できるようにする。
-- [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S3-02] `tools/check_runtime_cpp_layout.py` と docs を「generated/native/compiler lane は native/core を直接 include 可、`src/runtime/cpp/{pytra,core}` は legacy residual」として更新する。
+- [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S3-02] `tools/check/check_runtime_cpp_layout.py` と docs を「generated/native/compiler lane は native/core を直接 include 可、`src/runtime/cpp/{pytra,core}` は legacy residual」として更新する。
 - [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S4-01] export-time SDK generator は不要と判断し、`src/runtime/cpp/{pytra,core}` を repo から削除する。
 
 決定ログ:

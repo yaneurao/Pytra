@@ -21,7 +21,7 @@ Goal:
 In scope:
 - `src/runtime/nim/pytra/py_runtime.nim`
 - `src/toolchain/emit/nim/emitter/nim_native_emitter.py` (only where required for runtime-contract wiring)
-- `tools/runtime_parity_check.py` execution path (minimal fixes only if needed)
+- `tools/check/runtime_parity_check.py` execution path (minimal fixes only if needed)
 - `sample/nim/` (regenerated outputs)
 - Required unit/transpile checks
 
@@ -31,14 +31,14 @@ Out of scope:
 - README benchmark value updates
 
 Acceptance criteria:
-- `python3 tools/runtime_parity_check.py --case-root sample --targets nim --ignore-unstable-stdout` passes all cases.
-- `python3 tools/check_py2nim_transpile.py` passes.
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets nim --ignore-unstable-stdout` passes all cases.
+- `python3 tools/check/check_py2nim_transpile.py` passes.
 - Minimal regressions for added/updated runtime contracts are locked (unit or check).
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2nim_transpile.py`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets nim --ignore-unstable-stdout`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2nim_transpile.py`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets nim --ignore-unstable-stdout`
 - `python3 src/py2nim.py sample/py/<case>.py -o sample/nim/<case>.nim` (`regenerate_samples.py` does not support Nim)
 
 ## Breakdown
@@ -55,5 +55,5 @@ Verification commands (planned):
 Decision log:
 - 2026-03-03: Per user instruction, opened this as P0 for Nim runtime hardening and full `sample/` parity pass.
 - 2026-03-03: Baseline run of `runtime_parity_check --case-root sample --targets nim --ignore-unstable-stdout` confirmed `cases=18 pass=18 fail=0`, and finalized that failed-case categories (runtime gaps/contract mismatch/emitter issues) were empty.
-- 2026-03-03: Since `tools/regenerate_samples.py --langs nim --force` was unsupported with `unknown language(s): nim`, updated `sample/nim` via manual regeneration path `python3 src/py2nim.py sample/py/*.py -o sample/nim/*.nim` (18 cases + `py_runtime.nim`).
-- 2026-03-03: Re-ran parity after regeneration and confirmed `cases=18 pass=18 fail=0`; `python3 tools/check_py2nim_transpile.py` also passed with `checked=7 ok=7 fail=0`. Acceptance criteria were met without additional code changes.
+- 2026-03-03: Since `tools/gen/regenerate_samples.py --langs nim --force` was unsupported with `unknown language(s): nim`, updated `sample/nim` via manual regeneration path `python3 src/py2nim.py sample/py/*.py -o sample/nim/*.nim` (18 cases + `py_runtime.nim`).
+- 2026-03-03: Re-ran parity after regeneration and confirmed `cases=18 pass=18 fail=0`; `python3 tools/check/check_py2nim_transpile.py` also passed with `checked=7 ok=7 fail=0`. Acceptance criteria were met without additional code changes.

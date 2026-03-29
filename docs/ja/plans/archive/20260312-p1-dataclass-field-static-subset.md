@@ -39,13 +39,13 @@
 - `init=False` が constructor 生成に反映されること。
 - `default` / `default_factory` / `repr` / `compare` の v1 subset が field carrier に乗ること。
 - unsupported option は明示的に fail-closed すること。
-- `python3 tools/check_todo_priority.py`、focused unit tests、`python3 tools/build_selfhost.py`、`git diff --check` が通ること。
+- `python3 tools/check/check_todo_priority.py`、focused unit tests、`python3 tools/build_selfhost.py`、`git diff --check` が通ること。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_import_diagnostics.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k dataclass`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_import_diagnostics.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k dataclass`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

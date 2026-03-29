@@ -21,7 +21,7 @@
 - `src/pytra/compiler/east_parts/code_emitter.py`
 - `src/hooks/cs/emitter/cs_emitter.py`
 - 必要に応じて `tools/prepare_selfhost_source_cs.py` / `src/runtime/cs/*`
-- 回帰確認: `test/unit/test_code_emitter.py` / `test/unit/test_py2cs_smoke.py` / `tools/check_multilang_selfhost_stage1.py` / `tools/check_multilang_selfhost_multistage.py`
+- 回帰確認: `tools/unittest/test_code_emitter.py` / `tools/unittest/test_py2cs_smoke.py` / `tools/check/check_multilang_selfhost_stage1.py` / `tools/check/check_multilang_selfhost_multistage.py`
 
 非対象:
 - C# backend の新機能追加（最適化や構文拡張）
@@ -37,8 +37,8 @@
 確認コマンド:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_code_emitter.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v`
-- `python3 tools/check_multilang_selfhost_stage1.py`
-- `python3 tools/check_multilang_selfhost_multistage.py`
+- `python3 tools/check/check_multilang_selfhost_stage1.py`
+- `python3 tools/check/check_multilang_selfhost_multistage.py`
 
 分解:
 - [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S1-01] `v0.4.0` 以降の `CodeEmitter` 差分を棚卸しし、「共通必須 / C# 固有 / 判定保留」の3分類を作成する。

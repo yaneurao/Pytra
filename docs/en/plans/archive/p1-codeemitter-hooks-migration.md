@@ -27,8 +27,8 @@ Acceptance criteria:
 - `py2cpp.py` conditionals are reduced
 
 Validation commands:
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 test/unit/test_code_emitter.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/unittest/test_code_emitter.py`
 
 Decision log:
 - 2026-02-22: Initial draft.

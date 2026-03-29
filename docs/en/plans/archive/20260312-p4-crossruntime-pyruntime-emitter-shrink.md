@@ -66,14 +66,14 @@ Acceptance criteria:
   - both under `src/backends/cs/emitter/cs_emitter.py`
 
 Representative guards:
-- inventory source of truth: [check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/check_crossruntime_pyruntime_emitter_inventory.py)
-- unit guard: [test_check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_crossruntime_pyruntime_emitter_inventory.py)
+- inventory source of truth: [check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/check/check_crossruntime_pyruntime_emitter_inventory.py)
+- unit guard: [test_check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/unittest/tooling/test_check_crossruntime_pyruntime_emitter_inventory.py)
 - representative manifest:
   - freeze `smoke_file + smoke_tests + source_guard_paths` per residual bucket inside the inventory tool.
 - representative smoke:
-  - C++: [test_east3_cpp_bridge.py](/workspace/Pytra/test/unit/backends/cpp/test_east3_cpp_bridge.py)
-  - Rust: [test_py2rs_smoke.py](/workspace/Pytra/test/unit/backends/rs/test_py2rs_smoke.py)
-  - C#: [test_py2cs_smoke.py](/workspace/Pytra/test/unit/backends/cs/test_py2cs_smoke.py)
+  - C++: [test_east3_cpp_bridge.py](/workspace/Pytra/tools/unittest/emit/cpp/test_east3_cpp_bridge.py)
+  - Rust: [test_py2rs_smoke.py](/workspace/Pytra/tools/unittest/emit/rs/test_py2rs_smoke.py)
+  - C#: [test_py2cs_smoke.py](/workspace/Pytra/tools/unittest/emit/cs/test_py2cs_smoke.py)
 - source guard:
   - Rust/C# thin seams and the C# bytes/bytearray residual lane are now frozen through source-guard patterns in the inventory tool.
 
@@ -93,8 +93,8 @@ Representative guards:
 - After emitter shrink completes, the header surface tool must keep both `typed_collection_compat` and `shared_type_id_compat` empty.
 - The only remaining header bucket on the emitter side is `object_bridge_mutation`, and it is now explicitly handed off to the follow-up [20260312-p4-crossruntime-pyruntime-residual-caller-shrink.md](./20260312-p4-crossruntime-pyruntime-residual-caller-shrink.md) task.
 - Handoff sources of truth:
-  - header surface: [check_cpp_pyruntime_header_surface.py](/workspace/Pytra/tools/check_cpp_pyruntime_header_surface.py)
-  - header unit guard: [test_check_cpp_pyruntime_header_surface.py](/workspace/Pytra/test/unit/tooling/test_check_cpp_pyruntime_header_surface.py)
+  - header surface: [check_cpp_pyruntime_header_surface.py](/workspace/Pytra/tools/check/check_cpp_pyruntime_header_surface.py)
+  - header unit guard: [test_check_cpp_pyruntime_header_surface.py](/workspace/Pytra/tools/unittest/tooling/test_check_cpp_pyruntime_header_surface.py)
   - follow-up task: `P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01`
 
 ## Decision log

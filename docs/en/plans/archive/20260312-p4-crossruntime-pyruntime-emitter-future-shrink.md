@@ -12,7 +12,7 @@ Purpose:
 - Fix the bundle order for reducing the remaining `shared type_id thin seam` and the C# `bytearray` compatibility seam before a future header-shrink or runtime SoT task.
 
 Background:
-- The earlier emitter-shrink P4 tasks are already archived, and the current residual inventory is now fixed in [check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/check_crossruntime_pyruntime_emitter_inventory.py).
+- The earlier emitter-shrink P4 tasks are already archived, and the current residual inventory is now fixed in [check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/check/check_crossruntime_pyruntime_emitter_inventory.py).
 - The current residuals are intentional seams rather than unclassified debt, but further `py_runtime.h` shrink will still require emitter-side follow-up across C++ / Rust / C#.
 - In particular, the C++ emitter still uses `py_runtime_value_*` / `py_runtime_type_id_is_*`, Rust/C# still carry the shared thin helper contract, and C# still keeps a `bytearray` mutation compatibility seam.
 - This is not an immediate blocker, so it belongs in low-priority `P4`.
@@ -67,7 +67,7 @@ Acceptance criteria:
 ## Future Representative Guard Baseline
 
 - `cpp_emitter_shared_type_id_residual`
-  - smoke: `test/unit/backends/cpp/test_east3_cpp_bridge.py`
+  - smoke: `tools/unittest/emit/cpp/test_east3_cpp_bridge.py`
   - representative tests:
     - `test_render_expr_supports_east3_obj_boundary_nodes`
     - `test_transpile_representative_nominal_adt_match_emits_if_else_chain`
@@ -76,19 +76,19 @@ Acceptance criteria:
     - `src/backends/cpp/emitter/runtime_expr.py`
     - `src/backends/cpp/emitter/stmt.py`
 - `rs_emitter_shared_type_id_residual`
-  - smoke: `test/unit/backends/rs/test_py2rs_smoke.py`
+  - smoke: `tools/unittest/emit/rs/test_py2rs_smoke.py`
   - representative tests:
     - `test_type_predicate_nodes_are_lowered_without_legacy_bridge`
   - source guard path:
     - `src/backends/rs/emitter/rs_emitter.py`
 - `cs_emitter_shared_type_id_residual`
-  - smoke: `test/unit/backends/cs/test_py2cs_smoke.py`
+  - smoke: `tools/unittest/emit/cs/test_py2cs_smoke.py`
   - representative tests:
     - `test_type_predicate_nodes_are_lowered_without_legacy_bridge`
   - source guard path:
     - `src/backends/cs/emitter/cs_emitter.py`
 - `crossruntime_mutation_helper_residual`
-  - smoke: `test/unit/backends/cs/test_py2cs_smoke.py`
+  - smoke: `tools/unittest/emit/cs/test_py2cs_smoke.py`
   - representative tests:
     - `test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not`
     - `test_bytearray_index_and_slice_compat_helpers_stay_explicit`

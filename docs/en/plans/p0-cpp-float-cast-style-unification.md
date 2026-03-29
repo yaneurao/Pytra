@@ -21,7 +21,7 @@ Goal:
 Scope:
 - `src/hooks/cpp/emitter/expr.py` (`apply_cast`)
 - Direct `static_cast<float64>` emission points in `src/hooks/cpp/emitter/stmt.py` / `src/hooks/cpp/emitter/call.py` / `src/hooks/cpp/emitter/*`
-- `test/unit/test_east3_cpp_bridge.py` / `test/unit/test_py2cpp_codegen_issues.py` / `tools/check_py2cpp_transpile.py`
+- `tools/unittest/test_east3_cpp_bridge.py` / `tools/unittest/test_py2cpp_codegen_issues.py` / `tools/check/check_py2cpp_transpile.py`
 - Verify regenerated `sample/cpp` (especially `16_glass_sculpture_chaos.cpp`)
 
 Out of scope:
@@ -36,11 +36,11 @@ Acceptance criteria:
 - Hoisted cast examples in `sample/cpp/16_glass_sculpture_chaos.cpp` change to `float64(width)` form.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --force`
 
 Decision log:
 - 2026-02-28: By user instruction, opened this P0 task to unify output style from `static_cast<float64>(x)` to `float64(x)`.

@@ -13,7 +13,7 @@ Background:
 - The current C++ runtime ownership split is `src/runtime/cpp/native/core/` plus `src/runtime/cpp/generated/core/`, and `src/runtime/cpp/core/` itself no longer exists.
 - Even so, the live tree still contains residual references that can mislead readers into thinking the deleted `src/runtime/cpp/core/**` surface is still active.
 - A representative stale example is [docs/ja/plans/archive/20260306-p0-runtime-root-reset-cpp-parity.md](../../ja/plans/archive/20260306-p0-runtime-root-reset-cpp-parity.md), which stayed under live `plans/` even though it was complete and still described `src/runtime/cpp/core` plus `src/runtime/cpp/gen` as the canonical layout.
-- In contrast, negative guards such as `tools/check_runtime_cpp_layout.py` and `test_runtime_symbol_index.py` still need to mention legacy `src/runtime/cpp/core/**` so they can fail fast if it reappears.
+- In contrast, negative guards such as `tools/check/check_runtime_cpp_layout.py` and `test_runtime_symbol_index.py` still need to mention legacy `src/runtime/cpp/core/**` so they can fail fast if it reappears.
 
 Objective:
 - Remove the deleted `src/runtime/cpp/core/**` surface from all live docs, tooling, and tests that still treat it as an active layout.
@@ -37,11 +37,11 @@ Acceptance criteria:
 - Related checker behavior, unit tests, and docs wording are synchronized to the current ownership contract.
 
 Validation commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `rg -n "src/runtime/cpp/core|runtime/cpp/core/" src tools test docs -g '!**/archive/**'`
-- `python3 tools/check_runtime_cpp_layout.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_runtime_cpp_layout.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_runtime_symbol_index.py'`
+- `python3 tools/check/check_runtime_cpp_layout.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_runtime_cpp_layout.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_runtime_symbol_index.py'`
 - `git diff --check`
 
 ## Breakdown

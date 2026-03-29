@@ -23,11 +23,11 @@
 - `src/py2php.py`（新規）
 - `src/hooks/php/emitter/`（新規）
 - `src/runtime/php/pytra/`（新規 runtime）
-- `tools/check_py2php_transpile.py`（新規）
-- `tools/runtime_parity_check.py`（PHP target 追加）
-- `tools/regenerate_samples.py`（php 出力先追加）
+- `tools/check/check_py2php_transpile.py`（新規）
+- `tools/check/runtime_parity_check.py`（PHP target 追加）
+- `tools/gen/regenerate_samples.py`（php 出力先追加）
 - `sample/php/*`（再生成）
-- `test/unit/test_py2php_smoke.py`（新規）
+- `tools/unittest/test_py2php_smoke.py`（新規）
 - `docs/ja/how-to-use.md` / `docs/ja/spec/spec-user.md`（導線追記）
 
 非対象:
@@ -56,7 +56,7 @@ runtime 分離契約（S1-01 確定）:
   - `src/runtime/php/pytra/py_runtime.php`（共通 helper）
   - `src/runtime/php/pytra/utils/png.php` / `gif.php`（I/O helper）
   - `src/runtime/php/pytra/std/*.php`（`time`, `math`, `pathlib`）
-- `tools/regenerate_samples.py` は sample 出力時に `sample/php/pytra/**` を同期コピーする。
+- `tools/gen/regenerate_samples.py` は sample 出力時に `sample/php/pytra/**` を同期コピーする。
 - 同一 helper 名は全 backend で意味を揃える（例: `py_truthy`, `py_len`, `py_str`）。
 
 受け入れ基準:
@@ -67,11 +67,11 @@ runtime 分離契約（S1-01 確定）:
 - docs に PHP backend の使い方と制約が反映される。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2php_smoke.py' -v`
-- `python3 tools/check_py2php_transpile.py`
-- `python3 tools/regenerate_samples.py --langs php --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets php --ignore-unstable-stdout 01_mandelbrot 03_julia_set 06_julia_parameter_sweep 16_glass_sculpture_chaos 18_parser_combinator`
+- `python3 tools/check/check_py2php_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs php --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets php --ignore-unstable-stdout 01_mandelbrot 03_julia_set 06_julia_parameter_sweep 16_glass_sculpture_chaos 18_parser_combinator`
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、PHP 対応を `P3` として計画化し、`Ruby -> Lua -> PHP` 順の次段として起票した。
@@ -80,8 +80,8 @@ runtime 分離契約（S1-01 確定）:
 - 2026-03-02: [ID: P3-PHP-BACKEND-01-S2-01] `php_native_emitter` を拡張し、`FunctionDef/If/While/ForCore(StaticRange, RuntimeIter)` と基本式（定数/二項/比較/呼び出し/コンテナ）を出力可能にした。`core/add`, `control/if_else`, `control/for_range` を `py2php` で変換し、for-range が PHP `for` へ出力されることを確認。
 - 2026-03-02: [ID: P3-PHP-BACKEND-01-S2-02] `ClassDef` 出力（`extends`, `__construct`, `parent::method`）と `isinstance`/`dict.get`/`Unbox` 系 lower を追加。`oop/inheritance.py`, `oop/inheritance_virtual_dispatch_multilang.py`, `oop/is_instance.py`, `sample/py/18_mini_language_interpreter.py` の変換で class/コンテナ経路の生成崩れが解消することを確認。
 - 2026-03-02: [ID: P3-PHP-BACKEND-01-S2-03] runtime を `src/runtime/php/pytra/{py_runtime.php,runtime/{png,gif}.php,std/time.php}` に分離し、`py2php.py` で `output/pytra/**` へ同期コピーする方式へ拡張。emitter は `__pytra_perf_counter/__pytra_len/__pytra_str_*` を参照し、生成コードへの helper 本体埋め込みを行わない構成へ統一した。
-- 2026-03-02: [ID: P3-PHP-BACKEND-01-S3-01] `test/unit/test_py2php_smoke.py`（11件）と `tools/check_py2php_transpile.py` を追加。`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2php_smoke.py' -v` および `python3 tools/check_py2php_transpile.py` の双方で pass を確認した。
-- 2026-03-02: [ID: P3-PHP-BACKEND-01-S3-02] `tools/regenerate_samples.py` と `tools/runtime_parity_check.py` に `php` ターゲットを追加し、`transpiler_versions.json` へ `php` version token を登録。`python3 tools/regenerate_samples.py --langs php --force` で `sample/php` 18件を再生成し、`runtime_parity_check --targets php` はこの環境で `php` ツールチェーン未導入のため `toolchain_missing` skip まで確認した。
+- 2026-03-02: [ID: P3-PHP-BACKEND-01-S3-01] `tools/unittest/test_py2php_smoke.py`（11件）と `tools/check/check_py2php_transpile.py` を追加。`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2php_smoke.py' -v` および `python3 tools/check/check_py2php_transpile.py` の双方で pass を確認した。
+- 2026-03-02: [ID: P3-PHP-BACKEND-01-S3-02] `tools/gen/regenerate_samples.py` と `tools/check/runtime_parity_check.py` に `php` ターゲットを追加し、`transpiler_versions.json` へ `php` version token を登録。`python3 tools/gen/regenerate_samples.py --langs php --force` で `sample/php` 18件を再生成し、`runtime_parity_check --targets php` はこの環境で `php` ツールチェーン未導入のため `toolchain_missing` skip まで確認した。
 - 2026-03-02: [ID: P3-PHP-BACKEND-01-S3-03] docs 導線を更新。`docs/{ja,en}/spec/spec-user.md` に `py2php` と `work/transpile/php` / `sample/php` の配置を追記し、`docs/{ja,en}/how-to-use.md` に PHP 実行手順と回帰コマンドを追加、`README.md` / `docs/ja/README.md` のサンプル変換コード一覧へ PHP リンクを反映した。
 
 ## 分解

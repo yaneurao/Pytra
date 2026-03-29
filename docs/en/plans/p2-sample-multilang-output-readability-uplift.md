@@ -37,8 +37,8 @@ Verification commands:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2rb*' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua*' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2java*' -v`
-- `python3 tools/regenerate_samples.py --langs js,ts,ruby,lua,java --stems 01_mandelbrot,18_mini_language_interpreter --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets js,ts,ruby,lua,java --ignore-unstable-stdout 01_mandelbrot 18_mini_language_interpreter`
+- `python3 tools/gen/regenerate_samples.py --langs js,ts,ruby,lua,java --stems 01_mandelbrot,18_mini_language_interpreter --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets js,ts,ruby,lua,java --ignore-unstable-stdout 01_mandelbrot 18_mini_language_interpreter`
 
 Breakdown:
 - [x] [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S1-01] Inventory redundant syntax patterns per language (unnecessary parentheses/helper vars/append chains) and define applicability boundaries.
@@ -56,6 +56,6 @@ Decision log:
 - 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-02] Confirmed Ruby already degrades append chains to `owner.concat([..])` in existing implementation. Added equivalent rule to Lua, degrading chained `owner.append(x)` (owner=Name, arg=side-effect-free expression) into a single line `table.move({..}, 1, n, #(owner)+1, owner)`.
 - 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-02] Verification: added `test_append_chain_is_compacted_with_table_move` and it passed. Full `test_py2lua*` still fails due to known baseline failures (legacy assumptions in runtime-separation expected values), independent of this task. `test_py2rb*` passed.
 - 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] Added "constant step fastpath" in Java emitter `ForCore` / listcomp range output, changing output to omit `__step_N` for constant steps including `step=±1`. For non-constant or zero steps, kept existing dynamic ternary path (fail-closed).
-- 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] Verification: added regressions for `for_range` and `range_downcount_len_minus1` to `test_py2java_smoke.py`, passed. Reflected in `sample/java` with `tools/regenerate_samples.py --langs java --stems 01_mandelbrot,18_mini_language_interpreter --force`.
+- 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S2-03] Verification: added regressions for `for_range` and `range_downcount_len_minus1` to `test_py2java_smoke.py`, passed. Reflected in `sample/java` with `tools/gen/regenerate_samples.py --langs java --stems 01_mandelbrot,18_mini_language_interpreter --force`.
 - 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-01] Regression checks: `test_py2{js,ts,rb,java}_smoke.py` passed. `test_py2lua_smoke.py` still has 7 known failures from expectations not yet updated for runtime-separation contract migration (helper-inline assumptions), independent of this task.
-- 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-02] Ran `tools/regenerate_samples.py --langs js,ts,ruby,lua,java --stems 01_mandelbrot,18_mini_language_interpreter --force`. Ran `runtime_parity_check --targets js,ts,ruby,lua,java --ignore-unstable-stdout 01,18`; confirmed `lua` OK on both cases, and known continuing issues: `js/ts` `01` artifact size mismatch, `java` `01` artifact missing and `18` compile/run fail, `ruby` `18` tokenize run fail (tracked as separate issue streams).
+- 2026-03-02: [ID: P2-SAMPLE-OUTPUT-READABILITY-01-S3-02] Ran `tools/gen/regenerate_samples.py --langs js,ts,ruby,lua,java --stems 01_mandelbrot,18_mini_language_interpreter --force`. Ran `runtime_parity_check --targets js,ts,ruby,lua,java --ignore-unstable-stdout 01,18`; confirmed `lua` OK on both cases, and known continuing issues: `js/ts` `01` artifact size mismatch, `java` `01` artifact missing and `18` compile/run fail, `ruby` `18` tokenize run fail (tracked as separate issue streams).

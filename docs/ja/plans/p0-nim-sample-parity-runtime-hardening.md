@@ -21,7 +21,7 @@
 対象:
 - `src/runtime/nim/pytra/py_runtime.nim`
 - `src/toolchain/emit/nim/emitter/nim_native_emitter.py`（runtime 契約接続に必要な範囲）
-- `tools/runtime_parity_check.py` 実行導線（必要時のみ最小修正）
+- `tools/check/runtime_parity_check.py` 実行導線（必要時のみ最小修正）
 - `sample/nim/`（再生成結果）
 - 必要な unit/transpile check
 
@@ -31,14 +31,14 @@
 - README ベンチマーク値更新
 
 受け入れ基準:
-- `python3 tools/runtime_parity_check.py --case-root sample --targets nim --ignore-unstable-stdout` が全件 pass。
-- `python3 tools/check_py2nim_transpile.py` が pass。
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets nim --ignore-unstable-stdout` が全件 pass。
+- `python3 tools/check/check_py2nim_transpile.py` が pass。
 - 追加/修正した runtime 契約について最小回帰（unit or check）を固定。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2nim_transpile.py`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets nim --ignore-unstable-stdout`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2nim_transpile.py`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets nim --ignore-unstable-stdout`
 - `python3 src/py2nim.py sample/py/<case>.py -o sample/nim/<case>.nim`（`regenerate_samples.py` は Nim 未対応）
 
 ## 分解
@@ -55,5 +55,5 @@
 決定ログ:
 - 2026-03-03: ユーザー指示により、Nim runtime 整備と `sample/` parity 全件通過を P0 として起票。
 - 2026-03-03: `runtime_parity_check --case-root sample --targets nim --ignore-unstable-stdout` のベースラインで `cases=18 pass=18 fail=0` を確認し、失敗ケース分類（runtime不足/契約不整合/emitter問題）は空であることを確定。
-- 2026-03-03: `tools/regenerate_samples.py --langs nim --force` は `unknown language(s): nim` で未対応だったため、`python3 src/py2nim.py sample/py/*.py -o sample/nim/*.nim` の手動再生成導線で `sample/nim` を更新（18ケース + `py_runtime.nim`）。
-- 2026-03-03: 再生成後の parity 再実行で `cases=18 pass=18 fail=0` を確認し、`python3 tools/check_py2nim_transpile.py` も `checked=7 ok=7 fail=0` で通過。追加コード修正なしで受け入れ基準を満たした。
+- 2026-03-03: `tools/gen/regenerate_samples.py --langs nim --force` は `unknown language(s): nim` で未対応だったため、`python3 src/py2nim.py sample/py/*.py -o sample/nim/*.nim` の手動再生成導線で `sample/nim` を更新（18ケース + `py_runtime.nim`）。
+- 2026-03-03: 再生成後の parity 再実行で `cases=18 pass=18 fail=0` を確認し、`python3 tools/check/check_py2nim_transpile.py` も `checked=7 ok=7 fail=0` で通過。追加コード修正なしで受け入れ基準を満たした。

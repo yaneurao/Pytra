@@ -13,7 +13,7 @@
   -build      .py → target            一括実行
 
 selfhost 対象 (§5.7): toolchain2/ + pytra.std.* のみ使用。
-golden file 生成は tools/generate_golden.py に分離。
+golden file 生成は tools/gen/generate_golden.py に分離。
 """
 
 from __future__ import annotations
@@ -679,9 +679,35 @@ def cmd_emit(args: list[str]) -> int:
     return 1
 
 
+def _fqcn_to_tid_const(fqcn: str) -> str:
+    """Convert a fully-qualified class name to a Rust TID constant name.
+
+    Examples:
+      "trait_basic.Circle"                     → "TRAIT_BASIC_CIRCLE_TID"
+      "pytra.built_in.error.ValueError"        → "PYTRA_BUILT_IN_ERROR_VALUE_ERROR_TID"
+      "BaseException"                           → "BASE_EXCEPTION_TID"
+    """
+    import re
+    # Replace dots with underscores, convert CamelCase to SCREAMING_SNAKE
+    flat = fqcn.replace(".", "_")
+    # Insert underscore before sequences of uppercase letters preceded by lowercase (CamelCase split)
+    snake = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", flat)
+    snake = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", snake)
+    return snake.upper() + "_TID"
+
+
+def _generate_type_id_table_rs(type_id_table: dict) -> str:  # type: ignore[type-arg]
+    """Generate pytra_built_in_type_id_table.rs content from manifest type_id_table."""
+    lines: list[str] = []
+    for fqcn, tid in sorted(type_id_table.items(), key=lambda kv: kv[1]):
+        const_name = _fqcn_to_tid_const(fqcn)
+        lines.append("const " + const_name + ": i64 = " + str(tid) + "_i64;")
+    return "\n".join(lines) + "\n" if lines else ""
+
+
 def _emit_rs(manifest_path: Path, output_dir: Path) -> int:
     """Rust emit: linked output → Rust source files."""
-    _manifest_doc, linked_modules = load_linked_output(manifest_path)
+    manifest_doc, linked_modules = load_linked_output(manifest_path)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     written = 0
@@ -703,6 +729,17 @@ def _emit_rs(manifest_path: Path, output_dir: Path) -> int:
             for rs_file in bucket_dir.glob("*.rs"):
                 dst = output_dir.joinpath(rs_file.name)
                 dst.write_text(rs_file.read_text(encoding="utf-8"), encoding="utf-8")
+                written += 1
+
+    # Generate pytra_built_in_type_id_table.rs from manifest if not already emitted
+    tid_table_path = output_dir.joinpath("pytra_built_in_type_id_table.rs")
+    if not tid_table_path.exists():
+        global_section = manifest_doc.get("global") if isinstance(manifest_doc, dict) else None
+        type_id_table = global_section.get("type_id_table") if isinstance(global_section, dict) else None
+        if isinstance(type_id_table, dict) and len(type_id_table) > 0:
+            tid_rs = _generate_type_id_table_rs(type_id_table)
+            if tid_rs != "":
+                tid_table_path.write_text(tid_rs, encoding="utf-8")
                 written += 1
 
     print("emitted: " + str(output_dir) + " (" + str(written) + " Rust files)")
@@ -1018,7 +1055,7 @@ def main() -> int:
         print("  -emit       *.east3 -> target         (code generation)")
         print("  -build      .py -> target             (all-in-one)")
         print("")
-        print("golden file generation: python3 tools/generate_golden.py --help")
+        print("golden file generation: python3 tools/gen/generate_golden.py --help")
         return 0
 
     cmd_name = argv[0]

@@ -41,14 +41,14 @@ Acceptance criteria:
 - representative regressions, checkers, and the English mirror are synchronized to the updated shrink contract.
 
 Validation commands (planned):
-- `python3 tools/check_todo_priority.py`
-- `rg -n "\\bpy_append\\(|\\bpy_at\\([^\\n]*object|obj_to_list_ref_or_raise\\(|make_object\\(list<object>\\{|py_to<[^>]+>\\(.*object" src/runtime/cpp src/backends/cpp sample/cpp test/unit/backends/cpp -S`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_east3_cpp_bridge.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_codegen_issues.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_cpp_pyruntime_upstream_fallback_inventory.py'`
-- `python3 tools/check_cpp_pyruntime_upstream_fallback_inventory.py`
-- `python3 tools/check_cpp_pyruntime_header_surface.py`
+- `python3 tools/check/check_todo_priority.py`
+- `rg -n "\\bpy_append\\(|\\bpy_at\\([^\\n]*object|obj_to_list_ref_or_raise\\(|make_object\\(list<object>\\{|py_to<[^>]+>\\(.*object" src/runtime/cpp src/backends/cpp sample/cpp tools/unittest/emit/cpp -S`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_iterable.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_east3_cpp_bridge.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_codegen_issues.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_cpp_pyruntime_upstream_fallback_inventory.py'`
+- `python3 tools/check/check_cpp_pyruntime_upstream_fallback_inventory.py`
+- `python3 tools/check/check_cpp_pyruntime_header_surface.py`
 - `git diff --check`
 
 ## Policy
@@ -71,9 +71,9 @@ Validation commands (planned):
 Decision log:
 - 2026-03-14: Opened as a P2 task after the runtime audit confirmed that `py_runtime.h` can still shrink, but the next gain must come from pushing typed fallback upstream into EAST3, the emitter, and runtime SoT rather than physically splitting the header.
 - 2026-03-14: The residual thin-seam checker stack still pointed at the archived `P5` plan as its active follow-up, so this `P2` was rebased as the current owner and the locked bundle order was synchronized to the active `S1-01..S3-01` shrink contract.
-- 2026-03-14: Completed `S1-01` by adding `src/toolchain/compiler/cpp_pyruntime_upstream_fallback_inventory.py` and `tools/check_cpp_pyruntime_upstream_fallback_inventory.py`, locking 9 header bulk anchors, 2 C++ emitter residual categories, 3 generated runtime residual categories, and 2 sample residual categories in a machine-readable inventory plus unit test.
+- 2026-03-14: Completed `S1-01` by adding `src/toolchain/compiler/cpp_pyruntime_upstream_fallback_inventory.py` and `tools/check/check_cpp_pyruntime_upstream_fallback_inventory.py`, locking 9 header bulk anchors, 2 C++ emitter residual categories, 3 generated runtime residual categories, and 2 sample residual categories in a machine-readable inventory plus unit test.
 - 2026-03-14: The 2026-03-14 baseline is fixed as 1287 lines in `src/runtime/cpp/native/core/py_runtime.h`, 5 header `py_to<*>(...object...)` call sites, 2 `obj_to_list_ref_or_raise(` plus 3 `make_object(list<object>{})` sites under `src/backends/cpp/emitter/**`, 2 `obj_to_list_ref_or_raise(` plus 3 `make_object(list<object>{})` plus 46 `py_at(...py_to<int64>)` sites under `src/runtime/cpp/generated/**`, and 41 `py_append(` plus 39 `py_at(...py_to<int64>)` sites under `sample/cpp/**`.
-- 2026-03-14: Completed `S1-02` by adding `src/toolchain/compiler/cpp_pyruntime_upstream_fallback_contract.py` and `tools/check_cpp_pyruntime_upstream_fallback_contract.py`, partitioning the header bulk into 4 `object_only_compat_header` entries, 5 `any_object_boundary_header` entries, and 7 `typed_lane_must_not_use` residual entries.
+- 2026-03-14: Completed `S1-02` by adding `src/toolchain/compiler/cpp_pyruntime_upstream_fallback_contract.py` and `tools/check/check_cpp_pyruntime_upstream_fallback_contract.py`, partitioning the header bulk into 4 `object_only_compat_header` entries, 5 `any_object_boundary_header` entries, and 7 `typed_lane_must_not_use` residual entries.
 - 2026-03-14: The final handoff guard now includes the upstream fallback boundary checker/test so the active `P2` handoff references both the baseline inventory and the object-only versus typed-lane boundary contract.
 - 2026-03-14: As the first `S2-01` bundle, switched empty pyobj runtime list seeds from generic `make_object(list<object>{})` boxing to direct `object_new<PyListObj>(list<object>{})`, which removes the `cpp_emitter_boxed_list_seed_sites` bucket from the emitter residual inventory. The only remaining emitter-side typed-lane residual is now the `obj_to_list_ref_or_raise(` helper bucket.
 - 2026-03-14: As the second `S2-01` bundle, collapsed the inline `obj_to_list_ref_or_raise({boxed_value}, ...)` site in pyobj runtime list `extend` through the shared helper, reducing `cpp_emitter_object_list_bridge_sites` to the helper definition alone. The emitter-side residual is now helper-only even at the source-literal level.
@@ -86,7 +86,7 @@ Decision log:
 - 2026-03-14: As the sixth `S2-02` bundle, rewrote `src/pytra/built_in/predicates.py` from object indexing loops onto the iterator lane, shrinking the `generated_runtime_generic_index_sites` baseline from `46 -> 44`. The remaining sites now concentrate in `iter_ops`, `type_id`, `std/*`, and `utils/png`.
 - 2026-03-14: As the seventh `S2-02` bundle, allowed `list[object]` to stay on the C++ `pyobj` value-model lane, lifted `src/pytra/built_in/iter_ops.py` to return `list[object]`, and retired `generated_runtime_object_list_bridge_sites`. The typed-lane residual buckets are now down to emitter 1 / generated 1 / sample 1.
 - 2026-03-14: As the eighth `S2-02` bundle, moved the object helper bodies in `src/pytra/built_in/iter_ops.py` onto the iterator lane itself, shrinking the `generated_runtime_generic_index_sites` baseline from `44 -> 42`. The remaining sites now concentrate in `type_id`, `std/*`, and `utils/png`.
-- 2026-03-14: As the ninth `S2-02` bundle, synchronized `tools/check_crossruntime_pyruntime_residual_caller_inventory.py` and its unit test to the current generated `py_runtime_value_*` thin seam, reclassifying the generated C++ residual around `json.cpp` and `type_id.cpp` into the single `generated_cpp_shared_type_id_residual` bucket. The stale `generated_cpp_object_bridge_residual` bucket is now retired and the crossruntime residual-caller checker matches the live generated caller shape.
+- 2026-03-14: As the ninth `S2-02` bundle, synchronized `tools/check/check_crossruntime_pyruntime_residual_caller_inventory.py` and its unit test to the current generated `py_runtime_value_*` thin seam, reclassifying the generated C++ residual around `json.cpp` and `type_id.cpp` into the single `generated_cpp_shared_type_id_residual` bucket. The stale `generated_cpp_object_bridge_residual` bucket is now retired and the crossruntime residual-caller checker matches the live generated caller shape.
 - 2026-03-14: As the tenth `S2-02` bundle, switched the C++ emitter's ref-first typed-list subscripts from `py_at(...py_to<int64>)` to `py_list_at_ref(rc_list_ref(...), ...)`, then regenerated `type_id/json/argparse/random/re/png` plus six representative C++ samples through the normal entrypoints. This retires both `generated_runtime_generic_index_sites` and `sample_cpp_generic_index_sites` at zero, leaving only the emitter helper bucket in the typed-lane residual inventory. `S2-02` is complete.
 - 2026-03-14: As the first `S2-03` bundle, added `py_coerce_cstr_typed_value()` to `py_runtime.h` and moved the `const char*` lane for list append/set plus dict-key coercion away from `py_to<T>(make_object(str(...)))` and into that narrow helper. This retires the `header_dict_key_charptr_object_coercion` bucket and leaves only the unsupported-target guard as the remaining header-side `py_to<...>(...object...)` residual.
 - 2026-03-17: As the second S2-03 bundle, added const qualifiers to non-mutating emitter methods, removed unnecessary rc_list_ref wrapping on intermediate py_list_at_ref results, unified collection-literal boxing under object_new<PyListObj>() (dropping make_object(list<object>{})), and fixed the generic make_object<T> str->bool mis-conversion bug by adding a !is_convertible_v<T, str> guard. test_cpp_runtime_iterable / test_runtime_iterable_protocol_helpers now passes. S2-03 complete.

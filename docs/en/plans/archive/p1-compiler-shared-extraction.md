@@ -31,8 +31,8 @@ Acceptance criteria:
 - Boundary definitions (`CodeEmitter` / parser / compiler shared layer) are documented
 
 Validation commands:
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 test/unit/test_py2cpp_features.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/unittest/test_py2cpp_features.py`
 
 `P1-COMP-08` migration plan (adopt shared analysis APIs in other language CLIs):
 
@@ -42,13 +42,13 @@ Validation commands:
    - Freeze return schemas visible from CLIs (dict schema), treating `py2cpp` as the reference implementation.
 2. Phase 1 (apply first to `py2rs.py`)
    - Prohibit direct calls to `py2cpp.py`-specific helpers from `py2rs.py`; receive module-analysis results only via shared APIs.
-   - Validate output differences with `tools/check_py2rs_transpile.py`.
+   - Validate output differences with `tools/check/check_py2rs_transpile.py`.
 3. Phase 2 (expand to `py2cs.py` / `py2js.py` / `py2ts.py`)
    - Use the same API in these CLIs and unify the pre-import-resolution stage.
    - Move FS-dependent pre-processing before `meta.import_bindings` into the shared layer.
 4. Phase 3 (expand to preview languages: `py2go.py` / `py2java.py` / `py2swift.py` / `py2kotlin.py`)
    - Unify diagnostic format for failures (analysis failure / transpile failure), limiting language-specific CLIs to presentation responsibilities.
-   - Reach a state where each `tools/check_py2<lang>_transpile.py` uses the same preprocessing API.
+   - Reach a state where each `tools/check/check_py2<lang>_transpile.py` uses the same preprocessing API.
 5. Phase 4 (retire legacy paths)
    - Remove duplicated project-analysis code from each CLI including `py2cpp.py`.
    - Add regression tests in the shared API layer and shift CLI-layer tests toward wiring tests.
@@ -56,7 +56,7 @@ Validation commands:
 Completion conditions:
 - Every non-C++ CLI performs project analysis through shared APIs in `src/pytra/compiler/`.
 - Project-analysis implementations remaining in `py2cpp.py` are removed except C++-specific helpers.
-- Existing transpile checks (`tools/check_py2*.py`) pass without regressions.
+- Existing transpile checks (`tools/check/check_py2*.py`) pass without regressions.
 
 Decision log:
 - 2026-02-22: Initial draft.

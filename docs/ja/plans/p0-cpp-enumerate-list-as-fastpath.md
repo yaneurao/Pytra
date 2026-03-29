@@ -21,8 +21,8 @@
 対象:
 - `src/runtime/cpp/pytra-core/built_in/py_runtime.h`（`py_enumerate_list_as<T>` 追加）
 - `src/hooks/cpp/emitter/stmt.py`（typed enumerate fastpath 出力変更）
-- `test/unit/test_py2cpp_codegen_issues.py`（sample/18 固定文字列の更新）
-- 必要に応じて `test/unit/test_cpp_runtime_boxing.py` 等 runtime 回帰
+- `tools/unittest/test_py2cpp_codegen_issues.py`（sample/18 固定文字列の更新）
+- 必要に応じて `tools/unittest/test_cpp_runtime_boxing.py` 等 runtime 回帰
 
 非対象:
 - `py_enumerate(object)` 既存 API 契約変更
@@ -36,11 +36,11 @@
 - 既存の fail-closed（非 list/object 不一致時の安全側挙動）を維持する。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --force`
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、`py_to_str_list_from_object` による中間 list 構築を避けるため、`py_enumerate_list_as<T>()` を導入する P0 タスクを起票した。

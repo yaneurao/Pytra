@@ -34,7 +34,7 @@
 - imported class + module constant の representative header contract が regression と plan に記録される。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `bash ./pytra materials/refs/from-Pytra-NES3/apu_const_pkg/user.py --target cpp --output-dir /tmp/pytra_nes3_apu_const_pkg`
 - `for f in /tmp/pytra_nes3_apu_const_pkg/src/*.cpp; do g++ -std=c++20 -O0 -c "$f" -I /tmp/pytra_nes3_apu_const_pkg/include -I /workspace/Pytra/src -I /workspace/Pytra/src/runtime/cpp; done`
 - `git diff --check`

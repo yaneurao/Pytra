@@ -21,9 +21,9 @@
 - `src/hooks/kotlin/emitter/kotlin_native_emitter.py`
 - `src/runtime/kotlin/pytra/`（runtime 正本の新設または整理）
 - `src/py2kotlin.py`（runtime 配置導線）
-- `test/unit/test_py2kotlin_smoke.py`
-- `tools/check_py2kotlin_transpile.py`
-- `tools/runtime_parity_check.py` の Kotlin 導線
+- `tools/unittest/test_py2kotlin_smoke.py`
+- `tools/check/check_py2kotlin_transpile.py`
+- `tools/check/runtime_parity_check.py` の Kotlin 導線
 - `sample/kotlin` 再生成
 
 非対象:
@@ -38,11 +38,11 @@
 - `sample/kotlin` 再生成後も inline helper が残存しない。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2kotlin_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2kotlin_transpile.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin_smoke.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets kotlin --all-samples --ignore-unstable-stdout`
-- `python3 tools/regenerate_samples.py --langs kotlin --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets kotlin --all-samples --ignore-unstable-stdout`
+- `python3 tools/gen/regenerate_samples.py --langs kotlin --force`
 - `rg -n \"fun __pytra_truthy\\(v: Any\\?\\): Boolean\" sample/kotlin`
 
 決定ログ:
@@ -89,7 +89,7 @@
 - 2026-03-01: `src/runtime/kotlin/pytra/py_runtime.kt` を `__pytra_*` 32 helper 実装入りの runtime 正本へ更新し、`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin_smoke.py' -v`（10件）で非退行を確認した（`P1-KOTLIN-RUNTIME-EXT-01-S2-01`）。
 - 2026-03-01: `transpile_to_kotlin_native()` から `_emit_runtime_helpers()` 呼び出しを撤去し、生成 `.kt` から helper 本体 inline 出力を停止した。`test_py2kotlin_smoke` の回帰で `fun __pytra_truthy` 非出力を固定した（`P1-KOTLIN-RUNTIME-EXT-01-S2-02`）。
 - 2026-03-01: `py2kotlin.py` に runtime コピー導線（`_copy_kotlin_runtime`）を追加し、出力先へ `py_runtime.kt` を同梱するよう変更した。`/tmp` 変換実測で runtime 同梱を確認した（`P1-KOTLIN-RUNTIME-EXT-01-S2-03`）。
-- 2026-03-01: `tools/check_py2kotlin_transpile.py` に Kotlin 未対応 fixture（Try/Yield/Swap）を expected fail として明示化し、`checked=129 ok=129 fail=0 skipped=10` を確認した。
+- 2026-03-01: `tools/check/check_py2kotlin_transpile.py` に Kotlin 未対応 fixture（Try/Yield/Swap）を expected fail として明示化し、`checked=129 ok=129 fail=0 skipped=10` を確認した。
 - 2026-03-01: Kotlin parity 導線を更新し、`runtime_parity_check.py` の Kotlin 実行で `py_runtime.kt` 同梱コンパイルと artifact no-op 方針を反映した。
 - 2026-03-01: Kotlin emitter の `dict.get(key, default)` を `map.get(key) ?: default` へ修正し、`Dict(entries)` 描画を追加して sample/18 の runtime 失敗（token map 空化）を解消した。
-- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin_smoke.py' -v`（12件）、`python3 tools/check_py2kotlin_transpile.py`、`python3 tools/runtime_parity_check.py --case-root sample --targets kotlin --all-samples --ignore-unstable-stdout`（18/18 pass）、`python3 tools/regenerate_samples.py --langs kotlin --force` を通過した。
+- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin_smoke.py' -v`（12件）、`python3 tools/check/check_py2kotlin_transpile.py`、`python3 tools/check/runtime_parity_check.py --case-root sample --targets kotlin --all-samples --ignore-unstable-stdout`（18/18 pass）、`python3 tools/gen/regenerate_samples.py --langs kotlin --force` を通過した。

@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 PY2X = ROOT / "src" / "pytra-cli.py"
 PROFILE_PATH = ROOT / "tools" / "check_py2x_profiles.json"
 USER_ERROR_RE = re.compile(r"__PYTRA_USER_ERROR__\|([^|]+)\|([^\r\n]+)")
@@ -337,7 +337,7 @@ def _run_east3_contract_preflight(profile: dict[str, object], *, skip: bool) -> 
             "unittest",
             "discover",
             "-s",
-            "test/unit",
+            "tools/unittest",
             "-p",
             "test_east2_to_east3_lowering.py",
         ],
@@ -347,7 +347,7 @@ def _run_east3_contract_preflight(profile: dict[str, object], *, skip: bool) -> 
             "unittest",
             "discover",
             "-s",
-            "test/unit",
+            "tools/unittest",
             "-p",
             "test_east3_cpp_bridge.py",
         ],

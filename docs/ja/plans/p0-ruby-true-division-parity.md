@@ -33,8 +33,8 @@
 
 確認コマンド:
 - `python3 -m unittest discover -s test/unit -p 'test_py2rb_smoke.py' -v`
-- `python3 tools/check_py2rb_transpile.py`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets ruby --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/check_py2rb_transpile.py`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby --all-samples --ignore-unstable-stdout`
 
 決定ログ:
 - 2026-02-27: `sample/05` 遅延要因分析の過程で `sample/06` Ruby 生成コードの `int/int` 除算意味差を確認。P0 として修正タスクを起票。

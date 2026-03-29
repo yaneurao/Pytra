@@ -20,11 +20,11 @@
 
 対象:
 - `src/runtime/cpp/native/core/py_runtime.h`
-- `tools/check_cpp_pyruntime_header_surface.py`
-- `test/unit/tooling/test_check_cpp_pyruntime_header_surface.py`
-- 必要に応じて `tools/check_cpp_pyruntime_contract_inventory.py`
-- 必要に応じて `test/unit/backends/cpp/test_cpp_runtime_iterable.py`
-- 必要に応じて `test/unit/backends/cpp/test_cpp_runtime_type_id.py`
+- `tools/check/check_cpp_pyruntime_header_surface.py`
+- `tools/unittest/tooling/test_check_cpp_pyruntime_header_surface.py`
+- 必要に応じて `tools/check/check_cpp_pyruntime_contract_inventory.py`
+- 必要に応じて `tools/unittest/emit/cpp/test_cpp_runtime_iterable.py`
+- 必要に応じて `tools/unittest/emit/cpp/test_cpp_runtime_type_id.py`
 
 非対象:
 - `py_runtime.h` の物理分割だけで行数を見かけ上減らすこと
@@ -44,14 +44,14 @@ end state:
 - `shared_type_id_compat`: `py_is_subtype` / `py_issubclass` / `py_runtime_type_id` / `py_isinstance` の thin compatibility だけを残す。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_cpp_pyruntime_header_surface.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_cpp_pyruntime_header_surface.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_type_id.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_cpp_pyruntime_header_surface.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_cpp_pyruntime_header_surface.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_iterable.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_type_id.py'`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_transpiler_version_gate.py`
-- `python3 tools/run_regen_on_version_bump.py --dry-run`
+- `python3 tools/check/check_transpiler_version_gate.py`
+- `python3 tools/run/run_regen_on_version_bump.py --dry-run`
 - `git diff --check`
 
 分解:

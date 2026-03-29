@@ -37,11 +37,11 @@
 - generated consumer module が imported class/type を type position でも namespace-qualified に render すること。
 - generated multi-file layout が imported class/type を current storage contract の範囲で compile できるだけの declaration / include contract を持つこと。
 - 既存の imported function / global symbol relative import smoke を壊さないこと。
-- `python3 tools/check_todo_priority.py`、focused C++ regression、`python3 tools/build_selfhost.py`、`git diff --check` が通ること。
+- `python3 tools/check/check_todo_priority.py`、focused C++ regression、`python3 tools/build_selfhost.py`、`git diff --check` が通ること。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/toolchain/emit/cpp -p 'test_py2cpp_features.py' -k relative_import`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k relative_import`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

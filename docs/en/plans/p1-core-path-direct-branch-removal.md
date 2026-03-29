@@ -21,7 +21,7 @@ Goal:
 In scope:
 - `src/pytra/compiler/east_parts/core.py`
 - `src/pytra/compiler/stdlib/signature_registry.py` (if needed)
-- `test/unit/test_east_core.py` (regression)
+- `tools/unittest/test_east_core.py` (regression)
 
 Out of scope:
 - Changing `Path` API spec
@@ -33,9 +33,9 @@ Acceptance criteria:
 - Existing regressions (`test_east_core.py`, `check_py2cpp_transpile.py`) pass without regression.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 -m unittest discover -s test/unit -p 'test_east_core.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 ## Breakdown
 
@@ -84,4 +84,4 @@ Decision log:
 - 2026-03-01: Removed direct branches `fn_name == "Path"` / `owner_t == "Path"` in `core.py`, and moved to resolver via `lookup_stdlib_imported_symbol_return_type` / `lookup_stdlib_imported_symbol_runtime_call` (`P1-CORE-PATH-SOT-01-S2-01`).
 - 2026-03-01: Moved `Path` method return-type inference to `lookup_stdlib_method_return_type`, and verified constructor inference and `BuiltinCall(runtime_call=Path)` retention for `from pathlib import Path as P` / `from pytra.std.pathlib import Path as PP` in `test_east_core.py` (`P1-CORE-PATH-SOT-01-S2-02`).
 - 2026-03-01: Added anti-reintroduction detection for direct `Path` branches and alias-import regressions to `test_east_core.py`, and passed `python3 -m unittest discover -s test/unit -p 'test_east_core.py' -v` (28 cases) (`P1-CORE-PATH-SOT-01-S3-01`).
-- 2026-03-01: Ran `python3 tools/check_py2cpp_transpile.py` and confirmed no regression with `checked=134 ok=134 fail=0 skipped=6` (`P1-CORE-PATH-SOT-01-S3-02`).
+- 2026-03-01: Ran `python3 tools/check/check_py2cpp_transpile.py` and confirmed no regression with `checked=134 ok=134 fail=0 skipped=6` (`P1-CORE-PATH-SOT-01-S3-02`).

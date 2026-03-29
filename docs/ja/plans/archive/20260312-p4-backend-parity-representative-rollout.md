@@ -34,9 +34,9 @@
 - 進捗は archived parity plan ではなく、この live plan に記録される。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_backend_parity_matrix_contract.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_backend_parity_matrix_contract.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_backend_parity_matrix_contract.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_backend_parity_matrix_contract.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 
@@ -51,7 +51,7 @@
 ## 固定 inventory / rollout order
 
 - 正本: [backend_parity_representative_rollout_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_representative_rollout_inventory.py)
-- checker: [check_backend_parity_representative_rollout_inventory.py](/workspace/Pytra/tools/check_backend_parity_representative_rollout_inventory.py)
+- checker: [check_backend_parity_representative_rollout_inventory.py](/workspace/Pytra/tools/check/check_backend_parity_representative_rollout_inventory.py)
 - current residual backend は空で、representative residual inventory は closed
 - fixed bundle order:
   - `cpp_locked_baseline`

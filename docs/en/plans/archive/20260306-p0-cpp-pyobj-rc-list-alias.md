@@ -35,9 +35,9 @@
   - `src/runtime/cpp/core/py_runtime.ext.h`
   - 必要に応じて `src/runtime/cpp/core/py_types.ext.h`
 - テスト:
-  - `test/unit/backends/cpp/test_py2cpp_list_pyobj_model.py`
-  - `test/unit/backends/cpp/test_py2cpp_codegen_issues.py`
-  - `test/unit/backends/cpp/test_cpp_runtime_*`
+  - `tools/unittest/emit/cpp/test_py2cpp_list_pyobj_model.py`
+  - `tools/unittest/emit/cpp/test_py2cpp_codegen_issues.py`
+  - `tools/unittest/emit/cpp/test_cpp_runtime_*`
 
 非対象:
 - `@extern` ABI 型の変更
@@ -97,7 +97,7 @@
 - 上記ケースの生成コードで alias 名が `object` ではなく `rc<list<int64>>` 相当の typed handle として出る。
 - `py_append/py_pop/py_len/py_slice` など主要 list 操作が `rc<list<T>>` 経路で成立する。
 - `@extern` 境界の ABI は `list<T>` のままで、`rc<>` が漏れない。
-- `tools/check_runtime_cpp_layout.py` と関連 unit が通る。
+- `tools/check/check_runtime_cpp_layout.py` と関連 unit が通る。
 
 ## リスクと対策
 
@@ -112,12 +112,12 @@
 
 ## 確認コマンド（予定）
 
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_runtime_cpp_layout.py`
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 test/unit/backends/cpp/test_py2cpp_list_pyobj_model.py`
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 test/unit/backends/cpp/test_cpp_runtime_boxing.py`
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 test/unit/backends/cpp/test_cpp_runtime_iterable.py`
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 test/unit/backends/cpp/test_cpp_runtime_type_id.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_runtime_cpp_layout.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 tools/unittest/emit/cpp/test_py2cpp_list_pyobj_model.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 tools/unittest/emit/cpp/test_cpp_runtime_boxing.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 tools/unittest/emit/cpp/test_cpp_runtime_iterable.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 tools/unittest/emit/cpp/test_cpp_runtime_type_id.py`
 
 ## 分解
 
@@ -147,7 +147,7 @@
 - 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-01`] `RcObject` を `PyObj` 専用から一般化し、`list<T>` を `pytra::gc::RcObject` 継承へ変更した。`py_types.ext.h` に `rc_list_new / rc_list_from_value / rc_list_ref / rc_list_copy_value` と `py_is_rc_list_handle` trait を追加し、typed handle を runtime の first-class な内部表現として扱える状態にした。
 - 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-02`] `py_runtime.ext.h` に `py_len / py_append / py_extend / py_pop / py_slice / py_at / py_set_at / py_clear / py_reverse / py_sort` の `rc<list<T>>` overload を追加した。これにより alias 用 typed handle でも list mutation / indexing / slicing を object boxing なしで呼べる。
 - 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-03`] `make_object(const rc<list<T>>&)` と `obj_to_rc_list<T>` / `obj_to_rc_list_or_raise`、`py_to<rc<list<T>>>` / `py_object_try_cast<rc<list<T>>>` を追加した。`rc<list<T>> -> object` は boxed copy、`object -> rc<list<T>>` は typed unbox copy とし、ABI ではなく backend 内部 adapter に留めた。
-- 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-01`] 検証として `test_cpp_runtime_boxing.py`, `test_cpp_runtime_iterable.py`, `test_cpp_runtime_type_id.py`, `test_py2cpp_list_pyobj_model.py`, `tools/check_runtime_cpp_layout.py` を実行し通過した。加えて ad-hoc の `rc<list<int64>>` smoke を `g++ -std=c++20` でコンパイル実行し、`len/append/extend/pop/set_at/object roundtrip` が成立することを確認した。
+- 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S2-01`] 検証として `test_cpp_runtime_boxing.py`, `test_cpp_runtime_iterable.py`, `test_cpp_runtime_type_id.py`, `test_py2cpp_list_pyobj_model.py`, `tools/check/check_runtime_cpp_layout.py` を実行し通過した。加えて ad-hoc の `rc<list<int64>>` smoke を `g++ -std=c++20` でコンパイル実行し、`len/append/extend/pop/set_at/object roundtrip` が成立することを確認した。
 - 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-01`] emitter の alias 名判定を `object` runtime list から分離し、alias 名だけ `rc<list<T>>` handle 経路へ切り替えた。`_uses_pyobj_runtime_list_expr()` は alias 名で false、`_uses_pyobj_rc_list_expr()` を追加して method/index path の dispatch を分離した。
 - 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-02`] `AnnAssign/Assign` の alias ターゲット宣言を `rc<list<T>>` に変更し、`b = a` は handle copy、list literal / empty list / list comprehension は `rc_list_from_value(...)` へ寄せた。`list_alias_shared_mutation.py` の生成結果は `rc<list<int64>> a = rc_list_from_value(list<int64>{1, 2}); rc<list<int64>> b = a;` となり、`make_object(...)` fallback が消えた。
 - 2026-03-06: [ID: `P0-CPP-PYOBJ-RCLIST-ALIAS-01-S3-03`] method call / subscript / len / slice / truthy の `rc<list<T>>` aware 描画を追加した。`ListAppend/ListExtend/ListPop/ListClear/ListReverse/ListSort` は alias handle なら `py_*` overload を呼び、subscript は `py_at(handle, ...)`、truthy/len compare fastpath は `.empty()` へ縮退せず `py_len(handle)` を使うようにした。ad-hoc case `a/b alias + append/pop/subscript/slice/truthy/reverse/sort` を C++ 変換・コンパイル・実行し `True` を確認した。

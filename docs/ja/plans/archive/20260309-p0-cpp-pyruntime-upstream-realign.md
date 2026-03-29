@@ -45,17 +45,17 @@
 - parser/EAST が `print` / `ord` / `chr` / `int(x, base)` を `pytra.core.py_runtime` へ固定束縛する経路が解消される。
 - `py_runtime.h` に残る helper は「core runtime に残す理由」を説明できるものに限定される。
 - representative C++ backend/runtime test と必要な parity が非退行で通る。
-- `tools/check_todo_priority.py` が通る。
+- `tools/check/check_todo_priority.py` が通る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `rg -n "#include <(cctype|filesystem|fstream|functional|regex|typeinfo)>" src/runtime/cpp/native/core/py_runtime.h`
 - `rg -n "\\burllib\\b|urlretrieve" src test sample`
 - `rg -n "py_bool_to_string|static inline int64 len\\(|static inline object getattr\\(" src/runtime/cpp/native/core/py_runtime.h`
 - `rg -n "pytra\\.core\\.py_runtime" src/toolchain/ir/core.py src/backends/cpp`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_*cpp*bridge*.py'`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_*cpp*bridge*.py'`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture`
 
 ## 優先順位の原則
 
@@ -197,4 +197,4 @@
 - 2026-03-09: `S2-02` として `py_runtime.h` から bare `len(const T&)` alias と generic `getattr(const object&, const str&, default)` を削除した。`PYTRA_TYPE_ID` probe は `east2_to_east3_lowering.py` で `getattr(any_like, "PYTRA_TYPE_ID", None)` を `ObjTypeId` boundary へ縮退し、checked-in `type_id.cpp` も `py_runtime_type_id(value)` を直接使う形に更新した。
 - 2026-03-09: `S3-01/S3-02` として parser/EAST binding の `print`, `ord`, `chr`, `int(x, base)` を `pytra.core.py_runtime` から切り離し、`pytra.built_in.io_ops` / `pytra.built_in.scalar_ops` へ移した。C++ runtime では dedicated lane として `src/runtime/cpp/native/built_in/io_ops.h`, `src/runtime/cpp/native/built_in/scalar_ops.h` を新設し、generated/shim header も同期した。
 - 2026-03-09: C++ include 収集は `body` だけでなく `main_guard_body` も走査するように修正した。これにより top-level `print(...)` の `runtime_module_id=pytra.built_in.io_ops` が `json_extended` の main guard でも `pytra/built_in/io_ops.h` へ反映される。
-- 2026-03-09: `S4-01` の確認は `test_py2cpp_features.py -k json`, `test_runtime_symbol_index.py`, `test_cpp_runtime_symbol_index_integration.py`, `test_cpp_runtime_boxing.py`, `tools/gen_runtime_symbol_index.py --check`, fixture parity `cases=3 pass=3 fail=0` を通した。`test_east_core.py` 全体には unrelated failure があるため、runtime binding の subset と representative C++ backend suiteで確認した。
+- 2026-03-09: `S4-01` の確認は `test_py2cpp_features.py -k json`, `test_runtime_symbol_index.py`, `test_cpp_runtime_symbol_index_integration.py`, `test_cpp_runtime_boxing.py`, `tools/gen/gen_runtime_symbol_index.py --check`, fixture parity `cases=3 pass=3 fail=0` を通した。`test_east_core.py` 全体には unrelated failure があるため、runtime binding の subset と representative C++ backend suiteで確認した。

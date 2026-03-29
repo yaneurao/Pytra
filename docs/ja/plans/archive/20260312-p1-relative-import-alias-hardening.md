@@ -38,11 +38,11 @@
 - spec / support matrix が alias representative case を明示し、実装済み contract と矛盾しない。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_relative_import_semantics.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_import_graph_issue_structure.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_py2x_cli.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k relative_import_alias`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_relative_import_semantics.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_import_graph_issue_structure.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_py2x_cli.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k relative_import_alias`
 - `git diff --check`
 
 決定ログ:

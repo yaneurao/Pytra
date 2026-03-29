@@ -33,8 +33,8 @@
 - 未完了項目は優先度順に順次実施します（最小 `P<number>` を最優先、同一優先度は上から先頭）。
 - `P0` が 1 件でも未完了なら、明示上書き指示なしで `P1` 以下へ着手してはいけません。
 - `docs/ja/todo/index.md` の進捗メモは 1 行要約に留め、詳細な判断・検証ログは文脈ファイル（`docs/ja/plans/*.md`）の `決定ログ` へ追記します。
-- 大きいタスクは文脈ファイルで `-S1` / `-S2` 形式の子タスクへ分割してよく、`tools/check_todo_priority.py` は最上位未完了 `ID` とその子 `ID` を許可します。
-- `docs/ja/todo/index.md` または `docs/ja/plans/*.md` に進捗ログを追加したターンでは、`python3 tools/check_todo_priority.py` を通過させます（`plans` 側は `決定ログ` の日付行のみが進捗判定対象）。
+- 大きいタスクは文脈ファイルで `-S1` / `-S2` 形式の子タスクへ分割してよく、`tools/check/check_todo_priority.py` は最上位未完了 `ID` とその子 `ID` を許可します。
+- `docs/ja/todo/index.md` または `docs/ja/plans/*.md` に進捗ログを追加したターンでは、`python3 tools/check/check_todo_priority.py` を通過させます（`plans` 側は `決定ログ` の日付行のみが進捗判定対象）。
 - 割り込み等で未コミット差分が残る場合は、同一 `ID` を完了させるか差分を戻してから別 `ID` へ移ります。
 - タスク完了時はチェック状態を更新します。
 
@@ -113,11 +113,11 @@
   - `sample/out/` は sample/py の出力見本（PNG/GIF/TXT）専用。それ以外の用途（変換結果、一時ファイル等）での出力は禁止。
   - `/tmp/` はシステム共有領域であり、掃除されずゴミが蓄積する。使用禁止。
   - `tempfile.TemporaryDirectory()` も `/tmp/` を使うため禁止。代わりに `work/tmp/` 配下にサブディレクトリを作成する。
-- `src/toolchain/emit/common/emitter/code_emitter.py` を変更した場合は `test/unit/common/test_code_emitter.py` を必ず実行し、共通ユーティリティ回帰を先に確認します。
-- `CodeEmitter` / `py2cpp` 系の変更では、最低限 `python3 tools/check_py2cpp_transpile.py` と `python3 tools/build_selfhost.py` の両方を通過させてからコミットします。
+- `src/toolchain/emit/common/emitter/code_emitter.py` を変更した場合は `tools/unittest/common/test_code_emitter.py` を必ず実行し、共通ユーティリティ回帰を先に確認します。
+- `CodeEmitter` / `py2cpp` 系の変更では、最低限 `python3 tools/check/check_py2cpp_transpile.py` と `python3 tools/build_selfhost.py` の両方を通過させてからコミットします。
 - 上記 2 コマンドのいずれかが失敗した状態でのコミットは禁止します。
-- 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/toolchain/emit/**`, `src/toolchain/emit/**/profiles/**`）を変更する場合は、`src/toolchain/misc/transpiler_versions.json` の対応バージョンを minor 以上で更新し、`python3 tools/check_transpiler_version_gate.py` を通過させます。
-- sample 再生成は `python3 tools/run_regen_on_version_bump.py --verify-cpp-on-diff` を使用し、バージョン更新で差分が出た C++ ケースを compile/run 検証します。
+- 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/toolchain/emit/**`, `src/toolchain/emit/**/profiles/**`）を変更する場合は、`src/toolchain/misc/transpiler_versions.json` の対応バージョンを minor 以上で更新し、`python3 tools/check/check_transpiler_version_gate.py` を通過させます。
+- sample 再生成は `python3 tools/run/run_regen_on_version_bump.py --verify-cpp-on-diff` を使用し、バージョン更新で差分が出た C++ ケースを compile/run 検証します。
 - アドホックな C++ コンパイル実験（デバッグ・調査目的）を行う場合は、ソースと成果物をリポジトリ直下ではなく `/tmp/` または `work/tmp/` 以下に置いて実行します（`tempfile.TemporaryDirectory()` パターンを参照）。
 - GCC ダンプフラグ（`-fdump-tree-all` 等）はカレントディレクトリに出力するため、リポジトリ直下では使用しません。使う場合は `-dumpdir /tmp/` を明示します。
 - コンパイルを伴う実験の後は `git status --short` でリポジトリ直下に意図しない生成物が残っていないことを確認します。
@@ -129,10 +129,10 @@
 - `#include "runtime/cpp/..."` は `work/selfhost/` 配下の同名ヘッダが優先解決される。`src/runtime/cpp` だけ更新しても selfhost ビルドは直らないことがある。
 - selfhost のビルドログは `stdout` 側に出ることがあるため、`> work/selfhost/build.all.log 2>&1` で統合取得する。
 - selfhost 対象コードでは、Python 専用表現が生成 C++ に漏れないことを確認する（例: `super().__init__`, Python 風継承表記）。
-- ランタイム変更時は `test/unit/toolchain/emit/cpp/test_py2cpp_features.py` の実行回帰に加え、selfhost の再生成・再コンパイル結果も確認する。
+- ランタイム変更時は `tools/unittest/emit/cpp/test_py2cpp_features.py` の実行回帰に加え、selfhost の再生成・再コンパイル結果も確認する。
 - selfhost 対象の Python コードでも、標準モジュールの直接 import は禁止し、`src/pytra/std/` の shim のみを使う（例: `pytra.std.json`, `pytra.std.pathlib`, `pytra.std.sys`, `pytra.std.os`, `pytra.std.glob`, `pytra.std.argparse`, `pytra.std.re`）。`typing` だけは注釈専用 no-op import として直接 import を許可する。
 - selfhost 向けに確実性を優先する箇所では、`continue` に依存した分岐や `x in {"a", "b"}` のようなリテラル集合 membership を避け、`if/elif` と明示比較（`x == "a" or x == "b"`）を優先する。
-- 日次の最小回帰は `python3 tools/run_local_ci.py` を実行し、`check_py2cpp_transpile` + unit tests + selfhost build + selfhost diff をまとめて通す。
+- 日次の最小回帰は `python3 tools/run/run_local_ci.py` を実行し、`check_py2cpp_transpile` + unit tests + selfhost build + selfhost diff をまとめて通す。
 
 ## 8. 対外リリース版バージョン運用
 

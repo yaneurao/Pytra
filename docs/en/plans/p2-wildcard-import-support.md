@@ -37,10 +37,10 @@ Acceptance criteria:
 - Existing import regressions (missing module / cycle / relative import) are not broken.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_features.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2rs_transpile.py`
 
 Decision log:
 - 2026-03-01: Based on user direction, filed P2 with policy to make `from ... import *` "officially supported + fail-closed when unresolved" instead of rejecting.

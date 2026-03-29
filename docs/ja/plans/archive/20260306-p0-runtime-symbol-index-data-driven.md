@@ -86,7 +86,7 @@
 ```json
 {
   "schema_version": 1,
-  "generated_by": "tools/gen_runtime_symbol_index.py",
+  "generated_by": "tools/gen/gen_runtime_symbol_index.py",
   "modules": {
     "pytra.built_in.iter_ops": {
       "source_py": "src/pytra/built_in/iter_ops.py",
@@ -150,7 +150,7 @@
 | backend(C++) | `src/backends/cpp/emitter/runtime_paths.py` | `module_tail -> *.gen.h`、`module_name -> runtime/cpp/...` 変換 | C++ path 規則の中心実装としては妥当だが、symbol 所属決定まで抱えると責務過多 | 「module -> target artifact」の導出専用に縮退 |
 | backend(C++) | `src/backends/cpp/profiles/runtime_calls.json` | `os.path.join`, `glob.glob`, `ArgumentParser`, `re.sub`, `sys.stdout.write` などの C++ 呼び先 | symbol 所属と最終描画名が混在。index 不在だと ad-hoc fallback の温床になる | 当面は C++ 描画名テーブルとして維持しつつ、所属 module は IR + index へ分離 |
 | tooling | `tools/build_multi_cpp.py` | manifest 内 source を起点に runtime source を再帰収集 | include から `.gen/.ext` companion を再構成するが、module/symbol 単位では見ていない | index を参照して module 単位で必要 artifact を導出 |
-| tooling | `tools/gen_makefile_from_manifest.py` | manifest から runtime source を再収集 | build graph が include 依存の推測に寄る | index + manifest module 情報で compile source を決定 |
+| tooling | `tools/gen/gen_makefile_from_manifest.py` | manifest から runtime source を再収集 | build graph が include 依存の推測に寄る | index + manifest module 情報で compile source を決定 |
 
 ### 2. 何をどこへ残すか
 
@@ -194,7 +194,7 @@
 ```json
 {
   "schema_version": 1,
-  "generated_by": "tools/gen_runtime_symbol_index.py",
+  "generated_by": "tools/gen/gen_runtime_symbol_index.py",
   "modules": {
     "pytra.built_in.iter_ops": {
       "source_py": "src/pytra/built_in/iter_ops.py",
@@ -283,7 +283,7 @@
 - `src/backends/cpp/emitter/module.py`
 - `src/backends/cpp/emitter/runtime_paths.py`
 - `tools/build_multi_cpp.py`
-- `tools/gen_makefile_from_manifest.py`
+- `tools/gen/gen_makefile_from_manifest.py`
 
 この段階で残す成果:
 - `work/logs/...` などへ棚卸しメモを残す。
@@ -311,7 +311,7 @@
 ### Step 3: generator 実装
 
 やること:
-- 新規 `tools/gen_runtime_symbol_index.py` のような generator を作る。
+- 新規 `tools/gen/gen_runtime_symbol_index.py` のような generator を作る。
 - 入力は SoT:
   - `src/pytra/built_in/*.py`
   - `src/pytra/std/*.py`
@@ -360,12 +360,12 @@
 - representative regression を通す。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/gen_runtime_symbol_index.py --check`
-- `python3 -m unittest discover -s test/unit/tooling -p 'test_runtime_symbol_index*.py'`
-- `python3 -m unittest discover -s test/unit/backends/cpp -p test_*.py`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/gen/gen_runtime_symbol_index.py --check`
+- `python3 -m unittest discover -s tools/unittest/tooling -p 'test_runtime_symbol_index*.py'`
+- `python3 -m unittest discover -s tools/unittest/emit/cpp -p test_*.py`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
 
 ### 非C++ backend への適用方針（S5-01 固定）
 
@@ -380,9 +380,9 @@
 - 2026-03-06: 本計画では「IR に埋めるのは target 非依存情報のみ」「target 別 file path は index + backend が導出」とする。
 - 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S1-01`] 直書き箇所の棚卸しを行い、`core.py` は裸 `runtime_call`、`signature_registry.py` は runtime symbol 対応、C++ backend (`module.py`, `runtime_paths.py`, `runtime_calls.json`) は module/file/namespace 推定、tooling (`build_multi_cpp.py`, `gen_makefile_from_manifest.py`) は include 起点の runtime source 再収集を担っていると固定した。役割分担は「IR=module+symbol」「index=artifact+companion」「backend/tooling=描画と build graph 導出」とする。
 - 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S1-02`] index schema は `modules` と `targets` を分離し、target 非依存の symbol 所属と target 別 artifact 情報を分ける形で固定した。`public_headers` / `compile_sources` / `companions` を最小集合とし、path を IR へ埋めないことを明文化した。
-- 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S2-01`] `tools/gen_runtime_symbol_index.py` を追加し、`src/pytra/{built_in,std,utils}` と modern runtime layout (`src/runtime/<lang>/{core,built_in,std,utils}`) を走査して `tools/runtime_symbol_index.json` を生成できるようにした。第1段階では modern layout を持つ target のみ artifact を index 化し、legacy runtime layout は index 対象外とする。
-- 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S2-02`] representative case を `test/unit/tooling/test_runtime_symbol_index.py` で固定し、`py_enumerate_object`, `py_any`, `py_strip`, `perf_counter`, `write_rgb_png`, `Path` の module/symbol/artifact/companion を検証するようにした。
-- 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S2-03`] generator に `--check` を追加し、`tools/run_local_ci.py` へ組み込んだ。stale index は fail-fast とする。
+- 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S2-01`] `tools/gen/gen_runtime_symbol_index.py` を追加し、`src/pytra/{built_in,std,utils}` と modern runtime layout (`src/runtime/<lang>/{core,built_in,std,utils}`) を走査して `tools/runtime_symbol_index.json` を生成できるようにした。第1段階では modern layout を持つ target のみ artifact を index 化し、legacy runtime layout は index 対象外とする。
+- 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S2-02`] representative case を `tools/unittest/tooling/test_runtime_symbol_index.py` で固定し、`py_enumerate_object`, `py_any`, `py_strip`, `perf_counter`, `write_rgb_png`, `Path` の module/symbol/artifact/companion を検証するようにした。
+- 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S2-03`] generator に `--check` を追加し、`tools/run/run_local_ci.py` へ組み込んだ。stale index は fail-fast とする。
 - 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S3-01`] EAST3 の `BuiltinCall` へ `runtime_module_id` と `runtime_symbol` を併置した。第1段階では `runtime_call` は互換のため維持しつつ、`perf_counter -> pytra.std.time/perf_counter`, `enumerate -> pytra.built_in.iter_ops/enumerate`, `any -> pytra.built_in.predicates/any`, `dict.get -> pytra.core.dict/dict.get`, `Path.exists -> pytra.std.pathlib/Path.exists` のような target 非依存表現を持たせる。`test_east_core.py` は既存の `toolchain.compiler.east_parts` import 破綻で直接は起動できないため、同一 API を使う ad-hoc 実行で実値を確認した。
 - 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S3-02`] import 解決済み symbol にも `runtime_module_id` / `runtime_symbol` を埋めるよう拡張した。`from pytra.std import json` の `json.loads`、`from pytra.utils import png` の `png.write_rgb_png`、`import math` の `math.sin` / `math.pi` について、Call/Attribute の両ノードに module/symbol が付与されることを ad-hoc 実行で確認した。
 - 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S3-03`] `signature_registry.py` に `runtime/cpp`, `*.gen.*`, `*.ext.*`, `src/runtime` といった artifact path 推定責務が再混入しないことを `test_stdlib_signature_registry.py` で固定した。現段階では runtime symbol / 型 / owner-method 契約は残すが、file path 推定責務は generator + index 側へ完全に分離した状態を回帰で保証する。
@@ -390,4 +390,4 @@
 - 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S4-02`] `tools/cpp_runtime_deps.py` に index 逆引きを追加し、`build_multi_cpp.py` / `gen_makefile_from_manifest.py` の runtime companion 導出を `runtime_symbol_index.json` ベースへ寄せた。forwarder header から `math.ext.cpp` を引く既存テスト (`test_cpp_runtime_build_graph.py`) は通過した。
 - 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S4-03`] C++ emitter の `BuiltinCall` dispatch と imported symbol call 描画で、`runtime_call` 文字列のみに依存せず `runtime_module_id/runtime_symbol` を優先するようにした。対象は `py_enumerate` / `py_any` / `py_all` / `py_strip` 系 / `dict.get` 系 / `perf_counter` / `Path` で、IR に binding が載っていることと C++ 出力が namespaced call へ落ちることを `test_cpp_runtime_symbol_index_integration.py` で固定した。
 - 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S5-01` / `-S5-02`] 非C++ backend へも `runtime_module_id + runtime_symbol + runtime_symbol_index` を唯一の所属決定経路として適用する方針を本計画と `docs/ja/spec/{spec-runtime.md,spec-east.md}` へ明記した。target 固有 import/file path は backend が導出してよいが、module 所属対応を backend ごとの手書き table として再導入してはならない。
-- 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S5-03`] representative regression として `tools/gen_runtime_symbol_index.py --check`、`test_runtime_symbol_index.py`、`test_cpp_runtime_build_graph.py`、`test_cpp_runtime_symbol_index_integration.py`、`tools/runtime_parity_check.py --targets cpp --case-root fixture` を実行し、C++ include 解決・runtime build graph・import resolution・fixture parity が index 前提で通ることを確認した。`math_extended/pathlib_extended/inheritance_virtual_dispatch_multilang` はすべて `pass`。
+- 2026-03-06: [ID: `P0-RUNTIME-SYMBOL-INDEX-01-S5-03`] representative regression として `tools/gen/gen_runtime_symbol_index.py --check`、`test_runtime_symbol_index.py`、`test_cpp_runtime_build_graph.py`、`test_cpp_runtime_symbol_index_integration.py`、`tools/check/runtime_parity_check.py --targets cpp --case-root fixture` を実行し、C++ include 解決・runtime build graph・import resolution・fixture parity が index 前提で通ることを確認した。`math_extended/pathlib_extended/inheritance_virtual_dispatch_multilang` はすべて `pass`。

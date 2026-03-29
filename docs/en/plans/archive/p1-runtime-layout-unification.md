@@ -28,8 +28,8 @@ Acceptance criteria:
 - New runtime additions directly under `src/*_module/` stop
 
 Validation commands:
-- `python3 tools/check_py2cpp_transpile.py`
-- Language smoke tests (`test/unit/test_py2*_smoke.py`)
+- `python3 tools/check/check_py2cpp_transpile.py`
+- Language smoke tests (`tools/unittest/test_py2*_smoke.py`)
 
 `P1-RUNTIME-04` migration plan (non-Rust):
 
@@ -44,7 +44,7 @@ Validation commands:
 2. Migration steps:
    - Step A: create `src/runtime/<lang>/pytra/` skeletons, place copied files with minimal-diff updates that preserve import/namespace behavior.
    - Step B: switch runtime resolution in each `py2<lang>.py` / hook to prefer the new layout (old layout remains compatibility fallback).
-   - Step C: pass language-level smoke checks (`tools/check_py2<lang>_transpile.py`, `test/unit/test_py2<lang>_smoke.py`) and remove old-layout references gradually.
+   - Step C: pass language-level smoke checks (`tools/check/check_py2<lang>_transpile.py`, `tools/unittest/test_py2<lang>_smoke.py`) and remove old-layout references gradually.
    - Step D: after compatibility window, remove runtime bodies from `src/*_module/`, keeping relocation guidance only if needed.
 3. Completion conditions:
    - Runtime bodies for non-Rust languages are also under `src/runtime/<lang>/pytra/`.

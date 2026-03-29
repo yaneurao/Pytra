@@ -34,12 +34,12 @@
 - target backend の representative smoke が `from .helper import *` または `from ..helper import *` を transpile success すること。
 - duplicate binding / unresolved wildcard / root escape は引き続き fail-closed すること。
 - 既存の non-wildcard relative import smoke を壊さないこと。
-- `python3 tools/check_todo_priority.py`、focused backend smoke、`python3 tools/build_selfhost.py`、`git diff --check` が通ること。
+- `python3 tools/check/check_todo_priority.py`、focused backend smoke、`python3 tools/build_selfhost.py`、`git diff --check` が通ること。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_relative_wildcard_import_native_rollout_contract.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_wildcard_import_native_rollout_contract.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_relative_wildcard_import_native_rollout_contract.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_wildcard_import_native_rollout_contract.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

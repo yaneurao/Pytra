@@ -44,10 +44,10 @@ This page is the canonical publish target for feature × backend support-state r
 
 ## Tooling Export
 
-- matrix manifest: [export_backend_parity_matrix_manifest.py](/workspace/Pytra/tools/export_backend_parity_matrix_manifest.py)
-- conformance summary manifest: [export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/export_backend_conformance_summary_handoff_manifest.py)
-- parity review manifest: [export_backend_parity_review_manifest.py](/workspace/Pytra/tools/export_backend_parity_review_manifest.py)
-- handoff manifest: [export_backend_parity_handoff_manifest.py](/workspace/Pytra/tools/export_backend_parity_handoff_manifest.py)
+- matrix manifest: [export_backend_parity_matrix_manifest.py](/workspace/Pytra/tools/gen/export_backend_parity_matrix_manifest.py)
+- conformance summary manifest: [export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/gen/export_backend_conformance_summary_handoff_manifest.py)
+- parity review manifest: [export_backend_parity_review_manifest.py](/workspace/Pytra/tools/gen/export_backend_parity_review_manifest.py)
+- handoff manifest: [export_backend_parity_handoff_manifest.py](/workspace/Pytra/tools/gen/export_backend_parity_handoff_manifest.py)
 
 ## Representative Seed Matrix
 
@@ -86,14 +86,14 @@ This page is the canonical publish target for feature × backend support-state r
 
 ## Current Relative-Import Coverage
 
-- The current relative-import coverage baseline is published canonically through [relative_import_backend_coverage.py](/workspace/Pytra/src/toolchain/compiler/relative_import_backend_coverage.py) and [check_relative_import_backend_coverage.py](/workspace/Pytra/tools/check_relative_import_backend_coverage.py).
+- The current relative-import coverage baseline is published canonically through [relative_import_backend_coverage.py](/workspace/Pytra/src/toolchain/compiler/relative_import_backend_coverage.py) and [check_relative_import_backend_coverage.py](/workspace/Pytra/tools/check/check_relative_import_backend_coverage.py).
 - Today `cpp` is `build_run_locked`, while `rs/cs/go/java/js/kotlin/lua/nim/php/ruby/scala/swift/ts` are `transpile_smoke_locked`. The evidence lane stays fixed as direct native-emitter function-body transpile smoke for `go/nim/swift`, as `package_project_transpile` for the JVM package bundle on `java/kotlin/scala`, and as the representative relative-import alias-rewrite lane for `lua/php/ruby`.
 - This section is a verification-coverage handoff, not a support claim. Even after representative smoke is locked, non-C++ lanes do not become fully supported automatically.
 - The historical handoff for ordinary relative imports lives in [20260312-p1-relative-import-longtail-support-implementation.md](../plans/archive/20260312-p1-relative-import-longtail-support-implementation.md): the bundle order stays fixed as `locked_js_ts_smoke_bundle -> native_path_bundle -> jvm_package_bundle`, with `java/kotlin/scala` archived as the JVM bundle and `lua/php/ruby` archived as the long-tail representative lane under the `transpile_smoke_locked` baseline.
 
 ## Current Relative-Wildcard-Import Coverage
 
-- The final handoff for relative wildcard imports is published canonically through [relative_wildcard_import_native_rollout_contract.py](/workspace/Pytra/src/toolchain/compiler/relative_wildcard_import_native_rollout_contract.py) and [check_relative_wildcard_import_native_rollout_contract.py](/workspace/Pytra/tools/check_relative_wildcard_import_native_rollout_contract.py).
+- The final handoff for relative wildcard imports is published canonically through [relative_wildcard_import_native_rollout_contract.py](/workspace/Pytra/src/toolchain/compiler/relative_wildcard_import_native_rollout_contract.py) and [check_relative_wildcard_import_native_rollout_contract.py](/workspace/Pytra/tools/check/check_relative_wildcard_import_native_rollout_contract.py).
 - `cpp` keeps the representative `from .helper import *` lane fixed at `build_run_locked + multi_file_build_run`, while non-C++ native backends lock `go/java/kotlin/lua/nim/php/ruby/scala/swift` at `transpile_smoke_locked + module_graph_bundle_transpile` on the representative module-graph bundle. The focused smoke lanes stay fixed as `go_relative_wildcard_import_rollout_smoke` / `java_relative_wildcard_import_rollout_smoke` / `kotlin_relative_wildcard_import_rollout_smoke` / `lua_relative_wildcard_import_rollout_smoke` / `nim_relative_wildcard_import_rollout_smoke` / `php_relative_wildcard_import_rollout_smoke` / `ruby_relative_wildcard_import_rollout_smoke` / `scala_relative_wildcard_import_rollout_smoke` / `swift_relative_wildcard_import_rollout_smoke`.
 - The rollout bundle order is archived as `native_path_bundle -> jvm_package_bundle -> longtail_native_bundle`, while the single-file `load_east3_document(...)` direct lane and unresolved / duplicate / root-escape wildcard cases remain `backend_specific_fail_closed`.
 - This section is also a verification-coverage handoff rather than a support claim, and it does not promote the out-of-scope `rs/cs/js/ts` backends to full support.

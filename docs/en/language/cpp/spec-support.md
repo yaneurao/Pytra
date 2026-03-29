@@ -23,60 +23,60 @@ This document summarizes language-feature support status in `src/py2cpp.py` at a
 
 | Feature | Status | Current State | Evidence |
 |---|---|---|---|
-| `enumerate(xs)` | supported | Supported. | `src/py2cpp.py:3304`, `test/unit/test_py2cpp_features.py:1441`, `test/fixtures/strings/enumerate_basic.py:7` |
-| `enumerate(xs, 1)` / `enumerate(xs, start)` | supported | Supported with second argument. `start` is converted to `int64`. | `src/py2cpp.py:3306`, `test/fixtures/strings/enumerate_basic.py:17`, `test/fixtures/strings/enumerate_basic.py:21`, `test/unit/test_py2cpp_features.py:1441` |
-| Basic `lambda` (0/1/multi args) | supported | Supported. | `src/py2cpp.py:4296`, `test/unit/test_py2cpp_features.py:1259`, `test/fixtures/core/lambda_basic.py:8` |
-| Outer-variable capture in `lambda` | supported | Supported (`[&]` capture). | `src/py2cpp.py:4303`, `test/unit/test_py2cpp_features.py:1337`, `test/fixtures/core/lambda_capture_multiargs.py:7` |
-| Passing `lambda` as argument | supported | Supported. | `test/unit/test_py2cpp_features.py:1349`, `test/fixtures/core/lambda_as_arg.py:10` |
-| Immediate `lambda` call | supported | Supported. | `test/unit/test_py2cpp_features.py:1355`, `test/fixtures/core/lambda_immediate.py:5` |
-| Ternary inside `lambda` | supported | Supported. | `test/unit/test_py2cpp_features.py:1331`, `test/fixtures/core/lambda_ifexp.py:6` |
-| `x if cond else y` (IfExp) | supported | Supported. | `src/py2cpp.py:3911`, `test/unit/test_py2cpp_features.py:964` |
-| `list` comprehension | partial | Supported, but assumes a single generator. | `src/py2cpp.py:4304`, `src/py2cpp.py:4306`, `test/unit/test_py2cpp_features.py:1253`, `test/unit/test_py2cpp_features.py:1325` |
-| `set` comprehension | partial | Supported, but assumes a single generator. | `src/py2cpp.py:4381`, `src/py2cpp.py:4383`, `test/unit/test_py2cpp_features.py:1307`, `test/fixtures/collections/comprehension_dict_set.py:6` |
-| `dict` comprehension | partial | Supported, but assumes a single generator. | `src/py2cpp.py:4436`, `src/py2cpp.py:4438`, `test/unit/test_py2cpp_features.py:1307`, `test/fixtures/collections/comprehension_dict_set.py:7` |
-| `if` condition in comprehension | supported | Supported. | `test/unit/test_py2cpp_features.py:1253`, `test/unit/test_py2cpp_features.py:1301`, `test/fixtures/collections/comprehension_filter.py:7` |
-| `range(start, stop, step)` in comprehension | supported | Supported. | `test/unit/test_py2cpp_features.py:1325`, `test/fixtures/collections/comprehension_range_step.py:6` |
-| Nested comprehension (comprehension inside comprehension) | supported | Supported. | `test/unit/test_py2cpp_features.py:1295`, `test/fixtures/collections/comprehension_nested.py:6` |
-| `str` slice | supported | Supported. | `test/unit/test_py2cpp_features.py:1435`, `test/fixtures/strings/str_slice.py:1` |
-| for-each over string | supported | Supported. | `test/unit/test_py2cpp_features.py:1429`, `test/fixtures/strings/str_for_each.py:1` |
-| Basic `bytes` / `bytearray` operations | supported | Supported, including representative `bytes` truthiness (`if payload`, `while payload`, `x if payload else y`). The representative `bytearray` truthiness lane remains a separate follow-up task. | `test/unit/toolchain/emit/cpp/test_py2cpp_features.py`, `test/unit/toolchain/emit/cpp/test_east3_cpp_bridge.py`, `test/fixtures/typing/bytes_basic.py:1`, `test/fixtures/typing/bytes_truthiness.py:1`, `test/fixtures/typing/bytearray_basic.py:1` |
+| `enumerate(xs)` | supported | Supported. | `src/py2cpp.py:3304`, `tools/unittest/test_py2cpp_features.py:1441`, `test/fixtures/strings/enumerate_basic.py:7` |
+| `enumerate(xs, 1)` / `enumerate(xs, start)` | supported | Supported with second argument. `start` is converted to `int64`. | `src/py2cpp.py:3306`, `test/fixtures/strings/enumerate_basic.py:17`, `test/fixtures/strings/enumerate_basic.py:21`, `tools/unittest/test_py2cpp_features.py:1441` |
+| Basic `lambda` (0/1/multi args) | supported | Supported. | `src/py2cpp.py:4296`, `tools/unittest/test_py2cpp_features.py:1259`, `test/fixtures/core/lambda_basic.py:8` |
+| Outer-variable capture in `lambda` | supported | Supported (`[&]` capture). | `src/py2cpp.py:4303`, `tools/unittest/test_py2cpp_features.py:1337`, `test/fixtures/core/lambda_capture_multiargs.py:7` |
+| Passing `lambda` as argument | supported | Supported. | `tools/unittest/test_py2cpp_features.py:1349`, `test/fixtures/core/lambda_as_arg.py:10` |
+| Immediate `lambda` call | supported | Supported. | `tools/unittest/test_py2cpp_features.py:1355`, `test/fixtures/core/lambda_immediate.py:5` |
+| Ternary inside `lambda` | supported | Supported. | `tools/unittest/test_py2cpp_features.py:1331`, `test/fixtures/core/lambda_ifexp.py:6` |
+| `x if cond else y` (IfExp) | supported | Supported. | `src/py2cpp.py:3911`, `tools/unittest/test_py2cpp_features.py:964` |
+| `list` comprehension | partial | Supported, but assumes a single generator. | `src/py2cpp.py:4304`, `src/py2cpp.py:4306`, `tools/unittest/test_py2cpp_features.py:1253`, `tools/unittest/test_py2cpp_features.py:1325` |
+| `set` comprehension | partial | Supported, but assumes a single generator. | `src/py2cpp.py:4381`, `src/py2cpp.py:4383`, `tools/unittest/test_py2cpp_features.py:1307`, `test/fixtures/collections/comprehension_dict_set.py:6` |
+| `dict` comprehension | partial | Supported, but assumes a single generator. | `src/py2cpp.py:4436`, `src/py2cpp.py:4438`, `tools/unittest/test_py2cpp_features.py:1307`, `test/fixtures/collections/comprehension_dict_set.py:7` |
+| `if` condition in comprehension | supported | Supported. | `tools/unittest/test_py2cpp_features.py:1253`, `tools/unittest/test_py2cpp_features.py:1301`, `test/fixtures/collections/comprehension_filter.py:7` |
+| `range(start, stop, step)` in comprehension | supported | Supported. | `tools/unittest/test_py2cpp_features.py:1325`, `test/fixtures/collections/comprehension_range_step.py:6` |
+| Nested comprehension (comprehension inside comprehension) | supported | Supported. | `tools/unittest/test_py2cpp_features.py:1295`, `test/fixtures/collections/comprehension_nested.py:6` |
+| `str` slice | supported | Supported. | `tools/unittest/test_py2cpp_features.py:1435`, `test/fixtures/strings/str_slice.py:1` |
+| for-each over string | supported | Supported. | `tools/unittest/test_py2cpp_features.py:1429`, `test/fixtures/strings/str_for_each.py:1` |
+| Basic `bytes` / `bytearray` operations | supported | Supported, including representative `bytes` truthiness (`if payload`, `while payload`, `x if payload else y`). The representative `bytearray` truthiness lane remains a separate follow-up task. | `tools/unittest/emit/cpp/test_py2cpp_features.py`, `tools/unittest/emit/cpp/test_east3_cpp_bridge.py`, `test/fixtures/typing/bytes_basic.py:1`, `test/fixtures/typing/bytes_truthiness.py:1`, `test/fixtures/typing/bytearray_basic.py:1` |
 
 ## import / Module Resolution
 
 | Feature | Status | Current State | Evidence |
 |---|---|---|---|
-| `import M` | supported | Supported. | `test/unit/test_py2cpp_features.py:1385`, `test/fixtures/imports/import_math_module.py:3` |
-| `import M as A` | supported | Supported. | `test/unit/test_py2cpp_features.py:259`, `test/fixtures/imports/import_pytra_runtime_png.py:3` |
-| `from M import S` | supported | Supported. | `test/unit/test_py2cpp_features.py:242`, `test/unit/test_py2cpp_features.py:1283`, `test/fixtures/imports/from_import_symbols.py:3` |
-| `from M import S as A` | supported | Supported. | `test/unit/test_py2cpp_features.py:1283`, `test/fixtures/imports/from_import_symbols.py:3` |
-| Circular import detection | unsupported | Detects and stops with `input_invalid(kind=import_cycle)`. | `src/py2cpp.py:5734`, `test/unit/test_py2cpp_features.py:567` |
-| Relative import (`from .m import x`) | supported | Sibling and parent relative `from-import` are supported. Aliased forms such as `from .. import helper as h` and `from ..helper import f as g` are locked by representative regression, and a sibling relative symbol-list import such as `from .controller import (BUTTON_A, BUTTON_B)` is now locked across the parser regression, representative CLI regression, and multi-file build/run regression. Imported module-level functions and globals are emitted as namespace-qualified names with forward declarations. Root-escape cases that climb above the entry root stay fail-closed with `input_invalid(kind=relative_import_escape)`. | `test/unit/tooling/test_py2x_cli.py`, `test/unit/common/test_import_graph_issue_structure.py`, `test/unit/toolchain/emit/cpp/test_py2cpp_features.py` |
-| `from M import *` | partial | Wildcard imports work only when exported symbols can be resolved statically. Unresolved wildcard imports stay fail-closed with `input_invalid(kind=unresolved_wildcard)`. | `test/unit/toolchain/emit/cpp/test_py2cpp_features.py:720`, `test/unit/toolchain/emit/cpp/test_py2cpp_features.py:2328`, `test/unit/toolchain/emit/cpp/test_py2cpp_features.py:2498` |
-| Unresolved module import | unsupported | `input_invalid(kind=missing_module)`. | `test/unit/test_py2cpp_features.py:544` |
-| Duplicate import binding | unsupported | `input_invalid(kind=duplicate_binding)`. | `test/unit/test_py2cpp_features.py:645`, `test/unit/test_py2cpp_features.py:675` |
-| Referencing `M.T` after `from M import S` | unsupported | Treated as `input_invalid(kind=missing_symbol)`. | `test/unit/test_py2cpp_features.py:732` |
+| `import M` | supported | Supported. | `tools/unittest/test_py2cpp_features.py:1385`, `test/fixtures/imports/import_math_module.py:3` |
+| `import M as A` | supported | Supported. | `tools/unittest/test_py2cpp_features.py:259`, `test/fixtures/imports/import_pytra_runtime_png.py:3` |
+| `from M import S` | supported | Supported. | `tools/unittest/test_py2cpp_features.py:242`, `tools/unittest/test_py2cpp_features.py:1283`, `test/fixtures/imports/from_import_symbols.py:3` |
+| `from M import S as A` | supported | Supported. | `tools/unittest/test_py2cpp_features.py:1283`, `test/fixtures/imports/from_import_symbols.py:3` |
+| Circular import detection | unsupported | Detects and stops with `input_invalid(kind=import_cycle)`. | `src/py2cpp.py:5734`, `tools/unittest/test_py2cpp_features.py:567` |
+| Relative import (`from .m import x`) | supported | Sibling and parent relative `from-import` are supported. Aliased forms such as `from .. import helper as h` and `from ..helper import f as g` are locked by representative regression, and a sibling relative symbol-list import such as `from .controller import (BUTTON_A, BUTTON_B)` is now locked across the parser regression, representative CLI regression, and multi-file build/run regression. Imported module-level functions and globals are emitted as namespace-qualified names with forward declarations. Root-escape cases that climb above the entry root stay fail-closed with `input_invalid(kind=relative_import_escape)`. | `tools/unittest/tooling/test_py2x_cli.py`, `tools/unittest/common/test_import_graph_issue_structure.py`, `tools/unittest/emit/cpp/test_py2cpp_features.py` |
+| `from M import *` | partial | Wildcard imports work only when exported symbols can be resolved statically. Unresolved wildcard imports stay fail-closed with `input_invalid(kind=unresolved_wildcard)`. | `tools/unittest/emit/cpp/test_py2cpp_features.py:720`, `tools/unittest/emit/cpp/test_py2cpp_features.py:2328`, `tools/unittest/emit/cpp/test_py2cpp_features.py:2498` |
+| Unresolved module import | unsupported | `input_invalid(kind=missing_module)`. | `tools/unittest/test_py2cpp_features.py:544` |
+| Duplicate import binding | unsupported | `input_invalid(kind=duplicate_binding)`. | `tools/unittest/test_py2cpp_features.py:645`, `tools/unittest/test_py2cpp_features.py:675` |
+| Referencing `M.T` after `from M import S` | unsupported | Treated as `input_invalid(kind=missing_symbol)`. | `tools/unittest/test_py2cpp_features.py:732` |
 
 ## OOP / Types / Runtime
 
 | Feature | Status | Current State | Evidence |
 |---|---|---|---|
-| `super().__init__()` | supported | Supported. | `test/unit/test_py2cpp_features.py:1379`, `test/fixtures/oop/super_init.py:1` |
-| `@dataclass` | supported | Supported. The representative static subset is compile-smoked through `field(default=...)`, `field(default_factory=deque)`, `field(default_factory=Child)` on `rc<Child>`, plus the Pytra-NES representative multi-file package that uses `timestamps: deque[float] = field(init=False, repr=False)`. Arbitrary callable `default_factory` and full Python dataclasses compatibility remain out of scope. | `test/unit/test_py2cpp_features.py:1519`, `test/unit/toolchain/emit/cpp/test_py2cpp_features.py`, `test/unit/ir/test_east_core_parser_behavior_classes.py`, `test/fixtures/stdlib/dataclasses_extended.py:1` |
-| `collections.deque[T]` (representative lane) | partial | The C++ type lowering for `deque[T]` is locked to `::std::deque<T>`, and the representative lane is now build/run-smoked through the dataclass field subset (`init=False` zero-arg construction and `default_factory=deque`), the expression/method subset `copy()` / `index(value)`, and the Pytra-NES multi-file package surface `append()` / `popleft()` / `len(...)`. Full `deque` API compatibility, the `index()` slice overload family, and plain local inference (`r = q.copy()`) remain out of scope. | `src/toolchain/emit/cpp/emitter/type_bridge.py`, `src/toolchain/emit/cpp/emitter/header_builder.py`, `src/runtime/cpp/native/core/py_types.h`, `test/unit/toolchain/emit/cpp/test_py2cpp_features.py` |
-| `str(Path(...))` (representative lane) | supported | In the representative C++ lane, `Path` stringify lowers through `path.__str__()` and no longer falls back to generic `py_to_string(T)`. This is locked with compile/run smoke. | `test/unit/toolchain/emit/cpp/test_py2cpp_features.py`, `test/unit/toolchain/emit/cpp/test_cpp_runtime_iterable.py`, `test/fixtures/stdlib/path_stringify.py:1` |
-| nominal ADT v1 (`@sealed` family / variant ctor / `isinstance` + projection) | supported | The representative v1 surface reuses the existing class lane. `@sealed` families, top-level variants, payload `@dataclass`, variant constructors, `isinstance` checks, and projection all transpile. | `test/unit/toolchain/emit/cpp/test_py2cpp_codegen_issues.py:1339`, `test/unit/toolchain/emit/cpp/test_east3_cpp_bridge.py:188` |
-| nominal ADT `Match` (representative EAST3 lane) | partial | The `NominalAdtMatch` lane lowers to an `if / else if` chain. The source `match/case` parser surface is still staged, and plain `Match` remains fail-closed. | `test/unit/toolchain/emit/cpp/test_east3_cpp_bridge.py:195`, `test/unit/toolchain/emit/cpp/test_noncpp_east3_contract_guard.py:225` |
-| `Enum` / `IntEnum` / `IntFlag` | supported | Supported. | `test/unit/test_py2cpp_features.py:1453`, `test/unit/test_py2cpp_features.py:1459`, `test/unit/test_py2cpp_features.py:1465` |
-| `Any` family (basic) | supported | Supported (regression-checked for `Any`/`None`/mixed list-dict cases). | `test/unit/test_py2cpp_features.py:1265`, `test/unit/test_py2cpp_features.py:1271`, `test/unit/test_py2cpp_features.py:1277`, `test/unit/test_py2cpp_features.py:1289` |
-| Attribute/method call on `object` receiver | unsupported | Rejected by emit guard. | `test/unit/test_py2cpp_features.py:1531` |
+| `super().__init__()` | supported | Supported. | `tools/unittest/test_py2cpp_features.py:1379`, `test/fixtures/oop/super_init.py:1` |
+| `@dataclass` | supported | Supported. The representative static subset is compile-smoked through `field(default=...)`, `field(default_factory=deque)`, `field(default_factory=Child)` on `rc<Child>`, plus the Pytra-NES representative multi-file package that uses `timestamps: deque[float] = field(init=False, repr=False)`. Arbitrary callable `default_factory` and full Python dataclasses compatibility remain out of scope. | `tools/unittest/test_py2cpp_features.py:1519`, `tools/unittest/emit/cpp/test_py2cpp_features.py`, `tools/unittest/ir/test_east_core_parser_behavior_classes.py`, `test/fixtures/stdlib/dataclasses_extended.py:1` |
+| `collections.deque[T]` (representative lane) | partial | The C++ type lowering for `deque[T]` is locked to `::std::deque<T>`, and the representative lane is now build/run-smoked through the dataclass field subset (`init=False` zero-arg construction and `default_factory=deque`), the expression/method subset `copy()` / `index(value)`, and the Pytra-NES multi-file package surface `append()` / `popleft()` / `len(...)`. Full `deque` API compatibility, the `index()` slice overload family, and plain local inference (`r = q.copy()`) remain out of scope. | `src/toolchain/emit/cpp/emitter/type_bridge.py`, `src/toolchain/emit/cpp/emitter/header_builder.py`, `src/runtime/cpp/native/core/py_types.h`, `tools/unittest/emit/cpp/test_py2cpp_features.py` |
+| `str(Path(...))` (representative lane) | supported | In the representative C++ lane, `Path` stringify lowers through `path.__str__()` and no longer falls back to generic `py_to_string(T)`. This is locked with compile/run smoke. | `tools/unittest/emit/cpp/test_py2cpp_features.py`, `tools/unittest/emit/cpp/test_cpp_runtime_iterable.py`, `test/fixtures/stdlib/path_stringify.py:1` |
+| nominal ADT v1 (`@sealed` family / variant ctor / `isinstance` + projection) | supported | The representative v1 surface reuses the existing class lane. `@sealed` families, top-level variants, payload `@dataclass`, variant constructors, `isinstance` checks, and projection all transpile. | `tools/unittest/emit/cpp/test_py2cpp_codegen_issues.py:1339`, `tools/unittest/emit/cpp/test_east3_cpp_bridge.py:188` |
+| nominal ADT `Match` (representative EAST3 lane) | partial | The `NominalAdtMatch` lane lowers to an `if / else if` chain. The source `match/case` parser surface is still staged, and plain `Match` remains fail-closed. | `tools/unittest/emit/cpp/test_east3_cpp_bridge.py:195`, `tools/unittest/emit/cpp/test_noncpp_east3_contract_guard.py:225` |
+| `Enum` / `IntEnum` / `IntFlag` | supported | Supported. | `tools/unittest/test_py2cpp_features.py:1453`, `tools/unittest/test_py2cpp_features.py:1459`, `tools/unittest/test_py2cpp_features.py:1465` |
+| `Any` family (basic) | supported | Supported (regression-checked for `Any`/`None`/mixed list-dict cases). | `tools/unittest/test_py2cpp_features.py:1265`, `tools/unittest/test_py2cpp_features.py:1271`, `tools/unittest/test_py2cpp_features.py:1277`, `tools/unittest/test_py2cpp_features.py:1289` |
+| Attribute/method call on `object` receiver | unsupported | Rejected by emit guard. | `tools/unittest/test_py2cpp_features.py:1531` |
 
 ## Constraints From CLI Options
 
 | Feature | Status | Current State | Evidence |
 |---|---|---|---|
-| `--str-index-mode=codepoint` | unsupported | Explicit error at present. | `src/pytra/compiler/transpile_cli.py:152`, `test/unit/test_py2cpp_features.py:1183` |
+| `--str-index-mode=codepoint` | unsupported | Explicit error at present. | `src/pytra/compiler/transpile_cli.py:152`, `tools/unittest/test_py2cpp_features.py:1183` |
 | `--str-slice-mode=codepoint` | unsupported | Explicit error at present. | `src/pytra/compiler/transpile_cli.py:154`, `src/py2cpp.py:6419` |
-| `--int-width=bigint` | unsupported | Explicit error in transpilation; only planning-value display is allowed in `--dump-options`. | `src/pytra/compiler/transpile_cli.py:144`, `test/unit/test_py2cpp_features.py:1167`, `src/py2cpp.py:6417` |
+| `--int-width=bigint` | unsupported | Explicit error in transpilation; only planning-value display is allowed in `--dump-options`. | `src/pytra/compiler/transpile_cli.py:144`, `tools/unittest/test_py2cpp_features.py:1167`, `src/py2cpp.py:6417` |
 
 ## Undetermined (Do Not Overstate In This Table)
 
@@ -88,5 +88,5 @@ The following still lack sufficient dedicated regression coverage, so they are t
 
 ## Update Rules
 
-- When updating this table, always add runtime-test evidence (`test/unit/...`) for each corresponding row.
+- When updating this table, always add runtime-test evidence (`tools/unittest/...`) for each corresponding row.
 - Do not mark anything as `supported` if implementation appears to work but no test evidence exists.

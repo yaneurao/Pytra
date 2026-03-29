@@ -22,7 +22,7 @@
 対象:
 - `src/hooks/cpp/emitter/operator.py`（`Div` lower 判定）
 - 必要なら `src/hooks/cpp/optimizer/passes/*`（後段補助）
-- `test/unit/test_py2cpp_smoke.py` / `test/unit/test_east3_cpp_bridge.py` / `tools/check_py2cpp_transpile.py`
+- `tools/unittest/test_py2cpp_smoke.py` / `tools/unittest/test_east3_cpp_bridge.py` / `tools/check/check_py2cpp_transpile.py`
 - `sample/cpp` 再生成結果（特に `01_mandelbrot.cpp`）
 
 非対象:
@@ -38,11 +38,11 @@
 - `sample/cpp/01_mandelbrot.cpp` の該当行（`t` 計算）が `/` 表記へ変わる。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_smoke.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --force`
 - `rg -n "py_div\\(| / " sample/cpp/01_mandelbrot.cpp`
 
 決定ログ:

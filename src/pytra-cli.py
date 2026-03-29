@@ -342,7 +342,7 @@ def cmd_build(argv: list[str], *, default_build: bool = True) -> int:
 
     if target == "cpp":
         # C++: Makefile → make → exe
-        makefile_gen = src_dir + "/../tools/gen_makefile_from_manifest.py"
+        makefile_gen = src_dir + "/../tools/gen/gen_makefile_from_manifest.py"
         manifest = emit_dir + "/manifest.json"
         makefile = emit_dir + "/Makefile"
         gen_cmd = [

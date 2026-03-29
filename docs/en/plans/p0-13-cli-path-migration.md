@@ -17,12 +17,12 @@
 toolchain フォルダ構成変更により `src/backends/cpp/cli.py` が
 `src/toolchain/emit/cpp/cli.py` に移動したが、以下のテストが旧パスをハードコードしている。
 
-- `test/unit/backends/cpp/test_py2cpp_codegen_issues.py:152`
+- `tools/unittest/emit/cpp/test_py2cpp_codegen_issues.py:152`
   `(ROOT / "src" / "backends" / "cpp" / "cli.py").read_text(...)`
 
 ## 対象
 
-- `test/unit/backends/cpp/test_py2cpp_codegen_issues.py`
+- `tools/unittest/emit/cpp/test_py2cpp_codegen_issues.py`
 
 ## 受け入れ基準
 

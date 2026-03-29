@@ -19,7 +19,7 @@ Objective:
 
 Scope:
 - Expression output in `src/hooks/java/emitter/java_native_emitter.py` (especially around `BinOp`)
-- `test/unit/test_py2java_smoke.py` and Java codegen regressions
+- `tools/unittest/test_py2java_smoke.py` and Java codegen regressions
 - `sample/java` regeneration results
 
 Out of scope:
@@ -33,9 +33,9 @@ Acceptance Criteria:
 - Existing Java smoke/transpile regressions pass, and excessive parentheses are reduced in regenerated `sample/java`.
 
 Validation Commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2java_smoke.py' -v`
-- `python3 tools/regenerate_samples.py --langs java --force`
+- `python3 tools/gen/regenerate_samples.py --langs java --force`
 - `rg -n "\\(x \\* x\\)" sample/java`
 
 Decision Log:
@@ -43,7 +43,7 @@ Decision Log:
 - 2026-03-01: Applied minimal-parentheses rules only to `BinOp`, and adopted fail-closed policy to always keep parentheses when RHS is a same-precedence `BinOp` (preserve grouping such as `a - (b - c)`).
 - 2026-03-01: Switched `BinOp` output in `java_native_emitter.py` to precedence-based rendering and reduced unnecessary whole-expression parentheses.
 - 2026-03-01: Added regressions in `test_py2java_smoke.py` for `BinOp` minimal-parentheses and RHS grouping preservation, and updated existing expected values to new notation.
-- 2026-03-01: Ran `tools/regenerate_samples.py --langs java --force` and reflected changes into all 18 files in `sample/java`. Verified no residues of `"(x * x)"` and `"(2.0 * Math.PI)"` via `rg`.
+- 2026-03-01: Ran `tools/gen/regenerate_samples.py --langs java --force` and reflected changes into all 18 files in `sample/java`. Verified no residues of `"(x * x)"` and `"(2.0 * Math.PI)"` via `rg`.
 - 2026-03-01: Confirmed `check_py2java_transpile.py` still fails only for known 4 unsupported `Try/Yield/Swap` cases (out of scope for this task).
 
 ## Breakdown

@@ -9,7 +9,7 @@
 実行コマンド:
 
 ```bash
-python3 tools/check_multilang_selfhost_stage1.py
+python3 tools/check/check_multilang_selfhost_stage1.py
 ```
 
 | lang | stage1 (self-transpile) | generated_mode | stage2 (selfhost run) | note |

@@ -33,15 +33,15 @@
 - 計測条件（fresh transpile / warmup / repeat / 中央値）が文書化され、再現手順が残っている。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/regenerate_samples.py --langs ruby --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets ruby --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/gen/regenerate_samples.py --langs ruby --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby --all-samples --ignore-unstable-stdout`
 - `python3 -m unittest discover -s test/unit -p 'test_py2rb_smoke.py' -v`
 
 決定ログ:
 - 2026-02-27: ユーザー要望に基づき、Ruby の sample 実行時間を `docs/ja/README.md` 比較表へ右端列として追加する `P0-SAMPLE-RUBY-BENCH-01` を起票。
 - 2026-02-27: `ruby` 未導入で計測が開始できなかったため、環境に Ruby 3.1.2 を導入して再計測を実施。
-- 2026-02-27: `sample/18` の Ruby 実行で `in/not in` 比較が `==` に崩れる不具合と `main` 呼び出し不整合を修正し、`test/unit/test_py2rb_smoke.py`（14件）通過を確認。
+- 2026-02-27: `sample/18` の Ruby 実行で `in/not in` 比較が `==` に崩れる不具合と `main` 呼び出し不整合を修正し、`tools/unittest/test_py2rb_smoke.py`（14件）通過を確認。
 - 2026-02-27: `sample/py` 18件を fresh transpile + `warmup=1` + `repeat=5` で Ruby 実測し、中央値を `work/logs/bench_ruby_sample_20260227.json` に記録。
 - 2026-02-27: `docs/ja/README.md` の実行速度比較表に Ruby 列（右端）を追加し、18件の中央値を反映。注記に Ruby 再計測ログ参照を追記。
 

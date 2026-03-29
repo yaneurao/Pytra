@@ -36,4 +36,4 @@
 ## 決定ログ
 
 - 2026-03-23: Go 担当からの Swap `target_kinds` 提案を「冗長」として却下。Subscript swap を EAST3 lowering で展開する方式を採用。
-- 2026-03-23: S1-S2 完了。`east2_to_east3_swap_detection.py` を修正し、Name-Name swap のみ Swap ノード、Subscript 含む swap は `__swap_tmp_N` を使った 3 文の Assign 列に展開。`test/unit/ir/test_east3_swap_detection.py` に 7 テスト追加（Name swap、Subscript swap、BinOp index swap、mixed swap、非 swap、複数 swap の一意 tmp 名）。
+- 2026-03-23: S1-S2 完了。`east2_to_east3_swap_detection.py` を修正し、Name-Name swap のみ Swap ノード、Subscript 含む swap は `__swap_tmp_N` を使った 3 文の Assign 列に展開。`tools/unittest/ir/test_east3_swap_detection.py` に 7 テスト追加（Name swap、Subscript swap、BinOp index swap、mixed swap、非 swap、複数 swap の一意 tmp 名）。

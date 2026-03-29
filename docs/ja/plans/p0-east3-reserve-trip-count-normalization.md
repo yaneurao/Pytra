@@ -22,7 +22,7 @@
 - `src/pytra/compiler/east_parts/east3_opt_passes/safe_reserve_hint_pass.py`
 - `src/pytra/compiler/east_parts/east3_opt_passes/*`（必要に応じて新規 pass）
 - `src/hooks/cpp/emitter/stmt.py`
-- `test/unit/*`（EAST3 optimizer / C++ codegen 回帰）
+- `tools/unittest/*`（EAST3 optimizer / C++ codegen 回帰）
 - `sample/cpp/18_mini_language_interpreter.cpp`（再生成結果）
 
 非対象:
@@ -34,14 +34,14 @@
 - EAST3 `reserve_hints` に件数式（ASTまたは同等の構造化表現）を保持し、C++ emitter がそれを直接描画する。
 - C++ emitter から `StaticRange` 件数式の文字列組み立てロジックを撤去するか、フォールバック専用の最小経路へ縮小する。
 - `sample/cpp/18_mini_language_interpreter.cpp` の `lines.reserve(...)` が `- (0)` や過剰括弧を含む旧式から更新される。
-- `tools/check_py2cpp_transpile.py` と関連 unit テストが通過する。
+- `tools/check/check_py2cpp_transpile.py` と関連 unit テストが通過する。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 分解:
 - [x] [ID: P0-EAST3-RESERVE-COUNT-NORM-01-S1-01] `reserve_hints` 拡張仕様（`count_expr` 形式 / fail-closed 条件 / 互換扱い）を定義する。

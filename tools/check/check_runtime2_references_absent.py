@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 ALLOWLIST_FILE = ROOT / "tools" / "runtime2_reference_allowlist.txt"
 SCAN_DIRS = ("src", "tools", "test", "pytra")
 TEXT_SUFFIXES = {

@@ -26,7 +26,7 @@
 
 受け入れ基準:
 - `transpile_to_zig_native(east_doc)` が EAST3 JSON → Zig ソースを生成できる。
-- `test/unit/backends/zig/test_py2zig_smoke.py` の基本テストが通る。
+- `tools/unittest/emit/zig/test_py2zig_smoke.py` の基本テストが通る。
 - `transpiler_versions.json` に `"zig": "0.1.0"` が登録されている。
 - `check_py2x_profiles.json` に Zig プロファイルが登録されている。
 

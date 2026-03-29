@@ -20,8 +20,8 @@ Goal:
 
 In scope:
 - `src/hooks/scala/emitter/scala_native_emitter.py`
-- `test/unit/test_py2scala_smoke.py`
-- `tools/check_py2scala_transpile.py` (if needed)
+- `tools/unittest/test_py2scala_smoke.py`
+- `tools/check/check_py2scala_transpile.py` (if needed)
 - `sample/scala/01_mandelbrot.scala` (regeneration check)
 
 Out of scope:
@@ -36,10 +36,10 @@ Acceptance criteria:
 - `check_py2scala_transpile.py` passes, and regenerated diffs for `sample/scala/01` match expectations.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2scala_smoke.py' -v`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/regenerate_samples.py --langs scala --stems 01_mandelbrot --force`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs scala --stems 01_mandelbrot --force`
 
 Decision log:
 - 2026-03-02: Per user instruction, created a P0 ticket for Scala redundant-parentheses reduction as a planning-first task without immediate implementation.

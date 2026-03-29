@@ -42,7 +42,7 @@ BUILD_DRIVER_FAIL_CLOSED_RULES = {
 }
 
 REPRESENTATIVE_VERIFICATION_LANES = {
-    "existing_backend_smoke": "test/unit/backends/cs/test_py2cs_smoke.py",
+    "existing_backend_smoke": "tools/unittest/emit/cs/test_py2cs_smoke.py",
     "future_host_smoke": "test/unit/tooling/test_powershell_cs_host_profile.py",
     "sample_parity_input": "sample/py/01_mandelbrot.py",
     "future_sample_parity": "tools/check_powershell_cs_host_sample_parity.py",
@@ -52,7 +52,7 @@ REPRESENTATIVE_VERIFICATION_LANES = {
 }
 
 CURRENT_PY2CS_SMOKE_BASELINE = {
-    "runner": "test/unit/backends/cs/test_py2cs_smoke.py",
+    "runner": "tools/unittest/emit/cs/test_py2cs_smoke.py",
     "covers_backend_transpile": True,
     "covers_generated_program_cs": True,
     "covers_pwsh_launcher": False,

@@ -40,11 +40,11 @@ Acceptance criteria:
 - `docs/ja/todo/index.md` keeps only one-line progress summaries while details stay in this plan's decision log.
 
 Checks:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_import_diagnostics.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_import_graph_issue_structure.py'`
-- `PYTHONPATH=src python3 test/unit/tooling/test_py2x_cli.py -k relative_import -v`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k relative_import`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_import_diagnostics.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_import_graph_issue_structure.py'`
+- `PYTHONPATH=src python3 tools/unittest/tooling/test_py2x_cli.py -k relative_import -v`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k relative_import`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

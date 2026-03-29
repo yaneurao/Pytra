@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 VERSIONS_FILE = ROOT / "src" / "toolchain" / "misc" / "transpiler_versions.json"
 VERSIONS_REL = VERSIONS_FILE.relative_to(ROOT).as_posix()
 
@@ -176,7 +176,7 @@ def main() -> int:
         print("[SKIP] no transpiler minor/major version bump detected")
         return 0
 
-    cmd = ["python3", "tools/regenerate_samples.py", "--langs", ",".join(affected_langs)]
+    cmd = ["python3", "tools/gen/regenerate_samples.py", "--langs", ",".join(affected_langs)]
 
     if args.cache_file.strip() != "":
         cmd.extend(["--cache-file", args.cache_file.strip()])

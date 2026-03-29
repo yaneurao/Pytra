@@ -18,7 +18,7 @@
 
 対象:
 - `src/hooks/cpp/emitter/stmt.py` / 必要に応じて EAST3 optimizer pass
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 
 非対象:
 - 一般 CSE の全面導入
@@ -30,9 +30,9 @@
 - 既存回帰を壊さない。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 決定ログ:
 - 2026-03-01: ユーザー要望により、sample/13 の `candidates` 選択式重複を独立 P0 として起票。

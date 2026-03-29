@@ -56,15 +56,15 @@
 - `type_id` の registry / subtype / isinstance ownership が `py_tid_*` 主体に寄り、`py_runtime.h` の手書き実装は薄い delegate か raw primitive に縮小される。
 - `py_isinstance_of` fast path や `PyFile` alias のような redundant surface を棚卸しし、残す理由が無いものは削除する。
 - representative C++ backend/runtime test と parity が非退行で通る。
-- `python3 tools/check_todo_priority.py` が通る。
+- `python3 tools/check/check_todo_priority.py` が通る。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_type_id.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k json`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k argparse_extended_runtime`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_iterable.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_type_id.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k json`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k argparse_extended_runtime`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture`
 - `git diff --check`
 
 ## 優先順位

@@ -44,10 +44,10 @@
 
 ## Tooling Export
 
-- matrix manifest: [export_backend_parity_matrix_manifest.py](/workspace/Pytra/tools/export_backend_parity_matrix_manifest.py)
-- conformance summary manifest: [export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/export_backend_conformance_summary_handoff_manifest.py)
-- parity review manifest: [export_backend_parity_review_manifest.py](/workspace/Pytra/tools/export_backend_parity_review_manifest.py)
-- handoff manifest: [export_backend_parity_handoff_manifest.py](/workspace/Pytra/tools/export_backend_parity_handoff_manifest.py)
+- matrix manifest: [export_backend_parity_matrix_manifest.py](/workspace/Pytra/tools/gen/export_backend_parity_matrix_manifest.py)
+- conformance summary manifest: [export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/gen/export_backend_conformance_summary_handoff_manifest.py)
+- parity review manifest: [export_backend_parity_review_manifest.py](/workspace/Pytra/tools/gen/export_backend_parity_review_manifest.py)
+- handoff manifest: [export_backend_parity_handoff_manifest.py](/workspace/Pytra/tools/gen/export_backend_parity_handoff_manifest.py)
 
 ## Representative Seed Matrix
 
@@ -86,14 +86,14 @@
 
 ## Current Relative-Import Coverage
 
-- relative import の current coverage baseline は [relative_import_backend_coverage.py](/workspace/Pytra/src/toolchain/misc/relative_import_backend_coverage.py) と [check_relative_import_backend_coverage.py](/workspace/Pytra/tools/check_relative_import_backend_coverage.py) を正本にする。
+- relative import の current coverage baseline は [relative_import_backend_coverage.py](/workspace/Pytra/src/toolchain/misc/relative_import_backend_coverage.py) と [check_relative_import_backend_coverage.py](/workspace/Pytra/tools/check/check_relative_import_backend_coverage.py) を正本にする。
 - 現時点で `build_run_locked` なのは `cpp`、`transpile_smoke_locked` なのは `rs/cs/go/java/js/kotlin/lua/nim/php/ruby/scala/swift/ts` です。`go/nim/swift` は direct native emitter の function-body transpile smoke、`java/kotlin/scala` は JVM package bundle の `package_project_transpile`、`lua/php/ruby` は representative relative import alias rewrite の `native_emitter_function_body_transpile` を証跡 lane に固定しています。
 - この欄は support claim ではなく verification coverage の handoff であり、non-C++ lane は representative smoke が lock されても full support 扱いにはしない。
 - ordinary relative import の historical handoff は [20260312-p1-relative-import-longtail-support-implementation.md](../plans/archive/20260312-p1-relative-import-longtail-support-implementation.md) を参照する。historical bundle order は `locked_js_ts_smoke_bundle -> native_path_bundle -> jvm_package_bundle` のまま固定し、`java/kotlin/scala` は archived JVM bundle、`lua/php/ruby` は long-tail representative lane として `transpile_smoke_locked` baseline に残る。
 
 ## Current Relative-Wildcard-Import Coverage
 
-- relative wildcard import の final handoff は [relative_wildcard_import_native_rollout_contract.py](/workspace/Pytra/src/toolchain/misc/relative_wildcard_import_native_rollout_contract.py) と [check_relative_wildcard_import_native_rollout_contract.py](/workspace/Pytra/tools/check_relative_wildcard_import_native_rollout_contract.py) を正本にする。
+- relative wildcard import の final handoff は [relative_wildcard_import_native_rollout_contract.py](/workspace/Pytra/src/toolchain/misc/relative_wildcard_import_native_rollout_contract.py) と [check_relative_wildcard_import_native_rollout_contract.py](/workspace/Pytra/tools/check/check_relative_wildcard_import_native_rollout_contract.py) を正本にする。
 - `cpp` は representative `from .helper import *` を `build_run_locked + multi_file_build_run` に固定し、non-C++ native backend では `go/java/kotlin/lua/nim/php/ruby/scala/swift` を representative module-graph bundle の `transpile_smoke_locked + module_graph_bundle_transpile` に固定した。focused smoke lane は `go_relative_wildcard_import_rollout_smoke` / `java_relative_wildcard_import_rollout_smoke` / `kotlin_relative_wildcard_import_rollout_smoke` / `lua_relative_wildcard_import_rollout_smoke` / `nim_relative_wildcard_import_rollout_smoke` / `php_relative_wildcard_import_rollout_smoke` / `ruby_relative_wildcard_import_rollout_smoke` / `scala_relative_wildcard_import_rollout_smoke` / `swift_relative_wildcard_import_rollout_smoke` の 9 本で固定する。
 - rollout bundle order は `native_path_bundle -> jvm_package_bundle -> longtail_native_bundle` のまま archive し、single-file `load_east3_document(...)` direct lane と unresolved / duplicate / root-escape wildcard case は引き続き `backend_specific_fail_closed` を維持する。
 - この欄も support claim ではなく verification coverage handoff であり、今回の native rollout 対象外だった `rs/cs/js/ts` を full support とみなすものではない。

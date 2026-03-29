@@ -34,11 +34,11 @@ Acceptance criteria:
 - The archived bundle checker and matching unit tests pass.
 
 Verification commands:
-- `python3 tools/check_relative_import_backend_coverage.py`
-- `python3 tools/check_relative_import_longtail_bundle_contract.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_backend_coverage.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_longtail_bundle_contract.py'`
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_relative_import_backend_coverage.py`
+- `python3 tools/check/check_relative_import_longtail_bundle_contract.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_backend_coverage.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_longtail_bundle_contract.py'`
+- `python3 tools/check/check_todo_priority.py`
 - `git diff --check`
 
 Decision log:

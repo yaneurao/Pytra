@@ -36,9 +36,9 @@ Acceptance criteria:
 - The task remains granular enough that `bytearray` and similar follow-ups can be split later.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k bytes_truthiness`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_east3_cpp_bridge.py' -k truthy`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k bytes_truthiness`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_east3_cpp_bridge.py' -k truthy`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

@@ -22,12 +22,12 @@ CONFORMANCE_SUMMARY_DOC_TARGETS: Final[tuple[str, ...]] = (
 )
 
 CONFORMANCE_SUMMARY_TOOLING_EXPORTS: Final[tuple[str, ...]] = (
-    "tools/export_backend_conformance_summary_handoff_manifest.py",
-    "tools/check_backend_conformance_summary_handoff_contract.py",
+    "tools/gen/export_backend_conformance_summary_handoff_manifest.py",
+    "tools/check/check_backend_conformance_summary_handoff_contract.py",
 )
 
 CONFORMANCE_SUMMARY_SOURCE_EXPORTS: Final[dict[str, str]] = {
-    "seed_manifest": "tools/export_backend_conformance_seed_manifest.py",
+    "seed_manifest": "tools/gen/export_backend_conformance_seed_manifest.py",
     "runner_manifest": "tools/export_backend_conformance_runner_manifest.py",
     "runtime_parity_manifest": "tools/export_backend_conformance_runtime_parity_manifest.py",
 }

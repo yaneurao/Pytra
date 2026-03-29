@@ -29,7 +29,7 @@ Acceptance criteria:
 
 Verification commands:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v`
-- `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets cs`
+- `PYTHONPATH=src python3 tools/check/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets cs`
 
 Breakdown:
 - [x] Pre-analyze base-method override relations and add `virtual/override` to method declarations.
@@ -42,4 +42,4 @@ Decision log:
 - 2026-03-01: Added lowering from `super().method(...)` to `base.method(...)`, and from `super().__init__(...)` to constructor initializer `: base(...)`.
 - 2026-03-01: Added minimal C# mappings for `py_assert_stdout` / `py_assert_eq` / `py_assert_true` / `py_assert_all`, resolving fixture compile blockers.
 - 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v` passed (46 tests, 0 fail).
-- 2026-03-01: `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets cs --ignore-unstable-stdout` passed (1/1).
+- 2026-03-01: `PYTHONPATH=src python3 tools/check/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets cs --ignore-unstable-stdout` passed (1/1).

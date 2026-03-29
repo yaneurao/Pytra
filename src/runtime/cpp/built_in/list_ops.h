@@ -2,7 +2,7 @@
 #define PYTRA_NATIVE_BUILT_IN_LIST_OPS_H
 
 #include "core/py_runtime.h"
-#include "built_in/scalar_ops.h"
+#include "scalar_ops.h"
 
 // operator+ for Object<list<T>>: Python list + list concatenation.
 template <class T>

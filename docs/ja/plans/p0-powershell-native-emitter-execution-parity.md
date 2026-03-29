@@ -52,13 +52,13 @@
 
 ### S6: 実行テスト追加
 
-- [x] [ID: P0-PS-EXEC-PARITY-01-S6] `test/unit/backends/powershell/test_py2ps_smoke.py` に pwsh 実行テスト（26件）を追加し、主要 fixture の実行成功を検証する。
+- [x] [ID: P0-PS-EXEC-PARITY-01-S6] `tools/unittest/emit/powershell/test_py2ps_smoke.py` に pwsh 実行テスト（26件）を追加し、主要 fixture の実行成功を検証する。
 
 ## 受け入れ基準
 
 - test/fixtures/ の transpile 可能ケースのうち、pwsh 実行成功率が 80% 以上（≧105/131）。
-- `python3 tools/check_py2x_transpile.py --target powershell` が 0 fail を維持。
-- `python3 -m pytest test/unit/toolchain/emit/powershell/` が全 pass。
+- `python3 tools/check/check_py2x_transpile.py --target powershell` が 0 fail を維持。
+- `python3 -m pytest tools/unittest/emit/powershell/` が全 pass。
 - sample/powershell/ の 17_monte_carlo_pi.ps1 と 18_mini_language_interpreter.ps1 が pwsh で実行成功。
 
 ## 非対象
@@ -69,9 +69,9 @@
 
 ## 確認コマンド
 
-- `python3 tools/check_py2x_transpile.py --target powershell`
-- `PYTHONPATH=src python3 -m pytest test/unit/toolchain/emit/powershell/ -v`
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_py2x_transpile.py --target powershell`
+- `PYTHONPATH=src python3 -m pytest tools/unittest/emit/powershell/ -v`
+- `python3 tools/check/check_todo_priority.py`
 
 ## 決定ログ
 

@@ -69,23 +69,23 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "generated_drift_needles": (),
         "representative_smoke_needles": (
             (
-                "test/unit/backends/cs/test_py2cs_smoke.py",
+                "tools/unittest/emit/cs/test_py2cs_smoke.py",
                 "def test_representative_math_import_fixture_transpiles",
             ),
             (
-                "test/unit/backends/go/test_py2go_smoke.py",
+                "tools/unittest/emit/go/test_py2go_smoke.py",
                 "def test_go_native_emitter_routes_math_calls_via_runtime_helpers",
             ),
             (
-                "test/unit/backends/java/test_py2java_smoke.py",
+                "tools/unittest/emit/java/test_py2java_smoke.py",
                 "def test_java_generated_math_runtime_owner_is_live_wrapper_shaped",
             ),
             (
-                "test/unit/backends/php/test_py2php_smoke.py",
+                "tools/unittest/emit/php/test_py2php_smoke.py",
                 "def test_php_generated_math_runtime_owner_is_live_wrapper_shaped",
             ),
             (
-                "test/unit/backends/rs/test_py2rs_smoke.py",
+                "tools/unittest/emit/rs/test_py2rs_smoke.py",
                 "def test_runtime_scaffold_exposes_pytra_std_time_and_math",
             ),
         ),
@@ -121,19 +121,19 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "generated_drift_needles": (),
         "representative_smoke_needles": (
             (
-                "test/unit/backends/cs/test_py2cs_smoke.py",
+                "tools/unittest/emit/cs/test_py2cs_smoke.py",
                 "def test_representative_time_import_fixture_transpiles",
             ),
             (
-                "test/unit/backends/java/test_py2java_smoke.py",
+                "tools/unittest/emit/java/test_py2java_smoke.py",
                 "def test_java_native_emitter_routes_perf_counter_via_runtime_helper",
             ),
             (
-                "test/unit/backends/php/test_py2php_smoke.py",
+                "tools/unittest/emit/php/test_py2php_smoke.py",
                 "def test_php_generated_time_runtime_owner_is_live_wrapper_shaped",
             ),
             (
-                "test/unit/backends/rs/test_py2rs_smoke.py",
+                "tools/unittest/emit/rs/test_py2rs_smoke.py",
                 "def test_generated_time_and_math_runtime_hook_modules_compile_with_scaffold",
             ),
         ),
@@ -159,11 +159,11 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "generated_drift_needles": (),
         "representative_smoke_needles": (
             (
-                "test/unit/backends/lua/test_py2lua_smoke.py",
+                "tools/unittest/emit/lua/test_py2lua_smoke.py",
                 "def test_import_lowering_maps_os_sys_glob_runtime_via_generic_extern_metadata",
             ),
             (
-                "test/unit/backends/php/test_py2php_smoke.py",
+                "tools/unittest/emit/php/test_py2php_smoke.py",
                 "def test_php_runtime_source_path_is_migrated",
             ),
         ),
@@ -189,11 +189,11 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "generated_drift_needles": (),
         "representative_smoke_needles": (
             (
-                "test/unit/backends/lua/test_py2lua_smoke.py",
+                "tools/unittest/emit/lua/test_py2lua_smoke.py",
                 "def test_import_lowering_maps_os_sys_glob_runtime_via_generic_extern_metadata",
             ),
             (
-                "test/unit/backends/js/test_py2js_smoke.py",
+                "tools/unittest/emit/js/test_py2js_smoke.py",
                 "def test_stdlib_imports_use_runtime_bundle_paths",
             ),
         ),
@@ -222,19 +222,19 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "generated_drift_needles": (),
         "representative_smoke_needles": (
             (
-                "test/unit/backends/cs/test_py2cs_smoke.py",
+                "tools/unittest/emit/cs/test_py2cs_smoke.py",
                 "def test_representative_sys_extended_fixture_transpiles",
             ),
             (
-                "test/unit/backends/js/test_py2js_smoke.py",
+                "tools/unittest/emit/js/test_py2js_smoke.py",
                 "def test_js_generated_sys_runtime_wrapper_delegates_to_native_owner",
             ),
             (
-                "test/unit/backends/ts/test_py2ts_smoke.py",
+                "tools/unittest/emit/ts/test_py2ts_smoke.py",
                 "def test_ts_generated_sys_runtime_wrapper_delegates_to_native_owner",
             ),
             (
-                "test/unit/backends/lua/test_py2lua_smoke.py",
+                "tools/unittest/emit/lua/test_py2lua_smoke.py",
                 "def test_import_lowering_maps_os_sys_glob_runtime_via_generic_extern_metadata",
             ),
         ),
@@ -261,11 +261,11 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "generated_drift_needles": (),
         "representative_smoke_needles": (
             (
-                "test/unit/backends/lua/test_py2lua_smoke.py",
+                "tools/unittest/emit/lua/test_py2lua_smoke.py",
                 "def test_import_lowering_maps_os_sys_glob_runtime_via_generic_extern_metadata",
             ),
             (
-                "test/unit/backends/ts/test_py2ts_smoke.py",
+                "tools/unittest/emit/ts/test_py2ts_smoke.py",
                 "def test_stdlib_imports_use_runtime_bundle_paths",
             ),
         ),
@@ -292,11 +292,11 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "generated_drift_needles": (),
         "representative_smoke_needles": (
             (
-                "test/unit/backends/go/test_py2go_smoke.py",
+                "tools/unittest/emit/go/test_py2go_smoke.py",
                 "def test_go_generated_built_in_compare_lane_compiles_with_runtime_bundle",
             ),
             (
-                "test/unit/backends/kotlin/test_py2kotlin_smoke.py",
+                "tools/unittest/emit/kotlin/test_py2kotlin_smoke.py",
                 "def test_kotlin_generated_built_in_compare_lane_compiles_with_runtime_bundle",
             ),
         ),
@@ -323,11 +323,11 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "generated_drift_needles": (),
         "representative_smoke_needles": (
             (
-                "test/unit/backends/scala/test_py2scala_smoke.py",
+                "tools/unittest/emit/scala/test_py2scala_smoke.py",
                 "def test_scala_generated_built_in_compare_lane_is_materialized",
             ),
             (
-                "test/unit/backends/swift/test_py2swift_smoke.py",
+                "tools/unittest/emit/swift/test_py2swift_smoke.py",
                 "def test_swift_generated_built_in_compare_lane_compiles_with_runtime_bundle",
             ),
         ),

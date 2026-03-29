@@ -11,7 +11,7 @@
 
 背景:
 - `toolchain.link` facade はすでに `validate_raw_east3_doc` を export している。
-- それにもかかわらず、`src/toolchain/ir/east3.py` と focused regression の [`test/unit/common/test_frontend_type_expr.py`](/workspace/Pytra/test/unit/common/test_frontend_type_expr.py) は `toolchain.link.program_validator` を直接 import している。
+- それにもかかわらず、`src/toolchain/ir/east3.py` と focused regression の [`tools/unittest/common/test_frontend_type_expr.py`](/workspace/Pytra/tools/unittest/common/test_frontend_type_expr.py) は `toolchain.link.program_validator` を直接 import している。
 - package facade が存在するのに external consumer 側で submodule reach-through が残ると、`program_validator` の内部配置に不要な結合が残り、前タスクで揃えた facade 方針とも不整合になる。
 
 目的:
@@ -20,8 +20,8 @@
 
 対象:
 - `src/toolchain/ir/east3.py`
-- `test/unit/common/test_frontend_type_expr.py`
-- 必要なら `test/unit/common/test_py2x_entrypoints_contract.py`
+- `tools/unittest/common/test_frontend_type_expr.py`
+- 必要なら `tools/unittest/common/test_py2x_entrypoints_contract.py`
 
 非対象:
 - `toolchain.link` package 内部での internal import 再編
@@ -34,9 +34,9 @@
 - source contract が `toolchain.link.program_validator` 直接 import の再発を検知できる。
 
 確認コマンド:
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 test/unit/common/test_frontend_type_expr.py`
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 test/unit/common/test_py2x_entrypoints_contract.py -k dynamic_carrier_seams_are_explicitly_isolated`
-- `python3 /workspace/Pytra/tools/check_todo_priority.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 tools/unittest/common/test_frontend_type_expr.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 tools/unittest/common/test_py2x_entrypoints_contract.py -k dynamic_carrier_seams_are_explicitly_isolated`
+- `python3 /workspace/Pytra/tools/check/check_todo_priority.py`
 - `git -C /workspace/Pytra diff --check`
 
 分解:

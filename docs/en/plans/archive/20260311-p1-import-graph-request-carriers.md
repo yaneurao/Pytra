@@ -33,12 +33,12 @@ Acceptance criteria:
 - `collect_import_requests()` preserves `kind/module/symbol` for both `Import` and `ImportFrom`.
 - `collect_import_modules()` works as a compatibility wrapper over the structured carrier without breaking existing smoke tests.
 - The representative `from . import helper` regression passes in unit and CLI smoke coverage.
-- `python3 tools/check_todo_priority.py`, focused unit tests, `python3 tools/build_selfhost.py`, and `git diff --check` pass.
+- `python3 tools/check/check_todo_priority.py`, focused unit tests, `python3 tools/build_selfhost.py`, and `git diff --check` pass.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_import_graph_issue_structure.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_py2x_cli.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_import_graph_issue_structure.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_py2x_cli.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

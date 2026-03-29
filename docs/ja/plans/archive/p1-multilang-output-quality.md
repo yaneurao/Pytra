@@ -41,18 +41,18 @@
 
 確認コマンド:
 - `python3 tools/measure_multilang_quality.py`
-- `python3 tools/check_py2rs_transpile.py`
-- `python3 tools/check_py2cs_transpile.py`
-- `python3 tools/check_py2js_transpile.py`
-- `python3 tools/check_py2ts_transpile.py`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/check_py2java_transpile.py`
-- `python3 tools/check_py2swift_transpile.py`
-- `python3 tools/check_py2kotlin_transpile.py`
-- `python3 tools/check_multilang_selfhost_stage1.py`
-- `python3 tools/check_multilang_selfhost_multistage.py`
-- `python3 tools/check_multilang_selfhost_suite.py`
-- `python3 tools/check_sample_regen_clean.py`
+- `python3 tools/check/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2cs_transpile.py`
+- `python3 tools/check/check_py2js_transpile.py`
+- `python3 tools/check/check_py2ts_transpile.py`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/check/check_py2java_transpile.py`
+- `python3 tools/check/check_py2swift_transpile.py`
+- `python3 tools/check/check_py2kotlin_transpile.py`
+- `python3 tools/check/check_multilang_selfhost_stage1.py`
+- `python3 tools/check/check_multilang_selfhost_multistage.py`
+- `python3 tools/check/check_multilang_selfhost_suite.py`
+- `python3 tools/check/check_sample_regen_clean.py`
 
 `P1-MQ-01` 計測結果:
 
@@ -74,7 +74,7 @@
   3. `let mut` 宣言は一律付与をやめ、`write_count` と mutating call 情報に基づいて `let` / `let mut` を切り替える。
   4. `rs` profile の宣言テンプレート（`annassign_decl_*`, `assign_decl_init`）を `{mut_kw}` 対応に変更し、可変性を emitter 側で制御する。
 - 生成物反映:
-  - `python3 tools/regenerate_samples.py --langs rs --force` で `sample/rs` を再生成。
+  - `python3 tools/gen/regenerate_samples.py --langs rs --force` で `sample/rs` を再生成。
   - `sample/rs/01_mandelbrot.rs` では `x2/y2/t/r/g/b/width/height/max_iter/...` の不要 `mut` が除去されることを確認。
 - 指標変化（`sample/cpp` 比較の生カウント）:
   - `rs mut`: `711 -> 609`
@@ -90,7 +90,7 @@
   2. `import_bindings` と AST 走査結果から未使用識別子を除外し、`import` 文の過剰出力を削減した。
   3. `py_runtime` の展開シンボルを「実際に必要な型ID関連シンボルのみ」へ縮退し、不要な destructuring を削減した。
 - 生成物反映:
-  - `python3 tools/regenerate_samples.py --langs js,ts --force` で `sample/js` / `sample/ts` を再生成。
+  - `python3 tools/gen/regenerate_samples.py --langs js,ts --force` で `sample/js` / `sample/ts` を再生成。
 - 指標変化（`sample/cpp` 比較の生カウント）:
   - `js paren`: `2029 -> 148`
   - `ts paren`: `2029 -> 148`
@@ -108,7 +108,7 @@
   3. `BinOp` / `BoolOp` / `Compare` / `UnaryOp` の式描画で最小括弧化を行い、`((`/`))` を削減した。
   4. `FloorDiv` と `Subscript` の `(long|double|int)` 直キャストを `System.Convert` 経由へ置換した。
 - 生成物反映:
-  - `python3 tools/regenerate_samples.py --langs cs --force` で `sample/cs` を再生成。
+  - `python3 tools/gen/regenerate_samples.py --langs cs --force` で `sample/cs` を再生成。
 - 指標変化（`sample/cpp` 比較の生カウント）:
   - `cs paren`: `1103 -> 215`
   - `cs cast`: `204 -> 0`
@@ -123,7 +123,7 @@
   2. `using` 行や本体ステートメントは埋め込まず、`public` シグネチャとコメント行のみを抽出するフィルタを導入した。
   3. Go/Java transpiler minor version を `0.3.0` へ更新した（`transpiler_versions.json`）。
 - 生成物反映:
-  - `python3 tools/regenerate_samples.py --langs go,java --force` で `sample/go` / `sample/java` を再生成。
+  - `python3 tools/gen/regenerate_samples.py --langs go,java --force` で `sample/go` / `sample/java` を再生成。
 - 指標変化（`sample/cpp` 比較の生カウント）:
   - `go paren`: `1572 -> 0`
   - `go cast`: `844 -> 0`
@@ -140,7 +140,7 @@
   2. Swift 既定 `import Foundation` を撤去し、未使用 import を解消した。
   3. Swift/Kotlin transpiler minor version を `0.3.0` へ更新した（`transpiler_versions.json`）。
 - 生成物反映:
-  - `python3 tools/regenerate_samples.py --langs swift,kotlin --force` で `sample/swift` / `sample/kotlin` を再生成。
+  - `python3 tools/gen/regenerate_samples.py --langs swift,kotlin --force` で `sample/swift` / `sample/kotlin` を再生成。
 - 指標変化（`sample/cpp` 比較の生カウント）:
   - `swift paren`: `296 -> 0`
   - `swift imports`: `18 -> 0`
@@ -164,16 +164,16 @@
 
 `P1-MQ-03` 実装結果（品質回帰チェック導線）:
 
-- 対象: `tools/check_multilang_quality_regression.py`, `tools/run_local_ci.py`
+- 対象: `tools/check/check_multilang_quality_regression.py`, `tools/run/run_local_ci.py`
 - 変更点:
   1. `docs/ja/plans/p1-multilang-output-quality-baseline.md` の生カウント表を基準に、非 C++ 言語の品質指標（`mut`/`paren`/`cast`/`clone`/`imports`/`unused_import_est`）が悪化していないかを検査するスクリプトを追加した。
-  2. `tools/run_local_ci.py` に上記チェックを組み込み、ローカル CI 相当導線で常時検査されるようにした。
+  2. `tools/run/run_local_ci.py` に上記チェックを組み込み、ローカル CI 相当導線で常時検査されるようにした。
 - 確認:
-  - `python3 tools/check_multilang_quality_regression.py` が `48 comparisons` で通過することを確認。
+  - `python3 tools/check/check_multilang_quality_regression.py` が `48 comparisons` で通過することを確認。
 
 `P1-MQ-04-S1` 実装結果（stage1 selfhost 棚卸し）:
 
-- 対象: `tools/check_multilang_selfhost_stage1.py`, `docs/ja/plans/archive/p1-multilang-selfhost-status.md`
+- 対象: `tools/check/check_multilang_selfhost_stage1.py`, `docs/ja/plans/archive/p1-multilang-selfhost-status.md`
 - 変更点:
   1. 非 C++ 各言語の `py2<lang>.py` 自己変換（stage1）を一括実行し、生成物モード（native/preview）と stage2 実行可否を収集するスクリプトを追加した。
   2. 初回ステータスを `docs/ja/plans/archive/p1-multilang-selfhost-status.md` に固定した。
@@ -185,7 +185,7 @@
 
 `P1-MQ-04-S2` 実装結果（non-preview stage2 経路整備）:
 
-- 対象: `tools/check_multilang_selfhost_stage1.py`, `docs/ja/plans/archive/p1-multilang-selfhost-status.md`
+- 対象: `tools/check/check_multilang_selfhost_stage1.py`, `docs/ja/plans/archive/p1-multilang-selfhost-status.md`
 - 変更点:
   1. `rs/cs/js` を stage2 対象言語として明示し、言語別 runner（`rustc`/`mcs+mono`/`node`）を自動選択する経路を追加した。
   2. `js` は依存 `.js` 不在を避けるため、`src/py2js.py` 生成物の相対 import を再帰走査し、依存 `.py` を一時 `src/` ツリーへ順次変換してから stage2 実行するようにした。
@@ -199,7 +199,7 @@
 
 `P1-MQ-05` 実装結果（多段 selfhost 可否と失敗要因分類）:
 
-- 対象: `tools/check_multilang_selfhost_multistage.py`, `docs/ja/plans/archive/p1-multilang-selfhost-multistage-status.md`
+- 対象: `tools/check/check_multilang_selfhost_multistage.py`, `docs/ja/plans/archive/p1-multilang-selfhost-multistage-status.md`
 - 変更点:
   1. 非 C++ 各言語で `stage1 -> stage2(self->self) -> stage3(sample)` を同一手順で試行する多段 selfhost チェックを追加した。
   2. 失敗要因を `stage1_transpile_fail` / `toolchain_missing` / `compile_fail` / `self_retranspile_fail` / `stage2_compile_fail` / `sample_transpile_fail` / `preview_only` に分類し、レポートへ固定した。
@@ -212,23 +212,23 @@
 
 `P1-MQ-06` 実装結果（定期実行導線整備）:
 
-- 対象: `tools/check_multilang_selfhost_suite.py`, `tools/run_local_ci.py`
+- 対象: `tools/check/check_multilang_selfhost_suite.py`, `tools/run/run_local_ci.py`
 - 変更点:
   1. `check_multilang_selfhost_stage1.py` と `check_multilang_selfhost_multistage.py` をまとめて実行する統合スイート（`check_multilang_selfhost_suite.py`）を追加した。
   2. 統合スイートは実行後に `docs/ja/plans/*status.md` を再生成し、stage1/multistage の失敗要因サマリを標準出力へ出す。
-  3. `tools/run_local_ci.py` に統合スイートを追加し、通常 CI 相当導線から定期実行できるようにした。
+  3. `tools/run/run_local_ci.py` に統合スイートを追加し、通常 CI 相当導線から定期実行できるようにした。
 - 確認:
-  - `python3 tools/check_multilang_selfhost_suite.py` が成功し、既知失敗カテゴリ（`stage1_transpile_fail` / `toolchain_missing` / `preview_only` など）を要約表示することを確認。
+  - `python3 tools/check/check_multilang_selfhost_suite.py` が成功し、既知失敗カテゴリ（`stage1_transpile_fail` / `toolchain_missing` / `preview_only` など）を要約表示することを確認。
 
 `P1-MQ-07` 実装結果（sample 再生成差分ゼロ運用）:
 
-- 対象: `tools/check_sample_regen_clean.py`, `tools/run_local_ci.py`
+- 対象: `tools/check/check_sample_regen_clean.py`, `tools/run/run_local_ci.py`
 - 変更点:
   1. `sample/{cpp,rs,cs,js,ts,go,java,swift,kotlin}` を対象に、未コミット差分が残っていないかを検査する `check_sample_regen_clean.py` を追加した。
   2. `run_local_ci.py` で `run_regen_on_version_bump.py` 実行直後に `check_sample_regen_clean.py` を走らせ、再生成差分ゼロを CI 導線で強制するようにした。
   3. 既存の `check_transpiler_version_gate.py` + `run_regen_on_version_bump.py` と組み合わせ、transpiler 変更時に version bump -> 再生成 -> 差分ゼロ検証までを一連化した。
 - 確認:
-  - `python3 tools/check_sample_regen_clean.py` が `sample outputs are clean` を返すことを確認。
+  - `python3 tools/check/check_sample_regen_clean.py` が `sample outputs are clean` を返すことを確認。
 
 `P1-MQ-10` 再オープン理由（preview 脱却）:
 
@@ -246,17 +246,17 @@
 - 2026-02-24: ID: P1-MQ-02-S3-S2 として Go/Java preview 出力をシグネチャ要約へ縮退し、`sample/go` / `sample/java` の `paren`/`cast`/`imports` を削減した。
 - 2026-02-24: ID: P1-MQ-02-S3-S3 として Swift/Kotlin preview 出力をシグネチャ要約へ縮退し、`sample/swift` / `sample/kotlin` の `paren`/`cast`/`imports`/`unused_import_est` を削減した。
 - 2026-02-24: ID: P1-MQ-02-S4 として多言語サンプル再生成と再計測を完了し、`docs/ja/plans/p1-multilang-output-quality-baseline.md` に改善結果を固定した。
-- 2026-02-24: ID: P1-MQ-03 として品質回帰チェック（`tools/check_multilang_quality_regression.py`）を追加し、`tools/run_local_ci.py` に組み込んだ。
-- 2026-02-24: ID: P1-MQ-04-S1 として stage1 selfhost 棚卸しスクリプト（`tools/check_multilang_selfhost_stage1.py`）を追加し、言語別ステータスを `docs/ja/plans/archive/p1-multilang-selfhost-status.md` に固定した。
+- 2026-02-24: ID: P1-MQ-03 として品質回帰チェック（`tools/check/check_multilang_quality_regression.py`）を追加し、`tools/run/run_local_ci.py` に組み込んだ。
+- 2026-02-24: ID: P1-MQ-04-S1 として stage1 selfhost 棚卸しスクリプト（`tools/check/check_multilang_selfhost_stage1.py`）を追加し、言語別ステータスを `docs/ja/plans/archive/p1-multilang-selfhost-status.md` に固定した。
 - 2026-02-24: ID: P1-MQ-04-S2 の事前調査として JS emitter に `Slice` 出力（`out[:-3]` -> `.slice(...)`）を追加して stage2 の `SyntaxError` は解消したが、次段で `src/hooks/js/emitter/js_emitter.js` 不在（Python hooks 依存）により実行が継続失敗することを確認した。
 - 2026-02-24: ID: P1-MQ-04-S2 として non-preview 言語（`rs/cs/js`）の stage2 runner を自動化し、`docs/ja/plans/archive/p1-multilang-selfhost-status.md` に `blocked/fail` 理由を固定した。
-- 2026-02-24: ID: P1-MQ-05 として多段 selfhost チェック（`tools/check_multilang_selfhost_multistage.py`）を追加し、`docs/ja/plans/archive/p1-multilang-selfhost-multistage-status.md` に失敗カテゴリを固定した。
-- 2026-02-24: ID: P1-MQ-06 として統合 selfhost スイート（`tools/check_multilang_selfhost_suite.py`）を追加し、`tools/run_local_ci.py` へ組み込んだ。
+- 2026-02-24: ID: P1-MQ-05 として多段 selfhost チェック（`tools/check/check_multilang_selfhost_multistage.py`）を追加し、`docs/ja/plans/archive/p1-multilang-selfhost-multistage-status.md` に失敗カテゴリを固定した。
+- 2026-02-24: ID: P1-MQ-06 として統合 selfhost スイート（`tools/check/check_multilang_selfhost_suite.py`）を追加し、`tools/run/run_local_ci.py` へ組み込んだ。
 - 2026-02-24: ID: P1-MQ-07 として `check_sample_regen_clean.py` を追加し、`run_local_ci.py` で再生成後の sample 差分ゼロを検証する運用を固定した。
 - 2026-02-24: `sample/go`, `sample/kotlin`, `sample/swift` が preview 要約出力のままであることを確認。`P1-MQ-02-S3-S2/S3` の完了条件が不足していたため、`P1-MQ-10`（preview 脱却）を再オープンした。
-- 2026-02-25: ID: P1-MQ-10-S1 として `src/hooks/go/emitter/go_emitter.py` を C# 本文委譲モードへ変更し、`sample/go` の要約コメント専用出力を廃止。`python3 tools/regenerate_samples.py --langs go --force --clear-cache --verify-cpp-on-diff` で `sample/go/*.go` を再生成。
-- 2026-02-25: ID: P1-MQ-10-S2 として `src/hooks/kotlin/emitter/kotlin_emitter.py` を preview 除去の暫定 C# 本文委譲へ変更し、`sample/kotlin` を `python3 tools/regenerate_samples.py --langs kotlin --force --clear-cache --verify-cpp-on-diff` で再生成。`TODO: 専用 KotlinEmitter 実装へ段階移行する。` を除去。
-- 2026-02-25: ID: P1-MQ-10-S3 として `src/hooks/swift/emitter/swift_emitter.py` を preview 除去の暫定 C# 本文委譲へ変更し、`sample/swift` を `python3 tools/regenerate_samples.py --langs swift --force --clear-cache --verify-cpp-on-diff` で再生成。`TODO: 専用 SwiftEmitter 実装へ段階移行する。` を除去。
-- 2026-02-25: ID: P1-MQ-10-S4 として `tools/check_py2go_transpile.py` / `tools/check_py2kotlin_transpile.py` / `tools/check_py2swift_transpile.py` / `tools/check_multilang_quality_regression.py` に preview 再流入ガード（固定文言検知）を追加。`sample/` 出力は `tools/check_multilang_quality_regression.py` でも併せて監視。
+- 2026-02-25: ID: P1-MQ-10-S1 として `src/hooks/go/emitter/go_emitter.py` を C# 本文委譲モードへ変更し、`sample/go` の要約コメント専用出力を廃止。`python3 tools/gen/regenerate_samples.py --langs go --force --clear-cache --verify-cpp-on-diff` で `sample/go/*.go` を再生成。
+- 2026-02-25: ID: P1-MQ-10-S2 として `src/hooks/kotlin/emitter/kotlin_emitter.py` を preview 除去の暫定 C# 本文委譲へ変更し、`sample/kotlin` を `python3 tools/gen/regenerate_samples.py --langs kotlin --force --clear-cache --verify-cpp-on-diff` で再生成。`TODO: 専用 KotlinEmitter 実装へ段階移行する。` を除去。
+- 2026-02-25: ID: P1-MQ-10-S3 として `src/hooks/swift/emitter/swift_emitter.py` を preview 除去の暫定 C# 本文委譲へ変更し、`sample/swift` を `python3 tools/gen/regenerate_samples.py --langs swift --force --clear-cache --verify-cpp-on-diff` で再生成。`TODO: 専用 SwiftEmitter 実装へ段階移行する。` を除去。
+- 2026-02-25: ID: P1-MQ-10-S4 として `tools/check/check_py2go_transpile.py` / `tools/check/check_py2kotlin_transpile.py` / `tools/check/check_py2swift_transpile.py` / `tools/check/check_multilang_quality_regression.py` に preview 再流入ガード（固定文言検知）を追加。`sample/` 出力は `tools/check/check_multilang_quality_regression.py` でも併せて監視。
 - 2026-02-25: `python3 tools/measure_multilang_quality.py` 再実行で `docs/ja/plans/p1-multilang-output-quality-baseline.md` を更新し、`check_multilang_quality_regression.py` の通過条件を現状に合わせた。
-- 2026-02-25: [ID: P1-MQ-09] `src/hooks/rs/emitter/rs_emitter.py` の `BinOp` を固定括弧形式から最小化形式へ変更し、`sample/rs` 再生成と品質再計測を行った。`python3 tools/regenerate_samples.py --langs rs --force --clear-cache --verify-cpp-on-diff` および `python3 tools/measure_multilang_quality.py` を実行し、`rs paren` を 164 に更新。
+- 2026-02-25: [ID: P1-MQ-09] `src/hooks/rs/emitter/rs_emitter.py` の `BinOp` を固定括弧形式から最小化形式へ変更し、`sample/rs` 再生成と品質再計測を行った。`python3 tools/gen/regenerate_samples.py --langs rs --force --clear-cache --verify-cpp-on-diff` および `python3 tools/measure_multilang_quality.py` を実行し、`rs paren` を 164 に更新。

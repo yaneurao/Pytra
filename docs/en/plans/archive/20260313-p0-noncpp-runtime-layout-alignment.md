@@ -22,7 +22,7 @@ Goal:
 
 Scope:
 - `src/runtime/{rs,cs}/**`
-- `tools/gen_runtime_from_manifest.py`
+- `tools/gen/gen_runtime_from_manifest.py`
 - `tools/runtime_generation_manifest.json`
 - `src/toolchain/compiler/backend_registry_metadata.py`
 - `src/toolchain/compiler/pytra_cli_profiles.py`
@@ -44,12 +44,12 @@ Acceptance criteria:
 - `src/runtime/cs/pytra/**` does not own canonical implementations; if it remains during tooling migration, it is transitional compatibility debris only and must eventually become empty or be removed.
 
 Planned verification:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_runtime_core_gen_markers.py`
-- `python3 tools/check_runtime_pytra_gen_naming.py`
-- `python3 tools/check_runtime_std_sot_guard.py`
-- `python3 tools/check_cs_single_source_selfhost_compile.py`
-- `PYTHONPATH=src:.:test/unit python3 -m unittest discover -s test/unit/backends/cs -p 'test_py2cs_smoke.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_runtime_core_gen_markers.py`
+- `python3 tools/check/check_runtime_pytra_gen_naming.py`
+- `python3 tools/check/check_runtime_std_sot_guard.py`
+- `python3 tools/check/check_cs_single_source_selfhost_compile.py`
+- `PYTHONPATH=src:.:test/unit python3 -m unittest discover -s tools/unittest/emit/cs -p 'test_py2cs_smoke.py'`
 
 Execution policy:
 1. Do not move handwritten files into `generated/`; regenerate them from the SoT through the manifest/generator lane.
@@ -140,13 +140,13 @@ Decision log:
 - 2026-03-12: Per user direction, promoted the non-C++ runtime layout reset to P0 and fixed the rule that `generated/` may contain only SoT-emitted artifacts.
 - 2026-03-12: Chose `<lane>/<bucket>/<module>` as the canonical compare unit instead of forcing literal C++ header/source duplication into every backend.
 - 2026-03-12: Closed `S1-01/S1-02` by fixing the canonical `<lane>/<bucket>/<module>` compare unit and mapping the current `pytra-core/pytra-gen` trees for `rs/cs` onto the target `generated/native/pytra` layout. In the first wave, `pytra/**` remains the compat/public shim lane and is excluded from ownership decisions.
-- 2026-03-12: Closed `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S2-01` / `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S2-02` / `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S2-03` by cutting the real `src/runtime/{rs,cs}/{native,generated}` trees over, syncing the Rust runtime hook, the C# build/selfhost/runtime paths, and the runtime guards / allowlists / inventories, then rerunning `tools/gen_runtime_from_manifest.py --targets rs,cs --items utils/png,utils/gif`.
+- 2026-03-12: Closed `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S2-01` / `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S2-02` / `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S2-03` by cutting the real `src/runtime/{rs,cs}/{native,generated}` trees over, syncing the Rust runtime hook, the C# build/selfhost/runtime paths, and the runtime guards / allowlists / inventories, then rerunning `tools/gen/gen_runtime_from_manifest.py --targets rs,cs --items utils/png,utils/gif`.
 - 2026-03-12: As the first probe for `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-01`, checked whether `json.py` / `pathlib.py` can already flow into `cs/rs` generated std lanes. `json.py` still stops on the `@abi` target restriction, while `pathlib.py` still lacks wired `os/os_path/glob` runtime import lanes, so the std-lane migration remains a follow-up wave.
 - 2026-03-12: As a compare-lane expansion under `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01`, added `rs/cs` `std/{time,math,os,os_path,glob,pathlib}` entries to `tools/runtime_generation_manifest.json` and generated `src/runtime/{rs,cs}/generated/std/*` from SoT. For now these files exist to make tree-level comparison concrete; build/runtime hooks still stay on the `native` lane.
 - 2026-03-12: Closed `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-01` by fixing the C# std lane ownership contract in `noncpp_runtime_layout_contract.py` / `check_noncpp_runtime_layout_contract.py`. The current decision is `json=native/std + generated blocked`, `pathlib=native/std canonical + generated compare artifact`, `math=native/built_in canonical + generated compare artifact`, and `re/argparse/enum=no runtime module`, guarded across the build profile, emitter alias lane, and C# smoke tests.
 - 2026-03-12: Re-scoped this P0 to `rs/cs` only and moved the remaining backend rollout into a separate P1 task. `generated/built_in/*` is part of the mandatory P0 end state, not an optional later extra.
 - 2026-03-12: Closed `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-02-A` by adding the Rust std ownership baseline to `noncpp_runtime_layout_contract.py` / `check_noncpp_runtime_layout_contract.py`. The current decision is `time/math=native/built_in canonical + generated compare artifact`, `pathlib/os/os_path/glob=no live runtime module + generated compare artifact`, `json=generated blocked + no live runtime module`, and `re/argparse/enum=no runtime module`, guarded across the manifest, native scaffold, and Rust smoke tests.
-- 2026-03-12: Closed `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S4-01` by adding `rs/cs` targets for `built_in/{contains,io_ops,iter_ops,numeric_ops,predicates,scalar_ops,sequence,string_ops,type_id,zip_ops}` to `tools/runtime_generation_manifest.json` and regenerating `src/runtime/{rs,cs}/generated/built_in/*` from SoT through `tools/gen_runtime_from_manifest.py --targets rs,cs --items ...`. The C# compare lane goes through `cs_program_to_helper` so multiple generated built-ins do not collide on `Program`.
+- 2026-03-12: Closed `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S4-01` by adding `rs/cs` targets for `built_in/{contains,io_ops,iter_ops,numeric_ops,predicates,scalar_ops,sequence,string_ops,type_id,zip_ops}` to `tools/runtime_generation_manifest.json` and regenerating `src/runtime/{rs,cs}/generated/built_in/*` from SoT through `tools/gen/gen_runtime_from_manifest.py --targets rs,cs --items ...`. The C# compare lane goes through `cs_program_to_helper` so multiple generated built-ins do not collide on `Program`.
 - 2026-03-12: Closed `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-02-B` by fixing the first live-generated C# std candidate as `time`. `generated/std/time.cs` remains a compare artifact for now, but its representative surface is only the `perf_counter()` lane, so it is the narrowest next live-generated target. `json/pathlib/math` stay deferred native-canonical lanes, while `re/argparse/enum` remain deferred no-runtime lanes.
 - 2026-03-12: Closed `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-02-C` by regenerating C# `generated/std/time.cs` through `cs_std_time_live_wrapper` into `namespace Pytra.CsModule { public static class time { ... } }`, with the wrapper calling the native `time_native` backing seam. The C# build plan now compiles `generated/std/time.cs` as the canonical module while keeping `native/built_in/time.cs` only as the backing seam, and the contract checker validates the wrapper content directly.
 - 2026-03-12: Per user direction, clarified that C# `pytra/` is not a shim/public lane. Because there is no `#include`-style indirection in C#, `src/runtime/cs/pytra/**` has no reason to host implementation bodies; any remaining duplicate files there are part of `S4-02` and should be deleted.

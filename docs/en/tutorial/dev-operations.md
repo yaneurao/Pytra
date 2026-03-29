@@ -15,41 +15,41 @@ This page collects day-to-day operational runbooks for parity, local CI, and bac
 
 ## Runtime Parity Operations (sample, all targets)
 
-- `tools/runtime_parity_check.py` compares not only stdout but also the `size` and `CRC32` of artifacts indicated by `output:`.
+- `tools/check/runtime_parity_check.py` compares not only stdout but also the `size` and `CRC32` of artifacts indicated by `output:`.
 - On each parity run, stale artifacts under `sample/out`, `test/out`, `out`, and `work/transpile/<target>/<case>` are automatically deleted per case.
 - Unstable lines such as `elapsed_sec` are excluded from comparison by default (`--ignore-unstable-stdout` is a compatibility flag).
 - Canonical wrapper to verify all 14 targets at once:
 
 ```bash
-python3 tools/check_all_target_sample_parity.py \
+python3 tools/check/check_all_target_sample_parity.py \
   --summary-dir work/logs/all_target_sample_parity
 ```
 
 - Canonical group when using `runtime_parity_check.py` directly at the lower level:
 
 ```bash
-python3 tools/runtime_parity_check.py \
+python3 tools/check/runtime_parity_check.py \
   --targets cpp \
   --case-root sample \
   --all-samples \
   --east3-opt-level 2 \
   --cpp-codegen-opt 3
 
-python3 tools/runtime_parity_check.py \
+python3 tools/check/runtime_parity_check.py \
   --targets js,ts \
   --case-root sample \
   --all-samples \
   --ignore-unstable-stdout \
   --east3-opt-level 2
 
-python3 tools/runtime_parity_check.py \
+python3 tools/check/runtime_parity_check.py \
   --targets rs,cs,go,java,kotlin,swift,scala \
   --case-root sample \
   --all-samples \
   --ignore-unstable-stdout \
   --east3-opt-level 2
 
-python3 tools/runtime_parity_check.py \
+python3 tools/check/runtime_parity_check.py \
   --targets ruby,lua,php,nim \
   --case-root sample \
   --all-samples \
@@ -67,31 +67,31 @@ python3 tools/runtime_parity_check.py \
 
 ## Non-C++ Backend Health Check after linked-program
 
-- The non-C++ backend gate after linked-program introduction uses `tools/check_noncpp_backend_health.py` as the canonical check.
+- The non-C++ backend gate after linked-program introduction uses `tools/check/check_noncpp_backend_health.py` as the canonical check.
 - The minimal daily check is the single command below. `parity` depends on toolchains and is not run here.
 
 ```bash
-python3 tools/check_noncpp_backend_health.py --family all --skip-parity
+python3 tools/check/check_noncpp_backend_health.py --family all --skip-parity
 ```
 
 - To restrict to a family, use `wave1` / `wave2` / `wave3`:
 
 ```bash
-python3 tools/check_noncpp_backend_health.py --family wave1 --skip-parity
-python3 tools/check_noncpp_backend_health.py --family wave2 --skip-parity
-python3 tools/check_noncpp_backend_health.py --family wave3 --skip-parity
+python3 tools/check/check_noncpp_backend_health.py --family wave1 --skip-parity
+python3 tools/check/check_noncpp_backend_health.py --family wave2 --skip-parity
+python3 tools/check/check_noncpp_backend_health.py --family wave3 --skip-parity
 ```
 
 - `toolchain_missing` is treated as a parity-environment baseline (not a backend bug).
-- `tools/run_local_ci.py` embeds `python3 tools/check_noncpp_backend_health.py --family all --skip-parity`, so passing local CI simultaneously monitors the non-C++ backend smoke/transpile gate.
-- `python3 tools/check_jsonvalue_decode_boundaries.py` is also embedded in local CI, so if raw `json.loads(...)` re-enters at JSON artifact boundaries in `pytra-cli` / `east_io` / `toolchain/link/*`, local CI will fail.
+- `tools/run/run_local_ci.py` embeds `python3 tools/check/check_noncpp_backend_health.py --family all --skip-parity`, so passing local CI simultaneously monitors the non-C++ backend smoke/transpile gate.
+- `python3 tools/check/check_jsonvalue_decode_boundaries.py` is also embedded in local CI, so if raw `json.loads(...)` re-enters at JSON artifact boundaries in `pytra-cli` / `east_io` / `toolchain/link/*`, local CI will fail.
 
 ## Required Guards when Changing Emitters (Stop-Ship)
 
 - When modifying any `src/toolchain/emit/*/emitter/*.py`, always run the following before committing:
-  - `python3 tools/check_emitter_runtimecall_guardrails.py`
-  - `python3 tools/check_emitter_forbidden_runtime_symbols.py`
-  - `python3 tools/check_noncpp_east3_contract.py`
+  - `python3 tools/check/check_emitter_runtimecall_guardrails.py`
+  - `python3 tools/check/check_emitter_forbidden_runtime_symbols.py`
+  - `python3 tools/check/check_noncpp_east3_contract.py`
 - If any of the above returns `FAIL`, committing or pushing is prohibited (Stop-Ship).
 - Runtime/stdlib call resolution must use only the authoritative EAST3 information (`runtime_call`, `resolved_runtime_call`, `resolved_runtime_source`). Do not add function-name or module-name branches or tables on the emitter side.
 - The `java` backend is a strict target. No directly-written symbols for runtime dispatch are permitted via allowlist — maintain zero such entries.
@@ -104,15 +104,15 @@ python3 tools/check_noncpp_backend_health.py --family wave3 --skip-parity
   - Paths that are type-known and locally non-escaping are treated as value-type paths (value-path), with shallow copies inserted.
   - When the determination is ambiguous, fail-closed to the ref-boundary side.
 - Verifying generated output:
-  - `python3 tools/check_py2cs_transpile.py`
-  - `python3 tools/check_py2js_transpile.py`
-  - `python3 tools/check_py2ts_transpile.py`
-  - `python3 tools/check_py2go_transpile.py`
-  - `python3 tools/check_py2swift_transpile.py`
-  - `python3 tools/check_py2rb_transpile.py`
-  - `python3 tools/check_py2lua_transpile.py`
-  - `python3 tools/check_py2php_transpile.py`
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets cs,js,ts,go,swift,ruby,lua,php --ignore-unstable-stdout 18_mini_language_interpreter`
+  - `python3 tools/check/check_py2cs_transpile.py`
+  - `python3 tools/check/check_py2js_transpile.py`
+  - `python3 tools/check/check_py2ts_transpile.py`
+  - `python3 tools/check/check_py2go_transpile.py`
+  - `python3 tools/check/check_py2swift_transpile.py`
+  - `python3 tools/check/check_py2rb_transpile.py`
+  - `python3 tools/check/check_py2lua_transpile.py`
+  - `python3 tools/check/check_py2php_transpile.py`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --targets cs,js,ts,go,swift,ruby,lua,php --ignore-unstable-stdout 18_mini_language_interpreter`
 - Rollback approach (interim):
   - If value-type materialization causes a problem, move the local type annotation toward `object/Any` to force a ref-boundary.
   - Conversely, if you want to explicitly isolate an alias, write an explicit copy such as `list(...)` / `dict(...)` on the Python input side.
@@ -143,10 +143,10 @@ mkdir -p work/transpile/cpp2
 python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o work/transpile/cpp/01_mandelbrot.cpp
 
 # 4) Verify the direct route passes -fsyntax-only for all samples
-python3 tools/check_selfhost_direct_compile.py
+python3 tools/check/check_selfhost_direct_compile.py
 
 # 5) Check output diff between Python version and selfhost version on representative cases
-python3 tools/check_selfhost_cpp_diff.py --mode strict --show-diff
+python3 tools/check/check_selfhost_cpp_diff.py --mode strict --show-diff
 
 # 6) Verify representative e2e
 python3 tools/verify_selfhost_end_to_end.py --skip-build \
@@ -154,17 +154,17 @@ python3 tools/verify_selfhost_end_to_end.py --skip-build \
 
 # 7) Generate stage2 binary and check diff
 python3 tools/build_selfhost_stage2.py
-python3 tools/check_selfhost_stage2_cpp_diff.py --mode strict
+python3 tools/check/check_selfhost_stage2_cpp_diff.py --mode strict
 
 # 8) Verify full sample parity with the stage2 binary
-python3 tools/check_selfhost_stage2_sample_parity.py --skip-build
+python3 tools/check/check_selfhost_stage2_sample_parity.py --skip-build
 ```
 
 Notes:
 - Direct `.py` input to `selfhost/py2cpp.out` is the current contract. The bridge path is treated as an investigation-only fallback.
-- `tools/check_selfhost_cpp_diff.py` and `tools/check_selfhost_stage2_cpp_diff.py` treat strict mode as canonical.
-- `tools/check_selfhost_stage2_sample_parity.py --skip-build` is the canonical command for full sample parity using `selfhost/py2cpp_stage2.out`. Unlike the representative diff, it checks transpile + compile + run parity for all `sample/py` cases.
-- `tools/check_selfhost_direct_compile.py` is the shortest compile regression gate: it converts all `sample/py` cases with selfhost and checks up to `g++ -fsyntax-only`.
+- `tools/check/check_selfhost_cpp_diff.py` and `tools/check/check_selfhost_stage2_cpp_diff.py` treat strict mode as canonical.
+- `tools/check/check_selfhost_stage2_sample_parity.py --skip-build` is the canonical command for full sample parity using `selfhost/py2cpp_stage2.out`. Unlike the representative diff, it checks transpile + compile + run parity for all `sample/py` cases.
+- `tools/check/check_selfhost_direct_compile.py` is the shortest compile regression gate: it converts all `sample/py` cases with selfhost and checks up to `g++ -fsyntax-only`.
 
 Failure checklist:
 - First classify `error:` entries in `build.all.log`, separating type-system errors (`std::any` / `optional`) from syntax errors (unlowered constructs).
@@ -176,9 +176,9 @@ Failure checklist:
 When incrementally modifying `CodeEmitter`, run the following after each step:
 
 ```bash
-python3 tools/check_py2cpp_transpile.py
-python3 tools/check_py2rs_transpile.py
-python3 tools/check_py2js_transpile.py
+python3 tools/check/check_py2cpp_transpile.py
+python3 tools/check/check_py2rs_transpile.py
+python3 tools/check/check_py2js_transpile.py
 ```
 
 Notes:

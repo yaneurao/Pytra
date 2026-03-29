@@ -36,13 +36,13 @@
 - 条件付き append (`if ...: xs.append(...)`) では `reserve` が一切出力されないこと。
 - 無条件 append かつループ回数が事前確定可能な `StaticRangeForPlan` のみ `reserve` が出力されること。
 - `sample/cpp/18_mini_language_interpreter.cpp` で不適切 `reserve` が消えること。
-- `test_py2cpp_codegen_issues.py` と `tools/check_py2cpp_transpile.py` が通過すること。
+- `test_py2cpp_codegen_issues.py` と `tools/check/check_py2cpp_transpile.py` が通過すること。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force --verbose`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force --verbose`
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、`reserve` は「無条件 append + ループ回数事前確定」条件でのみ有効化し、判定責務を EAST3 側へ移す `P0` 計画を起票した。

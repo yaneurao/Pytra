@@ -21,7 +21,7 @@
 対象:
 - `src/pytra/compiler/east_parts/core.py`
 - `src/pytra/compiler/stdlib/signature_registry.py`（必要時）
-- `test/unit/test_east_core.py`（回帰）
+- `tools/unittest/test_east_core.py`（回帰）
 
 非対象:
 - `Path` API 仕様の変更
@@ -33,9 +33,9 @@
 - 既存回帰（`test_east_core.py`、`check_py2cpp_transpile.py`）が非退行で通る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 -m unittest discover -s test/unit -p 'test_east_core.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 ## 分解
 
@@ -84,4 +84,4 @@
 - 2026-03-01: `core.py` の `fn_name == "Path"` / `owner_t == "Path"` 直分岐を撤去し、`lookup_stdlib_imported_symbol_return_type` / `lookup_stdlib_imported_symbol_runtime_call` 経由の resolver へ移行した（`P1-CORE-PATH-SOT-01-S2-01`）。
 - 2026-03-01: `Path` メソッド戻り値推論を `lookup_stdlib_method_return_type` に移管し、`from pathlib import Path as P` / `from pytra.std.pathlib import Path as PP` の constructor 推論・`BuiltinCall(runtime_call=Path)` 維持を `test_east_core.py` で確認した（`P1-CORE-PATH-SOT-01-S2-02`）。
 - 2026-03-01: `test_east_core.py` に `Path` 直分岐の再混入検知と alias import 回帰を追加し、`python3 -m unittest discover -s test/unit -p 'test_east_core.py' -v`（28件）を通過させた（`P1-CORE-PATH-SOT-01-S3-01`）。
-- 2026-03-01: `python3 tools/check_py2cpp_transpile.py` を実行し、`checked=134 ok=134 fail=0 skipped=6` で非退行を確認した（`P1-CORE-PATH-SOT-01-S3-02`）。
+- 2026-03-01: `python3 tools/check/check_py2cpp_transpile.py` を実行し、`checked=134 ok=134 fail=0 skipped=6` で非退行を確認した（`P1-CORE-PATH-SOT-01-S3-02`）。

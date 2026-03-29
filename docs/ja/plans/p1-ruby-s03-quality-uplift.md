@@ -36,10 +36,10 @@
 - `check_py2rb_transpile.py` と `runtime_parity_check --targets ruby --case 03_julia_set` が通る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2rb_transpile.py`
-- `python3 tools/regenerate_samples.py --langs ruby --stems 03_julia_set --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets ruby --case 03_julia_set --ignore-unstable-stdout`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2rb_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs ruby --stems 03_julia_set --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby --case 03_julia_set --ignore-unstable-stdout`
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、`sample/ruby/03` の改善項目を P1 計画として起票。
@@ -51,7 +51,7 @@
 - 2026-03-02: 連続 `append` の peephole を追加し、同一 owner + 安全引数（Name/Constant/Attribute/Subscript）2件以上を `owner.concat([..])` へ縮退。
 - 2026-03-02: `sample/ruby/01` / `sample/ruby/03` で `pixels.concat([r, g, b])` を確認。`test_py2rb_smoke` と `03_julia_set` parity を再通過。
 - 2026-03-02: `test_sample03_reduces_redundant_parentheses_in_binop_and_conditions` を追加し、括弧縮退 + `concat` 縮退の回帰検知を固定（S3-01）。
-- 2026-03-02: `tools/regenerate_samples.py --langs ruby --stems 01_mandelbrot,03_julia_set --force` と `runtime_parity_check ... 03_julia_set` を再実行し、S3-02 を完了。
+- 2026-03-02: `tools/gen/regenerate_samples.py --langs ruby --stems 01_mandelbrot,03_julia_set --force` と `runtime_parity_check ... 03_julia_set` を再実行し、S3-02 を完了。
 - 2026-03-02: `Div` で「右辺が非ゼロ数値定数」のみ direct `/` fastpath を追加し、ゼロ除算契約を壊さない境界で `__pytra_div` 依存を削減（S2-01）。
 - 2026-03-02: `sample/ruby/06` の `t = __pytra_div((i - 1), 254.0)` が `(__pytra_float(i - 1)) / 254.0` へ縮退。`03/06` parity 通過を確認。
 - 2026-03-02: `_render_float_cast` の数値定数 fastpath（`int -> <n>.0`, `float -> literal`）を追加し、同型 cast helper 呼び出しを抑制（S2-05）。

@@ -40,7 +40,7 @@ Acceptance criteria:
 - Usage is added to `docs/ja/how-to-use.md` (and `docs/en/how-to-use.md` if needed).
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 src/ir2lang.py --help`
 - `python3 src/ir2lang.py --input sample/ir/01_mandelbrot.json --target cpp --output out/ir2lang_cpp_01.cpp`
 - `python3 src/ir2lang.py --input sample/ir/01_mandelbrot.json --target rs --output out/ir2lang_rs_01.rs`
@@ -96,5 +96,5 @@ Decision log:
 - 2026-03-03: Finalized policy that `ir2lang.py` input is EAST3 JSON only, requiring `east_stage==3`.
 - 2026-03-03: Finalized policy to adopt `pytra-cli.py`-compatible layer-option syntax, and support backend-only verification via `--no-runtime-hook`.
 - 2026-03-03: Added `src/ir2lang.py`, implementing `backend_registry` lazy dispatch, layer-option pass-through, and fail-fast EAST3 contract checks.
-- 2026-03-03: Added fixtures `sample/ir/01_mandelbrot.east3.json` and `test/ir/core_add.east3.json`, and fixed backend-only regression path with `tools/check_ir2lang_smoke.py` (`cpp/rs/js`).
+- 2026-03-03: Added fixtures `sample/ir/01_mandelbrot.east3.json` and `test/ir/core_add.east3.json`, and fixed backend-only regression path with `tools/check/check_ir2lang_smoke.py` (`cpp/rs/js`).
 - 2026-03-03: Added `ir2lang.py` procedures (fixture creation/direct conversion/smoke execution) to `docs/ja/how-to-use.md` / `docs/en/how-to-use.md`.

@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 BACKENDS_ROOT = ROOT / "src" / "backends"
 ALLOWLIST_PATH = ROOT / "tools" / "emitter_forbidden_runtime_symbols_allowlist.txt"
 

@@ -24,7 +24,7 @@
 - `src/runtime/php/pytra/runtime/gif.php`
 - PHP backend の画像保存 lower（`__pytra_noop` 経路の撤去）
 - PHP backend の tuple/多値返却受け取り lower（`sample/16` の未束縛変数原因）
-- `tools/runtime_parity_check.py` の artifact クリーンアップ
+- `tools/check/runtime_parity_check.py` の artifact クリーンアップ
 
 非対象:
 - PHP backend 全体の性能最適化
@@ -38,10 +38,10 @@
 - `runtime_parity_check --case-root sample --targets php --all-samples` の結果が、少なくとも artifact 偽陽性なしで評価される。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/regenerate_samples.py --langs php --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets php --all-samples`
-- `python3 tools/check_py2php_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/gen/regenerate_samples.py --langs php --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets php --all-samples`
+- `python3 tools/check/check_py2php_transpile.py`
 
 決定ログ:
 - 2026-03-03: ユーザー指示により、PHP 画像 runtime 未実装と `sample/16` 実行失敗を P0 として起票。

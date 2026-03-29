@@ -46,7 +46,7 @@ module_name_to_cpp_include("pytra.core.dict") == "core/dict.h"
 
 ## 対象
 
-- `test/unit/backends/cpp/test_cpp_runtime_symbol_index_integration.py` — 6 件
+- `tools/unittest/emit/cpp/test_cpp_runtime_symbol_index_integration.py` — 6 件
 
 ## 受け入れ基準
 

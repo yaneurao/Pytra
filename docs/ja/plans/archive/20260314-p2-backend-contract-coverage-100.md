@@ -11,7 +11,7 @@
 
 背景:
 - 現行の `docs/ja/language/backend-parity-matrix.md` は representative feature の support state を公開する canonical support matrix であり、全 test suite の総覧ではない。
-- support matrix の row は `feature_id + representative_fixture` の curated inventory に固定されている一方、`test/unit/backends/*` では `property_method_call` や `list_bool_index` のように多 backend で既に見ている fixture があり、coverage の実態と docs の見え方がずれている。
+- support matrix の row は `feature_id + representative_fixture` の curated inventory に固定されている一方、`tools/unittest/emit/*` では `property_method_call` や `list_bool_index` のように多 backend で既に見ている fixture があり、coverage の実態と docs の見え方がずれている。
 - `test/ir` は EAST3(JSON) 起点の backend-only smoke、`test/integration` は backend-specific integration suite、`test/transpile` は artifact 比較系の fixture 群だが、これらは parity matrix の row taxonomy に直接接続されていない。
 - その結果、「どの feature/lane/backend がどの大きな test bundle で検証されているか」「未掲載だが既に見ている fixture は何か」「coverage がどこまで 100% か」が docs と tooling から即答できない。
 
@@ -23,7 +23,7 @@
 対象:
 - `backend_feature_contract_inventory.py` と `backend_conformance_inventory.py` にある representative feature / lane contract
 - `docs/ja|en/language/backend-parity-matrix.md` と将来の coverage docs/export
-- `test/unit/common` / `test/unit/backends` / `test/ir` / `test/integration` / `test/transpile`
+- `tools/unittest/common` / `tools/unittest/backends` / `test/ir` / `test/integration` / `test/transpile`
 - coverage bundle taxonomy、manifest、checker、export tool、mirror docs
 - representative inventory に未昇格だが multi-backend で既に見ている fixture の棚卸し
 
@@ -42,11 +42,11 @@
 - 新規 feature や suite を追加した際、coverage bundle 未接続の `feature/lane/backend` を checker が fail させる。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `rg -n "property_method_call|list_bool_index|test/ir|test/integration|test/transpile|support matrix|coverage matrix" src tools test docs -g '!**/archive/**'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_backend_*coverage*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends -p 'test_py2*_smoke.py'`
-- `python3 tools/check_ir2lang_smoke.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_backend_*coverage*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/backends -p 'test_py2*_smoke.py'`
+- `python3 tools/check/check_ir2lang_smoke.py`
 - `git diff --check`
 
 ## Coverage Bundle 方針
@@ -79,7 +79,7 @@
 
 決定ログ:
 - 2026-03-14: `backend-parity-matrix` が representative support claim であって suite inventory ではないことを確認し、bundle-based coverage matrix を別建てして contract coverage 100% を定義する P2 task として起票した。
-- 2026-03-14: `backend_contract_coverage_inventory.py` / checker / unit test を追加し、representative inventory seed、coverage bundle taxonomy、live suite family inventory、未掲載 multi-backend fixture seed（`property_method_call`, `list_bool_index`）を first-pass の machine-readable inventory として固定した。`test/unit/link|selfhost|tooling` は supporting-only、`test/unit/common|backends|ir`, `test/ir`, `test/integration`, `test/transpile` は direct matrix input 候補として分類する。
+- 2026-03-14: `backend_contract_coverage_inventory.py` / checker / unit test を追加し、representative inventory seed、coverage bundle taxonomy、live suite family inventory、未掲載 multi-backend fixture seed（`property_method_call`, `list_bool_index`）を first-pass の machine-readable inventory として固定した。`tools/unittest/link|selfhost|tooling` は supporting-only、`tools/unittest/common|backends|ir`, `test/ir`, `test/integration`, `test/transpile` は direct matrix input 候補として分類する。
 - 2026-03-14: `backend_contract_coverage_contract.py` / checker / unit test を追加し、support matrix / future coverage matrix / backend test matrix の役割分担と `feature x required_lane x backend` contract coverage 100% の定義を tooling contract に固定した。`docs/ja|en/language/backend-parity-matrix.md` と `backend-test-matrix.md` にも同じ wording を入れ、suite health と contract coverage を混同しない状態を doc needle で検証する。
 - 2026-03-14: `backend_contract_coverage_matrix_contract.py` / checker / unit test を追加し、representative feature の `required_lane x backend` seed ownership を machine-readable に固定した。`parse/east/east3_lowering/emit` は bundle owner、`runtime` は `case_runtime_followup` / `module_runtime_strategy_followup` rule として seed 化し、bundle 未接続 lane を explicit rule 付きで可視化する。
 - 2026-03-14: `backend_contract_coverage_suite_attachment_contract.py` / checker / unit test を追加し、live suite family ごとの bundle attachment / explicit exclusion を machine-readable に固定した。`unit_common`, `unit_backends`, `unit_ir`, `ir_fixture`, `integration`, `transpile_artifact` は direct bundle attachment、`unit_link`, `unit_selfhost`, `unit_tooling` は supporting-only exclusion reason を必須にして、未接続 suite を checker で可視化する。

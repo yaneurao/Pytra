@@ -28,7 +28,7 @@ Acceptance criteria:
 
 Verification commands:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v`
-- `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets go`
+- `PYTHONPATH=src python3 tools/check/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets go`
 
 Breakdown:
 - [x] Compare inheritance representation approaches in Go (embedding/interface) and finalize the adopted approach.
@@ -40,4 +40,4 @@ Decision log:
 - 2026-03-01: Adopted receiving inheritance type annotations via class interfaces (`AnimalLike`, etc.) rather than `*Class`, enabling dynamic dispatch through base references.
 - 2026-03-01: Implemented rules lowering `super().method(...)` to embedded-base calls (`self.<Base>.method(...)`) and `super().__init__(...)` to `self.<Base>.Init(...)`.
 - 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v` passed (12 tests, 0 fail).
-- 2026-03-01: `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets go --ignore-unstable-stdout` passed (1/1).
+- 2026-03-01: `PYTHONPATH=src python3 tools/check/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets go --ignore-unstable-stdout` passed (1/1).

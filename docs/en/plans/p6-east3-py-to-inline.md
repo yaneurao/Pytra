@@ -34,7 +34,7 @@ EAST3 IR はキャスト意味論を持ち、emitter は型情報を参照でき
 
 - `src/toolchain/emit/cpp/emitter/`（`py_to` emit 箇所）
 - `src/runtime/cpp/native/core/py_runtime.h`（除去対象関数）
-- `test/unit/toolchain/emit/cpp/`（回帰テスト）
+- `tools/unittest/emit/cpp/`（回帰テスト）
 
 ## 非対象
 

@@ -76,7 +76,7 @@
 1. 固定入力:
    - `materials/refs/microgpt/microgpt-20260222.py`（原本）
 2. 検査コマンド:
-   - `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
+   - `python3 tools/check/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
 3. 期待結果:
    - `result=fail phase=transpile` か `result=fail phase=syntax-check` の場合は `stage=A..F` のいずれかで分類される。
    - `result=ok phase=transpile+syntax-check` の場合は `stage=SUCCESS` となる。
@@ -93,9 +93,9 @@ parser 受理拡張（P3-MSP-04）:
      - `_sh_split_def_header_and_inline_stmt`: `def` ヘッダと inline 本文の分割 helper を追加。
      - `convert_source_to_east_self_hosted` / `_sh_parse_stmt_block_mutable` / class 解析経路: inline 定義を synthetic body へ lower。
 3. 検証
-   - `python3 test/unit/test_self_hosted_signature.py`
+   - `python3 tools/unittest/test_self_hosted_signature.py`
      - `ok_untyped_param.py` と `ok_class_inline_method.py` を追加し、受理拡張の回帰を固定。
-   - `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
+   - `python3 tools/check/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
      - `stage=A`（無注釈引数）から `stage=C`（top-level/lower ギャップ）へ前進。
 4. 境界
    - 本タスクは parser 受理範囲の拡張のみを対象にし、top-level `for` / tuple 同時代入 / 複数 `for` 内包や lower 不整合は `P3-MSP-05` 以降で扱う。
@@ -113,7 +113,7 @@ parser top-level/内包拡張（P3-MSP-05）:
      - top-level `asg_top` 処理: target を expression として parse する方式へ変更（tuple target 許容）。
      - `_sh_parse_expr_lowered` list-comp 分岐: chained `for` / `if` 句を順次解析し `generators` 配列へ lower。
 3. 検証
-   - `python3 test/unit/test_self_hosted_signature.py`
+   - `python3 tools/unittest/test_self_hosted_signature.py`
      - 追加 fixture:
        - `test/fixtures/signature/ok_top_level_if_import.py`
        - `test/fixtures/signature/ok_top_level_for.py`
@@ -125,7 +125,7 @@ parser top-level/内包拡張（P3-MSP-05）:
      - `python3 src/py2cpp.py /tmp/msp5_top_tuple_assign.py -o /tmp/msp5_top_tuple_assign.cpp`
      - `python3 src/py2cpp.py /tmp/msp5_multi_for_comp.py -o /tmp/msp5_multi_for_comp.cpp`
    - 回帰導線:
-     - `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
+     - `python3 tools/check/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
      - 先頭失敗は `line 15`（top-level `if`）から `line 80`（lambda 既定値）へ前進。
 4. 境界
    - ここで未対応だった lambda 既定値・generator tuple target・f-string format spec は後続の `P3-MSP-07` で段階対応した。
@@ -139,13 +139,13 @@ EAST/emitter `range(...)` lower 整合（P3-MSP-06）:
    - `src/py2cpp.py`:
      - `CppEmitter._render_range_name_call` を追加。
      - `CppEmitter._render_call_name_or_attr` の `raw == "range"` 分岐を例外送出から helper 呼び出しへ切替。
-   - `test/unit/test_py2cpp_features.py`:
+   - `tools/unittest/test_py2cpp_features.py`:
      - `Py2CppFeatureTest.test_random_choices_range_call_lowers_to_py_range` を追加し、`random.choices(range(3), ...)` で `py_range(0, 3, 1)` が生成されることを固定。
 3. 検証
-   - `python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_random_choices_range_call_lowers_to_py_range`
-   - `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
+   - `python3 tools/unittest/test_py2cpp_features.py Py2CppFeatureTest.test_random_choices_range_call_lowers_to_py_range`
+   - `python3 tools/check/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
      - `stage=C`（`unsupported lambda parameter token: = at 80:30`）を確認し、`stage=D` への後退が消えたことを確認。
-   - `python3 tools/check_py2cpp_transpile.py`
+   - `python3 tools/check/check_py2cpp_transpile.py`
      - `checked=124 ok=124 fail=0 skipped=6`
    - `python3 src/py2cpp.py /tmp/msp6_choices_range.py -o /tmp/msp6_choices_range.cpp`
      - 生成 C++ に `pytra::std::random::choices(py_range(0, 3, 1), ...)` を確認。
@@ -174,17 +174,17 @@ EAST/emitter `zip` 経由型崩れ安定化（P3-MSP-07）:
    - `src/py2cpp.py`:
      - `_emit_target_unpack`（`unknown` を維持）
 3. 検証
-   - `python3 test/unit/test_self_hosted_signature.py`（16件成功）
+   - `python3 tools/unittest/test_self_hosted_signature.py`（16件成功）
      - 追加 fixture:
        - `ok_lambda_default.py`
        - `ok_generator_tuple_target.py`
        - `ok_list_concat_comp.py`
        - `ok_tuple_of_list_comp.py`
        - `ok_fstring_format_spec.py`
-   - `python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_random_choices_range_call_lowers_to_py_range Py2CppFeatureTest.test_lambda_default_arg_emits_cpp_default Py2CppFeatureTest.test_zip_tuple_unpack_does_not_force_object_receiver`
-   - `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
+   - `python3 tools/unittest/test_py2cpp_features.py Py2CppFeatureTest.test_random_choices_range_call_lowers_to_py_range Py2CppFeatureTest.test_lambda_default_arg_emits_cpp_default Py2CppFeatureTest.test_zip_tuple_unpack_does_not_force_object_receiver`
+   - `python3 tools/check/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
      - `stage=F`（syntax-check 失敗）へ前進し、transpile 段階の `C/E` は解消。
-   - `python3 tools/check_py2cpp_transpile.py`
+   - `python3 tools/check/check_py2cpp_transpile.py`
      - `checked=129 ok=129 fail=0 skipped=6`
 4. 残課題
    - 原本 `microgpt` は transpile 済みだが、生成 C++ の top-level 実行文配置など compile 互換差分が残り `stage=F`。`P3-MSP-03` で継続する。
@@ -221,17 +221,17 @@ runtime/std 互換差分整理（P3-MSP-08）:
    - `src/py2cpp.py` で `IfExp` の定数条件畳み込み、class 内 object 属性の `py_obj_cast<CurrentClass>` 経路、class 左辺算術（`+ - * /`）の dunder lower、class method 呼び出し引数の `object` 強制 boxing を追加し、`Value` 系の compile エラーを段階的に後退させた。
    - `src/runtime/cpp/pytra/built_in/py_runtime.h` に `object` 四則演算 overload（`+ - * /`）を追加し、`src/runtime/cpp/pytra/std/math.*` に `math.log/exp(object)` overload を追加した。
 2. 検証
-   - `python3 test/unit/test_self_hosted_signature.py`（16件成功）
-   - `python3 test/unit/test_py2cpp_features.py Py2CppFeatureTest.test_random_choices_range_call_lowers_to_py_range Py2CppFeatureTest.test_lambda_default_arg_emits_cpp_default Py2CppFeatureTest.test_zip_tuple_unpack_does_not_force_object_receiver`（3件成功）
-   - `python3 tools/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）
-   - `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
+   - `python3 tools/unittest/test_self_hosted_signature.py`（16件成功）
+   - `python3 tools/unittest/test_py2cpp_features.py Py2CppFeatureTest.test_random_choices_range_call_lowers_to_py_range Py2CppFeatureTest.test_lambda_default_arg_emits_cpp_default Py2CppFeatureTest.test_zip_tuple_unpack_does_not_force_object_receiver`（3件成功）
+   - `python3 tools/check/check_py2cpp_transpile.py`（`checked=129 ok=129 fail=0 skipped=6`）
+   - `python3 tools/check/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
      - `stage=F` は維持だが、先頭エラーは `std::make_tuple` 既定値不整合から `Value::__add__`、さらに `Value::__rtruediv__` 周辺へ前進。
 3. 完了状態（2026-02-24）
    - `src/pytra/compiler/east_parts/core.py` の `/` 型推論を「数値同士のみ `float64`、それ以外は `unknown`」へ修正し、`softmax` 由来の `Value -> float64` 崩れを抑止した。
    - `src/py2cpp.py` で class ctor 引数のシグネチャ coercion（`__init__`）を有効化し、`object` 引数への boxing を徹底した。
    - `src/py2cpp.py` の `Attribute` lower（`obj_to_rc_or_raise`) で unknown owner を常に boxing するよう修正し、`loss.data` 経路の compile 崩れを解消した。
    - `src/runtime/cpp/pytra-core/built_in/py_runtime.h` で `py_div` の object 対応、`object` 複合代入、`rc<T>` の unary minus（`__neg__`）を追加し、`Value` 演算経路の compile 互換を確立した。
-   - 検証: `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known` が `result=ok phase=transpile+syntax-check, stage=SUCCESS` で通過した。
+   - 検証: `python3 tools/check/check_microgpt_original_py2cpp_regression.py --expect-stage any-known` が `result=ok phase=transpile+syntax-check, stage=SUCCESS` で通過した。
 
 目的:
 - 「変換器都合で元ソースを書き換える」運用を禁止し、必要な対応を parser/emitter/runtime 側タスクへ移す。
@@ -255,7 +255,7 @@ runtime/std 互換差分整理（P3-MSP-08）:
 - 2026-02-23: 2026-02-23 00:03〜00:13 の作業ログと `materials/refs/microgpt/microgpt-20260222.py` vs `work/tmp/microgpt-20260222-lite.py` 差分から、原本改変項目を抽出して本コンテキストを作成。
 - 2026-02-23: `P3-MSP-01` を実施。改変 7 項目を parser / emitter / runtime の責務へ再分類し、入力側改変の代わりに実装側で吸収する方針を明文化。
 - 2026-02-23: `P3-MSP-02` を実施。原本入力で先頭エラー（無注釈引数）を再現し、ログ追跡と合わせて失敗要因 A〜F を列挙。回避改変の内容を `P3-MSP-04`〜`P3-MSP-09` の実装タスクへ置換した。
-- 2026-02-23: `P3-MSP-09` を実施。`tools/check_microgpt_original_py2cpp_regression.py` を追加し、原本固定入力の transpile/syntax-check を失敗ステージ A〜F で分類して再発検知できる導線を整備した。
+- 2026-02-23: `P3-MSP-09` を実施。`tools/check/check_microgpt_original_py2cpp_regression.py` を追加し、原本固定入力の transpile/syntax-check を失敗ステージ A〜F で分類して再発検知できる導線を整備した。
 - 2026-02-23: `P3-MSP-04` を実施。無注釈引数を `unknown` 受理へ切り替え、`def ...: stmt` の inline 定義を top-level / nested / class method で受理する parser 拡張を実装。`test_self_hosted_signature.py` の追加ケース通過と、原本 `microgpt` の失敗ステージ `A -> C` 前進を確認した。
 - 2026-02-23: `P3-MSP-05` を実施。top-level `if` / `for`、tuple 同時代入、list-comp 複数 `for`、block 内 import を parser で受理するよう拡張。原本 `microgpt` の失敗先頭を `line 15` から `line 80`（lambda 既定値）へ前進させた。
 - 2026-02-23: `P3-MSP-06` を実施。`src/py2cpp.py` で raw `range(...)` Name-call を `py_range(...)` へ lower する経路を追加し、`unexpected raw range Call in EAST` 例外を解消。`random.choices(range(...))` 再現ケースで transpile 通過を確認し、回帰ステージは `C` 維持（`D` 解消）を確認した。
@@ -263,7 +263,7 @@ runtime/std 互換差分整理（P3-MSP-08）:
 - 2026-02-23: `P3-MSP-08` を実施。`open`/`list.index`/`random.shuffle(list[str])` の最小再現を行い、runtime/std 互換差分の吸収レイヤを確定した。`random.choices(range(...))` は runtime ではなく `P3-MSP-06`（EAST lower）側で扱うと決定した。
 - 2026-02-23: `P3-MSP-03` の継続として module init 分離・runtime API 追加・`object` 既定値補完・無注釈関数の戻り値推定を実装し、`stage=F` 先頭エラーを `std::make_tuple` 既定値不整合から `Value::__add__` 周辺へ前進させた。
 - 2026-02-23: `P3-MSP-03` の継続として `IfExp` 定数畳み込み、class/object 境界の dunder lower・boxing 強化、runtime `object` 四則演算と `math.log/exp(object)` overload を追加し、`stage=F` 先頭エラーを `Value::__add__` から `Value::__rtruediv__` 周辺へ前進させた。
-- 2026-02-24: `materials/` 再編後の導線ずれを解消するため、`tools/check_microgpt_original_py2cpp_regression.py` の既定入力を `materials/refs/microgpt/microgpt-20260222.py` へ更新し、`--source` 省略で `stage=F` を再現できる状態に復旧した。
+- 2026-02-24: `materials/` 再編後の導線ずれを解消するため、`tools/check/check_microgpt_original_py2cpp_regression.py` の既定入力を `materials/refs/microgpt/microgpt-20260222.py` へ更新し、`--source` 省略で `stage=F` を再現できる状態に復旧した。
 - 2026-02-24: `P3-MSP-03` の継続として `x if isinstance(x, T) else T(x)` 形の `IfExp` で `else` 側を `make_object(...)` へ統一する lower を追加し、`stage=F` 先頭エラーを `Value::__add__` から `Value::log()` 周辺へ前進させた（`check_microgpt_original_py2cpp_regression.py --expect-stage any-known`）。
 - 2026-02-24: P3-MSP-03 を完了。`core.py` の `/` 型推論、`py2cpp.py` の class ctor / 属性 access boxing、runtime `py_div` / `object` 複合代入 / `rc<T>` unary minus を段階適用し、`materials/refs/microgpt/microgpt-20260222.py` を入力した `transpile -> g++ -fsyntax-only` が `stage=SUCCESS` で通過した。
 - 2026-02-24: `P3-MSP-03` の継続として module 関数引数 coercion に「数値シグネチャ + Any/unknown 引数の unbox」を追加し、`pytra::std::math::log/exp` へ `object` が流れる経路を縮退。`stage=F` 先頭エラーを `Value::log()` から lambda 内部（`val.data` / `(val - max_val).exp()`）へ前進させた。

@@ -29,8 +29,8 @@
 - 必要に応じて `src/backends/cpp/emitter/runtime_expr.py`
 - 必要に応じて `src/backends/rs/emitter/rs_emitter.py`
 - 必要に応じて `src/backends/cs/emitter/cs_emitter.py`
-- `tools/check_crossruntime_pyruntime_final_thincompat_inventory.py`
-- `test/unit/tooling/test_check_crossruntime_pyruntime_final_thincompat_inventory.py`
+- `tools/check/check_crossruntime_pyruntime_final_thincompat_inventory.py`
+- `tools/unittest/tooling/test_check_crossruntime_pyruntime_final_thincompat_inventory.py`
 - 必要に応じて representative runtime / smoke tests
 
 非対象:
@@ -59,12 +59,12 @@ bundle 順:
 4. 最後に `cpp_header_final_thincompat_defs` を削除する。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_crossruntime_pyruntime_final_thincompat_inventory.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_crossruntime_pyruntime_final_thincompat_inventory.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_type_id.py'`
-- `PYTHONPATH=src:test/unit python3 -m unittest discover -s test/unit/backends/rs -p 'test_py2rs_smoke.py' -k type_predicate`
-- `PYTHONPATH=src:test/unit python3 -m unittest discover -s test/unit/backends/cs -p 'test_py2cs_smoke.py' -k type_predicate`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_crossruntime_pyruntime_final_thincompat_inventory.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_crossruntime_pyruntime_final_thincompat_inventory.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_type_id.py'`
+- `PYTHONPATH=src:test/unit python3 -m unittest discover -s tools/unittest/emit/rs -p 'test_py2rs_smoke.py' -k type_predicate`
+- `PYTHONPATH=src:test/unit python3 -m unittest discover -s tools/unittest/emit/cs -p 'test_py2cs_smoke.py' -k type_predicate`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 
@@ -78,7 +78,7 @@ bundle 順:
 
 決定ログ:
 - 2026-03-11: TODO が空になったため、新しい低優先度 follow-up として起票した。直前までに emitter-side blocker 自体はかなり整理済みなので、次段階は「generic helper 定義と checked-in caller を消せる状態にする」ことを目的にする。
-- 2026-03-11: `S1-01` として `tools/check_crossruntime_pyruntime_final_thincompat_inventory.py` と unit test を追加し、`py_runtime.h` の final template 2 本、generated `std/json.cpp` の generic `py_isinstance` blocker、Rust/C# runtime mirror の generic alias surface を bucket 化した。
+- 2026-03-11: `S1-01` として `tools/check/check_crossruntime_pyruntime_final_thincompat_inventory.py` と unit test を追加し、`py_runtime.h` の final template 2 本、generated `std/json.cpp` の generic `py_isinstance` blocker、Rust/C# runtime mirror の generic alias surface を bucket 化した。
 - 2026-03-11: `S1-02` として bundle 順を `cpp generated blocker -> Rust alias surface -> C# alias surface -> header defs` に固定した。inventory/tooling には `empty_before_header_removal` / `internal_or_private_only_before_header_removal` / `remove_last_after_crossruntime_alignment` の target end state も埋め込み、header removal を必ず最後にする contract を source guard 化した。inventory は exact residual 固定ではなく「許可 bucket の部分集合」を見るため、後続 bundle が先に residual を減らしても未分類再流入だけを落とせる。
 - 2026-03-11: `S2-01` として checked-in C++ blocker だった `src/runtime/cpp/generated/std/json.cpp` を `py_runtime_object_isinstance` へ寄せ、JSON escape の `\b` / `\f` regressions も同時に修正した。inventory の `cpp_generated_final_thincompat_blocker` は空 bucket に更新した。
 - 2026-03-11: `S2-02` として Rust/C# runtime mirror の `py_runtime_type_id` / `py_is_subtype` / `py_issubclass` / `py_isinstance` alias を public から internal/private seam へ落とした。inventory は alias 自体の存在を bucket として保ちつつ、public 再流入だけを `target end state` violation として落とす。

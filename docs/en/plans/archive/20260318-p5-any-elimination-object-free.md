@@ -50,11 +50,11 @@
 
 ## 確認コマンド（予定）
 
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -v`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/runtime_parity_check.py --targets cpp --all-samples`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --all-samples`
 
 ---
 
@@ -248,7 +248,7 @@
   - `from typing import Any` のインポート行は `Import`/`ImportFrom` として除外済み（チェック対象外）。
   - `src/toolchain/compiler/east_parts/east3_opt_passes/any_annotation_prohibition_pass.py` にシムを追加。
   - **デフォルトでは `build_local_only_passes()` に含めない**。stdlib（`enum.py`, `argparse.py` 等）が `Any` を使用中のため、S2-02 での stdlib 移行完了後に有効化する。明示的に `--east3-opt-pass +AnyAnnotationProhibitionPass` で有効化可能。
-  - ユニットテスト 20 件（`test/unit/ir/test_east3_any_annotation_prohibition_pass.py`）全件 pass。pre-existing 失敗以外の非退行なし。
+  - ユニットテスト 20 件（`tools/unittest/ir/test_east3_any_annotation_prohibition_pass.py`）全件 pass。pre-existing 失敗以外の非退行なし。
 
 - 2026-03-17 [S2-02 完了]: stdlib の `Any` アノテーション移行。
 
@@ -357,11 +357,11 @@
   - `shared` バージョン `0.119 → 0.120`（json.py 変更）、`cpp` バージョン `0.579 → 0.580`（emitter 変更）。
 
   **変更内容（S6-03）:**
-  - `test/unit/backends/cpp/test_cpp_runtime_boxing.py`: 削除（boxing API のテストが全て不要になった）。
-  - `test/unit/backends/cpp/test_py2cpp_list_pyobj_model.py`: 削除（`cpp_list_model=pyobj` 経路が除去された）。
-  - `test/unit/backends/cpp/test_cpp_runtime_type_id.py`: `PyObj` → `RcObject` に更新。
-  - `test/unit/backends/cpp/test_cpp_runtime_iterable.py`: boxing 依存のテストケースを除去。
-  - `test/unit/backends/cpp/test_east3_cpp_bridge.py`: `obj_to_rc_or_raise` アサーションを除去。
+  - `tools/unittest/emit/cpp/test_cpp_runtime_boxing.py`: 削除（boxing API のテストが全て不要になった）。
+  - `tools/unittest/emit/cpp/test_py2cpp_list_pyobj_model.py`: 削除（`cpp_list_model=pyobj` 経路が除去された）。
+  - `tools/unittest/emit/cpp/test_cpp_runtime_type_id.py`: `PyObj` → `RcObject` に更新。
+  - `tools/unittest/emit/cpp/test_cpp_runtime_iterable.py`: boxing 依存のテストケースを除去。
+  - `tools/unittest/emit/cpp/test_east3_cpp_bridge.py`: `obj_to_rc_or_raise` アサーションを除去。
 
   **テスト結果:** 319 件実行（削除済み 4 件分減）。13 失敗 + 1 エラーはすべて pre-existing。`test_py2cpp_features.py` は `ModuleNotFoundError: No module named 'test.unit'` により 124+ 件がロード不可（pre-existing）。
   - cpp バージョン `0.580`、shared バージョン `0.120`。

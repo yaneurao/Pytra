@@ -33,12 +33,12 @@ Acceptance criteria:
 - A representative nested-package smoke containing `from .cpu.runner import run` and `from ..util.bits import low_nibble` passes under `py2x.py --target cpp`.
 - `from . import helper` is also locked by a representative regression for the current contract.
 - Root escape (`from ...bad import x`) continues to fail closed as `input_invalid(kind=unsupported_import_form)`.
-- `python3 tools/check_todo_priority.py`, the focused unit tests, `python3 tools/build_selfhost.py`, and `git diff --check` pass.
+- `python3 tools/check/check_todo_priority.py`, the focused unit tests, `python3 tools/build_selfhost.py`, and `git diff --check` pass.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_py2x_cli.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_import_diagnostics.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_py2x_cli.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_import_diagnostics.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

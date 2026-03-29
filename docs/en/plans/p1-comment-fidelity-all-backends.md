@@ -22,8 +22,8 @@ Goal:
 In scope:
 - `src/hooks/*/emitter/*.py` (`cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua`)
 - `src/py2*.py` (only necessary path updates)
-- `test/unit/test_py2*smoke.py`
-- (if needed) `tools/check_comment_fidelity.py`
+- `tools/unittest/test_py2*smoke.py`
+- (if needed) `tools/check/check_comment_fidelity.py`
 - `sample/*` regeneration path
 
 Out of scope:
@@ -39,9 +39,9 @@ Acceptance criteria:
 - Comment-fidelity regressions pass on smoke tests for major toolchain.emit.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 -m unittest discover -s test/unit -p 'test_py2*smoke.py' -v`
-- `python3 tools/regenerate_samples.py --langs cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua --force`
+- `python3 tools/gen/regenerate_samples.py --langs cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua --force`
 
 Decision log:
 - 2026-02-28: Per user request, opened `P1-COMMENT-FIDELITY-01` with policy "across all languages, prohibit output of comments absent in source, and force source-comment reflection."

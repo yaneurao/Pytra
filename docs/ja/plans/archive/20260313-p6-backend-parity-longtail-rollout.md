@@ -32,11 +32,11 @@
 - secondary tier 完了後にそのまま受け渡せる live plan になっている。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_backend_parity_matrix_contract.py`
-- `python3 tools/check_backend_parity_longtail_rollout_inventory.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_backend_parity_matrix_contract.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_backend_parity_longtail_rollout_inventory.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_backend_parity_matrix_contract.py`
+- `python3 tools/check/check_backend_parity_longtail_rollout_inventory.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_backend_parity_matrix_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_backend_parity_longtail_rollout_inventory.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

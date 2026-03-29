@@ -18,8 +18,8 @@
 
 対象:
 - `src/hooks/cpp/emitter/*`（list 初期化/append/return 型整合）
-- `test/unit/test_east3_cpp_bridge.py`
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_east3_cpp_bridge.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/18_mini_language_interpreter.cpp`
 
 非対象:
@@ -32,11 +32,11 @@
 - transpile/unit/parity で非退行を確認する。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout`
 
 決定ログ:
 - 2026-03-01: sample/18 追加最適化として benchmark ソース構築の typed list 化を P0 で起票。

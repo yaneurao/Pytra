@@ -33,12 +33,12 @@
 - nested package project layout で `from .cpu.runner import run` と `from ..util.bits import low_nibble` を含む representative smoke が `py2x.py --target cpp` で通ること。
 - `from . import helper` の package-local import も representative regression で current contract を固定すること。
 - root escape (`from ...bad import x`) は引き続き `input_invalid(kind=unsupported_import_form)` で fail-closed すること。
-- `python3 tools/check_todo_priority.py`、対象 unit test、`python3 tools/build_selfhost.py`、`git diff --check` が通ること。
+- `python3 tools/check/check_todo_priority.py`、対象 unit test、`python3 tools/build_selfhost.py`、`git diff --check` が通ること。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_py2x_cli.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_import_diagnostics.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_py2x_cli.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_import_diagnostics.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

@@ -34,7 +34,7 @@
 - 既存の representative `bytes` truthiness regression を壊さずに member lane も同じ contract へ揃う。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `bash ./pytra materials/refs/from-Pytra-NES3/cartridge_like.py --target cpp --output-dir /tmp/pytra_nes3_cartridge_like`
 - `g++ -std=c++20 -O0 -c /tmp/pytra_nes3_cartridge_like/src/cartridge_like.cpp -I /tmp/pytra_nes3_cartridge_like/include -I /workspace/Pytra/src -I /workspace/Pytra/src/runtime/cpp`
 - `git diff --check`

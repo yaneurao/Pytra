@@ -28,7 +28,7 @@
 - `src/toolchain/frontends/runtime_abi.py`
 - `src/pytra/std/abi.py` 相当の surface と decorator metadata
 - `src/pytra/built_in/string_ops.py` など既存 `@abi` 利用箇所
-- `test/unit/ir`, `test/unit/tooling`, `test/unit/common`, `test/unit/backends/cpp` の関連回帰
+- `tools/unittest/ir`, `tools/unittest/tooling`, `tools/unittest/common`, `tools/unittest/emit/cpp` の関連回帰
 
 非対象:
 - `@abi` 自体を不要にする設計変更
@@ -52,12 +52,12 @@
 4. writable case は `value_mut` だけで表し、rare case を明示化する。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core.py' -k abi`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/link -p 'test_global_optimizer.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_pytra_built_in_string_ops.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_codegen_issues.py' -k abi`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_ir2lang_cli.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core.py' -k abi`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/link -p 'test_global_optimizer.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_pytra_built_in_string_ops.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_codegen_issues.py' -k abi`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_ir2lang_cli.py'`
 
 ## 分解
 

@@ -23,7 +23,7 @@ Goal:
 Scope:
 - `src/hooks/go/emitter/*`
 - `src/runtime/go/pytra/*` where needed
-- `test/unit/test_py2go_*`
+- `tools/unittest/test_py2go_*`
 - Regeneration of `sample/go/01_mandelbrot.go`
 
 Out of scope:
@@ -40,9 +40,9 @@ Acceptance criteria:
 
 Verification commands:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go*.py' -v`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/regenerate_samples.py --langs go --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets go 01_mandelbrot`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs go --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets go 01_mandelbrot`
 
 Breakdown:
 - [x] [ID: P1-GO-SAMPLE01-QUALITY-01-S1-01] Inventory the quality gaps in `sample/go/01`, redundant casts, loop shape, no-op image output, and `any` fallback, and fix the improvement priority order.
@@ -59,8 +59,8 @@ Decision log:
   - P2: Hot-path degradation where `pixels` falls back to `[]any` and `append` is wrapped in `__pytra_as_list`
   - P3: Redundant same-type cast chains in `__pytra_float` and `__pytra_int`, such as `__pytra_float(float64(...))`
   - P4: Redundant lowering where `range(..., step=1)` still emits a generic step-branch loop like `(__step>=0 && ...) || ...`
-- 2026-03-02: Completed `S2-01`. Added fast paths for known-type numeric casts in `_render_binop_expr`, `_render_compare_expr`, math calls, and assignment casts, reducing doubled `__pytra_float` and `__pytra_int`. Regenerating `sample/go/01_mandelbrot.go` confirmed reduced forms such as `var x2 float64 = (x * x)`. `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v` passed. The four failures in `python3 tools/check_py2go_transpile.py`, unsupported `Try`, `Yield`, and `Swap`, were recorded as known out-of-scope categories.
+- 2026-03-02: Completed `S2-01`. Added fast paths for known-type numeric casts in `_render_binop_expr`, `_render_compare_expr`, math calls, and assignment casts, reducing doubled `__pytra_float` and `__pytra_int`. Regenerating `sample/go/01_mandelbrot.go` confirmed reduced forms such as `var x2 float64 = (x * x)`. `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v` passed. The four failures in `python3 tools/check/check_py2go_transpile.py`, unsupported `Try`, `Yield`, and `Swap`, were recorded as known out-of-scope categories.
 - 2026-03-02: Completed `S2-02`. Added a constant-step fast path to `StaticRangeForPlan`, changing `step==1` into `for i := start; i < stop; i += 1` and `step==-1` into `for i := start; i > stop; i -= 1`. Regenerating `sample/go/01_mandelbrot.go` confirmed forms such as `for i := int64(0); i < max_iter; i += 1` and forward canonical loops for `y` and `x`. `test_py2go_smoke` passed, and the four failures in `check_py2go_transpile` remained the same known unsupported categories.
-- 2026-03-02: Completed `S2-03`. Removed the no-op image-API route and connected `write_rgb_png`, `save_gif`, and `grayscale_palette` to Go runtime hooks, `__pytra_write_rgb_png`, `__pytra_save_gif`, and `__pytra_grayscale_palette`. `save_gif` now accepts the keywords `delay_cs` and `loop`, while unsupported keywords fail closed. After `python3 tools/regenerate_samples.py --langs go --force`, `sample/go/01` now calls `__pytra_write_rgb_png(...)` and `sample/go/05` calls `__pytra_save_gif(..., int64(5), int64(0))`. In `runtime_parity_check`, `01_mandelbrot` still showed `artifact_size_mismatch`, `python:5761703`, `go:5761708`, so the final parity convergence was deferred to `S3-01`.
+- 2026-03-02: Completed `S2-03`. Removed the no-op image-API route and connected `write_rgb_png`, `save_gif`, and `grayscale_palette` to Go runtime hooks, `__pytra_write_rgb_png`, `__pytra_save_gif`, and `__pytra_grayscale_palette`. `save_gif` now accepts the keywords `delay_cs` and `loop`, while unsupported keywords fail closed. After `python3 tools/gen/regenerate_samples.py --langs go --force`, `sample/go/01` now calls `__pytra_write_rgb_png(...)` and `sample/go/05` calls `__pytra_save_gif(..., int64(5), int64(0))`. In `runtime_parity_check`, `01_mandelbrot` still showed `artifact_size_mismatch`, `python:5761703`, `go:5761708`, so the final parity convergence was deferred to `S3-01`.
 - 2026-03-02: Completed `S2-04`. Added typed fast paths for `append` and `pop` on `[]any` owners, reducing `append(__pytra_as_list(pixels), ...)` into `append(pixels, ...)`. Regenerating `sample/go/01` confirmed `pixels = append(pixels, r/g/b)`. `test_py2go_smoke` passed, and the four `Try/Yield/Swap` failures in `check_py2go_transpile` were unchanged.
-- 2026-03-02: Completed `S3-01`. Added regression fragments to `test_py2go_smoke` for numeric casts, canonical loops, image runtime hooks, and the `pixels` append fast path, and brought `python3 tools/runtime_parity_check.py --case-root sample --targets go 01_mandelbrot` to pass, `cases=1 pass=1 fail=0`. The PNG runtime was aligned with the Python implementation's stored-deflate output. `tools/check_py2go_transpile.py` was also aligned with the same expected-fail set used by the other backends, `finally/try_raise/yield_generator_min/tuple_assign`, and confirmed as `checked=131 ok=131 fail=0 skipped=10`.
+- 2026-03-02: Completed `S3-01`. Added regression fragments to `test_py2go_smoke` for numeric casts, canonical loops, image runtime hooks, and the `pixels` append fast path, and brought `python3 tools/check/runtime_parity_check.py --case-root sample --targets go 01_mandelbrot` to pass, `cases=1 pass=1 fail=0`. The PNG runtime was aligned with the Python implementation's stored-deflate output. `tools/check/check_py2go_transpile.py` was also aligned with the same expected-fail set used by the other backends, `finally/try_raise/yield_generator_min/tuple_assign`, and confirmed as `checked=131 ok=131 fail=0 skipped=10`.

@@ -18,7 +18,7 @@ Goal:
 
 Scope:
 - `src/hooks/cpp/emitter/*` (function signature/type bridging/caller consistency)
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/18_mini_language_interpreter.cpp` (regeneration check)
 
 Out of scope:
@@ -31,9 +31,9 @@ Acceptance criteria:
 - Generated output, unit tests, and transpile checks pass with no regression.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `python3 src/py2cpp.py sample/py/18_mini_language_interpreter.py -o sample/cpp/18_mini_language_interpreter.cpp`
 
 Decision log:
@@ -41,7 +41,7 @@ Decision log:
 - 2026-03-01: Added typed signature emission (`const list<str>&`) for `pyobj + list[str]` arguments in `emit_function`, and changed `tokenize` arguments from `object` to `list<str>`.
 - 2026-03-01: In typed enumerate restoration for `ForCore`, fixed the condition to prefer `py_enumerate(lines)` when a typed `list[str]` parameter name is present, and removed `py_to_str_list_from_object(lines)` from inside the function.
 - 2026-03-01: Added `list[str]`-specific `py_to_str_list_from_object(...)` conversion in callsite coercion, and fixed policy to safely connect `pyobj`-derived `object` variables (`demo_lines`/`source_lines`) to typed `tokenize`.
-- 2026-03-01: Confirmed non-regression via `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` (80 tests), `python3 tools/check_py2cpp_transpile.py` (`checked=134 ok=134 fail=0 skipped=6`), and `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout` (PASS).
+- 2026-03-01: Confirmed non-regression via `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` (80 tests), `python3 tools/check/check_py2cpp_transpile.py` (`checked=134 ok=134 fail=0 skipped=6`), and `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout` (PASS).
 
 ## Breakdown
 

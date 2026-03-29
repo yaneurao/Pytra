@@ -11,7 +11,7 @@
 
 背景:
 - `src/toolchain/ir/core.py` は selfhost parser の機能追加と helper 分解を重ねた結果、約 1 万行まで肥大化した。
-- `test/unit/ir/test_east_core.py` も source guard を 1 ファイルへ集約したため、責務単位の変更でも追跡範囲が広すぎる。
+- `tools/unittest/ir/test_east_core.py` も source guard を 1 ファイルへ集約したため、責務単位の変更でも追跡範囲が広すぎる。
 - 直近の P2 では helper 1 個ごとの細かい commit が増え、局所整理は進んだ一方で、ファイル分割と進捗整理が後回しになった。
 
 目的:
@@ -20,8 +20,8 @@
 対象:
 - `src/toolchain/ir/core.py`
 - `src/toolchain/ir/core_expr_*.py`
-- `test/unit/ir/test_east_core.py`
-- 必要に応じて `test/unit/ir/test_east_*.py`
+- `tools/unittest/ir/test_east_core.py`
+- 必要に応じて `tools/unittest/ir/test_east_*.py`
 - `docs/ja/todo/index.md` / `docs/en/todo/index.md`
 - `docs/ja/plans/p2-east-core-modularization.md` / `docs/en/plans/p2-east-core-modularization.md`
 
@@ -37,10 +37,10 @@
 - representative regression として `test_east_core.py`、`test_prepare_selfhost_source.py`、`tools/build_selfhost.py` が継続して通る。
 
 確認コマンド:
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/selfhost -p 'test_prepare_selfhost_source.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/selfhost -p 'test_prepare_selfhost_source.py'`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `git diff --check`
 
 分解:

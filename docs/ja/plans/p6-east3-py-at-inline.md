@@ -29,7 +29,7 @@
 
 - `src/toolchain/emit/cpp/emitter/`（`py_at` emit 箇所）
 - `src/runtime/cpp/native/core/py_runtime.h`（除去対象関数）
-- `test/unit/toolchain/emit/cpp/`（回帰テスト）
+- `tools/unittest/emit/cpp/`（回帰テスト）
 
 ## 非対象
 

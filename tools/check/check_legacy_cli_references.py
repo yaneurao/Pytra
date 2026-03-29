@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SCAN_DIRS = [ROOT / "src", ROOT / "tools", ROOT / "test"]
 SRC_ROOT = ROOT / "src"
 

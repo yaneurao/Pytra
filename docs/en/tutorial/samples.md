@@ -84,7 +84,7 @@ You'll see that the structure of the original Python code is preserved almost ex
 ## Regenerate All Samples
 
 ```bash
-python3 tools/regenerate_samples.py
+python3 tools/gen/regenerate_samples.py
 ```
 
 This transpiles all 18 samples to all 18 languages.

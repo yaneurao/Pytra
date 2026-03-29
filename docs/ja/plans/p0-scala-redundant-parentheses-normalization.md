@@ -20,8 +20,8 @@
 
 対象:
 - `src/hooks/scala/emitter/scala_native_emitter.py`
-- `test/unit/test_py2scala_smoke.py`
-- `tools/check_py2scala_transpile.py`（必要時）
+- `tools/unittest/test_py2scala_smoke.py`
+- `tools/check/check_py2scala_transpile.py`（必要時）
 - `sample/scala/01_mandelbrot.scala`（再生成確認）
 
 非対象:
@@ -36,10 +36,10 @@
 - `check_py2scala_transpile.py` が通過し、`sample/scala/01` 再生成差分が期待どおりである。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2scala_smoke.py' -v`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/regenerate_samples.py --langs scala --stems 01_mandelbrot --force`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs scala --stems 01_mandelbrot --force`
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、実装着手せず計画のみを先行し、Scala の冗長括弧削減を `P0` で起票。

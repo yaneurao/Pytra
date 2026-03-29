@@ -36,11 +36,11 @@ Acceptance criteria:
 - `check_py2rs_transpile.py`, Rust smoke tests, and `runtime_parity_check --targets rs` pass without regression.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2rs_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2rs_transpile.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2rs*' -v`
-- `python3 tools/regenerate_samples.py --langs rs --stems 18_mini_language_interpreter --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets rs --case 18_mini_language_interpreter`
+- `python3 tools/gen/regenerate_samples.py --langs rs --stems 18_mini_language_interpreter --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets rs --case 18_mini_language_interpreter`
 
 Decision log:
 - 2026-03-02: Filed sample/18 Rust output improvements as P1 based on user direction.

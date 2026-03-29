@@ -31,9 +31,9 @@
 - selfhost / C++ 変換回帰テストが通過する。
 
 確認コマンド:
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_todo_priority.py`（更新時）
-- `python3 test/unit/test_unit_runtime.py`（または該当する runtime テスト群）
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_todo_priority.py`（更新時）
+- `python3 tools/unittest/test_unit_runtime.py`（または該当する runtime テスト群）
 
 進め方:
 1) `py_to<T>` の骨子設計（`enable_if` / SFINAE / `object` `std::any` 専用オーバーロード）を runtime ヘッダで定義。
@@ -51,24 +51,24 @@
 - `src/runtime/cpp/pytra-core/built_in/py_runtime.h` に `py_to<T>` テンプレート（`object`/`std::any`/値型）を追加し、`int64`/`float64`/`bool`/`str`/`object` の主要変換先を一元化した。
 - 既存 API（`py_to_int64`/`py_to_float64`/`py_to_bool`）は互換ラッパとして残し、算術型・`object` 経路の呼び出しは `py_to<T>` を通す形へ寄せた。
 - 検証:
-  - `python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout`（`SUMMARY cases=1 pass=1 fail=0 targets=cpp`）
+  - `python3 tools/check/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout`（`SUMMARY cases=1 pass=1 fail=0 targets=cpp`）
 
 `P1-CPP-PYTO-01-S2` 確定内容（2026-02-25）:
 - `src/hooks/cpp/emitter/expr.py` の cast lower を `py_to<float64>` / `py_to<int64>` / `py_to<bool>` 形式へ移行した。
 - `src/hooks/cpp/emitter/cpp_emitter.py` の `py_to_int64/py_to_float64/py_to_bool` 直呼び（dict default 取得、添字、truthy 判定、range/enumerate 引数など）を `py_to<...>` 形式へ段階置換した。
 - 検証:
-  - `python3 test/unit/test_py2cpp_smoke.py`（3件 pass）
-  - `python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout`（`SUMMARY cases=1 pass=1 fail=0 targets=cpp`）
+  - `python3 tools/unittest/test_py2cpp_smoke.py`（3件 pass）
+  - `python3 tools/check/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout`（`SUMMARY cases=1 pass=1 fail=0 targets=cpp`）
 
 `P1-CPP-PYTO-01-S3` 確定内容（2026-02-25）:
-- `test/unit/test_cpp_runtime_boxing.py` の runtime C++ スモークに `py_to_int64(object/any)` と `py_to<int64>(object/any)` の挙動確認を追加し、非変換値は `0`、strict 検証は `obj_to_int64_or_raise` で行う差分を固定した。
+- `tools/unittest/test_cpp_runtime_boxing.py` の runtime C++ スモークに `py_to_int64(object/any)` と `py_to<int64>(object/any)` の挙動確認を追加し、非変換値は `0`、strict 検証は `obj_to_int64_or_raise` で行う差分を固定した。
 - `docs/ja/README.md` / `readme.md` の注意事項へ C++ runtime 変換方針（`py_to_int64` 系は互換重視で `0`、strict は `_or_raise`）を追記した。
 - 検証:
-  - `python3 test/unit/test_cpp_runtime_boxing.py`（1件 pass）
-  - `python3 tools/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout`（`SUMMARY cases=1 pass=1 fail=0 targets=cpp`）
+  - `python3 tools/unittest/test_cpp_runtime_boxing.py`（1件 pass）
+  - `python3 tools/check/check_py2cpp_transpile.py`（`checked=131 ok=131 fail=0 skipped=6`）
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 01_mandelbrot --ignore-unstable-stdout`（`SUMMARY cases=1 pass=1 fail=0 targets=cpp`）
 
 決定ログ:
 - [2026-02-25] [ID: P1-CPP-PYTO-01]

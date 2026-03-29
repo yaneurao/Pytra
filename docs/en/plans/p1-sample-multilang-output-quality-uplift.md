@@ -40,8 +40,8 @@ Verification commands:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2rs*' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2js*' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2ts*' -v`
-- `python3 tools/regenerate_samples.py --langs go,java,kotlin,swift,scala,rs,js,ts --stems 01_mandelbrot,18_mini_language_interpreter --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets go,java,kotlin,swift,scala,rs,js,ts --ignore-unstable-stdout 01_mandelbrot 18_mini_language_interpreter`
+- `python3 tools/gen/regenerate_samples.py --langs go,java,kotlin,swift,scala,rs,js,ts --stems 01_mandelbrot,18_mini_language_interpreter --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets go,java,kotlin,swift,scala,rs,js,ts --ignore-unstable-stdout 01_mandelbrot 18_mini_language_interpreter`
 
 Breakdown:
 - [x] [ID: P1-SAMPLE-OUTPUT-QUALITY-01-S1-01] Inventory `Any/Object` degradation hotspots in `go/java` (`sample/18`) and fix applicability boundaries for typed fastpaths.

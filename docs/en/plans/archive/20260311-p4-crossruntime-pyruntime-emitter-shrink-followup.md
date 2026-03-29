@@ -59,10 +59,10 @@ Bundle order:
 5. Refresh representative smoke/docs/archive.
 
 Checks:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_transpiler_version_gate.py`
-- `python3 tools/run_regen_on_version_bump.py --dry-run`
+- `python3 tools/check/check_transpiler_version_gate.py`
+- `python3 tools/run/run_regen_on_version_bump.py --dry-run`
 - `git diff --check`
 
 Breakdown:
@@ -76,7 +76,7 @@ Breakdown:
 
 Decision log:
 - 2026-03-11: Created as the next follow-up after `P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01` completed. The generic thin compat layer is gone from the header, so the next shrink step must classify and reduce caller-side residual helper contracts instead.
-- 2026-03-11: Completed `S1-01` by retargeting `tools/check_crossruntime_pyruntime_emitter_inventory.py` onto thin-helper names and classifying the current residuals into `cpp_emitter_object_bridge_residual`, `cpp_emitter_shared_type_id_residual`, `rs_emitter_shared_type_id_residual`, `cs_emitter_shared_type_id_residual`, and `crossruntime_mutation_helper_residual`. C++ now tracks `py_runtime_object_*` and `py_runtime_type_id_*`, Rust/C# track `py_runtime_value_*` / `py_runtime_type_id_*`, and mutation helpers are limited to the C++ object-bridge fallback plus the C# bytes/bytearray lane.
+- 2026-03-11: Completed `S1-01` by retargeting `tools/check/check_crossruntime_pyruntime_emitter_inventory.py` onto thin-helper names and classifying the current residuals into `cpp_emitter_object_bridge_residual`, `cpp_emitter_shared_type_id_residual`, `rs_emitter_shared_type_id_residual`, `cs_emitter_shared_type_id_residual`, and `crossruntime_mutation_helper_residual`. C++ now tracks `py_runtime_object_*` and `py_runtime_type_id_*`, Rust/C# track `py_runtime_value_*` / `py_runtime_type_id_*`, and mutation helpers are limited to the C++ object-bridge fallback plus the C# bytes/bytearray lane.
 - 2026-03-11: Completed `S1-02` by adding `TARGET_END_STATE` and `REDUCTION_ORDER` to the inventory tooling and fixing the bucket order as `crossruntime_mutation_helper_residual -> cpp_emitter_object_bridge_residual -> rs_emitter_shared_type_id_residual -> cs_emitter_shared_type_id_residual -> cpp_emitter_shared_type_id_residual`. The C++ shared `type_id` residual is intentionally left as the final contract for the later header-shrink stage rather than being forced empty in this follow-up.
 - 2026-03-11: Completed `S2-01` by reclassifying the remaining C++ `py_append/extend/pop/clear/reverse/sort/set_at` symbols in `call.py` as object-list bridge context labels rather than crossruntime mutation-helper residuals. The C++ emitter is now reduced to two residual buckets: `cpp_emitter_object_bridge_residual` and `cpp_emitter_shared_type_id_residual`, while `crossruntime_mutation_helper_residual` is C#-only.
 - 2026-03-11: Completed `S2-02` by removing the generic alias `py_runtime_type_id` / `py_is_subtype` / `py_issubclass` / `py_isinstance` definitions from the Rust runtime prelude and fixing the shared contract on `py_runtime_value_type_id`, `py_runtime_value_isinstance`, `py_runtime_type_id_is_subtype`, and `py_runtime_type_id_issubclass` only. Representative smoke now also forbids the generic aliases from reappearing.

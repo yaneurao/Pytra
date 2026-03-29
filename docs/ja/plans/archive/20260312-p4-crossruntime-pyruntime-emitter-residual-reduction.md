@@ -58,12 +58,12 @@
 
 ## Representative Guard
 
-- inventory 正本: [check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/check_crossruntime_pyruntime_emitter_inventory.py)
-- unit guard: [test_check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_crossruntime_pyruntime_emitter_inventory.py)
+- inventory 正本: [check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/check/check_crossruntime_pyruntime_emitter_inventory.py)
+- unit guard: [test_check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/unittest/tooling/test_check_crossruntime_pyruntime_emitter_inventory.py)
 - representative smoke:
-  - C++: [test_east3_cpp_bridge.py](/workspace/Pytra/test/unit/backends/cpp/test_east3_cpp_bridge.py)
-  - Rust: [test_py2rs_smoke.py](/workspace/Pytra/test/unit/backends/rs/test_py2rs_smoke.py)
-  - C#: [test_py2cs_smoke.py](/workspace/Pytra/test/unit/backends/cs/test_py2cs_smoke.py)
+  - C++: [test_east3_cpp_bridge.py](/workspace/Pytra/tools/unittest/emit/cpp/test_east3_cpp_bridge.py)
+  - Rust: [test_py2rs_smoke.py](/workspace/Pytra/tools/unittest/emit/rs/test_py2rs_smoke.py)
+  - C#: [test_py2cs_smoke.py](/workspace/Pytra/tools/unittest/emit/cs/test_py2cs_smoke.py)
 
 ## 決定ログ
 

@@ -4,7 +4,7 @@
 
 # Backend Test Matrix
 
-This page is the publish target that visualizes how green each backend-owned `test/unit/toolchain/emit/<backend>/` suite currently is.
+This page is the publish target that visualizes how green each backend-owned `tools/unittest/emit/<backend>/` suite currently is.
 
 ## Purpose
 
@@ -16,8 +16,8 @@ This page is the publish target that visualizes how green each backend-owned `te
 
 ## Maintenance Rule
 
-- Refresh this page with [`tools/export_backend_test_matrix.py`](/workspace/Pytra/tools/export_backend_test_matrix.py).
-- The target scope is backend-owned suites under `test/unit/toolchain/emit/<backend>/` plus the shared smoke equivalent of `test/unit/toolchain/emit/test_py2starred_smoke.py`.
+- Refresh this page with [`tools/gen/export_backend_test_matrix.py`](/workspace/Pytra/tools/gen/export_backend_test_matrix.py).
+- The target scope is backend-owned suites under `tools/unittest/emit/<backend>/` plus the shared smoke equivalent of `tools/unittest/emit/test_py2starred_smoke.py`.
 - States are displayed as `🟩 PASS` / `🟥 FAIL` / `🟨 TM` (`toolchain_missing`) / `🟪 TO` (`timeout`).
 - GitHub markdown rendering sanitizes `<style>` and inline style attributes, so this page uses a plain table that remains readable without CSS.
 
@@ -140,7 +140,7 @@ This page is the publish target that visualizes how green each backend-owned `te
 ## Scope
 
 - The overview matrix uses three rows: `Primary Smoke`, `Backend Dir Discover`, and `Shared Starred Smoke`.
-- `Module Detail` runs each `test/unit/toolchain/emit/<backend>/test_*.py` module individually.
-- `Shared Starred Smoke` re-runs the same fixture and assertions as `test/unit/toolchain/emit/test_py2starred_smoke.py` for each backend.
-- Support helpers under `test/unit/toolchain/emit/` (`*_support.py`) are excluded from execution.
+- `Module Detail` runs each `tools/unittest/emit/<backend>/test_*.py` module individually.
+- `Shared Starred Smoke` re-runs the same fixture and assertions as `tools/unittest/emit/test_py2starred_smoke.py` for each backend.
+- Support helpers under `tools/unittest/emit/` (`*_support.py`) are excluded from execution.
 <!-- END BACKEND TEST MATRIX DETAILS -->

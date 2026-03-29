@@ -42,7 +42,7 @@ Acceptance criteria:
 
 - seed export:
   - manifest: `backend_feature_contract_inventory.build_feature_contract_handoff_manifest()`
-  - CLI/export seam: [export_backend_feature_contract_manifest.py](/workspace/Pytra/tools/export_backend_feature_contract_manifest.py)
+  - CLI/export seam: [export_backend_feature_contract_manifest.py](/workspace/Pytra/tools/gen/export_backend_feature_contract_manifest.py)
 - mapping rule:
   - Each `feature_id` has exactly one representative fixture path.
   - Multiple features may share the same fixture, but the sharing must be explicit in `fixture_mapping[*].shared_fixture_feature_ids`.
@@ -60,8 +60,8 @@ Acceptance criteria:
 - source of truth:
   - lane contract: [backend_conformance_harness_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_harness_contract.py)
   - runner seed manifest: [backend_conformance_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_inventory.py)
-  - CLI/export seam: [export_backend_conformance_seed_manifest.py](/workspace/Pytra/tools/export_backend_conformance_seed_manifest.py)
-  - validation: [check_backend_conformance_harness_contract.py](/workspace/Pytra/tools/check_backend_conformance_harness_contract.py), [test_check_backend_conformance_harness_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_harness_contract.py)
+  - CLI/export seam: [export_backend_conformance_seed_manifest.py](/workspace/Pytra/tools/gen/export_backend_conformance_seed_manifest.py)
+  - validation: [check_backend_conformance_harness_contract.py](/workspace/Pytra/tools/check/check_backend_conformance_harness_contract.py), [test_check_backend_conformance_harness_contract.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_conformance_harness_contract.py)
 - stage order:
   - `frontend`: `parse`
   - `ir`: `east`, `east3_lowering`
@@ -85,8 +85,8 @@ Acceptance criteria:
 
 - source of truth:
   - runner contract: [backend_conformance_runner_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_runner_contract.py)
-  - CLI/export seam: [export_backend_conformance_runner_manifest.py](/workspace/Pytra/tools/export_backend_conformance_runner_manifest.py)
-  - validation: [check_backend_conformance_runner_contract.py](/workspace/Pytra/tools/check_backend_conformance_runner_contract.py), [test_check_backend_conformance_runner_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_runner_contract.py)
+  - CLI/export seam: [export_backend_conformance_runner_manifest.py](/workspace/Pytra/tools/gen/export_backend_conformance_runner_manifest.py)
+  - validation: [check_backend_conformance_runner_contract.py](/workspace/Pytra/tools/check/check_backend_conformance_runner_contract.py), [test_check_backend_conformance_runner_contract.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_conformance_runner_contract.py)
 - representative backend order:
   - `cpp -> rs -> cs`
 - backend-selectable lane rule:
@@ -94,11 +94,11 @@ Acceptance criteria:
   - `parse/east/east3_lowering` stay in the shared harness contract from `S2-01`, so the runner does not introduce a second vocabulary
 - entrypoint rule:
   - `emit`: `src/pytra-cli.py`
-  - `runtime`: `tools/runtime_parity_check.py`
+  - `runtime`: `tools/check/runtime_parity_check.py`
 - smoke binding rule:
-  - `cpp`: `test/unit/backends/cpp/test_py2cpp_features.py`
-  - `rs`: `test/unit/backends/rs/test_py2rs_smoke.py`
-  - `cs`: `test/unit/backends/cs/test_py2cs_smoke.py`
+  - `cpp`: `tools/unittest/emit/cpp/test_py2cpp_features.py`
+  - `rs`: `tools/unittest/emit/rs/test_py2rs_smoke.py`
+  - `cs`: `tools/unittest/emit/cs/test_py2cs_smoke.py`
 - handoff rule:
   - the runner manifest fixes backend order / selectable lanes / lane entrypoints / smoke bindings, and `S3-01` plus `S4-01` consume only this manifest for runner-facing policy
 
@@ -106,13 +106,13 @@ Acceptance criteria:
 
 - source of truth:
   - runtime strategy contract: [backend_conformance_runtime_parity_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_runtime_parity_contract.py)
-  - CLI/export seam: [export_backend_conformance_runtime_parity_manifest.py](/workspace/Pytra/tools/export_backend_conformance_runtime_parity_manifest.py)
-  - validation: [check_backend_conformance_runtime_parity_contract.py](/workspace/Pytra/tools/check_backend_conformance_runtime_parity_contract.py), [test_check_backend_conformance_runtime_parity_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_runtime_parity_contract.py)
+  - CLI/export seam: [export_backend_conformance_runtime_parity_manifest.py](/workspace/Pytra/tools/gen/export_backend_conformance_runtime_parity_manifest.py)
+  - validation: [check_backend_conformance_runtime_parity_contract.py](/workspace/Pytra/tools/check/check_backend_conformance_runtime_parity_contract.py), [test_check_backend_conformance_runtime_parity_contract.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_conformance_runtime_parity_contract.py)
 - representative module order:
   - `json`, `pathlib`, `enum`, `argparse`, `math`, `re`
 - runtime strategy rule:
   - every `fixture_class=pytra_std` runtime lane stays on `stdlib_module_runtime_case`
-  - case root stays `fixture`, runner lane stays `runtime`, and the entrypoint stays `tools/runtime_parity_check.py`
+  - case root stays `fixture`, runner lane stays `runtime`, and the entrypoint stays `tools/check/runtime_parity_check.py`
   - compare unit stays `normalized_stdout_exitcode_artifact_digest` and backend order stays `cpp -> rs -> cs`
 - fixture binding rule:
   - `json`: `test/fixtures/stdlib/json_extended.py`
@@ -128,8 +128,8 @@ Acceptance criteria:
 
 - source of truth:
   - summary handoff contract: [backend_conformance_summary_handoff_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_summary_handoff_contract.py)
-  - CLI/export seam: [export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/export_backend_conformance_summary_handoff_manifest.py)
-  - validation: [check_backend_conformance_summary_handoff_contract.py](/workspace/Pytra/tools/check_backend_conformance_summary_handoff_contract.py), [test_check_backend_conformance_summary_handoff_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_summary_handoff_contract.py), [test_export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_conformance_summary_handoff_manifest.py)
+  - CLI/export seam: [export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/gen/export_backend_conformance_summary_handoff_manifest.py)
+  - validation: [check_backend_conformance_summary_handoff_contract.py](/workspace/Pytra/tools/check/check_backend_conformance_summary_handoff_contract.py), [test_check_backend_conformance_summary_handoff_contract.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_conformance_summary_handoff_contract.py), [test_export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/unittest/tooling/test_export_backend_conformance_summary_handoff_manifest.py)
 - destination order:
   - `support_matrix -> docs -> tooling`
 - required manifest rule:

@@ -36,13 +36,13 @@
 - `check_*_transpile` と関連 unit が非退行で通る。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_py2rs_transpile.py`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp,rs,scala --stems 01_mandelbrot,08_langtons_ant,18_mini_language_interpreter --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp,rs,scala --stems 01_mandelbrot,08_langtons_ant,18_mini_language_interpreter --force`
 
 分解:
 - [x] [ID: P0-EAST3-EXPR-NORM-ROLL-01-S1-01] backend 横断で式組み立て責務の棚卸し（BinOp/Compare/ForRange/trip_count）を行い、EAST3移管対象を確定する。

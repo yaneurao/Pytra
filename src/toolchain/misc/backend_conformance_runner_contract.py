@@ -16,13 +16,13 @@ BACKEND_SELECTABLE_RUNNER_LANES: Final[tuple[str, ...]] = (
 
 RUNNER_LANE_ENTRYPOINTS: Final[dict[str, str]] = {
     "emit": "src/pytra-cli.py",
-    "runtime": "tools/runtime_parity_check.py",
+    "runtime": "tools/check/runtime_parity_check.py",
 }
 
 RUNNER_SMOKE_FILES: Final[dict[str, str]] = {
-    "cpp": "test/unit/backends/cpp/test_py2cpp_features.py",
-    "rs": "test/unit/backends/rs/test_py2rs_smoke.py",
-    "cs": "test/unit/backends/cs/test_py2cs_smoke.py",
+    "cpp": "tools/unittest/emit/cpp/test_py2cpp_features.py",
+    "rs": "tools/unittest/emit/rs/test_py2rs_smoke.py",
+    "cs": "tools/unittest/emit/cs/test_py2cs_smoke.py",
 }
 
 

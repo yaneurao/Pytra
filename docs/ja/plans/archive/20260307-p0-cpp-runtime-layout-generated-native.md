@@ -34,14 +34,14 @@
   - `src/backends/cpp/cli.py`
   - `src/backends/cpp/emitter/runtime_paths.py`
 - runtime artifact/tooling
-  - `tools/gen_runtime_symbol_index.py`
+  - `tools/gen/gen_runtime_symbol_index.py`
   - `tools/cpp_runtime_deps.py`
-  - `tools/check_runtime_cpp_layout.py`
+  - `tools/check/check_runtime_cpp_layout.py`
 - C++ 関連 docs / tests
   - `docs/ja/spec/spec-runtime.md`
   - `docs/ja/spec/spec-abi.md`
-  - `test/unit/backends/cpp/*`
-  - `test/unit/tooling/test_runtime_symbol_index.py`
+  - `tools/unittest/emit/cpp/*`
+  - `tools/unittest/tooling/test_runtime_symbol_index.py`
 
 非対象:
 - `src/runtime/cpp/core/` の責務再定義
@@ -233,10 +233,10 @@ src/runtime/cpp/
 - `src/runtime/cpp/std/*.gen.h|*.gen.cpp` を `src/runtime/cpp/generated/std/*.h|*.cpp` へ移し、checked-in std generated artifact の正本配置を実ファイルとして切り替えた。
 - `src/runtime/cpp/pytra/std/*.h` は `runtime/cpp/generated/std/*.h` を forward する shim に同期した。
 - `src/runtime/cpp/std/*.ext.cpp` は `runtime/cpp/generated/std/*.h` を include するよう更新し、legacy `std/` 直下には native companion と `README.md` だけを残した。
-- `tools/check_runtime_std_sot_guard.py` も std generated artifact の配置を `generated/std` 前提へ更新し、`pytra/` public shim を generated 扱いに寄せた。
+- `tools/check/check_runtime_std_sot_guard.py` も std generated artifact の配置を `generated/std` 前提へ更新し、`pytra/` public shim を generated 扱いに寄せた。
 - `src/runtime/cpp/utils/*.gen.h|*.gen.cpp` を `src/runtime/cpp/generated/utils/*.h|*.cpp` へ移し、checked-in utils generated artifact の正本配置を実ファイルとして切り替えた。
 - `src/runtime/cpp/pytra/utils/*.h` は `runtime/cpp/generated/utils/*.h` を forward する shim に同期し、`assertions` 用 shim も追加した。
-- `tools/runtime_generation_manifest.json` / `tools/verify_image_runtime_parity.py` / `tools/check_runtime_std_sot_guard.py` / `runtime_symbol_index` 系 test を `generated/utils` 前提へ更新した。
+- `tools/runtime_generation_manifest.json` / `tools/check/verify_image_runtime_parity.py` / `tools/check/check_runtime_std_sot_guard.py` / `runtime_symbol_index` 系 test を `generated/utils` 前提へ更新した。
 - `src/runtime/cpp/built_in/*.gen.h|*.gen.cpp` を `src/runtime/cpp/generated/built_in/*.h|*.cpp` へ移し、legacy `built_in/` 直下は native helper header (`*.ext.h`) だけを残す構成へ切り替えた。
 - `src/runtime/cpp/pytra/built_in/*.h` shim を追加し、generated std artifact の built-in import も `pytra/built_in/*.h` / `pytra/std/sys.h` へ寄せた。
 - `py_runtime.ext.h` / runtime symbol index / type_id・iterable 系 test を `generated/built_in` + `pytra/built_in` 前提へ更新した。
@@ -258,17 +258,17 @@ src/runtime/cpp/
 - module runtime の ownership が `generated/` と `native/` のディレクトリで判別できる。
 - `native/` は C++ 固有 companion のみに限定され、SoT 重複ロジックを持たない。
 - `generated user code -> pytra shim -> generated/native` の経路が成立する。
-- `tools/gen_runtime_symbol_index.py` と `tools/cpp_runtime_deps.py` が新レイアウトで動作する。
-- `tools/check_runtime_cpp_layout.py` が新しい ownership 境界を検証できる。
+- `tools/gen/gen_runtime_symbol_index.py` と `tools/cpp_runtime_deps.py` が新レイアウトで動作する。
+- `tools/check/check_runtime_cpp_layout.py` が新しい ownership 境界を検証できる。
 
 ## 確認コマンド（予定）
 
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/gen_runtime_symbol_index.py --check`
-- `python3 tools/check_runtime_cpp_layout.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_*.py'`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/gen/gen_runtime_symbol_index.py --check`
+- `python3 tools/check/check_runtime_cpp_layout.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_*.py'`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
 
 ## 分解
 
@@ -307,5 +307,5 @@ src/runtime/cpp/
 - 2026-03-07: `built_in` generated artifact も rename ベースで `generated/built_in` へ移し、`pytra/built_in/*.h` shim を追加した。generated std artifact は stable include 面として `pytra/built_in/*.h` を参照するよう合わせた。
 - 2026-03-07: legacy module companion 9 件 (`std/*.ext.cpp` 6 + `built_in/*.ext.h` 3) を `native/` へ移し、layout guard 上も `legacy module files: 0` を確認した。checked-in `test/transpile/cpp/*/Makefile` の stale path は generated fixture 更新タスク `S5-01` でまとめて同期する。
 - 2026-03-07: representative module 契約は `math / os_path / time` を canonical example とし、runtime symbol index test で `generated -> native -> pytra shim` の三層を直接検証する形で固定した。
-- 2026-03-07: `test/transpile/cpp/*/Makefile` は repo tracked file ではなく generated artifact なので、`S5-01` では `tools/gen_makefile_from_manifest.py` で再生成して parity 検証に使い、tracked repo 側には unit/test/guard の新 layout 前提だけを記録した。
+- 2026-03-07: `test/transpile/cpp/*/Makefile` は repo tracked file ではなく generated artifact なので、`S5-01` では `tools/gen/gen_makefile_from_manifest.py` で再生成して parity 検証に使い、tracked repo 側には unit/test/guard の新 layout 前提だけを記録した。
 - 2026-03-07: `S5-02` で module runtime の suffix ベース ownership は legacy-closed とし、legacy dir には補足文書以外の `.h/.cpp` を置かない方針を guard / spec / archive へ反映した。

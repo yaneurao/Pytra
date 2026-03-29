@@ -33,12 +33,12 @@
 - `collect_import_requests()` が `Import` / `ImportFrom` の `kind/module/symbol` を保持すること。
 - `collect_import_modules()` は structured carrier の compatibility wrapper として動作し、既存 smoke を壊さないこと。
 - `from . import helper` の regression が unit / CLI smoke で通ること。
-- `python3 tools/check_todo_priority.py`、対象 unit test、`python3 tools/build_selfhost.py`、`git diff --check` が通ること。
+- `python3 tools/check/check_todo_priority.py`、対象 unit test、`python3 tools/build_selfhost.py`、`git diff --check` が通ること。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_import_graph_issue_structure.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_py2x_cli.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_import_graph_issue_structure.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_py2x_cli.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

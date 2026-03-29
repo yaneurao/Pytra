@@ -20,7 +20,7 @@ Goal:
 In scope:
 - `src/hooks/cpp/emitter/stmt.py`
 - `src/hooks/cpp/emitter/collection_expr.py`
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/13_maze_generation_steps.cpp` (regeneration check)
 
 Out of scope:
@@ -34,15 +34,15 @@ Acceptance criteria:
 - Existing transpile/unit tests pass with no behavior regressions.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force`
 
 Decision log:
 - 2026-03-02: Per user direction, filed reduction of sample/13 `grid` initialization IIFE as P0.
 - 2026-03-02: Confirmed current output is `list<list<int64>>(cell_h, list<int64>(cell_w, 1))`, and `[&]() -> list<list<int64>> { ... }()` IIFE is not being re-emitted.
-- 2026-03-02: Ran `python3 tools/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force` / `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` / `python3 tools/check_py2cpp_transpile.py`; confirmed all passed.
+- 2026-03-02: Ran `python3 tools/gen/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force` / `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` / `python3 tools/check/check_py2cpp_transpile.py`; confirmed all passed.
 
 ## Breakdown
 

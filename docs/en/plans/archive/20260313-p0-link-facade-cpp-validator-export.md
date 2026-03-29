@@ -22,8 +22,8 @@ Goal:
 In scope:
 - `src/toolchain/link/__init__.py`
 - `src/toolchain/compiler/typed_boundary.py`
-- `test/unit/link/test_program_loader.py`
-- `test/unit/common/test_py2x_entrypoints_contract.py` if needed
+- `tools/unittest/link/test_program_loader.py`
+- `tools/unittest/common/test_py2x_entrypoints_contract.py` if needed
 
 Out of scope:
 - Changing validator behavior itself
@@ -36,9 +36,9 @@ Acceptance criteria:
 - Representative link tests / source-contract checks are green.
 
 Verification commands:
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 -m unittest discover -s /workspace/Pytra/test/unit/link -p 'test_program_loader.py'`
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 -m unittest discover -s /workspace/Pytra/test/unit/common -p 'test_py2x_entrypoints_contract.py'`
-- `python3 /workspace/Pytra/tools/check_todo_priority.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 -m unittest discover -s /workspace/Pytra/tools/unittest/link -p 'test_program_loader.py'`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 -m unittest discover -s /workspace/Pytra/tools/unittest/common -p 'test_py2x_entrypoints_contract.py'`
+- `python3 /workspace/Pytra/tools/check/check_todo_priority.py`
 - `git -C /workspace/Pytra diff --check`
 
 Breakdown:

@@ -20,15 +20,15 @@
 
 対象:
 - `test/fixtures/*`（新規ケース追加）
-- `test/unit/test_py2cs_smoke.py`
-- `test/unit/test_py2js_smoke.py`
-- `test/unit/test_py2ts_smoke.py`
-- `test/unit/test_py2rs_smoke.py`
+- `tools/unittest/test_py2cs_smoke.py`
+- `tools/unittest/test_py2js_smoke.py`
+- `tools/unittest/test_py2ts_smoke.py`
+- `tools/unittest/test_py2rs_smoke.py`
 - `src/hooks/cs/emitter/cs_emitter.py`
 - `src/hooks/js/emitter/js_emitter.py`
 - `src/hooks/rs/emitter/rs_emitter.py`
 - `src/pytra/compiler/east_parts/code_emitter.py`（必要時: 共通 mode 解決 helper）
-- `tools/runtime_parity_check.py`（必要時: 新規fixture導線）
+- `tools/check/runtime_parity_check.py`（必要時: 新規fixture導線）
 
 非対象:
 - 既存 sample 全件の性能最適化
@@ -43,20 +43,20 @@
 - 既存の transpile/smoke/parity 導線が非退行で通る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_py2rs_transpile.py`
-- `python3 tools/check_py2cs_transpile.py`
-- `python3 tools/check_py2js_transpile.py`
-- `python3 tools/check_py2ts_transpile.py`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/check_py2java_transpile.py`
-- `python3 tools/check_py2swift_transpile.py`
-- `python3 tools/check_py2kotlin_transpile.py`
-- `python3 tools/check_py2rb_transpile.py`
-- `python3 tools/check_py2lua_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2cs_transpile.py`
+- `python3 tools/check/check_py2js_transpile.py`
+- `python3 tools/check/check_py2ts_transpile.py`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/check/check_py2java_transpile.py`
+- `python3 tools/check/check_py2swift_transpile.py`
+- `python3 tools/check/check_py2kotlin_transpile.py`
+- `python3 tools/check/check_py2rb_transpile.py`
+- `python3 tools/check/check_py2lua_transpile.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2*smoke.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root fixture --targets cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua <new_case> --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root fixture --targets cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua <new_case> --ignore-unstable-stdout`
 
 分解:
 - [x] [ID: P0-MULTILANG-DOWNRANGE-01-S1-01] `range(len-1, -1, -1)` の最小 fixture を `test/fixtures` に追加し、期待出力を固定する。
@@ -80,4 +80,4 @@
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v` pass（44）
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2rs_smoke.py' -v` pass（29）
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua_smoke.py' -v` pass（19）
-  - `python3 tools/runtime_parity_check.py --case-root fixture --targets cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua range_downcount_len_minus1` pass（ok=10, swift=toolchain_missing）
+  - `python3 tools/check/runtime_parity_check.py --case-root fixture --targets cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua range_downcount_len_minus1` pass（ok=10, swift=toolchain_missing）

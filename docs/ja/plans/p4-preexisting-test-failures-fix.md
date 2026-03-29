@@ -11,7 +11,7 @@
 
 ## 背景
 
-`test/unit/toolchain/emit/cpp/test_py2cpp_features.py` に 4 件の pre-existing テスト失敗がある。
+`tools/unittest/emit/cpp/test_py2cpp_features.py` に 4 件の pre-existing テスト失敗がある。
 これらは今セッション以前から存在しており、変更前のコードでも同様に失敗する。
 
 確認済みの失敗テスト:
@@ -22,7 +22,7 @@
 
 ## 対象
 
-- `test/unit/toolchain/emit/cpp/test_py2cpp_features.py` — 4 件の失敗テスト
+- `tools/unittest/emit/cpp/test_py2cpp_features.py` — 4 件の失敗テスト
 - 関連する emitter / runtime コード
 
 ## 受け入れ基準

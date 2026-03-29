@@ -36,11 +36,11 @@ Acceptance criteria:
 - The generated consumer module must reference imported user-module symbols via namespace-qualified names.
 - The generated consumer module must include enough forward declarations to compile imported user-module functions and module-level globals.
 - Existing relative-import function alias and module alias build/run smokes must keep passing.
-- `python3 tools/check_todo_priority.py`, focused C++ regressions, `python3 tools/build_selfhost.py`, and `git diff --check` must pass.
+- `python3 tools/check/check_todo_priority.py`, focused C++ regressions, `python3 tools/build_selfhost.py`, and `git diff --check` must pass.
 
 Verification:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k relative_import`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k relative_import`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

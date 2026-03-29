@@ -23,7 +23,7 @@
 対象:
 - `src/hooks/kotlin/emitter/*`
 - `src/runtime/kotlin/pytra/*`（必要に応じて）
-- `test/unit/test_py2kotlin_*`
+- `tools/unittest/test_py2kotlin_*`
 - `sample/kotlin/01_mandelbrot.kt` の再生成
 
 非対象:
@@ -40,9 +40,9 @@
 
 確認コマンド:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin*.py' -v`
-- `python3 tools/check_py2kotlin_transpile.py`
-- `python3 tools/regenerate_samples.py --langs kotlin --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets kotlin 01_mandelbrot`
+- `python3 tools/check/check_py2kotlin_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs kotlin --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets kotlin 01_mandelbrot`
 
 分解:
 - [x] [ID: P1-KOTLIN-SAMPLE01-QUALITY-01-S1-01] `sample/kotlin/01` の品質差分（冗長 cast / loop / no-op / any退化）を棚卸しし、改善優先順を固定する。

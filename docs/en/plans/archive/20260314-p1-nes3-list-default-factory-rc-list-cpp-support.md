@@ -35,7 +35,7 @@ Acceptance criteria:
 - Existing `default_factory=Child` and `default_factory=deque` lanes keep working.
 
 Validation commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `bash ./pytra materials/refs/from-Pytra-NES3/list_default_factory.py --target cpp --output-dir /tmp/pytra_nes3_list_default_factory`
 - `g++ -std=c++20 -O0 -c /tmp/pytra_nes3_list_default_factory/src/list_default_factory.cpp -I /tmp/pytra_nes3_list_default_factory/include -I /workspace/Pytra/src -I /workspace/Pytra/src/runtime/cpp`
 - `git diff --check`

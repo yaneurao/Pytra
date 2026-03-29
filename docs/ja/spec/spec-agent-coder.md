@@ -8,15 +8,22 @@
 
 ## 1. golden / テスト生成
 
-- **golden ファイル（east1/east2/east3/east3-opt/linked）は `python3 tools/regenerate_golden.py` でのみ生成すること。** `pytra-cli2` を直接叩いて手動で出力先を指定してはならない。手動生成はパスの間違い（`test/fixtures/` や `test/pytra/east1/built_in/` のような誤ったディレクトリ）の原因になる。
-- **sample の再生成は `python3 tools/regenerate_samples.py` でのみ行うこと。**
+- **golden ファイル（east1/east2/east3/east3-opt/linked）は `python3 tools/gen/regenerate_golden.py` でのみ生成すること。** `pytra-cli2` を直接叩いて手動で出力先を指定してはならない。手動生成はパスの間違い（`test/fixtures/` や `test/pytra/east1/built_in/` のような誤ったディレクトリ）の原因になる。
+- **sample の再生成は `python3 tools/gen/regenerate_samples.py` でのみ行うこと。**
 
-## 2. test/ 配置ルール
+## 2. tools/ 配置ルール
+
+- **`tools/` 直下への新規 `.py` ファイル追加は禁止。** 必ず `tools/check/` / `tools/gen/` / `tools/run/` のいずれかに配置する。
+- **新規ファイルを追加・削除・移動した場合は `tools/README.md`（台帳）を必ず同時に更新する。** 台帳の更新なしにファイルを追加してはならない。
+- CI チェック `python3 tools/check/check_tools_ledger.py` が台帳との突合を行う。台帳に記載のないファイルがあれば FAIL になる。
+- 一時的・実験的なスクリプトは `tools/unregistered/` に置く（CI 対象外）。
+
+## 3. test/ 配置ルール
 
 - **`test/fixture/` 配下のディレクトリ構造を勝手に作らないこと。** 既存のディレクトリ構成（`source/py/`, `east1/py/`, `east2/`, `east3/`, `east3-opt/`, `linked/`）に従う。
 - **`test/` 直下に新しいサブディレクトリを作らないこと**（`test/fixtures/` のような typo ディレクトリを防ぐ）。
 
-## 3. emitter の禁止事項
+## 4. emitter の禁止事項
 
 - emitter は EAST3 を忠実にレンダリングする。以下は禁止:
   - cast を追加する（EAST に cast がないなら resolve のバグ）
@@ -29,25 +36,25 @@
 - **workaround が必要に見える場合は、実装する前にまずユーザーに報告すること。** spec 違反の実装を入れてはならない。
 - 詳細は `docs/ja/spec/spec-emitter-guide.md` を参照。
 
-## 4. runtime の禁止事項
+## 5. runtime の禁止事項
 
 - runtime ヘッダーに type_id テーブルのサイズや値をハードコードしてはならない（`g_type_table[4096]` のような固定サイズ配列は禁止）。
 - 手書き TID 定数（`PYTRA_TID_VALUE_ERROR = 12` 等）は禁止。linker が生成した `pytra.built_in.type_id_table` の定数を使う。
 - 正本ソース（`src/pytra/utils/*.py` 等）を変換器の制約に合わせて書き換えてはならない（例: `with` 文を手動 open/close に崩す）。emitter が対応するのが正しい対処。
 
-## 5. コミット運用
+## 6. コミット運用
 
 - 作業内容が論理的にまとまった時点で、ユーザーの都度許可なしにコミットしてよい。
 - コミットは論理単位で分割し、変更意図が分かるメッセージを付ける。
 - TODO 消化コミットはメッセージに `ID` を含める（例: `[ID: P0-XXX-01] ...`）。
 - **タスク完了時は `docs/ja/todo/index.md` の該当タスクの `[ ]` を `[x]` に変更し、完了メモ（件数等）を追記してコミットすること。** チェックを入れ忘れると、他のエージェントが同じタスクに着手してしまう。
 
-## 6. バージョン更新
+## 7. バージョン更新
 
 - 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/toolchain/emit/**` 等）を変更する場合は、`src/toolchain/misc/transpiler_versions.json` の対応バージョンを **PATCH** で更新する。
 - MINOR / MAJOR はユーザーの明示指示がある場合のみ。
 
-## 7. selfhost 運用
+## 8. selfhost 運用
 
 - selfhost 対象コード（`src/toolchain/misc/east.py` 系）では、動的 import（`try/except ImportError` フォールバック、`importlib` による遅延 import）を使わない。
 - selfhost 対象コードでは、Python 標準 `ast` モジュールへの依存を禁止する。

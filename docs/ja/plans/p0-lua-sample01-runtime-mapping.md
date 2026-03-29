@@ -22,7 +22,7 @@
 対象:
 - `src/hooks/lua/emitter/lua_native_emitter.py`
 - `src/runtime/lua/*`（必要に応じて新設）
-- `test/unit/test_py2lua_smoke.py`（または Lua 専用 test）
+- `tools/unittest/test_py2lua_smoke.py`（または Lua 専用 test）
 - `sample/lua/01_mandelbrot.lua` 再生成結果
 
 非対象:
@@ -38,11 +38,11 @@
 - transpile/smoke/parity 導線が通る。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua*.py' -v`
-- `python3 tools/check_py2lua_transpile.py`
-- `python3 tools/regenerate_samples.py --langs lua --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets lua 01_mandelbrot`
+- `python3 tools/check/check_py2lua_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs lua --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets lua 01_mandelbrot`
 
 分解:
 - [x] [ID: P0-LUA-SAMPLE01-RUNTIME-01-S1-01] `time.perf_counter` import の Lua runtime マッピングを実装し、`not yet mapped` コメント生成を禁止する。
@@ -54,5 +54,5 @@
 - 2026-03-01: ユーザー指示により、`sample/lua/01` の runtime 機能欠落（time/png no-op）を `P0` で先行是正する方針を確定した。
 - 2026-03-01: `src/hooks/lua/emitter/lua_native_emitter.py` で `time.perf_counter` を `__pytra_perf_counter` へ接続し、`pytra.runtime.png` / `pytra.utils.png` を no-op stub ではなく `__pytra_write_rgb_png` ベース実装へ接続した。未解決 `pytra.*`（特に `gif`）は fail-closed（`RuntimeError`）へ変更した。
 - 2026-03-01: `print` の Lua 既定区切り（タブ）による `output_mismatch` を確認し、`__pytra_print` helper を導入して Python 互換の空白区切り出力に統一した。
-- 2026-03-01: 回帰として `test/unit/test_py2lua_smoke.py` を更新し、`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua_smoke.py' -v`（18 tests, OK）を確認した。
-- 2026-03-01: `python3 src/py2lua.py sample/py/01_mandelbrot.py -o sample/lua/01_mandelbrot.lua && lua sample/lua/01_mandelbrot.lua` で実行確認し、`python3 tools/runtime_parity_check.py --case-root sample --targets lua --ignore-unstable-stdout 01_mandelbrot` を PASS（`cases=1 pass=1 fail=0`）で確認した。
+- 2026-03-01: 回帰として `tools/unittest/test_py2lua_smoke.py` を更新し、`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua_smoke.py' -v`（18 tests, OK）を確認した。
+- 2026-03-01: `python3 src/py2lua.py sample/py/01_mandelbrot.py -o sample/lua/01_mandelbrot.lua && lua sample/lua/01_mandelbrot.lua` で実行確認し、`python3 tools/check/runtime_parity_check.py --case-root sample --targets lua --ignore-unstable-stdout 01_mandelbrot` を PASS（`cases=1 pass=1 fail=0`）で確認した。

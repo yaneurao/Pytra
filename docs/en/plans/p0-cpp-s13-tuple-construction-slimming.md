@@ -21,7 +21,7 @@ Goal:
 In scope:
 - `src/hooks/cpp/emitter/collection_expr.py`
 - `src/hooks/cpp/emitter/stmt.py`
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/13_maze_generation_steps.cpp` (regeneration check)
 
 Out of scope:
@@ -36,16 +36,16 @@ Acceptance criteria:
 - Regenerated `sample/cpp/13` confirms reduced redundant wrapping in target fragments.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force`
 
 Decision log:
 - 2026-03-02: Per user direction, filed sample/13 tuple double-wrap reduction as P0.
 - 2026-03-02: Added a path in `src/hooks/cpp/emitter/call.py` that skips extra cast for `list<tuple[...]>.append(...)` when the argument is `::std::make_tuple(...)`, avoiding double wrapping `::std::tuple<...>(::std::make_tuple(...))`.
 - 2026-03-02: Added non-emission checks for `tuple(make_tuple)` to sample/13 regressions in `test_py2cpp_codegen_issues.py` and locked recurrence detection.
-- 2026-03-02: Ran `python3 tools/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force` / `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` / `python3 tools/check_py2cpp_transpile.py`; confirmed all passed.
+- 2026-03-02: Ran `python3 tools/gen/regenerate_samples.py --langs cpp --stems 13_maze_generation_steps --force` / `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` / `python3 tools/check/check_py2cpp_transpile.py`; confirmed all passed.
 
 ## Breakdown
 

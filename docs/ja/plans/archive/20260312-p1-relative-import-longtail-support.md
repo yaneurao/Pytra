@@ -32,27 +32,27 @@
 - active handoff は `docs/ja/plans/archive/20260312-p1-relative-import-longtail-support-implementation.md` を参照し、`lua/php/ruby` を `longtail_relative_import_support_rollout` に固定する。
 - archived long-tail fail-closed bundle checker は support rollout を follow-up として参照し、support contract checker は archived baseline を prereq として参照する。
 - backend coverage / second-wave handoff / backend parity docs が deleted live long-tail bundle plan を参照しない。
-- `python3 tools/check_relative_import_*contract.py` と対応 unit test が通る。
+- `python3 tools/check/check_relative_import_*contract.py` と対応 unit test が通る。
 
 確認コマンド:
-- `python3 tools/check_relative_import_backend_coverage.py`
-- `python3 tools/check_relative_import_secondwave_rollout_contract.py`
-- `python3 tools/check_relative_import_longtail_bundle_contract.py`
-- `python3 tools/check_relative_import_longtail_support_contract.py`
-- `python3 tools/check_relative_import_lua_support_contract.py`
-- `python3 tools/check_relative_import_php_support_contract.py`
-- `python3 tools/check_relative_import_ruby_support_contract.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_backend_coverage.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_secondwave_rollout_contract.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_longtail_bundle_contract.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_longtail_support_contract.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_lua_support_contract.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_php_support_contract.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_ruby_support_contract.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/lua -p 'test_py2lua_smoke.py' -k relative_import_support_rollout`
-- `PYTHONPATH=src:test/unit python3 test/unit/backends/php/test_py2php_smoke.py -k relative_import_support_rollout -v`
-- `PYTHONPATH=src:test/unit:test/unit/backends python3 -m unittest discover -s test/unit/backends/rb -p 'test_py2rb_smoke.py' -k relative_import_support_rollout`
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_relative_import_backend_coverage.py`
+- `python3 tools/check/check_relative_import_secondwave_rollout_contract.py`
+- `python3 tools/check/check_relative_import_longtail_bundle_contract.py`
+- `python3 tools/check/check_relative_import_longtail_support_contract.py`
+- `python3 tools/check/check_relative_import_lua_support_contract.py`
+- `python3 tools/check/check_relative_import_php_support_contract.py`
+- `python3 tools/check/check_relative_import_ruby_support_contract.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_backend_coverage.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_secondwave_rollout_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_longtail_bundle_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_longtail_support_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_lua_support_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_php_support_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_relative_import_ruby_support_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/lua -p 'test_py2lua_smoke.py' -k relative_import_support_rollout`
+- `PYTHONPATH=src:test/unit python3 tools/unittest/emit/php/test_py2php_smoke.py -k relative_import_support_rollout -v`
+- `PYTHONPATH=src:test/unit:tools/unittest/backends python3 -m unittest discover -s tools/unittest/emit/rb -p 'test_py2rb_smoke.py' -k relative_import_support_rollout`
+- `python3 tools/check/check_todo_priority.py`
 - `git diff --check`
 
 決定ログ:

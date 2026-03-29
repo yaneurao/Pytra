@@ -142,13 +142,13 @@ python -m unittest discover -s test/unit -p "test_*.py" -v
 If you want to verify only the shared emitter foundation (`src/toolchain/emit/common/emitter/code_emitter.py`):
 
 ```bash
-python -m unittest discover -s test/unit/common -p "test_code_emitter.py" -v
+python -m unittest discover -s tools/unittest/common -p "test_code_emitter.py" -v
 ```
 
 Dedicated test to run all `test/fixtures/**/*.py` and verify trailing output `True`:
 
 ```bash
-python -m unittest discover -s test/unit/common -p "test_fixtures_truth.py" -v
+python -m unittest discover -s tools/unittest/common -p "test_fixtures_truth.py" -v
 ```
 
 ## 6. Usage Notes

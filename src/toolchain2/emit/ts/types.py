@@ -9,6 +9,7 @@ from __future__ import annotations
 # EAST3 resolved_type → TypeScript type
 _TYPE_MAP: dict[str, str] = {
     "int": "number",
+    "byte": "number",
     "int8": "number",
     "int16": "number",
     "int32": "number",
@@ -44,7 +45,7 @@ _TYPE_MAP: dict[str, str] = {
     "TypeError": "Error",
     "IndexError": "Error",
     "KeyError": "Error",
-    "Path": "string",
+    "Path": "PyPath",
 }
 
 _TS_KEYWORDS: set[str] = {

@@ -35,11 +35,11 @@ Acceptance criteria:
 - Representative unit tests and selfhost build pass.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_import_diagnostics.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_self_hosted_signature.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_import_diagnostics.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_self_hosted_signature.py'`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_transpiler_version_gate.py`
+- `python3 tools/check/check_transpiler_version_gate.py`
 - `git diff --check`
 
 Decision log:

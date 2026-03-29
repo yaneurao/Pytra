@@ -11,7 +11,7 @@
 
 背景:
 - `P1-PY2X-SINGLE-ENTRY-01` は archive 済みだが、`src/py2rs.py` / `src/py2cs.py` などの legacy wrapper が実体として残っている。
-- `tools/check_multilang_selfhost_stage1.py`、`tools/check_noncpp_east3_contract.py`、`test/unit/test_py2*_smoke.py` などが wrapper ファイル名に依存している。
+- `tools/check/check_multilang_selfhost_stage1.py`、`tools/check/check_noncpp_east3_contract.py`、`tools/unittest/test_py2*_smoke.py` などが wrapper ファイル名に依存している。
 - この状態では「`pytra-cli.py` 一本化」を名目上達成していても、実体としては wrapper 維持運用のままである。
 
 目的:
@@ -36,22 +36,22 @@
 - wrapper 再流入を CI/ローカルで fail-fast 検出できる。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `rg -n "src/py2(rs|cs|js|ts|go|java|kotlin|swift|rb|lua|scala|php|nim)\\.py" src tools test docs`
-- `python3 tools/check_legacy_cli_references.py`
-- `python3 tools/check_py2rs_transpile.py`
-- `python3 tools/check_py2cs_transpile.py`
-- `python3 tools/check_py2js_transpile.py`
-- `python3 tools/check_py2ts_transpile.py`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/check_py2java_transpile.py`
-- `python3 tools/check_py2swift_transpile.py`
-- `python3 tools/check_py2kotlin_transpile.py`
-- `python3 tools/check_py2rb_transpile.py`
-- `python3 tools/check_py2lua_transpile.py`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/check_py2php_transpile.py`
-- `python3 tools/check_py2nim_transpile.py`
+- `python3 tools/check/check_legacy_cli_references.py`
+- `python3 tools/check/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2cs_transpile.py`
+- `python3 tools/check/check_py2js_transpile.py`
+- `python3 tools/check/check_py2ts_transpile.py`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/check/check_py2java_transpile.py`
+- `python3 tools/check/check_py2swift_transpile.py`
+- `python3 tools/check/check_py2kotlin_transpile.py`
+- `python3 tools/check/check_py2rb_transpile.py`
+- `python3 tools/check/check_py2lua_transpile.py`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/check/check_py2php_transpile.py`
+- `python3 tools/check/check_py2nim_transpile.py`
 
 ## S1-01 棚卸し結果（2026-03-04）
 
@@ -86,10 +86,10 @@
 決定ログ:
 - 2026-03-04: archive 済み `P1-PY2X-SINGLE-ENTRY-01` を再開対象として差し戻し。完了条件を「`py2x` 導入」ではなく「legacy wrapper 実ファイル撤去」へ再定義した。
 - 2026-03-04: `S1-01` として wrapper 参照を `tools/test/docs/selfhost` で再棚卸しし、置換順を「tools -> test -> docs -> wrapper削除 -> guard/回帰」に確定した。
-- 2026-03-04: `S2-01` の先行分として `tools/check_noncpp_east3_contract.py` の wrapper 実ファイル前提チェックを除去し、`pytra-cli.py` + backend layer + smoke 契約検証へ整理した。合わせて `tools/check_transpiler_version_gate.py` の言語 direct dependency を `src/py2*.py` から `src/pytra-cli.py` へ置換し、`tools/check_legacy_cli_references.py` の allowlist から上記2ファイルを除外して再流入を抑止した。
-- 2026-03-04: `S2-01` を完了。`tools/check_multilang_selfhost_stage1.py` / `tools/check_multilang_selfhost_multistage.py` を `src/pytra-cli.py --target <lang>` 基準へ更新し、JS/RS/CS の stage2/stage3 実行でも `--target` を明示。`tools/prepare_selfhost_source_cs.py` は `src/pytra-cli.py -> selfhost/py2x_cs.py` seed 生成へ簡素化し、`tools/check_cs_single_source_selfhost_compile.py` も `py2x` 基準へ移行した。`rg -n \"py2(rs|cs|js|ts|go|java|kotlin|swift|rb|lua|scala|php|nim)\\.py\" tools` が 0 件、関連ツール実行（stage1/multistage/cs-single-source）はクラッシュなしを確認。
-- 2026-03-04: `S2-02` を完了。`test/unit/test_py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,scala,php,nim}_smoke.py` の wrapper import / wrapper 実ファイル文字列依存を backend module + `load_east3_document(..., target_lang=<lang>)` 基準へ置換し、Lua smoke の runtime 外出し（`dofile("py_runtime.lua")`）期待値へ追従。`PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2*_smoke.py' -v`（298 tests）で `OK` を確認。
+- 2026-03-04: `S2-01` の先行分として `tools/check/check_noncpp_east3_contract.py` の wrapper 実ファイル前提チェックを除去し、`pytra-cli.py` + backend layer + smoke 契約検証へ整理した。合わせて `tools/check/check_transpiler_version_gate.py` の言語 direct dependency を `src/py2*.py` から `src/pytra-cli.py` へ置換し、`tools/check/check_legacy_cli_references.py` の allowlist から上記2ファイルを除外して再流入を抑止した。
+- 2026-03-04: `S2-01` を完了。`tools/check/check_multilang_selfhost_stage1.py` / `tools/check/check_multilang_selfhost_multistage.py` を `src/pytra-cli.py --target <lang>` 基準へ更新し、JS/RS/CS の stage2/stage3 実行でも `--target` を明示。`tools/prepare_selfhost_source_cs.py` は `src/pytra-cli.py -> selfhost/py2x_cs.py` seed 生成へ簡素化し、`tools/check/check_cs_single_source_selfhost_compile.py` も `py2x` 基準へ移行した。`rg -n \"py2(rs|cs|js|ts|go|java|kotlin|swift|rb|lua|scala|php|nim)\\.py\" tools` が 0 件、関連ツール実行（stage1/multistage/cs-single-source）はクラッシュなしを確認。
+- 2026-03-04: `S2-02` を完了。`tools/unittest/test_py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,scala,php,nim}_smoke.py` の wrapper import / wrapper 実ファイル文字列依存を backend module + `load_east3_document(..., target_lang=<lang>)` 基準へ置換し、Lua smoke の runtime 外出し（`dofile("py_runtime.lua")`）期待値へ追従。`PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2*_smoke.py' -v`（298 tests）で `OK` を確認。
 - 2026-03-04: `S2-03` を完了。運用ドキュメントの実行例を `pytra-cli.py --target <lang>` 基準へ統一し、`how-to-use` の互換ラッパ説明を非推奨/段階撤去方針へ更新。`spec-runtime/spec-options/spec-east/spec-east3-optimizer/spec-dev/spec-tools`（ja/en）で `src/py2cpp.py` 前提を `src/pytra-cli.py --target cpp` または `src/toolchain/emit/cpp/cli.py` へ置換し、selfhost 同期手順は `python3 tools/prepare_selfhost_source.py` を正本化。`rg -n \"python3?\\s+src/py2(rs|cs|js|ts|go|java|kotlin|swift|rb|lua|scala|php|nim|cpp)\\.py\" docs/ja docs/en --glob '!**/plans/**' --glob '!**/todo/**' --glob '!**/archive/**' --glob '!**/language/**'` が 0 件であることを確認。
-- 2026-03-04: `S3-01` を完了。`src/py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,scala,php,nim}.py` と `src/toolchain/misc/py2x_wrapper.py` を削除し、残存依存は `test/unit/test_error_classification_cross_lang.py` を `load_east3_document(..., target_lang=...)` 基準へ置換、`src/toolchain/emit/cs/emitter/cs_emitter.py` の anchor を `src/pytra-cli.py` へ更新して解消した。回帰として `python3 tools/check_legacy_cli_references.py`、`python3 -m unittest discover -s test/unit -p 'test_error_classification_cross_lang.py' -v`、`PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2*_smoke.py' -v`（298 tests）を通過確認。
-- 2026-03-04: `S3-02` を完了。`tools/check_legacy_cli_references.py` を更新し、`src/pytra-cli.py` / `src/pytra-cli.py` 以外の `src/py2*.py` 実ファイル再流入と `toolchain/misc/py2x_wrapper.py` の再生成を fail-fast 検知するようにした。合わせて path/import の許可リストを空にして削除後構成を固定し、`python3 tools/check_legacy_cli_references.py` の `OK` を確認。
+- 2026-03-04: `S3-01` を完了。`src/py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,scala,php,nim}.py` と `src/toolchain/misc/py2x_wrapper.py` を削除し、残存依存は `tools/unittest/test_error_classification_cross_lang.py` を `load_east3_document(..., target_lang=...)` 基準へ置換、`src/toolchain/emit/cs/emitter/cs_emitter.py` の anchor を `src/pytra-cli.py` へ更新して解消した。回帰として `python3 tools/check/check_legacy_cli_references.py`、`python3 -m unittest discover -s test/unit -p 'test_error_classification_cross_lang.py' -v`、`PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2*_smoke.py' -v`（298 tests）を通過確認。
+- 2026-03-04: `S3-02` を完了。`tools/check/check_legacy_cli_references.py` を更新し、`src/pytra-cli.py` / `src/pytra-cli.py` 以外の `src/py2*.py` 実ファイル再流入と `toolchain/misc/py2x_wrapper.py` の再生成を fail-fast 検知するようにした。合わせて path/import の許可リストを空にして削除後構成を固定し、`python3 tools/check/check_legacy_cli_references.py` の `OK` を確認。
 - 2026-03-04: `S3-03` を完了。`check_py2{cpp,rs,cs,js,ts,go,java,swift,kotlin,rb,lua,scala,php,nim}_transpile.py` を全件実行して fail=0 を確認し、`PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2*_smoke.py' -v`（298 tests）も `OK` を確認。wrapper撤去後の transpile/smoke 非退行を固定した。

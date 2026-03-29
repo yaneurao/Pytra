@@ -13,7 +13,7 @@
 - 以前の header shrink と cross-runtime residual caller 整理により、`src/runtime/cpp/native/core/py_runtime.h` の残存 surface はかなり小さくなった。
 - 現在 header に残っている代表 residual は `object_bridge_mutation` 9 本と thin `type_id` helper 4 本だけで、transitive include や typed collection compatibility のような大きい blocker は既に解消済みである。
 - ただし residual caller が native compiler wrapper、generated C++ runtime、Rust/C# runtime builtins にまだ残っているため、header 単体の掃除ではなく「caller 契約を切り替えてから削る」段階に入っている。
-- `tools/check_cpp_pyruntime_header_surface.py` はまだ archived follow-up を handoff 先として参照しており、active な最終 shrink task と同期していない。
+- `tools/check/check_cpp_pyruntime_header_surface.py` はまだ archived follow-up を handoff 先として参照しており、active な最終 shrink task と同期していない。
 
 目的:
 - `py_runtime.h` の残りを final shrink 対象として active task に戻し、current residual inventory / target end state / bundle order を docs と tooling で固定する。
@@ -22,9 +22,9 @@
 
 対象:
 - `src/runtime/cpp/native/core/py_runtime.h`
-- `tools/check_cpp_pyruntime_header_surface.py`
-- `test/unit/tooling/test_check_cpp_pyruntime_header_surface.py`
-- 必要に応じて `tools/check_cpp_pyruntime_contract_inventory.py`
+- `tools/check/check_cpp_pyruntime_header_surface.py`
+- `tools/unittest/tooling/test_check_cpp_pyruntime_header_surface.py`
+- 必要に応じて `tools/check/check_cpp_pyruntime_contract_inventory.py`
 - 必要に応じて `src/runtime/cpp/native/compiler/*.cpp`
 - 必要に応じて `src/runtime/cpp/generated/**/*.cpp`
 - 必要に応じて `src/backends/{cpp,rs,cs}/**/*.py`
@@ -38,7 +38,7 @@
 - relative import や nominal ADT など import/runtime 以外の機能追加
 
 受け入れ基準:
-- `tools/check_cpp_pyruntime_header_surface.py` が active plan / task を参照し、current residual inventory と bundle order を fail-closed で固定している。
+- `tools/check/check_cpp_pyruntime_header_surface.py` が active plan / task を参照し、current residual inventory と bundle order を fail-closed で固定している。
 - `object_bridge_mutation` helper の caller が bundle 単位で upstream 化され、少なくとも 1 束以上 header から削減される。
 - `shared_type_id` thin helper の ownership が native/generated/Rust/C# caller 側で整理され、header に generic alias を戻さないことが source guard で固定される。
 - representative C++ runtime test と tooling test が通る。
@@ -63,14 +63,14 @@ bundle order:
 4. `S3-01`: representative runtime/source guard/docs/archive を更新して閉じる。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_cpp_pyruntime_header_surface.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_cpp_pyruntime_header_surface.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_type_id.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_cpp_pyruntime_header_surface.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_cpp_pyruntime_header_surface.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_iterable.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_type_id.py'`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_transpiler_version_gate.py`
-- `python3 tools/run_regen_on_version_bump.py --dry-run`
+- `python3 tools/check/check_transpiler_version_gate.py`
+- `python3 tools/run/run_regen_on_version_bump.py --dry-run`
 - `git diff --check`
 
 分解:

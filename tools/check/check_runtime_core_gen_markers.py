@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 RUNTIME_ROOT = ROOT / "src" / "runtime"
 ALLOWLIST_PATH = ROOT / "tools" / "runtime_core_gen_markers_allowlist.txt"
 

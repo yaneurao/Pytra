@@ -6,7 +6,7 @@ from __future__ import annotations
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def _find_legacy_checker_scripts(root: Path) -> list[str]:

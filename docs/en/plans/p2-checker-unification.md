@@ -13,20 +13,20 @@
 - `docs/ja/todo/index.md` の `ID: P2-CHECKER-UNIFY-01`
 
 背景:
-- `tools/check_py2cpp_transpile.py` など言語別 checker が多数存在し、CI・計画書・テストが個別ファイル名へ強く依存している。
+- `tools/check/check_py2cpp_transpile.py` など言語別 checker が多数存在し、CI・計画書・テストが個別ファイル名へ強く依存している。
 - 役割は本質的に共通（`py2x --target <lang>` で fixture/sample を変換し、成功/既知失敗契約を検証）であり、分割ファイル維持は重複実装と運用コストを増やす。
 - ユーザー方針として、checker も単一入口へ統一し、言語差分は設定で扱う構成が望ましい。
 
 目的:
-- checker を `tools/check_py2x_transpile.py --target <lang>` の単一入口へ統一する。
+- checker を `tools/check/check_py2x_transpile.py --target <lang>` の単一入口へ統一する。
 - 言語差分（ケース集合、expected-fail、追加アサーション）はプロファイル定義へ移し、スクリプト本体の分岐を縮小する。
 - 既存 `check_py2*.py` は段階移行後に削除する（移行期間は互換ラッパ許容）。
 
 対象:
-- `tools/check_py2*.py` 群
-- 新規統一 checker（`tools/check_py2x_transpile.py`）
+- `tools/check/check_py2*.py` 群
+- 新規統一 checker（`tools/check/check_py2x_transpile.py`）
 - checker 設定（target別プロファイル）
-- 呼び出し元（`tools/run_local_ci.py`, 契約検証スクリプト, docs/plan のコマンド例）
+- 呼び出し元（`tools/run/run_local_ci.py`, 契約検証スクリプト, docs/plan のコマンド例）
 
 非対象:
 - backend 生成品質の改善
@@ -40,18 +40,18 @@
 - 旧 `check_py2*.py` は最終的に削除される（中間段階では薄い互換ラッパのみ許容）。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 -m py_compile tools/check_py2x_transpile.py`
-- `python3 tools/check_py2x_transpile.py --target cpp`
-- `python3 tools/check_py2x_transpile.py --target java`
-- `python3 tools/check_py2x_transpile.py --target scala`
-- `python3 tools/run_local_ci.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 -m py_compile tools/check/check_py2x_transpile.py`
+- `python3 tools/check/check_py2x_transpile.py --target cpp`
+- `python3 tools/check/check_py2x_transpile.py --target java`
+- `python3 tools/check/check_py2x_transpile.py --target scala`
+- `python3 tools/run/run_local_ci.py`
 
 ## 分解
 
 - [x] [ID: P2-CHECKER-UNIFY-01-S1-01] 既存 `check_py2*.py` の差分（ケース選定・expected-fail・追加品質検証）を棚卸しして統一仕様を定義する。
 - [x] [ID: P2-CHECKER-UNIFY-01-S1-02] target別プロファイル形式（ケース集合、許容失敗、追加検証フック）を設計する。
-- [x] [ID: P2-CHECKER-UNIFY-01-S2-01] `tools/check_py2x_transpile.py` を実装し、`--target` で全言語の共通検証を実行可能にする。
+- [x] [ID: P2-CHECKER-UNIFY-01-S2-01] `tools/check/check_py2x_transpile.py` を実装し、`--target` で全言語の共通検証を実行可能にする。
 - [x] [ID: P2-CHECKER-UNIFY-01-S2-02] 既存 `check_py2*.py` を互換ラッパ化し、新checkerへ委譲させる。
 - [x] [ID: P2-CHECKER-UNIFY-01-S2-03] `run_local_ci.py` / 契約検証スクリプト / docs の呼び出しを単一 checker に置換する。
 - [x] [ID: P2-CHECKER-UNIFY-01-S3-01] 互換期間終了後に `check_py2*.py` を削除し、再導入防止ガードを追加する。
@@ -61,11 +61,11 @@
 - 2026-03-05: ユーザー指示により、言語別 checker 群は将来削除前提とし、`--target` 駆動の単一 checker へ統合する方針を確定。
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S1-01`] `check_py2*_transpile.py` 14本の差分を棚卸しし、差分軸を「ケース集合（全fixture+sample or 明示CASES）」「expected-fail 形式（単純集合 or 構造化spec）」「追加品質フック（scala sample01 / php sample18）」「追加CLI（`--skip-east3-contract-tests` / `--check-multi-file` / `--check-yanesdk-smoke` / stage2 probe）」へ固定した。
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S1-02`] 単一 checker 用 profile 形式を `target / case_mode / cases / expected_failures / quality_hooks / flags / stage2_probe` で固定し、単純 expected-fail 一覧を構造化 `expected_failures` へ正規化する仕様を確定した。
-- 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S2-01`] `tools/check_py2x_transpile.py` と `tools/check_py2x_profiles.json` を追加し、共通実行器（cases解決・expected-fail skip/validate・quality hook・stage2 probe）を実装。まず `cpp/java/scala` profile を移植し、`sample/py/01_mandelbrot.py` で3target smoke 通過を確認した。
+- 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S2-01`] `tools/check/check_py2x_transpile.py` と `tools/check/check_py2x_profiles.json` を追加し、共通実行器（cases解決・expected-fail skip/validate・quality hook・stage2 probe）を実装。まず `cpp/java/scala` profile を移植し、`sample/py/01_mandelbrot.py` で3target smoke 通過を確認した。
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S2-01`] profile を `cpp/cs/go/java/js/kotlin/lua/nim/php/ruby/rs/scala/swift/ts` へ拡張し、`php_sample18` 品質フック・runtime sidecar 内容検証・`cpp_emitter_separation` preflight を共通実行器へ追加。`--skip-east3-contract-tests` 付きで `sample/py/01_mandelbrot.py` 全target smoke（14件）を通過して S2-01 を完了。
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S2-02`] `check_py2cpp/cs/go/java/js/kotlin/lua/nim/php/rb/rs/scala/swift/ts` を互換ラッパ化し、実処理を `check_py2x_transpile.py --target` へ委譲。`cpp` 互換維持のため unified 側へ `--check-multi-file-imports` / `--check-yanesdk-smoke` を追加し、`nim/cpp/js` ラッパ実行（`js` は `--skip-east3-contract-tests`）で委譲結果が旧導線と整合することを確認。
 - 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S2-03`] `run_local_ci.py`・`check_noncpp_east3_contract.py`・`check_gsk_native_regression.py` の checker 呼び出しを `check_py2x_transpile.py --target ...` へ置換。`check_noncpp` からの `js/ts` 呼び出しは `--skip-east3-contract-tests` を付与して再帰を回避し、unified 側 preflight も旧仕様（`test_east2_to_east3_lowering.py` / `test_east3_cpp_bridge.py`）へ戻して非循環化した。`check_noncpp --skip-transpile` + `check_py2js_transpile.py` + `check_py2ts_transpile.py` を通過。
-- 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S3-01`] 旧 `tools/check_py2{cpp,cs,go,java,js,kotlin,lua,nim,php,rb,rs,scala,swift,ts}_transpile.py` を削除し、`tools/check_legacy_transpile_checkers_absent.py` + `test_check_legacy_transpile_checkers_absent.py` を追加して再導入を fail-fast 化。`run_local_ci.py` に新ガードを統合し、Scala checker unit は `check_py2x_transpile.py` の profile 検証へ移行した。
+- 2026-03-05: [ID: `P2-CHECKER-UNIFY-01-S3-01`] 旧 `tools/check/check_py2{cpp,cs,go,java,js,kotlin,lua,nim,php,rb,rs,scala,swift,ts}_transpile.py` を削除し、`tools/check/check_legacy_transpile_checkers_absent.py` + `test_check_legacy_transpile_checkers_absent.py` を追加して再導入を fail-fast 化。`run_local_ci.py` に新ガードを統合し、Scala checker unit は `check_py2x_transpile.py` の profile 検証へ移行した。
 - 2026-03-05: 回帰セット（`py_compile`、`test_check_legacy_transpile_checkers_absent.py`、`test_check_py2scala_transpile.py`、`check_legacy_transpile_checkers_absent.py`、`check_noncpp_east3_contract.py --skip-transpile`、`check_py2x_transpile.py --target cpp/java/scala/js/ts`）を再実行し全通過。単一 checker への置換後も `cpp/java/scala` の全ケース回帰が維持されることを確認した。
 
 ## S1-01 棚卸し結果（固定）

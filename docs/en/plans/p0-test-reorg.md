@@ -70,7 +70,7 @@ test/
 
 ### 3. regenerate_golden.py の対応
 
-`tools/regenerate_golden.py` に `--case-root=include` と `--case-root=pytra` を追加する。
+`tools/gen/regenerate_golden.py` に `--case-root=include` と `--case-root=pytra` を追加する。
 
 ### 4. 既存パイプラインの参照パス更新
 

@@ -11,7 +11,7 @@ Related TODO:
 
 Background:
 - Even if `P1-EAST-TYPEEXPR-01` and `P2-COMPILER-TYPED-BOUNDARY-01` improve type semantics and carrier boundaries, the compiler can still decay if internal handoff contracts remain weak. In that case, breakage leaks downstream as backend-local crashes or silent fallback.
-- Some guards already exist, but they are still too coarse. For example, `tools/check_east_stage_boundary.py` prevents cross-stage imports/calls, but it does not validate node shape or `meta` / `source_span` / type invariants.
+- Some guards already exist, but they are still too coarse. For example, `tools/check/check_east_stage_boundary.py` prevents cross-stage imports/calls, but it does not validate node shape or `meta` / `source_span` / type invariants.
 - `validate_raw_east3_doc(...)` in `toolchain/link/program_validator.py` also focuses on coarse contracts such as `kind`, `east_stage`, `schema_version`, and `dispatch_mode`. It does not yet guarantee node-level invariants or post-pass consistency.
 - As a result, optimizers, lowerers, and backends often assume required fields locally, and schema drift is discovered late during feature work or selfhost transitions.
 - If Pytra is going to prioritize internal compiler improvement, it needs machine-checkable contracts for what each stage may accept and return before adding more language surface.
@@ -25,7 +25,7 @@ Goal:
 Scope:
 - `toolchain/ir/east3.py` / `toolchain/link/program_validator.py` / `toolchain/link/global_optimizer.py`
 - `toolchain/ir/east2_to_east3_lowering.py` and representative EAST3 optimization passes
-- `tools/check_east_stage_boundary.py` and compiler contract guards
+- `tools/check/check_east_stage_boundary.py` and compiler contract guards
 - Representative backend entrypoints (first C++) and the IR/EAST contracts they consume
 - Diagnostics / regression tests / selfhost-facing guards
 
@@ -55,16 +55,16 @@ These are requirements, not recommendations.
 Acceptance criteria:
 - Validators exist for raw EAST3, linked output, and representative backend input, and they cover at least basic node-level invariants.
 - Representative mismatches in `TypeExpr` / `resolved_type` / `source_span` / `meta` stop through structured diagnostics instead of backend crashes.
-- `tools/check_east_stage_boundary.py` or an equivalent guard covers stage semantic contracts too.
+- `tools/check/check_east_stage_boundary.py` or an equivalent guard covers stage semantic contracts too.
 - Representative optimize/lowering/backend entrypoints run validator hooks and do not silently pass malformed documents through.
 - Regression coverage exists so later P4/P5 work does not casually reintroduce contract drift.
 
 Planned verification commands:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_east_stage_boundary.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/link -p 'test_program_validator.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east3*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_east3_cpp_bridge.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_east_stage_boundary.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/link -p 'test_program_validator.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east3*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_east3_cpp_bridge.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 
@@ -85,7 +85,7 @@ Keep the order fixed: first expose the blind spots, then add central validators,
 
 | Area | What it currently validates | What it does not validate yet |
 | --- | --- | --- |
-| `tools/check_east_stage_boundary.py` | Cross-stage import/call boundaries for `east2.py` and `code_emitter.py` | Document shape, `type_expr` / `resolved_type` mirrors, `source_span` / `repr`, helper metadata, semantic drift at pass/backend entry |
+| `tools/check/check_east_stage_boundary.py` | Cross-stage import/call boundaries for `east2.py` and `code_emitter.py` | Document shape, `type_expr` / `resolved_type` mirrors, `source_span` / `repr`, helper metadata, semantic drift at pass/backend entry |
 | `validate_raw_east3_doc(...)` | Top-level `kind=Module`, `east_stage=3`, `body` list, `schema_version>=1`, `meta.dispatch_mode`, forbidding `meta.linked_program_v1`, and `sync_type_expr_mirrors(...)` | Recursive node shape, node-level `source_span` / `repr` requirements, helper-metadata categories, node/meta `dispatch_mode` consistency, post-pass drift |
 | `validate_link_input_doc(...)` | Manifest-level schema plus required `target` / `dispatch_mode` / `entry_modules` / `modules` fields | Per-module EAST3 payload shape and semantic contract for options payload |
 | `validate_link_output_doc(...)` | Manifest-level schema, helper-module metadata presence, and top-level required `global` / `diagnostics` keys | Internal shape of `global`, invariant checks for embedded IR/EAST artifacts, schema for diagnostic items |
@@ -148,7 +148,7 @@ Keep the order fixed: first expose the blind spots, then add central validators,
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-01] Added central validator primitives around `toolchain/link/program_validator.py` and expanded raw EAST3 / linked-output checks beyond coarse schema validation into representative node/meta invariants.
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-02] Added pre/post validation hooks to representative passes, lowering entrypoints, and linker entrypoints so malformed nodes stop propagating.
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-01] Run compiler-contract validators at representative backend entrypoints (first C++) and replace backend-local crashes or silent fallback with structured diagnostics.
-- [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-02] Extend `tools/check_east_stage_boundary.py` or its successor guard so it can detect stage semantic-contract drift too.
+- [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-02] Extend `tools/check/check_east_stage_boundary.py` or its successor guard so it can detect stage semantic-contract drift too.
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S5-01] Add representative unit/selfhost regressions so contract violations can be reproduced as expected failures.
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S5-02] Refresh docs / TODO / archive / migration notes and fix the rule that validator updates are mandatory when new nodes/meta are introduced.
 

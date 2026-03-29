@@ -21,7 +21,7 @@
 対象:
 - `src/toolchain/emit/php/emitter/php_native_emitter.py`
 - `src/runtime/php/pytra/py_runtime.php`（必要最小限の補助のみ）
-- `test/unit/test_py2php_smoke.py`（必要に応じて PHP codegen 回帰を追加）
+- `tools/unittest/test_py2php_smoke.py`（必要に応じて PHP codegen 回帰を追加）
 - `sample/php/18_mini_language_interpreter.php`（再生成による確認）
 
 非対象:
@@ -39,11 +39,11 @@
   - `main`/`__pytra_main` 名衝突時に entrypoint が衝突回避される。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 -m unittest discover -s test/unit -p 'test_py2php_smoke.py' -v`
-- `python3 tools/check_py2php_transpile.py`
-- `python3 tools/regenerate_samples.py --langs php --stems 18_mini_language_interpreter --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets php --ignore-unstable-stdout 18_mini_language_interpreter`
+- `python3 tools/check/check_py2php_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs php --stems 18_mini_language_interpreter --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets php --ignore-unstable-stdout 18_mini_language_interpreter`
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、`sample/18` PHP のコード生成改善を P1 計画として起票。
@@ -52,7 +52,7 @@
 - 2026-03-03: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-02] `Compare(In/NotIn)` を型別 membership lower へ修正し、`dict` では `array_key_exists` を使用。
 - 2026-03-03: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-03] dataclass class の field 宣言 + 自動 `__construct` 生成を追加して ctor 契約を整合。
 - 2026-03-03: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-04] entrypoint 名決定時に function/class 衝突回避を一般化。
-- 2026-03-03: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-01] `tools/check_py2php_transpile.py` に `sample/18` 品質断片チェックを追加。
+- 2026-03-03: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-01] `tools/check/check_py2php_transpile.py` に `sample/18` 品質断片チェックを追加。
 - 2026-03-03: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-02] `sample/php/18` 再生成後に `runtime_parity_check`（php, case18）を pass。
 
 ## 分解

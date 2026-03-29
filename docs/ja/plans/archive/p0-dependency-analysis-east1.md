@@ -37,9 +37,9 @@
 - 既存の import graph 解析結果（循環・欠落・予約語衝突）に回帰がない。
 
 確認コマンド:
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `python3 -m unittest test.unit.test_py2cpp_smoke`
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 
 決定ログ:
 - 2026-02-24: ユーザー指示により、依存解析の責務を `EAST1 build` へ明示移管するタスクを `P0` 優先で追加。

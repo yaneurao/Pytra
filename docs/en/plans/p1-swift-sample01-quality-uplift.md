@@ -23,7 +23,7 @@ Objective:
 Scope:
 - `src/hooks/swift/emitter/*`
 - `src/runtime/swift/pytra/*` (as needed)
-- `test/unit/test_py2swift_*`
+- `tools/unittest/test_py2swift_*`
 - Regenerate `sample/swift/01_mandelbrot.swift`
 
 Out of scope:
@@ -40,9 +40,9 @@ Acceptance Criteria:
 
 Validation Commands:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2swift*.py' -v`
-- `python3 tools/check_py2swift_transpile.py`
-- `python3 tools/regenerate_samples.py --langs swift --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets swift 01_mandelbrot`
+- `python3 tools/check/check_py2swift_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs swift --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets swift 01_mandelbrot`
 
 Breakdown:
 - [x] [ID: P1-SWIFT-SAMPLE01-QUALITY-01-S1-01] Inventory quality gaps in `sample/swift/01` (redundant cast / loop / no-op / `any` fallback) and lock improvement priority.

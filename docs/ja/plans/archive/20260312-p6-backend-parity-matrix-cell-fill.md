@@ -38,12 +38,12 @@
 - docs publish target が row seed だけでなく `feature × backend` の state table を出せること。
 - 各 cell に少なくとも `support_state` と `evidence_kind` を export できること。
 - C++ 個別 matrix は補助資料扱いで、cross-backend matrix が canonical source と明記されること。
-- `python3 tools/check_todo_priority.py` と parity matrix tooling test が通ること。
+- `python3 tools/check/check_todo_priority.py` と parity matrix tooling test が通ること。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_backend_parity_matrix*.py'`
-- `python3 tools/export_backend_parity_matrix_manifest.py`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_backend_parity_matrix*.py'`
+- `python3 tools/gen/export_backend_parity_matrix_manifest.py`
 - `git diff --check`
 
 決定ログ:

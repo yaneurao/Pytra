@@ -22,7 +22,7 @@ Objective:
 Scope:
 - `src/hooks/lua/emitter/lua_native_emitter.py`
 - `src/runtime/lua/*` (as needed)
-- `test/unit/test_py2lua_smoke.py` (code-fragment regressions)
+- `tools/unittest/test_py2lua_smoke.py` (code-fragment regressions)
 - Regenerate `sample/lua/01_mandelbrot.lua`
 
 Out of scope:
@@ -37,10 +37,10 @@ Acceptance Criteria:
 - Existing transpile/smoke/parity checks pass without regression.
 
 Validation Commands:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua*.py' -v`
-- `python3 tools/check_py2lua_transpile.py`
-- `python3 tools/regenerate_samples.py --langs lua --force`
+- `python3 tools/check/check_py2lua_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs lua --force`
 
 Breakdown:
 - [x] [ID: P1-LUA-SAMPLE01-QUALITY-01-S1-01] Lock redundant points in `sample/lua/01` (implicit runtime dependency / `nil` initialization / loop forms) with code fragments.

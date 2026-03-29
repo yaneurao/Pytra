@@ -10,21 +10,21 @@ Related TODO:
 - `ID: P0-MULTILANG-ARTIFACT-CRC-ALIGN-01` in `docs/ja/todo/index.md`
 
 Background:
-- Artifact CRC32 comparison has already been added to `tools/runtime_parity_check.py` (CRC32 is checked in addition to size).
+- Artifact CRC32 comparison has already been added to `tools/check/runtime_parity_check.py` (CRC32 is checked in addition to size).
 - Kotlin explicitly skipped artifact comparison with `ignore_artifacts=True`, so it was incomplete as a comparison target.
 - In response to the revalidation request for `PyPy..Kotlin` / `Swift`, the latest run showed `artifact_missing / artifact_size_mismatch / artifact_crc32_mismatch / run_failed` across multiple languages.
 
 Observed results (2026-03-04):
 - Kotlin (after gate removal):
-  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_20260304.json`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_20260304.json`
   - `cases=18 pass=2 fail=16`
   - `artifact_size_mismatch=4 (01..04)`, `artifact_missing=12 (05..16)`, `ok=2 (17,18)`
 - Kotlin (after removing `save_gif` no-op):
-  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_20260304_after_gif.json`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_20260304_after_gif.json`
   - `cases=18 pass=6 fail=12`
   - Confirmed `artifact_missing=0` (`artifact_size_mismatch=4 (01..04)`, `artifact_crc32_mismatch=8 (05,06,08,10,11,12,14,16)`)
 - Kotlin (after aligning PNG writer with Python stored-block zlib spec):
-  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_20260304_after_png_store.json`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_20260304_after_png_store.json`
   - `cases=18 pass=10 fail=8`
   - Confirmed `artifact_size_mismatch=0` (remaining issues are only `artifact_crc32_mismatch=8`)
 - PyPy:
@@ -43,26 +43,26 @@ Observed results (2026-03-04):
   - Installed `Swift 6.2.4` with `swiftly`, enabling `swiftc`.
   - Re-ran with `--targets swift`; at least `sample/01..06` reproduced `run_failed` (function-call argument label mismatches).
 - Swift (fixed full-run log with `--all-samples`):
-  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets swift --cmd-timeout-sec 90 --summary-json work/logs/runtime_parity_sample_swift_crc_20260304_all_timeout90.json`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets swift --cmd-timeout-sec 90 --summary-json work/logs/runtime_parity_sample_swift_crc_20260304_all_timeout90.json`
   - `cases=18 pass=0 fail=18`
   - Fixed categories as `run_failed=17`, `artifact_missing=1` (`sample/11`).
 - Language baseline lock (reflecting Kotlin/Swift updates):
   - `work/logs/runtime_parity_sample_baseline_lock_20260304.json`
   - Fixed category breakdowns for `cpp/cs/go/java/js/kotlin/rs/swift/ts`.
 - Java (after wiring runtime image calls):
-  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets java --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_java_crc_20260304_after_image_connect.json`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets java --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_java_crc_20260304_after_image_connect.json`
   - `cases=18 pass=2 fail=16`
   - Confirmed `artifact_missing=0` (remaining: `artifact_size_mismatch=4`, `artifact_crc32_mismatch=7`, `run_failed=5`)
 - Java (after fixing compile-fail group):
-  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets java --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_java_crc_20260304_after_compile_fix4.json`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets java --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_java_crc_20260304_after_compile_fix4.json`
   - `cases=18 pass=6 fail=12`
   - Confirmed `run_failed=0` (remaining: `artifact_size_mismatch=4`, `artifact_crc32_mismatch=8`)
 - Go (after `__pytra_bytes` + typed-operation return fixes):
-  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets go --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_go_crc_20260304_after_s205b.json`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets go --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_go_crc_20260304_after_s205b.json`
   - `cases=18 pass=16 fail=2`
   - `run_failed` shrank to only `sample/18` (`TokenLike` remaining). `palette must be 256*3 bytes` and `ifexp/min/max` compile failures were resolved.
 - Go (after fixing broken `TokenLike` field access):
-  - `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets go --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_go_crc_20260304_after_s206.json`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets go --cmd-timeout-sec 120 --summary-json work/logs/runtime_parity_sample_go_crc_20260304_after_s206.json`
   - `cases=18 pass=17 fail=1`
   - Confirmed `run_failed=0` (only remaining issue: `artifact_crc32_mismatch=1` for `sample/16`)
 
@@ -96,10 +96,10 @@ Goal:
 - Fix failing toolchain/emit/runtimes and achieve size+CRC32 parity for artifact-generating cases in `sample`.
 
 In scope:
-- `tools/runtime_parity_check.py`
+- `tools/check/runtime_parity_check.py`
 - `src/toolchain/emit/{kotlin,java,go,swift,js,ts,cs,cpp}/**`
 - `src/runtime/{kotlin,java,go,js,ts,cs,cpp}/**`
-- `test/unit/test_runtime_parity_check_cli.py`
+- `tools/unittest/test_runtime_parity_check_cli.py`
 - `docs/ja/todo/index.md` / this plan document
 
 Out of scope:
@@ -118,18 +118,18 @@ Acceptance criteria:
 - The above is saved as `summary-json` logs, and reproduction steps are documented.
 
 Verification commands (planned):
-- `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_*.json`
-- `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets swift --summary-json work/logs/runtime_parity_sample_swift_crc_*.json`
-- `python3 tools/runtime_parity_check.py --case-root sample --all-samples --targets cpp,rs,cs,js,ts,go,java,swift,kotlin --summary-json work/logs/runtime_parity_sample_cpp_to_kotlin_crc_*.json`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets kotlin --summary-json work/logs/runtime_parity_sample_kotlin_crc_*.json`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets swift --summary-json work/logs/runtime_parity_sample_swift_crc_*.json`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --all-samples --targets cpp,rs,cs,js,ts,go,java,swift,kotlin --summary-json work/logs/runtime_parity_sample_cpp_to_kotlin_crc_*.json`
 - `python3 -m unittest discover -s test/unit -p 'test_runtime_parity_check_cli.py' -v`
 
 Decision log:
 - 2026-03-04: Per user instruction, opened as P0 for Kotlin artifact-skip removal + Kotlin revalidation + fail-group root-cause analysis + rerun after Swift toolchain installation.
-- 2026-03-04: Removed `ignore_artifacts=True` for Kotlin target from `tools/runtime_parity_check.py`.
+- 2026-03-04: Removed `ignore_artifacts=True` for Kotlin target from `tools/check/runtime_parity_check.py`.
 - 2026-03-04: Installed `Swift 6.2.4` with `swiftly` and enabled `swiftc` (`/usr/local/bin/swiftc` symlink).
 - 2026-03-04: Changed Kotlin emitter `save_gif/grayscale_palette` to runtime-helper wiring, and added GIF writer (`__pytra_save_gif`) to `src/runtime/kotlin/pytra/py_runtime.kt`. Resolved `artifact_missing`.
 - 2026-03-04: Changed Kotlin `__pytra_write_rgb_png` to the same stored-block zlib/chunk construction as Python runtime, resolving size/CRC mismatches in 01..04.
-- 2026-03-04: Added `--cmd-timeout-sec` to `tools/runtime_parity_check.py` so long-running Swift `sample/09` cannot stall the whole run. Regression confirmed on all 10 cases in `test_runtime_parity_check_cli.py`.
+- 2026-03-04: Added `--cmd-timeout-sec` to `tools/check/runtime_parity_check.py` so long-running Swift `sample/09` cannot stall the whole run. Regression confirmed on all 10 cases in `test_runtime_parity_check_cli.py`.
 - 2026-03-04: Completed Swift `--all-samples` with timeout, and locked `run_failed=17/artifact_missing=1` as baseline.
 - 2026-03-04: Merged Kotlin-updated and Swift-all logs into existing `cpp..kotlin` logs, generated `runtime_parity_sample_baseline_lock_20260304.json`, and fixed per-language categories.
 - 2026-03-04: Wired Java emitter `write_rgb_png/save_gif/grayscale_palette` to `PyRuntime.pyWriteRGBPNG/pySaveGif/pyGrayscalePalette`, resolving `artifact_missing`.
@@ -144,7 +144,7 @@ Decision log:
 - 2026-03-04: In Kotlin emitter, merged `keywords` (`save_gif(delay_cs, loop)`) into positional args and fixed missing operator mappings for `BitAnd/BitOr/BitXor/LShift/RShift`. Normalized RHS of `shl/shr` to `.toInt()` to resolve compile failures; confirmed all 18 cases `ok` on `--targets kotlin --all-samples` (`work/logs/runtime_parity_sample_kotlin_after_shift_int_fix_20260304.json`).
 - 2026-03-04: In Java emitter, merged `keywords`, fixed unary-minus parenthesis collapse (`-(a+b)` -> `-a+b`), and added mappings for `BitAnd/BitOr/BitXor/LShift/RShift`. Replaced Java runtime PNG writer from `Deflater` dependency to Python-equivalent stored-block zlib + Adler32 implementation; confirmed all 18 cases `ok` on `--targets java --all-samples` (`work/logs/runtime_parity_sample_java_after_png_unary_fix_20260304.json`).
 - 2026-03-04: Revalidated `rs,cs,js,ts` on latest code and confirmed all 18 cases `ok` on `--targets rs,cs,js,ts --all-samples` (`work/logs/runtime_parity_sample_rs_cs_js_ts_after_s301_20260304.json`). Remaining items for `S3-01` were only full Swift completion and full `cpp` rerun.
-- 2026-03-04: Updated `run_shell` in `tools/runtime_parity_check.py` to `start_new_session=True` + `os.killpg(SIGKILL)` so child processes (such as `*_swift.out`) are not orphaned on timeout. Also switched Swift execution to `swiftc -O`.
+- 2026-03-04: Updated `run_shell` in `tools/check/runtime_parity_check.py` to `start_new_session=True` + `os.killpg(SIGKILL)` so child processes (such as `*_swift.out`) are not orphaned on timeout. Also switched Swift execution to `swiftc -O`.
 - 2026-03-04: As Swift revalidation, ran `01..04` and confirmed artifact parity 4/4 `ok` (`work/logs/runtime_parity_sample_swift_01_04_after_s301_progress_20260304.json`). Reconfirmed that with `--all-samples --cmd-timeout-sec 300`, `05/06/07` still timeout with `run_failed`, and organized the remaining issue as "execution strategy for heavy cases (timeout or Swift-side speedup)".
 - 2026-03-04: As `S3-02`, added `swiftc -O` regression and timeout process-group kill regression to `test_runtime_parity_check_cli.py`. Documented mandatory artifact parity conditions (exists+size+CRC32), stale artifact purge, and timeout kill operational rules in `docs/ja/spec/spec-tools.md` / `docs/en/spec/spec-tools.md`.
 - 2026-03-04: Added Subscript-assignment fast path to Swift emitter (direct index assignment on `Name` + `grid[y][x]` write-back), bypassing value-copy path of `__pytra_setIndex(Any, ...)`. Resolved timeouts/CRC failures in `05..09`; `--targets swift --all-samples --cmd-timeout-sec 300` progressed to `case_pass=11` (`work/logs/runtime_parity_sample_swift_all_after_subscript_store_opt_20260304.json`).

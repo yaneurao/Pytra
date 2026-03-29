@@ -55,9 +55,9 @@
 4. linked-program 統合後に specialization collector を実装する前提で、metadata 契約を先に作る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 -m py_compile src/toolchain/ir/core.py src/toolchain/frontends/runtime_abi.py`
-- 実装着手後は `test/unit/ir` / `test/unit/link` / `test/unit/common` の generic 関連回帰を追加する
+- 実装着手後は `tools/unittest/ir` / `tools/unittest/link` / `tools/unittest/common` の generic 関連回帰を追加する
 
 ## 分解
 

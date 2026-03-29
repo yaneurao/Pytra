@@ -29,8 +29,8 @@
 - selfhost 回帰が発生しない
 
 確認コマンド:
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_selfhost_cpp_diff.py --mode allow-not-implemented`
 
 決定ログ:
 - 2026-02-22: 初版作成。

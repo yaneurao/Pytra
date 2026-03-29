@@ -12,7 +12,7 @@
 背景:
 - `P0-LINKED-PROGRAM-OPT-01` では、global optimizer の入力単位を linked program へ拡張し、backend 契約を `ModuleEmitter + ProgramWriter` へ再編する。この変更は C++ を主対象に進めるが、`backend_registry.py` / `py2x.py` / `ir2lang.py` の共通経路に触れるため、非C++ backend 側の single-file 導線が壊れやすい。
 - 非C++ backend は `P1-MULTILANG-BACKEND-3LAYER-01` で `lower/optimizer/emitter` の3層化までは完了しているが、linked-program 契約を前提にした互換層、health matrix、修復順序、共通 gate はまだ固定されていない。
-- 現状の checker は `tools/check_noncpp_east3_contract.py`、`tools/check_py2x_transpile.py`、`test/unit/common/test_py2x_smoke_common.py`、各言語 smoke、`tools/runtime_parity_check.py` に分散しており、「どの target が、どの層で、なぜ壊れているか」を 1 枚で見渡せない。
+- 現状の checker は `tools/check/check_noncpp_east3_contract.py`、`tools/check/check_py2x_transpile.py`、`tools/unittest/common/test_py2x_smoke_common.py`、各言語 smoke、`tools/check/runtime_parity_check.py` に分散しており、「どの target が、どの層で、なぜ壊れているか」を 1 枚で見渡せない。
 - linked-program 導入と非C++ backend の修復を同時に進めると、互換層不足による共通経路破壊と、各言語固有の runtime / quality 差分が混ざり、blocking chain が見えなくなる。
 
 目的:
@@ -29,9 +29,9 @@
 - `src/backends/{rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,php,scala,nim}/`
 - `src/toolchain/compiler/backend_registry.py`
 - `src/py2x.py`, `src/ir2lang.py`, `src/pytra-cli.py`
-- `tools/check_noncpp_east3_contract.py`
-- `tools/check_py2x_transpile.py` と各 profile
-- `test/unit/common/test_py2x_smoke_common.py`
+- `tools/check/check_noncpp_east3_contract.py`
+- `tools/check/check_py2x_transpile.py` と各 profile
+- `tools/unittest/common/test_py2x_smoke_common.py`
 - 各言語 smoke / transpile / parity 導線
 - 必要な `docs/ja/spec` / `docs/en/spec`
 
@@ -66,39 +66,39 @@
 
 health matrix の failure category:
 - `static_contract_fail`
-  - `tools/check_noncpp_east3_contract.py` 不通、layer 契約・逆流 import・責務境界違反。
+  - `tools/check/check_noncpp_east3_contract.py` 不通、layer 契約・逆流 import・責務境界違反。
 - `common_smoke_fail`
   - `test_py2x_smoke_common.py` 失敗。
 - `target_smoke_fail`
   - 各言語の smoke suite 失敗。
 - `transpile_fail`
-  - `tools/check_py2x_transpile.py --target <lang>` 失敗。
+  - `tools/check/check_py2x_transpile.py --target <lang>` 失敗。
 - `parity_fail`
-  - `tools/runtime_parity_check.py` 失敗。
+  - `tools/check/runtime_parity_check.py` 失敗。
 - `toolchain_missing`
   - compiler / runtime 未導入により parity 実行不能。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_noncpp_east3_contract.py --skip-transpile`
-- `PYTHONPATH=src:. python3 -m unittest discover -s test/unit/common -p 'test_py2x_smoke*.py'`
-- `PYTHONPATH=src:. python3 -m unittest discover -s test/unit/backends -p 'test_py2*_smoke.py'`
-- `python3 tools/check_py2x_transpile.py --target rs`
-- `python3 tools/check_py2x_transpile.py --target cs`
-- `python3 tools/check_py2x_transpile.py --target js`
-- `python3 tools/check_py2x_transpile.py --target ts`
-- `python3 tools/check_py2x_transpile.py --target go`
-- `python3 tools/check_py2x_transpile.py --target java`
-- `python3 tools/check_py2x_transpile.py --target kotlin`
-- `python3 tools/check_py2x_transpile.py --target swift`
-- `python3 tools/check_py2x_transpile.py --target ruby`
-- `python3 tools/check_py2x_transpile.py --target lua`
-- `python3 tools/check_py2x_transpile.py --target php`
-- `python3 tools/check_py2x_transpile.py --target scala`
-- `python3 tools/check_py2x_transpile.py --target nim`
-- `python3 tools/runtime_parity_check.py --targets rs,cs,js,ts --case-root sample --ignore-unstable-stdout`
-- `python3 tools/runtime_parity_check.py --targets go,java,kotlin,swift,scala --case-root sample --ignore-unstable-stdout`
-- `python3 tools/runtime_parity_check.py --targets ruby,lua,php,nim --case-root sample --ignore-unstable-stdout`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_noncpp_east3_contract.py --skip-transpile`
+- `PYTHONPATH=src:. python3 -m unittest discover -s tools/unittest/common -p 'test_py2x_smoke*.py'`
+- `PYTHONPATH=src:. python3 -m unittest discover -s tools/unittest/backends -p 'test_py2*_smoke.py'`
+- `python3 tools/check/check_py2x_transpile.py --target rs`
+- `python3 tools/check/check_py2x_transpile.py --target cs`
+- `python3 tools/check/check_py2x_transpile.py --target js`
+- `python3 tools/check/check_py2x_transpile.py --target ts`
+- `python3 tools/check/check_py2x_transpile.py --target go`
+- `python3 tools/check/check_py2x_transpile.py --target java`
+- `python3 tools/check/check_py2x_transpile.py --target kotlin`
+- `python3 tools/check/check_py2x_transpile.py --target swift`
+- `python3 tools/check/check_py2x_transpile.py --target ruby`
+- `python3 tools/check/check_py2x_transpile.py --target lua`
+- `python3 tools/check/check_py2x_transpile.py --target php`
+- `python3 tools/check/check_py2x_transpile.py --target scala`
+- `python3 tools/check/check_py2x_transpile.py --target nim`
+- `python3 tools/check/runtime_parity_check.py --targets rs,cs,js,ts --case-root sample --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --targets go,java,kotlin,swift,scala --case-root sample --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --targets ruby,lua,php,nim --case-root sample --ignore-unstable-stdout`
 
 ## 分解
 
@@ -166,11 +166,11 @@ health matrix の failure category:
 ## 7. Health Matrix Snapshot（2026-03-08）
 
 測定条件:
-- `static_contract`: `python3 tools/check_noncpp_east3_contract.py --skip-transpile`
-- `common_smoke`: `PYTHONPATH=src:.:test/unit python3 -m unittest discover -s test/unit/common -p 'test_py2x_smoke*.py'`
-- `target_smoke`: `PYTHONPATH=src:.:test/unit python3 -m unittest discover -s test/unit/backends/<dir> -p 'test_py2<lang>_smoke.py'`
-- `transpile`: `python3 tools/check_py2x_transpile.py --target <lang>`
-- `parity`: smoke/transpile を通過した target だけ `python3 tools/runtime_parity_check.py --targets <lang> --case-root sample --ignore-unstable-stdout`
+- `static_contract`: `python3 tools/check/check_noncpp_east3_contract.py --skip-transpile`
+- `common_smoke`: `PYTHONPATH=src:.:test/unit python3 -m unittest discover -s tools/unittest/common -p 'test_py2x_smoke*.py'`
+- `target_smoke`: `PYTHONPATH=src:.:test/unit python3 -m unittest discover -s tools/unittest/emit/<dir> -p 'test_py2<lang>_smoke.py'`
+- `transpile`: `python3 tools/check/check_py2x_transpile.py --target <lang>`
+- `parity`: smoke/transpile を通過した target だけ `python3 tools/check/runtime_parity_check.py --targets <lang> --case-root sample --ignore-unstable-stdout`
 
 共通結果:
 - `static_contract`: pass
@@ -200,12 +200,12 @@ health matrix の failure category:
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S1-01] static contract と common smoke は pass、初期 health matrix では `js` / `ts` が green、`cs` は `toolchain_missing`、`rs/go/java/scala/lua` は `target_smoke_fail`、`kotlin/swift/ruby/php/nim` は `transpile_fail` を primary failure として確定した。`parity` は smoke/transpile green の target だけ追加測定し、`js` / `ts` は `18/18`、`cs` は 18 case 全件 `toolchain_missing` だった。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S1-02] done 条件を `static_contract -> common_smoke -> target_smoke -> transpile -> parity` の gate 順へ固定し、primary failure は最初に落ちた gate で決める方針を `spec-dev` / `spec-tools` に反映した。smoke 実行の canonical `PYTHONPATH` は `src:.:test/unit` とし、`toolchain_missing` は `parity_fail` と別の infra baseline として扱う。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-01] `backend_registry.py` の `SingleFileProgramWriter` default 自体は既に整っていたが、`py2x.py` の linked-program 非C++経路だけがまだ `emit_source + 直書き + runtime_hook` に戻っていた。これを `emit_module -> build_program_artifact -> get_program_writer` へ揃え、`ir2lang.py` と同じ compat contract に統一した。`test_py2x_cli.py` / `test_py2x_entrypoints_contract.py` で回帰を固定している。
-- 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-02] `tools/check_noncpp_backend_health.py` を追加し、`static_contract -> common_smoke -> target_smoke -> transpile -> parity` を family 単位で集約できるようにした。`--family` / `--targets` / `--skip-parity` / `--summary-json` を持ち、family status は `broken_targets == 0` なら `green`、`toolchain_missing` は family を壊さず別カウンタで表示する方針を採用した。
+- 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S2-02] `tools/check/check_noncpp_backend_health.py` を追加し、`static_contract -> common_smoke -> target_smoke -> transpile -> parity` を family 単位で集約できるようにした。`--family` / `--targets` / `--skip-parity` / `--summary-json` を持ち、family status は `broken_targets == 0` なら `green`、`toolchain_missing` は family を壊さず別カウンタで表示する方針を採用した。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S3-01] Wave 1 の実 failure は `rs` smoke の `bytes(frame)` return clone に収束していたため、Rust emitter の return-context rendering を修正した。`test_py2rs_smoke.py` は 31/31 へ回復し、`sample/py/08_langtons_ant.py` の focused transpile も通過した。`js` / `ts` は初期 snapshot の green を維持、`cs` は引き続き `toolchain_missing` baseline として扱う。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S3-02] Wave 1 parity を再測定し、`js` / `ts` は sample parity `18/18 ok` を維持、`rs` / `cs` は sample parity 18 case 全件 `toolchain_missing` を確認した。これにより Wave 1 では backend bug と infra baseline を分離でき、残る `toolchain_missing` は修復対象ではなく実行環境依存として扱う。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S4-01] Wave 2 の primary failure は `Path(...)` ctor の source-origin call が canonical runtime metadata を持たないまま backend へ流れる点と、`kotlin` / `swift` emitter が `runtime_symbol_index` を `src.*` import していた点に収束した。`go` / `java` / `scala` には bare `Path(...)` ctor fallback を追加し、`java` は `_safe_ident` で `super` を壊さないよう補正、`kotlin` / `swift` は import path を `toolchain.*` へ修正した。これにより Wave 2 は smoke/transpile green へ回復し、残る parity 計測だけを `S4-02` に分離した。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S4-02] Wave 2 parity を target ごとに再測定した結果、`go` / `java` / `kotlin` / `swift` / `scala` は sample parity 18 case 全件 `toolchain_missing` だった。つまり Wave 2 に残っているのは backend bug ではなく実行環境依存の infra baseline であり、Wave 1 と同じく修復対象外として扱う。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-01] Wave 3 の実 failure は 2 系統だった。`ruby` / `php` / `nim` は `runtime_symbol_index` を `src.*` import していたため backend spec load 時点で `ModuleNotFoundError` になっており、`kotlin` / `swift` と同じ修正で回復した。`lua` は emitter の出力が `_G.math.max` と truthiness-preserving ifexp closure に進化していた一方 smoke expectation が古いままだったため、test 側を現行 contract に同期して 33/33 へ戻した。これにより Wave 3 は smoke/transpile green となり、残る parity 計測だけを `S5-02` に分離した。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S5-02] Wave 3 parity を target ごとに再測定した結果、`ruby` / `lua` / `php` / `nim` は sample parity 18 case 全件 `toolchain_missing` だった。Wave 3 でも backend bug と実行環境依存の infra baseline を分離できたので、残タスクは parity 測定ではなく運用導線への統合だけになった。
-- 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-01] `tools/run_local_ci.py` に `python3 tools/check_noncpp_backend_health.py --family all --skip-parity` を追加した。確認として `wave1` / `wave2` / `wave3` を個別に実行し、いずれも `status=green` を確認した。これで local CI は parity 非依存の non-C++ smoke/transpile gate を常時監視できる。
+- 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-01] `tools/run/run_local_ci.py` に `python3 tools/check/check_noncpp_backend_health.py --family all --skip-parity` を追加した。確認として `wave1` / `wave2` / `wave3` を個別に実行し、いずれも `status=green` を確認した。これで local CI は parity 非依存の non-C++ smoke/transpile gate を常時監視できる。
 - 2026-03-08: [ID: P4-NONCPP-BACKEND-RECOVERY-01-S6-02] `docs/ja/spec/spec-tools.md` と `docs/en/spec/spec-tools.md` に local CI への non-C++ health gate 統合と health matrix 運用を反映し、`docs/ja/how-to-use.md` には日常の `--family all --skip-parity` コマンドを追記した。これにより linked-program 後の非C++ backend 修復運用は docs 上でも閉じた。

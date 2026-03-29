@@ -19,7 +19,7 @@
 対象:
 - `src/hooks/cpp/emitter/*`（tokenize 出力）
 - `sample/py/18_mini_language_interpreter.py`（必要最小の型注釈調整が必要な場合のみ）
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/18_mini_language_interpreter.cpp`
 
 非対象:
@@ -32,17 +32,17 @@
 - transpile/unit/parity で非退行を確認する。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout`
 
 決定ログ:
 - 2026-03-01: sample/18 追加最適化として tokenizer 分岐の tag 化を P0 で起票。
 - 2026-03-01: `sample/18` の single-char token 判定を `dict[str,int]` tag lookup + kind 配列参照へ変更し、`if (ch == "+")` 連鎖を縮退した。
 - 2026-03-01: module-level 定数の初期化順問題（global 未初期化 + `__pytra_main` 内 shadow）で `=` 判定が失敗する退行を確認し、tag/kind 定数を `tokenize` ローカルへ移して解消した。
 - 2026-03-01: `test_py2cpp_codegen_issues.py` に tokenizer tag-dispatch 回帰を追加し、single-char 分岐連鎖の再発を防止した。
-- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（82件）、`python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）、`runtime_parity_check`（sample/18 cpp PASS）で非退行を確認した。
+- 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（82件）、`python3 tools/check/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）、`runtime_parity_check`（sample/18 cpp PASS）で非退行を確認した。
 
 ## 分解
 

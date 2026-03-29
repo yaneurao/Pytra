@@ -28,7 +28,7 @@
 
 - `src/toolchain/emit/cpp/emitter/operator.py`（FloorDiv / Mod / Div の emit）
 - `src/runtime/cpp/native/core/py_runtime.h`（`py_div` / `py_floordiv` / `py_mod` 除去）
-- `test/unit/toolchain/emit/cpp/`（回帰テスト）
+- `tools/unittest/emit/cpp/`（回帰テスト）
 - `docs/ja/spec/spec-runtime.md`（変更点注記）
 
 ## 非対象

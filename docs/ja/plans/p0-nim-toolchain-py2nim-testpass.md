@@ -24,8 +24,8 @@
 - `src/py2nim.py`
 - `src/toolchain/emit/nim/emitter/*`（必要なら `src/hooks/nim` から移設）
 - `src/runtime/nim/pytra/py_runtime.nim`
-- `test/unit/test_py2nim_smoke.py` と Nim fixture
-- `tools/check_py2nim_transpile.py`
+- `tools/unittest/test_py2nim_smoke.py` と Nim fixture
+- `tools/check/check_py2nim_transpile.py`
 
 非対象:
 - Nim backend の性能最適化（ベンチマーク改善）
@@ -36,15 +36,15 @@
 - `nim --version` がこの環境で実行可能で、導入手順が再現可能な形で残る。
 - `python3 src/py2nim.py <fixture.py> -o <out.nim>` で `.nim` と runtime が生成される。
 - `PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2nim_smoke.py' -v` が pass する。
-- `python3 tools/check_py2nim_transpile.py` が pass する。
-- 追加した Nim 導線が既存主要チェック（少なくとも `tools/check_py2cpp_transpile.py`）を壊さない。
+- `python3 tools/check/check_py2nim_transpile.py` が pass する。
+- 追加した Nim 導線が既存主要チェック（少なくとも `tools/check/check_py2cpp_transpile.py`）を壊さない。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `nim --version`
-- `python3 tools/check_py2nim_transpile.py`
+- `python3 tools/check/check_py2nim_transpile.py`
 - `PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2nim_smoke.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、Nim コンパイラ導入・`py2nim.py` 実装・`test/` 通過までを P0 として起票。
@@ -55,10 +55,10 @@
 - 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-02] `src/py2nim.py` を実装（EAST3 only / runtime 分離コピー / stage2 明示拒否）。
 - 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-03] Nim native emitter を `toolchain.emit.nim` 配下へ接続し、生成コード先頭へ `include \"py_runtime.nim\"` を追加。
 - 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-04] `src/runtime/nim/pytra/py_runtime.nim` を追加し、`py_int/py_float/py_truthy/py_mod/write_rgb_png` を提供。
-- 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-01] `test/unit/test_py2nim_smoke.py` を追加し、既存 `test/fixtures/core|control|oop` を再利用して CLI/変換導線を固定。
-- 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-02] `tools/check_py2nim_transpile.py` を追加し、`checked=7 ok=7 fail=0` を確認。
+- 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-01] `tools/unittest/test_py2nim_smoke.py` を追加し、既存 `test/fixtures/core|control|oop` を再利用して CLI/変換導線を固定。
+- 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-02] `tools/check/check_py2nim_transpile.py` を追加し、`checked=7 ok=7 fail=0` を確認。
 - 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-03] `PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2nim_smoke.py' -v` を実行し 7 件 pass を確認。`python3 src/py2nim.py sample/py/01_mandelbrot.py -o /tmp/pytra_nim_01.nim` と `nim c /tmp/pytra_nim_01.nim` で生成・compile 成功を確認。
-- 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-04] `python3 tools/check_py2cpp_transpile.py` を実行し `checked=140 ok=140 fail=0 skipped=6` で非退行を確認。
+- 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-04] `python3 tools/check/check_py2cpp_transpile.py` を実行し `checked=140 ok=140 fail=0 skipped=6` で非退行を確認。
 
 ## 分解
 
@@ -68,7 +68,7 @@
 - [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-02] `src/py2nim.py` を実装し、EAST3 only・runtime 分離コピー・fail-closed を満たす CLI 導線を作る。
 - [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-03] Nim native emitter の最小対応（関数/分岐/ループ/主要式）を整備し、既知 fixture を変換可能にする。
 - [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-04] `src/runtime/nim/pytra/py_runtime.nim` を整備し、生成コードからの参照契約を固定する。
-- [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-01] `test/unit/test_py2nim_smoke.py` と必要 fixture を整備し、Nim 導線の最小回帰を固定する。
-- [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-02] `tools/check_py2nim_transpile.py` を整備して transpile 一括回帰を追加する。
+- [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-01] `tools/unittest/test_py2nim_smoke.py` と必要 fixture を整備し、Nim 導線の最小回帰を固定する。
+- [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-02] `tools/check/check_py2nim_transpile.py` を整備して transpile 一括回帰を追加する。
 - [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-03] Nim 対象 test/check を実行して pass を確認し、結果を記録する。
 - [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-04] 既存主要チェック（`check_py2cpp_transpile` など）で非退行を確認する。

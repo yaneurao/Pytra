@@ -23,7 +23,7 @@
 対象:
 - `src/hooks/go/emitter/*`
 - `src/runtime/go/pytra/*`（必要に応じて）
-- `test/unit/test_py2go_*`
+- `tools/unittest/test_py2go_*`
 - `sample/go/01_mandelbrot.go` の再生成
 
 非対象:
@@ -40,9 +40,9 @@
 
 確認コマンド:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go*.py' -v`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/regenerate_samples.py --langs go --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets go 01_mandelbrot`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs go --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets go 01_mandelbrot`
 
 分解:
 - [x] [ID: P1-GO-SAMPLE01-QUALITY-01-S1-01] `sample/go/01` の品質差分（冗長 cast / loop / no-op / any退化）を棚卸しし、改善優先順を固定する。
@@ -59,8 +59,8 @@
   - P2: `pixels` が `[]any` 退化し append ごとに `__pytra_as_list` を挟むホットパス劣化。
   - P3: `__pytra_float/__pytra_int` の同型 cast 連鎖（`__pytra_float(float64(...))` など）による冗長化。
   - P4: `range(..., step=1)` でも汎用 step 分岐ループ（`(__step>=0 && ...) || ...`）を生成する冗長 lower。
-- 2026-03-02: `S2-01` として、型既知の numeric cast fastpath（`_render_binop_expr` / `_render_compare_expr` / math 呼び出し / 代入 cast）を導入し、二重 `__pytra_float/__pytra_int` を削減した。`sample/go/01_mandelbrot.go` 再生成で `var x2 float64 = (x * x)` 等の縮退を確認。`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v` は pass。`python3 tools/check_py2go_transpile.py` の fail 4件（Try/Yield/Swap 未対応）は既知カテゴリで本タスク外と記録した。
+- 2026-03-02: `S2-01` として、型既知の numeric cast fastpath（`_render_binop_expr` / `_render_compare_expr` / math 呼び出し / 代入 cast）を導入し、二重 `__pytra_float/__pytra_int` を削減した。`sample/go/01_mandelbrot.go` 再生成で `var x2 float64 = (x * x)` 等の縮退を確認。`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v` は pass。`python3 tools/check/check_py2go_transpile.py` の fail 4件（Try/Yield/Swap 未対応）は既知カテゴリで本タスク外と記録した。
 - 2026-03-02: `S2-02` として `StaticRangeForPlan` に step 定数 fastpath を追加し、`step==1` を `for i := start; i < stop; i += 1`、`step==-1` を `for i := start; i > stop; i -= 1` へ lower するよう変更した。`sample/go/01_mandelbrot.go` 再生成で `for i := int64(0); i < max_iter; i += 1` と `for y/x := ...; ...; ... += 1` を確認。`test_py2go_smoke` は pass、`check_py2go_transpile` fail 4件は既知未対応カテゴリ（Try/Yield/Swap）で不変。
-- 2026-03-02: `S2-03` として画像 API の no-op 経路を撤去し、`write_rgb_png/save_gif/grayscale_palette` を Go runtime hook（`__pytra_write_rgb_png/__pytra_save_gif/__pytra_grayscale_palette`）へ接続した。`save_gif` は keyword（`delay_cs`, `loop`）を取り込み、未対応 keyword は fail-closed。`python3 tools/regenerate_samples.py --langs go --force` で `sample/go` を再生成し、`sample/go/01` が `__pytra_write_rgb_png(...)`、`sample/go/05` が `__pytra_save_gif(..., int64(5), int64(0))` へ更新されたことを確認。`runtime_parity_check` では `01_mandelbrot` が `artifact_size_mismatch`（`python:5761703`, `go:5761708`）で残るため、最終 parity 収束は `S3-01` 側で扱う。
+- 2026-03-02: `S2-03` として画像 API の no-op 経路を撤去し、`write_rgb_png/save_gif/grayscale_palette` を Go runtime hook（`__pytra_write_rgb_png/__pytra_save_gif/__pytra_grayscale_palette`）へ接続した。`save_gif` は keyword（`delay_cs`, `loop`）を取り込み、未対応 keyword は fail-closed。`python3 tools/gen/regenerate_samples.py --langs go --force` で `sample/go` を再生成し、`sample/go/01` が `__pytra_write_rgb_png(...)`、`sample/go/05` が `__pytra_save_gif(..., int64(5), int64(0))` へ更新されたことを確認。`runtime_parity_check` では `01_mandelbrot` が `artifact_size_mismatch`（`python:5761703`, `go:5761708`）で残るため、最終 parity 収束は `S3-01` 側で扱う。
 - 2026-03-02: `S2-04` として `append/pop` に `[]any` owner の typed fastpath を追加し、`append(__pytra_as_list(pixels), ...)` を `append(pixels, ...)` へ縮退させた。`sample/go/01` 再生成で `pixels = append(pixels, r/g/b)` を確認。`test_py2go_smoke` は pass、`check_py2go_transpile` fail 4件（Try/Yield/Swap）は不変。
-- 2026-03-02: `S3-01` として `test_py2go_smoke` に回帰断片（numeric cast / canonical loop / image runtime hook / pixels append fastpath）を追加し、`python3 tools/runtime_parity_check.py --case-root sample --targets go 01_mandelbrot` を pass (`cases=1 pass=1 fail=0`) へ収束させた。PNG runtime は Python 実装と同じ stored-deflate 生成へ合わせた。`tools/check_py2go_transpile.py` は他 backend と同じ既知負例（`finally/try_raise/yield_generator_min/tuple_assign`）を expected-fail に揃え、`checked=131 ok=131 fail=0 skipped=10` を確認した。
+- 2026-03-02: `S3-01` として `test_py2go_smoke` に回帰断片（numeric cast / canonical loop / image runtime hook / pixels append fastpath）を追加し、`python3 tools/check/runtime_parity_check.py --case-root sample --targets go 01_mandelbrot` を pass (`cases=1 pass=1 fail=0`) へ収束させた。PNG runtime は Python 実装と同じ stored-deflate 生成へ合わせた。`tools/check/check_py2go_transpile.py` は他 backend と同じ既知負例（`finally/try_raise/yield_generator_min/tuple_assign`）を expected-fail に揃え、`checked=131 ok=131 fail=0 skipped=10` を確認した。

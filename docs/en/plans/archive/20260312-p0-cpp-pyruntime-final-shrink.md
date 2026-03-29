@@ -13,7 +13,7 @@ Background:
 - Earlier header-shrink work and cross-runtime residual-caller cleanup reduced `src/runtime/cpp/native/core/py_runtime.h` to a much smaller residual surface.
 - The remaining header surface is now mainly the 9 `object_bridge_mutation` helpers and 4 thin `type_id` helpers; larger blockers such as transitive includes and typed collection compatibility are already gone.
 - The next step is no longer "clean the header in isolation" but "retarget callers, then remove header helpers."
-- `tools/check_cpp_pyruntime_header_surface.py` still points at an archived follow-up instead of an active final-shrink task.
+- `tools/check/check_cpp_pyruntime_header_surface.py` still points at an archived follow-up instead of an active final-shrink task.
 
 Goal:
 - Restore the final `py_runtime.h` shrink as an active task and lock the current residual inventory, target end state, and bundle order in docs/tooling.
@@ -22,9 +22,9 @@ Goal:
 
 In scope:
 - `src/runtime/cpp/native/core/py_runtime.h`
-- `tools/check_cpp_pyruntime_header_surface.py`
-- `test/unit/tooling/test_check_cpp_pyruntime_header_surface.py`
-- `tools/check_cpp_pyruntime_contract_inventory.py` if needed
+- `tools/check/check_cpp_pyruntime_header_surface.py`
+- `tools/unittest/tooling/test_check_cpp_pyruntime_header_surface.py`
+- `tools/check/check_cpp_pyruntime_contract_inventory.py` if needed
 - `src/runtime/cpp/native/compiler/*.cpp` if needed
 - `src/runtime/cpp/generated/**/*.cpp` if needed
 - `src/backends/{cpp,rs,cs}/**/*.py` if needed
@@ -37,7 +37,7 @@ Out of scope:
 - Feature work outside runtime/import contracts
 
 Acceptance criteria:
-- `tools/check_cpp_pyruntime_header_surface.py` points to the active task/plan and fail-closes on current residual inventory and bundle order drift.
+- `tools/check/check_cpp_pyruntime_header_surface.py` points to the active task/plan and fail-closes on current residual inventory and bundle order drift.
 - At least one bundle of `object_bridge_mutation` helpers is removed from the header after caller-side upstreaming.
 - Shared `type_id` ownership is stabilized across native/generated/Rust/C# callers without reintroducing generic aliases into the header.
 - Representative C++ runtime tests and tooling tests pass.
@@ -62,14 +62,14 @@ Bundle order:
 4. `S3-01`: update representative runtime tests, source guards, docs, and archive the task.
 
 Validation commands:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_cpp_pyruntime_header_surface.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_cpp_pyruntime_header_surface.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_type_id.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_cpp_pyruntime_header_surface.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_cpp_pyruntime_header_surface.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_iterable.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_type_id.py'`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_transpiler_version_gate.py`
-- `python3 tools/run_regen_on_version_bump.py --dry-run`
+- `python3 tools/check/check_transpiler_version_gate.py`
+- `python3 tools/run/run_regen_on_version_bump.py --dry-run`
 - `git diff --check`
 
 Breakdown:

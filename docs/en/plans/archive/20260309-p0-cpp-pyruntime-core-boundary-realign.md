@@ -53,15 +53,15 @@ Acceptance criteria:
 - Ownership of `type_id` registry / subtype / isinstance logic moves to `py_tid_*`, and handwritten implementations in `py_runtime.h` shrink to thin delegates or raw primitives.
 - Redundant surfaces such as the `py_isinstance_of` fast path and the `PyFile` alias are inventoried and removed when no remaining justification exists.
 - Representative C++ backend/runtime tests and parity remain green.
-- `python3 tools/check_todo_priority.py` passes.
+- `python3 tools/check/check_todo_priority.py` passes.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_type_id.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k json`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k argparse_extended_runtime`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_iterable.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_type_id.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k json`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k argparse_extended_runtime`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture`
 - `git diff --check`
 
 ## Priority Order

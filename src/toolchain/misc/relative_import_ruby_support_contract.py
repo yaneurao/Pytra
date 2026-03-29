@@ -26,7 +26,7 @@ RELATIVE_IMPORT_RUBY_SUPPORT_BACKEND_V1: Final[dict[str, object]] = {
 }
 
 RELATIVE_IMPORT_RUBY_SUPPORT_SMOKE_V1: Final[dict[str, object]] = {
-    "smoke_test_file": "test/unit/backends/rb/test_py2rb_smoke.py",
+    "smoke_test_file": "tools/unittest/emit/rb/test_py2rb_smoke.py",
     "focused_tests": (
         "test_cli_relative_import_support_rollout_scenarios_transpile_for_ruby",
         "test_cli_relative_import_support_rollout_fail_closed_for_wildcard_on_ruby",

@@ -30,7 +30,7 @@
 - 現行の3層適用 backend は `rs/cs/js/ts/go/java/kotlin/swift/ruby/lua/php/scala`。
 - `py2<lang>.py` は `load_east3_document -> lower_east3_to_<lang>_ir -> optimize_<lang>_ir -> transpile` の順序を固定し、層を飛び越える処理を追加しない。
 - `lower/optimizer` から `emitter` を import しない。`emitter` から `lower/optimizer` を import しない。
-- 再発防止の正本チェックは `python3 tools/check_noncpp_east3_contract.py` とする。
+- 再発防止の正本チェックは `python3 tools/check/check_noncpp_east3_contract.py` とする。
 
 ### 1.2 backend 共通 artifact / writer 契約（linked-program 期）
 
@@ -494,7 +494,7 @@ migration note:
   - オプション: `--std`（既定 `c++20`）、`--opt`（既定 `-O2`）
   - `manifest.modules` が配列でない、または有効 `source` が空の場合はエラー終了します。
   - `manifest.include_dir` が未指定の場合は `manifest` 同階層 `include/` を既定として扱います。
-- `docs/ja/spec/spec-make.md` にある `./pytra --build` / `src/pytra-cli.py` / `tools/gen_makefile_from_manifest.py` は、2026-02-24 時点で実装済みです。
+- `docs/ja/spec/spec-make.md` にある `./pytra --build` / `src/pytra-cli.py` / `tools/gen/gen_makefile_from_manifest.py` は、2026-02-24 時点で実装済みです。
 
 ### py2cpp 共通化ガードルール
 
@@ -505,13 +505,13 @@ migration note:
 - 既存の `pytra-cli.py --target cpp` 汎用 helper を修正する場合も、同時に共通層移管可否を検討し、`docs/ja/plans/p1-py2cpp-reduction.md` の決定ログへ記録します。
 - 緊急 hotfix で例外的に `pytra-cli.py --target cpp` へ汎用 helper を暫定追加する場合は、実装箇所に `TEMP-CXX-HOTFIX` コメントと対応 `ID` を残します。
 - 暫定追加した helper は「追加日から 7 日以内」または「次回 PATCH リリースまで」の早い方で、`src/toolchain/misc/` 側へ後追い抽出します。
-- 後追い抽出完了まで、`docs/ja/todo/index.md` に抽出タスクを未完了で保持し、`tools/check_py2cpp_helper_guard.py` の allowlist 更新理由を `docs/ja/plans/p1-py2cpp-reduction.md` に記録します。
-- 上記の責務境界は `tools/check_py2cpp_boundary.py` で検証し、`tools/run_local_ci.py` で常時実行します。
+- 後追い抽出完了まで、`docs/ja/todo/index.md` に抽出タスクを未完了で保持し、`tools/check/check_py2cpp_helper_guard.py` の allowlist 更新理由を `docs/ja/plans/p1-py2cpp-reduction.md` に記録します。
+- 上記の責務境界は `tools/check/check_py2cpp_boundary.py` で検証し、`tools/run/run_local_ci.py` で常時実行します。
 - `src/toolchain/misc/transpile_cli.py` の汎用 helper は機能グループごとの `class + @staticmethod`（`*Helpers`）を正本とし、`pytra-cli.py --target cpp` 側は class 単位 import + 起動時束縛で参照します。トップレベル関数は当面、既存 CLI / selfhost 互換のために併存させます。
 - `ImportGraphHelpers` のうち `analyze_import_graph` / `build_module_east_map` は、実装本体を `src/toolchain/misc/east_parts/east1_build.py` へ委譲する thin wrapper として運用します（互換公開 API のみ保持）。
 - `pytra-cli.py --target cpp` の import graph/build 入口（`_analyze_import_graph`, `build_module_east_map`）は `East1BuildHelpers` への委譲に限定し、`transpile_cli` へ実装詳細を持ち込みません。
-- 回帰は `test/unit/ir/test_east1_build.py`・`test/unit/toolchain/emit/cpp/test_py2cpp_east1_build_bridge.py`・`tools/check_py2cpp_transpile.py` を正本導線とし、依存解析責務の逆流を検出します。
-- `P0-PY2CPP-SPLIT-01` の回帰として `python3 -m unittest discover -s test/unit/toolchain/emit/cpp -p 'test_py2cpp_smoke.py'` を併用し、`pytra-cli.py --target cpp` の責務境界（`tools/check_py2cpp_boundary.py`）が維持されていることを確認します。
+- 回帰は `tools/unittest/ir/test_east1_build.py`・`tools/unittest/emit/cpp/test_py2cpp_east1_build_bridge.py`・`tools/check/check_py2cpp_transpile.py` を正本導線とし、依存解析責務の逆流を検出します。
+- `P0-PY2CPP-SPLIT-01` の回帰として `python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_smoke.py'` を併用し、`pytra-cli.py --target cpp` の責務境界（`tools/check/check_py2cpp_boundary.py`）が維持されていることを確認します。
 
 ### 3.1 import と `runtime/cpp` 対応
 
@@ -609,7 +609,7 @@ migration note:
 - `src/pytra/utils/png.py` は `binascii` / `zlib` / `struct` に依存しない pure Python 実装（CRC32/Adler32/DEFLATE stored block）を採用します。
 - 受け入れ基準:
   - 置換作業中は、同一入力に対して `src/pytra/utils/*.py` 出力と各言語ランタイム出力のバイト列が一致することを必須とします。
-  - C++ では `tools/verify_image_runtime_parity.py` を実行して PNG/GIF の最小ケース一致を確認します。
+  - C++ では `tools/check/verify_image_runtime_parity.py` を実行して PNG/GIF の最小ケース一致を確認します。
 
 ### 3.3.1 std/utils 正本運用ガード（手書き禁止）
 
@@ -617,7 +617,7 @@ migration note:
 - `src/runtime/<lang>/native/**` と legacy `src/runtime/<lang>/pytra-core/**`、および互換残骸の `src/runtime/<lang>/pytra/**` へ、正本と同等のロジックを手書き実装してはならない。
 - 正本由来コードは canonical generated lane（移行済み backend は `src/runtime/<lang>/generated/**`、未移行 backend は `src/runtime/<lang>/pytra-gen/**`）に生成し、`source:` / `generated-by:` トレースを保持する。
 - 例外（既存負債）は `tools/runtime_std_sot_allowlist.txt` に明示し、無記録の追加は禁止する。
-- 検証の正本は `python3 tools/check_runtime_std_sot_guard.py` とし、`tools/run_local_ci.py` で常時実行する。
+- 検証の正本は `python3 tools/check/check_runtime_std_sot_guard.py` とし、`tools/run/run_local_ci.py` で常時実行する。
 
 ### 3.4 Python 補助ライブラリ命名
 
@@ -643,8 +643,8 @@ migration note:
   - 画像出力仕様を変える最適化（PNG chunk 構成、GIF 制御ブロック、色テーブル順など）。
   - Python 正本と異なる既定値・フォーマット・丸め方への変更。
 - 受け入れ条件:
-  - 変更後に `python3 tools/verify_image_runtime_parity.py` が `True` を返すこと。
-  - `test/unit/common/test_image_runtime_parity.py` と `test/unit/toolchain/emit/cpp/test_py2cpp_features.py` を通過すること。
+  - 変更後に `python3 tools/check/verify_image_runtime_parity.py` が `True` を返すこと。
+  - `tools/unittest/common/test_image_runtime_parity.py` と `tools/unittest/emit/cpp/test_py2cpp_features.py` を通過すること。
 
 ## 4. 検証手順（C++）
 
@@ -689,7 +689,7 @@ migration note:
 
 ### 5.1 CodeEmitter テスト方針
 
-- `src/toolchain/emit/common/emitter/code_emitter.py` の回帰は `test/unit/common/test_code_emitter.py` で担保します。
+- `src/toolchain/emit/common/emitter/code_emitter.py` の回帰は `tools/unittest/common/test_code_emitter.py` で担保します。
 - 主対象:
   - 出力バッファ操作（`emit`, `emit_stmt_list`, `next_tmp`）
   - 動的入力安全化（`any_to_dict`, `any_to_list`, `any_to_str`, `any_dict_get`）
@@ -704,7 +704,7 @@ migration note:
 - `src/py2rs.py` は `src/toolchain/emit/common/` / `src/rs_module/` に依存しない（runtime 正本は `src/runtime/rs/{native,generated}/`）。
 - non-C++ / non-C# backend の checked-in `src/runtime/<lang>/pytra/**` は存在してはならない。
 - 言語固有差分は `src/toolchain/emit/rs/profiles/` と `src/toolchain/emit/rs/` に分離する。
-- 変換可否のスモーク確認は `tools/check_py2rs_transpile.py` を正本とする。
+- 変換可否のスモーク確認は `tools/check/check_py2rs_transpile.py` を正本とする。
 - `--east-stage` の既定は `3`、`--east-stage 2` は移行互換モード（警告付き）として扱う。
 - 現時点の到達点は「変換成功（transpile success）を優先」であり、Rust コンパイル互換・出力品質は段階的に改善する。
 
@@ -717,7 +717,7 @@ migration note:
 - `browser` / `browser.widgets.dialog` は外部提供ランタイム（ブラウザ環境）として扱い、`py2js` 側では import 本体を生成しない。
 - `document: Any = extern()` / `doc: Any = extern("document")` のような ambient global 変数宣言は JS/TS 限定で許可し、import-free symbol として lower する。
 - ambient global marker が付いた `Any` binding に限り、property access / method call / call expression を raw identifier chain として lower してよい。一般の `Any/object` receiver 禁止ルールは緩めない。
-- 変換可否のスモーク確認は `tools/check_py2js_transpile.py` を正本とする。
+- 変換可否のスモーク確認は `tools/check/check_py2js_transpile.py` を正本とする。
 - `--east-stage` の既定は `3`、`--east-stage 2` は移行互換モード（警告付き）として扱う。
 
 ### 5.4 責務境界（CodeEmitter / EAST parser / compiler共通層）
@@ -810,4 +810,4 @@ migration note:
 - `pytra-cli.py --target cpp` と非 C++ 8変換器（`py2rs.py`, `py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`）は、既定を `--east-stage 3` に統一する。
 - `pytra-cli.py --target cpp` は `--east-stage 3` のみ受理し、`--east-stage 2` 指定時はエラー停止する。
 - 非 C++ 8変換器のみ、`--east-stage 2` を移行互換モードとして受理し、`warning: --east-stage 2 is compatibility mode; default is 3.` を出力する。
-- 回帰導線は `tools/check_py2cpp_transpile.py` と `tools/check_noncpp_east3_contract.py` を正本とする。
+- 回帰導線は `tools/check/check_py2cpp_transpile.py` と `tools/check/check_noncpp_east3_contract.py` を正本とする。

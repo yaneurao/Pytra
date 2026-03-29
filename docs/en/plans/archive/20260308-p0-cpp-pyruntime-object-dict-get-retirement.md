@@ -34,8 +34,8 @@
 - `JsonObj.get_required` 相当の lane が正本になる。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_pylib_json.py' -v`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_pylib_json.py' -v`
 
 ## 1. 方針
 

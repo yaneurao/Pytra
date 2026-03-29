@@ -27,7 +27,7 @@ Purpose:
 ### 2. C++ stage2 build / diff
 
 - Command: `python3 tools/build_selfhost_stage2.py`
-- Command: `python3 tools/check_selfhost_cpp_diff.py`
+- Command: `python3 tools/check/check_selfhost_cpp_diff.py`
 - Purpose: build stage2 from the stage1 artifact and classify artifact diffs as expected blocks or regressions.
 - Main failures:
   - `known_block/not_implemented`
@@ -49,7 +49,7 @@ Purpose:
 
 ### 4. Multilang selfhost readiness
 
-- Command: `python3 tools/check_multilang_selfhost_suite.py`
+- Command: `python3 tools/check/check_multilang_selfhost_suite.py`
 - Purpose: summarize non-C++ stage1 / multistage readiness through shared summary blocks.
 - Main details:
   - `pass`
@@ -105,18 +105,18 @@ Related status reports:
 
 ## Routine Check Order
 
-1. `python3 tools/check_todo_priority.py`
-2. `python3 tools/check_selfhost_contract_reentry_guard.py`
+1. `python3 tools/check/check_todo_priority.py`
+2. `python3 tools/check/check_selfhost_contract_reentry_guard.py`
 3. `python3 tools/build_selfhost.py`
 4. `python3 tools/build_selfhost_stage2.py`
-5. `python3 tools/check_selfhost_cpp_diff.py`
+5. `python3 tools/check/check_selfhost_cpp_diff.py`
 6. `python3 tools/verify_selfhost_end_to_end.py`
-7. `python3 tools/check_multilang_selfhost_suite.py`
+7. `python3 tools/check/check_multilang_selfhost_suite.py`
 
 Notes:
-- Always run `python3 tools/check_transpiler_version_gate.py` when transpiler files change.
-- For representative compiler-internal changes, run `test/unit/selfhost/*.py` and `test/unit/common/test_py2x_entrypoints_contract.py` early.
-- `python3 tools/check_selfhost_contract_reentry_guard.py` is the shared host/selfhost contract gate for representative internal changes, and `run_local_ci.py` also calls it.
+- Always run `python3 tools/check/check_transpiler_version_gate.py` when transpiler files change.
+- For representative compiler-internal changes, run `tools/unittest/selfhost/*.py` and `tools/unittest/common/test_py2x_entrypoints_contract.py` early.
+- `python3 tools/check/check_selfhost_contract_reentry_guard.py` is the shared host/selfhost contract gate for representative internal changes, and `run_local_ci.py` also calls it.
 
 ## Archive Handoff
 

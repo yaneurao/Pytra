@@ -22,7 +22,7 @@
 対象:
 - `src/hooks/lua/emitter/lua_native_emitter.py`
 - `src/runtime/lua/*`（必要に応じて）
-- `test/unit/test_py2lua_smoke.py`（コード断片回帰）
+- `tools/unittest/test_py2lua_smoke.py`（コード断片回帰）
 - `sample/lua/01_mandelbrot.lua` の再生成
 
 非対象:
@@ -37,10 +37,10 @@
 - 既存の transpile/smoke/parity が非退行で通る。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2lua*.py' -v`
-- `python3 tools/check_py2lua_transpile.py`
-- `python3 tools/regenerate_samples.py --langs lua --force`
+- `python3 tools/check/check_py2lua_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs lua --force`
 
 分解:
 - [x] [ID: P1-LUA-SAMPLE01-QUALITY-01-S1-01] `sample/lua/01` の冗長箇所（暗黙runtime依存 / nil初期化 / ループ表現）をコード断片で固定する。

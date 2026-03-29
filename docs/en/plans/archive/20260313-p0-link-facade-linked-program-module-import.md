@@ -11,7 +11,7 @@ Related TODO:
 
 Background:
 - The `toolchain.link` facade already exports `LinkedProgramModule`.
-- Even so, [`test/unit/tooling/test_py2x_cli.py`](/workspace/Pytra/test/unit/tooling/test_py2x_cli.py) still imports it directly from `src.toolchain.link.program_model`.
+- Even so, [`tools/unittest/tooling/test_py2x_cli.py`](/workspace/Pytra/tools/unittest/tooling/test_py2x_cli.py) still imports it directly from `src.toolchain.link.program_model`.
 - The same consumer lane in [`src/ir2lang.py`](/workspace/Pytra/src/ir2lang.py) already uses the facade import, so the `py2x` tooling test is the remaining reach-through import.
 
 Goal:
@@ -19,8 +19,8 @@ Goal:
 - Add a source contract so a regression back to direct `program_model` imports fails fast.
 
 In scope:
-- `test/unit/tooling/test_py2x_cli.py`
-- `test/unit/common/test_py2x_entrypoints_contract.py`
+- `tools/unittest/tooling/test_py2x_cli.py`
+- `tools/unittest/common/test_py2x_entrypoints_contract.py`
 - `docs/en/todo/index.md` and the Japanese mirror
 
 Out of scope:
@@ -34,9 +34,9 @@ Acceptance criteria:
 - The focused unit suite is green.
 
 Verification commands:
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 /workspace/Pytra/test/unit/common/test_py2x_entrypoints_contract.py`
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 /workspace/Pytra/test/unit/tooling/test_py2x_cli.py`
-- `python3 /workspace/Pytra/tools/check_todo_priority.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 /workspace/Pytra/tools/unittest/common/test_py2x_entrypoints_contract.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 /workspace/Pytra/tools/unittest/tooling/test_py2x_cli.py`
+- `python3 /workspace/Pytra/tools/check/check_todo_priority.py`
 - `git -C /workspace/Pytra diff --check`
 
 Breakdown:

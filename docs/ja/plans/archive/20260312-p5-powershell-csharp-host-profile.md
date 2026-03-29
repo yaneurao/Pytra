@@ -37,9 +37,9 @@ representative layout:
 - build 出力は `build/Program.exe` を canonical artifact とする。
 
 確認コマンド:
-- `python3 tools/check_powershell_cs_host_contract.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_powershell_cs_host_contract.py'`
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_powershell_cs_host_contract.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_powershell_cs_host_contract.py'`
+- `python3 tools/check/check_todo_priority.py`
 - `git diff --check`
 
 ## 子タスク
@@ -58,6 +58,6 @@ representative layout:
 - 2026-03-12: `S1-01` として `pwsh / Windows / PowerShell 7 / dotnet-or-csc required / Add-Type optional` を canonical baseline に固定し、docs drift は `check_powershell_cs_host_contract.py` で落とす。
 - 2026-03-12: `S2-01` として representative layout を `run.ps1`, `src/Program.cs`, `runtime/*.cs`, `build/Program.exe` に固定し、launcher は generated `Program.Main(string[] args)` を書き換えず、runtime `.cs` は `runtime/` に分離配置する contract を採用した。
 - 2026-03-12: `S2-02` として build driver priority を `dotnet` -> `csc` -> `Add-Type` に固定し、Add-Type は最後段の non-canonical fallback とした。persistent `build/Program.exe` が要る representative smoke / parity lane では使わない。
-- 2026-03-12: `S3-01` として current anchor を `test/unit/backends/cs/test_py2cs_smoke.py` に固定しつつ、future PowerShell host regression を `test/unit/tooling/test_powershell_cs_host_profile.py`、`tools/check_powershell_cs_host_sample_parity.py`、`test/unit/tooling/test_pytra_cli_powershell_cs_host_profile.py` に分離した。差分は launcher staging、runtime bundling、driver selection、compiled execution、sample parity、CLI profile selection の 6 category とする。
+- 2026-03-12: `S3-01` として current anchor を `tools/unittest/emit/cs/test_py2cs_smoke.py` に固定しつつ、future PowerShell host regression を `tools/unittest/tooling/test_powershell_cs_host_profile.py`、`tools/check/check_powershell_cs_host_sample_parity.py`、`tools/unittest/tooling/test_pytra_cli_powershell_cs_host_profile.py` に分離した。差分は launcher staging、runtime bundling、driver selection、compiled execution、sample parity、CLI profile selection の 6 category とする。
 - 2026-03-12: `S3-01` の representative sample/parity anchor は `sample/py/01_mandelbrot.py`、CLI profile anchor は `src/pytra-cli.py` と `src/toolchain/compiler/pytra_cli_profiles.py` に固定する。
 - 2026-03-12: `S4-01` として README / how-to-use に `pwsh + py2cs` host profile であり pure backend ではないこと、current user-facing lane は `py2cs` smoke と手動 compile/run に留まることを明記した。

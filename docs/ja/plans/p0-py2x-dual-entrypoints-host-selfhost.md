@@ -38,13 +38,13 @@
 - docs に「通常/ selfhost のエントリ使い分け」が明記されている。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 -m unittest discover -s test/unit -p test_py2x_cli.py`
-- `python3 tools/check_py2rs_transpile.py`
-- `python3 tools/check_py2js_transpile.py`
-- `python3 tools/check_py2php_transpile.py`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/check_py2nim_transpile.py`
+- `python3 tools/check/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2js_transpile.py`
+- `python3 tools/check/check_py2php_transpile.py`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/check/check_py2nim_transpile.py`
 
 ## 分解
 
@@ -64,6 +64,6 @@
 - 2026-03-03: `src/pytra/compiler/backend_registry.py` を host-lazy registry に差し替え、`importlib.import_module` + target別 loader + `_SPEC_CACHE` で必要 backend のみ遅延ロードする構成へ変更した。従来の eager registry は `src/pytra/compiler/backend_registry_static.py` として分離した。
 - 2026-03-03: `src/pytra-cli.py` を追加し、`backend_registry_static` を参照する selfhost 専用エントリを新設した。`src/pytra-cli.py` は `backend_registry`（host-lazy）固定の通常導線とした。
 - 2026-03-03: import cycle 回避のため、`src/pytra/compiler/east_parts/__init__.py` から `east1_build` の package-level re-export を外し、明示 import のみを許可する形へ変更した。
-- 2026-03-03: 境界違反検知として `test/unit/test_py2x_entrypoints_contract.py` を追加し、`py2x`/`py2x-selfhost` の registry バインディング、host registry の lazy import 方式、target限定 import、spec cache 利用を unit 固定した。
+- 2026-03-03: 境界違反検知として `tools/unittest/test_py2x_entrypoints_contract.py` を追加し、`py2x`/`py2x-selfhost` の registry バインディング、host registry の lazy import 方式、target限定 import、spec cache 利用を unit 固定した。
 - 2026-03-03: 回帰確認として次を実行し、すべて通過した。`test_py2x_cli.py`, `test_py2x_entrypoints_contract.py`, `check_py2{rs,js,php,scala,nim}_transpile.py`, `check_noncpp_east3_contract.py --skip-transpile`, `check_transpiler_version_gate.py --base-ref HEAD`。
 - 2026-03-03: `docs/ja/how-to-use.md` と `docs/en/how-to-use.md` に `pytra-cli.py` / `pytra-cli.py` の使い分け（通常=host-lazy, selfhost=static eager）を追記した。

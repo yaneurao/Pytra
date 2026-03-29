@@ -23,7 +23,7 @@ Goal:
 In scope:
 - `src/hooks/scala/emitter/scala_native_emitter.py`
 - (if needed) Scala runtime-helper emission strategy
-- `test/unit/test_py2scala_smoke.py`
+- `tools/unittest/test_py2scala_smoke.py`
 - Regeneration of `sample/scala/01_mandelbrot.scala`
 
 Out of scope:
@@ -39,9 +39,9 @@ Acceptance criteria:
 - `test_py2scala_smoke` and Scala sample parity (at minimum `01_mandelbrot`) pass with no regression.
 
 Verification commands (planned):
-- `python3 tools/regenerate_samples.py --langs scala --force`
+- `python3 tools/gen/regenerate_samples.py --langs scala --force`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2scala_smoke.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets scala 01_mandelbrot`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets scala 01_mandelbrot`
 
 Breakdown:
 - [x] [ID: P0-SCALA-SAMPLE01-QUALITY-01-S1-01] Compare `sample/scala/01` and `sample/cpp/01`, and lock redundant items (cast/loop/runtime embedding/typed degradation) as concrete fragments.
@@ -86,5 +86,5 @@ Decision log:
 - 2026-03-02: [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-02] Added canonical-while fastpath (`while (i < stop)`) for `step==1` in `ForCore(StaticRangeForPlan)`, reducing `__step` branch loops.
 - 2026-03-02: [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-03] Added a fastpath in append statements: when a typed local (`mutable.ArrayBuffer[Any]`) is detected, emit direct `pixels.append(...)` without `__pytra_as_list` re-wrap.
 - 2026-03-02: [ID: P0-SCALA-SAMPLE01-QUALITY-01-S3-01] Added `test_sample_01_quality_fastpaths_reduce_redundant_wrappers` to `test_py2scala_smoke.py` and locked cast/loop/append fragments as regressions.
-- 2026-03-02: [ID: P0-SCALA-SAMPLE01-QUALITY-01-S3-02] Regenerated all `sample/py/*.py -> sample/scala/*.scala`; confirmed `test_py2scala_smoke` (17 tests) and `runtime_parity_check --all-samples --targets scala` (18/18 pass). `tools/regenerate_samples.py --langs scala` is not yet supported (`unknown language(s): scala`), so this remains tracked in another P0.
+- 2026-03-02: [ID: P0-SCALA-SAMPLE01-QUALITY-01-S3-02] Regenerated all `sample/py/*.py -> sample/scala/*.scala`; confirmed `test_py2scala_smoke` (17 tests) and `runtime_parity_check --all-samples --targets scala` (18/18 pass). `tools/gen/regenerate_samples.py --langs scala` is not yet supported (`unknown language(s): scala`), so this remains tracked in another P0.
 - 2026-03-02: [ID: P0-SCALA-SAMPLE01-QUALITY-01-S2-04] Switched runtime helper handling from "embed everything" to "embed only helpers actually referenced by generated code via dependency closure." `sample/scala/01` shrank from 703 lines to 310 lines, and unused helpers such as `__pytra_save_gif` were removed. Smoke (17) and parity (18) both passed.

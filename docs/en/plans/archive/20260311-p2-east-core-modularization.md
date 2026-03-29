@@ -11,7 +11,7 @@ Related TODO:
 
 Background:
 - `src/toolchain/ir/core.py` has grown to around 10k lines after repeated selfhost parser feature work and helper splitting.
-- `test/unit/ir/test_east_core.py` also concentrated source guards into one file, so even responsibility-local changes now expand the review surface.
+- `tools/unittest/ir/test_east_core.py` also concentrated source guards into one file, so even responsibility-local changes now expand the review surface.
 - The recent P2 work made local cleanup progress, but it was too fine-grained: helper-by-helper commits accumulated while file-level modularization and progress cleanup lagged behind.
 
 Objective:
@@ -20,8 +20,8 @@ Objective:
 Scope:
 - `src/toolchain/ir/core.py`
 - `src/toolchain/ir/core_expr_*.py`
-- `test/unit/ir/test_east_core.py`
-- `test/unit/ir/test_east_*.py` if needed
+- `tools/unittest/ir/test_east_core.py`
+- `tools/unittest/ir/test_east_*.py` if needed
 - `docs/ja/todo/index.md` / `docs/en/todo/index.md`
 - `docs/ja/plans/p2-east-core-modularization.md` / `docs/en/plans/p2-east-core-modularization.md`
 
@@ -37,10 +37,10 @@ Acceptance Criteria:
 - Representative regressions continue to pass: `test_east_core.py`, `test_prepare_selfhost_source.py`, and `tools/build_selfhost.py`.
 
 Validation Commands:
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/selfhost -p 'test_prepare_selfhost_source.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/selfhost -p 'test_prepare_selfhost_source.py'`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `git diff --check`
 
 Breakdown:

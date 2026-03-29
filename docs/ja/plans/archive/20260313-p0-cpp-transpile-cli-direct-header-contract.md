@@ -10,7 +10,7 @@
 - `docs/ja/todo/index.md` の `ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01`
 
 背景:
-- `test/unit/common/test_py2x_entrypoints_contract.py` の `test_compiler_transpile_cli_typed_shim_skips_legacy_wrapper()` は、まだ `src/runtime/cpp/pytra/compiler/transpile_cli.h` を public wrapper として読みに行っている。
+- `tools/unittest/common/test_py2x_entrypoints_contract.py` の `test_compiler_transpile_cli_typed_shim_skips_legacy_wrapper()` は、まだ `src/runtime/cpp/pytra/compiler/transpile_cli.h` を public wrapper として読みに行っている。
 - しかし live tree では checked-in `src/runtime/cpp/pytra/compiler/transpile_cli.h` は既に存在せず、`src/runtime/cpp/generated/compiler/transpile_cli.h` と `src/runtime/cpp/generated/compiler/transpile_cli.cpp` が typed shim の direct ownership artifact になっている。
 - `docs/ja/spec/spec-runtime.md` でも C++ は `public_headers == compiler_headers` を direct ownership header に揃える前提なので、この focused contract test だけが stale assumption を温存している。
 
@@ -19,7 +19,7 @@
 - 削除済み `cpp/pytra` wrapper を再要求しない source contract に直す。
 
 対象:
-- `test/unit/common/test_py2x_entrypoints_contract.py`
+- `tools/unittest/common/test_py2x_entrypoints_contract.py`
 - 必要なら関連 plan / TODO / archive 記録
 
 非対象:
@@ -33,8 +33,8 @@
 - typed shim が `_front.load_east3_document_typed(...)` へ直送していることを引き続き guard する。
 
 確認コマンド:
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 /workspace/Pytra/test/unit/common/test_py2x_entrypoints_contract.py -k typed_shim_skips_legacy_wrapper`
-- `python3 /workspace/Pytra/tools/check_todo_priority.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 /workspace/Pytra/tools/unittest/common/test_py2x_entrypoints_contract.py -k typed_shim_skips_legacy_wrapper`
+- `python3 /workspace/Pytra/tools/check/check_todo_priority.py`
 - `git -C /workspace/Pytra diff --check`
 
 分解:

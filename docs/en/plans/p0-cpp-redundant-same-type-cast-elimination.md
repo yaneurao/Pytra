@@ -24,7 +24,7 @@ Scope:
 - `src/hooks/cpp/emitter/type_bridge.py`
 - `src/hooks/cpp/emitter/builtin_runtime.py`
 - `src/pytra/compiler/east_parts/core.py` if needed (EAST3 typing)
-- `test/unit/test_py2cpp_smoke.py` / `test/unit/test_east3_cpp_bridge.py`
+- `tools/unittest/test_py2cpp_smoke.py` / `tools/unittest/test_east3_cpp_bridge.py`
 - `sample/cpp/18_mini_language_interpreter.cpp`
 
 Out of scope:
@@ -39,10 +39,10 @@ Acceptance criteria:
 - After regenerating `sample/cpp`, sample/18 compile/run pass.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_smoke.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout`
 
 Decision log:
 - 2026-02-28: By user instruction, confirmed policy to handle this at P0 as "remove same-type casts including `str` globally" rather than a point fix for `isdigit`.
@@ -51,7 +51,7 @@ Decision log:
 - 2026-02-28: [ID: `P0-CPP-SAMECAST-01-S1-03`] Updated `StrCharClassOp`: type-known `str` emits direct `receiver.isdigit()/isalpha()`, while only unknown/object paths keep defensive `str(...)` casts.
 - 2026-02-28: [ID: `P0-CPP-SAMECAST-01-S2-01`] Added same-type no-op checks in `apply_cast` and `_render_unbox_target_cast` so same-type casts inferable from rendered expressions (non-Any/object/unknown) are omitted.
 - 2026-02-28: [ID: `P0-CPP-SAMECAST-01-S2-02`] Added char-class regression for sample/18 (`test_sample18_charclass_avoids_redundant_str_cast`). Also updated expected values in `test_east3_cpp_bridge.py` to pin no-cast output for type-known `str`.
-- 2026-02-28: [ID: `P0-CPP-SAMECAST-01-S3-01`] Re-ran `python3 tools/regenerate_samples.py --langs cpp --force` (`summary: total=18 skip=0 regen=18 fail=0`) and `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout` (`[PASS] 18_mini_language_interpreter`), confirming regenerated sample and parity pass.
+- 2026-02-28: [ID: `P0-CPP-SAMECAST-01-S3-01`] Re-ran `python3 tools/gen/regenerate_samples.py --langs cpp --force` (`summary: total=18 skip=0 regen=18 fail=0`) and `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout` (`[PASS] 18_mini_language_interpreter`), confirming regenerated sample and parity pass.
 
 ## Breakdown
 

@@ -26,7 +26,7 @@
 - `src/runtime/{rs,cs,go,java,kotlin,scala,swift,nim,js,ts,lua,ruby,php}/generated/{built_in,std,utils}/**`
 - `src/runtime/<lang>/native/{built_in,std,utils}/**` の ownership 整理
 - `tools/runtime_generation_manifest.json`
-- `tools/gen_runtime_from_manifest.py`
+- `tools/gen/gen_runtime_from_manifest.py`
 - non-C++ runtime contract / checker / allowlist / inventory
 - backend build profile / packaging / selfhost / smoke / runtime copy 導線
 - docs / TODO / spec wording
@@ -92,15 +92,15 @@
 - 旧 rollout の `generated ∪ blocked = baseline` ではなく、`generated = baseline` を end state として docs / checker / plan wording に固定する。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_noncpp_runtime_generated_cpp_baseline_contract.py`
-- `python3 tools/check_noncpp_runtime_layout_contract.py`
-- `python3 tools/check_noncpp_runtime_layout_rollout_remaining_contract.py`
-- `python3 tools/check_runtime_core_gen_markers.py`
-- `python3 tools/check_runtime_pytra_gen_naming.py`
-- `python3 tools/check_runtime_std_sot_guard.py`
-- `python3 tools/check_multilang_selfhost_stage1.py`
-- `python3 tools/check_multilang_selfhost_multistage.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_noncpp_runtime_generated_cpp_baseline_contract.py`
+- `python3 tools/check/check_noncpp_runtime_layout_contract.py`
+- `python3 tools/check/check_noncpp_runtime_layout_rollout_remaining_contract.py`
+- `python3 tools/check/check_runtime_core_gen_markers.py`
+- `python3 tools/check/check_runtime_pytra_gen_naming.py`
+- `python3 tools/check/check_runtime_std_sot_guard.py`
+- `python3 tools/check/check_multilang_selfhost_stage1.py`
+- `python3 tools/check/check_multilang_selfhost_multistage.py`
 - `find src/runtime -path '*/generated/*' -type f | sort`
 - `git diff --check`
 
@@ -169,7 +169,7 @@
 - 2026-03-13: `S2-02` current bundle として Kotlin / Scala / Swift / Nim の `generated/utils/{gif,png}` rename を contract / test / smoke expectation に反映し、`current_inventory` / `target_inventory` / `module_buckets` / `wave_a_generated_compare` / `wave_a_generated_smoke` を canonical basename 前提に同期した。`utils/image_runtime` だけを helper artifact として残し、次は static family の full-baseline 残差を `go` から埋める。
 - 2026-03-13: `S2-02` third bundle として Go の missing 17 modules（`built_in/{predicates,sequence,string_ops,type_id}`, `std/{argparse,glob,json,math,os,os_path,pathlib,random,re,sys,time,timeit}`, `utils/assertions`）を SoT から `generated/` に materialize し、baseline debt contract で Go を materialized backend に昇格させた。runtime hook copy はまだ既存 substrate / image helper のまま据え置き、legacy rollout contract / representative smoke / tooling unit を full generated inventory に同期した。残る static family の full-baseline debt は Kotlin / Scala / Swift / Nim に集中する。
 - 2026-03-13: `S2-02` fourth bundle として Swift の missing 17 modules（`built_in/{numeric_ops,scalar_ops,string_ops,type_id}`, `std/{argparse,glob,json,math,os,os_path,pathlib,random,re,sys,time,timeit}`, `utils/assertions`）を SoT から `generated/` に materialize し、baseline debt contract で Swift を materialized backend に昇格させた。`generated/std` lane mapping、current/target inventory、module buckets、wave-A generated compare/smoke、Swift runtime path smoke を full generated inventory に同期し、runtime hook copy は `py_runtime.swift` と `utils/image_runtime.swift` の substrate subset のまま据え置いた。残る static family の full-baseline debt は Kotlin / Scala / Nim に集中する。
-- 2026-03-13: `S2-02` fifth bundle として Nim の missing 18 modules（`built_in/{io_ops,scalar_ops,sequence,string_ops,type_id}`, `std/{argparse,glob,json,math,os,os_path,pathlib,random,re,sys,time,timeit}`, `utils/assertions`）を SoT から `generated/` に materialize し、baseline debt contract で Nim を materialized backend に昇格させた。`generated/std` lane mapping、current/target inventory、module buckets、wave-A generated compare/smoke、Nim runtime path smoke を full generated inventory に同期し、runtime hook copy は `py_runtime.nim` と `utils/image_runtime.nim` の substrate subset のまま据え置いた。併せて `tools/gen_runtime_from_manifest.py` の current-file 読み出しを `newline=""` に切り替え、Nim `string_ops.nim` に含まれる raw carriage-return literal が `--check` で偽 stale 判定されないようにした。残る static family の full-baseline debt は Kotlin / Scala に集中する。
+- 2026-03-13: `S2-02` fifth bundle として Nim の missing 18 modules（`built_in/{io_ops,scalar_ops,sequence,string_ops,type_id}`, `std/{argparse,glob,json,math,os,os_path,pathlib,random,re,sys,time,timeit}`, `utils/assertions`）を SoT から `generated/` に materialize し、baseline debt contract で Nim を materialized backend に昇格させた。`generated/std` lane mapping、current/target inventory、module buckets、wave-A generated compare/smoke、Nim runtime path smoke を full generated inventory に同期し、runtime hook copy は `py_runtime.nim` と `utils/image_runtime.nim` の substrate subset のまま据え置いた。併せて `tools/gen/gen_runtime_from_manifest.py` の current-file 読み出しを `newline=""` に切り替え、Nim `string_ops.nim` に含まれる raw carriage-return literal が `--check` で偽 stale 判定されないようにした。残る static family の full-baseline debt は Kotlin / Scala に集中する。
 - 2026-03-13: `S2-02` sixth bundle として Kotlin の missing 18 modules（`built_in/{io_ops,numeric_ops,scalar_ops,string_ops,type_id}`, `std/{argparse,glob,json,math,os,os_path,pathlib,random,re,sys,time,timeit}`, `utils/assertions`）を SoT から `generated/` に materialize し、baseline debt contract で Kotlin を materialized backend に昇格させた。`generated/std` lane mapping、current/target inventory、module buckets、wave-A generated compare/smoke、Kotlin runtime path smoke を full generated inventory に同期し、runtime hook copy は `py_runtime.kt` と `utils/image_runtime.kt` の substrate subset のまま据え置いた。残る static family の full-baseline debt は Scala のみになった。
 - 2026-03-13: `S2-02` seventh bundle として Scala の missing 18 modules（`built_in/{io_ops,numeric_ops,scalar_ops,string_ops,type_id}`, `std/{argparse,glob,json,math,os,os_path,pathlib,random,re,sys,time,timeit}`, `utils/assertions`）を SoT から `generated/` に materialize し、baseline debt contract で Scala を materialized backend に昇格させた。`generated/std` lane mapping、current/target inventory、module buckets、wave-A generated compare/smoke、Scala runtime path smoke を full generated inventory に同期した。これで static family（`go/java/kotlin/scala/swift/nim`）の full-baseline debt は解消し、`S2-02` を完了扱いにできる状態になった。
 - 2026-03-13: `S2-03` first bundle として PHP の missing 9 modules（`std/{argparse,glob,os,os_path,random,re,sys,timeit}` と `utils/assertions`）を SoT から `generated/` に materialize し、`current_inventory` / `target_inventory` / `module_buckets` / manifest unit / php smoke を full generated inventory に同期した。generated-cpp baseline checker では PHP を materialized backend に昇格させたが、legacy rollout remaining contract の Wave-B compare baseline はまだ旧 16-module のままなので、新規 PHP modules は compare baseline 外 generated artifact として inventory に積んでいる。

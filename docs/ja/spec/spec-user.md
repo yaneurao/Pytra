@@ -154,13 +154,13 @@ python -m unittest discover -s test/unit -p "test_*.py" -v
 共通エミッタ基盤（`src/toolchain/emit/common/emitter/code_emitter.py`）のみを確認したい場合:
 
 ```bash
-python -m unittest discover -s test/unit/common -p "test_code_emitter.py" -v
+python -m unittest discover -s tools/unittest/common -p "test_code_emitter.py" -v
 ```
 
 `test/fixtures/**/*.py` を一括実行して末尾出力 `True` を検証する専用テスト:
 
 ```bash
-python -m unittest discover -s test/unit/common -p "test_fixtures_truth.py" -v
+python -m unittest discover -s tools/unittest/common -p "test_fixtures_truth.py" -v
 ```
 
 ## 6. 利用時の注意

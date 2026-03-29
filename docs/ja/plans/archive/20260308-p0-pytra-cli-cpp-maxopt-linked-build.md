@@ -70,11 +70,11 @@
 - C++ max-opt route の non-regression は representative CLI test に加えて `sample` parity を acceptance gate とする。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_pytra_cli.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_py2x_cli.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/link -p 'test_*.py'`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples --cpp-codegen-opt 3 --east3-opt-level 2`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_pytra_cli.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_py2x_cli.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/link -p 'test_*.py'`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples --cpp-codegen-opt 3 --east3-opt-level 2`
 - 必要なら `python3 tools/verify_sample_outputs.py --samples ... --compile-flags=\"-O2\"`
 
 ## 分解
@@ -145,5 +145,5 @@
 - 2026-03-08: `codegen-opt=3` の build route では aggregate `-O3` を `py2x` に渡さず、stage 1 へ `--east3-opt-level 2` を既定で補う。stage 2 は linked `ir2lang` の C++ multi-file emit default を使い、未公開の `cpp_opt_level` layer option は注入しない。
 - 2026-03-08: `S2-02` では transpile-only も同じ linked-program route に統一する。linked C++ route は multi-file emit 前提なので、`--target cpp --codegen-opt 3` では `--output` を禁止し、`--output-dir` を canonical output surface とする。
 - 2026-03-08: `S3-01` の representative regression は `test_pytra_cli.py` に追加し、`codegen-opt=3` で `--link-only -> --from-link-output` の 2 段 route、manifest 解決、`--run` 時の `make run` fallback を固定した。
-- 2026-03-08: `S3-02` として `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples --cpp-codegen-opt 3 --east3-opt-level 2` を実行し、`SUMMARY cases=18 pass=18 fail=0` を確認した。
+- 2026-03-08: `S3-02` として `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples --cpp-codegen-opt 3 --east3-opt-level 2` を実行し、`SUMMARY cases=18 pass=18 fail=0` を確認した。
 - 2026-03-08: `S4-01` では `how-to-use` と `spec-make` を実装実態へ同期し、`--target cpp --codegen-opt 3` が multi-file / `--output-dir` 前提であること、intermediate linked bundle が `output_dir/.pytra_linked/` に置かれること、sample parity gate の正規コマンドを記録した。

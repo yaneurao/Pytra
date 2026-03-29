@@ -8,7 +8,7 @@ This document defines the operational specification that routes C++ build flow t
 
 ## 2026-02-24 Alignment Note
 
-- `src/pytra-cli.py`, `tools/gen_makefile_from_manifest.py`, and `./pytra` are already implemented and provide the `--target cpp --build` route through `./pytra`.
+- `src/pytra-cli.py`, `tools/gen/gen_makefile_from_manifest.py`, and `./pytra` are already implemented and provide the `--target cpp --build` route through `./pytra`.
 - The `manifest.json` contract for `--multi-file` and the `tools/build_multi_cpp.py` route remain active specifications (`docs/en/spec/spec-dev.md` / `docs/en/spec/spec-tools.md`).
 - This document is operated as an implementation-aligned specification. Anything treated as a future idea is split out as a separate task.
 
@@ -95,7 +95,7 @@ The processing order for `./pytra ... --target cpp --build` is:
 1. When `--codegen-opt 3` is selected, materialize raw `EAST3` modules, run the linked-program optimizer, and generate C++ multi-file output from the linked modules.
 2. When `--codegen-opt 0/1/2` is selected, build `ProgramArtifact` through the existing compatibility route.
 3. `CppProgramWriter` generates the output tree and `manifest.json`.
-4. `tools/gen_makefile_from_manifest.py` generates the `Makefile`.
+4. `tools/gen/gen_makefile_from_manifest.py` generates the `Makefile`.
 5. Run `make -f <Makefile>` and produce the binary.
 6. If `--run` is specified, run `make -f <Makefile> run`.
 
@@ -139,7 +139,7 @@ Example:
 
 ## 8. Makefile Generation Specification
 
-Use `tools/gen_makefile_from_manifest.py`, which accepts:
+Use `tools/gen/gen_makefile_from_manifest.py`, which accepts:
 
 - positional arguments
   - `manifest`
@@ -173,13 +173,13 @@ Exit non-zero in the following cases:
 - `./pytra sample/py/01_mandelbrot.py --target cpp --build --output-dir out/mandelbrot` performs conversion, Makefile generation, and build in sequence.
 - `./pytra sample/py/01_mandelbrot.py --target cpp --build --compiler g++ --std c++20 --opt -O3 --exe mandelbrot.out` reflects the specified values into the Makefile and the build.
 - `./pytra sample/py/01_mandelbrot.py --target cpp --codegen-opt 3 --build --output-dir out/mandelbrot` selects the maximum-opt C++ route through the linked-program optimizer.
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples --cpp-codegen-opt 3 --east3-opt-level 2` remains green.
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples --cpp-codegen-opt 3 --east3-opt-level 2` remains green.
 - `./pytra sample/py/01_mandelbrot.py --target rs --build` exits with an error as specified.
 - Running `make -f out/mandelbrot/Makefile` a second time results in an incremental build with minimal relink/recompile.
 
 ## 11. Staged Rollout
 
-1. Phase 1: add `tools/gen_makefile_from_manifest.py`
+1. Phase 1: add `tools/gen/gen_makefile_from_manifest.py`
 2. Phase 2: add `src/pytra-cli.py` and implement `--target cpp --build`
 3. Phase 3: add the root launcher `./pytra` and internalize `PYTHONPATH` setup
 4. Phase 4: add `--run`, `--codegen-opt`, and `--jobs` if needed
@@ -251,4 +251,4 @@ Exit non-zero in the following cases:
 
 - Do not add new `if/elif target == "...":` branches to `src/pytra-cli.py`.
 - Do not hard-code `<lang>`-specific runtime file paths such as `py_runtime.kt` or `png.java` in `src/pytra-cli.py`.
-- Tools around the CLI, such as `tools/runtime_parity_check.py`, must not duplicate target-specific build or run commands. The route must be unified through `pytra-cli`.
+- Tools around the CLI, such as `tools/check/runtime_parity_check.py`, must not duplicate target-specific build or run commands. The route must be unified through `pytra-cli`.

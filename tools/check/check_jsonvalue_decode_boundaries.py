@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 TARGET_FILES = [
     "src/pytra-cli.py",
     "src/east2x.py",

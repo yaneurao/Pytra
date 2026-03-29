@@ -26,8 +26,8 @@ In scope:
 - `src/runtime` rename/rebuild
 - C++ runtime path references in `src/backends/cpp/*`
 - C++ runtime copy/build paths in `src/toolchain/compiler/*`
-- C++ runtime generation in `tools/gen_runtime_from_manifest.py` and related manifest data
-- C++ parity execution flow in `tools/runtime_parity_check.py`
+- C++ runtime generation in `tools/gen/gen_runtime_from_manifest.py` and related manifest data
+- C++ parity execution flow in `tools/check/runtime_parity_check.py`
 - Runtime-path wording in the relevant docs/specs
 
 Out of scope:
@@ -39,14 +39,14 @@ Acceptance criteria:
 - The legacy runtime is quarantined under `src/runtime2/`, and new implementation paths reference only `src/runtime/`.
 - `src/runtime/cpp/` uses only `core/` and `gen/`, with no active `pytra/` shim.
 - C++ runtime references are unified on `runtime/cpp/core` plus `runtime/cpp/gen`.
-- `tools/runtime_parity_check.py --targets cpp --case-root fixture` passes.
-- `tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples` passes.
+- `tools/check/runtime_parity_check.py --targets cpp --case-root fixture` passes.
+- `tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples` passes.
 
 Validation commands:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `rg -n "runtime/cpp/pytra|src/runtime2" src/backends/cpp src/toolchain tools`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
 
 ## Breakdown
 

@@ -26,6 +26,7 @@
 | ツール | 目的 |
 |---|---|
 | `run_local_ci.py` | ローカル最小 CI 一括実行 |
+| `check_tools_ledger.py` | tools/ 台帳突合チェック |
 | `check_mapping_json.py` | mapping.json 妥当性チェック（全言語） |
 | `gen_backend_progress.py` | バックエンド進捗ページ生成 |
 | `check_todo_priority.py` | TODO 優先度逸脱の検証 |

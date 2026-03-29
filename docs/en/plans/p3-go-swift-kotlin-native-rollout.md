@@ -20,7 +20,7 @@ Goal:
 In scope:
 - `src/py2go.py` / `src/py2swift.py` / `src/py2kotlin.py`
 - `src/hooks/go/emitter/` / `src/hooks/swift/emitter/` / `src/hooks/kotlin/emitter/`
-- `tools/check_py2go_transpile.py` / `tools/check_py2swift_transpile.py` / `tools/check_py2kotlin_transpile.py`
+- `tools/check/check_py2go_transpile.py` / `tools/check/check_py2swift_transpile.py` / `tools/check/check_py2kotlin_transpile.py`
 - Regeneration path and related docs for `sample/go`, `sample/swift`, `sample/kotlin`
 
 Out of scope:
@@ -35,11 +35,11 @@ Acceptance criteria:
 - Legacy sidecar path is removed or downgraded to explicit opt-in compatibility mode.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/check_py2swift_transpile.py`
-- `python3 tools/check_py2kotlin_transpile.py`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets go,swift,kotlin --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/check/check_py2swift_transpile.py`
+- `python3 tools/check/check_py2kotlin_transpile.py`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets go,swift,kotlin --all-samples --ignore-unstable-stdout`
 
 Decision log:
 - 2026-02-26: Initial draft created. Added low-priority migration plan to native-ize Go/Swift/Kotlin sidecar toolchain.emit.

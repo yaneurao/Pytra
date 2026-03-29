@@ -41,7 +41,7 @@ Acceptance criteria:
 ## S1-01 Representative Inventory
 
 - source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
-- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py)
+- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_feature_contract_inventory.py)
 - category rule:
   - `syntax`: `syntax.<area>.<feature>`
   - `builtin`: `builtin.<domain>.<feature>`
@@ -71,7 +71,7 @@ Acceptance criteria:
 ## S1-02 Support-state Taxonomy
 
 - source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
-- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py)
+- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_feature_contract_inventory.py)
 - support states:
   - `supported`: the representative fixture / regression lane passes on the backend without preview-only caveats.
   - `fail_closed`: the feature is not implemented, but the backend stops with an explicit `unsupported_syntax` / `not_implemented` style diagnostic instead of silently degrading.
@@ -100,7 +100,7 @@ Acceptance criteria:
 ## S2-02 New-feature Acceptance Rule
 
 - source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
-- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py)
+- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_feature_contract_inventory.py)
 - fixed acceptance rules:
   - `feature_id_required`: a new feature must have a feature ID unless it is explicitly declared out of representative scope.
   - `inventory_or_followup_required`: a representative fixture entry or a parity follow-up task must exist before merge.
@@ -112,8 +112,8 @@ Acceptance criteria:
 ## S3-01 Representative Handoff
 
 - source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
-- export seam: [export_backend_feature_contract_manifest.py](/workspace/Pytra/tools/export_backend_feature_contract_manifest.py)
-- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py), [test_export_backend_feature_contract_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_feature_contract_manifest.py)
+- export seam: [export_backend_feature_contract_manifest.py](/workspace/Pytra/tools/gen/export_backend_feature_contract_manifest.py)
+- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/unittest/tooling/test_check_backend_feature_contract_inventory.py), [test_export_backend_feature_contract_manifest.py](/workspace/Pytra/tools/unittest/tooling/test_export_backend_feature_contract_manifest.py)
 - P6 conformance handoff:
   - exported inventory: `iter_representative_conformance_handoff()`
   - downstream task: `P6-BACKEND-CONFORMANCE-SUITE-01`

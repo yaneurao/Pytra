@@ -1,5 +1,5 @@
 {
-  "generated_by": "tools/gen_runtime_symbol_index.py",
+  "generated_by": "tools/gen/gen_runtime_symbol_index.py",
   "modules": {
     "pytra.built_in": {
       "runtime_group": "built_in",

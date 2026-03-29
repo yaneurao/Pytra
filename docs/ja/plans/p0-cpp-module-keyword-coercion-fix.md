@@ -21,8 +21,8 @@
 対象:
 - `src/hooks/cpp/emitter/call.py`（import 関数経路の args/kw merge と node 伝播）
 - `src/hooks/cpp/emitter/module.py`（module 関数型強制）
-- `test/unit/test_py2cpp_codegen_issues.py`（sample/15 断片回帰）
-- 必要に応じて `test/unit/test_east3_cpp_bridge.py` / `tools/check_py2cpp_transpile.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`（sample/15 断片回帰）
+- 必要に応じて `tools/unittest/test_east3_cpp_bridge.py` / `tools/check/check_py2cpp_transpile.py`
 
 非対象:
 - class method / local function call の keyword マージ仕様変更
@@ -36,11 +36,11 @@
 - unknown/Any 経路は従来どおり fail-closed を維持する。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --force`
 
 決定ログ:
 - 2026-03-01: ユーザー報告（sample/15 の `int64(py_to<int64>(4))`）を受け、原因を「module import 関数 keyword 引数の AST ノード未伝播」と特定し、P0 タスクとして起票した。

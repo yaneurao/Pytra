@@ -36,11 +36,11 @@
 - generated consumer module が imported user-module symbol を namespace-qualified して参照すること。
 - generated consumer module が imported user-module function と module-level global の両方を compile できるだけの forward declaration を持つこと。
 - 既存の relative import function alias / module alias build-run smoke を壊さないこと。
-- `python3 tools/check_todo_priority.py`、focused C++ regression、`python3 tools/build_selfhost.py`、`git diff --check` が通ること。
+- `python3 tools/check/check_todo_priority.py`、focused C++ regression、`python3 tools/build_selfhost.py`、`git diff --check` が通ること。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k relative_import`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k relative_import`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

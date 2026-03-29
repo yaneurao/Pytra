@@ -27,7 +27,7 @@ Acceptance criteria:
 - Core tests and selfhost verification remain healthy
 
 Validation commands:
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `python3 tools/build_selfhost.py`
 
 Decision log:

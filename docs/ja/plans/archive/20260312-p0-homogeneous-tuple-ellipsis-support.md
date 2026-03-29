@@ -38,12 +38,12 @@
 - C++ backend が `::std::tuple<int64, ...>` のような不正型を emit しないこと。
 - representative v1 lane（定数、ローカル変数、関数引数、戻り値、read-only index access）が target policy に従って emit できること。
 - 未対応 backend / lane は silent fallback せず fail-closed で止まること。
-- `python3 tools/check_todo_priority.py`、focused unit tests、`python3 tools/build_selfhost.py`、`git diff --check` が通ること。
+- `python3 tools/check/check_todo_priority.py`、focused unit tests、`python3 tools/build_selfhost.py`、`git diff --check` が通ること。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k tuple`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k tuple`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

@@ -23,8 +23,8 @@ Scope:
 - `src/pytra/compiler/east_parts/east3_opt_passes/non_escape_interprocedural_pass.py`
 - Import-resolution area (as needed: `core.py` / `transpile_cli.py` / EAST3 doc meta)
 - `src/hooks/cpp/emitter/cpp_emitter.py` (collapse fixed safe-call judgment)
-- `test/unit/test_east3_non_escape_*`
-- `test/unit/test_py2cpp_*` and `tools/check_py2cpp_transpile.py`
+- `tools/unittest/test_east3_non_escape_*`
+- `tools/unittest/test_py2cpp_*` and `tools/check/check_py2cpp_transpile.py`
 - Regeneration check for `sample/cpp/05_mandelbrot_zoom.cpp`
 
 Out of scope:
@@ -39,12 +39,12 @@ Acceptance criteria:
 - Existing `east3 optimizer` / `py2cpp` regressions pass with no regression.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_non_escape_*.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer*.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_*.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --force`
 - `rg -n "frames|save_gif|list<bytes>|object frames" sample/cpp/05_mandelbrot_zoom.cpp`
 
 Decision log:

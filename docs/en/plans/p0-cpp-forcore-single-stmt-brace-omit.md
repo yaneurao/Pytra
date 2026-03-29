@@ -21,7 +21,7 @@ Goal:
 In scope:
 - `src/hooks/cpp/emitter/cpp_emitter.py` (default brace-omission decision)
 - `src/hooks/cpp/emitter/stmt.py` (`ForCore` emission path)
-- `test/unit/test_py2cpp_codegen_issues.py` (regression)
+- `tools/unittest/test_py2cpp_codegen_issues.py` (regression)
 - `sample/cpp/18_mini_language_interpreter.cpp` (regenerated diff check)
 
 Out of scope:
@@ -36,10 +36,10 @@ Acceptance criteria:
 - Braces are omitted for single-statement loops (`lines.append(...)`) in `sample/cpp/18_mini_language_interpreter.cpp`.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force`
 
 Decision log:
 - 2026-03-02: Per user direction, filed `P0` to handle single-statement `ForCore` brace omission in `CppEmitter`.

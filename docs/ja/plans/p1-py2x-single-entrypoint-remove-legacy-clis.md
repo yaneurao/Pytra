@@ -38,23 +38,23 @@
 - 最終状態で `src/py2cpp.py` が削除され、主要回帰が通る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `rg -n "src/py2(?!x)\\w*\\.py" src tools test docs`
-- `python3 tools/check_py2x_transpile.py`（新設予定）
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_py2rs_transpile.py`
-- `python3 tools/check_py2cs_transpile.py`
-- `python3 tools/check_py2js_transpile.py`
-- `python3 tools/check_py2ts_transpile.py`
-- `python3 tools/check_py2go_transpile.py`
-- `python3 tools/check_py2java_transpile.py`
-- `python3 tools/check_py2swift_transpile.py`
-- `python3 tools/check_py2kotlin_transpile.py`
-- `python3 tools/check_py2rb_transpile.py`
-- `python3 tools/check_py2lua_transpile.py`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/check_py2php_transpile.py`
-- `python3 tools/check_py2nim_transpile.py`
+- `python3 tools/check/check_py2x_transpile.py`（新設予定）
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2cs_transpile.py`
+- `python3 tools/check/check_py2js_transpile.py`
+- `python3 tools/check/check_py2ts_transpile.py`
+- `python3 tools/check/check_py2go_transpile.py`
+- `python3 tools/check/check_py2java_transpile.py`
+- `python3 tools/check/check_py2swift_transpile.py`
+- `python3 tools/check/check_py2kotlin_transpile.py`
+- `python3 tools/check/check_py2rb_transpile.py`
+- `python3 tools/check/check_py2lua_transpile.py`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/check/check_py2php_transpile.py`
+- `python3 tools/check/check_py2nim_transpile.py`
 - `python3 tools/build_selfhost.py`
 - `python3 tools/build_selfhost_stage2.py`
 
@@ -84,7 +84,7 @@
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] selfhost 関連スクリプト（`build_selfhost*` / `check_selfhost_cpp_diff` / `selfhost_transpile` / `check_selfhost_direct_compile` / `verify_selfhost_end_to_end`）から `src/py2cpp.py` 直参照を除去し、`src/pytra-cli.py` 基準の呼び出しと `--selfhost-target auto`（旧 binary 互換）を導入。`check_selfhost_cpp_diff --skip-east3-contract-tests --cases test/fixtures/core/add.py` は実行可能で `mismatches=0` を確認。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] `tools/build_selfhost.py` を `py2x-selfhost` 起点へ切替え後、生成 `selfhost/py2cpp.cpp` は C++ コンパイルで未解決（`pytra::compiler::ler::*` 参照・help 文字列連結・ローカル変数束縛欠落）となるため、selfhost 導線は未成立のまま。`S2-05` は完了化せず継続する。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] `transpile_cli` の import 解決で `toolchain.*` / `toolchain.emit.*` を既知 import 扱いへ調整し、C++ emitter に self_hosted 由来の未lower method 呼び出し（`str.startswith/endswith` 等）フォールバックを追加。これにより `python3 tools/prepare_selfhost_source.py && python3 src/py2cpp.py selfhost/py2cpp.py -o /tmp/selfhost_py2cpp_oldpath.cpp` は再度通過。
-- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] `tools/check_legacy_cli_references.py` を追加し、`src/tools/test` 配下の `src/py2*.py` 文字列参照と `import py2*` を allowlist 以外で fail-fast 検出するガードを導入。`tools/run_local_ci.py` に同チェックを組み込み、`python3 tools/check_legacy_cli_references.py` で pass を確認。
+- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S3-01] `tools/check/check_legacy_cli_references.py` を追加し、`src/tools/test` 配下の `src/py2*.py` 文字列参照と `import py2*` を allowlist 以外で fail-fast 検出するガードを導入。`tools/run/run_local_ci.py` に同チェックを組み込み、`python3 tools/check/check_legacy_cli_references.py` で pass を確認。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] C++ emitter の import 解決で `toolchain.misc.` 接頭辞を `15` 文字で切る不具合を修正（正: `len("toolchain.misc.")`）。`build_selfhost.py` の先頭失敗は `pytra::compiler::ler::*` から `pytra::compiler::*` 未実体化へ前進し、`_print_help` 文字列連結・layer option 変数スコープ崩れは `src/pytra-cli.py` 側修正で解消した。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] `pytra-cli.py` の引数定義を runtime `ArgumentParser` 契約へ寄せ（`add_argument` 署名差の解消、`_add_common_args` の const 参照問題解消）、selfhost トランスパイル段階を再通過させた。現在の `build_selfhost.py` 失敗は `pytra::compiler::{transpile_cli,backend_registry_static}` 未実体化（runtime C++ ヘッダ欠落）に限定。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] `src/runtime/cpp/pytra/compiler/{transpile_cli,backend_registry_static}.{h,cpp}` を追加し、selfhost 生成 C++ のリンク失敗を解消。実行時は `[not_implemented]` を返す最小実装とし、`build_selfhost.py` は通過・`build_selfhost_stage2.py` は `[not_implemented]` 時に `selfhost/py2cpp.cpp` 再利用フォールバックで stage2 バイナリ生成を継続できる状態へ前進。

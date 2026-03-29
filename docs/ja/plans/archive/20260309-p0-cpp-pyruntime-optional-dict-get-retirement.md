@@ -36,10 +36,10 @@
 - helper が削除され、regression と parity が green である。
 
 確認コマンド:
-- `PYTHONPATH=src python3 test/unit/backends/cpp/test_cpp_runtime_iterable.py`
-- `PYTHONPATH=src python3 test/unit/backends/cpp/test_east3_cpp_bridge.py`
-- `PYTHONPATH=src python3 test/unit/backends/cpp/test_py2cpp_codegen_issues.py`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
+- `PYTHONPATH=src python3 tools/unittest/emit/cpp/test_cpp_runtime_iterable.py`
+- `PYTHONPATH=src python3 tools/unittest/emit/cpp/test_east3_cpp_bridge.py`
+- `PYTHONPATH=src python3 tools/unittest/emit/cpp/test_py2cpp_codegen_issues.py`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture`
 
 ## フェーズ
 

@@ -21,7 +21,7 @@
 - `src/py2lua.py`
 - `src/hooks/lua/emitter/`
 - `src/runtime/lua/pytra/`（必要最小限）
-- `tools/check_py2lua_transpile.py` / `test/unit/test_py2lua_smoke.py` / parity 導線
+- `tools/check/check_py2lua_transpile.py` / `tools/unittest/test_py2lua_smoke.py` / parity 導線
 - `sample/lua` と関連ドキュメント
 
 非対象:
@@ -32,23 +32,23 @@
 受け入れ基準:
 - `py2lua.py` で EAST3 から Lua コードを生成できる。
 - 最小 fixture（`add` / `if_else` / `for_range`）の変換・実行が通る。
-- `tools/check_py2lua_transpile.py` と smoke/parity 回帰導線が用意される。
+- `tools/check/check_py2lua_transpile.py` と smoke/parity 回帰導線が用意される。
 - `sample/lua` と `docs/ja` 利用手順・対応表が同期される。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2lua_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2lua_transpile.py`
 - `python3 -m unittest discover -s test/unit -p 'test_py2lua_smoke.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets lua --all-samples --ignore-unstable-stdout`
 
 決定ログ:
 - 2026-02-28: ユーザー指示により、Lua backend 追加を最優先（P0）として着手する方針を確定した。
 - 2026-02-28: [ID: `P0-LUA-BACKEND-01-S1-01`] `docs/ja/spec/spec-lua-native-backend.md` を追加し、入力責務（EAST3 only）、fail-closed、runtime 境界、非対象を契約として固定した。
-- 2026-02-28: [ID: `P0-LUA-BACKEND-01-S1-02`] `src/py2lua.py` と `src/hooks/lua/emitter/lua_native_emitter.py` を追加し、`add/if_else/for_range` を通す最小 native 経路を実装した。`test/unit/test_py2lua_smoke.py`（9件）を追加して CLI/EAST3 読み込み/最小 fixture 変換を固定した。
+- 2026-02-28: [ID: `P0-LUA-BACKEND-01-S1-02`] `src/py2lua.py` と `src/hooks/lua/emitter/lua_native_emitter.py` を追加し、`add/if_else/for_range` を通す最小 native 経路を実装した。`tools/unittest/test_py2lua_smoke.py`（9件）を追加して CLI/EAST3 読み込み/最小 fixture 変換を固定した。
 - 2026-02-28: [ID: `P0-LUA-BACKEND-01-S2-01`] Lua emitter に `Assign(target/targets)`・`While`・`Dict/Subscript/IfExp/JoinedStr/Attribute/Box/Unbox`・Attribute Call lower を追加し、`test_py2lua_smoke.py` を 12 件へ拡張して通過した。fixture 横断では `ok 22 -> 57` へ改善し、残差は `ClassDef/ListComp/Lambda` など S2-02 領域へ収束した。
 - 2026-02-28: [ID: `P0-LUA-BACKEND-01-S2-02`] `ClassDef`/constructor/method dispatch/`IsInstance`/import lower（`math` と `pytra.utils png/gif` stub）を追加し、`test_py2lua_smoke.py` を 15 件へ拡張して通過した。fixture 横断では `ok 57 -> 81` へ改善し、残差は `ListComp/Lambda/ObjStr` など非 class 領域へ収束した。
-- 2026-02-28: [ID: `P0-LUA-BACKEND-01-S3-01`] `tools/check_py2lua_transpile.py` を追加し、`checked=86 ok=86 fail=0 skipped=53` を確認した。`runtime_parity_check --targets lua` 導線を追加し、`17_monte_carlo_pi` で `toolchain_missing` 付き PASS（exit 0）を確認した。
-- 2026-02-28: [ID: `P0-LUA-BACKEND-01-S3-02`] `tools/regenerate_samples.py` に `lua` 設定を追加し、`sample/lua` を `02/03/04/17` で再生成した（`summary: total=4 skip=0 regen=4 fail=0`）。`docs/ja/how-to-use.md` / `docs/ja/spec/spec-user.md` / `docs/ja/spec/spec-import.md` / `sample/README-ja.md` に Lua 導線と現状カバレッジを同期した。
+- 2026-02-28: [ID: `P0-LUA-BACKEND-01-S3-01`] `tools/check/check_py2lua_transpile.py` を追加し、`checked=86 ok=86 fail=0 skipped=53` を確認した。`runtime_parity_check --targets lua` 導線を追加し、`17_monte_carlo_pi` で `toolchain_missing` 付き PASS（exit 0）を確認した。
+- 2026-02-28: [ID: `P0-LUA-BACKEND-01-S3-02`] `tools/gen/regenerate_samples.py` に `lua` 設定を追加し、`sample/lua` を `02/03/04/17` で再生成した（`summary: total=4 skip=0 regen=4 fail=0`）。`docs/ja/how-to-use.md` / `docs/ja/spec/spec-user.md` / `docs/ja/spec/spec-import.md` / `sample/README-ja.md` に Lua 導線と現状カバレッジを同期した。
 
 ## 分解
 

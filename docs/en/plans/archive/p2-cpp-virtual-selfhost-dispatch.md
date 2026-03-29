@@ -12,7 +12,7 @@ Even if behavior remains correct as-is, simplification improves readability, mai
 
 - In selfhost-generated C++ (including regenerated `sample/` outputs), method-call paths should use `virtual` where possible, reducing unnecessary `type_id` dispatch branches.
 - `py2cpp.py` and `CppEmitter` should generate override-compatible call paths with minimal branching.
-- No regression in `tools/check_selfhost_cpp_diff.py` / `tools/verify_selfhost_end_to_end.py`.
+- No regression in `tools/check/check_selfhost_cpp_diff.py` / `tools/verify_selfhost_end_to_end.py`.
 
 ## Subtasks
 
@@ -64,7 +64,7 @@ Even if behavior remains correct as-is, simplification improves readability, mai
 12. `P2-CPP-SELFHOST-VIRTUAL-01-S4-03`: Reflect concise progress to `docs/ja/spec/spec-dev.md` (and `spec-type_id` if needed).
 
 `S4` finalized (2026-02-26):
-- Added `test/unit/test_selfhost_virtual_dispatch_regression.py`:
+- Added `tools/unittest/test_selfhost_virtual_dispatch_regression.py`:
   - verifies no reintroduction of `type_id` comparison/switch dispatch in `sample/cpp/*.cpp` and `src/runtime/cpp/pytra-gen/**/*.cpp` (excluding `built_in/type_id.cpp`).
 - Reconfirmed:
   - `check_selfhost_cpp_diff`: `mismatches=0 known_diffs=2 skipped=0`
@@ -78,11 +78,11 @@ Even if behavior remains correct as-is, simplification improves readability, mai
 15. `P2-CPP-SELFHOST-VIRTUAL-01-S5-03`: Add checks that at least two re-transpiled target cases keep semantics in `verify_selfhost_end_to_end.py`, locking no conflict between simplification and recursive calls.
 
 `S5` finalized (2026-02-26):
-- Added/updated `test/unit/test_py2cpp_codegen_issues.py` cases:
+- Added/updated `tools/unittest/test_py2cpp_codegen_issues.py` cases:
   - base-qualified method call path
   - `super().method(...)` lowering path (`Base::method(*this, ...)`)
   - staticmethod/classmethod/object-receiver boundaries with no `type_id` dispatch-switch generation
-- Added selfhost e2e regression in `test/unit/test_selfhost_virtual_dispatch_regression.py` using `tools/verify_selfhost_end_to_end.py --skip-build` for:
+- Added selfhost e2e regression in `tools/unittest/test_selfhost_virtual_dispatch_regression.py` using `tools/verify_selfhost_end_to_end.py --skip-build` for:
   - `test/fixtures/core/fib.py`
   - `sample/py/17_monte_carlo_pi.py`
 

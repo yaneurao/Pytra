@@ -23,8 +23,8 @@ In scope:
 - `src/pytra/compiler/east_parts/east3_optimizer.py`
 - `src/pytra/compiler/east_parts/east3_opt_passes/*` (add new lifetime pass set)
 - `src/pytra/compiler/east_parts/east3_opt_passes/non_escape_interprocedural_pass.py` (connection points only as needed)
-- `test/unit/test_east3_optimizer*.py`
-- `test/unit/test_east3_lifetime_*.py` (new)
+- `tools/unittest/test_east3_optimizer*.py`
+- `tools/unittest/test_east3_lifetime_*.py` (new)
 - Minimal required additions to `spec-east3-optimizer`
 
 Out of scope:
@@ -39,11 +39,11 @@ Acceptance criteria:
 - Existing optimizer regressions and transpile smoke (`py2cpp`/`py2rs`) pass with no regressions.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_lifetime_*.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer*.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2rs_transpile.py`
 
 Decision log:
 - 2026-03-02: Per user direction, fixed P0 policy to commonize variable lifetime analysis in EAST3 before backend-specific optimization.

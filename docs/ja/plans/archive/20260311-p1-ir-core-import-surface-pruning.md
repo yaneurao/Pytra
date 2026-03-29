@@ -25,7 +25,7 @@
 - `src/toolchain/ir/core_module_parser.py`
 - `src/toolchain/ir/core_stmt_parser.py`
 - `src/toolchain/compiler/east_parts/*`
-- `test/unit/ir/test_east_core_source_contract_*.py`
+- `tools/unittest/ir/test_east_core_source_contract_*.py`
 - `docs/ja/todo/index.md` / `docs/en/todo/index.md`
 - `docs/ja/plans/p1-ir-core-import-surface-pruning.md` / `docs/en/plans/p1-ir-core-import-surface-pruning.md`
 
@@ -40,12 +40,12 @@
 - representative regression として `test_east_core*.py`、`test_prepare_selfhost_source.py`、`tools/build_selfhost.py` が通る。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/selfhost -p 'test_prepare_selfhost_source.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/selfhost -p 'test_prepare_selfhost_source.py'`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_transpiler_version_gate.py`
-- `python3 tools/run_regen_on_version_bump.py --dry-run`
+- `python3 tools/check/check_transpiler_version_gate.py`
+- `python3 tools/run/run_regen_on_version_bump.py --dry-run`
 - `git diff --check`
 
 分解:

@@ -44,7 +44,7 @@
 - `docs/ja/todo/archive/index.md` に archive plan へのリンクを追加する。
 - `docs/en/` mirror の plan / TODO / archive も同じ handoff を反映する。
 - `plans/README.md` の active live plan 一覧から完了 plan を外し、backlog / stale-complete の分類基準が崩れていないことを確認する。
-- handoff 後に `python3 tools/check_todo_priority.py` と `git diff --check` を実行する。
+- handoff 後に `python3 tools/check/check_todo_priority.py` と `git diff --check` を実行する。
 
 ## 推奨テンプレート
 

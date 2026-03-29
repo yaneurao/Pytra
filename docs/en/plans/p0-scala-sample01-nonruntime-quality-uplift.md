@@ -21,7 +21,7 @@ Goal:
 In scope:
 - `src/hooks/scala/emitter/scala_native_emitter.py`
 - `src/hooks/code_emitter.py` (only where Scala common-rule usage is involved)
-- `tools/check_py2scala_transpile.py`
+- `tools/check/check_py2scala_transpile.py`
 - `sample/scala/01_mandelbrot.scala` (reflected via regeneration)
 
 Out of scope:
@@ -33,13 +33,13 @@ Acceptance criteria:
 - In hot paths of `sample/scala/01_mandelbrot.scala`, `mutable.ArrayBuffer[Any]` is replaced by typed containers.
 - Unnecessary `boundary.Label` is not emitted in simple while/for-like paths.
 - Same-type conversion chains (for example, `__pytra_int(0L)`) are reduced, and type-known paths are emitted as direct expressions.
-- `tools/check_py2scala_transpile.py` and sample parity (`01_mandelbrot`) pass with no regression.
+- `tools/check/check_py2scala_transpile.py` and sample parity (`01_mandelbrot`) pass with no regression.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/regenerate_samples.py --langs scala --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets scala 01_mandelbrot --ignore-unstable-stdout`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs scala --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets scala 01_mandelbrot --ignore-unstable-stdout`
 
 Breakdown:
 - [x] [ID: P0-SCALA-S01-NONRUNTIME-QUALITY-01-S1-01] Compare `sample/cpp/01` and `sample/scala/01`, and lock non-runtime quality gaps (type degradation/redundant casts/control structures) as concrete fragments.

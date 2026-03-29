@@ -37,10 +37,10 @@
 - 既存 import 回帰（missing module / cycle / relative import）を壊さないこと。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_features.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/check_py2rs_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2rs_transpile.py`
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、`from ... import *` を「拒否」ではなく「正式対応 + 解決不能は fail-closed」方針で `P2` 起票した。

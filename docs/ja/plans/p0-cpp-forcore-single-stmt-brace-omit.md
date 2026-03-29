@@ -21,7 +21,7 @@
 対象:
 - `src/hooks/cpp/emitter/cpp_emitter.py`（brace 省略既定判定）
 - `src/hooks/cpp/emitter/stmt.py`（`ForCore` 出力経路）
-- `test/unit/test_py2cpp_codegen_issues.py`（回帰）
+- `tools/unittest/test_py2cpp_codegen_issues.py`（回帰）
 - `sample/cpp/18_mini_language_interpreter.cpp`（再生成差分確認）
 
 非対象:
@@ -36,10 +36,10 @@
 - `sample/cpp/18_mini_language_interpreter.cpp` の単文ループ（`lines.append(...)`）で `{}` 省略が確認できる。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force`
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、`ForCore` 単文ループの `{}` 省略を `CppEmitter` 側で扱う方針で `P0` 起票。

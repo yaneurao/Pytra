@@ -27,7 +27,7 @@
 確認コマンド:
 
 ```bash
-python3 tools/runtime_parity_check.py \
+python3 tools/check/runtime_parity_check.py \
   --targets cpp \
   --case-root sample \
   --all-samples \
@@ -83,7 +83,7 @@ python3 src/toolchain/emit/all.py work/tmp/01_mandelbrot.east3.json --target rs 
   -o work/tmp/east2x_01.rs --no-runtime-hook
 
 # 3) 主要 target（cpp/rs/js）の backend-only smoke
-python3 tools/check_east2x_smoke.py
+python3 tools/check/check_east2x_smoke.py
 ```
 
 補足:

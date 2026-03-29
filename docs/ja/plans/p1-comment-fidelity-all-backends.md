@@ -22,8 +22,8 @@
 対象:
 - `src/hooks/*/emitter/*.py`（`cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua`）
 - `src/py2*.py`（必要な導線更新のみ）
-- `test/unit/test_py2*smoke.py`
-- （必要なら）`tools/check_comment_fidelity.py`
+- `tools/unittest/test_py2*smoke.py`
+- （必要なら）`tools/check/check_comment_fidelity.py`
 - `sample/*` 再生成導線
 
 非対象:
@@ -39,9 +39,9 @@
 - 主要 backend の smoke test でコメント忠実性の回帰テストが通過する。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 -m unittest discover -s test/unit -p 'test_py2*smoke.py' -v`
-- `python3 tools/regenerate_samples.py --langs cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua --force`
+- `python3 tools/gen/regenerate_samples.py --langs cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua --force`
 
 決定ログ:
 - 2026-02-28: ユーザー要望により「全言語で、元ソースにないコメント出力を禁止し、元コメントを強制反映する」方針を `P1-COMMENT-FIDELITY-01` として起票。

@@ -41,10 +41,10 @@
 - 既存 Python 入力の transpile/smoke が非退行で通過する。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 -m unittest discover -s test/unit -p 'test_east*.py' -v`
 - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 決定ログ:
 - 2026-03-01: ユーザー指示により、「EAST2 を最初の共通 IR として運用するための Python 依存排除」を P1 で分割着手する方針を確定した。
@@ -57,7 +57,7 @@
 - 2026-03-01: `meta.legacy_compat_bridge`（既定 `true`）を `east2_to_east3_lowering.py` へ導入し、legacy name/builtin fallback を段階的に停止可能な互換ブリッジを明示化した。
 - 2026-03-01: 回帰として `legacy_compat_bridge=false` 時に legacy fallback が無効化されるテスト（builtin/type-predicate）を追加し、既存 semantic-tag 経路と両立することを確認した。
 - 2026-03-01: `test_east_core.py` に「semantic_tag マッピングが adapter 経由であること」を検知する回帰を追加し、Python 依存再混入の検知導線を固定した。
-- 2026-03-01: 代表非退行として `tools/check_py2cpp_transpile.py`（`checked=136 ok=136 fail=0 skipped=6`）と `runtime_parity_check.py add --targets cpp,rs`（`ok=2`）を実行し、移行後の transpile/parity が成立することを確認した。
+- 2026-03-01: 代表非退行として `tools/check/check_py2cpp_transpile.py`（`checked=136 ok=136 fail=0 skipped=6`）と `runtime_parity_check.py add --targets cpp,rs`（`ok=2`）を実行し、移行後の transpile/parity が成立することを確認した。
 
 ## 分解
 

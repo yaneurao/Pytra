@@ -37,8 +37,8 @@
 確認コマンド:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2scala*' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cs*' -v`
-- `python3 tools/regenerate_samples.py --langs scala,cs --stems 01_mandelbrot --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets scala,cs --ignore-unstable-stdout 01_mandelbrot`
+- `python3 tools/gen/regenerate_samples.py --langs scala,cs --stems 01_mandelbrot --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets scala,cs --ignore-unstable-stdout 01_mandelbrot`
 
 分解:
 - [x] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S1-01] Scala emitter で算術式の優先順位保持を修正し、`sample/scala/01` の崩れ式を解消する。

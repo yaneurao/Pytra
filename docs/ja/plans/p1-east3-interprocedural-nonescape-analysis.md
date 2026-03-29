@@ -23,7 +23,7 @@
 - `src/pytra/compiler/east_parts/east3_optimizer.py`
 - `src/pytra/compiler/east_parts/east3_opt_passes/*`（新規 `NonEscapeInterproceduralPass` 追加）
 - `src/pytra/compiler/east_parts/east3_optimizer_cli.py`（必要なら trace/dump 拡張）
-- `test/unit/test_east3_optimizer*.py`（解析結果の回帰固定）
+- `tools/unittest/test_east3_optimizer*.py`（解析結果の回帰固定）
 - 必要なら `docs/ja/spec/spec-east3-optimizer.md` へ最小反映
 
 非対象:
@@ -48,9 +48,9 @@
 - 既存 `east3 optimizer` 回帰が非退行。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer*.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 決定ログ:
 - 2026-02-28: ユーザー指示により、RAII 置換の前段として EAST3 側に関数間 non-escape 解析（SCC + fixed point）を導入する方針を確定した。
@@ -62,7 +62,7 @@
 - 2026-02-28: `test_east3_non_escape_interprocedural_pass.py` で summary 伝播（sink->wrap）・return 起源伝播（identity->wrap2）・policy override を回帰固定した。
 - 2026-02-28: 収束後 summary を関数ノード `meta.escape_summary` と call 式 `meta.non_escape_callsite` へ注釈する実装を追加し、unit test に注釈 payload の回帰アサーションを追加した。
 - 2026-02-28: 相互再帰 + 外部呼び出し混在ケース（`a <-> b` と `unknown_sink`）の summary 伝播テストと、2回目実行で `changed=False` になる決定性テストを追加した。
-- 2026-02-28: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer*.py' -v`（42件 OK）と `python3 tools/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）を再実行し、非退行を確認した。
+- 2026-02-28: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer*.py' -v`（42件 OK）と `python3 tools/check/check_py2cpp_transpile.py`（`checked=133 ok=133 fail=0 skipped=6`）を再実行し、非退行を確認した。
 
 ## 分解
 

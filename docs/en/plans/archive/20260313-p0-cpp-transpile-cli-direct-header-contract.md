@@ -10,7 +10,7 @@ Related TODO:
 - `ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01` in `docs/en/todo/index.md`
 
 Background:
-- `test_compiler_transpile_cli_typed_shim_skips_legacy_wrapper()` in `test/unit/common/test_py2x_entrypoints_contract.py` still tries to read `src/runtime/cpp/pytra/compiler/transpile_cli.h` as though a checked-in public wrapper still exists.
+- `test_compiler_transpile_cli_typed_shim_skips_legacy_wrapper()` in `tools/unittest/common/test_py2x_entrypoints_contract.py` still tries to read `src/runtime/cpp/pytra/compiler/transpile_cli.h` as though a checked-in public wrapper still exists.
 - In the live tree, that checked-in `src/runtime/cpp/pytra/compiler/transpile_cli.h` file is already gone, while `src/runtime/cpp/generated/compiler/transpile_cli.h` and `src/runtime/cpp/generated/compiler/transpile_cli.cpp` are the direct-ownership artifacts for the typed shim.
 - `docs/ja/spec/spec-runtime.md` already fixes the C++ contract as `public_headers == compiler_headers` on the direct-ownership header, so this focused contract test is the stale assumption that remains behind.
 
@@ -19,7 +19,7 @@ Goal:
 - Stop requiring the deleted checked-in `cpp/pytra` wrapper in the source contract.
 
 In scope:
-- `test/unit/common/test_py2x_entrypoints_contract.py`
+- `tools/unittest/common/test_py2x_entrypoints_contract.py`
 - Related plan / TODO / archive records if needed
 
 Out of scope:
@@ -33,8 +33,8 @@ Acceptance criteria:
 - The typed shim still guards the direct call into `_front.load_east3_document_typed(...)`.
 
 Verification commands:
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 /workspace/Pytra/test/unit/common/test_py2x_entrypoints_contract.py -k typed_shim_skips_legacy_wrapper`
-- `python3 /workspace/Pytra/tools/check_todo_priority.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src python3 /workspace/Pytra/tools/unittest/common/test_py2x_entrypoints_contract.py -k typed_shim_skips_legacy_wrapper`
+- `python3 /workspace/Pytra/tools/check/check_todo_priority.py`
 - `git -C /workspace/Pytra diff --check`
 
 Breakdown:

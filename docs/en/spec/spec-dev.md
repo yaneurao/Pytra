@@ -30,7 +30,7 @@ This document defines the transpiler's implementation policy, structure, and con
 - The current 3-layer backends are `rs/cs/js/ts/go/java/kotlin/swift/ruby/lua/php/scala`.
 - `py2<lang>.py` must keep the order `load_east3_document -> lower_east3_to_<lang>_ir -> optimize_<lang>_ir -> transpile`, and must not insert logic that skips layer boundaries.
 - `lower/optimizer` must not import `emitter`, and `emitter` must not import `lower/optimizer`.
-- The canonical regression guard is `python3 tools/check_noncpp_east3_contract.py`.
+- The canonical regression guard is `python3 tools/check/check_noncpp_east3_contract.py`.
 
 ### 1.2 Backend-Shared Artifact / Writer Contract (Linked-Program Period)
 
@@ -489,7 +489,7 @@ Names starting with `_` are treated as internal implementation details. The foll
   - Options: `--std` (default `c++20`), `--opt` (default `-O2`)
   - If `manifest.modules` is not an array, or if there is no valid `source`, exit with an error.
   - If `manifest.include_dir` is missing, use sibling `include/` next to the manifest as the default.
-- The `./pytra --build` route, `src/pytra-cli.py`, and `tools/gen_makefile_from_manifest.py` described in `docs/en/spec/spec-make.md` were already implemented as of 2026-02-24.
+- The `./pytra --build` route, `src/pytra-cli.py`, and `tools/gen/gen_makefile_from_manifest.py` described in `docs/en/spec/spec-make.md` were already implemented as of 2026-02-24.
 
 ### Guard Rules for py2cpp Commonization
 
@@ -500,13 +500,13 @@ Names starting with `_` are treated as internal implementation details. The foll
 - When modifying an existing generic helper inside `pytra-cli.py --target cpp`, also evaluate whether it can be moved into the common layer, and record the decision in `docs/ja/plans/p1-py2cpp-reduction.md`.
 - If an emergency hotfix temporarily adds a generic helper to `pytra-cli.py --target cpp`, the implementation site must include a `TEMP-CXX-HOTFIX` comment and the matching task ID.
 - A temporary helper must be extracted into `src/toolchain/compiler/` within either 7 days of addition or the next patch release, whichever comes first.
-- Until the extraction is done, keep an extraction task open in `docs/ja/todo/index.md`, and record the reason for the `tools/check_py2cpp_helper_guard.py` allowlist update in `docs/ja/plans/p1-py2cpp-reduction.md`.
-- These responsibility boundaries are validated by `tools/check_py2cpp_boundary.py` and run continuously through `tools/run_local_ci.py`.
+- Until the extraction is done, keep an extraction task open in `docs/ja/todo/index.md`, and record the reason for the `tools/check/check_py2cpp_helper_guard.py` allowlist update in `docs/ja/plans/p1-py2cpp-reduction.md`.
+- These responsibility boundaries are validated by `tools/check/check_py2cpp_boundary.py` and run continuously through `tools/run/run_local_ci.py`.
 - Generic helpers in `src/toolchain/compiler/transpile_cli.py` use per-feature `class + @staticmethod` (`*Helpers`) as the canonical layout. `pytra-cli.py --target cpp` uses class-level imports and startup binding only. Top-level functions remain temporarily for compatibility with existing CLI/selfhost callers.
 - Inside `ImportGraphHelpers`, `analyze_import_graph` and `build_module_east_map` are operated as thin wrappers delegating their implementation body to `src/toolchain/compiler/east_parts/east1_build.py` (only the compatibility public API is retained).
 - The import-graph/build entrypoints in `pytra-cli.py --target cpp` (`_analyze_import_graph`, `build_module_east_map`) are restricted to delegation into `East1BuildHelpers`; implementation details must not be brought back into `transpile_cli`.
-- Regressions are guarded through `test/unit/ir/test_east1_build.py`, `test/unit/toolchain/emit/cpp/test_py2cpp_east1_build_bridge.py`, and `tools/check_py2cpp_transpile.py`, which detect responsibility backflow in dependency analysis.
-- As part of `P0-PY2CPP-SPLIT-01`, also run `python3 -m unittest discover -s test/unit/toolchain/emit/cpp -p 'test_py2cpp_smoke.py'` to confirm that the `pytra-cli.py --target cpp` responsibility boundary (`tools/check_py2cpp_boundary.py`) remains intact.
+- Regressions are guarded through `tools/unittest/ir/test_east1_build.py`, `tools/unittest/emit/cpp/test_py2cpp_east1_build_bridge.py`, and `tools/check/check_py2cpp_transpile.py`, which detect responsibility backflow in dependency analysis.
+- As part of `P0-PY2CPP-SPLIT-01`, also run `python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_smoke.py'` to confirm that the `pytra-cli.py --target cpp` responsibility boundary (`tools/check/check_py2cpp_boundary.py`) remains intact.
 
 ### 3.1 Imports and `runtime/cpp`
 
@@ -594,7 +594,7 @@ Constraints:
 - `src/pytra/utils/png.py` uses a pure-Python implementation with CRC32, Adler32, and DEFLATE stored blocks and must not depend on `binascii`, `zlib`, or `struct`.
 - Acceptance criteria:
   - During replacement work, the bytes produced by `src/pytra/utils/*.py` and the output of each language runtime must match for identical input.
-  - On C++, run `tools/verify_image_runtime_parity.py` and confirm minimum PNG/GIF cases match.
+  - On C++, run `tools/check/verify_image_runtime_parity.py` and confirm minimum PNG/GIF cases match.
 
 ### 3.3.1 Guard for std/utils SoT Operation (No Handwritten Reimplementation)
 
@@ -602,7 +602,7 @@ Constraints:
 - Equivalent logic to the SoT must not be handwritten under `src/runtime/<lang>/native/**`, legacy `src/runtime/<lang>/pytra-core/**`, or compatibility leftovers under `src/runtime/<lang>/pytra/**`.
 - SoT-derived code must always be generated into the canonical generated lane (`src/runtime/<lang>/generated/**` for migrated backends, `src/runtime/<lang>/pytra-gen/**` for legacy backends) and must preserve `source:` and `generated-by:` traces.
 - Existing debt is allowed only when explicitly recorded in `tools/runtime_std_sot_allowlist.txt`; unrecorded additions are forbidden.
-- The canonical validation is `python3 tools/check_runtime_std_sot_guard.py`, which runs continuously through `tools/run_local_ci.py`.
+- The canonical validation is `python3 tools/check/check_runtime_std_sot_guard.py`, which runs continuously through `tools/run/run_local_ci.py`.
 
 ### 3.4 Naming of Python Helper Libraries
 
@@ -628,8 +628,8 @@ Constraints:
   - any optimization that changes the image output specification, including PNG chunk layout, GIF control blocks, or color-table order
   - any change to defaults, formats, or rounding behavior that diverges from the Python SoT
 - Acceptance conditions:
-  - after changes, `python3 tools/verify_image_runtime_parity.py` must return `True`
-  - `test/unit/common/test_image_runtime_parity.py` and `test/unit/toolchain/emit/cpp/test_py2cpp_features.py` must pass
+  - after changes, `python3 tools/check/verify_image_runtime_parity.py` must return `True`
+  - `tools/unittest/common/test_image_runtime_parity.py` and `tools/unittest/emit/cpp/test_py2cpp_features.py` must pass
 
 ## 4. Validation Procedure (C++)
 
@@ -674,7 +674,7 @@ Constraints:
 
 ### 5.1 CodeEmitter Test Policy
 
-- Regressions in `src/toolchain/emit/common/emitter/code_emitter.py` are covered by `test/unit/common/test_code_emitter.py`.
+- Regressions in `src/toolchain/emit/common/emitter/code_emitter.py` are covered by `tools/unittest/common/test_code_emitter.py`.
 - Main targets:
   - output-buffer operations (`emit`, `emit_stmt_list`, `next_tmp`)
   - dynamic-input sanitization (`any_to_dict`, `any_to_list`, `any_to_str`, `any_dict_get`)
@@ -689,7 +689,7 @@ Constraints:
 - `src/py2rs.py` must not depend on `src/toolchain/emit/common/` or `src/rs_module/`; the canonical runtime now lives under `src/runtime/rs/{native,generated}/`.
 - For non-C++/non-C# backends, checked-in `src/runtime/<lang>/pytra/**` must not exist.
 - Separate language-specific differences into `src/toolchain/emit/rs/profiles/` and `src/toolchain/emit/rs/`.
-- The canonical smoke check for convertibility is `tools/check_py2rs_transpile.py`.
+- The canonical smoke check for convertibility is `tools/check/check_py2rs_transpile.py`.
 - Default `--east-stage` is `3`. `--east-stage 2` remains a migration-compatibility mode with a warning.
 - The current milestone prioritizes successful transpilation. Rust compile compatibility and output quality improve in later stages.
 
@@ -700,7 +700,7 @@ Constraints:
 - `src/py2js.py` must not depend on `src/toolchain/emit/common/`.
 - Separate language-specific differences into `src/toolchain/emit/js/profiles/` and `src/toolchain/emit/js/`.
 - Treat `browser` and `browser.widgets.dialog` as externally provided runtime libraries in the browser environment, so `py2js` must not generate the import bodies themselves.
-- The canonical smoke check for convertibility is `tools/check_py2js_transpile.py`.
+- The canonical smoke check for convertibility is `tools/check/check_py2js_transpile.py`.
 - Default `--east-stage` is `3`. `--east-stage 2` remains a migration-compatibility mode with a warning.
 
 ### 5.4 Responsibility Boundary (CodeEmitter / EAST parser / Shared Compiler Layer)
@@ -794,4 +794,4 @@ Constraints:
 - `pytra-cli.py --target cpp` and the eight non-C++ converters (`py2rs.py`, `py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`) all default to `--east-stage 3`.
 - `pytra-cli.py --target cpp` accepts only `--east-stage 3`; `--east-stage 2` is a hard error.
 - Only the eight non-C++ converters accept `--east-stage 2` as a migration-compatibility mode and must print `warning: --east-stage 2 is compatibility mode; default is 3.`
-- The canonical regression routes are `tools/check_py2cpp_transpile.py` and `tools/check_noncpp_east3_contract.py`.
+- The canonical regression routes are `tools/check/check_py2cpp_transpile.py` and `tools/check/check_noncpp_east3_contract.py`.

@@ -58,10 +58,10 @@
 - `@template` / linked-program specialization は JSON wrapper の generic helper へ将来流用できるが、本計画の必須前提ではない。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_runtime_cpp_layout.py`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_runtime_cpp_layout.py`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_*json*.py'`
 
 ## 1. 問題の本質

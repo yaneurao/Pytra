@@ -21,7 +21,7 @@ Goal:
 In scope:
 - `src/pytra/compiler/east_parts/east3_opt_passes/*` (add new pass or extend existing pass)
 - `src/hooks/cpp/emitter/stmt.py` / `src/hooks/cpp/emitter/collection_expr.py`
-- `test/unit/test_east3_cpp_bridge.py` / `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_east3_cpp_bridge.py` / `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/18_mini_language_interpreter.cpp` (regeneration check)
 
 Out of scope:
@@ -36,11 +36,11 @@ Acceptance criteria:
 - `check_py2cpp_transpile.py` and relevant unit tests pass, and reduction is confirmed at target points in `sample/cpp/18`.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force`
 
 Decision log:
 - 2026-03-02: Per user direction, filed `P0` for adding EAST3 safety markers and reducing to `= {};` in the C++ emitter.
@@ -50,8 +50,8 @@ Decision log:
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer.py' -v` (51 tests, OK)
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v` (92 tests, OK)
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` (98 tests, OK)
-  - `python3 tools/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force` (regen=1 fail=0)
-  - `python3 tools/check_py2cpp_transpile.py` (checked=136 ok=136 fail=0 skipped=6)
+  - `python3 tools/gen/regenerate_samples.py --langs cpp --stems 18_mini_language_interpreter --force` (regen=1 fail=0)
+  - `python3 tools/check/check_py2cpp_transpile.py` (checked=136 ok=136 fail=0 skipped=6)
 
 ## Breakdown
 

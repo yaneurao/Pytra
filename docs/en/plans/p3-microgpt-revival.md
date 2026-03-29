@@ -32,8 +32,8 @@ Acceptance criteria:
 - The mapping between archive history (old IDs) and resumed tasks (new IDs) is traceable in docs.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_microgpt_original_py2cpp_regression.py --expect-stage any-known`
 - `python3 src/py2cpp.py materials/refs/microgpt/microgpt-20260222.py -o work/out/microgpt_revival.cpp`
 
 Decision log:

@@ -31,10 +31,10 @@
 - EAST3 optimizer:
   - `P1-EAST3-NONESCAPE-IPA-01` の注釈利用
 - テスト/検証:
-  - `test/unit/test_cpp_runtime_*`
-  - `test/unit/test_py2cpp_*`
-  - `tools/check_py2cpp_transpile.py`
-  - `tools/runtime_parity_check.py`
+  - `tools/unittest/test_cpp_runtime_*`
+  - `tools/unittest/test_py2cpp_*`
+  - `tools/check/check_py2cpp_transpile.py`
+  - `tools/check/runtime_parity_check.py`
 
 非対象:
 - `str/dict/set` の同時 PyObj 化（本タスクでは扱わない）
@@ -119,17 +119,17 @@
 
 ## 検証コマンド（予定）
 
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_cpp_runtime_*.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_*.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets cpp --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp --all-samples --ignore-unstable-stdout`
 
 決定ログ:
 - 2026-02-28: ユーザー指示により、`str/dict/set` へ広げる前に `list` 単体で PyObj/RC モデル移行を優先する方針を確定した。
 - 2026-02-28: 移行リスク抑制のため、`value/pyobj` dual model を前提に段階切替する方針を採用した。
 - 2026-02-28: `docs/ja/spec/spec-cpp-list-reference-semantics.md` を新設し、現行 `value model` 契約（コピー代入）と移行先 `pyobj model` 契約（alias 共有）を明文化した。
-- 2026-02-28: alias 期待 fixture `test/fixtures/collections/list_alias_shared_mutation.py` を追加し、`python3 tools/runtime_parity_check.py --case-root fixture --targets cpp list_alias_shared_mutation` で `output mismatch`（Python=`True`, C++=`False`）を確認して差分を固定した。
+- 2026-02-28: alias 期待 fixture `test/fixtures/collections/list_alias_shared_mutation.py` を追加し、`python3 tools/check/runtime_parity_check.py --case-root fixture --targets cpp list_alias_shared_mutation` で `output mismatch`（Python=`True`, C++=`False`）を確認して差分を固定した。
 - 2026-02-28: `sample/py` + `test/fixtures` を AST スキャンし、list 型注釈を持つ `name = name` 代入の候補を棚卸しした結果、現時点の候補は `test/fixtures/collections/list_alias_shared_mutation.py:7 (b = a)` の 1 件のみだった。
 - 2026-02-28: runtime の `PyListIterObj` を owner list 参照型へ拡張し、`PyListObj::py_iter_or_raise()` が snapshot ではなく owner 実体を保持する iterator を返すよう変更した。
 - 2026-02-28: `test_cpp_runtime_iterable.py` に「反復中 `py_append` した要素を iterator が観測する」回帰を追加し、`test_cpp_runtime_iterable.py` / `test_cpp_runtime_boxing.py` の runtime compile-run テストがともに通過することを確認した。
@@ -138,7 +138,7 @@
 - 2026-02-28: 旧値モデル互換ブリッジとして `list<T>(object)` 経路が維持されることを `test_cpp_runtime_boxing.py` で固定した（`list<int64> legacy_list = list<int64>(as_list)` が動作し、PyListObj 側サイズが不変であることを確認）。
 - 2026-02-28: runtime 単体テストに list モデル回帰（owner 連動 iterator / `obj_to_list_obj` / legacy bridge）を追加し、`test_cpp_runtime_iterable.py` と `test_cpp_runtime_boxing.py` が通過することを確認した。
 - 2026-02-28: C++ emitter に `cpp_list_model`（`value|pyobj`）設定を追加し、`_cpp_type_text(list[...])` を model switch 経由へ集約した。`pyobj` モード時は list 型を `object` へ描画する。
-- 2026-02-28: `test_cpp_type.py` に list model switch 回帰を追加し、`python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）と合わせて非退行を確認した。
+- 2026-02-28: `test_cpp_type.py` に list model switch 回帰を追加し、`python3 tools/check/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）と合わせて非退行を確認した。
 - 2026-02-28: `pyobj` list モード向けに runtime helper（`py_extend/py_pop/py_clear/py_reverse/py_sort`）を追加し、emitter 側で `ListAppend/ListExtend/ListPop/ListClear/ListReverse/ListSort` を object runtime 呼び出しへ切り替えた。
 - 2026-02-28: list literal を `make_object(list<...>{...})` へ描画する分岐と、`list(...)` ctor の `pyobj` 経路、`Subscript` の list index を `py_at(...)` へ寄せる分岐を追加した。
 - 2026-02-28: `test_py2cpp_codegen_issues.py` に `pyobj` list モード回帰を追加し、`test_cpp_runtime_iterable.py` / `test_py2cpp_codegen_issues.py` / `check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）の通過を確認した。
@@ -156,9 +156,9 @@
 - 2026-02-28: `12_sort_visualizer` で `render(const object&)` 呼び出しに stack 縮退した `list<int64>` がそのまま渡される compile blocker を確認した。`type_bridge._coerce_call_arg` で `cpp_list_model=pyobj` かつ list 注釈シグネチャ時の effective target を `object` へ寄せ、stack list だけ `make_object(...)` する補正を追加した。`test_py2cpp_codegen_issues.py` に回帰（`test_pyobj_list_model_boxes_stack_list_when_call_target_param_is_list_annotation`）を追加し、`benchmark_cpp_list_models.py 12_sort_visualizer --warmup 0 --repeat 1 --allow-failures` で実行成功を確認した。
 - 2026-02-28: `13_maze_generation_steps` で tuple/list runtime blocker（`index access on non-indexable object`）を確認した。原因は `make_object(list<T>)` 内の `make_object(v)` が tuple overload を拾えず tuple 要素が `object()` に潰れる点と、pyobj list subscript の tuple unbox 不足だった。tuple boxing overload を `list<T>` より前に配置し、`_render_unbox_target_cast` に `tuple[...]` 用 `::std::make_tuple(py_at(...))` 変換を追加して解消した。`test_py2cpp_codegen_issues.py` の tuple subscript 回帰（`test_pyobj_list_model_tuple_subscript_unboxes_to_make_tuple_before_destructure`）と `benchmark_cpp_list_models.py 13_maze_generation_steps --warmup 0 --repeat 1 --allow-failures` 実行成功を確認した。
 - 2026-02-28: `05..16` の `pyobj` 単独 compile/run 検証を追加実施し、12件すべて成功（`passed=12 failed=0`）を確認した。検証コマンドは `python3 src/py2cpp.py ... --cpp-list-model pyobj` + `g++ -O0` + 実行をケースごとに回す one-shot スクリプト。これにより `S4-02-S2` を完了扱いとした。
-- 2026-02-28: `parse_py2cpp_argv` の `cpp_list_model_opt` 既定を `pyobj` に切替し、`py2cpp` 本体の fallback も `pyobj` へ統一した。`docs/ja/how-to-use.md` の C++ 節へ rollback 手順（`--cpp-list-model value`）を追記し、`test_parse_py2cpp_argv_defaults_cpp_list_model_to_pyobj` と `python3 tools/check_todo_priority.py` / `python3 tools/check_py2cpp_transpile.py` の通過を確認した。さらに `python3 src/py2cpp.py sample/py/18_mini_language_interpreter.py --single-file` と `--cpp-list-model value` の比較で、既定は `object lines = make_object(list<object>{});`、rollback 指定時は `list<str> lines = ...;` へ切り替わることを確認した。これにより `S4-02-S3` と親 `S4-02` を完了扱いとした。
+- 2026-02-28: `parse_py2cpp_argv` の `cpp_list_model_opt` 既定を `pyobj` に切替し、`py2cpp` 本体の fallback も `pyobj` へ統一した。`docs/ja/how-to-use.md` の C++ 節へ rollback 手順（`--cpp-list-model value`）を追記し、`test_parse_py2cpp_argv_defaults_cpp_list_model_to_pyobj` と `python3 tools/check/check_todo_priority.py` / `python3 tools/check/check_py2cpp_transpile.py` の通過を確認した。さらに `python3 src/py2cpp.py sample/py/18_mini_language_interpreter.py --single-file` と `--cpp-list-model value` の比較で、既定は `object lines = make_object(list<object>{});`、rollback 指定時は `list<str> lines = ...;` へ切り替わることを確認した。これにより `S4-02-S3` と親 `S4-02` を完了扱いとした。
 - 2026-02-28: `S4-03` として、旧 `value` 互換コードの撤去対象（emitter 分岐 / runtime bridge / CLI rollback）と段階撤去ステージ（A〜E）を確定した。あわせて別ID起票条件（parity/selfhost 退行、`list` 以外への波及、deprecation 期間明示の必要）を定義し、本IDの範囲を固定した。
-- 2026-02-28: `S4-04` として `docs/ja/how-to-use.md`（既定/rollback 手順）、`docs/ja/spec/spec-cpp-list-reference-semantics.md`（pyobj 既定 + value rollback 契約）、`docs/ja/todo/index.md`（親/子ID完了）を同期した。`python3 tools/check_todo_priority.py` を再実行し、TODO運用整合が崩れていないことを確認した。
+- 2026-02-28: `S4-04` として `docs/ja/how-to-use.md`（既定/rollback 手順）、`docs/ja/spec/spec-cpp-list-reference-semantics.md`（pyobj 既定 + value rollback 契約）、`docs/ja/todo/index.md`（親/子ID完了）を同期した。`python3 tools/check/check_todo_priority.py` を再実行し、TODO運用整合が崩れていないことを確認した。
 - 2026-03-20: `P0-LEGACY-API-CLEANUP-01-S4` として `cpp_list_model` デュアルモード（value/pyobj）を完全撤去した。emitter 初期値を `"pyobj"` 固定に変更し、value 分岐・CLI `--cpp-list-model` オプション・プロファイル上書き・`CppForIterModeHintPass` の value 向けヒント生成をすべて除去した。`tools/benchmark_cpp_list_models.py` を削除。テスト期待値を pyobj モード出力に更新。unit test 276 件通過を確認。
 
 ## 分解

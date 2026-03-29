@@ -23,8 +23,8 @@
 - backend: `src/hooks/{rs,cs,js,ts,go,java,kotlin,swift,ruby,lua}/emitter/*`
 - runtime 補助: `src/runtime/{rs,cs,go,java,kotlin,swift,ruby,lua}/**`（必要箇所のみ）
 - 検証:
-  - `test/unit/test_*emitter*.py`
-  - `tools/runtime_parity_check.py`（対象 backend 指定）
+  - `tools/unittest/test_*emitter*.py`
+  - `tools/check/runtime_parity_check.py`（対象 backend 指定）
   - `sample/*` の再生成差分
 
 非対象:
@@ -40,8 +40,8 @@
 
 確認コマンド:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_*emitter*.py' -v`
-- `PYTHONPATH=src python3 tools/runtime_parity_check.py --case-root sample --targets rs,cs,go,java,kotlin,swift,ruby,lua`
-- `python3 tools/check_todo_priority.py`
+- `PYTHONPATH=src python3 tools/check/runtime_parity_check.py --case-root sample --targets rs,cs,go,java,kotlin,swift,ruby,lua`
+- `python3 tools/check/check_todo_priority.py`
 
 ## S1-01 現行モデル棚卸し（差分マトリクス）
 
@@ -125,8 +125,8 @@
   - `typed_non_escape_value_path` で `&[T]` / `&BTreeMap<...>` をそのまま値型変数へ代入してしまう破綻を防ぎ、Rust の所有モデルに沿って値化する。
 - 回帰固定:
   - `test_py2rs_smoke.py::test_ref_container_args_materialize_value_path_with_to_vec_or_clone`
-  - `tools/check_py2rs_transpile.py`
-  - `tools/runtime_parity_check.py --case-root sample --targets rs --ignore-unstable-stdout 18_mini_language_interpreter`
+  - `tools/check/check_py2rs_transpile.py`
+  - `tools/check/runtime_parity_check.py --case-root sample --targets rs --ignore-unstable-stdout 18_mini_language_interpreter`
 
 ## S3-02 Kotlin pilot 実装メモ（GC backend）
 
@@ -148,8 +148,8 @@
     - `a: list[int] = xs`, `b: dict[str, int] = ys` が alias 代入でなく `toMutableList()/toMutableMap()` になることを固定。
 - 実行確認:
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin_smoke.py' -v`
-  - `python3 tools/check_py2kotlin_transpile.py`
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets kotlin --ignore-unstable-stdout 18_mini_language_interpreter`
+  - `python3 tools/check/check_py2kotlin_transpile.py`
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --targets kotlin --ignore-unstable-stdout 18_mini_language_interpreter`
 
 ## S4-01 C# 展開メモ（S4-01-S1-01）
 
@@ -164,8 +164,8 @@
   - `test_py2cs_smoke` に `test_ref_container_args_materialize_value_path_with_copy_ctor` を追加し、alias代入再発を検知する。
 - 検証:
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cs_smoke.py' -v`（PASS）
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets cs --ignore-unstable-stdout 18_mini_language_interpreter`（PASS）
-  - `python3 tools/check_py2cs_transpile.py` は既存未対応 fixture（`Yield` / `Swap`）2件で fail 継続（今回変更の新規退行なし）。
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --targets cs --ignore-unstable-stdout 18_mini_language_interpreter`（PASS）
+  - `python3 tools/check/check_py2cs_transpile.py` は既存未対応 fixture（`Yield` / `Swap`）2件で fail 継続（今回変更の新規退行なし）。
 
 ## S4-01 JS/TS 展開メモ（S4-01-S2-01）
 
@@ -180,8 +180,8 @@
 - 検証:
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2js_smoke.py' -v`（PASS）
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2ts_smoke.py' -v`（PASS）
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets js,ts --ignore-unstable-stdout 18_mini_language_interpreter`（PASS）
-  - `python3 tools/check_py2js_transpile.py` / `check_py2ts_transpile.py` は `east3-contract` 前段が `FAIL cs: src/py2cs.py missing ['choices=[\"2\", \"3\"]']` で停止（JS/TS実装差分外の共通 blocker）。
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --targets js,ts --ignore-unstable-stdout 18_mini_language_interpreter`（PASS）
+  - `python3 tools/check/check_py2js_transpile.py` / `check_py2ts_transpile.py` は `east3-contract` 前段が `FAIL cs: src/py2cs.py missing ['choices=[\"2\", \"3\"]']` で停止（JS/TS実装差分外の共通 blocker）。
 
 ## S4-01 Go 展開メモ（S4-01-S3-01）
 
@@ -194,8 +194,8 @@
   - `test_py2go_smoke` に `test_ref_container_args_materialize_value_path_with_copy_expr` を追加し、alias 代入再発を検知する。
 - 検証:
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v`（PASS）
-  - `python3 tools/check_py2go_transpile.py`（PASS）
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets go --ignore-unstable-stdout 18_mini_language_interpreter` は既存 Go 生成の `TokenLike` field 解決失敗で run_failed（本 task 外 blocker）。
+  - `python3 tools/check/check_py2go_transpile.py`（PASS）
+  - `python3 tools/check/runtime_parity_check.py --case-root sample --targets go --ignore-unstable-stdout 18_mini_language_interpreter` は既存 Go 生成の `TokenLike` field 解決失敗で run_failed（本 task 外 blocker）。
 
 分解:
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S1-01] backend 別の現行コンテナ所有モデル（値/参照/GC/ARC）を棚卸しし、差分マトリクスを作成する。

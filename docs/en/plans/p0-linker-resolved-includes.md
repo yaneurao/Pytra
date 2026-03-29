@@ -172,7 +172,7 @@ runtime モジュールの C++ 出力は、マルチファイルモード（`wri
 | `tools/runtime_symbol_index.json` | `compiler_headers` を実体パスに修正（S2 完了後は段階的に不要化） |
 | `src/runtime/cpp/generated/` | 段階的に撤去 |
 | `tools/runtime_generation_manifest.json` | C++ ターゲット撤去 |
-| `tools/gen_runtime_from_manifest.py` | `cpp_program_to_header` 撤去 |
+| `tools/gen/gen_runtime_from_manifest.py` | `cpp_program_to_header` 撤去 |
 
 ## 非対象
 

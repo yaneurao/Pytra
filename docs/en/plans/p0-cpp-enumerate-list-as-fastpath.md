@@ -21,8 +21,8 @@ Goal:
 Scope:
 - `src/runtime/cpp/pytra-core/built_in/py_runtime.h` (add `py_enumerate_list_as<T>`)
 - `src/hooks/cpp/emitter/stmt.py` (change typed enumerate fast-path output)
-- `test/unit/test_py2cpp_codegen_issues.py` (update fixed string for sample/18)
-- Runtime regressions such as `test/unit/test_cpp_runtime_boxing.py` when needed
+- `tools/unittest/test_py2cpp_codegen_issues.py` (update fixed string for sample/18)
+- Runtime regressions such as `tools/unittest/test_cpp_runtime_boxing.py` when needed
 
 Out of scope:
 - Contract changes to existing API `py_enumerate(object)`
@@ -36,11 +36,11 @@ Acceptance criteria:
 - Existing fail-closed behavior is preserved (safe behavior for non-list/object mismatch).
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --force`
 
 Decision log:
 - 2026-03-01: By user instruction, opened this P0 task to introduce `py_enumerate_list_as<T>()` to avoid intermediate list construction by `py_to_str_list_from_object`.

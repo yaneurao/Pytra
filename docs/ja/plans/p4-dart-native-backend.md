@@ -23,7 +23,7 @@
 
 受け入れ基準:
 - `transpile_to_dart_native(east_doc)` が EAST3 JSON → Dart ソースを生成できる。
-- `test/unit/backends/dart/test_py2dart_smoke.py` の基本テストが通る。
+- `tools/unittest/emit/dart/test_py2dart_smoke.py` の基本テストが通る。
 - `transpiler_versions.json` に `"dart": "0.1.0"` が登録されている。
 - `check_py2x_profiles.json` に Dart プロファイルが登録されている。
 

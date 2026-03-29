@@ -21,7 +21,7 @@
 対象:
 - Scala emitter の TODO/no-op 経路削減（`ForCore` / statement / image writer 呼び出し）
 - Scala runtime helper（画像出力・型変換・container 操作）の不足補完
-- `tools/runtime_parity_check.py` の Scala artifact optional 扱い撤廃
+- `tools/check/runtime_parity_check.py` の Scala artifact optional 扱い撤廃
 - Scala parity 用の回帰導線（コマンド/スクリプト/テスト）整備
 - ドキュメント（how-to-use / spec-tools）への運用反映
 
@@ -31,30 +31,30 @@
 - Scala 以外の backend 品質改善
 
 受け入れ基準:
-- `python3 tools/runtime_parity_check.py --case-root sample --targets scala --all-samples` が `pass=18 fail=0` になること。
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets scala --all-samples` が `pass=18 fail=0` になること。
 - Scala parity 実行で artifact 比較が有効になり、PNG/GIF 出力ケースで `artifact_presence_mismatch` / `artifact_missing` / `artifact_size_mismatch` が 0 件になること。
 - Scala fixture parity（正例マニフェスト）で `run_failed` / `output_mismatch` が 0 件になること。
-- `test/unit/test_runtime_parity_check_cli.py` の Scala 前提テストが新契約（artifact optional ではない）で通ること。
+- `tools/unittest/test_runtime_parity_check_cli.py` の Scala 前提テストが新契約（artifact optional ではない）で通ること。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2scala_transpile.py`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets scala --all-samples --summary-json out/scala_parity_sample_summary.json`
-- `python3 tools/runtime_parity_check.py --case-root fixture --targets scala <fixture-case-list> --summary-json out/scala_parity_fixture_summary.json`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2scala_transpile.py`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets scala --all-samples --summary-json out/scala_parity_sample_summary.json`
+- `python3 tools/check/runtime_parity_check.py --case-root fixture --targets scala <fixture-case-list> --summary-json out/scala_parity_fixture_summary.json`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2scala_smoke.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_runtime_parity_check_cli.py' -v`
 
 決定ログ:
 - 2026-03-01: Scala3 parity を「stdout のみ暫定一致」から「artifact 含む完全一致」へ引き上げる方針で P0 起票。
-- 2026-03-02: `python3 tools/runtime_parity_check.py --case-root sample --targets scala --all-samples --summary-json out/scala_parity_sample_summary.json` と `python3 tools/runtime_parity_check.py --case-root fixture --targets scala math_extended pathlib_extended inheritance_virtual_dispatch_multilang --summary-json out/scala_parity_fixture_summary.json` を実行し、現環境 baseline は `sample: toolchain_missing=18`, `fixture: toolchain_missing=3` で固定した（Scala toolchain 未導入のため run フェーズ未到達）。
+- 2026-03-02: `python3 tools/check/runtime_parity_check.py --case-root sample --targets scala --all-samples --summary-json out/scala_parity_sample_summary.json` と `python3 tools/check/runtime_parity_check.py --case-root fixture --targets scala math_extended pathlib_extended inheritance_virtual_dispatch_multilang --summary-json out/scala_parity_fixture_summary.json` を実行し、現環境 baseline は `sample: toolchain_missing=18`, `fixture: toolchain_missing=3` で固定した（Scala toolchain 未導入のため run フェーズ未到達）。
 - 2026-03-02: Scala fixture 正例マニフェストを `test/fixtures/scala_positive_manifest.txt` として固定し、負例（`signature/ng_*`, `typing/any_class_alias.py`）を別タスク管理する境界を分離した。
-- 2026-03-02: `save_gif` / `write_rgb_png` の Scala 出力を `__pytra_noop` から `__pytra_save_gif` / `__pytra_write_rgb_png` へ接続し、`__pytra_grayscale_palette` と PNG/GIF 書き出し helper を runtime helper 群へ追加した。`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2scala_smoke.py' -v` と `python3 tools/check_py2scala_transpile.py` を実行し非退行を確認した。
+- 2026-03-02: `save_gif` / `write_rgb_png` の Scala 出力を `__pytra_noop` から `__pytra_save_gif` / `__pytra_write_rgb_png` へ接続し、`__pytra_grayscale_palette` と PNG/GIF 書き出し helper を runtime helper 群へ追加した。`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2scala_smoke.py' -v` と `python3 tools/check/check_py2scala_transpile.py` を実行し非退行を確認した。
 - 2026-03-02: `// TODO: unsupported ...` の出力経路を fail-closed（`RuntimeError`）へ切り替え、実ケースで必要な `Try` / `Swap` / `Yield` lowering を追加した。`yield_generator_min` 向けに generator 収集バッファ経路を導入し、`check_py2scala_transpile.py` を `checked=135 ok=135 fail=0 skipped=6` へ復帰させた。
-- 2026-03-02: `sample/18` の `run_failed` を調査し、`Dict.entries` literal の出力欠落と `dict.get(key, default)` の lowering 誤り（Scala 側で tuple key lookup 化）を修正した。`python3 tools/runtime_parity_check.py --case-root sample --targets scala --all-samples` は `SUMMARY cases=18 pass=18 fail=0` を確認。
+- 2026-03-02: `sample/18` の `run_failed` を調査し、`Dict.entries` literal の出力欠落と `dict.get(key, default)` の lowering 誤り（Scala 側で tuple key lookup 化）を修正した。`python3 tools/check/runtime_parity_check.py --case-root sample --targets scala --all-samples` は `SUMMARY cases=18 pass=18 fail=0` を確認。
 - 2026-03-02: 継承メソッドの override 判定を class hierarchy 解析で導入し、継承先メソッドを `override def` で出力するよう修正した。`super().method()` の出力も `super.method()` へ補正し、`inheritance_virtual_dispatch_multilang` の Scala parity を `ok` で通過させた。
 - 2026-03-02: `runtime_parity_check` の `ARTIFACT_OPTIONAL_TARGETS` から Scala を撤去し、artifact 比較を必須化した。`test_runtime_parity_check_cli.py` の Scala 前提テストを新契約（artifact presence を検証）へ更新し、`--all-samples` 実行で `cases=18 pass=18 fail=0` を再確認した。
-- 2026-03-02: Scala parity 再実行導線として `tools/check_scala_parity.py` を追加した。`--skip-fixture` は `sample` 18件を pass、fixture 併走では `pass=1 fail=2`（`math_extended`, `pathlib_extended`）を検出し、未達ケースの再実行ループを固定できる状態にした。
-- 2026-03-02: `math.fabs` / `Path` helper / Python互換の `bool`・`None` 文字列表現を Scala emitter/runtime helper へ補完し、`python3 tools/check_scala_parity.py` が `sample: pass=18 fail=0`, `fixture: pass=3 fail=0` で完走することを確認した。`docs/ja/how-to-use.md` / `docs/en/how-to-use.md` / `docs/ja/spec/spec-tools.md` / `docs/en/spec/spec-tools.md` へ Scala parity 手順を反映した。
+- 2026-03-02: Scala parity 再実行導線として `tools/check/check_scala_parity.py` を追加した。`--skip-fixture` は `sample` 18件を pass、fixture 併走では `pass=1 fail=2`（`math_extended`, `pathlib_extended`）を検出し、未達ケースの再実行ループを固定できる状態にした。
+- 2026-03-02: `math.fabs` / `Path` helper / Python互換の `bool`・`None` 文字列表現を Scala emitter/runtime helper へ補完し、`python3 tools/check/check_scala_parity.py` が `sample: pass=18 fail=0`, `fixture: pass=3 fail=0` で完走することを確認した。`docs/ja/how-to-use.md` / `docs/en/how-to-use.md` / `docs/ja/spec/spec-tools.md` / `docs/en/spec/spec-tools.md` へ Scala parity 手順を反映した。
 
 ## 分解
 

@@ -49,7 +49,7 @@ test/include/east1/py/
 
 該当箇所:
 - `src/pytra-cli2.py` の `_resolve_one()` 内の builtins_path / containers_path
-- `tools/regenerate_golden.py` の include golden 生成パス
+- `tools/gen/regenerate_golden.py` の include golden 生成パス
 - `src/toolchain2/resolve/py/` の BuiltinRegistry ロード箇所
 
 ### 旧ディレクトリの削除

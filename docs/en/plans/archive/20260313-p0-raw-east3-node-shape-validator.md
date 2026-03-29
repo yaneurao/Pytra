@@ -22,7 +22,7 @@ Goal:
 
 Scope:
 - `src/toolchain/link/program_validator.py`
-- `test/unit/common/test_frontend_type_expr.py`
+- `tools/unittest/common/test_frontend_type_expr.py`
 - Representative smoke / docs / matrix notes only if needed
 
 Out of scope:
@@ -37,8 +37,8 @@ Acceptance criteria:
 - Targeted `py2x --target rs/java/ruby/scala/cpp` transpiles no longer stop at raw EAST3 validation.
 
 Verification:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src:/workspace/Pytra/test/unit python3 -m unittest discover -s test/unit/common -p 'test_frontend_type_expr.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src:/workspace/Pytra/test/unit python3 -m unittest discover -s tools/unittest/common -p 'test_frontend_type_expr.py'`
 - `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src:/workspace/Pytra/test/unit python3 src/py2x.py --target rs test/fixtures/typing/any_dict_items.py -o /tmp/any_dict_items.rs`
 - `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src:/workspace/Pytra/test/unit python3 src/py2x.py --target java test/fixtures/typing/any_dict_items.py -o /tmp/AnyDictItems.java`
 - `PYTHONPATH=/workspace/Pytra:/workspace/Pytra/src:/workspace/Pytra/test/unit python3 src/py2x.py --target ruby test/fixtures/typing/any_dict_items.py -o /tmp/any_dict_items.rb`

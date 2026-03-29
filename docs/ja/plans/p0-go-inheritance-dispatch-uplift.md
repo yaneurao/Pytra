@@ -28,7 +28,7 @@
 
 確認コマンド:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v`
-- `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets go`
+- `PYTHONPATH=src python3 tools/check/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets go`
 
 分解:
 - [x] Go での継承表現（埋め込み/インターフェース）を比較し、採用方式を確定する。
@@ -40,4 +40,4 @@
 - 2026-03-01: 継承型注釈は `*Class` ではなく class interface（`AnimalLike` など）で受ける方式を採用し、基底参照経由の動的ディスパッチを成立させた。
 - 2026-03-01: `super().method(...)` は埋め込み基底（`self.<Base>.method(...)`）へ lower、`super().__init__(...)` は `self.<Base>.Init(...)` へ lower する規則を実装した。
 - 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v` は pass（12 tests, 0 fail）。
-- 2026-03-01: `PYTHONPATH=src python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets go --ignore-unstable-stdout` は pass（1/1）。
+- 2026-03-01: `PYTHONPATH=src python3 tools/check/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets go --ignore-unstable-stdout` は pass（1/1）。

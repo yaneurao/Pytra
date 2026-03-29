@@ -22,7 +22,7 @@
 対象:
 - `src/pytra/compiler/east_parts/east3_opt_passes/*`（新規/既存 pass でマーカー付与）
 - `src/hooks/cpp/emitter/stmt.py`（tuple assign 出力）
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/16_glass_sculpture_chaos.cpp`（再生成確認）
 
 非対象:
@@ -40,10 +40,10 @@
 - `check_py2cpp_transpile.py` と関連 unit が通り、`sample/cpp/16` で `std::get` 連鎖縮退を確認できる。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --stems 16_glass_sculpture_chaos --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --stems 16_glass_sculpture_chaos --force`
 
 決定ログ:
 - 2026-03-02: ユーザー指示により、EAST3 で安全条件マーカーを付与し、CppEmitter で構造化束縛へ縮退する P0 を起票。
@@ -52,8 +52,8 @@
 - 2026-03-02: 検証コマンドを実施し、`sample/cpp/16` で主要 tuple unpack を構造化束縛へ縮退したことを確認。
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_optimizer.py' -v`（49 tests, OK）
   - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（98 tests, OK）
-  - `python3 tools/regenerate_samples.py --langs cpp --stems 16_glass_sculpture_chaos --force`（regen=1 fail=0）
-  - `python3 tools/check_py2cpp_transpile.py`（checked=136 ok=136 fail=0 skipped=6）
+  - `python3 tools/gen/regenerate_samples.py --langs cpp --stems 16_glass_sculpture_chaos --force`（regen=1 fail=0）
+  - `python3 tools/check/check_py2cpp_transpile.py`（checked=136 ok=136 fail=0 skipped=6）
 
 ## 分解
 

@@ -29,15 +29,15 @@
 - `docs/ja/todo/archive` の日付ファイル集合と `docs/en/todo/archive` のミラー集合を自動チェックできる
 
 運用手順:
-1. `python3 tools/sync_todo_history_translation.py` を実行し、`docs/en/todo/archive/YYYYMMDD.md` の不足分を作成する。
+1. `python3 tools/run/sync_todo_history_translation.py` を実行し、`docs/en/todo/archive/YYYYMMDD.md` の不足分を作成する。
 2. 生成された `pending` ファイルを英語翻訳し、`<!-- translation-status: done -->` へ更新する。
-3. `python3 tools/sync_todo_history_translation.py --check` で同期漏れ（missing/extra/index欠落）がないことを確認する。
+3. `python3 tools/run/sync_todo_history_translation.py --check` で同期漏れ（missing/extra/index欠落）がないことを確認する。
 4. `git diff -- docs/ja/todo/archive docs/en/todo/archive` で差分単位を確認してコミットする。
 
 確認コマンド:
-- `python3 tools/sync_todo_history_translation.py --check`
+- `python3 tools/run/sync_todo_history_translation.py --check`
 - `git diff -- docs/ja/todo/archive docs/en/todo/archive`
 
 決定ログ:
 - 2026-02-22: 初版作成。
-- 2026-02-22: `tools/sync_todo_history_translation.py` を追加し、`docs/en/todo/archive` の日付ファイル雛形と index 同期を自動化した。
+- 2026-02-22: `tools/run/sync_todo_history_translation.py` を追加し、`docs/en/todo/archive` の日付ファイル雛形と index 同期を自動化した。

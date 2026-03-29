@@ -37,15 +37,15 @@ Acceptance criteria:
 - The remaining seams in `py_runtime.h` are classified into object-bridge mutation and shared `type_id` thin seams, and their reduction order is fixed in docs/tooling.
 - Residual callers in the C++ / Rust / C# emitters are organized by bucket.
 - The blockers and handoff criteria for the eventual final shrink are documented.
-- `python3 tools/check_todo_priority.py` and `git diff --check` pass.
+- `python3 tools/check/check_todo_priority.py` and `git diff --check` pass.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_cpp_pyruntime_header_surface.py`
-- `python3 tools/check_cpp_pyruntime_contract_inventory.py`
-- `python3 tools/check_crossruntime_pyruntime_emitter_inventory.py`
-- `python3 tools/check_cpp_pyruntime_residual_thin_seam_contract.py`
-- `python3 tools/check_cpp_pyruntime_residual_thin_seam_handoff_contract.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_cpp_pyruntime_header_surface.py`
+- `python3 tools/check/check_cpp_pyruntime_contract_inventory.py`
+- `python3 tools/check/check_crossruntime_pyruntime_emitter_inventory.py`
+- `python3 tools/check/check_cpp_pyruntime_residual_thin_seam_contract.py`
+- `python3 tools/check/check_cpp_pyruntime_residual_thin_seam_handoff_contract.py`
 - `git diff --check`
 
 Decision log:

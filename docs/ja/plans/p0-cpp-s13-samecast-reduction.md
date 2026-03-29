@@ -19,7 +19,7 @@
 対象:
 - `src/pytra/compiler/east_parts/east3_opt_passes/*`（必要なら cast 縮退 pass）
 - `src/hooks/cpp/emitter/expr.py` / `type_bridge.py`（最終ガード）
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 
 非対象:
 - `object/Any/unknown` 経路の cast 契約変更
@@ -31,9 +31,9 @@
 - `check_py2cpp_transpile` と unit が通る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 決定ログ:
 - 2026-03-01: ユーザー要望により、sample/13 同型 cast 縮退を独立 P0 として起票。

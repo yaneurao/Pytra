@@ -77,8 +77,8 @@ S1-01 分類結果（違反タイプ別）:
 
 確認コマンド（予定）:
 - `rg -n "math|gif|png" src/backends`
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/run_local_ci.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/run/run_local_ci.py`
 
 ## 分解
 
@@ -94,8 +94,8 @@ S1-01 分類結果（違反タイプ別）:
 - 2026-03-05: ユーザー指摘に基づき、目的を「文字列撤去」から「責務境界の設計是正」へ修正した。`math/gif/png` 検索は症状検知ガードとして再定義した。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-01] 179件を `branch/dispatch/runtime実装混在` へ分類し、`lua -> scala -> rs` を先行是正順に確定した（分類CSVを `work/logs/backend_boundary_audit_classified_20260305_s1_01.csv` に固定）。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-02] `docs/ja/spec/spec-east.md` に EAST3 -> backend の固定契約（`Call/Attribute` の解決済み属性、優先順位、`resolved_runtime_source`、fail-closed、emitter API 制約）を追記し、再解決禁止を仕様化した。
-- 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua_native_emitter.py` から未使用の runtime 実装混在ブロック（`_emit_math_runtime_helpers` / `_emit_path_runtime_helpers` / `_emit_gif_runtime_helpers` / `_emit_png_runtime_helpers`）を削除。`math|gif|png` ヒットは `49 -> 8`、全 backend 合計は `179 -> 138` に縮退。`python3 test/unit/toolchain/emit/lua/test_py2lua_smoke.py`（32件）で回帰 green を確認。
-- 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `scala_native_emitter.py` に残留していた未使用 inline runtime helper 群（`_emit_runtime_helpers` / `_emit_runtime_helpers_minimal` など）を削除し、`rs_emitter.py` の未使用 `RUST_RUNTIME_SUPPORT` を撤去。`math|gif|png` ヒットは `scala: 39 -> 29`、`rs: 31 -> 4`、全 backend 合計は `138 -> 101` に縮退。`python3 test/unit/toolchain/emit/scala/test_py2scala_smoke.py`（16件）と `python3 test/unit/toolchain/emit/rs/test_py2rs_smoke.py`（30件）で回帰 green を確認。
+- 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua_native_emitter.py` から未使用の runtime 実装混在ブロック（`_emit_math_runtime_helpers` / `_emit_path_runtime_helpers` / `_emit_gif_runtime_helpers` / `_emit_png_runtime_helpers`）を削除。`math|gif|png` ヒットは `49 -> 8`、全 backend 合計は `179 -> 138` に縮退。`python3 tools/unittest/emit/lua/test_py2lua_smoke.py`（32件）で回帰 green を確認。
+- 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `scala_native_emitter.py` に残留していた未使用 inline runtime helper 群（`_emit_runtime_helpers` / `_emit_runtime_helpers_minimal` など）を削除し、`rs_emitter.py` の未使用 `RUST_RUNTIME_SUPPORT` を撤去。`math|gif|png` ヒットは `scala: 39 -> 29`、`rs: 31 -> 4`、全 backend 合計は `138 -> 101` に縮退。`python3 tools/unittest/emit/scala/test_py2scala_smoke.py`（16件）と `python3 tools/unittest/emit/rs/test_py2rs_smoke.py`（30件）で回帰 green を確認。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `scala_native_emitter.py` から `owner=="math"` による生AST再解決フォールバック（attribute/call/type推論）を撤去し、解決済み runtime_call 経路へ統一。`math|gif|png` ヒットは `scala: 29 -> 16`、全 backend 合計は `101 -> 88` に縮退し、`test_py2scala_smoke.py`（16件）再通過を確認。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `php_native_emitter.py` / `go_native_emitter.py` から `owner=="math"` 生AST再解決フォールバック（call/attribute/type推論）を撤去。`math|gif|png` ヒットは `php+go: 28 -> 12`、全 backend 合計は `88 -> 72` に縮退。`test_py2php_smoke.py`（10件）と `test_py2go_smoke.py`（16件）で回帰 green を確認。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `kotlin_native_emitter.py` / `nim_native_emitter.py` の `math` 生AST再解決フォールバック（型推論・call/attr）を撤去。`math|gif|png` ヒットは `kotlin+nim: 8 -> 3`、全 backend 合計は `72 -> 67` に縮退。`test_py2kotlin_smoke.py`（16件）と `test_py2nim_smoke.py`（3件）で回帰 green を確認。
@@ -105,5 +105,5 @@ S1-01 分類結果（違反タイプ別）:
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] `php/go` に fail-closed 補強を追加し、`runtime_call` が存在しても描画不能な `resolved_runtime_call` 経路は例外化した。`go` は `runtime_call=std::filesystem::*`（legacy表現）で target固有 symbol へ還元できないケースがあるため、`runtime_source=runtime_call` は従来フォールバックを暫定維持。`test_py2php_smoke.py`（10件）/ `test_py2go_smoke.py`（16件）は通過。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] `kotlin` でも `resolved_runtime_call` 空振り時の stdlib fallback を例外化し、call/attribute 両方で fail-closed を補強。`test_py2kotlin_smoke.py`（16件）回帰 green を確認。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-03] `js/cs/nim` でも `resolved_runtime_call` 空振り時の stdlib fallback を例外化し、call/attribute 推測レンダリングを停止。`js`/`nim` smoke は green、`cs` は既存 baseline（`failures=11`）維持で新規悪化なし。これにより fail-closed 適用対象を `go/php/kotlin/js/cs/nim` へ拡大し、`S2-03` を完了。
-- 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-01] CI導線（`tools/run_local_ci.py`）上の guard 実行を再検証し、`check_emitter_forbidden_runtime_symbols.py` を「findings=0 のとき空allowlist許容」に修正。`check_emitter_runtimecall_guardrails.py` / `check_emitter_forbidden_runtime_symbols.py` / `test_check_emitter_runtimecall_guardrails.py` の3系統を通過確認し、ガードを常時実行可能状態へ固定。
+- 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-01] CI導線（`tools/run/run_local_ci.py`）上の guard 実行を再検証し、`check_emitter_forbidden_runtime_symbols.py` を「findings=0 のとき空allowlist許容」に修正。`check_emitter_runtimecall_guardrails.py` / `check_emitter_forbidden_runtime_symbols.py` / `test_check_emitter_runtimecall_guardrails.py` の3系統を通過確認し、ガードを常時実行可能状態へ固定。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S3-02] `go/php/kotlin/js/cs/nim` smoke へ `resolved_runtime_call` 空振り fail-closed 回帰を追加。追加テストで露見した `go/php/kotlin/cs` の推測レンダリング漏れを修正（`semantic_tag` tail と `resolved_runtime_call` の整合チェックを導入）し、`test_py2{go,php,kotlin,js,nim,cs}_smoke.py`（合計117件）を全通過。あわせて `check_emitter_runtimecall_guardrails.py` / `check_emitter_forbidden_runtime_symbols.py` / `test_check_emitter_runtimecall_guardrails.py` / `test_runtime_parity_check_cli.py` を再実行して非退行を固定。

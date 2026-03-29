@@ -21,9 +21,9 @@ Goal:
 In scope:
 - `src/toolchain/ir/east2_to_east3_lowering.py`
 - `src/toolchain/ir/east2_to_east3_*.py`
-- `test/unit/ir/test_east2_to_east3_lowering.py`
-- `test/unit/ir/test_east2_to_east3_source_contract.py`
-- `test/unit/ir/test_east2_to_east3_split_regressions.py`
+- `tools/unittest/ir/test_east2_to_east3_lowering.py`
+- `tools/unittest/ir/test_east2_to_east3_source_contract.py`
+- `tools/unittest/ir/test_east2_to_east3_split_regressions.py`
 - `docs/ja/todo/index.md` / `docs/en/todo/index.md`
 - `docs/ja/plans/p1-east23-lowering-orchestration-split.md` / `docs/en/plans/p1-east23-lowering-orchestration-split.md`
 
@@ -39,12 +39,12 @@ Acceptance criteria:
 - Source-contract and representative regressions pass: `test_east2_to_east3*.py`, `test_prepare_selfhost_source.py`, and `build_selfhost.py`.
 
 Checks:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east2_to_east3*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/selfhost -p 'test_prepare_selfhost_source.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east2_to_east3*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/selfhost -p 'test_prepare_selfhost_source.py'`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_transpiler_version_gate.py`
-- `python3 tools/run_regen_on_version_bump.py --dry-run`
+- `python3 tools/check/check_transpiler_version_gate.py`
+- `python3 tools/run/run_regen_on_version_bump.py --dry-run`
 - `git diff --check`
 
 Breakdown:

@@ -21,7 +21,7 @@ Goal:
 In scope:
 - `src/toolchain/emit/php/emitter/php_native_emitter.py`
 - `src/runtime/php/pytra/py_runtime.php` (minimum helper additions only if needed)
-- `test/unit/test_py2php_smoke.py` (add PHP codegen regressions if needed)
+- `tools/unittest/test_py2php_smoke.py` (add PHP codegen regressions if needed)
 - `sample/php/18_mini_language_interpreter.php` (validation by regeneration)
 
 Out of scope:
@@ -39,11 +39,11 @@ Acceptance criteria:
   - Entrypoint generation avoids collisions when `main`/`__pytra_main` names conflict.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `python3 -m unittest discover -s test/unit -p 'test_py2php_smoke.py' -v`
-- `python3 tools/check_py2php_transpile.py`
-- `python3 tools/regenerate_samples.py --langs php --stems 18_mini_language_interpreter --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets php --ignore-unstable-stdout 18_mini_language_interpreter`
+- `python3 tools/check/check_py2php_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs php --stems 18_mini_language_interpreter --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets php --ignore-unstable-stdout 18_mini_language_interpreter`
 
 Decision log:
 - 2026-03-02: Per user instruction, opened a P1 plan for PHP code generation improvements on `sample/18`.
@@ -52,7 +52,7 @@ Decision log:
 - 2026-03-03: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-02] Fixed `Compare(In/NotIn)` to type-specific membership lowering, using `array_key_exists` for `dict`.
 - 2026-03-03: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-03] Added field declarations + auto `__construct` generation for dataclass classes to align ctor contracts.
 - 2026-03-03: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S2-04] Generalized collision avoidance in entrypoint-name resolution for function/class names.
-- 2026-03-03: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-01] Added `sample/18` quality-fragment checks to `tools/check_py2php_transpile.py`.
+- 2026-03-03: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-01] Added `sample/18` quality-fragment checks to `tools/check/check_py2php_transpile.py`.
 - 2026-03-03: [ID: P1-PHP-S18-CODEGEN-QUALITY-01-S3-02] Passed `runtime_parity_check` (php, case18) after regenerating `sample/php/18`.
 
 ## Breakdown

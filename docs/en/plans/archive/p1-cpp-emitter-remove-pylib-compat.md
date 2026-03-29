@@ -27,7 +27,7 @@ and complete `cpp_emitter.py` name resolution using only the `pytra.*` namespace
 
 - Remove dependencies on `_normalize_runtime_module_name` from both `src/hooks/cpp/emitter/cpp_emitter.py` and `src/hooks/cpp/emitter/call.py`.
 - Remove conversion routes that assume `pylib.*` input (and clearly document that compatibility is no longer provided).
-- Confirm via tests (at least `tools/check_py2cpp_transpile.py` or `test/unit/test_py2cpp_*.py`) that no new `pylib`-assumption cases are required.
+- Confirm via tests (at least `tools/check/check_py2cpp_transpile.py` or `tools/unittest/test_py2cpp_*.py`) that no new `pylib`-assumption cases are required.
 
 ## Execution order (recommended)
 
@@ -47,6 +47,6 @@ and complete `cpp_emitter.py` name resolution using only the `pytra.*` namespace
 
 - [x] 2026-02-25: `P1-CPP-EMIT-NORM-01-S1` completed. Removed all `_normalize_runtime_module_name` call sites in `cpp_emitter.py` and `call.py`, excluding `pylib.*` compatibility normalization from paths.
 - [x] 2026-02-25: `P1-CPP-EMIT-NORM-01-S2` completed. Default `_normalize_runtime_module_name` in `src/pytra/compiler/east_parts/code_emitter.py` is identity behavior, and no `pylib.*`-dependent conversion branch exists, so no further change required.
-- [x] 2026-02-25: `P1-CPP-EMIT-NORM-01-S3` completed. Removed C++ tests that were validating `pylib` compatibility and deleted legacy compatibility test `test_import_pylib_png_runtime` from `test/unit/test_py2cpp_features.py` and fixture `test/fixtures/imports/import_pylib_png.py`. Continued using existing statement in `docs/ja/spec/spec-dev.md` (`pylib.runtime` removal) as explicit requirement.
+- [x] 2026-02-25: `P1-CPP-EMIT-NORM-01-S3` completed. Removed C++ tests that were validating `pylib` compatibility and deleted legacy compatibility test `test_import_pylib_png_runtime` from `tools/unittest/test_py2cpp_features.py` and fixture `test/fixtures/imports/import_pylib_png.py`. Continued using existing statement in `docs/ja/spec/spec-dev.md` (`pylib.runtime` removal) as explicit requirement.
 
 - [ ] In progress: audit follow-up task for `pylib.*` compatibility normalization removal

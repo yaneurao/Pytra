@@ -24,7 +24,7 @@
 対象:
 - `src/hooks/cpp/emitter/*`（stmt/expr/forcore/call 周辺）
 - `src/pytra/compiler/east_parts/east3_opt_passes/*`（必要時）
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/08_langtons_ant.cpp`（再生成確認）
 
 非対象:
@@ -42,9 +42,9 @@
 - `check_py2cpp_transpile` と関連 unit が通る。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 - `python3 src/py2cpp.py sample/py/08_langtons_ant.py -o sample/cpp/08_langtons_ant.cpp`
 
 分解:
@@ -65,6 +65,6 @@
 - 2026-03-01: S2-01 として `src/hooks/cpp/emitter/collection_expr.py` に `[[seed] * cols for _ in range(rows)]` の typed fill ctor fastpath を追加し、`sample/cpp/08` の `grid` 初期化を `list<list<int64>>(h, list<int64>(w, 0))` へ縮退した（`sample13` の同型初期化にも適用）。
 - 2026-03-01: S2-03 として `src/hooks/cpp/emitter/stmt.py` の `ForCore(StaticRangeForPlan)` で末尾 `if i % k == 0` ガードを検出し、`int64 __next_capture_*` を用いた `if (i == __next_capture_*)` 方式へ置換する fastpath を追加した。
 - 2026-03-01: S2-05 として同 fastpath 上で `frames.reserve((steps_total + capture_every - 1) / capture_every);` を事前出力する規則を追加した。
-- 2026-03-01: S3-01 として `test/unit/test_py2cpp_codegen_issues.py` に `sample08` 回帰2件（`else if` 連鎖、`return frame;`）を追加した。
+- 2026-03-01: S3-01 として `tools/unittest/test_py2cpp_codegen_issues.py` に `sample08` 回帰2件（`else if` 連鎖、`return frame;`）を追加した。
 - 2026-03-01: S3-01 回帰を拡張し、`sample08` の `grid` typed fill ctor / capture counter / reserve 出力を固定する unit を追加した。
-- 2026-03-01: S3-02 として `python3 src/py2cpp.py sample/py/08_langtons_ant.py -o sample/cpp/08_langtons_ant.cpp`、`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（94 tests, OK）、`python3 tools/check_py2cpp_transpile.py`（checked=135, ok=135）を確認した。
+- 2026-03-01: S3-02 として `python3 src/py2cpp.py sample/py/08_langtons_ant.py -o sample/cpp/08_langtons_ant.cpp`、`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（94 tests, OK）、`python3 tools/check/check_py2cpp_transpile.py`（checked=135, ok=135）を確認した。

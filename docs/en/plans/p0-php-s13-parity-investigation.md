@@ -10,7 +10,7 @@ Related TODO:
 - `ID: P0-PHP-S13-PARITY-INVEST-01` in `docs/ja/todo/index.md`
 
 Background:
-- In the latest run of `tools/runtime_parity_check.py --case-root sample --all-samples --targets ruby,lua,scala,php`, only one failure remained: PHP on `sample/13`.
+- In the latest run of `tools/check/runtime_parity_check.py --case-root sample --all-samples --targets ruby,lua,scala,php`, only one failure remained: PHP on `sample/13`.
 - The failure is stdout mismatch: expected Python value `frames: 147` vs observed PHP value `frames: 2`.
 - PHP execution for `sample/16` / `sample/18` passes, so this is likely not a broad PHP backend outage but a conversion-path mismatch specific to `sample/13`.
 
@@ -38,14 +38,14 @@ Acceptance criteria:
 - Findings are organized enough to open follow-up fix tasks (implementation IDs).
 
 Verification commands (planned):
-- `python3 tools/runtime_parity_check.py --case-root sample --targets php 13_maze_generation_steps`
-- `python3 tools/regenerate_samples.py --langs php --stems 13_maze_generation_steps --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets php 13_maze_generation_steps`
+- `python3 tools/gen/regenerate_samples.py --langs php --stems 13_maze_generation_steps --force`
 - `php sample/php/13_maze_generation_steps.php`
 - `python3 sample/py/13_maze_generation_steps.py`
 
 Decision log:
 - 2026-03-04: Per user instruction, opened this as P0 root-cause investigation for `sample/13` PHP parity failure (`frames: 147 -> 2`).
-- 2026-03-04: Reproduced `output mismatch (frames: 147 -> 2)` with `python3 tools/runtime_parity_check.py --case-root sample --targets php 13_maze_generation_steps`, and fixed the failure log at `work/logs/runtime_parity_sample_php_13_invest_20260304.json`.
+- 2026-03-04: Reproduced `output mismatch (frames: 147 -> 2)` with `python3 tools/check/runtime_parity_check.py --case-root sample --targets php 13_maze_generation_steps`, and fixed the failure log at `work/logs/runtime_parity_sample_php_13_invest_20260304.json`.
 - 2026-03-04: Compared generated PHP and identified first divergence as unsupported negative index for `stack[-1]` (emitted directly as `$stack[-1]`). Confirmed that `Undefined array key -1` occurs at PHP runtime, search is exhausted immediately, and `frames: 2` results.
 - 2026-03-04: Also confirmed concurrent factor: unsupported `ListComp` (`_render_expr` fallback `null`). In minimal repro `/tmp/php_s13_min_repro.py`, `grid = [[1] * w for _ in range(h)]` degrades to `$grid = null`.
 - 2026-03-04: Switched directly from repair policy to implementation: added `ListComp(range)` expansion to PHP emitter for `AnnAssign/Assign`, added list-repeat path (`__pytra_list_repeat`) for `BinOp Mult`, and added `__pytra_index` / `__pytra_list_repeat` in runtime.

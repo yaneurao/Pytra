@@ -25,20 +25,20 @@
 - `materials/refs/from-Pytra-NES2/{property_method_call.py,list_bool_index.py}`
 - new representative fixtures under `test/fixtures/**`
 - backend smoke:
-  - `test/unit/backends/cpp/test_py2cpp_features.py`
-  - `test/unit/backends/cs/test_py2cs_smoke.py`
-  - `test/unit/backends/rs/test_py2rs_smoke.py`
-  - `test/unit/backends/go/test_py2go_smoke.py`
-  - `test/unit/backends/java/test_py2java_smoke.py`
-  - `test/unit/backends/kotlin/test_py2kotlin_smoke.py`
-  - `test/unit/backends/scala/test_py2scala_smoke.py`
-  - `test/unit/backends/swift/test_py2swift_smoke.py`
-  - `test/unit/backends/nim/test_py2nim_smoke.py`
-  - `test/unit/backends/js/test_py2js_smoke.py`
-  - `test/unit/backends/ts/test_py2ts_smoke.py`
-  - `test/unit/backends/lua/test_py2lua_smoke.py`
-  - `test/unit/backends/rb/test_py2rb_smoke.py`
-  - `test/unit/backends/php/test_py2php_smoke.py`
+  - `tools/unittest/emit/cpp/test_py2cpp_features.py`
+  - `tools/unittest/emit/cs/test_py2cs_smoke.py`
+  - `tools/unittest/emit/rs/test_py2rs_smoke.py`
+  - `tools/unittest/emit/go/test_py2go_smoke.py`
+  - `tools/unittest/emit/java/test_py2java_smoke.py`
+  - `tools/unittest/emit/kotlin/test_py2kotlin_smoke.py`
+  - `tools/unittest/emit/scala/test_py2scala_smoke.py`
+  - `tools/unittest/emit/swift/test_py2swift_smoke.py`
+  - `tools/unittest/emit/nim/test_py2nim_smoke.py`
+  - `tools/unittest/emit/js/test_py2js_smoke.py`
+  - `tools/unittest/emit/ts/test_py2ts_smoke.py`
+  - `tools/unittest/emit/lua/test_py2lua_smoke.py`
+  - `tools/unittest/emit/rb/test_py2rb_smoke.py`
+  - `tools/unittest/emit/php/test_py2php_smoke.py`
 - 必要なら共通 smoke helper / fixture lookup / backend contract checker
 - docs / support wording / TODO
 
@@ -61,21 +61,21 @@
 - `materials/refs/from-Pytra-NES2/README.md` の repro と、repo 内 fixture/test の対応表が docs / 決定ログで追跡できる。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cs -p 'test_py2cs_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/rs -p 'test_py2rs_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/go -p 'test_py2go_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/java -p 'test_py2java_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/kotlin -p 'test_py2kotlin_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/scala -p 'test_py2scala_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/swift -p 'test_py2swift_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/nim -p 'test_py2nim_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/js -p 'test_py2js_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/ts -p 'test_py2ts_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/lua -p 'test_py2lua_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/rb -p 'test_py2rb_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/php -p 'test_py2php_smoke.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cs -p 'test_py2cs_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/rs -p 'test_py2rs_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/go -p 'test_py2go_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/java -p 'test_py2java_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/kotlin -p 'test_py2kotlin_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/scala -p 'test_py2scala_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/swift -p 'test_py2swift_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/nim -p 'test_py2nim_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/js -p 'test_py2js_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/ts -p 'test_py2ts_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/lua -p 'test_py2lua_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/rb -p 'test_py2rb_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/php -p 'test_py2php_smoke.py'`
 - `git diff --check`
 
 実施方針:
@@ -140,7 +140,7 @@ source:
 - 2026-03-13: `S1-02` として `test/fixtures/typing/property_method_call.py` と `test/fixtures/typing/list_bool_index.py` を追加し、`@property` value read / stringify と `list[bool]` read-write-reread semantics を assertion 付きで固定した。
 - 2026-03-13: `S2-01` として `property_method_call` / `list_bool_index` を `cpp` current compile-failure baseline と `cs/rs/go/java/kotlin/scala/swift/nim` representative transpile smoke へ接続した。`property_method_call` は property read が member-function pointer 扱いになって compile error、`list_bool_index` は `std::vector<bool>` proxy が `bool&` と衝突する compile error を current baseline として固定した。
 - 2026-03-13: `S2-02` として `property_method_call` / `list_bool_index` を `js/ts/lua/ruby/php` representative transpile smoke へ接続し、Wave B でも unsupported / preview に逃がさず少なくとも transpile surface を通す contract を固定した。
-- 2026-03-13: `S2-03` として `test/unit/backends/representative_contract_support.py` に共通 denylist helper を追加し、全 backend representative smoke が `unsupported / preview_only / not_implemented` marker を含むと fail するようにした。C++ current baseline は compile stderr ではなく生成 C++ source 自体に対して helper を適用し、escape marker を含まない compile-failure baseline だけを許可した。
+- 2026-03-13: `S2-03` として `tools/unittest/emit/representative_contract_support.py` に共通 denylist helper を追加し、全 backend representative smoke が `unsupported / preview_only / not_implemented` marker を含むと fail するようにした。C++ current baseline は compile stderr ではなく生成 C++ source 自体に対して helper を適用し、escape marker を含まない compile-failure baseline だけを許可した。
 - 2026-03-13: `S3-01` として C++ emitter に class-local `@property` getter track を追加し、attribute read を `this->mapper()` / `holder->mapper()` へ lower するように修正した。これで `property_method_call` は C++ も compile+run green になり、全 backend representative lane が green になったため、残件は `list_bool_index` のみとなった。
 - 2026-03-13: `S3-02` として C++ runtime の `list<T>` / `py_at` / `py_list_at_ref` を `list<T>::reference/const_reference` ベースにし、`make_object` に bool-convertible proxy fallback を追加した。これで `std::vector<bool>` proxy と `bool&` の衝突が消え、`list_bool_index` は C++ でも compile+run green になった。
 - 2026-03-13: `S4-01` として `materials/refs/from-Pytra-NES2` と repo fixture/test の最終対応を同期した。`bytes_truthiness` は `test/fixtures/typing/bytes_truthiness.py` と archived representative lane、`path_stringify` は `test/fixtures/stdlib/path_stringify.py` と archived representative lane、`field_default_factory_rc_obj` は archived dataclass representative lane、`property_method_call` / `list_bool_index` は `test/fixtures/typing/*` と全 backend representative smoke へそれぞれ昇格済みと確定した。`path_alias_pkg/entry.py` は bundle に現物がないため out-of-scope のまま close する。

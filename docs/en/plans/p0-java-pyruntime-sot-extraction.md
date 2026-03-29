@@ -46,11 +46,11 @@
 - Java の unit/smoke/sample parity（少なくとも `sample/01,05,18`）が green である。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_emitter_runtimecall_guardrails.py`
-- `python3 tools/audit_image_runtime_sot.py --fail-on-core-mix --fail-on-gen-markers`
-- `python3 -m unittest discover -s test/unit/toolchain/emit/java -p 'test_py2java_smoke.py'`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets java --samples 01,05,18 --check-artifacts`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_emitter_runtimecall_guardrails.py`
+- `python3 tools/check/audit_image_runtime_sot.py --fail-on-core-mix --fail-on-gen-markers`
+- `python3 -m unittest discover -s tools/unittest/emit/java -p 'test_py2java_smoke.py'`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets java --samples 01,05,18 --check-artifacts`
 
 実施方針:
 1. 先に「境界」と「禁止シンボル」を固定し、退行を CI で止める。
@@ -88,7 +88,7 @@
 - [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-01] Java emitter からライブラリ固有 `PyRuntime.*` 直書き分岐を撤去し、解決済み IR 駆動へ移行する。
 - [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S3-02] Java emitter の回帰テスト（json/pathlib/time/png/gif）を追加し、直書き再混入を防止する。
 - [ ] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-01] `PyRuntime.java` から JSON/pathlib/time/math/image 実装を段階削除し、必要最小限の core API のみに縮退する。
-- [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-02] 静的ガード（`PyRuntime.java` 禁止シンボル検査）を `tools/run_local_ci.py` へ組み込み、再発を fail-fast 化する。
+- [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-02] 静的ガード（`PyRuntime.java` 禁止シンボル検査）を `tools/run/run_local_ci.py` へ組み込み、再発を fail-fast 化する。
 - [x] [ID: P0-JAVA-PYRUNTIME-SOT-01-S4-03] Java smoke/parity（`sample/01,05,18`）を再実施し、artifact 含む一致を確認する。
 
 決定ログ:
@@ -96,14 +96,14 @@
 - 2026-03-05: `perf_counter` だけでなく `json/pathlib/time/math/png/gif` 全体を `PyRuntime.java` から除去対象に含める方針を確定した。
 - 2026-03-05: `S1-01` として Java runtime の責務境界を `pytra-core` / `pytra-gen/std` / `pytra-gen/utils` に固定し、禁止事項（core 側 std/utils 実装・emitter 直書き）を明文化した。
 - 2026-03-05: `S1-02` として `PyRuntime.java` 内の SoT 由来シンボル棚卸し（time/math/pathlib/json/image）と移管先を確定した。
-- 2026-03-05: `S2-01` として `tools/gen_java_std_runtime_from_canonical.py` を追加し、`src/pytra/std/{time,json,pathlib,math}.py` から `src/runtime/java/pytra-gen/std/*.java` を機械生成できる状態を固定した（`--check` 対応）。
+- 2026-03-05: `S2-01` として `tools/gen/gen_java_std_runtime_from_canonical.py` を追加し、`src/pytra/std/{time,json,pathlib,math}.py` から `src/runtime/java/pytra-gen/std/*.java` を機械生成できる状態を固定した（`--check` 対応）。
 - 2026-03-05: `S2-02` として Java runtime hook（host/static backend registry）を `pytra-core + pytra-gen/utils + pytra-gen/std` 配布へ更新した。
 - 2026-03-05: `S3-01` の先行段として Java emitter の `write_rgb_png/save_gif/grayscale_palette/json.*` 直書き分岐を撤去し、`runtime_call/resolved_runtime_call` 経由描画へ寄せた（`test_py2java_smoke` green, guardrail green）。
 - 2026-03-05: `S3-01` 継続として `resolved_runtime_call` のシンボル素通し化を試行したが、`pytra-gen/std/json.java` の現行生成品質では Java コンパイルが崩れるため、`json.*` は一旦 `PyRuntime.pyJson*` 経路へ戻して継続課題とした。
 - 2026-03-05: `S3-02` の先行段として `test_py2java_smoke.py` に emitter 実装ソース検査を追加し、`json/png/gif` の `runtime_call == \"...\"` 直書き分岐再混入を回帰検知化した。
 - 2026-03-05: `S4-01` の先行段として `PyRuntime.java` から画像互換ラッパ（`pyWriteRGBPNG/pySaveGif/pyGrayscalePalette`）を削除し、公開名 `write_rgb_png/save_gif/grayscale_palette` のみを残した。
-- 2026-03-05: `S4-02` の先行段として `tools/check_java_pyruntime_boundary.py` を追加し、`PyRuntime.java` での画像互換ラッパ再混入を CI fail-fast（`run_local_ci.py` 組み込み）化した。
-- 2026-03-05: `S4-03` として `tools/runtime_parity_check.py --case-root sample --targets java --ignore-unstable-stdout` で `01_mandelbrot`, `05_mandelbrot_zoom`, `18_mini_language_interpreter` を再検証し pass（01/05 は artifact size+CRC32 一致）を確認した。
+- 2026-03-05: `S4-02` の先行段として `tools/check/check_java_pyruntime_boundary.py` を追加し、`PyRuntime.java` での画像互換ラッパ再混入を CI fail-fast（`run_local_ci.py` 組み込み）化した。
+- 2026-03-05: `S4-03` として `tools/check/runtime_parity_check.py --case-root sample --targets java --ignore-unstable-stdout` で `01_mandelbrot`, `05_mandelbrot_zoom`, `18_mini_language_interpreter` を再検証し pass（01/05 は artifact size+CRC32 一致）を確認した。
 - 2026-03-05: `S4-01` 継続として `pyPerfCounter` / `pyMath*` を `PyRuntime.java` から除去し、`pytra-core/std/{time_impl.java,math_impl.java}`（`_impl`, `_m`）へ移管した。Java parity 実行導線は `_impl.java` / `_m.java` を含める形へ更新した。
 - 2026-03-05: `S4-02` 継続として `check_java_pyruntime_boundary.py` の禁止シンボルを image に加えて `pyPerfCounter` / `pyMath*` まで拡張した。
 - 2026-03-05: `S3-01` 継続として、`resolved_runtime_call` の画像系（`write_rgb_png/save_gif/grayscale_palette`）を `PngHelper/GifHelper` 直接呼び出しへ切り替え、Java emitter から `PyRuntime` 経由を撤去した。

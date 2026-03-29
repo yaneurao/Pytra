@@ -175,7 +175,7 @@ src/toolchain/
   - `emitter/`: `<LangIR> -> 最終ソース文字列` の描画
 - 新規実装は上記 3 層へ配置し、`emitter/` に意味論 lowering や optimizer 相当ロジックを新規追加しない。
 - 既存 backend は段階移行を許容するが、移行時の到達形は同一ディレクトリ規約へそろえる。
-- 非C++ backend の 3 層配線・層逆流 import の再発防止チェックは `python3 tools/check_noncpp_east3_contract.py` を正本とする。
+- 非C++ backend の 3 層配線・層逆流 import の再発防止チェックは `python3 tools/check/check_noncpp_east3_contract.py` を正本とする。
 
 #### 3.3.2 追加機能ディレクトリ（案2）と最終到達形（案3）
 

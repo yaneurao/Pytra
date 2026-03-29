@@ -39,13 +39,13 @@ Acceptance criteria:
 - `init=False` affects constructor generation.
 - The v1 subset `default` / `default_factory` / `repr` / `compare` is carried in the field carrier.
 - Unsupported options fail closed explicitly.
-- `python3 tools/check_todo_priority.py`, focused unit tests, `python3 tools/build_selfhost.py`, and `git diff --check` all pass.
+- `python3 tools/check/check_todo_priority.py`, focused unit tests, `python3 tools/build_selfhost.py`, and `git diff --check` all pass.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_import_diagnostics.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k dataclass`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/common -p 'test_import_diagnostics.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k dataclass`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

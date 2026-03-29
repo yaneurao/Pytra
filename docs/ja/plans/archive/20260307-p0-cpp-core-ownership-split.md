@@ -30,10 +30,10 @@
 - C++ runtime include / build graph / symbol index 導線
   - `src/backends/cpp/cli.py`
   - `src/backends/cpp/emitter/header_builder.py`
-  - `tools/gen_runtime_symbol_index.py`
+  - `tools/gen/gen_runtime_symbol_index.py`
   - `tools/cpp_runtime_deps.py`
-  - `tools/check_runtime_cpp_layout.py`
-  - `tools/check_runtime_core_gen_markers.py`
+  - `tools/check/check_runtime_cpp_layout.py`
+  - `tools/check/check_runtime_core_gen_markers.py`
 - C++ runtime 関連 test / docs
 
 非対象:
@@ -51,13 +51,13 @@
 - guard が `generated/core` への marker 必須、`native/core` への marker 禁止、`core/` への実装再侵入禁止を監査できる。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_runtime_cpp_layout.py`
-- `python3 tools/check_runtime_core_gen_markers.py`
-- `python3 tools/gen_runtime_symbol_index.py --check`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_runtime_symbol_index.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_cpp_runtime_build_graph.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_symbol_index_integration.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_runtime_cpp_layout.py`
+- `python3 tools/check/check_runtime_core_gen_markers.py`
+- `python3 tools/gen/gen_runtime_symbol_index.py --check`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_runtime_symbol_index.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_cpp_runtime_build_graph.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_runtime_symbol_index_integration.py'`
 
 ## 先に固定する設計判断
 
@@ -255,30 +255,30 @@ Phase 1 契約固定:
 
 ## Phase 2 実施結果
 
-- `tools/gen_runtime_symbol_index.py` に C++ core 専用 artifact 解決 helper を追加し、`core/*.ext.h` public header を維持したまま、compile source は `generated/core` / `native/core` / 現行 `core/*.ext.cpp` の順で探索できるよう更新した。
+- `tools/gen/gen_runtime_symbol_index.py` に C++ core 専用 artifact 解決 helper を追加し、`core/*.ext.h` public header を維持したまま、compile source は `generated/core` / `native/core` / 現行 `core/*.ext.cpp` の順で探索できるよう更新した。
 - `tools/cpp_runtime_deps.py` は `runtime/cpp/core/*.ext.h` から future `generated/core/*.ext.cpp` / `native/core/*.ext.cpp` を候補導出できるよう更新し、現行 `core/*.ext.cpp` は fallback に残した。
 - representative unit には synthetic runtime tree を使う future-proof test を追加し、
   - runtime symbol index 側で `core/dict.ext.h -> generated/core/dict.ext.cpp + native/core/dict.ext.cpp`
   - build graph 側で `runtime_cpp_candidates_from_header(core/dict.ext.h)` が future core split 候補を返す
   ことを確認した。
-- `tools/check_runtime_cpp_layout.py` は `generated/{built_in,std,utils}` / `native/{built_in,std,utils}` / `pytra/{built_in,std,utils}` と `generated/core` / `native/core` / `core` surface を別 bucket として扱うよう更新し、`core/` には既知 baseline (`gc/io`) 以外の `.cpp` が再侵入した時点で fail する guard にした。あわせて `pytra/core` のような unsupported bucket も fail-fast する。
-- `tools/check_runtime_core_gen_markers.py` は全言語の `pytra-gen` / `pytra-core` 監査を維持したまま、C++ `generated/core` の `source/generated-by` marker 必須、`native/core` と `core` surface の marker 禁止を追加した。
+- `tools/check/check_runtime_cpp_layout.py` は `generated/{built_in,std,utils}` / `native/{built_in,std,utils}` / `pytra/{built_in,std,utils}` と `generated/core` / `native/core` / `core` surface を別 bucket として扱うよう更新し、`core/` には既知 baseline (`gc/io`) 以外の `.cpp` が再侵入した時点で fail する guard にした。あわせて `pytra/core` のような unsupported bucket も fail-fast する。
+- `tools/check/check_runtime_core_gen_markers.py` は全言語の `pytra-gen` / `pytra-core` 監査を維持したまま、C++ `generated/core` の `source/generated-by` marker 必須、`native/core` と `core` surface の marker 禁止を追加した。
 - synthetic unit として `test_check_runtime_cpp_layout.py` を新設し、移行期の `core` baseline + future `generated/native/core` lane が通ること、`core/*.cpp` 再侵入と `pytra/core` 再導入が fail することを固定した。`test_check_runtime_core_gen_markers.py` にも C++ core split reason の回帰を追加した。
 
 ## Phase 3 実施結果
 
 - handwritten core compile source の第一弾として `src/runtime/cpp/core/gc.ext.cpp` と `src/runtime/cpp/core/io.ext.cpp` を `src/runtime/cpp/native/core/` へ移した。header include 面は `core/gc.ext.h` / `core/io.ext.h` のまま維持し、`.cpp` 実体だけを `core/` から追い出した。
-- compile source を直書きしていた representative smoke (`test_cpp_runtime_boxing.py`, `test_cpp_runtime_iterable.py`, `test_cpp_runtime_type_id.py`, `test_py2cpp_list_pyobj_model.py`, `tools/verify_image_runtime_parity.py`) は `native/core/*.ext.cpp` 参照へ同期した。
-- `tools/check_runtime_cpp_layout.py` は `core/` に `.cpp` が 1 本でも残っていたら fail する形へ締め、`test_runtime_symbol_index.py` / `test_cpp_runtime_build_graph.py` には実 repo の `core/gc.ext.h -> native/core/gc.ext.cpp` 契約を固定した。
+- compile source を直書きしていた representative smoke (`test_cpp_runtime_boxing.py`, `test_cpp_runtime_iterable.py`, `test_cpp_runtime_type_id.py`, `test_py2cpp_list_pyobj_model.py`, `tools/check/verify_image_runtime_parity.py`) は `native/core/*.ext.cpp` 参照へ同期した。
+- `tools/check/check_runtime_cpp_layout.py` は `core/` に `.cpp` が 1 本でも残っていたら fail する形へ締め、`test_runtime_symbol_index.py` / `test_cpp_runtime_build_graph.py` には実 repo の `core/gc.ext.h -> native/core/gc.ext.cpp` 契約を固定した。
 - `tools/runtime_symbol_index.json` を再生成し、`pytra.core.gc` / `pytra.core.io` の compile source が `native/core/*.ext.cpp` を指す状態へ同期した。
 - handwritten core header の正本も `src/runtime/cpp/native/core/` へ移し、`src/runtime/cpp/core/*.ext.h` は `runtime/cpp/native/core/*.ext.h` を読む薄い forwarder に差し替えた。`py_runtime.ext.h` inventory guard は `native/core` 正本を検査し、`core/py_runtime.ext.h` が forwarder であることも固定した。
-- `tools/check_runtime_cpp_layout.py` の `py_runtime` duplicate scan は `native/core/py_runtime.ext.h` を優先して見るよう更新し、`test_runtime_symbol_index.py` では `pytra.core.dict` が public header は `core/dict.ext.h` のまま、ownership は `native` になることを固定した。
-- `tools/check_runtime_cpp_layout.py` に「`runtime/cpp/native/core/...` を直接 include してよいのは `core/*.ext.h` forwarder だけ」という guard を追加し、synthetic test で generated runtime からの直接 include を fail-fast 化した。backend integration でも transpile 出力が `runtime/cpp/core/py_runtime.ext.h` を維持し、`native/core` を踏まないことを固定した。
+- `tools/check/check_runtime_cpp_layout.py` の `py_runtime` duplicate scan は `native/core/py_runtime.ext.h` を優先して見るよう更新し、`test_runtime_symbol_index.py` では `pytra.core.dict` が public header は `core/dict.ext.h` のまま、ownership は `native` になることを固定した。
+- `tools/check/check_runtime_cpp_layout.py` に「`runtime/cpp/native/core/...` を直接 include してよいのは `core/*.ext.h` forwarder だけ」という guard を追加し、synthetic test で generated runtime からの直接 include を fail-fast 化した。backend integration でも transpile 出力が `runtime/cpp/core/py_runtime.ext.h` を維持し、`native/core` を踏まないことを固定した。
 
 ## Phase 4 実施結果
 
 - `src/runtime/cpp/generated/core/README.md` を追加し、`generated/core/` を「まだ real artifact が 0 件でも維持する正式レイアウト」として repo 上に定着させた。
-- `tools/check_runtime_cpp_layout.py` は `generated/core` と `native/core` の directory 自体が存在しない場合も fail するよう更新し、ownership split lane の消失を防ぐ guard にした。
+- `tools/check/check_runtime_cpp_layout.py` は `generated/core` と `native/core` の directory 自体が存在しない場合も fail するよう更新し、ownership split lane の消失を防ぐ guard にした。
 - compile/source 解決の representative proof は既存 synthetic unit を正式レイアウト前提に据えたまま維持し、`test_runtime_symbol_index.py` の `core/dict.ext.h -> generated/core/dict.ext.cpp + native/core/dict.ext.cpp` と `test_cpp_runtime_build_graph.py` の `runtime_cpp_candidates_from_header(core/dict.ext.h)` が green であることを再確認した。
 - `generated/core` に置いてよい条件も固定した。許可するのは「pure Python SoT から機械変換でき、`core/...` include 面を崩さず、`native/core` 直 include や C++ 固有 ownership/ABI glue を必要としない low-level helper」のみとし、`gc/io`・object/container 表現・RC/GC・例外/I/O 集約・高レベル module runtime の逆流入は当面 `native/core` 側に留める。
 

@@ -22,10 +22,10 @@ Scope:
 - `src/toolchain/ir/core_expr_attr_subscript_suffix.py`
 - `src/toolchain/ir/core_expr_call_annotation.py`
 - `src/toolchain/ir/core_expr_shell.py`
-- `test/unit/ir/_east_core_test_support.py`
-- `test/unit/ir/test_east_core_source_contract_expr_suffix.py`
-- `test/unit/ir/test_east_core_source_contract_call_dispatch.py`
-- `test/unit/ir/test_east_core_source_contract_call_metadata.py`
+- `tools/unittest/ir/_east_core_test_support.py`
+- `tools/unittest/ir/test_east_core_source_contract_expr_suffix.py`
+- `tools/unittest/ir/test_east_core_source_contract_call_dispatch.py`
+- `tools/unittest/ir/test_east_core_source_contract_call_metadata.py`
 - `docs/ja/todo/index.md` / `docs/en/todo/index.md`
 - `docs/ja/plans/p1-ir-expr-module-decomposition.md` / `docs/en/plans/p1-ir-expr-module-decomposition.md`
 
@@ -41,12 +41,12 @@ Acceptance criteria:
 - Source-contract tests follow the split layout, and representative regressions (`test_east_core*.py`, `test_prepare_selfhost_source.py`, `build_selfhost.py`) pass.
 
 Checks:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/selfhost -p 'test_prepare_selfhost_source.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/ir -p 'test_east_core*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/selfhost -p 'test_prepare_selfhost_source.py'`
 - `python3 tools/build_selfhost.py`
-- `python3 tools/check_transpiler_version_gate.py`
-- `python3 tools/run_regen_on_version_bump.py --dry-run`
+- `python3 tools/check/check_transpiler_version_gate.py`
+- `python3 tools/run/run_regen_on_version_bump.py --dry-run`
 - `git diff --check`
 
 Breakdown:

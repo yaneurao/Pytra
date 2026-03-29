@@ -53,12 +53,12 @@
 - debug/restart/sample parity で helper artifact 経路が非退行である。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 -m unittest discover -s test/unit/link -p 'test_*.py' -v`
-- `python3 -m unittest discover -s test/unit/tooling -p 'test_ir2lang_cli.py' -v`
-- `python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_program_writer.py' -v`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
-- `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 -m unittest discover -s tools/unittest/link -p 'test_*.py' -v`
+- `python3 -m unittest discover -s tools/unittest/tooling -p 'test_ir2lang_cli.py' -v`
+- `python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_cpp_program_writer.py' -v`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
 
 ## 1. 問題の本質
 

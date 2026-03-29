@@ -45,10 +45,10 @@
 - 代表 backend 群で transpile/smoke/parity 回帰が green。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_emitter_runtimecall_guardrails.py`
-- `python3 tools/run_local_ci.py`
-- `python3 tools/runtime_parity_check.py 01_mandelbrot --case-root sample --targets cs,js,ts,go,java,ruby,lua,scala,php,nim`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_emitter_runtimecall_guardrails.py`
+- `python3 tools/run/run_local_ci.py`
+- `python3 tools/check/runtime_parity_check.py 01_mandelbrot --case-root sample --targets cs,js,ts,go,java,ruby,lua,scala,php,nim`
 
 ## S1-01 仕様（禁止/許可）
 
@@ -66,7 +66,7 @@
 
 運用:
 - 既存負債は `tools/emitter_runtimecall_guardrails_allowlist.txt` で明示管理する。
-- 新規追加は `tools/check_emitter_runtimecall_guardrails.py` で fail させる。
+- 新規追加は `tools/check/check_emitter_runtimecall_guardrails.py` で fail させる。
 - 実際の解決責務は lower/IR 側へ寄せ、emitter は解決済みノード描画へ限定する。
 
 ## S1-02 棚卸し結果（2026-03-05）
@@ -105,7 +105,7 @@ non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
 
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-01] 非C++ emitter の禁止/許可ルール（禁止文字列分岐、許可組み込み）を仕様化する。
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-02] 既存 emitter の違反棚卸し（言語別・関数別）を作成する。
-- [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-01] `tools/check_emitter_runtimecall_guardrails.py` を追加し、違反を fail 化する。
+- [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-01] `tools/check/check_emitter_runtimecall_guardrails.py` を追加し、違反を fail 化する。
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-02] guardrail チェックを `run_local_ci` と CI 必須ジョブへ組み込む。
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-01] lower/IR 側の runtime API 解決経路（`runtime_call` 系）を非C++ backend 共通で利用できる形に整理する。
 - [x] [ID: P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02] Java emitter の直書き分岐（`write_rgb_png/save_gif/grayscale_palette/json.*` 等）を解決済み経路へ移行し、SoT 宣言名をそのまま描画する。
@@ -127,14 +127,14 @@ non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
 - 2026-03-05: ユーザー指示（5回目再発）に基づき、非C++ emitter のライブラリ関数名直書きを防ぐ P0 計画を起票。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-01`] 禁止/許可ルールを明文化し、監視対象シンボルと許可組み込みの境界を固定した。既存負債は allowlist 管理、増分のみ fail-fast とする運用方針を確定した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S1-02`] non-C++ emitter の direct-branch を棚卸しし、言語別件数（最大は `lua=24`）とシンボル上位（`save_gif/write_rgb_png/Path`）を固定した。移行優先順を `java -> その他` に確定した。
-- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-01`] `tools/check_emitter_runtimecall_guardrails.py` を追加し、non-C++ emitter の禁止シンボル direct-branch 増分を fail-fast 化した。`tools/emitter_runtimecall_guardrails_allowlist.txt`（115件）を baseline として固定し、`python3 tools/check_emitter_runtimecall_guardrails.py` が通過することを確認した。
-- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-02`] `tools/run_local_ci.py` に `check_emitter_runtimecall_guardrails.py` を必須ステップとして追加し、運用ドキュメント（`docs/ja/spec/spec-tools.md` / `docs/en/spec/spec-tools.md`）へ反映した。ローカル CI 導線で常時実行される状態に固定した。
+- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-01`] `tools/check/check_emitter_runtimecall_guardrails.py` を追加し、non-C++ emitter の禁止シンボル direct-branch 増分を fail-fast 化した。`tools/emitter_runtimecall_guardrails_allowlist.txt`（115件）を baseline として固定し、`python3 tools/check/check_emitter_runtimecall_guardrails.py` が通過することを確認した。
+- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S2-02`] `tools/run/run_local_ci.py` に `check_emitter_runtimecall_guardrails.py` を必須ステップとして追加し、運用ドキュメント（`docs/ja/spec/spec-tools.md` / `docs/en/spec/spec-tools.md`）へ反映した。ローカル CI 導線で常時実行される状態に固定した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-01`] IR へ non-C++ 向け `resolved_runtime_call` 注釈経路を追加した（`lookup_noncpp_*` + `core.py` で import symbol/module attr 解決）。既存 `runtime_call`/`BuiltinCall` 契約は維持し、C++ 経路を壊さずに段階移行できる形へ整理した。`test_stdlib_signature_registry.py` と `test_east_core.py::test_noncpp_runtime_call_annotations_for_import_symbol_and_module_attr` で回帰固定を確認した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02`] Java emitter の `perf_counter/Path/json.loads/json.dumps/write_rgb_png/save_gif/grayscale_palette` 直書き分岐を `runtime_call + resolved_runtime_call` 解決経路へ集約した。`test_py2java_smoke.py`（22件）を再通過し、guardrail allowlist を `115 -> 105` へ更新して直書き削減を固定した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] Go emitter の同種分岐（`perf_counter/Path/json.loads/json.dumps/write_rgb_png/save_gif/grayscale_palette`）を `runtime_call + resolved_runtime_call` 経路へ移行した。`test_py2go_smoke.py`（13件）を通過し、guardrail allowlist を `105 -> 95` へ更新した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] Kotlin emitter の同種分岐（`perf_counter/json.loads/json.dumps/write_rgb_png/save_gif/grayscale_palette`）を `runtime_call + resolved_runtime_call` 経路へ移行した。`test_py2kotlin_smoke.py`（13件）を通過し、guardrail allowlist を `95 -> 87` へ更新した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] Swift emitter の同種分岐（`perf_counter/json.loads/json.dumps/write_rgb_png/save_gif/grayscale_palette`）を `runtime_call + resolved_runtime_call` 経路へ移行した。`test_py2swift_smoke.py`（11件）を通過し、guardrail allowlist を `87 -> 79` へ更新した。
-- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] `tools/check_emitter_forbidden_runtime_symbols.py` を追加し、`src/toolchain/emit/*/emitter/*.py` における `__pytra_write_rgb_png/__pytra_save_gif/__pytra_grayscale_palette` の混入増分を CI fail 化した。`tools/run_local_ci.py` と `docs/ja|en/spec/spec-tools.md` へ導線を追加し、baseline allowlist（31件）を固定した。
+- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] `tools/check/check_emitter_forbidden_runtime_symbols.py` を追加し、`src/toolchain/emit/*/emitter/*.py` における `__pytra_write_rgb_png/__pytra_save_gif/__pytra_grayscale_palette` の混入増分を CI fail 化した。`tools/run/run_local_ci.py` と `docs/ja|en/spec/spec-tools.md` へ導線を追加し、baseline allowlist（31件）を固定した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] タスク見直しの結果、Go/Kotlin/Swift の上記移行は runtime 実装シンボル（`__pytra_*`）直参照を emitter 側に残しており完了条件未達と判断。`S3-03-R1/R2` を追加して未完了として再実施する方針に戻した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] 「公開wrapper名（例: `pyWriteRGBPNG`）へ置換する」案は、`png.py/gif.py` 宣言を正本にした解決責務分離に反するため却下。途中差分は破棄し、`S3-03-R1/R2` を宣言駆動移行として再定義した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02`] Java emitter の `Path/json/png/gif` を `resolved_runtime_call` 宣言名マップへ統一し、`PyRuntime.*` 依存を撤去した（`pathlib.Path` 直描画化を含む）。
@@ -175,4 +175,4 @@ non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03`] Lua emitter にも fail-closed を展開し、`semantic_tag=stdlib.*` かつ `runtime_call/resolved_runtime_call` 未解決の Call/Attribute を即 `RuntimeError` とした。`test_py2lua_smoke.py` に未解決 stdlib call の負例を追加し、Lua smoke 32件 green を確認した。既存 forbidden-symbol 負債の行番号ずれに合わせ allowlist を再生成した（件数は 10 のまま）。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-03`] non-C++ 全 backend（`java/cs/js/ts/go/rs/swift/kotlin/ruby/lua/scala/php/nim`）で fail-closed を有効化し、各言語 smoke 負例を追加したため `S4-03` を完了扱いに更新した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-05`] Java 先行で runtime-call 描画 API を `expr` 受け取りから解決済み情報入力へ分離した。`_render_call_via_runtime_call` と `_render_resolved_runtime_call` は `runtime_call/runtime_source/semantic_tag/binding_module/binding_symbol` のみを受け取り、`_call_name(expr).strip()` に依存した生 callee 参照を撤去した。source guard（`test_py2java_smoke.py`）へ API 境界の再発防止アサートを追加した。
-- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-05`] `tools/check_java_runtimecall_api_boundary.py` を追加し、`_render_call_via_runtime_call(expr, ...)` / `_render_resolved_runtime_call(expr, ...)` / `_call_name(expr).strip()` の再混入を静的検査で fail-fast 化した。`tools/run_local_ci.py` に組み込み、ローカルCI必須導線へ固定した。
+- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S4-05`] `tools/check/check_java_runtimecall_api_boundary.py` を追加し、`_render_call_via_runtime_call(expr, ...)` / `_render_resolved_runtime_call(expr, ...)` / `_call_name(expr).strip()` の再混入を静的検査で fail-fast 化した。`tools/run/run_local_ci.py` に組み込み、ローカルCI必須導線へ固定した。

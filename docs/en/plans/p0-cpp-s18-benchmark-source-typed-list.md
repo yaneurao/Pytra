@@ -18,8 +18,8 @@ Goal:
 
 Scope:
 - `src/hooks/cpp/emitter/*` (list initialization/append/return type consistency)
-- `test/unit/test_east3_cpp_bridge.py`
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_east3_cpp_bridge.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 - `sample/cpp/18_mini_language_interpreter.cpp`
 
 Out of scope:
@@ -32,11 +32,11 @@ Acceptance criteria:
 - Non-regression is confirmed via transpile/unit/parity checks.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp 18_mini_language_interpreter --ignore-unstable-stdout`
 
 Decision log:
 - 2026-03-01: Filed as P0 for additional sample/18 optimization to convert benchmark source construction to a typed list.

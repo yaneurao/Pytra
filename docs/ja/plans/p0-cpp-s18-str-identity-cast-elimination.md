@@ -19,8 +19,8 @@
 対象:
 - `src/hooks/cpp/emitter/*`（cast 判定/式出力）
 - `src/pytra/compiler/east_parts/east3_opt_passes/*`（必要時）
-- `test/unit/test_east3_cpp_bridge.py`
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_east3_cpp_bridge.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 
 非対象:
 - `object/Any` 経路まで一律削減する unsafe 最適化
@@ -32,17 +32,17 @@
 - 回帰テストで fail-closed を担保し、非退行を確認する。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 決定ログ:
 - 2026-03-01: sample/18 追加最適化として `str -> str` 同型 cast 削減を P0 で起票。
 - 2026-03-01: `sample/18` の `let_name/assign_name` 代入 AST が `Unbox(target=str)` で、`value` 側 `Attribute` の `resolved_type` が `unknown` のため `py_to_string(...)` が残ることを確認した。
 - 2026-03-01: C++ emitter に `class_method_return_types` と `class_field_types` を持たせ、`Call(Attribute)`（例: `self.expect(...)`）とそのフィールドアクセス（`Token.text`）の型推論を補強した。
 - 2026-03-01: `_render_expr_kind_unbox` に「source/target 同型なら素通し」ガードを追加し、`py_to_string(this->expect(\"IDENT\")->text)` を `this->expect(\"IDENT\")->text` へ縮退した。
-- 2026-03-01: `test_py2cpp_codegen_issues.py` に sample/18 回帰（`IDENT.text` の `py_to_string` 不要化）を追加し、`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（81件）、`python3 tools/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）、`runtime_parity_check`（sample/18 cpp PASS）で非退行を確認した。
+- 2026-03-01: `test_py2cpp_codegen_issues.py` に sample/18 回帰（`IDENT.text` の `py_to_string` 不要化）を追加し、`PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`（81件）、`python3 tools/check/check_py2cpp_transpile.py`（`checked=134 ok=134 fail=0 skipped=6`）、`runtime_parity_check`（sample/18 cpp PASS）で非退行を確認した。
 
 ## 分解
 

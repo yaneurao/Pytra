@@ -32,11 +32,11 @@
 - representative tier 完了後に迷わず着手できる state になっている。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_backend_parity_matrix_contract.py`
-- `python3 tools/check_backend_parity_secondary_rollout_inventory.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_backend_parity_matrix_contract.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_backend_parity_secondary_rollout_inventory.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_backend_parity_matrix_contract.py`
+- `python3 tools/check/check_backend_parity_secondary_rollout_inventory.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_backend_parity_matrix_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_check_backend_parity_secondary_rollout_inventory.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

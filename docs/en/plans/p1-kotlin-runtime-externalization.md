@@ -21,9 +21,9 @@ Scope:
 - `src/hooks/kotlin/emitter/kotlin_native_emitter.py`
 - `src/runtime/kotlin/pytra/` (add/organize runtime source of truth)
 - `src/py2kotlin.py` (runtime placement path)
-- `test/unit/test_py2kotlin_smoke.py`
-- `tools/check_py2kotlin_transpile.py`
-- Kotlin path in `tools/runtime_parity_check.py`
+- `tools/unittest/test_py2kotlin_smoke.py`
+- `tools/check/check_py2kotlin_transpile.py`
+- Kotlin path in `tools/check/runtime_parity_check.py`
 - Regenerate `sample/kotlin`
 
 Out of scope:
@@ -38,11 +38,11 @@ Acceptance Criteria:
 - No inline helpers remain after regenerating `sample/kotlin`.
 
 Validation Commands (planned):
-- `python3 tools/check_todo_priority.py`
-- `python3 tools/check_py2kotlin_transpile.py`
+- `python3 tools/check/check_todo_priority.py`
+- `python3 tools/check/check_py2kotlin_transpile.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin_smoke.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets kotlin --all-samples --ignore-unstable-stdout`
-- `python3 tools/regenerate_samples.py --langs kotlin --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets kotlin --all-samples --ignore-unstable-stdout`
+- `python3 tools/gen/regenerate_samples.py --langs kotlin --force`
 - `rg -n "fun __pytra_truthy\(v: Any\?\): Boolean" sample/kotlin`
 
 Decision Log:
@@ -89,7 +89,7 @@ Decision Log:
 - 2026-03-01: Updated `src/runtime/kotlin/pytra/py_runtime.kt` to the runtime source of truth with implementations of 32 `__pytra_*` helpers, and confirmed non-regression with `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin_smoke.py' -v` (10 tests) (`P1-KOTLIN-RUNTIME-EXT-01-S2-01`).
 - 2026-03-01: Removed `_emit_runtime_helpers()` call from `transpile_to_kotlin_native()`, stopped inline helper body emission in generated `.kt`, and locked non-emission of `fun __pytra_truthy` via `test_py2kotlin_smoke` regression (`P1-KOTLIN-RUNTIME-EXT-01-S2-02`).
 - 2026-03-01: Added runtime copy path (`_copy_kotlin_runtime`) to `py2kotlin.py` to bundle `py_runtime.kt` in output, and verified bundling in `/tmp` conversion runs (`P1-KOTLIN-RUNTIME-EXT-01-S2-03`).
-- 2026-03-01: Marked unsupported Kotlin fixtures (Try/Yield/Swap) as expected fail in `tools/check_py2kotlin_transpile.py`, confirming `checked=129 ok=129 fail=0 skipped=10`.
+- 2026-03-01: Marked unsupported Kotlin fixtures (Try/Yield/Swap) as expected fail in `tools/check/check_py2kotlin_transpile.py`, confirming `checked=129 ok=129 fail=0 skipped=10`.
 - 2026-03-01: Updated Kotlin parity path, reflecting `py_runtime.kt` bundled compilation and artifact no-op policy for Kotlin execution in `runtime_parity_check.py`.
 - 2026-03-01: Fixed Kotlin emitter `dict.get(key, default)` to `map.get(key) ?: default`, added `Dict(entries)` rendering, and resolved sample/18 runtime failure (token map emptied).
-- 2026-03-01: Passed `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin_smoke.py' -v` (12 tests), `python3 tools/check_py2kotlin_transpile.py`, `python3 tools/runtime_parity_check.py --case-root sample --targets kotlin --all-samples --ignore-unstable-stdout` (18/18 pass), and `python3 tools/regenerate_samples.py --langs kotlin --force`.
+- 2026-03-01: Passed `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2kotlin_smoke.py' -v` (12 tests), `python3 tools/check/check_py2kotlin_transpile.py`, `python3 tools/check/runtime_parity_check.py --case-root sample --targets kotlin --all-samples --ignore-unstable-stdout` (18/18 pass), and `python3 tools/gen/regenerate_samples.py --langs kotlin --force`.

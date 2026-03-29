@@ -21,8 +21,8 @@ Goal:
 Scope:
 - `src/hooks/cpp/emitter/call.py` (args/kw merge and node propagation for import-function path)
 - `src/hooks/cpp/emitter/module.py` (module-function coercion)
-- `test/unit/test_py2cpp_codegen_issues.py` (sample/15 fragment regression)
-- `test/unit/test_east3_cpp_bridge.py` / `tools/check_py2cpp_transpile.py` as needed
+- `tools/unittest/test_py2cpp_codegen_issues.py` (sample/15 fragment regression)
+- `tools/unittest/test_east3_cpp_bridge.py` / `tools/check/check_py2cpp_transpile.py` as needed
 
 Out of scope:
 - Changes to keyword merge behavior for class methods / local function calls
@@ -36,11 +36,11 @@ Acceptance criteria:
 - Existing fail-closed behavior remains for `unknown/Any` paths.
 
 Verification commands (planned):
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
-- `python3 tools/regenerate_samples.py --langs cpp --force`
+- `python3 tools/check/check_py2cpp_transpile.py`
+- `python3 tools/gen/regenerate_samples.py --langs cpp --force`
 
 Decision log:
 - 2026-03-01: Based on user report (`int64(py_to<int64>(4))` in sample/15), identified the cause as missing AST-node propagation for keyword arguments in module-import functions and opened this as a P0 task.

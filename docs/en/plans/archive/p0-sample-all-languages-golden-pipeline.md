@@ -27,14 +27,14 @@ Out of scope:
 Acceptance criteria:
 - For each language, all 18 cases pass `compile -> run -> compare`.
 - Comparison uses normalized stdout (`normalize_stdout_for_compare`) plus artifact hash/size equality.
-- `tools/runtime_parity_check.py` and `tools/verify_sample_outputs.py` finish with NG=0 for executable targets.
+- `tools/check/runtime_parity_check.py` and `tools/verify_sample_outputs.py` finish with NG=0 for executable targets.
 - Remaining issues (if any) are recorded with failure category and retry conditions in this context doc.
 
 ## Execution policy
 
 1. Preparation:
    - Fix target list from `sample/py` and `sample/golden/manifest.json`.
-   - Normalize common CLI/workdir handling in `tools/runtime_parity_check.py`.
+   - Normalize common CLI/workdir handling in `tools/check/runtime_parity_check.py`.
 2. C++ as baseline:
    - Reconfirm full C++ 18/18 consistency first.
 3. Per-language iterative repair:

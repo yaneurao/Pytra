@@ -73,5 +73,5 @@ Zig は値型が基本であり、Python の参照セマンティクス（オブ
 
 - `transpile_to_zig_native()` が EAST3 から `.zig` を生成できる。
 - `check_py2x_transpile.py --target zig` で全 fixture の変換が成功する。
-- `test/unit/backends/zig/test_py2zig_smoke.py` で基本テストが通る。
+- `tools/unittest/emit/zig/test_py2zig_smoke.py` で基本テストが通る。
 - core/control fixture の大半が `zig build-exe` でコンパイル・実行でき、Python と同一の stdout を出力する。

@@ -34,11 +34,11 @@ Acceptance criteria:
 - A representative C++ multi-file smoke using `from .controller import (BUTTON_A as BUTTON, make_pad as make_pad_fn, Pad as ControllerPad)` must build and run.
 - The generated consumer module must resolve imported function, constant, and class/type origins correctly.
 - Existing sibling relative-import smoke tests without functions must keep passing.
-- `python3 tools/check_todo_priority.py`, focused C++ regressions, `python3 tools/build_selfhost.py`, and `git diff --check` must pass.
+- `python3 tools/check/check_todo_priority.py`, focused C++ regressions, `python3 tools/build_selfhost.py`, and `git diff --check` must pass.
 
 Verification:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/toolchain/emit/cpp -p 'test_py2cpp_features.py' -k sibling_relative_import`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py' -k sibling_relative_import`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

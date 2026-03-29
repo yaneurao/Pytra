@@ -37,8 +37,8 @@ Acceptance criteria:
 Verification commands:
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2scala*' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cs*' -v`
-- `python3 tools/regenerate_samples.py --langs scala,cs --stems 01_mandelbrot --force`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets scala,cs --ignore-unstable-stdout 01_mandelbrot`
+- `python3 tools/gen/regenerate_samples.py --langs scala,cs --stems 01_mandelbrot --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets scala,cs --ignore-unstable-stdout 01_mandelbrot`
 
 Breakdown:
 - [x] [ID: P0-SAMPLE-OUTPUT-CORRECTNESS-01-S1-01] Fix arithmetic-precedence preservation in the Scala emitter and remove broken expressions in `sample/scala/01`.

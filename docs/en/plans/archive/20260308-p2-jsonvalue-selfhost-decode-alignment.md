@@ -60,11 +60,11 @@
 - `match` は前提にしない。v1 は decode helper method (`as_obj`, `get_str`, `get_obj`, など) ベースで進める。
 
 確認コマンド（予定）:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/link -p 'test_*.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_py2x_cli.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_ir2lang_cli.py'`
-- `python3 tools/check_noncpp_east3_contract.py --skip-transpile`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/link -p 'test_*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_py2x_cli.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/tooling -p 'test_ir2lang_cli.py'`
+- `python3 tools/check/check_noncpp_east3_contract.py --skip-transpile`
 
 ## 1. 基本方針
 
@@ -190,6 +190,6 @@ entry_modules = root.get_arr("entry_modules")
 - 2026-03-08: `JsonObj` / `JsonArr` / `JsonValue` の相互参照を checked-in C++ runtime へ落とすため、`header_builder` は class block の前に forward declaration を出す形へ修正した。
 - 2026-03-08: `S2-02` では `program_loader` / `program_validator` / `link_manifest_io` / `materializer` の root decode を `json.loads_obj()` へ寄せ、validator の内部正規形を `JsonObj` / `JsonArr` に切り替えた。外向けの return contract は `dict[str, object]` / `Link*Entry` のまま維持し、call site を一度に壊さない形に留めた。
 - 2026-03-08: `S3-01` では `py2x.py` の link-input 判定を `JsonObj.get_str("schema")` ベースへ、`ir2lang.py` と `toolchain/ir/east_io.py` の wrapped/root unwrap を `loads_obj()` / `JsonObj.get_*` ベースへ切り替えた。`py2x-selfhost.py` 本体は raw JSON parse を持たないため変更不要と判断した。
-- 2026-03-08: `S3-02` の代表確認として `test_py2x_cli.py`, `test_ir2lang_cli.py`, `test_pylib_json.py`, `test/unit/link/test_*.py`, `check_noncpp_east3_contract.py --skip-transpile` を実行し、`JsonValue` decode lane で green を確認した。
-- 2026-03-08: `S4-01` では `tools/check_jsonvalue_decode_boundaries.py` と `test_check_jsonvalue_decode_boundaries.py` を追加し、`py2x` / `ir2lang` / `east_io` / `toolchain/link/*` の JSON artifact 境界が `json.loads_obj(...)` を正本に保ち、raw `json.loads(...)` を再侵入させない guard を local CI (`tools/run_local_ci.py`) に常設した。
+- 2026-03-08: `S3-02` の代表確認として `test_py2x_cli.py`, `test_ir2lang_cli.py`, `test_pylib_json.py`, `tools/unittest/link/test_*.py`, `check_noncpp_east3_contract.py --skip-transpile` を実行し、`JsonValue` decode lane で green を確認した。
+- 2026-03-08: `S4-01` では `tools/check/check_jsonvalue_decode_boundaries.py` と `test_check_jsonvalue_decode_boundaries.py` を追加し、`py2x` / `ir2lang` / `east_io` / `toolchain/link/*` の JSON artifact 境界が `json.loads_obj(...)` を正本に保ち、raw `json.loads(...)` を再侵入させない guard を local CI (`tools/run/run_local_ci.py`) に常設した。
 - 2026-03-08: `S4-02` では `spec-tools` / `how-to-use` を guard 運用へ同期し、本計画を archive へ移せる状態で閉じた。

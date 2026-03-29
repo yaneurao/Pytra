@@ -24,8 +24,8 @@ _TYPE_MAP: dict[str, str] = {
     "str": "String",
     "None": "()",
     "none": "()",
-    "bytes": "Vec<u8>",
-    "bytearray": "Vec<u8>",
+    "bytes": "PyList<i64>",
+    "bytearray": "PyList<i64>",
     "list": "PyList<Box<dyn std::any::Any>>",
     "dict": "HashMap<String, Box<dyn std::any::Any>>",
     "set": "HashSet<String>",
@@ -37,6 +37,7 @@ _TYPE_MAP: dict[str, str] = {
     "Node": "HashMap<String, Box<dyn std::any::Any>>",
     "Callable": "Box<dyn Fn()>",
     "callable": "Box<dyn Fn()>",
+    "deque": "VecDeque<Box<dyn std::any::Any>>",
     "Exception": "Box<dyn std::error::Error>",
     "BaseException": "Box<dyn std::error::Error>",
     "RuntimeError": "Box<dyn std::error::Error>",
@@ -122,6 +123,8 @@ _RS_KEYWORDS: set[str] = {
     "super", "trait", "true", "type", "unsafe", "use", "where", "while",
     "async", "await", "dyn", "abstract", "become", "box", "do", "final",
     "macro", "override", "priv", "typeof", "unsized", "virtual", "yield",
+    # Rust stdlib types that would conflict with user-defined struct names
+    "Box", "Vec", "String", "Option", "Result", "HashMap", "HashSet", "VecDeque",
 }
 
 
@@ -180,8 +183,19 @@ def rs_type(resolved_type: str) -> str:
         inner = resolved_type[4:-1]
         return "HashSet<" + rs_type(inner) + ">"
 
-    # tuple[A, B, ...] → use Vec<Box<dyn Any>> for now
+    # deque[T] → VecDeque<T>
+    if resolved_type.startswith("deque[") and resolved_type.endswith("]"):
+        inner = resolved_type[6:-1]
+        return "VecDeque<" + rs_type(inner) + ">"
+
+    # tuple[A, B, ...] → Vec<A> if all args same type, else Vec<Box<dyn Any>>
     if resolved_type.startswith("tuple[") and resolved_type.endswith("]"):
+        inner = resolved_type[6:-1]
+        parts = _split_generic_args(inner)
+        if len(parts) == 1:
+            elem_rt = rs_type(parts[0])
+            if elem_rt != "Box<dyn std::any::Any>":
+                return "Vec<" + elem_rt + ">"
         return "Vec<Box<dyn std::any::Any>>"
 
     # Optional[T] / T | None → Option<T>
@@ -230,8 +244,9 @@ def rs_zero_value(resolved_type: str) -> str:
 
 def rs_signature_type(resolved_type: str, class_names: set[str] = set(), trait_names: set[str] = set()) -> str:
     """Return the Rust type for a function parameter/return type."""
-    if resolved_type in class_names:
-        return "Box<" + safe_rs_ident(resolved_type) + ">"
+    # Check trait_names first — traits take priority over classes
     if resolved_type in trait_names:
         return "Box<dyn " + safe_rs_ident(resolved_type) + ">"
+    if resolved_type in class_names:
+        return "Box<" + safe_rs_ident(resolved_type) + ">"
     return rs_type(resolved_type)

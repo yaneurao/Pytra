@@ -19,8 +19,8 @@ Goal:
 Scope:
 - `src/hooks/cpp/emitter/*` (cast decisions/expression emission)
 - `src/pytra/compiler/east_parts/east3_opt_passes/*` (if needed)
-- `test/unit/test_east3_cpp_bridge.py`
-- `test/unit/test_py2cpp_codegen_issues.py`
+- `tools/unittest/test_east3_cpp_bridge.py`
+- `tools/unittest/test_py2cpp_codegen_issues.py`
 
 Out of scope:
 - Unsafe blanket reduction into `object/Any` paths
@@ -32,17 +32,17 @@ Acceptance criteria:
 - Regression tests enforce fail-closed behavior and confirm no regression.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_east3_cpp_bridge.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v`
-- `python3 tools/check_py2cpp_transpile.py`
+- `python3 tools/check/check_py2cpp_transpile.py`
 
 Decision log:
 - 2026-03-01: Filed as P0 for additional sample/18 optimization to reduce `str -> str` identity casts.
 - 2026-03-01: Confirmed that in sample/18, assignment AST for `let_name/assign_name` uses `Unbox(target=str)`, while the `resolved_type` on the value-side `Attribute` is `unknown`, causing `py_to_string(...)` to remain.
 - 2026-03-01: Added `class_method_return_types` and `class_field_types` to the C++ emitter, and strengthened type inference for `Call(Attribute)` (e.g. `self.expect(...)`) and field access from it (`Token.text`).
 - 2026-03-01: Added a pass-through guard in `_render_expr_kind_unbox` for source/target identity types, collapsing `py_to_string(this->expect("IDENT")->text)` to `this->expect("IDENT")->text`.
-- 2026-03-01: Added sample/18 regression coverage in `test_py2cpp_codegen_issues.py` (elide `py_to_string` for `IDENT.text`), and confirmed non-regression via `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` (81 tests), `python3 tools/check_py2cpp_transpile.py` (`checked=134 ok=134 fail=0 skipped=6`), and `runtime_parity_check` (sample/18 cpp PASS).
+- 2026-03-01: Added sample/18 regression coverage in `test_py2cpp_codegen_issues.py` (elide `py_to_string` for `IDENT.text`), and confirmed non-regression via `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2cpp_codegen_issues.py' -v` (81 tests), `python3 tools/check/check_py2cpp_transpile.py` (`checked=134 ok=134 fail=0 skipped=6`), and `runtime_parity_check` (sample/18 cpp PASS).
 
 ## Breakdown
 

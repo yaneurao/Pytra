@@ -25,20 +25,20 @@ Scope:
 - `materials/refs/from-Pytra-NES2/{property_method_call.py,list_bool_index.py}`
 - new representative fixtures under `test/fixtures/**`
 - backend smoke:
-  - `test/unit/backends/cpp/test_py2cpp_features.py`
-  - `test/unit/backends/cs/test_py2cs_smoke.py`
-  - `test/unit/backends/rs/test_py2rs_smoke.py`
-  - `test/unit/backends/go/test_py2go_smoke.py`
-  - `test/unit/backends/java/test_py2java_smoke.py`
-  - `test/unit/backends/kotlin/test_py2kotlin_smoke.py`
-  - `test/unit/backends/scala/test_py2scala_smoke.py`
-  - `test/unit/backends/swift/test_py2swift_smoke.py`
-  - `test/unit/backends/nim/test_py2nim_smoke.py`
-  - `test/unit/backends/js/test_py2js_smoke.py`
-  - `test/unit/backends/ts/test_py2ts_smoke.py`
-  - `test/unit/backends/lua/test_py2lua_smoke.py`
-  - `test/unit/backends/rb/test_py2rb_smoke.py`
-  - `test/unit/backends/php/test_py2php_smoke.py`
+  - `tools/unittest/emit/cpp/test_py2cpp_features.py`
+  - `tools/unittest/emit/cs/test_py2cs_smoke.py`
+  - `tools/unittest/emit/rs/test_py2rs_smoke.py`
+  - `tools/unittest/emit/go/test_py2go_smoke.py`
+  - `tools/unittest/emit/java/test_py2java_smoke.py`
+  - `tools/unittest/emit/kotlin/test_py2kotlin_smoke.py`
+  - `tools/unittest/emit/scala/test_py2scala_smoke.py`
+  - `tools/unittest/emit/swift/test_py2swift_smoke.py`
+  - `tools/unittest/emit/nim/test_py2nim_smoke.py`
+  - `tools/unittest/emit/js/test_py2js_smoke.py`
+  - `tools/unittest/emit/ts/test_py2ts_smoke.py`
+  - `tools/unittest/emit/lua/test_py2lua_smoke.py`
+  - `tools/unittest/emit/rb/test_py2rb_smoke.py`
+  - `tools/unittest/emit/php/test_py2php_smoke.py`
 - common smoke helpers / fixture lookup / backend contract checkers where needed
 - docs / support wording / TODO
 
@@ -59,21 +59,21 @@ Acceptance criteria:
 - The relation between the original repro bundle and the promoted fixtures/tests can be traced in docs or the decision log.
 
 Verification commands:
-- `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cs -p 'test_py2cs_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/rs -p 'test_py2rs_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/go -p 'test_py2go_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/java -p 'test_py2java_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/kotlin -p 'test_py2kotlin_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/scala -p 'test_py2scala_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/swift -p 'test_py2swift_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/nim -p 'test_py2nim_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/js -p 'test_py2js_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/ts -p 'test_py2ts_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/lua -p 'test_py2lua_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/rb -p 'test_py2rb_smoke.py'`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/php -p 'test_py2php_smoke.py'`
+- `python3 tools/check/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cpp -p 'test_py2cpp_features.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/cs -p 'test_py2cs_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/rs -p 'test_py2rs_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/go -p 'test_py2go_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/java -p 'test_py2java_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/kotlin -p 'test_py2kotlin_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/scala -p 'test_py2scala_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/swift -p 'test_py2swift_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/nim -p 'test_py2nim_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/js -p 'test_py2js_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/ts -p 'test_py2ts_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/lua -p 'test_py2lua_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/rb -p 'test_py2rb_smoke.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s tools/unittest/emit/php -p 'test_py2php_smoke.py'`
 - `git diff --check`
 
 Implementation policy:
@@ -138,7 +138,7 @@ Decision log:
 - 2026-03-13: `S1-02` added `test/fixtures/typing/property_method_call.py` and `test/fixtures/typing/list_bool_index.py`, locking the `@property` value-read/stringify semantics and the `list[bool]` read-write-reread semantics with assertions.
 - 2026-03-13: `S2-01` wired `property_method_call` / `list_bool_index` into the current C++ compile-failure baseline plus representative transpile smoke for `cs/rs/go/java/kotlin/scala/swift/nim`. `property_method_call` currently fails because property reads leak as member-function references, and `list_bool_index` currently fails because `std::vector<bool>` proxy semantics collide with the `bool&` expectation.
 - 2026-03-13: `S2-02` wired `property_method_call` / `list_bool_index` into representative transpile smoke for `js/ts/lua/ruby/php`, fixing Wave B at the transpile-contract level without allowing unsupported / preview escapes.
-- 2026-03-13: `S2-03` added a shared denylist helper under `test/unit/backends/representative_contract_support.py` so every representative smoke fails if the emitted source contains `unsupported / preview_only / not_implemented` markers. The C++ current baselines now apply the helper to generated C++ source itself before checking the expected compile failure.
+- 2026-03-13: `S2-03` added a shared denylist helper under `tools/unittest/emit/representative_contract_support.py` so every representative smoke fails if the emitted source contains `unsupported / preview_only / not_implemented` markers. The C++ current baselines now apply the helper to generated C++ source itself before checking the expected compile failure.
 - 2026-03-13: `S3-01` added class-local `@property` getter tracking to the C++ emitter so attribute reads lower to `this->mapper()` / `holder->mapper()` instead of member-function objects. With that change, `property_method_call` is compile+run green on C++ too, so every backend representative lane is now green and only `list_bool_index` remains unresolved.
 - 2026-03-13: `S3-02` switched the C++ runtime `list<T>` / `py_at` / `py_list_at_ref` surface to `list<T>::reference/const_reference` and added a bool-convertible proxy fallback to `make_object`. That removed the `std::vector<bool>` proxy vs `bool&` collision and made `list_bool_index` compile+run green on C++ too.
 - 2026-03-13: `S4-01` synced the final mapping between `materials/refs/from-Pytra-NES2` and repo fixtures/tests. `bytes_truthiness` is covered by `test/fixtures/typing/bytes_truthiness.py` plus the archived representative lane, `path_stringify` by `test/fixtures/stdlib/path_stringify.py` plus its archived representative lane, `field_default_factory_rc_obj` by the archived dataclass representative lane, and `property_method_call` / `list_bool_index` by `test/fixtures/typing/*` plus representative smoke across every backend. `path_alias_pkg/entry.py` remains out of scope because the file is still absent from the bundle.

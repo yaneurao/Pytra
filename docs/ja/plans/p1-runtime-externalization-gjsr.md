@@ -26,7 +26,7 @@
 - `src/hooks/swift/emitter/swift_native_emitter.py`
 - `src/hooks/ruby/emitter/ruby_native_emitter.py`
 - `src/runtime/go/pytra/*`, `src/runtime/java/pytra/*`, `src/runtime/swift/pytra/*`, `src/runtime/ruby/pytra/*`
-- `tools/runtime_parity_check.py`, `tools/regenerate_samples.py`, `test/unit/test_py2{go,java,swift,rb}_smoke.py`
+- `tools/check/runtime_parity_check.py`, `tools/gen/regenerate_samples.py`, `tools/unittest/test_py2{go,java,swift,rb}_smoke.py`
 
 非対象:
 - C++/Rust/C#/JS/TS backend の runtime 方式変更
@@ -40,13 +40,13 @@
 - `sample/{go,java,swift,ruby}` 再生成後も実行導線が破綻しない。
 
 確認コマンド:
-- `python3 tools/check_todo_priority.py`
+- `python3 tools/check/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2go_smoke.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2java_smoke.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2swift_smoke.py' -v`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_py2rb_smoke.py' -v`
-- `python3 tools/runtime_parity_check.py --case-root sample --targets go,java,swift,ruby --all-samples --ignore-unstable-stdout`
-- `python3 tools/regenerate_samples.py --langs go,java,swift,ruby --force`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets go,java,swift,ruby --all-samples --ignore-unstable-stdout`
+- `python3 tools/gen/regenerate_samples.py --langs go,java,swift,ruby --force`
 
 決定ログ:
 - 2026-02-27: ユーザー要望により「Go/Java/Swift/Ruby の inline runtime helper を埋め込まない」方針を `P1-RUNTIME-EXT-01` として起票した。
@@ -55,7 +55,7 @@
 - 2026-02-28: `S2-02` として Java emitter から helper 本体定義を撤去し、呼び出しを `PyRuntime.__pytra_*` に移管。`src/runtime/java/pytra/built_in/PyRuntime.java` に互換 helper を集約し、`py2java.py` が出力先へ `PyRuntime.java` を配置する導線へ切替えた。`test_py2java_smoke.py` と `runtime_parity_check --targets java`（`sample/18`）で回帰確認した。
 - 2026-02-28: `S2-03` として Swift emitter から helper inline 出力を停止し、`src/runtime/swift/pytra/py_runtime.swift` に helper 群を集約。`py2swift.py` が出力先へ `py_runtime.swift` を配置する導線に切替え、`test_py2swift_smoke.py` を通過。`runtime_parity_check --targets swift` は `swiftc` 未導入で `toolchain_missing`（環境制約）を確認した。
 - 2026-02-28: `S2-04` として Ruby emitter から inline helper 本体を撤去し、生成コードを `require_relative "py_runtime"` 参照へ切替えた。`src/runtime/ruby/pytra/py_runtime.rb` を新設し、`py2rb.py` が出力先へ `py_runtime.rb` を配置する導線を追加。`test_py2rb_smoke.py` と `runtime_parity_check --targets ruby`（`sample/18`）で回帰確認した。
-- 2026-02-28: `S3-01` として `test_py2{go,java,swift,rb}_smoke.py` を再実行し全 pass を確認。`runtime_parity_check --case-root sample --targets go,java,swift,ruby --all-samples --ignore-unstable-stdout` で `cases=18 pass=18 fail=0`（`swift` は `toolchain_missing`）を確認した。`tools/regenerate_samples.py` に `ruby` を追加して `--langs go,java,swift,ruby --force`（`total=72 regen=72 fail=0`）を通し、sample 再生成導線を固定した。
+- 2026-02-28: `S3-01` として `test_py2{go,java,swift,rb}_smoke.py` を再実行し全 pass を確認。`runtime_parity_check --case-root sample --targets go,java,swift,ruby --all-samples --ignore-unstable-stdout` で `cases=18 pass=18 fail=0`（`swift` は `toolchain_missing`）を確認した。`tools/gen/regenerate_samples.py` に `ruby` を追加して `--langs go,java,swift,ruby --force`（`total=72 regen=72 fail=0`）を通し、sample 再生成導線を固定した。
 
 ## S1-01 棚卸し結果（2026-02-28）
 
