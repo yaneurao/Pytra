@@ -78,12 +78,17 @@ PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py \
 PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py \
   class inheritance super_init --targets cpp
 
-# 従来版との結果比較（同じオプションで両方実行して diff）
-python3 tools/check/runtime_parity_check.py --category oop --targets cpp --summary-json work/tmp/slow.json
-PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py --category oop --targets cpp --summary-json work/tmp/fast.json
+# benchmark モード（sample 実行時間を計測し .parity-results/ に記録）
+PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
+  --targets go,cpp --case-root sample --all-samples --benchmark
+
+# benchmark 結果から sample/README の表を手動更新
+python3 tools/gen/gen_sample_benchmark.py
 ```
 
-注: `PYTHONPATH=src:tools` は toolchain2 と runtime_parity_check モジュールの解決に必要。
+注: `PYTHONPATH=src:tools/check` は toolchain2 と runtime_parity_check モジュールの解決に必要。
+
+`--benchmark` は warmup=1, repeat=3, 中央値で計測する。通常の parity check は 1 回実行のまま。計測結果は `.parity-results/<target>_sample.json` の各ケースの `elapsed_sec` に記録され、parity check 末尾で `gen_sample_benchmark.py` が自動実行される（前回生成から10分以上経過時のみ）。
 
 参照: `docs/ja/plans/plan-pipeline-redesign.md` §3.5「パフォーマンスノウハウ: インメモリパイプライン」
 

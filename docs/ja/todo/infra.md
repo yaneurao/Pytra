@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-03-30
+最終更新: 2026-03-30（P2-BENCH S1〜S5 完了）
 
 ## 運用ルール
 
@@ -19,16 +19,6 @@
 完了済みタスクは [アーカイブ](archive/20260330.md) / [P10-REORG アーカイブ](archive/20260330-p10reorg.md) を参照。
 
 ## 未完了タスク
-
-### P2-SAMPLE-BENCHMARK: sample parity check で実行時間を自動計測し README に反映する
-
-文脈: [docs/ja/plans/p2-sample-benchmark.md](../plans/p2-sample-benchmark.md)
-
-1. [ ] [ID: P2-BENCH-S1] parity check（fast 版）の sample 実行時に、Python と各ターゲットの実行時間（秒）を計測し `.parity-results/<target>_sample.json` の各ケースに `elapsed_sec` フィールドとして記録する
-2. [ ] [ID: P2-BENCH-S2] Python 実行の計測結果を `.parity-results/python_sample.json` に記録する（比較基準）
-3. [ ] [ID: P2-BENCH-S3] `tools/gen/gen_sample_benchmark.py` を作成する — `.parity-results/*_sample.json` を読み、`sample/README-ja.md` と `sample/README.md` の「実行速度の比較」テーブルを自動更新する（日英同時生成）
-4. [ ] [ID: P2-BENCH-S4] 計測プロトコルを既存の計測条件（warmup=1, repeat=5, 中央値）に合わせるか、新しいプロトコルを定義する
-5. [ ] [ID: P2-BENCH-S5] parity check の末尾で、前回生成から10分以上経過していれば `gen_sample_benchmark.py` を自動実行する（進捗マトリクスと同じ仕組み）
 
 ### P11-VERSION-GATE: toolchain2 用バージョンチェッカーの新設
 

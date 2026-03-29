@@ -1078,6 +1078,18 @@ emitter 開発時は **sample と fixture の両方** で parity check を実行
 
 実行結果は `.parity-results/` に自動蓄積され、`tools/gen/gen_backend_progress.py` の進捗マトリクスに反映される。
 
+### sample benchmark
+
+sample の実行時間を計測し、`sample/README-ja.md` / `sample/README.md` の benchmark テーブルを自動更新する。
+
+```bash
+# benchmark モード（warmup=1, repeat=3, 中央値で計測）
+PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
+  --targets go,cpp --case-root sample --all-samples --benchmark
+```
+
+計測結果は `.parity-results/<target>_sample.json` の `elapsed_sec` に記録される。parity check 末尾で `tools/gen/gen_sample_benchmark.py` が自動実行される（前回生成から10分以上経過時のみ）。
+
 ### unsupported feature の skip 管理
 
 言語がサポートしない機能の fixture は `runtime_parity_check.py` 内の `_LANG_UNSUPPORTED_FIXTURES` で宣言的にスキップされる。
