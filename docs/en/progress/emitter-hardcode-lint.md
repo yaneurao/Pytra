@@ -5,7 +5,7 @@
 # Emitter hardcode violation matrix
 
 > Machine-generated file. Run `python3 tools/check/check_emitter_hardcode_lint.py` to update.
-> Generated at: 2026-03-30T06:58:15
+> Generated at: 2026-03-30T06:59:55
 > [Links](./index.md)
 
 Matrix of grep-detected violations where the emitter hardcodes module names, runtime symbols, or class names instead of using EAST3 data.
@@ -15,15 +15,16 @@ Fewer violations means the emitter is more faithfully following the EAST3 source
 |---|---|
 | 🟩 | No violations (0) |
 | 🟥 | Violations found (count shown) |
+| ⬜ | Not implemented (no emitter in toolchain2) |
 
 | Category | cpp | rs | cs | ps1 | js | ts | dart | go | java | swift | kotlin | ruby | lua | scala | php | nim | julia | zig |
 |--- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| module name | 🟩0 | 🟥2 | 🟩0 | 🟩0 | 🟩0 | 🟥1 | 🟩0 | 🟥6 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 |
-| runtime symbol | 🟥1 | 🟥3 | 🟩0 | 🟩0 | 🟩0 | 🟥1 | 🟩0 | 🟥2 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 |
-| target const | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 |
-| prefix match | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 |
-| class name | 🟥3 | 🟥1 | 🟩0 | 🟩0 | 🟩0 | 🟥6 | 🟩0 | 🟥20 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 |
-| Python syntax | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 |
+| module name | 🟩0 | 🟥2 | ⬜ | ⬜ | ⬜ | 🟥1 | ⬜ | 🟥6 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| runtime symbol | 🟥1 | 🟥3 | ⬜ | ⬜ | ⬜ | 🟥1 | ⬜ | 🟥2 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| target const | 🟩0 | 🟩0 | ⬜ | ⬜ | ⬜ | 🟩0 | ⬜ | 🟩0 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| prefix match | 🟩0 | 🟩0 | ⬜ | ⬜ | ⬜ | 🟩0 | ⬜ | 🟩0 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| class name | 🟥3 | 🟥1 | ⬜ | ⬜ | ⬜ | 🟥6 | ⬜ | 🟥20 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Python syntax | 🟩0 | 🟩0 | ⬜ | ⬜ | ⬜ | 🟩0 | ⬜ | 🟩0 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ## Details
 

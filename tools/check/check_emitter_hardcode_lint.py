@@ -161,31 +161,45 @@ def collect_hits(
 # 出力
 # ---------------------------------------------------------------------------
 
+def implemented_langs() -> set[str]:
+    """toolchain2/emit/ に実際にディレクトリが存在する言語キーの集合。"""
+    dir_to_key = {d: k for k, d in ALL_LANGS_ORDERED}
+    return {
+        dir_to_key[p.name]
+        for p in EMIT_DIR.iterdir()
+        if p.is_dir() and p.name in dir_to_key
+    }
+
+
 def build_matrix(
     hits: list[tuple[str, str, Path, int, str]],
     langs: list[str],
-) -> dict[str, dict[str, int]]:
-    mat: dict[str, dict[str, int]] = {
-        cat: {lang: 0 for lang in langs}
+) -> dict[str, dict[str, int | None]]:
+    """None = 未実装、0以上 = 実装済み（違反数）"""
+    impl = implemented_langs()
+    mat: dict[str, dict[str, int | None]] = {
+        cat: {lang: (0 if lang in impl else None) for lang in langs}
         for cat in CATEGORIES
     }
     for lang, cat, _f, _ln, _line in hits:
         if cat in mat and lang in mat[cat]:
-            mat[cat][lang] += 1
+            mat[cat][lang] = (mat[cat][lang] or 0) + 1
     return mat
 
 
-def print_matrix(mat: dict[str, dict[str, int]], langs: list[str]) -> None:
+def _cell(n: int | None) -> str:
+    if n is None:
+        return "⬜"
+    return f"🟥{n}" if n else "🟩0"
+
+
+def print_matrix(mat: dict[str, dict[str, int | None]], langs: list[str]) -> None:
     header = "| カテゴリ           | " + " | ".join(f"{l:<6}" for l in langs) + " |"
     sep    = "|" + "-" * (len(header) - 2) + "|"
     print(header)
     print(sep)
     for cat, label in CATEGORY_LABELS.items():
-        row_counts = mat[cat]
-        cells = []
-        for l in langs:
-            n = row_counts[l]
-            cells.append(f"{'🟥' + str(n) if n else '🟩0':<6}")
+        cells = [f"{_cell(mat[cat][l]):<6}" for l in langs]
         print(f"| {label} | " + " | ".join(cells) + " |")
 
 
@@ -240,6 +254,7 @@ def _render_md(
         lines.append("|---|---|")
         lines.append("| 🟩 | 違反なし（0件） |")
         lines.append("| 🟥 | 違反あり（件数を表示） |")
+        lines.append("| ⬜ | 未実装（toolchain2 に emitter なし） |")
         lines.append("")
         cat_header = "| カテゴリ"
         cat_sep    = "|---"
@@ -257,6 +272,7 @@ def _render_md(
         lines.append("|---|---|")
         lines.append("| 🟩 | No violations (0) |")
         lines.append("| 🟥 | Violations found (count shown) |")
+        lines.append("| ⬜ | Not implemented (no emitter in toolchain2) |")
         lines.append("")
         cat_header = "| Category"
         cat_sep    = "|---"
@@ -267,10 +283,7 @@ def _render_md(
     lines.append(header)
     lines.append(sep)
     for cat, label in CATEGORY_LABELS.items():
-        cells = []
-        for l in langs:
-            n = mat[cat][l]
-            cells.append(f"🟥{n}" if n else "🟩0")
+        cells = [_cell(mat[cat][l]) for l in langs]
         lines.append(f"| {label.strip()} | " + " | ".join(cells) + " |")
     lines.append("")
 
