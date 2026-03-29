@@ -5,7 +5,7 @@
 # sample parity マトリクス
 
 > 機械生成ファイル。`python3 tools/gen/gen_backend_progress.py` で更新する。
-> 生成日時: 2026-03-30T05:25:24
+> 生成日時: 2026-03-30T05:26:02
 > [関連リンク](./progress.md)
 
 | アイコン | 意味 |
