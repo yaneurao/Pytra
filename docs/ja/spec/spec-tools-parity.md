@@ -16,6 +16,11 @@
   - 補足: artifact 比較は `output:` で報告された生成物に対して `存在 + size + CRC32` を必須一致条件とする。
   - 補足: ケース実行前に `sample/out`, `test/out`, `out` の同名 artifact を削除し、前回実行物の取り違えを防止する。
   - 補足: timeout 時は process-group 単位で kill し、`*_swift.out` などの子プロセス孤立を許容しない。
+- `tools/runtime_parity_check_fast.py`
+  - 目的: `runtime_parity_check.py` の高速版。transpile 段を toolchain2 Python API のインメモリ呼び出しに置き換え、プロセス起動と中間ファイル I/O を省略する。
+  - 主要オプション: `runtime_parity_check.py` と同一（`--targets`, `--case-root`, `--category`, `--all-samples`, `--east3-opt-level`, `--cmd-timeout-sec`, `--summary-json`）
+  - 制限: `--cpp-codegen-opt` は未対応。対応ターゲットは現時点で `cpp` と `go`。
+  - 実行方法: `PYTHONPATH=src:tools python3 tools/runtime_parity_check_fast.py [options]`
 - `tools/check_all_target_sample_parity.py`
   - 目的: canonical parity group（`cpp`, `js_ts`, `compiled`, `scripting_mixed`）を順に実行し、全 target sample parity を確定する。
   - 主要オプション: `--groups`, `--east3-opt-level`, `--cpp-codegen-opt`, `--summary-dir`
@@ -53,6 +58,32 @@ parity check で CLI サブプロセスの代わりにこれらの API を直接
 3. `--cli-mode` フラグで従来の CLI 経由実行も残し、API 呼び出しとの結果一致を検証可能にする
 
 実装: `tools/runtime_parity_check_fast.py`（registry を1回だけロードし、全ケースで共有する高速版）
+
+### 使い方
+
+```bash
+# oop カテゴリだけ C++ で回す
+PYTHONPATH=src:tools python3 tools/runtime_parity_check_fast.py \
+  --category oop --targets cpp
+
+# 全 fixture を Go で回す
+PYTHONPATH=src:tools python3 tools/runtime_parity_check_fast.py \
+  --targets go
+
+# sample 18 件を C++ で回す
+PYTHONPATH=src:tools python3 tools/runtime_parity_check_fast.py \
+  --case-root sample --all-samples --targets cpp
+
+# 個別ケース指定
+PYTHONPATH=src:tools python3 tools/runtime_parity_check_fast.py \
+  class inheritance super_init --targets cpp
+
+# 従来版との結果比較（同じオプションで両方実行して diff）
+python3 tools/runtime_parity_check.py --category oop --targets cpp --summary-json work/tmp/slow.json
+PYTHONPATH=src:tools python3 tools/runtime_parity_check_fast.py --category oop --targets cpp --summary-json work/tmp/fast.json
+```
+
+注: `PYTHONPATH=src:tools` は toolchain2 と runtime_parity_check モジュールの解決に必要。
 
 参照: `docs/ja/plans/plan-pipeline-redesign.md` §3.5「パフォーマンスノウハウ: インメモリパイプライン」
 
