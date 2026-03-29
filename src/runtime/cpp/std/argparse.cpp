@@ -1,8 +1,8 @@
-#include "std/argparse.h"
+#include "argparse.h"
 
 #include "built_in/contains.h"
 #include "built_in/string_ops_fwd.h"
-#include "std/sys.h"
+#include "sys.h"
 #include "core/exceptions.h"
 
 Namespace::Namespace()

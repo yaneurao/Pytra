@@ -42,6 +42,8 @@
     "str.lower": "py_lower",
     "str.isdigit": "py_isdigit",
     "str.isalpha": "py_isalpha",
+    "str.isalnum": "py_isalnum",
+    "str.index": "py_str_index",
     "py_write_text": "py_pathlib_write_text",
     "py_floordiv": "py_floordiv",
     "path.join": "join",

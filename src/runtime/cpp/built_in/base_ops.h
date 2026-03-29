@@ -1,6 +1,9 @@
 #ifndef PYTRA_NATIVE_BUILT_IN_BASE_OPS_H
 #define PYTRA_NATIVE_BUILT_IN_BASE_OPS_H
 
+#include <charconv>
+#include <cstring>
+#include <limits>
 #include <sstream>
 #include "core/py_types.h"
 
@@ -89,11 +92,19 @@ static inline ::std::string py_to_string(const ::std::string& v) {
     return v;
 }
 
-// Python-like float formatting: whole numbers print as "2.0" not "2".
+// Python-like float formatting: shortest round-trip representation.
+// Matches Python's str(float) output (e.g. 1.2246467991473532e-16, not 1.22465e-16).
 static inline ::std::string py_to_string(double v) {
-    ::std::ostringstream oss;
-    oss << v;
-    ::std::string s = oss.str();
+    char buf[32];
+    // Shortest round-trip representation (matches Python str(float) behaviour).
+    auto [ptr, ec] = ::std::to_chars(buf, buf + sizeof(buf), v);
+    if (ec != ::std::errc{}) {
+        // Fallback for special values (inf, nan, etc.)
+        ::std::ostringstream oss;
+        oss << v;
+        return oss.str();
+    }
+    ::std::string s(buf, ptr);
     if (s.find('.') == ::std::string::npos &&
         s.find('e') == ::std::string::npos &&
         s.find('n') == ::std::string::npos &&

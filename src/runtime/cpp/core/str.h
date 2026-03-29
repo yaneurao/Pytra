@@ -358,4 +358,14 @@ static inline bool py_isalpha(const str& ch) {
     return ch.size() == 1 && ::std::isalpha(static_cast<unsigned char>(static_cast<const ::std::string&>(ch)[0])) != 0;
 }
 
+static inline bool py_isalnum(const str& ch) {
+    return ch.size() == 1 && ::std::isalnum(static_cast<unsigned char>(static_cast<const ::std::string&>(ch)[0])) != 0;
+}
+
+static inline int64 py_str_index(const str& s, const str& sub) {
+    int64 pos = s.find(sub);
+    if (pos < 0) throw ::std::runtime_error("substring not found");
+    return pos;
+}
+
 #endif  // PYTRA_BUILT_IN_STR_H

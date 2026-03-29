@@ -3,12 +3,12 @@
 
 #include "core/py_runtime.h"
 
-extern list<str> argv;
-extern list<str> path;
+extern Object<list<str>> argv;
+extern Object<list<str>> path;
 
 void exit(int64 code = 0);
-void set_argv(const list<str>& values);
-void set_path(const list<str>& values);
+void set_argv(const Object<list<str>>& values);
+void set_path(const Object<list<str>>& values);
 void write_stderr(const str& text);
 void write_stdout(const str& text);
 

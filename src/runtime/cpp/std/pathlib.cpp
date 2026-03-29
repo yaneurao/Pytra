@@ -1,8 +1,8 @@
-#include "std/pathlib.h"
+#include "pathlib.h"
 
 #include <stdexcept>
 
-#include "std/glob.h"
+#include "glob.h"
 #include "std/os.h"
 #include "std/os_path.h"
 

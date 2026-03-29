@@ -1,21 +1,21 @@
 #include "core/py_runtime.h"
 #include "core/process_runtime.h"
 
-#include "std/sys.h"
+#include "sys.h"
 
-list<str> argv = py_runtime_argv();
-list<str> path = {};
+Object<list<str>> argv = rc_list_from_value(py_runtime_argv());
+Object<list<str>> path = rc_list_new<str>();
 
 void exit(int64 code) {
     py_runtime_exit(code);
 }
 
-void set_argv(const list<str>& values) {
+void set_argv(const Object<list<str>>& values) {
     argv = values;
-    py_runtime_set_argv(values);
+    if (values) py_runtime_set_argv(*values);
 }
 
-void set_path(const list<str>& values) {
+void set_path(const Object<list<str>>& values) {
     path = values;
 }
 

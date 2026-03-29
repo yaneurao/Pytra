@@ -249,7 +249,10 @@ def emit_runtime_module_artifacts(
     native_include = ""
     native_header = native_companion_header_path(module_id)
     if native_header.exists():
-        native_include = str(native_header.relative_to(_RUNTIME_CPP_ROOT)).replace("\\", "/")
+        # Use path relative to src/ so the generated #include resolves via -I src_dir
+        # rather than self-shadowing via -I emit_dir (which takes search precedence).
+        _src_root = _RUNTIME_CPP_ROOT.parents[1]  # .../src
+        native_include = str(native_header.relative_to(_src_root)).replace("\\", "/")
     header_text = build_cpp_header_from_east3(
         module_id,
         east_doc,

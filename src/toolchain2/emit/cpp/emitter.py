@@ -1152,6 +1152,25 @@ def _emit_unaryop(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     return operand
 
 
+def _is_non_optional_type_node(node: JsonVal) -> bool:
+    """Return True if the EAST node's type is definitively non-optional (e.g. nominal ADT).
+
+    Checks type_expr_summary_v1 category first, then falls back to resolved_type string.
+    """
+    if not isinstance(node, dict):
+        return False
+    summary = node.get("type_expr_summary_v1")
+    if isinstance(summary, dict):
+        category = summary.get("category")
+        if category in ("nominal_adt", "static"):
+            return True
+    # Fallback: inspect the resolved_type string directly.
+    resolved = _str(node, "resolved_type")
+    if not resolved or resolved in ("", "unknown", "None", "object"):
+        return False
+    return " | None" not in resolved and "Optional" not in resolved
+
+
 def _emit_compare(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     left = _emit_expr(ctx, node.get("left"))
     left_node = node.get("left")
@@ -1167,8 +1186,8 @@ def _emit_compare(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         right = _emit_expr(ctx, comp)
         prev_type = _expr_static_type(ctx, prev_node)
         comp_type = _expr_static_type(ctx, comp)
-        prev_is_nominal = prev_type in ctx.class_names
-        comp_is_nominal = comp_type in ctx.class_names
+        prev_is_nominal = prev_type in ctx.class_names or _is_non_optional_type_node(prev_node)
+        comp_is_nominal = comp_type in ctx.class_names or _is_non_optional_type_node(comp)
         prev_is_none = prev == "::std::nullopt" or prev_type == "None"
         comp_is_none = right == "::std::nullopt" or comp_type == "None"
         if op_str == "In": parts.append("py_contains(" + right + ", " + prev + ")")
@@ -1310,6 +1329,17 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                         node,
                         _qualify_runtime_call_symbol(mapped_name) + "(" + ", ".join([owner] + call_arg_strs) + ")",
                     )
+            # Fallback: look up <static_owner_type>.<attr> in the mapping for known value types
+            # (covers cases where the resolver left resolved_type="unknown" on the call node).
+            _static_owner_type = _expr_static_type(ctx, owner_node)
+            if _static_owner_type != "" and _static_owner_type != "unknown":
+                _type_attr_key = _static_owner_type + "." + attr
+                _fallback_name = resolve_runtime_call(_type_attr_key, attr, adapter, ctx.mapping)
+                if _fallback_name != "":
+                    return _wrap_container_result_if_needed(
+                        node,
+                        _qualify_runtime_call_symbol(_fallback_name) + "(" + ", ".join([owner] + call_arg_strs) + ")",
+                    )
             if owner == "this":
                 return "this->" + _safe_cpp_ident(attr) + "(" + ", ".join(call_arg_strs) + ")"
             member_sep = "->" if _uses_ref_container_storage(ctx, owner_node) else "."
@@ -1350,7 +1380,12 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 )
                 if mapped_name != "":
                     return _qualify_runtime_call_symbol(mapped_name) + "(" + ", ".join(call_arg_strs) + ")"
-            return _safe_cpp_ident(fn) + "(" + ", ".join(call_arg_strs) + ")"
+            # Qualify module-level calls with :: so class method names can't shadow them.
+            # Only skip :: for local variables (closures/lambdas) visible in scope.
+            safe_fn = _safe_cpp_ident(fn)
+            if _is_local_visible(ctx, fn):
+                return safe_fn + "(" + ", ".join(call_arg_strs) + ")"
+            return "::" + safe_fn + "(" + ", ".join(call_arg_strs) + ")"
     return _emit_expr(ctx, func) + "(" + ", ".join(call_arg_strs) + ")"
 
 
