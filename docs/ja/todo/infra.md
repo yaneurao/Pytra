@@ -28,6 +28,17 @@
 2. [ ] [ID: P3-SAMPLE-COPY-S2] コピー先のファイル名が既存の `sample/<lang>/` の命名規則（`01_mandelbrot.cpp` 等）と一致することを確認する
 3. [ ] [ID: P3-SAMPLE-COPY-S3] `regenerate_samples.py` との責務整理 — parity check が自動コピーするなら `regenerate_samples.py` は不要になる可能性がある。廃止するか、手動再生成用として残すか判断する
 
+### P3-SELFHOST-PARITY: selfhost 済みコンパイラによる fixture/sample parity 検証
+
+文脈: [docs/ja/plans/p3-selfhost-parity.md](../plans/p3-selfhost-parity.md)
+
+前提: 各言語の selfhost ビルドタスク（P4-CPP-SELFHOST, P6-GO-SELFHOST 等）が完了してから着手。
+
+1. [ ] [ID: P3-SELFHOST-PARITY-S1] `tools/run/run_selfhost_parity.py` を作成する — selfhost バイナリのビルド → emit → compile + run → stdout 比較の一連のフローを実行する
+2. [ ] [ID: P3-SELFHOST-PARITY-S2] 結果を `.parity-results/selfhost_<lang>.json` に記録する — `gen_backend_progress.py` が読み取り selfhost マトリクスに反映
+3. [ ] [ID: P3-SELFHOST-PARITY-S3] Python 行のハードコードを廃止し、`.parity-results/selfhost_python.json` から読む形に移行する
+4. [ ] [ID: P3-SELFHOST-PARITY-S4] selfhost マトリクスの PASS 条件を「fixture + sample の全件 parity PASS」に確定する
+
 ### P20-INT32: int のデフォルトサイズを int64 → int32 に変更
 
 文脈: [docs/ja/plans/p4-int32-default.md](../plans/p4-int32-default.md)
