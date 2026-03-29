@@ -5,6 +5,7 @@
 # selfhost マトリクス
 
 > 機械生成ファイル。`python3 tools/gen/gen_backend_progress.py` で更新する。
+> 生成日時: 2026-03-30T05:21:19
 > [凡例・関連リンク](./progress.md)
 
 toolchain2 を各言語に変換し、変換後のコンパイラで全言語の emit ができるか。

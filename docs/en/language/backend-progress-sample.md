@@ -1,14 +1,14 @@
-<a href="../../en/language/backend-progress-sample.md">
-  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+<a href="../../ja/language/backend-progress-sample.md">
+  <img alt="日本語で読む" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
 </a>
 
-# sample parity マトリクス
+# Sample parity matrix
 
-> 機械生成ファイル。`python3 tools/gen/gen_backend_progress.py` で更新する。
-> 生成日時: 2026-03-30T05:21:19
-> [凡例・関連リンク](./progress.md)
+> Machine-generated file. Run `python3 tools/gen/gen_backend_progress.py` to update.
+> Generated at: 2026-03-30T05:21:19
+> [Legend & links](./progress.md)
 
-| ケース | cpp | go | rs | ts |
+| Case | cpp | go | rs | ts |
 |---|---|---|---|---|
 | 01_mandelbrot | ⬜ | ⬜ | ⬜ | ⬜ |
 | 02_raytrace_spheres | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -28,4 +28,4 @@
 | 16_glass_sculpture_chaos | ⬜ | ⬜ | ⬜ | ⬜ |
 | 17_monte_carlo_pi | ⬜ | ⬜ | ⬜ | ⬜ |
 | 18_mini_language_interpreter | ⬜ | ⬜ | ⬜ | ⬜ |
-| **合計** | — | — | — | — |
+| **Total** | — | — | — | — |

@@ -1,14 +1,14 @@
-<a href="../../en/language/backend-progress-fixture.md">
-  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+<a href="../../ja/language/backend-progress-fixture.md">
+  <img alt="日本語で読む" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
 </a>
 
-# fixture parity マトリクス
+# Fixture parity matrix
 
-> 機械生成ファイル。`python3 tools/gen/gen_backend_progress.py` で更新する。
-> 生成日時: 2026-03-30T05:21:19
-> [凡例・関連リンク](./progress.md)
+> Machine-generated file. Run `python3 tools/gen/gen_backend_progress.py` to update.
+> Generated at: 2026-03-30T05:21:19
+> [Legend & links](./progress.md)
 
-| カテゴリ | ケース | cpp | go | rs | ts |
+| Category | Case | cpp | go | rs | ts |
 |---|---|---|---|---|---|
 | collections | boolop_value_select | ⬜ | ⬜ | ⬜ | ⬜ |
 | collections | comprehension | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -156,4 +156,4 @@
 | typing | starred_call_tuple_basic | ⬜ | ⬜ | ⬜ | ⬜ |
 | typing | type_alias_pep695 | ⬜ | ⬜ | ⬜ | ⬜ |
 | typing | union_return_errorcheck | ⬜ | ⬜ | ⬜ | ⬜ |
-| | **合計** | — | — | — | — |
+| | **Total** | — | — | — | — |
