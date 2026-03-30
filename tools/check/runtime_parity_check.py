@@ -31,144 +31,9 @@ _LOCAL_TOOL_FALLBACKS: dict[str, tuple[Path, ...]] = {
     "go": (ROOT / "work" / "tmp" / "go-toolchain" / "bin" / "go",),
 }
 
-# Declarative skip list: fixtures that are known to be unsupported by specific languages.
-# Key = language name, value = set of fixture stems to skip.
-# These are distinct from toolchain_missing (tool not installed) — these represent
-# language-level feature gaps (e.g. Zig doesn't support try/except).
-_LANG_UNSUPPORTED_FIXTURES: dict[str, set[str]] = {
-    "js": {
-        # run_failed: lambda not yet transpiled
-        "lambda_basic", "lambda_as_arg", "ok_lambda_default",
-        # run_failed: deque not supported
-        "deque_basic",
-        # run_failed: pass_through_comment contains C++ injection pragmas
-        "pass_through_comment",
-        # transpile_failed: argparse / json modules not supported
-        "argparse_extended", "json_extended",
-        # run_failed: dict/set comprehension, generator tuple target
-        "comprehension_dict_set", "ok_generator_tuple_target",
-        # run_failed: nested types (Any), class tuple assign (X = 0,)
-        "nested_types", "class_tuple_assign",
-        # run_failed: list concat + comprehension, inline __pow__
-        "ok_list_concat_comp", "ok_class_inline_method",
-        # run_failed: os.path submodule attribute access
-        "os_glob_extended",
-        # run_failed: pathlib mkdir exist_ok
-        "pathlib_extended",
-        # run_failed: set.discard / set.remove
-        "set_wrapper_methods",
-        # run_failed: str.upper / str.lower / str.startswith etc
-        "str_methods",
-        # run_failed: reversed / enumerate combo
-        "reversed_enumerate",
-        # run_failed: re module
-        "re_extended",
-        # output_mismatch: f-string format spec {:4d}
-        "ok_fstring_format_spec",
-        # output_mismatch: from pathlib import Path (non-pytra import)
-        "math_path_runtime_ir",
-    },
-    "ts": {
-        # TS delegates to JS emitter — same unsupported features
-        "lambda_basic", "lambda_as_arg", "ok_lambda_default",
-        "deque_basic", "pass_through_comment",
-        "argparse_extended", "json_extended",
-        "comprehension_dict_set", "ok_generator_tuple_target",
-        "nested_types", "class_tuple_assign",
-        "ok_list_concat_comp", "ok_class_inline_method",
-        "os_glob_extended", "pathlib_extended",
-        "set_wrapper_methods", "str_methods",
-        "reversed_enumerate", "re_extended",
-        "ok_fstring_format_spec", "math_path_runtime_ir",
-    },
-    "zig": {
-        "try_raise", "finally", "enum_basic", "dataclass_basic",
-        "match_exhaustive", "inheritance_class",
-    },
-    "nim": {
-        # transpile_failed: unsupported modules / union types
-        "any_class_alias", "argparse_extended", "dict_get_items",
-        "json_extended", "type_alias_pep695",
-        # output_mismatch: isinstance stub / class emit issues
-        "class_body_pass", "class_inherit_basic", "isinstance_tuple_check",
-        "isinstance_user_class", "list_alias_shared_mutation",
-        "ok_multi_for_comp", "type_ignore_from_import",
-        # run_failed: type mismatch (Nim strict typing vs Python dynamic)
-        "any_dict_items", "boolop_value_select", "bytearray_basic",
-        "class_member", "comprehension_dict_set", "dataclass",
-        "dataclasses_extended", "deque_basic", "finally", "for_over_string",
-        "from_import_symbols", "fstring_prefix", "import_pytra_runtime_png",
-        "in_membership", "inheritance", "inheritance_polymorphic_dispatch",
-        "list_repeat", "none_optional", "ok_fstring_format_spec",
-        "ok_typed_varargs_representative", "pathlib_extended",
-        "pytra_runtime_png", "staticmethod_basic", "str_for_each",
-        "str_index_char_compare", "str_join_method", "try_raise",
-        # run_failed: seq[auto] type inference gap
-        "any_basic", "any_list_mixed", "nested_types",
-        # run_failed: undeclared identifiers (enum, super, etc.)
-        "class_tuple_assign", "enum_basic", "enum_extended",
-        "from_pytra_std_import_math", "inheritance_virtual_dispatch_multilang",
-        "intenum_basic", "intflag_basic", "ok_class_inline_method",
-        "os_glob_extended", "pytra_std_import_math", "reversed_enumerate",
-        "set_wrapper_methods", "str_methods", "super_init",
-        # run_failed: indentation / comprehension emit
-        "comprehension_nested", "ok_generator_tuple_target", "ok_list_concat_comp",
-        # run_failed: missing native modules (sys, typing, re, etc.)
-        "sys_extended", "typing_extended", "re_extended",
-        # run_failed: lambda / other
-        "any_none", "bytes_basic", "dict_wrapper_methods", "enumerate_basic",
-        "lambda_as_arg", "lambda_basic", "lambda_capture_multiargs",
-        "lambda_ifexp", "lambda_immediate", "lambda_local_state",
-        "math_path_runtime_ir", "ok_lambda_default", "pass_through_comment",
-        "path_stringify", "str_slice",
-    },
-    "php": {
-        # output_mismatch: $_case_main undefined variable warning (py_assert_stdout pattern)
-        "add", "alias_arg", "assign", "class", "class_body_pass",
-        "class_instance", "class_member", "class_tuple_assign", "compare",
-        "comprehension", "dataclass", "dict_in", "fib", "finally",
-        "float", "for_over_string", "for_range", "fstring",
-        "fstring_format_spec", "gc_reassign", "if_else", "ifexp_bool",
-        "ifexp_ternary_regression", "inheritance",
-        "inheritance_polymorphic_dispatch",
-        "inheritance_virtual_dispatch_multilang", "instance_member",
-        "int8", "is_instance", "iterable", "list_alias_shared_mutation",
-        "loop", "math_path_runtime_ir", "negative_index", "nested_call",
-        "not", "slice_basic", "stateless_value", "str_for_each",
-        "str_join_method", "string", "string_ops", "sub_mul",
-        "top_level", "try_raise", "tuple_assign",
-        "type_ignore_from_import",
-        # run_failed: comprehension / lambda / advanced features
-        "any_basic", "any_class_alias", "any_dict_items", "any_list_mixed",
-        "any_none", "argparse_extended", "bitwise_invert_basic",
-        "bom_from_import", "boolop_value_select", "bytearray_basic",
-        "bytes_basic", "bytes_truthiness", "comprehension_dict_set",
-        "comprehension_filter", "comprehension_if_chain",
-        "comprehension_ifexp", "comprehension_nested",
-        "comprehension_range_step", "comprehension_range_step_like",
-        "dataclasses_extended", "deque_basic", "dict_get_items",
-        "dict_wrapper_methods", "enum_basic", "enum_extended",
-        "enumerate_basic", "from_import_symbols",
-        "from_pytra_std_import_math", "fstring_prefix",
-        "import_math_module", "import_pytra_runtime_png",
-        "in_membership", "intenum_basic", "intflag_basic",
-        "json_extended", "lambda_as_arg", "lambda_basic",
-        "lambda_capture_multiargs", "lambda_ifexp", "lambda_immediate",
-        "lambda_local_state", "list_bool_index", "list_repeat",
-        "math_extended", "nested_types", "none_optional",
-        "ok_list_concat_comp", "os_glob_extended", "path_stringify",
-        "pathlib_extended", "property_method_call",
-        "pytra_runtime_png", "pytra_std_import_math", "re_extended",
-        "reversed_enumerate", "set_wrapper_methods",
-        "staticmethod_basic", "str_methods", "str_slice",
-        "super_init", "sys_extended", "type_alias_pep695",
-        "typing_extended",
-        # run_failed: lambda / generator / inline method
-        "ok_class_inline_method", "ok_lambda_default",
-        # output: f-string format spec / generator not yet supported
-        "ok_fstring_format_spec", "ok_generator_tuple_target",
-    },
-}
+# Skip list abolished — all fixtures run for all languages.
+# FAIL is recorded as FAIL in .parity-results/ and shown in progress matrix.
+_LANG_UNSUPPORTED_FIXTURES: dict[str, set[str]] = {}
 
 
 @dataclass
@@ -187,6 +52,7 @@ class CheckRecord:
     target: str
     category: str
     detail: str
+    elapsed_sec: float | None = None
 
 
 def normalize(text: str) -> str:
@@ -810,6 +676,8 @@ def _save_parity_results(records: list[CheckRecord], case_root: str, targets: se
             entry: dict[str, object] = {"category": rec.category, "timestamp": now}
             if rec.detail:
                 entry["detail"] = rec.detail
+            if rec.elapsed_sec is not None:
+                entry["elapsed_sec"] = round(rec.elapsed_sec, 3)
             results[rec.case_stem] = entry
 
         doc = {

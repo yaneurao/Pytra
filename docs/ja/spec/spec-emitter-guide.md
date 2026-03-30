@@ -1164,20 +1164,9 @@ PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
 
 計測結果は `.parity-results/<target>_sample.json` の `elapsed_sec` に記録される。parity check 末尾で `tools/gen/gen_sample_benchmark.py` が自動実行される（前回生成から10分以上経過時のみ）。
 
-### unsupported feature の skip 管理
+### skip リストの廃止
 
-言語がサポートしない機能の fixture は `runtime_parity_check.py` 内の `_LANG_UNSUPPORTED_FIXTURES` で宣言的にスキップされる。
-
-```python
-# runtime_parity_check.py 内
-_LANG_UNSUPPORTED_FIXTURES = {
-    "zig": {"try_raise", "enum_basic", "dataclass_basic", ...},
-}
-```
-
-- `toolchain_missing`（ツール未インストール）とは別カテゴリ
-- 新しい fixture を追加したとき、未対応言語は自動的にスキップされる
-- emitter 担当は自言語の skip リストを維持すること。機能を実装したら該当 fixture を skip リストから除去する
+`_LANG_UNSUPPORTED_FIXTURES` によるスキップは廃止済み。全 fixture を全言語で実行し、FAIL なら FAIL として `.parity-results/` に記録し、進捗マトリクスに反映する。スキップで問題を隠さない。
 
 ### 検証内容
 
