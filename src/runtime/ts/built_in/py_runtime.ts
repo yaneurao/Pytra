@@ -577,6 +577,32 @@ export function pyBytes(value?: ArrayLike<number>): number[] {
   return new Uint8Array(Array.from(value as unknown as Iterable<number>)) as unknown as number[];
 }
 
+/** Python の collections.deque 相当。 */
+class _Deque<T = any> {
+  private _data: T[] = [];
+  constructor(items?: Iterable<T>) {
+    if (items) this._data = Array.from(items);
+  }
+  append(v: T): void { this._data.push(v); }
+  appendleft(v: T): void { this._data.unshift(v); }
+  pop(): T {
+    if (this._data.length === 0) throw new Error("pop from an empty deque");
+    return this._data.pop()!;
+  }
+  popleft(): T {
+    if (this._data.length === 0) throw new Error("pop from an empty deque");
+    return this._data.shift()!;
+  }
+  clear(): void { this._data.length = 0; }
+  get length(): number { return this._data.length; }
+  [Symbol.iterator](): Iterator<T> { return this._data[Symbol.iterator](); }
+  [PYTRA_TRY_LEN](): number { return this._data.length; }
+}
+export type deque<T = any> = _Deque<T>;
+export function deque<T = any>(items?: Iterable<T>): _Deque<T> {
+  return new _Deque<T>(items);
+}
+
 /** Python の sep.join(items) 相当。 */
 export function pyStrJoin(sep: string, items: string[]): string {
   return items.join(sep);
