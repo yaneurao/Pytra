@@ -26,15 +26,15 @@
 
 spec-east.md §7: 「期待型が `bool` のときは真偽演算（`&&`/`||`）として出力する。期待型が `bool` 以外のときは値選択式として出力する。」
 
-1. [ ] [ID: P0-GO-BOOLOP-S1] Go emitter の BoolOp emit で、`resolved_type` が `bool` の場合は `&&` / `||` で出力するよう修正する
-2. [ ] [ID: P0-GO-BOOLOP-S2] `boolop_value_select` fixture + sample 02/全件で Go parity PASS を確認する
+1. [x] [ID: P0-GO-BOOLOP-S1] Go emitter の BoolOp emit で、`resolved_type` が `bool` の場合は `&&` / `||` で出力するよう修正する
+2. [x] [ID: P0-GO-BOOLOP-S2] `boolop_value_select` fixture + sample 02/全件で Go parity PASS を確認する — typing 23/23, stdlib 16/16, sample 02 PASS
 
 ### P0-GO-TUPLE-MULTIRETURN: tuple multi-return 展開の不完全さを修正する
 
 Review 指摘: `py_splitext` を多値返却にした後、emitter の `_emit_assign`（`emitter.py:3780`）は `tuple[...] = Call(...)` を `name_0, name_1 := ...` に展開するが、元の `name` 自体は束縛しないため `return name` / `f(name)` が未定義参照になる。さらに `_emit_subscript`（`emitter.py:2915`）は `ctx.tup_multi_vars` に載った Name しか救済しないため、`os.path.splitext(p)[0]` のような直接添字が不正コードになる。
 
-1. [ ] [ID: P0-GO-TUPLE-MR-S1] tuple multi-return 展開で元の変数名も束縛するか、直接添字（`Call(...)[0]`）を multi-return の要素選択として emit する
-2. [ ] [ID: P0-GO-TUPLE-MR-S2] `os_glob_extended` / `pathlib_extended` fixture が Go で compile + run parity PASS することを確認する
+1. [x] [ID: P0-GO-TUPLE-MR-S1] tuple multi-return 展開で元の変数名も束縛するか、直接添字（`Call(...)[0]`）を multi-return の要素選択として emit する — `Call(...)[i]` を IIFE で展開する実装を追加
+2. [x] [ID: P0-GO-TUPLE-MR-S2] `os_glob_extended` / `pathlib_extended` fixture が Go で compile + run parity PASS することを確認する — stdlib 4件・typing 23/23 PASS
 
 ### P0-RESOLVE-INT-PROMOTION: BinOp の全演算子で整数昇格 cast がオペランドに付くよう修正する
 
@@ -46,16 +46,16 @@ Review 指摘: `py_splitext` を多値返却にした後、emitter の `_emit_as
 
 1. [x] [ID: P0-RESOLVE-INTPROMO-S1] resolve の BinOp 整数昇格で、全演算子について cast を「結果型にまで昇格」に修正する — 両オペランドに結果型への cast を付ける
 2. [x] [ID: P0-RESOLVE-INTPROMO-S2] `integer_promotion` fixture が Go で compile + run parity PASS することを確認する
-3. [x] [ID: P0-RESOLVE-INTPROMO-S3] 他の fixture に影響がないことを確認する（golden 再生成）— typing 23/23, stdlib 16/16 全 PASS
+3. [x] [ID: P0-RESOLVE-INTPROMO-S3] 他の fixture に影響がないことを確認する（golden 再生成）— typing 23/23, stdlib 16/16, sample 18/18 全 PASS
 
 ### P2-COMMON-RENDERER-PARENS: CommonRenderer に演算子優先順位ベースの括弧制御を実装する
 
 仕様: [spec-emitter-guide.md](../spec/spec-emitter-guide.md) §1.4
 
-1. [ ] [ID: P2-CR-PARENS-S1] CommonRenderer に演算子優先順位テーブルを受け取る仕組みを追加する — 各言語の emitter が自分の優先順位テーブルを渡す。Go の優先順位テーブルをプロトタイプとして最初に実装する
-2. [ ] [ID: P2-CR-PARENS-S2] BinOp / UnaryOp / Compare の出力時に「親の優先順位 ≥ 子の優先順位なら括弧を付ける」ロジックを実装する — 不要な括弧を出力しない
-3. [ ] [ID: P2-CR-PARENS-S3] 最外の冗長括弧（`x = (expr);` の外側）を除去する
-4. [ ] [ID: P2-CR-PARENS-S4] Go fixture + sample parity に影響がないことを確認する
+1. [x] [ID: P2-CR-PARENS-S1] CommonRenderer に演算子優先順位テーブルを受け取る仕組みを追加する — 各言語の emitter が自分の優先順位テーブルを渡す。Go の優先順位テーブルをプロトタイプとして最初に実装する
+2. [x] [ID: P2-CR-PARENS-S2] BinOp / UnaryOp / Compare の出力時に「親の優先順位 ≥ 子の優先順位なら括弧を付ける」ロジックを実装する — 不要な括弧を出力しない
+3. [x] [ID: P2-CR-PARENS-S3] 最外の冗長括弧（`x = (expr);` の外側）を除去する
+4. [x] [ID: P2-CR-PARENS-S4] Go fixture + sample parity に影響がないことを確認する — typing 23/23, stdlib 16/16, sample 18/18 全 PASS
 
 ### P6-GO-SELFHOST: Go emitter で toolchain2 を Go に変換し go build を通す
 

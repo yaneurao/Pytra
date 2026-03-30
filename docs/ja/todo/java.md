@@ -32,8 +32,10 @@
 
 文脈: [docs/ja/plans/p1-java-emitter.md](../plans/p1-java-emitter.md)
 
-1. [ ] [ID: P1-JAVA-EMITTER-S1] `src/toolchain2/emit/java/` に Java emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/java/` と TS emitter（`src/toolchain2/emit/ts/`）を参考にする。Java 固有のノード（class 必須、package、static method、checked exception 等）だけ override として残す
-2. [ ] [ID: P1-JAVA-EMITTER-S2] `src/runtime/java/mapping.json` を作成し、runtime_call の写像を定義する。`types` テーブルも含める（spec-runtime-mapping.md §7）。`env.target` 必須エントリも忘れないこと
+1. [x] [ID: P1-JAVA-EMITTER-S1] `src/toolchain2/emit/java/` に Java emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/java/` と TS emitter（`src/toolchain2/emit/ts/`）を参考にする。Java 固有のノード（class 必須、package、static method、checked exception 等）だけ override として残す
+   完了メモ: 2026-03-30 toolchain2 用の `emit/java/` を追加し、`pytra-cli2 --target java` の emit/build 配線と smoke test を実装
+2. [x] [ID: P1-JAVA-EMITTER-S2] `src/runtime/java/mapping.json` を作成し、runtime_call の写像を定義する。`types` テーブルも含める（spec-runtime-mapping.md §7）。`env.target` 必須エントリも忘れないこと
+   完了メモ: 2026-03-30 `src/runtime/java/mapping.json` を追加し、`env.target` / builtins / 基本型写像を定義
 3. [ ] [ID: P1-JAVA-EMITTER-S3] fixture 全件の Java emit 成功を確認する
 4. [ ] [ID: P1-JAVA-EMITTER-S4] Java runtime を toolchain2 の emit 出力と整合させる（旧 runtime の引き継ぎ or 再実装）
 5. [ ] [ID: P1-JAVA-EMITTER-S5] fixture + sample の Java compile + run parity を通す（`javac` + `java`）
