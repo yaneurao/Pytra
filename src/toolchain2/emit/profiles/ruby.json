@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "language": "ruby",
+
+  "types": {
+    "int8": "Integer",
+    "uint8": "Integer",
+    "int16": "Integer",
+    "uint16": "Integer",
+    "int32": "Integer",
+    "uint32": "Integer",
+    "int64": "Integer",
+    "uint64": "Integer",
+    "float32": "Float",
+    "float64": "Float",
+    "bool": "Boolean",
+    "str": "String",
+    "None": "nil",
+    "Any": "Object",
+    "Path": "String"
+  },
+
+  "generic_types": {
+    "list": "Array",
+    "dict": "Hash",
+    "set": "Set",
+    "tuple": "Array",
+    "optional": "{T}"
+  },
+
+  "operators": {
+    "bin": {
+      "FloorDiv": "__floordiv",
+      "Pow": "**"
+    },
+    "cmp": {
+      "Eq": "==",
+      "NotEq": "!=",
+      "Lt": "<",
+      "LtE": "<=",
+      "Gt": ">",
+      "GtE": ">="
+    },
+    "bool": {
+      "And": "&&",
+      "Or": "||"
+    },
+    "unary": {
+      "Not": "!"
+    }
+  },
+
+  "syntax": {
+    "if": "if {cond}",
+    "elif": "elsif {cond}",
+    "else": "else",
+    "while": "while {cond}",
+    "block_close": "end",
+    "return": "return",
+    "break": "break",
+    "continue": "next",
+    "pass": "",
+    "comment_prefix": "#",
+    "docstring_open": "=begin",
+    "docstring_close": "=end"
+  },
+
+  "lowering": {
+    "tuple_unpack_style": "individual_temps",
+    "container_covariance": false,
+    "closure_style": "nested_function",
+    "with_style": "try_finally",
+    "property_style": "method_call",
+    "swap_style": "parallel_assign",
+    "none_literal": "nil",
+    "bool_literals": ["true", "false"],
+    "self_keyword": "self",
+    "type_position": "none",
+    "condition_parens": false,
+    "block_braces": "end",
+    "stmt_terminator": "",
+    "string_type_owned": true,
+    "exception_style": "native_throw"
+  }
+}

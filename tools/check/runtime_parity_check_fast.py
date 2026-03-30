@@ -45,6 +45,9 @@ from toolchain2.emit.java.emitter import emit_java_module  # type: ignore
 from toolchain2.emit.java.types import java_module_class_name  # type: ignore
 from toolchain2.emit.rs.emitter import emit_rs_module  # type: ignore
 from toolchain2.emit.ts.emitter import emit_ts_module  # type: ignore
+from toolchain2.emit.ruby.emitter import transpile_to_ruby as emit_ruby_module  # type: ignore
+from toolchain2.emit.lua.emitter import emit_lua_module  # type: ignore
+from toolchain2.emit.php.emitter import emit_php_module  # type: ignore
 from toolchain2.link.linker import link_modules  # type: ignore
 from toolchain2.emit.cpp.runtime_paths import runtime_rel_tail_for_module  # type: ignore
 from toolchain2.optimize.optimizer import optimize_east3_document  # type: ignore
@@ -227,6 +230,33 @@ def _transpile_in_memory(
                 emit_dir.joinpath(m.module_id.replace(".", "_") + ".cpp").write_text(
                     code, encoding="utf-8"
                 )
+        elif target == "ruby":
+            for m in link_result.linked_modules:
+                code = emit_ruby_module(m.east_doc)
+                if code.strip() == "":
+                    continue
+                emit_dir.joinpath(m.module_id.replace(".", "_") + ".rb").write_text(
+                    code, encoding="utf-8"
+                )
+            _copy_ruby_runtime(emit_dir)
+        elif target == "lua":
+            for m in link_result.linked_modules:
+                code = emit_lua_module(m.east_doc)
+                if code.strip() == "":
+                    continue
+                emit_dir.joinpath(m.module_id.replace(".", "_") + ".lua").write_text(
+                    code, encoding="utf-8"
+                )
+            _copy_lua_runtime(emit_dir)
+        elif target == "php":
+            for m in link_result.linked_modules:
+                code = emit_php_module(m.east_doc)
+                if code.strip() == "":
+                    continue
+                emit_dir.joinpath(m.module_id.replace(".", "_") + ".php").write_text(
+                    code, encoding="utf-8"
+                )
+            _copy_php_runtime(emit_dir)
         else:
             return False, f"unsupported target: {target}"
 
@@ -306,6 +336,42 @@ def _copy_js_runtime(emit_dir: Path) -> None:
     if std_dir.exists():
         for js_file in std_dir.glob("*.js"):
             shutil.copy2(js_file, emit_dir / js_file.name)
+
+
+def _copy_ruby_runtime(emit_dir: Path) -> None:
+    """Copy Ruby runtime files to emit directory."""
+    ruby_runtime = ROOT / "src" / "runtime" / "ruby"
+    for bucket in ("built_in", "std"):
+        bucket_dir = ruby_runtime / bucket
+        if bucket_dir.exists():
+            dest_bucket = emit_dir / bucket
+            dest_bucket.mkdir(parents=True, exist_ok=True)
+            for rb_file in bucket_dir.glob("*.rb"):
+                shutil.copy2(rb_file, dest_bucket / rb_file.name)
+
+
+def _copy_lua_runtime(emit_dir: Path) -> None:
+    """Copy Lua runtime files to emit directory."""
+    lua_runtime = ROOT / "src" / "runtime" / "lua"
+    for bucket in ("built_in", "std"):
+        bucket_dir = lua_runtime / bucket
+        if bucket_dir.exists():
+            dest_bucket = emit_dir / bucket
+            dest_bucket.mkdir(parents=True, exist_ok=True)
+            for lua_file in bucket_dir.glob("*.lua"):
+                shutil.copy2(lua_file, dest_bucket / lua_file.name)
+
+
+def _copy_php_runtime(emit_dir: Path) -> None:
+    """Copy PHP runtime files to emit directory."""
+    php_runtime = ROOT / "src" / "runtime" / "php"
+    for bucket in ("built_in", "std"):
+        bucket_dir = php_runtime / bucket
+        if bucket_dir.exists():
+            dest_bucket = emit_dir / bucket
+            dest_bucket.mkdir(parents=True, exist_ok=True)
+            for php_file in bucket_dir.glob("*.php"):
+                shutil.copy2(php_file, dest_bucket / php_file.name)
 
 
 def _emit_helper_cpp(m, emit_dir: Path) -> None:
@@ -422,12 +488,35 @@ def _run_target(
         entry_ts = emit_dir / (stem + ".ts")
         if not entry_ts.exists():
             return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_ts}")
-        # Compile .ts → .js with tsc, then run with node
-        entry_js = entry_ts.with_suffix(".js")
-        compile_cmd = f"tsc --target es2022 --module nodenext --moduleResolution nodenext --esModuleInterop --noCheck --outDir {shlex.quote(str(emit_dir))} {shlex.quote(str(entry_ts))}"
+        # Compile all .ts files → .js with tsc, then run entry with node
+        ts_files = sorted(str(p) for p in emit_dir.rglob("*.ts"))
+        if len(ts_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .ts files found")
+        compile_cmd = (
+            "tsc --target es2022 --module nodenext --moduleResolution nodenext --esModuleInterop"
+            + " --outDir " + shlex.quote(str(emit_dir))
+            + " " + " ".join(shlex.quote(f) for f in ts_files)
+        )
         compile_result = run_shell(compile_cmd, cwd=work_dir, env=env, timeout_sec=timeout_sec)
         if compile_result.returncode != 0:
             return compile_result
+        # Find entry .js — try exact stem match, then fall back to any .js with main guard
+        entry_js = emit_dir / (stem + ".js")
+        if not entry_js.exists():
+            # Entry module may have a different name after linking
+            candidates = [p for p in emit_dir.glob("*.js") if not p.name.startswith("pytra_")]
+            if len(candidates) == 1:
+                entry_js = candidates[0]
+            elif len(candidates) == 0:
+                return subprocess.CompletedProcess("", 1, "", "no entry .js file found after tsc")
+            else:
+                # Pick the one that contains a main guard
+                for c in candidates:
+                    if "// main" in c.read_text(encoding="utf-8"):
+                        entry_js = c
+                        break
+                else:
+                    entry_js = candidates[0]
         return run_shell(
             f"node {shlex.quote(str(entry_js))}",
             cwd=work_dir, env=env, timeout_sec=timeout_sec,
@@ -440,6 +529,36 @@ def _run_target(
             return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_js}")
         return run_shell(
             f"node {shlex.quote(str(entry_js))}",
+            cwd=work_dir, env=env, timeout_sec=timeout_sec,
+        )
+
+    if target == "ruby":
+        stem = case_path.stem
+        entry_rb = emit_dir / (stem + ".rb")
+        if not entry_rb.exists():
+            return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_rb}")
+        return run_shell(
+            f"ruby {shlex.quote(str(entry_rb))}",
+            cwd=work_dir, env=env, timeout_sec=timeout_sec,
+        )
+
+    if target == "lua":
+        stem = case_path.stem
+        entry_lua = emit_dir / (stem + ".lua")
+        if not entry_lua.exists():
+            return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_lua}")
+        return run_shell(
+            f"lua5.4 {shlex.quote(str(entry_lua))}",
+            cwd=work_dir, env=env, timeout_sec=timeout_sec,
+        )
+
+    if target == "php":
+        stem = case_path.stem
+        entry_php = emit_dir / (stem + ".php")
+        if not entry_php.exists():
+            return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_php}")
+        return run_shell(
+            f"php {shlex.quote(str(entry_php))}",
             cwd=work_dir, env=env, timeout_sec=timeout_sec,
         )
 
