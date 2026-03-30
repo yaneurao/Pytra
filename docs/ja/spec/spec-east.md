@@ -131,7 +131,10 @@
 
 - `arg_types`, `arg_type_exprs`, `return_type`, `return_type_expr`, `arg_usage`, `renamed_symbols`
 - `arg_type_exprs` / `return_type_expr` は `arg_types` / `return_type` の構造化正本。
-- **`return_type` はソースの型注釈から取得する。注釈がない場合は `inference_failure` で fail-closed とする。** Return 文の値から戻り値型を推論してはならない（body 走査による型推論は禁止）。
+- **`return_type` はソースの型注釈から取得する。** 注釈がない場合は以下のルールに従う:
+  - body に `return <値>` が1つもない → `return_type` は `None` と推論する
+  - body に `return <値>` がある → `inference_failure` で fail-closed とする（注釈を書くこと）
+  - Return 文の値から戻り値**型**を推論してはならない（body 走査による型推論は禁止）。上記の判定は「`return <値>` の有無」の1ビットであり、型推論ではない。
 - `decorators`（raw decorator 文字列の列）
 - `meta.template_v1`（任意。`@template` の canonical metadata）
 - `meta.template_specialization_v1`（任意。linked-program が materialize した specialization metadata）

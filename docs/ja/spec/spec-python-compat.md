@@ -23,7 +23,7 @@ Pytra は「型注釈付きの Python サブセット」をソース言語とし
 | 構文・機能 | Python | Pytra |
 |---|---|---|
 | 変数の型注釈（`x: int = 1`） | 任意（省略可） | ✅ 省略可（リテラルは推論） |
-| 関数の引数・戻り値注釈 | 任意（省略可） | ⚠️ 省略すると `unknown` 型になる。型推論が効かない箇所ではエラーになる場合がある |
+| 関数の引数・戻り値注釈 | 任意（省略可） | ⚠️ 引数は省略すると `unknown` 型になる。戻り値型は `-> None` のみ省略可（body に `return <値>` がなければ自動的に `None`）。値を返す関数は注釈必須 |
 | `from typing import cast` | 実行時に値をそのまま返す | ✅ `from pytra.typing import cast` で使える。`from typing import ...` の直接 import はエラー |
 | `typing.TypeVar` によるジェネリクス | 型変数として機能する | ⚠️ 注釈として書くのみ許可。ジェネリック関数を定義したい場合は Pytra 固有の `@template` を使う |
 | `type X = A \| B`（PEP 695 型エイリアス） | Python 3.12 以降で型エイリアスとして機能する | ✅ tagged union の宣言として対応。各ターゲット言語のネイティブな tagged union に変換される |
