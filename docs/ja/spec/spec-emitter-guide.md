@@ -1148,21 +1148,41 @@ PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
   --targets <lang>
 ```
 
-emitter 開発時は **sample と fixture の両方** で parity check を実行すること。sample は実用的な大きいプログラム（18 件）、fixture は言語機能の網羅テスト（146+ 件）。
+### stdlib parity check
+
+`test/stdlib/source/py/` の stdlib モジュールテストも同じツールで検証できる。モジュールごとにフォルダが分かれている。
+
+```bash
+# stdlib parity（全件）
+PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
+  --targets <lang> --case-root stdlib
+```
+
+### 3 つの parity 全てが必要
+
+emitter 開発時は **fixture, sample, stdlib の 3 つ全て** で parity check を実行すること。
+
+```bash
+# fixture — 言語機能の網羅テスト
+PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
+  --targets <lang>
+
+# sample — 実アプリケーション
+PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
+  --targets <lang> --case-root sample
+
+# stdlib — Python 標準ライブラリ互換モジュール
+PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
+  --targets <lang> --case-root stdlib
+```
+
+**selfhost マトリクスの Python 行は、fixture + sample + stdlib の全てが PASS して初めて PASS になる。** 1 つでも FAIL があれば FAIL 表示。
 
 実行結果は `.parity-results/` に自動蓄積され、`tools/gen/gen_backend_progress.py` の進捗マトリクスに反映される。
 
 ### sample benchmark
 
-sample の実行時間を計測し、`sample/README-ja.md` / `sample/README.md` の benchmark テーブルを自動更新する。
-
-```bash
-# benchmark モード（warmup=1, repeat=3, 中央値で計測）
-PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
-  --targets go,cpp --case-root sample --benchmark
-```
-
-計測結果は `.parity-results/<target>_sample.json` の `elapsed_sec` に記録される。parity check 末尾で `tools/gen/gen_sample_benchmark.py` が自動実行される（前回生成から10分以上経過時のみ）。
+sample の実行時間は parity check の sample 実行時に自動計測され、`.parity-results/<target>_sample.json` の `elapsed_sec` に記録される。parity check 末尾で `tools/gen/gen_sample_benchmark.py` が自動実行され、`sample/README-ja.md` / `sample/README.md` の benchmark テーブルが更新される（前回生成から10分以上経過時のみ）。
 
 ### skip リストの廃止
 
@@ -1217,5 +1237,6 @@ emit だけ成功してもプレースホルダーコード（`nil /* list compr
 - [ ] コンテナ（list/dict/set）が参照型ラッパーで保持されている（§10）
 - [ ] `yields_dynamic: true` の Call ノードで型アサーションを生成している（§11）
 - [ ] emitter 側に型推論のワークアラウンド（math 戻り型判定、VarDecl 先読み等）がない（§12）
-- [ ] `runtime_parity_check.py --targets <lang> --case-root sample` で sample 検証している（§13）
-- [ ] `runtime_parity_check.py --targets <lang> --case-root fixture` で fixture 検証している（§13）
+- [ ] `runtime_parity_check_fast.py --targets <lang>` で fixture 検証している（§13）
+- [ ] `runtime_parity_check_fast.py --targets <lang> --case-root sample` で sample 検証している（§13）
+- [ ] `runtime_parity_check_fast.py --targets <lang> --case-root stdlib` で stdlib 検証している（§13）
