@@ -20,10 +20,10 @@ An overview of Pytra's development status. Links to test results, tasks, changel
 ## Backend support
 
 [Fixture matrix](./backend-progress-fixture.md)
-— Unit tests for language features (146 cases). One feature per file, verifying emit + compile + run + stdout match for each target language.
+— Unit tests for language features. One feature per file, verifying emit + compile + run + stdout match for each target language.
 
 [Sample matrix](./backend-progress-sample.md)
-— Real applications (18 cases). Mandelbrot set, ray tracing, Game of Life, etc. Run in each language and verify identical output to Python. See [samples list](../tutorial/samples.md).
+— Real applications. Mandelbrot set, ray tracing, Game of Life, etc. Run in each language and verify identical output to Python. See [samples list](../tutorial/samples.md).
 
 [Selfhost matrix](./backend-progress-selfhost.md)
 — Transpile Pytra's own compiler (toolchain2) to each language and verify the resulting compiler can emit all targets.
