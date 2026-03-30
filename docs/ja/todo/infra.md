@@ -20,6 +20,16 @@
 
 ## 未完了タスク
 
+### P0-PARITY-CHANGELOG: parity 変化点ログの自動記録
+
+文脈: [docs/ja/plans/plan-parity-changelog.md](../plans/plan-parity-changelog.md)
+
+parity check の PASS 件数が変化したタイミングで `progress-preview/changelog.md` に自動追記する。退行の即時検知と履歴追跡が目的。
+
+1. [ ] [ID: P0-CHANGELOG-S1] `runtime_parity_check_fast.py` で結果保存時に前回 PASS 件数と比較し、変化があれば `progress-preview/changelog.md` に行を追記する
+2. [ ] [ID: P0-CHANGELOG-S2] `runtime_parity_check.py`（非 fast 版）にも同様のロジックを追加する
+3. [ ] [ID: P0-CHANGELOG-S3] 動作確認 — parity check 実行後に changelog.md が正しく更新されることを確認する
+
 ### P20-EMIT-EXPECT: emitter テストのデータ駆動化
 
 文脈: [docs/ja/plans/plan-emit-expect-data-driven-tests.md](../plans/plan-emit-expect-data-driven-tests.md)
