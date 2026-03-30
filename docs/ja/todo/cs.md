@@ -30,6 +30,8 @@
 
 ### P1-CS-EMITTER: C# emitter を toolchain2 に新規実装する
 
+文脈: [docs/ja/plans/p1-cs-emitter.md](../plans/p1-cs-emitter.md)
+
 1. [ ] [ID: P1-CS-EMITTER-S1] `src/toolchain2/emit/cs/` に C# emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/cs/` と TS emitter（`src/toolchain2/emit/ts/`）を参考にする。C# 固有のノード（namespace、using、property、LINQ 等）だけ override として残す
 2. [ ] [ID: P1-CS-EMITTER-S2] `src/runtime/cs/mapping.json` を作成し、runtime_call の写像を定義する。`types` テーブルも含める（spec-runtime-mapping.md §7）。`env.target` 必須エントリも忘れないこと
 3. [ ] [ID: P1-CS-EMITTER-S3] fixture 全件の C# emit 成功を確認する

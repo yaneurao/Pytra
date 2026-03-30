@@ -30,6 +30,8 @@
 
 ### P1-JAVA-EMITTER: Java emitter を toolchain2 に新規実装する
 
+文脈: [docs/ja/plans/p1-java-emitter.md](../plans/p1-java-emitter.md)
+
 1. [ ] [ID: P1-JAVA-EMITTER-S1] `src/toolchain2/emit/java/` に Java emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/java/` と TS emitter（`src/toolchain2/emit/ts/`）を参考にする。Java 固有のノード（class 必須、package、static method、checked exception 等）だけ override として残す
 2. [ ] [ID: P1-JAVA-EMITTER-S2] `src/runtime/java/mapping.json` を作成し、runtime_call の写像を定義する。`types` テーブルも含める（spec-runtime-mapping.md §7）。`env.target` 必須エントリも忘れないこと
 3. [ ] [ID: P1-JAVA-EMITTER-S3] fixture 全件の Java emit 成功を確認する
