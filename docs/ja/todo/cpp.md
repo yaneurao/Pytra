@@ -47,7 +47,7 @@
 4. [x] [ID: P3-CR-CPP-S4] C++ runtime の py_types.h 例外安全性を修正する — `PyBoxedValue` と `ControlBlock` の2段階 `new` で例外安全にする。実用上 bad_alloc はリカバー不可能だが、変換器が生成するコードの品質として例外安全を保証する
    - 完了: commit 678317b7e / 51447a04f — `make_unique` に移行
 5. [ ] [ID: P3-CR-CPP-S5] CommonRenderer の list/dict/tuple 出力で `source_span.lineno` を参照し、元ソースの改行を再現する
-6. [ ] [ID: P3-CR-CPP-S6] C++ runtime の旧 type_id ヘルパーを撤去する — `type_id_support.h` の `py_tid_is_subtype` / `py_tid_isinstance` / `py_runtime_value_type_id` 等の旧関数群、`object.h` の `g_type_table[4096]`、`PYTRA_TID_*` ハードコード定数を削除し、`pytra.built_in.type_id_table` の `pytra_isinstance` に一本化する — 現状の emitter は list リテラルを `", ".join(parts)` で1行に出力しており、元ソースの改行位置を無視している。前の要素と `source_span.lineno` が異なる場合に改行を入れる。synthetic module（type_id_table 等）は linker が適切な `source_span` を振ることで同じ仕組みで整形される
+6. [ ] [ID: P3-CR-CPP-S6] isinstance を `pytra_isinstance` に一本化する — プリミティブ型（`str`, `list`, `dict`, `set` 等）の isinstance 判定を `type_id_support.h` の `py_runtime_object_isinstance` + `PYTRA_TID_*` から linker 生成の `pytra_isinstance` に移行する。`type_id_support.h` の旧 isinstance 関数群（`py_tid_is_subtype`, `py_tid_isinstance`, `py_runtime_value_type_id`）を削除する。注: `g_type_table` は destructor dispatch に使われており、本タスクのスコープ外。`g_type_table` の撤去は P10-CPP-TYPETABLE-REDESIGN で別途対応する
 7. [x] [ID: P3-CR-CPP-S7] `rc_list_from_value` / `rc_dict_from_value` 等の型別 RC 化関数を汎用 `rc_from_value<T>` に一本化する — emitter は「非 POD → `rc_from_value(...)` で包む」だけで済むようにし、型ごとの関数名分岐を emitter から除去する
    - 完了: py_types.h に rc_from_value オーバーロード群を追加、emitter.py の _wrap_container_value_expr を rc_from_value に統一。parity: for_range/comprehension/argparse_extended OK
 8. [x] [ID: P3-CR-CPP-S8] C++ emitter に `_safe_cpp_ident` を追加する — C++ 予約語（`double`, `class`, `int`, `float`, `namespace`, `template` 等）と衝突する関数名・メソッド名・変数名に末尾 `_` を付与する（Go emitter の `_safe_go_ident` と同等）
@@ -68,3 +68,12 @@
 
 1. [ ] [ID: P5-CPP-PARENS-S1] C++ の演算子優先順位テーブルを定義し、CommonRenderer に渡す
 2. [ ] [ID: P5-CPP-PARENS-S2] C++ fixture + sample parity に影響がないことを確認する
+
+### P10-CPP-TYPETABLE-REDESIGN: g_type_table と destructor dispatch の再設計
+
+`object.h` の `g_type_table[4096]` は RC のオブジェクト破棄時に destructor を呼ぶために使われている。isinstance の一本化（P3-CR-CPP-S6）とは別問題。`g_type_table` を撤去するには destructor dispatch の仕組みを再設計する必要がある。
+
+1. [ ] [ID: P10-CPP-TYPETABLE-S1] `g_type_table` が destructor 以外にどこで使われているか棚卸しする
+2. [ ] [ID: P10-CPP-TYPETABLE-S2] destructor dispatch を `g_type_table` なしで実現する設計を策定する（vtable、template 特殊化、`ControlBlock` に destructor ポインタを持たせる等）
+3. [ ] [ID: P10-CPP-TYPETABLE-S3] `g_type_table`、`py_tid_register_known_class_type`、`PYTRA_TID_*` 定数を撤去する
+4. [ ] [ID: P10-CPP-TYPETABLE-S4] fixture + sample parity に影響がないことを確認する
