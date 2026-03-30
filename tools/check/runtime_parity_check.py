@@ -690,6 +690,8 @@ def _save_parity_results(records: list[CheckRecord], case_root: str, targets: se
             except Exception:
                 pass
 
+        prev_pass = sum(1 for v in existing.values() if isinstance(v, dict) and v.get("category") == "ok")
+
         results: dict[str, object] = dict(existing)
         for rec in recs:
             entry: dict[str, object] = {"category": rec.category, "timestamp": now}
@@ -699,12 +701,56 @@ def _save_parity_results(records: list[CheckRecord], case_root: str, targets: se
                 entry["elapsed_sec"] = round(rec.elapsed_sec, 3)
             results[rec.case_stem] = entry
 
+        curr_pass = sum(1 for v in results.values() if isinstance(v, dict) and v.get("category") == "ok")
+
         doc = {
             "target": target,
             "case_root": case_root,
             "results": results,
         }
         out_path.write_text(json.dumps(doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        _append_parity_changelog(target, case_root, prev_pass, curr_pass, now)
+
+
+_CHANGELOG_PATHS = [
+    ROOT / "docs" / "ja" / "progress-preview" / "changelog.md",
+    ROOT / "docs" / "en" / "progress-preview" / "changelog.md",
+]
+
+_CHANGELOG_HEADER = (
+    "# Parity Changelog\n\n"
+    "| 日時 | 言語 | case-root | 変化 | 備考 |\n"
+    "|---|---|---|---|---|\n"
+)
+
+
+def _append_parity_changelog(target: str, case_root: str, prev_pass: int, curr_pass: int, now: str) -> None:
+    """Append a row to progress-preview/changelog.md when PASS count changes."""
+    diff = curr_pass - prev_pass
+    if diff == 0:
+        return
+    sign = "+" if diff > 0 else ""
+    note = "regression" if diff < 0 else ""
+    ts = now[:16]  # "YYYY-MM-DDTHH:MM"
+    row = f"| {ts} | {target} | {case_root} | {prev_pass}→{curr_pass} ({sign}{diff}) | {note} |"
+    sep_marker = "|---|---|---|---|---|"
+    for cl_path in _CHANGELOG_PATHS:
+        try:
+            cl_path.parent.mkdir(parents=True, exist_ok=True)
+            if not cl_path.exists():
+                content = _CHANGELOG_HEADER + row + "\n"
+            else:
+                content = cl_path.read_text(encoding="utf-8")
+                idx = content.find(sep_marker)
+                if idx == -1:
+                    content = content.rstrip("\n") + "\n" + row + "\n"
+                else:
+                    nl_pos = content.find("\n", idx)
+                    insert_after = (nl_pos + 1) if nl_pos != -1 else len(content)
+                    content = content[:insert_after] + row + "\n" + content[insert_after:]
+            cl_path.write_text(content, encoding="utf-8")
+        except Exception:
+            pass
 
 
 def main() -> int:

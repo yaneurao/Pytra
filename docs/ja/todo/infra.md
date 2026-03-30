@@ -26,9 +26,9 @@
 
 parity check の PASS 件数が変化したタイミングで `progress-preview/changelog.md` に自動追記する。退行の即時検知と履歴追跡が目的。
 
-1. [ ] [ID: P0-CHANGELOG-S1] `runtime_parity_check_fast.py` で結果保存時に前回 PASS 件数と比較し、変化があれば `progress-preview/changelog.md` に行を追記する
-2. [ ] [ID: P0-CHANGELOG-S2] `runtime_parity_check.py`（非 fast 版）にも同様のロジックを追加する
-3. [ ] [ID: P0-CHANGELOG-S3] 動作確認 — parity check 実行後に changelog.md が正しく更新されることを確認する
+1. [x] [ID: P0-CHANGELOG-S1] `runtime_parity_check_fast.py` で結果保存時に前回 PASS 件数と比較し、変化があれば `progress-preview/changelog.md` に行を追記する — `_save_parity_results` は fast 版が import して使うため、非 fast 版に実装することで両方に適用
+2. [x] [ID: P0-CHANGELOG-S2] `runtime_parity_check.py`（非 fast 版）にも同様のロジックを追加する — `_save_parity_results` 内に `prev_pass`/`curr_pass` 計算と `_append_parity_changelog` 呼び出しを追加
+3. [x] [ID: P0-CHANGELOG-S3] 動作確認 — parity check 実行後に changelog.md が正しく更新されることを確認する — ユニットテストで新規作成・行挿入・変化なし時スキップを確認
 
 ### P20-EMIT-EXPECT: emitter テストのデータ駆動化
 
