@@ -1023,6 +1023,13 @@ emitter の責務:
 - `pytra.built_in.type_id_table` を通常の EAST3 モジュールとして写像する。特別なロジックは不要。
 - `isinstance` は EAST3 で `pytra_isinstance(x.type_id, TID定数)` に lower 済み。emitter はこの関数呼び出しを言語構文に写像するだけ。
 
+isinstance のサブタイプ規則:
+
+- **`bool` は `int` のサブタイプではない。** `isinstance(True, int)` は Pytra では `False`。Python との非互換だが、型判定の実装を全言語で簡素化するため採用しない（[spec-python-compat.md](./spec-python-compat.md) 参照）。
+- `IntEnum` / `IntFlag` の派生クラスは通常の class 継承として扱う（`isinstance(Color.RED, IntEnum)` → `True`）。ただし `isinstance(Color.RED, int)` → `False`。
+- 全プリミティブ型（`bool`, `int`, `str`, `float`, `list`, `dict`, `set`, `None`）は leaf 型であり、相互にサブタイプ関係を持たない。
+- emitter はこの判定を自前で行わず、linker が生成した `pytra_isinstance` に委譲するだけ。
+
 禁止事項:
 
 - runtime ヘッダーに type_id テーブルのサイズや値をハードコードしてはならない（C++ の `g_type_table[4096]` のような固定サイズ配列は禁止）。
