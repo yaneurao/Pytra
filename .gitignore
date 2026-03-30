@@ -52,6 +52,9 @@ __pycache__/
 /test/pytra/east3-opt/
 /test/selfhost/
 
+# Node.js
+/node_modules/
+
 # Deprecated generated runtime directory (must not be used)
 src/runtime/cpp/generated/
 
