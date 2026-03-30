@@ -65,7 +65,6 @@
 
 ### P5-CPP-PARENS: C++ emitter に演算子優先順位テーブルを追加する
 
-前提: P2-COMMON-RENDERER-PARENS（Go 担当が CommonRenderer に共通ロジックを実装）完了後に着手。
 
 1. [ ] [ID: P5-CPP-PARENS-S1] C++ の演算子優先順位テーブルを定義し、CommonRenderer に渡す
 2. [ ] [ID: P5-CPP-PARENS-S2] C++ fixture + sample parity に影響がないことを確認する
