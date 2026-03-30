@@ -202,18 +202,7 @@ def _extract_func_sig(node: dict[str, JsonVal], is_method: bool, owner: str) -> 
             if isinstance(d, str):
                 decs.append(d)
     extern: ExternV2 | None = _extract_extern_v2(node)
-    return FuncSig(
-        name=name,
-        arg_names=arg_names,
-        arg_types=arg_types,
-        return_type=ret,
-        decorators=decs,
-        vararg_name=vararg_name,
-        vararg_type=vararg_type,
-        is_method=is_method,
-        owner_class=owner,
-        extern=extern,
-    )
+    return FuncSig(name=name, arg_names=arg_names, arg_types=arg_types, return_type=ret, decorators=decs, vararg_name=vararg_name, vararg_type=vararg_type, is_method=is_method, owner_class=owner, extern=extern)
 
 
 def _extract_class_sig(node: dict[str, JsonVal]) -> ClassSig:
@@ -258,9 +247,13 @@ def _extract_class_sig(node: dict[str, JsonVal]) -> ClassSig:
                 continue
             decorators.append(d)
             if d.startswith("template("):
-                inner: str = d[9:-1] if d.endswith(")") else ""
+                inner = ""
+                if d.endswith(")"):
+                    inner = d[9:-1]
                 for p in inner.split(","):
-                    p2: str = p.strip().strip("'\"")
+                    p2 = p.strip()
+                    p2 = p2.strip("'")
+                    p2 = p2.strip('"')
                     if p2 != "":
                         tparams.append(p2)
     is_trait = "trait" in decorators
@@ -282,17 +275,7 @@ def _extract_class_sig(node: dict[str, JsonVal]) -> ClassSig:
             tparams = ["K", "V"]
         elif name == "Iterable":
             tparams = ["T"]
-    return ClassSig(
-        name=name,
-        bases=bases,
-        methods=methods,
-        fields=fields,
-        decorators=decorators,
-        is_trait=is_trait,
-        implements_traits=implements_traits,
-        template_params=tparams,
-        extern=extern,
-    )
+    return ClassSig(name=name, bases=bases, methods=methods, fields=fields, decorators=decorators, is_trait=is_trait, implements_traits=implements_traits, template_params=tparams, extern=extern)
 
 
 def _load_module_sig(east1_path: Path, module_id: str) -> ModuleSig:

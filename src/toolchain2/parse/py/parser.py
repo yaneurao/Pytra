@@ -178,11 +178,7 @@ def _runtime_fn_extern_v2(namespace: str, fn_name: str, symbol_override: str, ta
 
 
 def _runtime_class_extern_v2(namespace: str, class_name: str) -> dict[str, str]:
-    return {
-        "module": namespace + "." + class_name,
-        "symbol": class_name,
-        "tag": "container." + class_name,
-    }
+    return {"module": namespace + "." + class_name, "symbol": class_name, "tag": "container." + class_name}
 
 
 def _runtime_method_tag(method_name: str) -> str:
@@ -192,12 +188,7 @@ def _runtime_method_tag(method_name: str) -> str:
 
 
 def _runtime_method_extern_v2(namespace: str, class_name: str, method_name: str) -> dict[str, str]:
-    return {
-        "module": namespace + "." + class_name,
-        "symbol": class_name + "." + method_name,
-        "tag": _runtime_method_tag(method_name),
-        "kind": "method",
-    }
+    return {"module": namespace + "." + class_name, "symbol": class_name + "." + method_name, "tag": _runtime_method_tag(method_name), "kind": "method"}
 
 
 def _parse_extern_var_call(value_text: str, var_name: str = "") -> Optional[dict[str, str]]:
@@ -211,11 +202,7 @@ def _parse_extern_var_call(value_text: str, var_name: str = "") -> Optional[dict
         if len(inner) >= 2 and inner[0] in ('"', "'") and inner[-1] == inner[0]:
             namespace = inner[1:-1]
             if namespace != "" and var_name != "":
-                return {
-                    "module": namespace,
-                    "symbol": var_name,
-                    "tag": "stdlib.symbol." + var_name,
-                }
+                return {"module": namespace, "symbol": var_name, "tag": "stdlib.symbol." + var_name}
     return None
 
 
@@ -509,10 +496,7 @@ class ExprParser:
 
     def _base(self, local_start: int, local_end: int) -> ExprBase:
         """ExprBase を生成する。start/end は式テキスト内のローカル位置。"""
-        return ExprBase(
-            source_span=self._span(local_start, local_end),
-            repr_text=self.source_text[local_start:local_end],
-        )
+        return ExprBase(source_span=self._span(local_start, local_end), repr_text=self.source_text[local_start:local_end])
 
     def _to_local(self, abs_col: int) -> int:
         """絶対 col → ローカル位置に逆算する。"""
@@ -1133,7 +1117,7 @@ class ExprParser:
 
     def _parse_dict_or_set(self) -> Expr:
         """dict リテラル、set リテラル、dict/set comprehension をパース。"""
-        open_tok = self.advance()  # {
+        open_tok = self.advance()
         if self.peek().value == "}":
             close_tok = self.advance()
             base = self._base(open_tok.start, close_tok.end)

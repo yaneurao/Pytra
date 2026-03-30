@@ -80,7 +80,8 @@ class EmitContext:
 # ---------------------------------------------------------------------------
 
 # All symbols exported by src/runtime/ts/built_in/py_runtime.ts
-_BUILTIN_RUNTIME_SYMBOLS: set[str] = {
+_BUILTIN_RUNTIME_SYMBOLS: set[str] = set()
+for _builtin_runtime_symbol in [
     "PY_TYPE_NONE", "PY_TYPE_BOOL", "PY_TYPE_NUMBER", "PY_TYPE_STRING",
     "PY_TYPE_ARRAY", "PY_TYPE_MAP", "PY_TYPE_SET", "PY_TYPE_OBJECT",
     "PYTRA_TYPE_ID", "PYTRA_TRUTHY", "PYTRA_TRY_LEN", "PYTRA_STR",
@@ -97,48 +98,32 @@ _BUILTIN_RUNTIME_SYMBOLS: set[str] = {
     "pyAssertStdout", "pyAssertTrue", "pyAssertEq", "pyAssertAll",
     "pyFloatStr", "pyFmt",
     "pysum", "pyzip", "type_",
-    # Math wrappers
     "pyfabs", "pytan", "pylog", "pyexp", "pylog10", "pylog2",
     "pysqrt", "pysin", "pycos", "pyceil", "pyfloor", "pypow",
     "pyround", "pytrunc", "pyatan2", "pyasin", "pyacos", "pyatan",
     "pyhypot", "py_math_pi", "py_math_e", "py_math_inf", "py_math_nan",
     "pyisfinite", "pyisinf", "pyisnan",
-    # json wrappers
     "dumps", "loads",
     "pydumps", "pyloads", "pyloads_arr", "pyloads_obj",
     "JsonValue", "JsonArr", "JsonObj",
-    # pathlib
     "Path", "PyPath", "py_math_tau",
-    # os.path
     "pyjoin", "pysplitext", "pybasename", "pydirname", "pyexists", "pyisfile", "pyisdir",
     "pymakedirs",
-    # argparse
     "ArgumentParser",
-    # png
     "pywrite_rgb_png",
-    # file I/O (OS glue for compiled pytra.utils modules)
     "pyopen", "PyFile",
-    # time
     "perf_counter",
-    # sys
     "sys", "pyset_argv", "pyset_path",
-    # re
     "sub", "match", "search", "findall", "split",
-    # glob
     "pyglob",
-    # dict/list builtins (resolved from Python dict.update, list.extend, etc.)
     "pyupdate", "pypop", "pyextend", "pysort", "pyclear",
-    # del() keyword (dict.delete equivalent)
     "pydel",
-    # list.insert(i, val), Python built-ins
     "pyinsert", "pybool", "pyrepr",
-    # Python built-in constructors and dataclass helpers
     "dict", "list", "set_", "field", "___",
-    # Python __file__ builtin
     "__file__",
-    # Python built-in type aliases
     "bool", "str", "int", "float",
-}
+]:
+    _BUILTIN_RUNTIME_SYMBOLS.add(_builtin_runtime_symbol)
 
 _BUILTIN_RUNTIME_MODULE: str = "pytra_built_in_py_runtime"
 
@@ -232,15 +217,25 @@ def _return_type_annotation(ctx: EmitContext, return_type: str) -> str:
     return ": " + tt
 
 
+def _is_top_level_public_name(ctx: EmitContext, name: str) -> bool:
+    if ctx.indent_level != 0:
+        return False
+    if ctx.current_class != "":
+        return False
+    return not name.startswith("_")
+
+
 def _is_exception_type_name(ctx: EmitContext, type_name: str) -> bool:
     """Check if a type name is an exception class."""
-    _BUILTIN_EXCEPTIONS: set[str] = {
+    _BUILTIN_EXCEPTIONS: set[str] = set()
+    for _builtin_exception in [
         "Exception", "BaseException", "RuntimeError", "ValueError",
         "TypeError", "IndexError", "KeyError", "StopIteration",
         "AttributeError", "NameError", "NotImplementedError",
         "OverflowError", "ZeroDivisionError", "AssertionError",
         "OSError", "IOError", "FileNotFoundError", "PermissionError",
-    }
+    ]:
+        _BUILTIN_EXCEPTIONS.add(_builtin_exception)
     if type_name in _BUILTIN_EXCEPTIONS:
         return True
     # Check inherited from exception class
@@ -451,12 +446,17 @@ def _ts_condition_expr(ctx: EmitContext, node: JsonVal) -> str:
     rendered = _emit_expr(ctx, node)
     if isinstance(node, dict):
         rt = _str(node, "resolved_type")
-        if (rt in ("bytes", "bytearray")
-                or rt.startswith("list[") or rt == "list"
-                or rt.startswith("tuple[") or rt == "tuple"):
+        is_sequence = rt in ("bytes", "bytearray")
+        if not is_sequence:
+            is_sequence = rt.startswith("list[") or rt == "list"
+        if not is_sequence:
+            is_sequence = rt.startswith("tuple[") or rt == "tuple"
+        if is_sequence:
             return rendered + ".length > 0"
-        if (rt.startswith("dict[") or rt == "dict"
-                or rt.startswith("set[") or rt == "set"):
+        is_mapping = rt.startswith("dict[") or rt == "dict"
+        if not is_mapping:
+            is_mapping = rt.startswith("set[") or rt == "set"
+        if is_mapping:
             return rendered + ".size > 0"
     return rendered
 
@@ -515,10 +515,13 @@ def _emit_lambda(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     return "(" + ", ".join(params) + ") => " + body_code
 
 
-_POD_NUMERIC_TYPES: frozenset[str] = frozenset({
+_POD_NUMERIC_TYPES_VALUES: set[str] = set()
+for _pod_numeric_type in [
     "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64",
     "float32", "float64", "int", "float", "number", "byte",
-})
+]:
+    _POD_NUMERIC_TYPES_VALUES.add(_pod_numeric_type)
+_POD_NUMERIC_TYPES: frozenset[str] = frozenset(_POD_NUMERIC_TYPES_VALUES)
 
 
 def _isinstance_ts_check(obj: str, obj_rt: str, type_name: str) -> str:
@@ -605,53 +608,49 @@ def _resolve_runtime_call_name(ctx: EmitContext, node: dict[str, JsonVal], func:
 
 def _translate_method_name(owner_rt: str, attr: str) -> str:
     """Translate Python method names to TS equivalents for known container types."""
-    is_list_type = (
-        owner_rt.startswith("list[") or owner_rt == "list"
-        or owner_rt in ("bytes", "bytearray")
-    )
+    is_list_type = owner_rt.startswith("list[") or owner_rt == "list"
+    if not is_list_type:
+        is_list_type = owner_rt in ("bytes", "bytearray")
     is_dict_type = owner_rt.startswith("dict[") or owner_rt == "dict"
     is_set_type = owner_rt.startswith("set[") or owner_rt == "set"
     is_str_type = owner_rt == "str" or owner_rt == "string"
 
     if is_list_type:
-        _LIST_MAP: dict[str, str] = {
-            "append": "push",
-            "pop": "pop",
-            "clear": "splice(0)",
-            "copy": "slice",
-            "index": "indexOf",
-            "count": "filter",
-            "reverse": "reverse",
-            "sort": "sort",
-            "extend": "push",
-            "insert": "splice",
-            "remove": "splice",
-        }
+        _LIST_MAP: dict[str, str] = {}
+        _LIST_MAP["append"] = "push"
+        _LIST_MAP["pop"] = "pop"
+        _LIST_MAP["clear"] = "splice(0)"
+        _LIST_MAP["copy"] = "slice"
+        _LIST_MAP["index"] = "indexOf"
+        _LIST_MAP["count"] = "filter"
+        _LIST_MAP["reverse"] = "reverse"
+        _LIST_MAP["sort"] = "sort"
+        _LIST_MAP["extend"] = "push"
+        _LIST_MAP["insert"] = "splice"
+        _LIST_MAP["remove"] = "splice"
         return _LIST_MAP.get(attr, attr)
     if is_dict_type:
-        _DICT_MAP: dict[str, str] = {
-            "get": "get",
-            "set": "set",
-            "has": "has",
-            "delete": "delete",
-            "clear": "clear",
-            "items": "entries",
-            "keys": "keys",
-            "values": "values",
-            "pop": "delete",
-            "update": "set",
-        }
+        _DICT_MAP: dict[str, str] = {}
+        _DICT_MAP["get"] = "get"
+        _DICT_MAP["set"] = "set"
+        _DICT_MAP["has"] = "has"
+        _DICT_MAP["delete"] = "delete"
+        _DICT_MAP["clear"] = "clear"
+        _DICT_MAP["items"] = "entries"
+        _DICT_MAP["keys"] = "keys"
+        _DICT_MAP["values"] = "values"
+        _DICT_MAP["pop"] = "delete"
+        _DICT_MAP["update"] = "set"
         return _DICT_MAP.get(attr, attr)
     if is_set_type:
-        _SET_MAP: dict[str, str] = {
-            "add": "add",
-            "discard": "delete",
-            "remove": "delete",
-            "pop": "values",
-            "clear": "clear",
-            "union": "union",
-            "intersection": "intersection",
-        }
+        _SET_MAP: dict[str, str] = {}
+        _SET_MAP["add"] = "add"
+        _SET_MAP["discard"] = "delete"
+        _SET_MAP["remove"] = "delete"
+        _SET_MAP["pop"] = "values"
+        _SET_MAP["clear"] = "clear"
+        _SET_MAP["union"] = "union"
+        _SET_MAP["intersection"] = "intersection"
         return _SET_MAP.get(attr, attr)
     return attr
 
@@ -687,10 +686,14 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     fn_id_for_vararg = ""
     if isinstance(func, dict) and _str(func, "kind") == "Name":
         fn_id_for_vararg = _str(func, "id")
-    if (fn_id_for_vararg in ctx.vararg_functions
-            and len(args) > 0
-            and isinstance(args[-1], dict)
-            and _str(args[-1], "kind") == "List"):
+    has_vararg_list = fn_id_for_vararg in ctx.vararg_functions
+    if has_vararg_list:
+        has_vararg_list = len(args) > 0
+    if has_vararg_list:
+        has_vararg_list = isinstance(args[-1], dict)
+    if has_vararg_list:
+        has_vararg_list = _str(args[-1], "kind") == "List"
+    if has_vararg_list:
         vararg_list_node = args[-1]
         elems = _list(vararg_list_node, "elements")
         elem_strs = [_emit_expr(ctx, e) for e in elems]
@@ -826,12 +829,9 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if runtime_symbol == "":
                     runtime_symbol = attr
                 if should_skip_module(mod_id, ctx.mapping):
-                    resolved = resolve_runtime_symbol_name(
-                        runtime_symbol,
-                        ctx.mapping,
-                        resolved_runtime_call=_str(node, "resolved_runtime_call"),
-                        runtime_call=_str(node, "runtime_call"),
-                    )
+                    resolved_runtime_call = _str(node, "resolved_runtime_call")
+                    runtime_call = _str(node, "runtime_call")
+                    resolved = resolve_runtime_symbol_name(runtime_symbol, ctx.mapping, resolved_runtime_call=resolved_runtime_call, runtime_call=runtime_call)
                     if resolved == "":
                         resolved = runtime_symbol
                     return _safe_ts_ident(resolved) + "(" + ", ".join(all_arg_strs) + ")"
@@ -843,12 +843,14 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
             # str methods → runtime free functions (e.g. ch.isdigit() → pyStrIsdigit(ch))
             # For "unknown" owner type, only match purely str-specific methods
-            _STR_ONLY_ATTRS = {
+            _STR_ONLY_ATTRS: set[str] = set()
+            for _str_only_attr in [
                 "isdigit", "isalpha", "isalnum", "isspace", "isupper", "islower",
                 "startswith", "endswith", "strip", "lstrip", "rstrip",
                 "split", "rsplit", "join", "replace", "find", "rfind",
                 "upper", "lower", "count", "index",
-            }
+            ]:
+                _STR_ONLY_ATTRS.add(_str_only_attr)
             owner_is_str = owner_rt in ("str", "string")
             owner_maybe_str = owner_rt in ("", "unknown") and attr in _STR_ONLY_ATTRS
             if owner_is_str or owner_maybe_str:
@@ -958,12 +960,19 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     left = _emit_expr(ctx, left_node)
     right = _emit_expr(ctx, right_node)
     op = _str(node, "op")
-    _OP_MAP: dict[str, str] = {
-        "Add": "+", "Sub": "-", "Mult": "*", "Div": "/",
-        "FloorDiv": "__floordiv", "Mod": "%", "Pow": "**",
-        "BitAnd": "&", "BitOr": "|", "BitXor": "^",
-        "LShift": "<<", "RShift": ">>>",
-    }
+    _OP_MAP: dict[str, str] = {}
+    _OP_MAP["Add"] = "+"
+    _OP_MAP["Sub"] = "-"
+    _OP_MAP["Mult"] = "*"
+    _OP_MAP["Div"] = "/"
+    _OP_MAP["FloorDiv"] = "__floordiv"
+    _OP_MAP["Mod"] = "%"
+    _OP_MAP["Pow"] = "**"
+    _OP_MAP["BitAnd"] = "&"
+    _OP_MAP["BitOr"] = "|"
+    _OP_MAP["BitXor"] = "^"
+    _OP_MAP["LShift"] = "<<"
+    _OP_MAP["RShift"] = ">>>"
     op_str = _OP_MAP.get(op, op)
     if op_str == "__floordiv":
         return "pyFloorDiv(" + left + ", " + right + ")"
@@ -971,16 +980,20 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if op_str == "+":
         left_rt = _str(left_node, "resolved_type") if isinstance(left_node, dict) else ""
         right_rt = _str(right_node, "resolved_type") if isinstance(right_node, dict) else ""
-        if (left_rt.startswith("list[") or left_rt == "list") and (right_rt.startswith("list[") or right_rt == "list"):
+        left_is_list = left_rt.startswith("list[") or left_rt == "list"
+        right_is_list = right_rt.startswith("list[") or right_rt == "list"
+        if left_is_list and right_is_list:
             return left + ".concat(" + right + ")"
     # List repeat: list * number → Array.from({length: n}, (_, i) => template[i % len])
     if op_str == "*":
         left_rt = _str(left_node, "resolved_type") if isinstance(left_node, dict) else ""
         right_rt = _str(right_node, "resolved_type") if isinstance(right_node, dict) else ""
         _INT_TYPES = ("int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "number")
-        if (left_rt.startswith("list[") or left_rt == "list") and right_rt in _INT_TYPES:
+        left_is_list = left_rt.startswith("list[") or left_rt == "list"
+        right_is_list = right_rt.startswith("list[") or right_rt == "list"
+        if left_is_list and right_rt in _INT_TYPES:
             return "(() => { const _arr = " + left + "; const _n = " + right + "; return Array.from({length: _n * _arr.length}, (_, i) => _arr[i % _arr.length]); })()"
-        if (right_rt.startswith("list[") or right_rt == "list") and left_rt in _INT_TYPES:
+        if right_is_list and left_rt in _INT_TYPES:
             return "(() => { const _arr = " + right + "; const _n = " + left + "; return Array.from({length: _n * _arr.length}, (_, i) => _arr[i % _arr.length]); })()"
     return "(" + left + " " + op_str + " " + right + ")"
 
@@ -988,16 +1001,27 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 def _emit_unaryop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     operand = _emit_expr(ctx, node.get("operand"))
     op = _str(node, "op")
-    _OP_MAP: dict[str, str] = {"USub": "-", "UAdd": "+", "Not": "!", "Invert": "~"}
+    _OP_MAP: dict[str, str] = {}
+    _OP_MAP["USub"] = "-"
+    _OP_MAP["UAdd"] = "+"
+    _OP_MAP["Not"] = "!"
+    _OP_MAP["Invert"] = "~"
     op_str = _OP_MAP.get(op, op)
     return "(" + op_str + operand + ")"
 
 
 def _types_may_mismatch(left_rt: str, right_rt: str) -> bool:
     """Return True if left/right types could cause TS2367 (e.g., string vs number)."""
-    _STR = {"str", "string", "char"}
-    _NUM = {"int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64",
-            "number", "float", "float32", "float64", "byte"}
+    _STR: set[str] = set()
+    _STR.add("str")
+    _STR.add("string")
+    _STR.add("char")
+    _NUM: set[str] = set()
+    for _num_name in [
+        "int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64",
+        "number", "float", "float32", "float64", "byte",
+    ]:
+        _NUM.add(_num_name)
     return (left_rt in _STR and right_rt in _NUM) or (left_rt in _NUM and right_rt in _STR)
 
 
@@ -1023,12 +1047,17 @@ def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     ops = _list(node, "ops")
     if len(comparators) == 0 or len(ops) == 0:
         return left
-    _OP_MAP: dict[str, str] = {
-        "Eq": "===", "NotEq": "!==",
-        "Lt": "<", "LtE": "<=", "Gt": ">", "GtE": ">=",
-        "Is": "===", "IsNot": "!==",
-        "In": "__IN__", "NotIn": "__NOT_IN__",
-    }
+    _OP_MAP: dict[str, str] = {}
+    _OP_MAP["Eq"] = "==="
+    _OP_MAP["NotEq"] = "!=="
+    _OP_MAP["Lt"] = "<"
+    _OP_MAP["LtE"] = "<="
+    _OP_MAP["Gt"] = ">"
+    _OP_MAP["GtE"] = ">="
+    _OP_MAP["Is"] = "==="
+    _OP_MAP["IsNot"] = "!=="
+    _OP_MAP["In"] = "__IN__"
+    _OP_MAP["NotIn"] = "__NOT_IN__"
     parts: list[str] = []
     current_left = left
     current_left_rt = left_rt
@@ -1131,11 +1160,16 @@ class _TsStmtRenderer(CommonRenderer):
         # If truthiness was rewritten (no extra parens needed), return as-is
         if isinstance(node, dict):
             rt = _str(node, "resolved_type")
-            if (rt in ("bytes", "bytearray")
-                    or rt.startswith("list[") or rt == "list"
-                    or rt.startswith("tuple[") or rt == "tuple"
-                    or rt.startswith("dict[") or rt == "dict"
-                    or rt.startswith("set[") or rt == "set"):
+            is_collection = rt in ("bytes", "bytearray")
+            if not is_collection:
+                is_collection = rt.startswith("list[") or rt == "list"
+            if not is_collection:
+                is_collection = rt.startswith("tuple[") or rt == "tuple"
+            if not is_collection:
+                is_collection = rt.startswith("dict[") or rt == "dict"
+            if not is_collection:
+                is_collection = rt.startswith("set[") or rt == "set"
+            if is_collection:
                 return result
         return self._format_condition(result)
 
@@ -1417,11 +1451,7 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     is_reassign = _bool(node, "is_reassign") or name in ctx.var_types
     ann = _type_annotation(ctx, rt)
 
-    is_top_level_public = (
-        ctx.indent_level == 0
-        and ctx.current_class == ""
-        and not name.startswith("_")
-    )
+    is_top_level_public = _is_top_level_public_name(ctx, name)
     if value is not None:
         val_code = _emit_expr(ctx, value)
         if is_reassign:
@@ -1440,15 +1470,23 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, export_prefix + "let " + name + ann + " = " + zero + ";")
 
 
-_PY_TO_TS_TYPE_NAME: dict[str, str] = {
-    "None": "null", "none": "null",
-    "bool": "boolean",
-    "int": "number", "int64": "number", "int32": "number",
-    "float": "number", "float32": "number", "float64": "number",
-    "str": "string", "string": "string",
-    "bytes": "number[]", "bytearray": "number[]",
-    "any": "any", "Any": "any", "object": "any",
-}
+_PY_TO_TS_TYPE_NAME: dict[str, str] = {}
+_PY_TO_TS_TYPE_NAME["None"] = "null"
+_PY_TO_TS_TYPE_NAME["none"] = "null"
+_PY_TO_TS_TYPE_NAME["bool"] = "boolean"
+_PY_TO_TS_TYPE_NAME["int"] = "number"
+_PY_TO_TS_TYPE_NAME["int64"] = "number"
+_PY_TO_TS_TYPE_NAME["int32"] = "number"
+_PY_TO_TS_TYPE_NAME["float"] = "number"
+_PY_TO_TS_TYPE_NAME["float32"] = "number"
+_PY_TO_TS_TYPE_NAME["float64"] = "number"
+_PY_TO_TS_TYPE_NAME["str"] = "string"
+_PY_TO_TS_TYPE_NAME["string"] = "string"
+_PY_TO_TS_TYPE_NAME["bytes"] = "number[]"
+_PY_TO_TS_TYPE_NAME["bytearray"] = "number[]"
+_PY_TO_TS_TYPE_NAME["any"] = "any"
+_PY_TO_TS_TYPE_NAME["Any"] = "any"
+_PY_TO_TS_TYPE_NAME["object"] = "any"
 
 
 def _py_type_name_to_ts(name: str) -> str:
@@ -1556,26 +1594,37 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 val_code = _emit_expr(ctx, value)
                 _emit(ctx, "void (" + val_code + ");")
                 return
-            # Top-level public declarations get `export` (matching Python's implicit public API)
-            is_top_level_public = (
-                ctx.indent_level == 0
-                and ctx.current_class == ""
-                and not name.startswith("_")
-            )
-            # Detect Union[A, B, C] / Optional[A] type alias → emit as TypeScript type declaration
-            if name not in ctx.var_types and not ctx.strip_types:
+            is_top_level_public = _is_top_level_public_name(ctx, name)
+            should_emit_type_alias = name not in ctx.var_types
+            if should_emit_type_alias:
+                should_emit_type_alias = not ctx.strip_types
+            if should_emit_type_alias:
                 members = _union_subscript_members(value)
                 if members is not None:
-                    _TS_PRIMITIVE_TYPES = {"null", "boolean", "number", "string", "any", "void", "never", "unknown"}
-                    safe_members = [m if (m in _TS_PRIMITIVE_TYPES or m.startswith("Map<") or m.startswith("Set<") or "[]" in m) else _safe_ts_ident(m) for m in members]
-                    export_kw = "export " if is_top_level_public else ""
+                    _TS_PRIMITIVE_TYPES: set[str] = set()
+                    for _ts_primitive_type in ["null", "boolean", "number", "string", "any", "void", "never", "unknown"]:
+                        _TS_PRIMITIVE_TYPES.add(_ts_primitive_type)
+                    safe_members: list[str] = []
+                    for m in members:
+                        is_safe = m in _TS_PRIMITIVE_TYPES or m.startswith("Map<")
+                        if not is_safe:
+                            is_safe = m.startswith("Set<") or "[]" in m
+                        if is_safe:
+                            safe_members.append(m)
+                        else:
+                            safe_members.append(_safe_ts_ident(m))
+                    export_kw = ""
+                    if is_top_level_public:
+                        export_kw = "export "
                     _emit(ctx, export_kw + "type " + _safe_ts_ident(name) + " = " + " | ".join(safe_members) + ";")
                     _emit_blank(ctx)
                     return
                 # Detect dict[K,V] / list[T] / set[T] type alias → emit as TS type
                 ts_alias = _container_type_alias(value)
                 if ts_alias and ts_alias not in ("any", ""):
-                    export_kw = "export " if is_top_level_public else ""
+                    export_kw = ""
+                    if is_top_level_public:
+                        export_kw = "export "
                     _emit(ctx, export_kw + "type " + _safe_ts_ident(name) + " = " + ts_alias + ";")
                     _emit_blank(ctx)
                     return
@@ -1622,12 +1671,18 @@ def _emit_aug_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     target = _emit_expr(ctx, node.get("target"))
     value = _emit_expr(ctx, node.get("value"))
     op = _str(node, "op")
-    _AUG_OP: dict[str, str] = {
-        "Add": "+=", "Sub": "-=", "Mult": "*=", "Div": "/=",
-        "Mod": "%=", "Pow": "**=",
-        "BitAnd": "&=", "BitOr": "|=", "BitXor": "^=",
-        "LShift": "<<=", "RShift": ">>>=",
-    }
+    _AUG_OP: dict[str, str] = {}
+    _AUG_OP["Add"] = "+="
+    _AUG_OP["Sub"] = "-="
+    _AUG_OP["Mult"] = "*="
+    _AUG_OP["Div"] = "/="
+    _AUG_OP["Mod"] = "%="
+    _AUG_OP["Pow"] = "**="
+    _AUG_OP["BitAnd"] = "&="
+    _AUG_OP["BitOr"] = "|="
+    _AUG_OP["BitXor"] = "^="
+    _AUG_OP["LShift"] = "<<="
+    _AUG_OP["RShift"] = ">>>="
     op_str = _AUG_OP.get(op, op + "=")
     if op == "FloorDiv":
         _emit(ctx, target + " = pyFloorDiv(" + target + ", " + value + ");")
@@ -1897,31 +1952,30 @@ def _map_builtin_exception(name: str) -> str:
     For isinstance checks, TypeError matches only TypeError; Error matches all.
     We use the most specific JS type to preserve semantics.
     """
-    _BUILTIN_EXC_MAP: dict[str, str] = {
-        "Exception": "Error",
-        "BaseException": "Error",
-        "RuntimeError": "Error",
-        "ValueError": "Error",
-        "TypeError": "TypeError",
-        "KeyError": "Error",
-        "IndexError": "RangeError",
-        "AttributeError": "Error",
-        "NotImplementedError": "Error",
-        "StopIteration": "Error",
-        "OverflowError": "RangeError",
-        "ZeroDivisionError": "Error",
-        "OSError": "Error",
-        "IOError": "Error",
-        "NameError": "Error",
-        "ImportError": "Error",
-        "AssertionError": "Error",
-        "SystemExit": "Error",
-        "RecursionError": "RangeError",
-        "FileNotFoundError": "Error",
-        "PermissionError": "Error",
-        "UnicodeDecodeError": "Error",
-        "UnicodeEncodeError": "Error",
-    }
+    _BUILTIN_EXC_MAP: dict[str, str] = {}
+    _BUILTIN_EXC_MAP["Exception"] = "Error"
+    _BUILTIN_EXC_MAP["BaseException"] = "Error"
+    _BUILTIN_EXC_MAP["RuntimeError"] = "Error"
+    _BUILTIN_EXC_MAP["ValueError"] = "Error"
+    _BUILTIN_EXC_MAP["TypeError"] = "TypeError"
+    _BUILTIN_EXC_MAP["KeyError"] = "Error"
+    _BUILTIN_EXC_MAP["IndexError"] = "RangeError"
+    _BUILTIN_EXC_MAP["AttributeError"] = "Error"
+    _BUILTIN_EXC_MAP["NotImplementedError"] = "Error"
+    _BUILTIN_EXC_MAP["StopIteration"] = "Error"
+    _BUILTIN_EXC_MAP["OverflowError"] = "RangeError"
+    _BUILTIN_EXC_MAP["ZeroDivisionError"] = "Error"
+    _BUILTIN_EXC_MAP["OSError"] = "Error"
+    _BUILTIN_EXC_MAP["IOError"] = "Error"
+    _BUILTIN_EXC_MAP["NameError"] = "Error"
+    _BUILTIN_EXC_MAP["ImportError"] = "Error"
+    _BUILTIN_EXC_MAP["AssertionError"] = "Error"
+    _BUILTIN_EXC_MAP["SystemExit"] = "Error"
+    _BUILTIN_EXC_MAP["RecursionError"] = "RangeError"
+    _BUILTIN_EXC_MAP["FileNotFoundError"] = "Error"
+    _BUILTIN_EXC_MAP["PermissionError"] = "Error"
+    _BUILTIN_EXC_MAP["UnicodeDecodeError"] = "Error"
+    _BUILTIN_EXC_MAP["UnicodeEncodeError"] = "Error"
     return _BUILTIN_EXC_MAP.get(name, _safe_ts_ident(name))
 
 
@@ -2285,7 +2339,8 @@ def _emit_import_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 # Sub-module import: emit as namespace star import if not skipped
                 if not should_skip_module(resolved_sub_mod, ctx.mapping):
                     sub_mod_path = _module_id_to_path(resolved_sub_mod)
-                    _emit(ctx, "import * as " + _safe_ts_ident(local) + " from \"" + sub_mod_path + "\";")
+                    js_ext = ".js" if ctx.strip_types else ""
+                    _emit(ctx, "import * as " + _safe_ts_ident(local) + " from \"" + sub_mod_path + js_ext + "\";")
                 continue
             # `from X import Y as Y` (asname == name) is the Python re-export pattern
             if asname != "" and asname == name and not ctx.strip_types:
@@ -2295,7 +2350,7 @@ def _emit_import_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             else:
                 imported.append(_safe_ts_ident(name))
         mod_path = _module_id_to_path(module)
-        ext = "" if ctx.strip_types else ""
+        ext = ".js" if ctx.strip_types else ""
         if len(reexported) > 0:
             _emit(ctx, "export { " + ", ".join(reexported) + " } from \"" + mod_path + ext + "\";")
         if len(imported) == 0:
@@ -2314,7 +2369,8 @@ def _emit_import_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 continue
             mod_path = _module_id_to_path(name)
             local = _safe_ts_ident(asname if asname != "" else name.rsplit(".", 1)[-1])
-            _emit(ctx, "import * as " + local + " from \"" + mod_path + "\";")
+            js_ext = ".js" if ctx.strip_types else ""
+            _emit(ctx, "import * as " + local + " from \"" + mod_path + js_ext + "\";")
 
 
 def _module_id_to_path(module_id: str) -> str:
@@ -2883,11 +2939,16 @@ def emit_ts_module(east3_doc: dict[str, JsonVal], *, strip_types: bool = False) 
     body_text = "\n".join(ctx.lines)
     used_builtins: list[str] = []
     for sym in sorted(_BUILTIN_RUNTIME_SYMBOLS):
-        if (sym + "(" in body_text or sym + ";" in body_text
-                or sym + "," in body_text or sym + "]" in body_text
-                or sym + ")" in body_text or sym + " " in body_text
-                or sym + "|" in body_text or sym + "\n" in body_text
-                or sym + "." in body_text):
+        sym_used = sym + "(" in body_text or sym + ";" in body_text
+        if not sym_used:
+            sym_used = sym + "," in body_text or sym + "]" in body_text
+        if not sym_used:
+            sym_used = sym + ")" in body_text or sym + " " in body_text
+        if not sym_used:
+            sym_used = sym + "|" in body_text or sym + "\n" in body_text
+        if not sym_used:
+            sym_used = sym + "." in body_text
+        if sym_used:
             used_builtins.append(sym)
 
     # Also include native symbols resolved via runtime_imports
@@ -2895,11 +2956,16 @@ def emit_ts_module(east3_doc: dict[str, JsonVal], *, strip_types: bool = False) 
     used_set = set(used_builtins)
     for native_sym in sorted(set(ctx.runtime_imports.values())):
         if native_sym not in used_set:
-            if (native_sym + "(" in body_text or native_sym + ";" in body_text
-                    or native_sym + "," in body_text or native_sym + "]" in body_text
-                    or native_sym + ")" in body_text or native_sym + " " in body_text
-                    or native_sym + "|" in body_text or native_sym + "\n" in body_text
-                    or native_sym + "." in body_text):
+            sym_used = native_sym + "(" in body_text or native_sym + ";" in body_text
+            if not sym_used:
+                sym_used = native_sym + "," in body_text or native_sym + "]" in body_text
+            if not sym_used:
+                sym_used = native_sym + ")" in body_text or native_sym + " " in body_text
+            if not sym_used:
+                sym_used = native_sym + "|" in body_text or native_sym + "\n" in body_text
+            if not sym_used:
+                sym_used = native_sym + "." in body_text
+            if sym_used:
                 used_builtins.append(native_sym)
                 used_set.add(native_sym)
 
@@ -2926,23 +2992,16 @@ def emit_ts_module(east3_doc: dict[str, JsonVal], *, strip_types: bool = False) 
     type_id_set = set(type_id_table_syms)
     used_builtins = [s for s in used_builtins if s not in type_id_set]
 
+    js_ext = ".js" if strip_types else ""
     preamble_lines: list[str] = []
-    if len(type_id_table_syms) > 0 and not strip_types:
+    if len(type_id_table_syms) > 0:
         preamble_lines.append(
-            "import { " + ", ".join(sorted(type_id_table_syms)) + " } from \"./" + type_id_table_module_name + "\";"
-        )
-    elif len(type_id_table_syms) > 0 and strip_types:
-        preamble_lines.append(
-            "const { " + ", ".join(sorted(type_id_table_syms)) + " } = require(\"./" + type_id_table_module_name + "\");"
+            "import { " + ", ".join(sorted(type_id_table_syms)) + " } from \"./" + type_id_table_module_name + js_ext + "\";"
         )
 
-    if len(used_builtins) > 0 and not ctx.strip_types:
+    if len(used_builtins) > 0:
         preamble_lines.append(
-            "import { " + ", ".join(used_builtins) + " } from \"./" + _BUILTIN_RUNTIME_MODULE + "\";"
-        )
-    elif len(used_builtins) > 0 and ctx.strip_types:
-        preamble_lines.append(
-            "const { " + ", ".join(used_builtins) + " } = require(\"./" + _BUILTIN_RUNTIME_MODULE + "\");"
+            "import { " + ", ".join(used_builtins) + " } from \"./" + _BUILTIN_RUNTIME_MODULE + js_ext + "\";"
         )
 
     if len(preamble_lines) > 0:

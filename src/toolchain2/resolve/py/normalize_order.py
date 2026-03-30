@@ -11,215 +11,119 @@ from __future__ import annotations
 from pytra.std.json import JsonVal
 
 
+def _fields_csv(csv_text: str) -> list[str]:
+    parts: list[str] = []
+    for raw_part in csv_text.split(","):
+        part = raw_part.strip()
+        if part != "":
+            parts.append(part)
+    return parts
+
+
 # Expression node field order: resolved_type comes right after source_span
-_EXPR_FIELD_ORDER: list[str] = [
-    "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr",
-]
+_EXPR_FIELD_ORDER: list[str] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr")
 
 # Name-specific trailing fields
-_NAME_FIELDS: list[str] = [
-    "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr", "id",
-    "type_expr",
-]
+_NAME_FIELDS: list[str] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, id, type_expr")
 
 # Constant-specific trailing fields
-_CONSTANT_FIELDS: list[str] = [
-    "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr", "value",
-]
+_CONSTANT_FIELDS: list[str] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, value")
 
 # BinOp
-_BINOP_FIELDS: list[str] = [
-    "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr",
-    "left", "op", "right",
-]
+_BINOP_FIELDS: list[str] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, left, op, right")
 
 # UnaryOp
-_UNARYOP_FIELDS: list[str] = [
-    "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr",
-    "op", "operand",
-]
+_UNARYOP_FIELDS: list[str] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, op, operand")
 
 # Compare
-_COMPARE_FIELDS: list[str] = [
-    "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr",
-    "left", "ops", "comparators",
-]
+_COMPARE_FIELDS: list[str] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, left, ops, comparators")
 
 # Call
-_CALL_FIELDS: list[str] = [
-    "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr",
-    "func", "args", "keywords",
-    # Runtime fields come after keywords
-    "lowered_kind", "builtin_name", "runtime_call",
-    "resolved_runtime_call", "resolved_runtime_source",
-    "runtime_module_id", "runtime_symbol", "runtime_call_adapter_kind",
-    "semantic_tag",
-    "runtime_owner",
-]
+_CALL_FIELDS: list[str] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, func, args, keywords, lowered_kind, builtin_name, runtime_call, resolved_runtime_call, resolved_runtime_source, runtime_module_id, runtime_symbol, runtime_call_adapter_kind, semantic_tag, runtime_owner")
 
 # Attribute
-_ATTRIBUTE_FIELDS: list[str] = [
-    "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr",
-    "value", "attr",
-]
+_ATTRIBUTE_FIELDS: list[str] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, value, attr")
 
 # Subscript
-_SUBSCRIPT_FIELDS: list[str] = [
-    "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr",
-    "value", "slice", "lowered_kind",
-    "lower", "upper", "step",
-]
+_SUBSCRIPT_FIELDS: list[str] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, value, slice, lowered_kind, lower, upper, step")
 
 # List
-_LIST_FIELDS: list[str] = [
-    "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr",
-    "elements",
-]
+_LIST_FIELDS: list[str] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, elements")
 
 # Dict
-_DICT_FIELDS: list[str] = [
-    "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr",
-    "keys", "values",
-]
+_DICT_FIELDS: list[str] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, keys, values")
 
 # Set
-_SET_FIELDS: list[str] = [
-    "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr",
-    "elements",
-]
+_SET_FIELDS: list[str] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, elements")
 
 # Tuple
-_TUPLE_FIELDS: list[str] = [
-    "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr",
-    "elements",
-]
+_TUPLE_FIELDS: list[str] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, elements")
 
 # IfExp
-_IFEXP_FIELDS: list[str] = [
-    "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr",
-    "test", "body", "orelse",
-]
+_IFEXP_FIELDS: list[str] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, test, body, orelse")
 
 # BoolOp
-_BOOLOP_FIELDS: list[str] = [
-    "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr",
-    "op", "values",
-]
+_BOOLOP_FIELDS: list[str] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, op, values")
 
 # ListComp
-_LISTCOMP_FIELDS: list[str] = [
-    "kind", "source_span", "resolved_type", "casts", "borrow_kind", "repr",
-    "elt", "generators",
-]
+_LISTCOMP_FIELDS: list[str] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, elt, generators")
 
 # FunctionDef
-_FUNCDEF_FIELDS: list[str] = [
-    "kind", "source_span", "name", "original_name",
-    "arg_types", "arg_order", "arg_defaults", "arg_index",
-    "return_type", "arg_usage", "renamed_symbols", "docstring",
-    "body", "is_generator", "yield_value_type",
-    "arg_type_exprs", "return_type_expr",
-    "leading_comments", "leading_trivia",
-]
+_FUNCDEF_FIELDS: list[str] = _fields_csv("kind, source_span, name, original_name, arg_types, arg_order, arg_defaults, arg_index, return_type, arg_usage, renamed_symbols, docstring, body, is_generator, yield_value_type, arg_type_exprs, return_type_expr, leading_comments, leading_trivia")
 
-_CLOSUREDEF_FIELDS: list[str] = [
-    "kind", "source_span", "name", "original_name",
-    "captures", "capture_types", "capture_modes", "is_recursive",
-    "arg_types", "arg_order", "arg_defaults", "arg_index",
-    "return_type", "arg_usage", "renamed_symbols", "docstring",
-    "body", "is_generator", "yield_value_type",
-    "arg_type_exprs", "return_type_expr",
-    "leading_comments", "leading_trivia",
-]
+_CLOSUREDEF_FIELDS: list[str] = _fields_csv("kind, source_span, name, original_name, captures, capture_types, capture_modes, is_recursive, arg_types, arg_order, arg_defaults, arg_index, return_type, arg_usage, renamed_symbols, docstring, body, is_generator, yield_value_type, arg_type_exprs, return_type_expr, leading_comments, leading_trivia")
 
 # ClassDef
-_CLASSDEF_FIELDS: list[str] = [
-    "kind", "source_span", "name", "original_name", "base",
-    "dataclass", "field_types",
-    "bases", "decorators", "body",
-    "class_storage_hint",
-    "leading_comments", "leading_trivia",
-]
+_CLASSDEF_FIELDS: list[str] = _fields_csv("kind, source_span, name, original_name, base, dataclass, field_types, bases, decorators, body, class_storage_hint, leading_comments, leading_trivia")
 
 # ForRange
-_FORRANGE_FIELDS: list[str] = [
-    "kind", "source_span", "target", "target_type",
-    "start", "stop", "step", "range_mode",
-    "body", "orelse",
-]
+_FORRANGE_FIELDS: list[str] = _fields_csv("kind, source_span, target, target_type, start, stop, step, range_mode, body, orelse")
 
 # Assign
-_ASSIGN_FIELDS: list[str] = [
-    "kind", "source_span", "target", "targets", "value",
-    "declare", "decl_type",
-    "declare_init",
-]
+_ASSIGN_FIELDS: list[str] = _fields_csv("kind, source_span, target, targets, value, declare, decl_type, declare_init")
 
 # AnnAssign
-_ANNASSIGN_FIELDS: list[str] = [
-    "kind", "source_span", "target", "annotation", "value",
-    "declare", "decl_type",
-    "annotation_type_expr", "decl_type_expr",
-    "simple",
-]
+_ANNASSIGN_FIELDS: list[str] = _fields_csv("kind, source_span, target, annotation, value, declare, decl_type, annotation_type_expr, decl_type_expr, simple")
 
 # AugAssign
-_AUGASSIGN_FIELDS: list[str] = [
-    "kind", "source_span", "target", "op", "value",
-    "declare", "decl_type",
-]
+_AUGASSIGN_FIELDS: list[str] = _fields_csv("kind, source_span, target, op, value, declare, decl_type")
 
 # Import resolution section
-_IMPORT_RESOLUTION_FIELDS: list[str] = [
-    "schema_version", "bindings", "qualified_refs",
-]
+_IMPORT_RESOLUTION_FIELDS: list[str] = _fields_csv("schema_version, bindings, qualified_refs")
 
 # Meta section
-_META_FIELDS: list[str] = [
-    "parser_backend",
-    "import_resolution",
-    "import_bindings", "qualified_symbol_refs",
-    "import_modules", "import_symbols",
-    "dispatch_mode",
-]
+_META_FIELDS: list[str] = _fields_csv("parser_backend, import_resolution, import_bindings, qualified_symbol_refs, import_modules, import_symbols, dispatch_mode")
 
 # Module
-_MODULE_FIELDS: list[str] = [
-    "kind", "source_path", "source_span", "body", "main_guard_body",
-    "renamed_symbols", "meta", "east_stage", "schema_version",
-]
+_MODULE_FIELDS: list[str] = _fields_csv("kind, source_path, source_span, body, main_guard_body, renamed_symbols, meta, east_stage, schema_version")
 
 
-_KIND_FIELDS: dict[str, list[str]] = {
-    "Name": _NAME_FIELDS,
-    "Constant": _CONSTANT_FIELDS,
-    "BinOp": _BINOP_FIELDS,
-    "UnaryOp": _UNARYOP_FIELDS,
-    "Compare": _COMPARE_FIELDS,
-    "Call": _CALL_FIELDS,
-    "Attribute": _ATTRIBUTE_FIELDS,
-    "Subscript": _SUBSCRIPT_FIELDS,
-    "List": _LIST_FIELDS,
-    "Dict": _DICT_FIELDS,
-    "Set": _SET_FIELDS,
-    "Tuple": _TUPLE_FIELDS,
-    "IfExp": _IFEXP_FIELDS,
-    "BoolOp": _BOOLOP_FIELDS,
-    "ListComp": _LISTCOMP_FIELDS,
-    "FunctionDef": _FUNCDEF_FIELDS,
-    "ClosureDef": _CLOSUREDEF_FIELDS,
-    "ClassDef": _CLASSDEF_FIELDS,
-    "For": ["kind", "source_span", "target", "target_type",
-            "iter_mode", "iter_source_type", "iter_element_type",
-            "iter", "body", "orelse"],
-    "RangeExpr": ["kind", "source_span", "resolved_type", "casts", "borrow_kind",
-                  "repr", "start", "stop", "step", "range_mode"],
-    "ForRange": _FORRANGE_FIELDS,
-    "Assign": _ASSIGN_FIELDS,
-    "AnnAssign": _ANNASSIGN_FIELDS,
-    "AugAssign": _AUGASSIGN_FIELDS,
-    "Module": _MODULE_FIELDS,
-}
+_KIND_FIELDS: dict[str, list[str]] = {}
+_KIND_FIELDS["Name"] = _NAME_FIELDS
+_KIND_FIELDS["Constant"] = _CONSTANT_FIELDS
+_KIND_FIELDS["BinOp"] = _BINOP_FIELDS
+_KIND_FIELDS["UnaryOp"] = _UNARYOP_FIELDS
+_KIND_FIELDS["Compare"] = _COMPARE_FIELDS
+_KIND_FIELDS["Call"] = _CALL_FIELDS
+_KIND_FIELDS["Attribute"] = _ATTRIBUTE_FIELDS
+_KIND_FIELDS["Subscript"] = _SUBSCRIPT_FIELDS
+_KIND_FIELDS["List"] = _LIST_FIELDS
+_KIND_FIELDS["Dict"] = _DICT_FIELDS
+_KIND_FIELDS["Set"] = _SET_FIELDS
+_KIND_FIELDS["Tuple"] = _TUPLE_FIELDS
+_KIND_FIELDS["IfExp"] = _IFEXP_FIELDS
+_KIND_FIELDS["BoolOp"] = _BOOLOP_FIELDS
+_KIND_FIELDS["ListComp"] = _LISTCOMP_FIELDS
+_KIND_FIELDS["FunctionDef"] = _FUNCDEF_FIELDS
+_KIND_FIELDS["ClosureDef"] = _CLOSUREDEF_FIELDS
+_KIND_FIELDS["ClassDef"] = _CLASSDEF_FIELDS
+_KIND_FIELDS["For"] = _fields_csv("kind, source_span, target, target_type, iter_mode, iter_source_type, iter_element_type, iter, body, orelse")
+_KIND_FIELDS["RangeExpr"] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, start, stop, step, range_mode")
+_KIND_FIELDS["ForRange"] = _FORRANGE_FIELDS
+_KIND_FIELDS["Assign"] = _ASSIGN_FIELDS
+_KIND_FIELDS["AnnAssign"] = _ANNASSIGN_FIELDS
+_KIND_FIELDS["AugAssign"] = _AUGASSIGN_FIELDS
+_KIND_FIELDS["Module"] = _MODULE_FIELDS
 
 
 def normalize_field_order(doc: JsonVal, parent_key: str = "") -> JsonVal:

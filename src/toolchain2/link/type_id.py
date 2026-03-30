@@ -22,60 +22,64 @@ if TYPE_CHECKING:
 from toolchain2.link.import_maps import collect_import_maps
 
 
-_BUILTIN_TYPE_IDS: dict[str, int] = {
-    "None": 0,
-    "bool": 1,
-    "int": 2,
-    "float": 3,
-    "str": 4,
-    "list": 5,
-    "dict": 6,
-    "set": 7,
-    "object": 8,
-    "BaseException": 9,
-    "Exception": 10,
-    "RuntimeError": 11,
-    "ValueError": 12,
-    "TypeError": 13,
-    "IndexError": 14,
-    "KeyError": 15,
-}
+_BUILTIN_TYPE_IDS: dict[str, int] = {}
+_BUILTIN_TYPE_IDS["None"] = 0
+_BUILTIN_TYPE_IDS["bool"] = 1
+_BUILTIN_TYPE_IDS["int"] = 2
+_BUILTIN_TYPE_IDS["float"] = 3
+_BUILTIN_TYPE_IDS["str"] = 4
+_BUILTIN_TYPE_IDS["list"] = 5
+_BUILTIN_TYPE_IDS["dict"] = 6
+_BUILTIN_TYPE_IDS["set"] = 7
+_BUILTIN_TYPE_IDS["object"] = 8
+_BUILTIN_TYPE_IDS["BaseException"] = 9
+_BUILTIN_TYPE_IDS["Exception"] = 10
+_BUILTIN_TYPE_IDS["RuntimeError"] = 11
+_BUILTIN_TYPE_IDS["ValueError"] = 12
+_BUILTIN_TYPE_IDS["TypeError"] = 13
+_BUILTIN_TYPE_IDS["IndexError"] = 14
+_BUILTIN_TYPE_IDS["KeyError"] = 15
 
-_BUILTIN_CLASS_IDS: dict[str, int] = {
-    "object": _BUILTIN_TYPE_IDS["object"],
-    "BaseException": _BUILTIN_TYPE_IDS["BaseException"],
-    "Exception": _BUILTIN_TYPE_IDS["Exception"],
-    "RuntimeError": _BUILTIN_TYPE_IDS["RuntimeError"],
-    "ValueError": _BUILTIN_TYPE_IDS["ValueError"],
-    "TypeError": _BUILTIN_TYPE_IDS["TypeError"],
-    "IndexError": _BUILTIN_TYPE_IDS["IndexError"],
-    "KeyError": _BUILTIN_TYPE_IDS["KeyError"],
-}
+_BUILTIN_CLASS_IDS: dict[str, int] = {}
+_BUILTIN_CLASS_IDS["object"] = _BUILTIN_TYPE_IDS["object"]
+_BUILTIN_CLASS_IDS["BaseException"] = _BUILTIN_TYPE_IDS["BaseException"]
+_BUILTIN_CLASS_IDS["Exception"] = _BUILTIN_TYPE_IDS["Exception"]
+_BUILTIN_CLASS_IDS["RuntimeError"] = _BUILTIN_TYPE_IDS["RuntimeError"]
+_BUILTIN_CLASS_IDS["ValueError"] = _BUILTIN_TYPE_IDS["ValueError"]
+_BUILTIN_CLASS_IDS["TypeError"] = _BUILTIN_TYPE_IDS["TypeError"]
+_BUILTIN_CLASS_IDS["IndexError"] = _BUILTIN_TYPE_IDS["IndexError"]
+_BUILTIN_CLASS_IDS["KeyError"] = _BUILTIN_TYPE_IDS["KeyError"]
+_BUILTIN_CLASS_IDS["None"] = _BUILTIN_TYPE_IDS["None"]
+_BUILTIN_CLASS_IDS["bool"] = _BUILTIN_TYPE_IDS["bool"]
+_BUILTIN_CLASS_IDS["int"] = _BUILTIN_TYPE_IDS["int"]
+_BUILTIN_CLASS_IDS["float"] = _BUILTIN_TYPE_IDS["float"]
+_BUILTIN_CLASS_IDS["str"] = _BUILTIN_TYPE_IDS["str"]
+_BUILTIN_CLASS_IDS["list"] = _BUILTIN_TYPE_IDS["list"]
+_BUILTIN_CLASS_IDS["dict"] = _BUILTIN_TYPE_IDS["dict"]
+_BUILTIN_CLASS_IDS["set"] = _BUILTIN_TYPE_IDS["set"]
 
-_BUILTIN_CLASS_CHILDREN: dict[str, list[str]] = {
-    "object": ["BaseException"],
-    "BaseException": ["Exception"],
-    "Exception": ["IndexError", "KeyError", "RuntimeError", "TypeError", "ValueError"],
-    "RuntimeError": [],
-    "ValueError": [],
-    "TypeError": [],
-    "IndexError": [],
-    "KeyError": [],
-}
+_BUILTIN_CLASS_CHILDREN: dict[str, list[str]] = {}
+_BUILTIN_CLASS_CHILDREN["object"] = ["BaseException"]
+_BUILTIN_CLASS_CHILDREN["BaseException"] = ["Exception"]
+_BUILTIN_CLASS_CHILDREN["Exception"] = ["IndexError", "KeyError", "RuntimeError", "TypeError", "ValueError"]
+_BUILTIN_CLASS_CHILDREN["RuntimeError"] = []
+_BUILTIN_CLASS_CHILDREN["ValueError"] = []
+_BUILTIN_CLASS_CHILDREN["TypeError"] = []
+_BUILTIN_CLASS_CHILDREN["IndexError"] = []
+_BUILTIN_CLASS_CHILDREN["KeyError"] = []
 
-_ROOT_BASE_NAMES: set[str] = set(_BUILTIN_TYPE_IDS.keys()) | {
-    "Enum",
-    "IntEnum",
-    "IntFlag",
-    "BaseException",
-    "Exception",
-    "RuntimeError",
-    "ValueError",
-    "TypeError",
-    "IndexError",
-    "KeyError",
-    "TypedDict",
-}
+_ROOT_BASE_NAMES: set[str] = set(_BUILTIN_TYPE_IDS.keys())
+_ROOT_BASE_NAMES.add("Enum")
+_ROOT_BASE_NAMES.add("IntEnum")
+_ROOT_BASE_NAMES.add("IntFlag")
+_ROOT_BASE_NAMES.add("BaseException")
+_ROOT_BASE_NAMES.add("Exception")
+_ROOT_BASE_NAMES.add("RuntimeError")
+_ROOT_BASE_NAMES.add("ValueError")
+_ROOT_BASE_NAMES.add("TypeError")
+_ROOT_BASE_NAMES.add("IndexError")
+_ROOT_BASE_NAMES.add("KeyError")
+_ROOT_BASE_NAMES.add("TypedDict")
 
 _USER_TYPE_ID_BASE = 1000
 
@@ -325,6 +329,14 @@ def build_type_id_table(
         type_info_table[name] = {"id": _BUILTIN_CLASS_IDS[name], "entry": _BUILTIN_CLASS_IDS[name], "exit": exit_val}
 
     _walk_builtin("object")
+
+    # Add type_info_table entries for any _BUILTIN_CLASS_IDS entries not processed by
+    # _walk_builtin (e.g. None, bool, int, float, str, list, dict, set — standalone leaf types).
+    # type_id_table entries were already added above; only type_info is missing.
+    for builtin_name in sorted(_BUILTIN_CLASS_IDS.keys()):
+        if builtin_name not in type_info_table:
+            raw_tid = _BUILTIN_CLASS_IDS[builtin_name]
+            type_info_table[builtin_name] = {"id": raw_tid, "entry": raw_tid, "exit": raw_tid + 1}
 
     for synthetic_root in sorted(_ROOT_BASE_NAMES):
         if synthetic_root in _BUILTIN_CLASS_IDS:

@@ -787,10 +787,12 @@ def _emit_list_literal(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     need_option_elem = elem_type.startswith("Option<")
     rendered_elems_raw = [(e, _emit_expr(ctx, e)) for e in elements]
     if need_box_elem:
-        rendered_elems = [
-            e_str if e_str.startswith("Box::new(") else "Box::new(" + e_str + ") as Box<dyn std::any::Any>"
-            for _, e_str in rendered_elems_raw
-        ]
+        rendered_elems = []
+        for _, e_str in rendered_elems_raw:
+            if e_str.startswith("Box::new("):
+                rendered_elems.append(e_str)
+            else:
+                rendered_elems.append("Box::new(" + e_str + ") as Box<dyn std::any::Any>")
     elif need_pyany_elem:
         rendered_elems = []
         for e_node, e_str in rendered_elems_raw:
@@ -915,11 +917,9 @@ def _emit_subscript(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             return "PyList::<" + rs_elem + ">::from_vec({ let __borrow = " + obj + ".py_borrow(); let __lo = (" + lo + ") as usize; let __hi = ((" + hi_raw + ") as usize).min(__borrow.len()); __borrow[__lo..__hi].to_vec() })"
         if obj_type == "str":
             ref_obj = "&" + obj if not obj.startswith("&") else obj
-            # Handle negative indices: lo = if lo < 0 { max(0, len+lo) } else { lo }
-            lo_safe = ("(let __loi = (" + lo + ") as i64; if __loi < 0 { (__s.len() as i64 + __loi).max(0) as usize } else { __loi as usize })"
-                       if lo != "0" else "0")
-            # Simpler: always use i64 arithmetic
-            lo_expr = "({ let __loi = (" + lo + ") as i64; if __loi < 0 { (__s.len() as i64 + __loi).max(0) as usize } else { __loi as usize } })" if lo != "0" else "0"
+            lo_expr = "0"
+            if lo != "0":
+                lo_expr = "({ let __loi = (" + lo + ") as i64; if __loi < 0 { (__s.len() as i64 + __loi).max(0) as usize } else { __loi as usize } })"
             return "{ let __s = " + ref_obj + "; let __lo = " + lo_expr + "; let __hi = ((" + hi_raw + ") as usize).min(__s.len()); __s[__lo..__hi].to_string() }"
         # Default slice
         return obj + "[(" + lo + " as usize)..(" + hi_raw + " as usize)]"
@@ -4269,7 +4269,11 @@ def emit_rs_module(east3_doc: dict[str, JsonVal]) -> str:
         _STD_MODULE_FILES_FIXED["pytra.std.math"] = "math_native.rs"
         _STD_MODULE_FILES_FIXED["pytra.std.time"] = "time_native.rs"
         _STD_MODULE_FILES_FIXED["pytra.std.collections"] = "pytra_std_collections.rs"
-        _std_module_files = {**_STD_MODULE_FILES_FIXED, **ctx.mapping.module_native_files}
+        _std_module_files: dict[str, str] = {}
+        for _std_mod_key, _std_mod_value in _STD_MODULE_FILES_FIXED.items():
+            _std_module_files[_std_mod_key] = _std_mod_value
+        for _std_mod_key, _std_mod_value in ctx.mapping.module_native_files.items():
+            _std_module_files[_std_mod_key] = _std_mod_value
         for alias, mod_id in ctx.import_alias_modules.items():
             rs_file = _std_module_files.get(mod_id, "")
             if rs_file == "":

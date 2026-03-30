@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 # EAST3 resolved_type → Go type
+# Includes cross-module aliases such as parse.py.nodes union helper names.
 _TYPE_MAP: dict[str, str] = {
     "int": "int64",
     "int8": "int8",
@@ -34,6 +35,10 @@ _TYPE_MAP: dict[str, str] = {
     "Any": "any",
     "JsonVal": "any",
     "Node": "map[string]any",
+    "TypeExpr": "any",
+    "TriviaNode": "any",
+    "Expr": "any",
+    "Stmt": "any",
     "Callable": "any",
     "callable": "any",
     "Exception": "*PytraErrorCarrier",
