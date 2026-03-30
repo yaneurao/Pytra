@@ -19,19 +19,15 @@ An overview of Pytra's development status. Links to test results, tasks, changel
 
 ## Backend support
 
-[Fixture matrix](./backend-progress-fixture.md)
-— Unit tests for language features. One feature per file, verifying emit + compile + run + stdout match for each target language.
+[Overall summary](./backend-progress-summary.md)
+— Overview of fixture / sample / stdlib / selfhost / emitter lint for all languages in one page.
 
-[Sample matrix](./backend-progress-sample.md)
-— Real applications. Mandelbrot set, ray tracing, Game of Life, etc. Run in each language and verify identical output to Python. See [samples list](../tutorial/samples.md).
-
-[Stdlib matrix](./backend-progress-stdlib.md)
-— Verify Python standard library compatible modules (math, json, pathlib, etc.) work in each language, per module.
-
-[Selfhost matrix](./backend-progress-selfhost.md)
-— Transpile Pytra's own compiler (toolchain2) to each language and verify the resulting compiler can emit all targets. The Python row requires fixture + sample + stdlib all PASS to be marked PASS.
-
-[Emitter hardcode violation matrix](./emitter-hardcode-lint.md)
+Details:
+- [fixture](./backend-progress-fixture.md) — language feature unit tests
+- [sample](./backend-progress-sample.md) — real applications ([samples list](../tutorial/samples.md))
+- [stdlib](./backend-progress-stdlib.md) — Python standard library compatible modules
+- [selfhost](./backend-progress-selfhost.md) — transpile the compiler itself. Requires fixture + sample + stdlib all PASS
+- [emitter lint](./emitter-hardcode-lint.md) — emitter hardcode violation detection
 — Counts grep-detected violations where emitters hardcode module names, runtime symbols, or class names instead of using EAST3 data.
 
 ## Task list
