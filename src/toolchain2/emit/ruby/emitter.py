@@ -603,6 +603,24 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if call_key != "":
         mapped = resolve_runtime_call(call_key, builtin_name, adapter_kind, ctx.mapping)
 
+    # When func is Attribute (method call), prepend owner to builtin args
+    builtin_args = list(args)
+    method_owner = ""
+    if isinstance(func, dict) and _str(func, "kind") == "Attribute":
+        owner_val = func.get("value")
+        method_owner = _emit_expr(ctx, owner_val)
+        # For builtin calls, prepend owner as first arg
+        if mapped != "":
+            builtin_args_strs: list[str] = [method_owner]
+            for a in args:
+                builtin_args_strs.append(_emit_expr(ctx, a))
+        else:
+            builtin_args_strs = []
+    else:
+        builtin_args_strs = []
+        for a in args:
+            builtin_args_strs.append(_emit_expr(ctx, a))
+
     # Special markers
     if mapped == "__CAST__":
         return _emit_cast_call(ctx, node, args)
@@ -615,63 +633,65 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if mapped == "__SET_CTOR__":
         return _emit_set_ctor(ctx, args)
     if mapped == "__LIST_APPEND__":
-        return _emit_method_call_on_first_arg(ctx, args, "push")
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "push")
     if mapped == "__LIST_POP__":
-        return _emit_list_pop(ctx, args)
+        return _emit_list_pop_strs(builtin_args_strs)
     if mapped == "__LIST_CLEAR__":
-        return _emit_method_call_on_first_arg(ctx, args, "clear")
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "clear")
     if mapped == "__LIST_INDEX__":
-        return _emit_list_index(ctx, args)
+        return _emit_list_index_strs(builtin_args_strs)
     if mapped == "__DICT_GET__":
-        return _emit_dict_get(ctx, args)
+        return _emit_dict_get_strs(builtin_args_strs)
     if mapped == "__DICT_ITEMS__":
-        return _emit_method_call_on_first_arg(ctx, args, "items")
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "items")
     if mapped == "__DICT_KEYS__":
-        return _emit_method_call_on_first_arg(ctx, args, "keys")
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "keys")
     if mapped == "__DICT_VALUES__":
-        return _emit_method_call_on_first_arg(ctx, args, "values")
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "values")
     if mapped == "__SET_ADD__":
-        return _emit_method_call_on_first_arg(ctx, args, "add")
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "add")
     if mapped == "__SET_DISCARD__":
-        return _emit_set_discard(ctx, args)
+        return _emit_set_discard_strs(builtin_args_strs)
     if mapped == "__SET_REMOVE__":
-        return _emit_method_call_on_first_arg(ctx, args, "delete")
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "delete")
     # String method markers
     if mapped == "__STR_STRIP__":
-        return _emit_method_call_on_first_arg(ctx, args, "strip")
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "strip")
     if mapped == "__STR_LSTRIP__":
-        return _emit_method_call_on_first_arg(ctx, args, "lstrip")
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "lstrip")
     if mapped == "__STR_RSTRIP__":
-        return _emit_method_call_on_first_arg(ctx, args, "rstrip")
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "rstrip")
     if mapped == "__STR_STARTSWITH__":
-        return _emit_str_method(ctx, args, "startswith")
+        return _emit_str_method_strs(builtin_args_strs, "start_with?")
     if mapped == "__STR_ENDSWITH__":
-        return _emit_str_method(ctx, args, "endswith")
+        return _emit_str_method_strs(builtin_args_strs, "end_with?")
     if mapped == "__STR_REPLACE__":
-        return _emit_str_replace(ctx, args)
+        return _emit_str_replace_strs(builtin_args_strs)
     if mapped == "__STR_FIND__":
-        return _emit_str_method(ctx, args, "find")
+        return _emit_str_method_strs(builtin_args_strs, "find")
     if mapped == "__STR_RFIND__":
-        return _emit_str_method(ctx, args, "rfind")
+        return _emit_str_method_strs(builtin_args_strs, "rfind")
     if mapped == "__STR_SPLIT__":
-        return _emit_str_split(ctx, args)
+        return _emit_str_split_strs(builtin_args_strs)
     if mapped == "__STR_JOIN__":
-        return _emit_str_join(ctx, args)
+        return _emit_str_join_strs(builtin_args_strs)
     if mapped == "__STR_UPPER__":
-        return _emit_method_call_on_first_arg(ctx, args, "upper")
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "upcase")
     if mapped == "__STR_LOWER__":
-        return _emit_method_call_on_first_arg(ctx, args, "lower")
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "downcase")
     if mapped == "__STR_COUNT__":
-        return _emit_str_method(ctx, args, "count")
+        return _emit_str_method_strs(builtin_args_strs, "count")
     if mapped == "__STR_INDEX__":
-        return _emit_str_method(ctx, args, "index")
+        return _emit_str_method_strs(builtin_args_strs, "index")
     if mapped == "__STR_ISALNUM__":
-        return _emit_str_isalnum(ctx, args)
+        return _emit_str_isalnum_strs(builtin_args_strs)
     if mapped == "__STR_ISSPACE__":
-        return _emit_str_isspace(ctx, args)
+        return _emit_str_isspace_strs(builtin_args_strs)
 
     if mapped != "":
-        # Regular mapped call
+        # Regular mapped call - use builtin_args_strs if available, else emit args
+        if len(builtin_args_strs) > 0:
+            return mapped + "(" + ", ".join(builtin_args_strs) + ")"
         arg_strs: list[str] = []
         for a in args:
             arg_strs.append(_emit_expr(ctx, a))
@@ -788,108 +808,86 @@ def _emit_set_ctor(ctx: EmitContext, args: list[JsonVal]) -> str:
     return "Set.new(" + arg_code + ")"
 
 
-def _emit_method_call_on_first_arg(ctx: EmitContext, args: list[JsonVal], method: str) -> str:
-    if len(args) == 0:
+def _emit_method_call_on_first_arg_strs(arg_strs: list[str], method: str) -> str:
+    if len(arg_strs) == 0:
         return "nil"
-    owner_code = _emit_expr(ctx, args[0])
-    rest: list[str] = []
-    i = 1
-    while i < len(args):
-        rest.append(_emit_expr(ctx, args[i]))
-        i += 1
+    owner = arg_strs[0]
+    rest = arg_strs[1:]
     if len(rest) > 0:
-        return owner_code + "." + method + "(" + ", ".join(rest) + ")"
-    return owner_code + "." + method
+        return owner + "." + method + "(" + ", ".join(rest) + ")"
+    return owner + "." + method
 
 
-def _emit_list_pop(ctx: EmitContext, args: list[JsonVal]) -> str:
-    if len(args) == 0:
+def _emit_list_pop_strs(arg_strs: list[str]) -> str:
+    if len(arg_strs) == 0:
         return "nil"
-    owner_code = _emit_expr(ctx, args[0])
-    if len(args) > 1:
-        idx_code = _emit_expr(ctx, args[1])
-        return owner_code + ".delete_at(" + idx_code + ")"
-    return owner_code + ".pop"
+    owner = arg_strs[0]
+    if len(arg_strs) > 1:
+        return owner + ".delete_at(" + arg_strs[1] + ")"
+    return owner + ".pop"
 
 
-def _emit_list_index(ctx: EmitContext, args: list[JsonVal]) -> str:
-    if len(args) < 2:
+def _emit_list_index_strs(arg_strs: list[str]) -> str:
+    if len(arg_strs) < 2:
         return "nil"
-    owner_code = _emit_expr(ctx, args[0])
-    val_code = _emit_expr(ctx, args[1])
-    return owner_code + ".index(" + val_code + ")"
+    return arg_strs[0] + ".index(" + arg_strs[1] + ")"
 
 
-def _emit_dict_get(ctx: EmitContext, args: list[JsonVal]) -> str:
-    if len(args) < 2:
+def _emit_dict_get_strs(arg_strs: list[str]) -> str:
+    if len(arg_strs) < 2:
         return "nil"
-    owner_code = _emit_expr(ctx, args[0])
-    key_code = _emit_expr(ctx, args[1])
-    if len(args) > 2:
-        default_code = _emit_expr(ctx, args[2])
-        return owner_code + ".get(" + key_code + ", " + default_code + ")"
-    return owner_code + ".get(" + key_code + ")"
+    owner = arg_strs[0]
+    key = arg_strs[1]
+    if len(arg_strs) > 2:
+        return owner + ".get(" + key + ", " + arg_strs[2] + ")"
+    return owner + ".get(" + key + ")"
 
 
-def _emit_set_discard(ctx: EmitContext, args: list[JsonVal]) -> str:
-    if len(args) < 2:
+def _emit_set_discard_strs(arg_strs: list[str]) -> str:
+    if len(arg_strs) < 2:
         return "nil"
-    owner_code = _emit_expr(ctx, args[0])
-    val_code = _emit_expr(ctx, args[1])
-    return owner_code + ".delete(" + val_code + ")"
+    return arg_strs[0] + ".delete(" + arg_strs[1] + ")"
 
 
-def _emit_str_method(ctx: EmitContext, args: list[JsonVal], method: str) -> str:
-    if len(args) < 2:
+def _emit_str_method_strs(arg_strs: list[str], method: str) -> str:
+    if len(arg_strs) < 2:
         return "nil"
-    owner_code = _emit_expr(ctx, args[0])
-    rest: list[str] = []
-    i = 1
-    while i < len(args):
-        rest.append(_emit_expr(ctx, args[i]))
-        i += 1
-    return owner_code + "." + method + "(" + ", ".join(rest) + ")"
+    owner = arg_strs[0]
+    rest = arg_strs[1:]
+    return owner + "." + method + "(" + ", ".join(rest) + ")"
 
 
-def _emit_str_replace(ctx: EmitContext, args: list[JsonVal]) -> str:
-    if len(args) < 3:
+def _emit_str_replace_strs(arg_strs: list[str]) -> str:
+    if len(arg_strs) < 3:
         return "nil"
-    owner_code = _emit_expr(ctx, args[0])
-    old_code = _emit_expr(ctx, args[1])
-    new_code = _emit_expr(ctx, args[2])
-    return owner_code + ".gsub(" + old_code + ", " + new_code + ")"
+    return arg_strs[0] + ".gsub(" + arg_strs[1] + ", " + arg_strs[2] + ")"
 
 
-def _emit_str_split(ctx: EmitContext, args: list[JsonVal]) -> str:
-    if len(args) == 0:
+def _emit_str_split_strs(arg_strs: list[str]) -> str:
+    if len(arg_strs) == 0:
         return "nil"
-    owner_code = _emit_expr(ctx, args[0])
-    if len(args) > 1:
-        sep_code = _emit_expr(ctx, args[1])
-        return owner_code + ".split(" + sep_code + ")"
-    return owner_code + ".split"
+    if len(arg_strs) > 1:
+        return arg_strs[0] + ".split(" + arg_strs[1] + ")"
+    return arg_strs[0] + ".split"
 
 
-def _emit_str_join(ctx: EmitContext, args: list[JsonVal]) -> str:
-    if len(args) < 2:
+def _emit_str_join_strs(arg_strs: list[str]) -> str:
+    if len(arg_strs) < 2:
         return "nil"
-    sep_code = _emit_expr(ctx, args[0])
-    iter_code = _emit_expr(ctx, args[1])
-    return iter_code + ".join(" + sep_code + ")"
+    # Ruby: iterable.join(separator) — first arg is separator, second is iterable
+    return arg_strs[1] + ".join(" + arg_strs[0] + ")"
 
 
-def _emit_str_isalnum(ctx: EmitContext, args: list[JsonVal]) -> str:
-    if len(args) == 0:
+def _emit_str_isalnum_strs(arg_strs: list[str]) -> str:
+    if len(arg_strs) == 0:
         return "false"
-    owner_code = _emit_expr(ctx, args[0])
-    return "!!" + owner_code + ".match?(/\\A[A-Za-z0-9]+\\z/)"
+    return "!!" + arg_strs[0] + ".match?(/\\A[A-Za-z0-9]+\\z/)"
 
 
-def _emit_str_isspace(ctx: EmitContext, args: list[JsonVal]) -> str:
-    if len(args) == 0:
+def _emit_str_isspace_strs(arg_strs: list[str]) -> str:
+    if len(arg_strs) == 0:
         return "false"
-    owner_code = _emit_expr(ctx, args[0])
-    return "!!" + owner_code + ".match?(/\\A\\s+\\z/)"
+    return "!!" + arg_strs[0] + ".match?(/\\A\\s+\\z/)"
 
 
 # ---------------------------------------------------------------------------
