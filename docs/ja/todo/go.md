@@ -28,9 +28,9 @@
 - NG: `int16(m8) * m16` → 結果は int16（overflow あり）、int32 への cast なし
 - OK: `int32(m8) * int32(m16)` → 結果は int32、overflow なし
 
-1. [ ] [ID: P0-RESOLVE-INTPROMO-S1] resolve の BinOp 整数昇格で、全演算子について cast を「結果型にまで昇格」に修正する — 両オペランドに結果型への cast を付ける
-2. [ ] [ID: P0-RESOLVE-INTPROMO-S2] `integer_promotion` fixture が Go で compile + run parity PASS することを確認する
-3. [ ] [ID: P0-RESOLVE-INTPROMO-S3] 他の fixture に影響がないことを確認する（golden 再生成）
+1. [x] [ID: P0-RESOLVE-INTPROMO-S1] resolve の BinOp 整数昇格で、全演算子について cast を「結果型にまで昇格」に修正する — 両オペランドに結果型への cast を付ける
+2. [x] [ID: P0-RESOLVE-INTPROMO-S2] `integer_promotion` fixture が Go で compile + run parity PASS することを確認する
+3. [x] [ID: P0-RESOLVE-INTPROMO-S3] 他の fixture に影響がないことを確認する（golden 再生成）— typing 23/23, stdlib 16/16 全 PASS
 
 ### P2-COMMON-RENDERER-PARENS: CommonRenderer に演算子優先順位ベースの括弧制御を実装する
 
@@ -40,7 +40,6 @@
 2. [ ] [ID: P2-CR-PARENS-S2] BinOp / UnaryOp / Compare の出力時に「親の優先順位 ≥ 子の優先順位なら括弧を付ける」ロジックを実装する — 不要な括弧を出力しない
 3. [ ] [ID: P2-CR-PARENS-S3] 最外の冗長括弧（`x = (expr);` の外側）を除去する
 4. [ ] [ID: P2-CR-PARENS-S4] Go fixture + sample parity に影響がないことを確認する
-5. [ ] [ID: P2-CR-PARENS-S5] C++ 担当がC++ の優先順位テーブルを追加し、C++ parity を確認する
 
 ### P6-GO-SELFHOST: Go emitter で toolchain2 を Go に変換し go build を通す
 

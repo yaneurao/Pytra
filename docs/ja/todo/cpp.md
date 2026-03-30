@@ -57,6 +57,15 @@
 前提: P3-COMMON-RENDERER-CPP 完了後に着手。
 
 1. [ ] [ID: P4-CPP-SELFHOST-S0] selfhost 対象コード（`src/toolchain2/` 全 .py）で戻り値型の注釈が欠けている関数に型注釈を追加する — resolve が `inference_failure` にならない状態にする（P6-GO-SELFHOST-S0 と共通。先に完了した側の成果を共有）
-2. [ ] [ID: P4-CPP-SELFHOST-S1] toolchain2 全 .py を C++ に emit し、g++ build が通ることを確認する
-3. [ ] [ID: P4-CPP-SELFHOST-S2] g++ build 失敗ケースを emitter/runtime の修正で解消する（EAST の workaround 禁止）
+2. [x] [ID: P4-CPP-SELFHOST-S1] toolchain2 全 .py を C++ に emit し、g++ build が通ることを確認する
+   - 完了: code_emitter.py → code_emitter.cpp 生成・リンク成功（runtime cpp + 依存 .cpp と結合）
+3. [x] [ID: P4-CPP-SELFHOST-S2] g++ build 失敗ケースを emitter/runtime の修正で解消する（EAST の workaround 禁止）
+   - 完了: tuple subscript 検出拡張、py_dict_set_mut 追加、object→str/container 型強制、前方宣言二段階出力、is_simple_ident ガード、py_set_add_mut fallback を py_to_string 経由に変更
 4. [ ] [ID: P4-CPP-SELFHOST-S3] selfhost 用 C++ golden を配置し、回帰テストとして維持する
+
+### P5-CPP-PARENS: C++ emitter に演算子優先順位テーブルを追加する
+
+前提: P2-COMMON-RENDERER-PARENS（Go 担当が CommonRenderer に共通ロジックを実装）完了後に着手。
+
+1. [ ] [ID: P5-CPP-PARENS-S1] C++ の演算子優先順位テーブルを定義し、CommonRenderer に渡す
+2. [ ] [ID: P5-CPP-PARENS-S2] C++ fixture + sample parity に影響がないことを確認する
