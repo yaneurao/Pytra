@@ -5,7 +5,7 @@
 # Selfhost matrix
 
 > Machine-generated file. Run `python3 tools/gen/gen_backend_progress.py` to update.
-> Generated at: 2026-03-30T10:35:00
+> Generated at: 2026-03-30T11:21:44
 > [Links](./index.md)
 
 Transpile toolchain2 to each language and verify the resulting compiler can emit all targets.
@@ -18,7 +18,7 @@ Transpile toolchain2 to each language and verify the resulting compiler can emit
 
 | selfhost lang \ emit target | cpp | rs | cs | ps1 | js | ts | dart | go | java | swift | kotlin | ruby | lua | scala | php | nim | julia | zig |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Python (source) | 🟥 | 🟥 | ⬜ | ⬜ | 🟥 | 🟩 | ⬜ | 🟥 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Python (source) | 🟥 | 🟥 | ⬜ | ⬜ | 🟥 | 🟩 | ⬜ | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | C++ selfhost | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Rust selfhost | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | C# selfhost | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -37,6 +37,6 @@ Transpile toolchain2 to each language and verify the resulting compiler can emit
 | Nim selfhost | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Julia selfhost | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Zig selfhost | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| **🟩 PASS** | — | — | — | — | — | 1 | — | — | — | — | — | — | — | — | — | — | — | — |
-| **🟥 FAIL** | 1 | 1 | — | — | 1 | — | — | 1 | — | — | — | — | — | — | — | — | — | — |
+| **🟩 PASS** | — | — | — | — | — | 1 | — | 1 | — | — | — | — | — | — | — | — | — | — |
+| **🟥 FAIL** | 1 | 1 | — | — | 1 | — | — | — | — | — | — | — | — | — | — | — | — | — |
 | **⬜ Untested** | 18 | 18 | 19 | 19 | 18 | 18 | 19 | 18 | 19 | 19 | 19 | 19 | 19 | 19 | 19 | 19 | 19 | 19 |
