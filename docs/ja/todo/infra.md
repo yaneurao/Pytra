@@ -20,25 +20,4 @@
 
 ## 未完了タスク
 
-### P0-PROGRESS-SUMMARY: バックエンド全体サマリページを自動生成する
-
-1. [x] [ID: P0-PROGRESS-SUMMARY-S1] `gen_backend_progress.py` に summary 生成を追加する — 各言語1行で fixture/sample/stdlib/selfhost/emitter lint の状況を表示する `backend-progress-summary.md` を日英同時生成。parity check 末尾の自動再生成（`_maybe_regenerate_progress`, `_maybe_regenerate_benchmark`, `_maybe_refresh_selfhost_python`, `_maybe_run_emitter_lint`）は `.parity-results/.gen.lock` で排他制御し、複数 agent の同時書き込みを防ぐこと
-   完了: `_build_summary_matrix()` 追加。`_acquire_gen_lock()` / `_release_gen_lock()` で 4 関数を保護。
-2. [x] [ID: P0-PROGRESS-SUMMARY-S2] `progress/index.md` の「バックエンドサポート状況」セクションに summary へのリンクを追加する（または summary をインライン表示する）
-   完了: JA/EN index.md に既存のリンクを確認。
-3. [x] [ID: P0-PROGRESS-SUMMARY-S3] `check_emitter_hardcode_lint.py` の出力に合計行（🟩 PASS / 🟥 FAIL）を追加する — 他のマトリクスと同じ形式
-   完了: `lang_total()` 追加。stdout・Markdown・JSON（`.parity-results/emitter_lint.json`）に合計行を出力。
-4. [x] [ID: P0-PROGRESS-SUMMARY-S4] parity check の末尾に `_maybe_run_emitter_lint()` を追加する — `emitter-hardcode-lint.md` の mtime が 1 時間以上古ければ `check_emitter_hardcode_lint.py` を自動実行する
-   完了: `runtime_parity_check_fast.py` に追加。gen.lock で 4 関数まとめて排他制御。
-
-5. [x] [ID: P0-PROGRESS-SUMMARY-S5] サマリの fixture / sample / stdlib セルに `PASS件数/総件数`（例: `🟩 123/128`）を表示するよう `_build_summary_matrix()` を修正する — 現状はアイコンのみで件数がない。plans/p0-progress-summary.md のテーブル形式を参照
-   完了: `_parity_summary_cell()` / `_lint_cell()` に変更。`🟩 132/132` 形式で表示。
-
-### P0-LINT-TYPEID-CATEGORY: emitter lint に type_id/isinstance カテゴリを追加する
-
-1. [x] [ID: P0-LINT-TYPEID-S1] `check_emitter_hardcode_lint.py` に第7カテゴリ「type_id / isinstance ロジックのハードコード」を追加する — 禁止パターン: `py_runtime_object_isinstance`, `PYTRA_TID_`, `py_tid_`, `g_type_table`
-   完了: `CATEGORIES["type_id"]` と `CATEGORY_LABELS["type_id"]` を追加。
-2. [x] [ID: P0-LINT-TYPEID-S2] emitter-hardcode-lint.md に新カテゴリが表示されることを確認する
-   完了: cpp で🟥（違反あり）、他実装済み言語で🟩。emitter-hardcode-lint.md・summary 再生成済み。
-
-（P20-INT32 は [plans/p4-int32-default.md](../plans/p4-int32-default.md) に保留中。再開時にここへ戻す。）
+（現在未完了タスクなし。P20-INT32 は [plans/p4-int32-default.md](../plans/p4-int32-default.md) に保留中。再開時にここへ戻す。）
