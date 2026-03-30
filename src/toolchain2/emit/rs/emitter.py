@@ -19,6 +19,7 @@ from toolchain2.emit.rs.types import (
     rs_zero_value,
     rs_signature_type,
     safe_rs_ident,
+    set_mapping_types,
     _split_generic_args,
 )
 from toolchain2.emit.common.code_emitter import (
@@ -420,10 +421,14 @@ def _emit_binop(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     if left_rs == "Box<dyn std::any::Any>" or right_rs == "Box<dyn std::any::Any>":
         # If EAST3 narrowed the type (e.g., inside isinstance guard), use downcast.
         # Also use the BinOp's own resolved_type as fallback (e.g., closure calls with unknown operands).
-        _ANY_DOWNCAST_ARITH: dict[str, str] = {
-            "int64": "i64", "int32": "i32", "float64": "f64", "float32": "f32",
-            "bool": "bool", "uint64": "u64", "uint32": "u32",
-        }
+        _ANY_DOWNCAST_ARITH: dict[str, str] = {}
+        _ANY_DOWNCAST_ARITH["int64"] = "i64"
+        _ANY_DOWNCAST_ARITH["int32"] = "i32"
+        _ANY_DOWNCAST_ARITH["float64"] = "f64"
+        _ANY_DOWNCAST_ARITH["float32"] = "f32"
+        _ANY_DOWNCAST_ARITH["bool"] = "bool"
+        _ANY_DOWNCAST_ARITH["uint64"] = "u64"
+        _ANY_DOWNCAST_ARITH["uint32"] = "u32"
         l_narrow = _ANY_DOWNCAST_ARITH.get(left_type, "")
         r_narrow = _ANY_DOWNCAST_ARITH.get(right_type, "")
         # Fallback: use the BinOp result type or the other operand's narrowed type
@@ -453,9 +458,11 @@ def _emit_binop(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
 def _emit_unaryop(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     operand = _emit_expr(ctx, node.get("operand"))
     op = _str(node, "op")
-    op_map: dict[str, str] = {
-        "Not": "!", "USub": "-", "UAdd": "+", "Invert": "!",
-    }
+    op_map: dict[str, str] = {}
+    op_map["Not"] = "!"
+    op_map["USub"] = "-"
+    op_map["UAdd"] = "+"
+    op_map["Invert"] = "!"
     rs_op = op_map.get(op, op)
     return "(" + rs_op + operand + ")"
 
@@ -467,10 +474,15 @@ def _emit_compare(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     ops = _list(node, "ops")
     if len(comparators) == 0 or len(ops) == 0:
         return left
-    op_map: dict[str, str] = {
-        "Eq": "==", "NotEq": "!=", "Lt": "<", "LtE": "<=",
-        "Gt": ">", "GtE": ">=", "Is": "==", "IsNot": "!=",
-    }
+    op_map: dict[str, str] = {}
+    op_map["Eq"] = "=="
+    op_map["NotEq"] = "!="
+    op_map["Lt"] = "<"
+    op_map["LtE"] = "<="
+    op_map["Gt"] = ">"
+    op_map["GtE"] = ">="
+    op_map["Is"] = "=="
+    op_map["IsNot"] = "!="
     parts: list[str] = []
     current_left = left
     current_left_node = left_node
@@ -494,10 +506,12 @@ def _emit_compare(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             right_type = _str(comparator, "resolved_type") if isinstance(comparator, dict) else ""
             is_none_cmp = (right == "None" or current_left == "None")
             if is_none_cmp:
-                left_is_optional = ("|None" in left_type or "Optional[" in left_type or
-                                    "| None" in left_type)
-                right_is_optional = ("|None" in right_type or "Optional[" in right_type or
-                                     "| None" in right_type)
+                left_is_optional = "|None" in left_type or "Optional[" in left_type
+                if not left_is_optional:
+                    left_is_optional = "| None" in left_type
+                right_is_optional = "|None" in right_type or "Optional[" in right_type
+                if not right_is_optional:
+                    right_is_optional = "| None" in right_type
                 # Which side is the Option<T>?
                 option_side = current_left if right == "None" else right
                 if left_is_optional or right_is_optional:
@@ -537,12 +551,17 @@ def _emit_isinstance(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     expected_id = _str(expected_node, "id") if isinstance(expected_node, dict) else ""
 
     # Normalize PYTRA_TID_* constants (used by C++ backend) to type names
-    _PYTRA_TID_MAP: dict[str, str] = {
-        "PYTRA_TID_INT": "int64", "PYTRA_TID_FLOAT": "float64", "PYTRA_TID_BOOL": "bool",
-        "PYTRA_TID_STR": "str", "PYTRA_TID_LIST": "list", "PYTRA_TID_DICT": "dict",
-        "PYTRA_TID_SET": "set", "PYTRA_TID_NONE": "None", "PYTRA_TID_BYTES": "bytes",
-        "PYTRA_TID_TUPLE": "tuple",
-    }
+    _PYTRA_TID_MAP: dict[str, str] = {}
+    _PYTRA_TID_MAP["PYTRA_TID_INT"] = "int64"
+    _PYTRA_TID_MAP["PYTRA_TID_FLOAT"] = "float64"
+    _PYTRA_TID_MAP["PYTRA_TID_BOOL"] = "bool"
+    _PYTRA_TID_MAP["PYTRA_TID_STR"] = "str"
+    _PYTRA_TID_MAP["PYTRA_TID_LIST"] = "list"
+    _PYTRA_TID_MAP["PYTRA_TID_DICT"] = "dict"
+    _PYTRA_TID_MAP["PYTRA_TID_SET"] = "set"
+    _PYTRA_TID_MAP["PYTRA_TID_NONE"] = "None"
+    _PYTRA_TID_MAP["PYTRA_TID_BYTES"] = "bytes"
+    _PYTRA_TID_MAP["PYTRA_TID_TUPLE"] = "tuple"
     if expected_id in _PYTRA_TID_MAP:
         expected_id = _PYTRA_TID_MAP[expected_id]
 
@@ -555,15 +574,16 @@ def _emit_isinstance(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     if is_any_val:
         if is_pyany_val:
             # val_rt is object/Any/Obj → PyAny enum → use matches! or type-id check
-            _ISINSTANCE_PYANY: dict[str, str] = {
-                "int64": "PyAny::Int(_)", "int": "PyAny::Int(_)",
-                "float64": "PyAny::Float(_)", "float": "PyAny::Float(_)",
-                "bool": "PyAny::Bool(_)",
-                "str": "PyAny::Str(_)",
-                "dict": "PyAny::Dict(_)",
-                "list": "PyAny::List(_)",
-                "None": "PyAny::None",
-            }
+            _ISINSTANCE_PYANY: dict[str, str] = {}
+            _ISINSTANCE_PYANY["int64"] = "PyAny::Int(_)"
+            _ISINSTANCE_PYANY["int"] = "PyAny::Int(_)"
+            _ISINSTANCE_PYANY["float64"] = "PyAny::Float(_)"
+            _ISINSTANCE_PYANY["float"] = "PyAny::Float(_)"
+            _ISINSTANCE_PYANY["bool"] = "PyAny::Bool(_)"
+            _ISINSTANCE_PYANY["str"] = "PyAny::Str(_)"
+            _ISINSTANCE_PYANY["dict"] = "PyAny::Dict(_)"
+            _ISINSTANCE_PYANY["list"] = "PyAny::List(_)"
+            _ISINSTANCE_PYANY["None"] = "PyAny::None"
             pyany_pattern = _ISINSTANCE_PYANY.get(expected_id, "")
             if pyany_pattern != "":
                 return "matches!(" + val_str + ", " + pyany_pattern + ")"
@@ -575,13 +595,19 @@ def _emit_isinstance(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             return "false"
         # For Box<dyn Any> (union types) — use downcast_ref
         ref_val = "&" + val_str if not val_str.startswith("&") else val_str
-        _ISINSTANCE_DOWNCAST: dict[str, str] = {
-            "int64": "i64", "int32": "i32", "int16": "i16", "int8": "i8",
-            "uint64": "u64", "uint32": "u32", "uint16": "u16", "uint8": "u8",
-            "float64": "f64", "float32": "f32",
-            "bool": "bool",
-            "str": "String",
-        }
+        _ISINSTANCE_DOWNCAST: dict[str, str] = {}
+        _ISINSTANCE_DOWNCAST["int64"] = "i64"
+        _ISINSTANCE_DOWNCAST["int32"] = "i32"
+        _ISINSTANCE_DOWNCAST["int16"] = "i16"
+        _ISINSTANCE_DOWNCAST["int8"] = "i8"
+        _ISINSTANCE_DOWNCAST["uint64"] = "u64"
+        _ISINSTANCE_DOWNCAST["uint32"] = "u32"
+        _ISINSTANCE_DOWNCAST["uint16"] = "u16"
+        _ISINSTANCE_DOWNCAST["uint8"] = "u8"
+        _ISINSTANCE_DOWNCAST["float64"] = "f64"
+        _ISINSTANCE_DOWNCAST["float32"] = "f32"
+        _ISINSTANCE_DOWNCAST["bool"] = "bool"
+        _ISINSTANCE_DOWNCAST["str"] = "String"
         rust_type = _ISINSTANCE_DOWNCAST.get(expected_id, "")
         if rust_type == "":
             # User-defined class or unknown: check via PyRuntimeTypeId downcast
@@ -593,13 +619,18 @@ def _emit_isinstance(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
 
     # Value has a known concrete type — static isinstance always true/false
     # e.g., isinstance(x: int64, int) → true, isinstance(x: list[str], list) → true
-    _TYPE_COMPAT: dict[str, list[str]] = {
-        "int64": ["int64", "int32", "int16", "int8", "uint64", "uint32", "uint16", "uint8"],
-        "int32": ["int64", "int32"], "int16": ["int64", "int16"], "int8": ["int64", "int8"],
-        "float64": ["float64", "float32"], "float32": ["float64", "float32"],
-        "bool": ["bool"], "str": ["str"],
-        "list": ["list"], "dict": ["dict"], "set": ["set"],
-    }
+    _TYPE_COMPAT: dict[str, list[str]] = {}
+    _TYPE_COMPAT["int64"] = ["int64", "int32", "int16", "int8", "uint64", "uint32", "uint16", "uint8"]
+    _TYPE_COMPAT["int32"] = ["int64", "int32"]
+    _TYPE_COMPAT["int16"] = ["int64", "int16"]
+    _TYPE_COMPAT["int8"] = ["int64", "int8"]
+    _TYPE_COMPAT["float64"] = ["float64", "float32"]
+    _TYPE_COMPAT["float32"] = ["float64", "float32"]
+    _TYPE_COMPAT["bool"] = ["bool"]
+    _TYPE_COMPAT["str"] = ["str"]
+    _TYPE_COMPAT["list"] = ["list"]
+    _TYPE_COMPAT["dict"] = ["dict"]
+    _TYPE_COMPAT["set"] = ["set"]
     # Direct match
     if val_rt == expected_id:
         return "true"
@@ -607,9 +638,9 @@ def _emit_isinstance(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     if expected_id in ("list", "dict", "set") and val_rt.startswith(expected_id + "["):
         return "true"
     # Numeric type aliases: int → int64
-    _NUMERIC: dict[str, str] = {
-        "int": "int64", "float": "float64",
-    }
+    _NUMERIC: dict[str, str] = {}
+    _NUMERIC["int"] = "int64"
+    _NUMERIC["float"] = "float64"
     mapped_expected = _NUMERIC.get(expected_id, expected_id)
     compat = _TYPE_COMPAT.get(val_rt, [val_rt])
     if mapped_expected in compat or expected_id in compat:
@@ -1418,12 +1449,13 @@ def _emit_method_call(
 
     # Check runtime_call for method call
     # Skip runtime_call resolution for typed collection methods — handled below by type dispatch
-    _typed_collection_obj = (
-        obj_type.startswith("set[") or obj_type == "set"
-        or obj_type.startswith("list[") or obj_type == "list"
-        or obj_type.startswith("dict[") or obj_type == "dict"
-        or obj_type == "deque"
-    )
+    _typed_collection_obj = obj_type.startswith("set[") or obj_type == "set"
+    if not _typed_collection_obj:
+        _typed_collection_obj = obj_type.startswith("list[") or obj_type == "list"
+    if not _typed_collection_obj:
+        _typed_collection_obj = obj_type.startswith("dict[") or obj_type == "dict"
+    if not _typed_collection_obj:
+        _typed_collection_obj = obj_type == "deque"
     runtime_call = _str(call_node, "runtime_call")
     call_adapter_kind = _str(call_node, "runtime_call_adapter_kind")
     call_builtin = _str(call_node, "builtin_name")
@@ -1507,11 +1539,11 @@ def _emit_method_call(
             # Check if actual variable is dynamic (JsonVal/PyAny) — EAST3 may have narrowed the type
             # but the Rust variable is actually PyAny, needing py_any_as_hashmap conversion
             _actual_rt = (ctx.var_types.get(obj_id, "") or obj_type) if obj_id else obj_type
-            _is_dynamic_var = (
-                _actual_rt in ("JsonVal", "Any", "object", "Obj")
-                or ("JsonVal" in _actual_rt and "dict[" not in _actual_rt.split("|")[0].strip()[:10])
-                or ("|" in _actual_rt and "JsonVal" in _actual_rt)
-            )
+            _is_dynamic_var = _actual_rt in ("JsonVal", "Any", "object", "Obj")
+            if not _is_dynamic_var:
+                _is_dynamic_var = "JsonVal" in _actual_rt and "dict[" not in _actual_rt.split("|")[0].strip()[:10]
+            if not _is_dynamic_var:
+                _is_dynamic_var = "|" in _actual_rt and "JsonVal" in _actual_rt
             if _is_dynamic_var:
                 _key = rendered_args[0] if rendered_args else '""'
                 _default = rendered_args[1] if len(rendered_args) >= 2 else "PyAny::None"
@@ -1765,13 +1797,19 @@ def _emit_expr(ctx: RsEmitContext, node: JsonVal) -> str:
         if not is_dynamic_inner and not needs_unwrap and outer_rt not in _PYANY and outer_rt != "":
             inner_rs = _rs_type_for_context(ctx, inner_base_rt)
             if inner_rs == "Box<dyn std::any::Any>":
-                _BOX_ANY_DOWNCAST: dict[str, tuple[str, str]] = {
-                    "int64": ("i64", "0"), "int32": ("i32", "0"), "int16": ("i16", "0"), "int8": ("i8", "0"),
-                    "uint64": ("u64", "0"), "uint32": ("u32", "0"), "uint16": ("u16", "0"), "uint8": ("u8", "0"),
-                    "float64": ("f64", "0.0"), "float32": ("f32", "0.0"),
-                    "bool": ("bool", "false"),
-                    "str": ("String", "String::new()"),
-                }
+                _BOX_ANY_DOWNCAST: dict[str, tuple[str, str]] = {}
+                _BOX_ANY_DOWNCAST["int64"] = ("i64", "0")
+                _BOX_ANY_DOWNCAST["int32"] = ("i32", "0")
+                _BOX_ANY_DOWNCAST["int16"] = ("i16", "0")
+                _BOX_ANY_DOWNCAST["int8"] = ("i8", "0")
+                _BOX_ANY_DOWNCAST["uint64"] = ("u64", "0")
+                _BOX_ANY_DOWNCAST["uint32"] = ("u32", "0")
+                _BOX_ANY_DOWNCAST["uint16"] = ("u16", "0")
+                _BOX_ANY_DOWNCAST["uint8"] = ("u8", "0")
+                _BOX_ANY_DOWNCAST["float64"] = ("f64", "0.0")
+                _BOX_ANY_DOWNCAST["float32"] = ("f32", "0.0")
+                _BOX_ANY_DOWNCAST["bool"] = ("bool", "false")
+                _BOX_ANY_DOWNCAST["str"] = ("String", "String::new()")
                 narrow = _BOX_ANY_DOWNCAST.get(outer_rt)
                 if narrow is not None:
                     rs_narrow, zero = narrow
@@ -2208,12 +2246,18 @@ def _emit_aug_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     target = node.get("target")
     value = node.get("value")
     op = _str(node, "op")
-    aug_ops: dict[str, str] = {
-        "Add": "+=", "Sub": "-=", "Mult": "*=", "Div": "/=",
-        "FloorDiv": "/=", "Mod": "%=",
-        "BitAnd": "&=", "BitOr": "|=", "BitXor": "^=",
-        "LShift": "<<=", "RShift": ">>=",
-    }
+    aug_ops: dict[str, str] = {}
+    aug_ops["Add"] = "+="
+    aug_ops["Sub"] = "-="
+    aug_ops["Mult"] = "*="
+    aug_ops["Div"] = "/="
+    aug_ops["FloorDiv"] = "/="
+    aug_ops["Mod"] = "%="
+    aug_ops["BitAnd"] = "&="
+    aug_ops["BitOr"] = "|="
+    aug_ops["BitXor"] = "^="
+    aug_ops["LShift"] = "<<="
+    aug_ops["RShift"] = ">>="
     rs_op = aug_ops.get(op, "+=")
     lhs = _emit_expr(ctx, target)
     rhs = _emit_expr(ctx, value) if value is not None else "0"
@@ -4146,6 +4190,7 @@ def emit_rs_module(east3_doc: dict[str, JsonVal]) -> str:
     # Load runtime mapping
     mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "rs" / "mapping.json"
     mapping = load_runtime_mapping(mapping_path)
+    set_mapping_types(mapping.types)
 
     # Skip runtime modules
     if should_skip_module(module_id, mapping):
@@ -4219,11 +4264,10 @@ def emit_rs_module(east3_doc: dict[str, JsonVal]) -> str:
         lines.append("include!(\"pytra_built_in_type_id_table.rs\");")
         # Include std module files for any imported modules that have a native .rs file
         # Native .rs file table: pytra.std.* entries are fixed; short names come from mapping.json
-        _STD_MODULE_FILES_FIXED: dict[str, str] = {
-            "pytra.std.math": "math_native.rs",
-            "pytra.std.time": "time_native.rs",
-            "pytra.std.collections": "pytra_std_collections.rs",
-        }
+        _STD_MODULE_FILES_FIXED: dict[str, str] = {}
+        _STD_MODULE_FILES_FIXED["pytra.std.math"] = "math_native.rs"
+        _STD_MODULE_FILES_FIXED["pytra.std.time"] = "time_native.rs"
+        _STD_MODULE_FILES_FIXED["pytra.std.collections"] = "pytra_std_collections.rs"
         _std_module_files = {**_STD_MODULE_FILES_FIXED, **ctx.mapping.module_native_files}
         for alias, mod_id in ctx.import_alias_modules.items():
             rs_file = _std_module_files.get(mod_id, "")

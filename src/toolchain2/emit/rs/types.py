@@ -1,51 +1,64 @@
 """Rust type mapping from EAST3 resolved types.
 
 §5 準拠: Any/object 禁止, pytra.std.* のみ, selfhost 対象。
+
+型写像の正本は src/runtime/rs/mapping.json の "types" テーブル。
+_FALLBACK_TYPE_MAP はmapping未ロード時のフォールバック専用。
 """
 
 from __future__ import annotations
 
 
-# EAST3 resolved_type → Rust type
-_TYPE_MAP: dict[str, str] = {
-    "int": "i64",
-    "int8": "i8",
-    "int16": "i16",
-    "int32": "i32",
-    "int64": "i64",
-    "uint8": "u8",
-    "uint16": "u16",
-    "uint32": "u32",
-    "uint64": "u64",
-    "float": "f64",
-    "float32": "f32",
-    "float64": "f64",
-    "bool": "bool",
-    "str": "String",
-    "None": "()",
-    "none": "()",
-    "bytes": "PyList<i64>",
-    "bytearray": "PyList<i64>",
-    "list": "PyList<Box<dyn std::any::Any>>",
-    "dict": "HashMap<String, Box<dyn std::any::Any>>",
-    "set": "HashSet<String>",
-    "tuple": "Vec<Box<dyn std::any::Any>>",
-    "object": "Box<dyn std::any::Any>",
-    "Obj": "Box<dyn std::any::Any>",
-    "Any": "Box<dyn std::any::Any>",
-    "JsonVal": "Box<dyn std::any::Any>",
-    "Node": "HashMap<String, Box<dyn std::any::Any>>",
-    "Callable": "Box<dyn Fn()>",
-    "callable": "Box<dyn Fn()>",
-    "deque": "VecDeque<Box<dyn std::any::Any>>",
-    "Exception": "Box<dyn std::error::Error>",
-    "BaseException": "Box<dyn std::error::Error>",
-    "RuntimeError": "Box<dyn std::error::Error>",
-    "ValueError": "Box<dyn std::error::Error>",
-    "TypeError": "Box<dyn std::error::Error>",
-    "IndexError": "Box<dyn std::error::Error>",
-    "KeyError": "Box<dyn std::error::Error>",
-}
+# Active mapping types dict — set by emitter at emit time via set_mapping_types().
+# When set, rs_type() consults this first.
+_active_mapping_types: dict[str, str] = {}
+
+
+def set_mapping_types(types: dict[str, str]) -> None:
+    """Set the active mapping types dict from mapping.json."""
+    global _active_mapping_types
+    _active_mapping_types = types
+
+
+# Fallback type map — used only when mapping.json types table is not available.
+_FALLBACK_TYPE_MAP: dict[str, str] = {}
+_FALLBACK_TYPE_MAP["int"] = "i64"
+_FALLBACK_TYPE_MAP["int8"] = "i8"
+_FALLBACK_TYPE_MAP["int16"] = "i16"
+_FALLBACK_TYPE_MAP["int32"] = "i32"
+_FALLBACK_TYPE_MAP["int64"] = "i64"
+_FALLBACK_TYPE_MAP["uint8"] = "u8"
+_FALLBACK_TYPE_MAP["uint16"] = "u16"
+_FALLBACK_TYPE_MAP["uint32"] = "u32"
+_FALLBACK_TYPE_MAP["uint64"] = "u64"
+_FALLBACK_TYPE_MAP["float"] = "f64"
+_FALLBACK_TYPE_MAP["float32"] = "f32"
+_FALLBACK_TYPE_MAP["float64"] = "f64"
+_FALLBACK_TYPE_MAP["bool"] = "bool"
+_FALLBACK_TYPE_MAP["str"] = "String"
+_FALLBACK_TYPE_MAP["None"] = "()"
+_FALLBACK_TYPE_MAP["none"] = "()"
+_FALLBACK_TYPE_MAP["bytes"] = "PyList<i64>"
+_FALLBACK_TYPE_MAP["bytearray"] = "PyList<i64>"
+_FALLBACK_TYPE_MAP["list"] = "PyList<PyAny>"
+_FALLBACK_TYPE_MAP["dict"] = "HashMap<String, PyAny>"
+_FALLBACK_TYPE_MAP["set"] = "HashSet<String>"
+_FALLBACK_TYPE_MAP["tuple"] = "Vec<PyAny>"
+_FALLBACK_TYPE_MAP["object"] = "PyAny"
+_FALLBACK_TYPE_MAP["Obj"] = "PyAny"
+_FALLBACK_TYPE_MAP["Any"] = "PyAny"
+_FALLBACK_TYPE_MAP["JsonVal"] = "PyAny"
+_FALLBACK_TYPE_MAP["Node"] = "HashMap<String, PyAny>"
+_FALLBACK_TYPE_MAP["Callable"] = "Box<dyn Fn()>"
+_FALLBACK_TYPE_MAP["callable"] = "Box<dyn Fn()>"
+_FALLBACK_TYPE_MAP["deque"] = "VecDeque<PyAny>"
+_FALLBACK_TYPE_MAP["Exception"] = "Box<dyn std::error::Error>"
+_FALLBACK_TYPE_MAP["BaseException"] = "Box<dyn std::error::Error>"
+_FALLBACK_TYPE_MAP["RuntimeError"] = "Box<dyn std::error::Error>"
+_FALLBACK_TYPE_MAP["ValueError"] = "Box<dyn std::error::Error>"
+_FALLBACK_TYPE_MAP["TypeError"] = "Box<dyn std::error::Error>"
+_FALLBACK_TYPE_MAP["IndexError"] = "Box<dyn std::error::Error>"
+_FALLBACK_TYPE_MAP["KeyError"] = "Box<dyn std::error::Error>"
 
 
 def _split_generic_args(s: str) -> list[str]:
@@ -72,10 +85,10 @@ def _split_generic_args(s: str) -> list[str]:
 
 
 def _parse_callable_signature(resolved_type: str) -> tuple[list[str], str]:
-    if not (
-        (resolved_type.startswith("callable[") or resolved_type.startswith("Callable["))
-        and resolved_type.endswith("]")
-    ):
+    is_callable = resolved_type.startswith("callable[")
+    if not is_callable:
+        is_callable = resolved_type.startswith("Callable[")
+    if not is_callable or not resolved_type.endswith("]"):
         return ([], "unknown")
     prefix_len = len("Callable[") if resolved_type.startswith("Callable[") else len("callable[")
     inner = resolved_type[prefix_len:-1].strip()
@@ -116,16 +129,17 @@ def _parse_callable_signature(resolved_type: str) -> tuple[list[str], str]:
     return ([], inner)
 
 
-_RS_KEYWORDS: set[str] = {
+_RS_KEYWORDS: set[str] = set()
+for _rs_keyword in [
     "as", "break", "const", "continue", "crate", "else", "enum", "extern",
     "false", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod",
     "move", "mut", "pub", "ref", "return", "self", "Self", "static", "struct",
     "super", "trait", "true", "type", "unsafe", "use", "where", "while",
     "async", "await", "dyn", "abstract", "become", "box", "do", "final",
     "macro", "override", "priv", "typeof", "unsized", "virtual", "yield",
-    # Rust stdlib types that would conflict with user-defined struct names
     "Box", "Vec", "String", "Option", "Result", "HashMap", "HashSet", "VecDeque",
-}
+]:
+    _RS_KEYWORDS.add(_rs_keyword)
 
 
 def safe_rs_ident(name: str) -> str:
@@ -148,6 +162,15 @@ def safe_rs_ident(name: str) -> str:
     return out
 
 
+def _lookup_type(resolved_type: str) -> str:
+    """Look up a direct type mapping from active mapping or fallback."""
+    if len(_active_mapping_types) > 0:
+        mapped = _active_mapping_types.get(resolved_type, "")
+        if mapped != "":
+            return mapped
+    return _FALLBACK_TYPE_MAP.get(resolved_type, "")
+
+
 def rs_type(resolved_type: str) -> str:
     """Convert an EAST3 resolved_type to a Rust type string."""
     if resolved_type == "" or resolved_type == "unknown":
@@ -161,9 +184,10 @@ def rs_type(resolved_type: str) -> str:
             return "Box<dyn Fn(" + ", ".join(param_rts) + ")>"
         return "Box<dyn Fn(" + ", ".join(param_rts) + ") -> " + ret_rt + ">"
 
-    # Direct mapping
-    if resolved_type in _TYPE_MAP:
-        return _TYPE_MAP[resolved_type]
+    # Direct mapping (mapping.json types table → fallback)
+    direct = _lookup_type(resolved_type)
+    if direct != "":
+        return direct
 
     # list[T] → PyList<T>
     if resolved_type.startswith("list[") and resolved_type.endswith("]"):
@@ -202,7 +226,7 @@ def rs_type(resolved_type: str) -> str:
     if resolved_type.endswith(" | None") or resolved_type.endswith("|None"):
         inner = resolved_type[:-7].strip() if resolved_type.endswith(" | None") else resolved_type[:-5].strip()
         rt = rs_type(inner)
-        if rt == "Box<dyn std::any::Any>":
+        if rt in ("Box<dyn std::any::Any>", "PyAny"):
             return rt
         return "Option<" + rt + ">"
 
