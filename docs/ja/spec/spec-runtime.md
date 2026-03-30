@@ -444,7 +444,7 @@ C++ runtime は次を正規配置とする。
 - `python3 tools/check/check_runtime_cpp_layout.py`
 - `python3 tools/check/check_runtime_std_sot_guard.py`
 - `python3 tools/check/runtime_parity_check.py --targets cpp --case-root fixture`
-- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
+- `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample`
 
 禁止事項:
 

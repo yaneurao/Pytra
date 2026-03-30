@@ -37,7 +37,7 @@
 確認コマンド:
 - `python3 tools/check/check_todo_priority.py`
 - `python3 -m unittest discover -s test/unit -p 'test_east3_*optimizer*.py'`
-- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp,rs,cs,js,ts --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp,rs,cs,js,ts --ignore-unstable-stdout`
 
 決定ログ:
 - 2026-02-26: 初版作成。`spec-east3-optimizer` に基づき、実装導入を S1/S2/S3 の3段で進める。

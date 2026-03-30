@@ -10,7 +10,7 @@ Compile + run still uses subprocesses (g++, go run, etc.).
 Usage:
     python3 tools/runtime_parity_check_fast.py --targets cpp --category oop
     python3 tools/runtime_parity_check_fast.py --targets go
-    python3 tools/runtime_parity_check_fast.py --case-root sample --all-samples --targets cpp
+    python3 tools/runtime_parity_check_fast.py --case-root sample --targets cpp
 """
 
 from __future__ import annotations
@@ -619,7 +619,6 @@ def main() -> int:
     parser.add_argument("cases", nargs="*", default=[], help="case stems (without .py)")
     parser.add_argument("--case-root", default="fixture", choices=("fixture", "sample"))
     parser.add_argument("--targets", default="cpp", help="comma separated targets (default: cpp)")
-    parser.add_argument("--all-samples", action="store_true")
     parser.add_argument("--category", default="", help="fixture subdirectory (e.g. oop, control)")
     parser.add_argument("--east3-opt-level", default=1, type=int, choices=(0, 1, 2))
     parser.add_argument("--cmd-timeout-sec", default=120, type=int)
@@ -637,7 +636,7 @@ def main() -> int:
 
     # Resolve case stems (reuse logic from runtime_parity_check)
     from runtime_parity_check import resolve_case_stems
-    stems, err = resolve_case_stems(args.cases, args.case_root, args.all_samples, args.category)
+    stems, err = resolve_case_stems(args.cases, args.case_root, category=args.category)
     if err != "":
         print(f"[ERROR] {err}")
         return 2

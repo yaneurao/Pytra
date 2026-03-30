@@ -72,7 +72,7 @@ PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py \
 
 # sample 18 件を C++ で回す
 PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py \
-  --case-root sample --all-samples --targets cpp
+  --case-root sample --targets cpp
 
 # 個別ケース指定
 PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py \
@@ -80,7 +80,7 @@ PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py \
 
 # benchmark モード（sample 実行時間を計測し .parity-results/ に記録）
 PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
-  --targets go,cpp --case-root sample --all-samples --benchmark
+  --targets go,cpp --case-root sample --benchmark
 
 # benchmark 結果から sample/README の表を手動更新
 python3 tools/gen/gen_sample_benchmark.py
@@ -116,13 +116,13 @@ python3 tools/gen/gen_sample_benchmark.py
 ## 5. 全 target sample parity 完了条件
 
 - canonical parity target order は `cpp,rs,cs,js,ruby,lua,php,ts,go,java,swift,kotlin,scala,nim` とする。これは `list_parity_targets()` の返却順と一致させる。
-- 「全target parity green」は `python3 tools/check/runtime_parity_check.py --targets cpp,rs,cs,js,ruby,lua,php,ts,go,java,swift,kotlin,scala,nim --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3` 実行時に、全 target / 全 18 sample case が `ok` のみで完了する状態を指す。
+- 「全target parity green」は `python3 tools/check/runtime_parity_check.py --targets cpp,rs,cs,js,ruby,lua,php,ts,go,java,swift,kotlin,scala,nim --case-root sample --ignore-unstable-stdout --east3-opt-level 2 --cpp-codegen-opt 3` 実行時に、全 target / 全 18 sample case が `ok` のみで完了する状態を指す。
 - full green 判定では `toolchain_missing` を例外扱いしない。`case_missing`, `python_failed`, `python_artifact_missing`, `toolchain_missing`, `transpile_failed`, `run_failed`, `output_mismatch`, `artifact_presence_mismatch`, `artifact_missing`, `artifact_size_mismatch`, `artifact_crc32_mismatch` はすべて 0 件でなければならない。
 - target 群を分けて確認する場合も、基準は同じとする。
-  - baseline target: `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples --east3-opt-level 2 --cpp-codegen-opt 3`
-  - JS/TS: `python3 tools/check/runtime_parity_check.py --targets js,ts --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2`
-  - compiled target: `python3 tools/check/runtime_parity_check.py --targets rs,cs,go,java,kotlin,swift,scala --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2`
-  - scripting / mixed target: `python3 tools/check/runtime_parity_check.py --targets ruby,lua,php,nim --case-root sample --all-samples --ignore-unstable-stdout --east3-opt-level 2`
+  - baseline target: `python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --east3-opt-level 2 --cpp-codegen-opt 3`
+  - JS/TS: `python3 tools/check/runtime_parity_check.py --targets js,ts --case-root sample --ignore-unstable-stdout --east3-opt-level 2`
+  - compiled target: `python3 tools/check/runtime_parity_check.py --targets rs,cs,go,java,kotlin,swift,scala --case-root sample --ignore-unstable-stdout --east3-opt-level 2`
+  - scripting / mixed target: `python3 tools/check/runtime_parity_check.py --targets ruby,lua,php,nim --case-root sample --ignore-unstable-stdout --east3-opt-level 2`
 - 日常の full-target 再実行は `python3 tools/check/check_all_target_sample_parity.py --summary-dir work/logs/all_target_sample_parity` を canonical wrapper とする。wrapper は上記 4 group を順に実行し、`all-target-summary.json` に統合結果を書き出す。
 
 ## 6. Debian 12 parity bootstrap snapshot

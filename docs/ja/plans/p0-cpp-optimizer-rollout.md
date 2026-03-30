@@ -38,7 +38,7 @@
 - `python3 tools/check/check_todo_priority.py`
 - `python3 tools/check/check_py2cpp_transpile.py`
 - `python3 -m unittest discover -s test/unit -p 'test_py2cpp_*.py'`
-- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp --all-samples --ignore-unstable-stdout`
+- `python3 tools/check/runtime_parity_check.py --case-root sample --targets cpp --ignore-unstable-stdout`
 
 決定ログ:
 - 2026-02-26: 初版作成。`spec-cpp-optimizer` の責務境界を実装可能な S1/S2/S3 へ分解した。

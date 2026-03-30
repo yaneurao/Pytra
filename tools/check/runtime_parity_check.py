@@ -345,13 +345,7 @@ def collect_fixture_case_stems(category: str = "") -> list[str]:
     return sorted(seen)
 
 
-def resolve_case_stems(cases: list[str], case_root: str, all_samples: bool, category: str = "") -> tuple[list[str], str]:
-    if all_samples:
-        if len(cases) > 0:
-            return [], "--all-samples cannot be combined with positional cases"
-        if case_root != "sample":
-            return [], "--all-samples requires --case-root sample"
-        return collect_sample_case_stems(), ""
+def resolve_case_stems(cases: list[str], case_root: str, all_samples: bool = False, category: str = "") -> tuple[list[str], str]:
     if category != "":
         if len(cases) > 0:
             return [], "--category cannot be combined with positional cases"
@@ -713,11 +707,6 @@ def main() -> int:
         help="comma separated targets (default: cpp)",
     )
     parser.add_argument(
-        "--all-samples",
-        action="store_true",
-        help="run all cases under sample/py (requires --case-root sample)",
-    )
-    parser.add_argument(
         "--category",
         default="",
         help="run only fixtures in this subdirectory (e.g. oop, control, typing). requires --case-root fixture",
@@ -757,7 +746,7 @@ def main() -> int:
         print("[ERROR] --targets must include at least one target")
         return 1
 
-    stems, err = resolve_case_stems(args.cases, args.case_root, args.all_samples, args.category)
+    stems, err = resolve_case_stems(args.cases, args.case_root, category=args.category)
     if err != "":
         print(f"[ERROR] {err}")
         return 2

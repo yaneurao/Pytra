@@ -38,7 +38,7 @@ python3 tools/run/run_selfhost_parity.py \
 
 # C++ selfhost で全言語の sample parity を検証
 python3 tools/run/run_selfhost_parity.py \
-  --selfhost-lang cpp --emit-target go,rs,ts --case-root sample --all-samples
+  --selfhost-lang cpp --emit-target go,rs,ts --case-root sample
 ```
 
 ### 処理の流れ
