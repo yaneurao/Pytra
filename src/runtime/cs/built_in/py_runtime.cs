@@ -598,6 +598,101 @@ namespace Pytra.CsModule
             return outv;
         }
 
+        public static long sum(IEnumerable<long> source)
+        {
+            long acc = 0;
+            foreach (long value in source)
+            {
+                acc += value;
+            }
+            return acc;
+        }
+
+        public static double sum(IEnumerable<double> source)
+        {
+            double acc = 0.0;
+            foreach (double value in source)
+            {
+                acc += value;
+            }
+            return acc;
+        }
+
+        public static List<object[]> zip<T, U>(IEnumerable<T> left, IEnumerable<U> right)
+        {
+            var outv = new List<object[]>();
+            using (IEnumerator<T> itLeft = left.GetEnumerator())
+            using (IEnumerator<U> itRight = right.GetEnumerator())
+            {
+                while (itLeft.MoveNext() && itRight.MoveNext())
+                {
+                    outv.Add(new object[] { itLeft.Current, itRight.Current });
+                }
+            }
+            return outv;
+        }
+
+        public static List<object[]> enumerate<T>(IEnumerable<T> source)
+        {
+            return enumerate(source, 0L);
+        }
+
+        public static List<object[]> enumerate<T>(IEnumerable<T> source, object startLike)
+        {
+            long index = Convert.ToInt64(startLike, CultureInfo.InvariantCulture);
+            var outv = new List<object[]>();
+            foreach (T value in source)
+            {
+                outv.Add(new object[] { index, value });
+                index += 1;
+            }
+            return outv;
+        }
+
+        public static List<T> reversed<T>(List<T> source)
+        {
+            var outv = new List<T>(source);
+            outv.Reverse();
+            return outv;
+        }
+
+        public static long index<T>(List<T> source, T value)
+        {
+            for (int i = 0; i < source.Count; i++)
+            {
+                if (py_equals(source[i], value))
+                {
+                    return i;
+                }
+            }
+            throw new ArgumentException("value is not in list");
+        }
+
+        public static string strip(string value)
+        {
+            return value.Trim();
+        }
+
+        public static string rstrip(string value)
+        {
+            return value.TrimEnd();
+        }
+
+        public static bool startswith(string value, string prefix)
+        {
+            return value.StartsWith(prefix, StringComparison.Ordinal);
+        }
+
+        public static bool endswith(string value, string suffix)
+        {
+            return value.EndsWith(suffix, StringComparison.Ordinal);
+        }
+
+        public static string replace(string value, string oldValue, string newValue)
+        {
+            return value.Replace(oldValue, newValue);
+        }
+
         public static List<byte> py_int_to_bytes(object valueLike, object lengthLike, object byteorderLike)
         {
             long value = Convert.ToInt64(valueLike, CultureInfo.InvariantCulture);
@@ -870,6 +965,21 @@ namespace Pytra.CsModule
             return Equals(left, right);
         }
 
+        public static bool py_eq(object left, object right)
+        {
+            return py_equals(left, right);
+        }
+
+        private static string py_format_sequence(IEnumerable source)
+        {
+            var parts = new List<string>();
+            foreach (object item in source)
+            {
+                parts.Add(py_display(item));
+            }
+            return "[" + string.Join(", ", parts) + "]";
+        }
+
         private static string py_display(object value)
         {
             if (value == null)
@@ -883,6 +993,18 @@ namespace Pytra.CsModule
             if (value is Exception ex)
             {
                 return ex.Message;
+            }
+            if (value is string text)
+            {
+                return text;
+            }
+            if (value is Array array)
+            {
+                return py_format_sequence(array);
+            }
+            if (value is IEnumerable enumerable)
+            {
+                return py_format_sequence(enumerable);
             }
             return Convert.ToString(value, CultureInfo.InvariantCulture);
         }
