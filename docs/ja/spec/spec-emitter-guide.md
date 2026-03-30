@@ -1131,7 +1131,13 @@ sample/py の全 18 ケースについて、Python 実行結果（stdout + artif
 
 ### 正本ツール
 
-**`tools/check/runtime_parity_check_fast.py` が全言語共通の parity check 正本ツール** である。言語別に独自の検証スクリプトを作成してはならない。
+**`tools/check/runtime_parity_check_fast.py` が全言語共通の parity check 正本ツール** である。以下は全て禁止:
+
+- 言語別の parity check スクリプト（`check_cs_fixture_emit.py` 等）
+- 言語別の smoke テストスクリプト（`test_cs_emitter_smoke.py` 等）
+- 言語別の fixture emit チェッカー
+
+全て `runtime_parity_check_fast.py --targets <lang>` で代替できる。独自スクリプトを作ると結果が `.parity-results/` に蓄積されず、進捗マトリクスに反映されない。
 
 transpile 段を toolchain2 Python API のインメモリ呼び出しで実行し、プロセス起動 + disk I/O を省略する。
 
