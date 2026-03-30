@@ -4,6 +4,36 @@
 
 # Changelog
 
+## 2026-03-31
+
+- **Ruby / Lua / PHP / Nim backend teams added**: TODO and plans created for each language.
+- **C# / Java emitter progress**: C# strings 12/12 PASS, Java S1/S2 complete.
+- **spec-python-compat: bool is NOT a subtype of int**: isinstance(True, int) returns False in Pytra.
+- **spec-emitter-guide §15 FAQ expanded**: unsigned right shift, package manager prohibition, type check skip prohibition, yields_dynamic cast guidance.
+- **EAST3 narrowing Cast node**: Rust team implemented Cast node insertion after isinstance narrowing.
+- **P7-GO-SELFHOST-RUNTIME filed**: 3 gaps identified for Go selfhost binary.
+- **Dockerfile: add TypeScript compiler**: `npm install -g typescript`. Removed package.json/node_modules.
+- **parity check: npx tsx → tsc + node**: Zero npm dependency.
+
+## 2026-03-30
+
+- **Go fixture all PASS**: Container types unified to reference wrappers. All 147 fixtures + stdlib 16/16 PASS.
+- **Rust emitter fixture 132/132 PASS**: arg_usage mut control, narrowing workaround.
+- **TypeScript emitter S5-S7 complete**: fixture 146/146, sample 18/18, JS 147/147 PASS. ESM migration, PNG encoder transpiled.
+- **C++ emitter P3-CR-CPP all complete**: S1-S8. isinstance unification, rc_from_value, keyword escaping.
+- **Fast parity check**: In-memory toolchain2 API calls. `--category` option.
+- **Automatic parity result accumulation + progress page**: 5 matrices (fixture/sample/stdlib/selfhost/emitter lint) + summary, auto-generated in ja+en.
+- **stdlib test separation**: Per-module tests in `test/stdlib/source/py/<module>/`. `--case-root stdlib` added.
+- **mapping.json types table**: Type mapping unified in mapping.json. `CodeEmitter.resolve_type()` API.
+- **Emitter hardcode lint**: 7-category grep-based violation detection.
+- **TODO per-area split**: cpp/go/rust/ts/cs/java/infra. P0 blocker rule removed.
+- **Golden files untracked**: ~400MB JSON removed from git. Regenerate with `regenerate_golden.py`.
+- **spec-runtime-decorator expansion**: extern_var, pipeline flow, quick reference table.
+- **Sample benchmark auto-measurement**: elapsed_sec recorded, sample README auto-updated.
+- **integer_promotion fixture**: All integer type widening/sign extension/mixed arithmetic tests.
+- **pytra.std.env added**: env.target compile-time constant via mapping.json.
+- **gc_reassign fixture fix**: __del__ body changed to pass (no GC-timing stdout).
+
 ## 2026-03-29
 
 - **Go fixture all PASS**: Unified Go emitter container types to reference wrappers (`*PyList[T]`, `*PyDict[K,V]`, `*PySet[T]`) (P1-GO-CONTAINER-WRAPPER S1-S3). All 147 fixtures + stdlib 16/16 PASS.

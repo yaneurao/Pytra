@@ -4,6 +4,36 @@
 
 # 更新履歴
 
+## 2026-03-31
+
+- **Ruby / Lua / PHP / Nim backend 担当を新設**: TODO と plans を起票。各言語の emitter 実装 → lint → selfhost のタスクを積んだ。
+- **C# / Java emitter 新規実装進行中**: C# は strings 12/12 PASS、Java は S1/S2 完了。
+- **spec-python-compat: bool は int のサブタイプではない**: isinstance(True, int) は Pytra では False。全プリミティブ型は leaf 型。
+- **spec-emitter-guide §15 FAQ 拡充**: unsigned right shift（`>>` → `>>>`）、パッケージマネージャ依存禁止、型チェックスキップ禁止、yields_dynamic cast ガイダンスを追加。
+- **EAST3 narrowing Cast ノード**: Rust 担当が isinstance narrowing 後に Cast ノードを挿入する EAST3 修正を実施。emitter workaround を削除。
+- **P7-GO-SELFHOST-RUNTIME 起票**: Go selfhost バイナリの実稼働に必要な3つのギャップ（linker type_id、Go emitter 自己翻訳、CLI wrapper）を特定。
+- **Dockerfile に TypeScript compiler 追加**: `npm install -g typescript` を Zig の後に配置。`package.json` / `node_modules/` は削除。
+- **parity check: npx tsx → tsc + node**: npm 依存を完全排除。
+
+## 2026-03-30
+
+- **Go fixture 全件 PASS**: Go emitter の container 既定表現を参照型ラッパー（`*PyList[T]`, `*PyDict[K,V]`, `*PySet[T]`）に統一。fixture 全 147 件 + stdlib 16/16 PASS。
+- **Rust emitter fixture 132/132 PASS**: arg_usage による mut 制御、narrowing workaround。
+- **TypeScript emitter S5〜S7 完了**: fixture 146/146、sample 18/18、JS 147/147 PASS。ESM 移行、PNG エンコーダをトランスパイル対象に変更。
+- **C++ emitter P3-CR-CPP 全完了**: S1〜S8 全完了。isinstance 一本化（S6）、rc_from_value 統一（S7）、予約語エスケープ（S8）。
+- **runtime_parity_check 高速版**: transpile 段を toolchain2 API のインメモリ呼び出しに置き換え。`--category` オプション追加。
+- **parity 結果の自動蓄積 + 進捗ページ自動生成**: `.parity-results/` に結果蓄積、`gen_backend_progress.py` で fixture/sample/stdlib/selfhost/emitter lint の5マトリクス + サマリを日英同時生成。
+- **stdlib テスト分離**: `test/stdlib/source/py/<module>/` にモジュール別テストを配置。parity check に `--case-root stdlib` 追加。
+- **mapping.json に types テーブル追加**: 型写像を mapping.json に統合。`CodeEmitter.resolve_type()` 共通 API。
+- **emitter ハードコード違反チェッカー**: 7カテゴリ（module_name, runtime_symbol, target_const, prefix_match, class_name, Python_syntax, type_id）の grep ベース検出。
+- **TODO 領域別分割**: cpp/go/rust/ts/cs/java/infra に分離。P0 ブロッカールール撤去。
+- **golden ファイルを git 追跡から除外**: ~400MB の JSON を gitignore。`regenerate_golden.py` で再生成。
+- **spec-runtime-decorator 拡張**: extern_var 追加、パイプライン解決フロー、早見表。
+- **sample benchmark 自動計測**: parity check で elapsed_sec を自動記録、sample/README の表を自動更新。
+- **integer_promotion fixture 追加**: 全整数型の widening / sign extension / mixed arithmetic テスト。
+- **pytra.std.env 追加**: `env.target` コンパイル時定数。mapping.json で言語名に置換。
+- **gc_reassign fixture 修正**: `__del__` を pass に変更（GC タイミング依存の stdout を排除）。
+
 ## 2026-03-29
 
 - **Go fixture 全件 PASS**: Go emitter の container 既定表現を参照型ラッパー（`*PyList[T]`, `*PyDict[K,V]`, `*PySet[T]`）に統一（P1-GO-CONTAINER-WRAPPER S1〜S3）。fixture 全 147 件 + stdlib 16/16 PASS。
