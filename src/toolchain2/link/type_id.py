@@ -80,6 +80,8 @@ _ROOT_BASE_NAMES.add("TypeError")
 _ROOT_BASE_NAMES.add("IndexError")
 _ROOT_BASE_NAMES.add("KeyError")
 _ROOT_BASE_NAMES.add("TypedDict")
+_ROOT_BASE_NAMES.add("ABC")
+_ROOT_BASE_NAMES.add("Protocol")
 
 _USER_TYPE_ID_BASE = 1000
 

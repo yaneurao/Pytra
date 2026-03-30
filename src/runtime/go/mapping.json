@@ -45,12 +45,41 @@
     "str.isspace": "py_str_isspace",
     "py_floordiv": "py_floordiv"
   },
+  "go_pkg_imports": {
+    "float_math": "math",
+    "file_io": "os"
+  },
+  "go_builtin_dispatch": {
+    "print": "py_print",
+    "len": "py_len"
+  },
+  "go_class_names": {
+    "exception_type_bounds": {
+      "PytraError":    [9, 15],
+      "BaseException": [9, 15],
+      "Exception":     [10, 15],
+      "RuntimeError":  [11, 11],
+      "ValueError":    [12, 12],
+      "TypeError":     [13, 13],
+      "IndexError":    [14, 14],
+      "KeyError":      [15, 15]
+    },
+    "exception_ctor_types": [
+      "PytraError", "BaseException", "Exception", "RuntimeError",
+      "ValueError", "TypeError", "IndexError", "KeyError",
+      "FileNotFoundError", "PermissionError", "NameError",
+      "NotImplementedError", "OverflowError"
+    ],
+    "path_type": "Path",
+    "argparse_type": "ArgumentParser"
+  },
   "skip_modules": [
     "pytra.built_in.",
     "pytra.std.glob",
     "pytra.std.math",
     "pytra.std.os",
     "pytra.std.os_path",
+    "pytra.std.pathlib",
     "pytra.std.random",
     "pytra.std.sys",
     "pytra.std.time",
