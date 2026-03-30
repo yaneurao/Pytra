@@ -22,7 +22,7 @@
 
 ### P0-PROGRESS-SUMMARY: バックエンド全体サマリページを自動生成する
 
-1. [ ] [ID: P0-PROGRESS-SUMMARY-S1] `gen_backend_progress.py` に summary 生成を追加する — 各言語1行で fixture/sample/stdlib/selfhost/emitter lint の状況を表示する `backend-progress-summary.md` を日英同時生成
+1. [ ] [ID: P0-PROGRESS-SUMMARY-S1] `gen_backend_progress.py` に summary 生成を追加する — 各言語1行で fixture/sample/stdlib/selfhost/emitter lint の状況を表示する `backend-progress-summary.md` を日英同時生成。parity check 末尾の自動再生成（`_maybe_regenerate_progress`, `_maybe_regenerate_benchmark`, `_maybe_refresh_selfhost_python`, `_maybe_run_emitter_lint`）は `.parity-results/.gen.lock` で排他制御し、複数 agent の同時書き込みを防ぐこと
 2. [ ] [ID: P0-PROGRESS-SUMMARY-S2] `progress/index.md` の「バックエンドサポート状況」セクションに summary へのリンクを追加する（または summary をインライン表示する）
 3. [ ] [ID: P0-PROGRESS-SUMMARY-S3] `check_emitter_hardcode_lint.py` の出力に合計行（🟩 PASS / 🟥 FAIL）を追加する — 他のマトリクスと同じ形式
 4. [ ] [ID: P0-PROGRESS-SUMMARY-S4] parity check の末尾に `_maybe_run_emitter_lint()` を追加する — `emitter-hardcode-lint.md` の mtime が 1 時間以上古ければ `check_emitter_hardcode_lint.py` を自動実行する
