@@ -589,7 +589,7 @@ def _emit_isinstance(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
                 return "matches!(" + val_str + ", " + pyany_pattern + ")"
             # User-defined class: encoded as PyAny::Int(type_id) — check via py_is_subtype
             if expected_id in ctx.class_names:
-                tid_const = ctx.module_prefix.upper() + safe_rs_ident(expected_id).upper() + "_TID"
+                tid_const = _module_prefix(ctx).upper() + safe_rs_ident(expected_id).upper() + "_TID"
                 return "(if let PyAny::Int(__tid) = &" + val_str + " { py_is_subtype(*__tid, " + tid_const + ") } else { false })"
             return "false"
         # For Box<dyn Any> (union types) — use downcast_ref
@@ -701,13 +701,15 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         qualified = obj_id + "." + attr if obj_id != "" else ""
         if qualified in ctx.mapping.calls:
             return ctx.mapping.calls[qualified]
-        resolved = resolve_runtime_symbol_name(runtime_symbol, ctx.mapping,
-            resolved_runtime_call=_str(node, "resolved_runtime_call"),
-            runtime_call=_str(node, "runtime_call"))
-        return resolved if resolved != "" else safe_rs_ident(attr)
-    # Class variable access: ClassName.field
-    # (when obj has type_object_of set, meaning it's a class reference not instance)
-    type_object_of = _str(obj_node, "type_object_of") if isinstance(obj_node, dict) else ""
+        resolved_runtime_call = _str(node, "resolved_runtime_call")
+        runtime_call = _str(node, "runtime_call")
+        resolved = resolve_runtime_symbol_name(runtime_symbol, ctx.mapping, resolved_runtime_call=resolved_runtime_call, runtime_call=runtime_call)
+        if resolved != "":
+            return resolved
+        return safe_rs_ident(attr)
+    type_object_of = ""
+    if isinstance(obj_node, dict):
+        type_object_of = _str(obj_node, "type_object_of")
     if type_object_of != "":
         # Inside a method of the same class accessing own class variable → self.field
         if ctx.current_class == type_object_of and attr in ctx.class_vars.get(type_object_of, {}):
