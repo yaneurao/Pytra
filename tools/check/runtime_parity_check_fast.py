@@ -36,10 +36,13 @@ if str(ROOT / "src") not in sys.path:
 # --- toolchain2 imports (in-memory pipeline) ---
 from toolchain2.common.jv import deep_copy_json  # type: ignore
 from toolchain2.compile.lower import lower_east2_to_east3  # type: ignore
+from toolchain2.emit.cs.emitter import emit_cs_module  # type: ignore
 from toolchain2.emit.cpp.emitter import emit_cpp_module  # type: ignore
 from toolchain2.emit.cpp.header_gen import build_cpp_header_from_east3  # type: ignore
 from toolchain2.emit.cpp.runtime_bundle import emit_runtime_module_artifacts  # type: ignore
 from toolchain2.emit.go.emitter import emit_go_module  # type: ignore
+from toolchain2.emit.java.emitter import emit_java_module  # type: ignore
+from toolchain2.emit.java.types import java_module_class_name  # type: ignore
 from toolchain2.emit.rs.emitter import emit_rs_module  # type: ignore
 from toolchain2.emit.ts.emitter import emit_ts_module  # type: ignore
 from toolchain2.link.linker import link_modules  # type: ignore
@@ -155,6 +158,16 @@ def _transpile_in_memory(
                 out_name = m.module_id.replace(".", "_") + ".go"
                 emit_dir.joinpath(out_name).write_text(code, encoding="utf-8")
             _copy_go_runtime(emit_dir)
+        elif target == "java":
+            for m in link_result.linked_modules:
+                if m.module_kind in ("runtime", "helper"):
+                    continue
+                code = emit_java_module(m.east_doc)
+                if code.strip() == "":
+                    continue
+                out_name = java_module_class_name(m.module_id) + ".java"
+                emit_dir.joinpath(out_name).write_text(code, encoding="utf-8")
+            _copy_java_runtime(emit_dir)
         elif target == "rs":
             for m in link_result.linked_modules:
                 code = emit_rs_module(m.east_doc)
@@ -164,6 +177,15 @@ def _transpile_in_memory(
                     code, encoding="utf-8"
                 )
             _copy_rs_runtime(emit_dir)
+        elif target == "cs":
+            for m in link_result.linked_modules:
+                code = emit_cs_module(m.east_doc)
+                if code.strip() == "":
+                    continue
+                emit_dir.joinpath(m.module_id.replace(".", "_") + ".cs").write_text(
+                    code, encoding="utf-8"
+                )
+            _copy_cs_runtime(emit_dir)
         elif target == "ts":
             for m in link_result.linked_modules:
                 code = emit_ts_module(m.east_doc)
@@ -227,6 +249,34 @@ def _copy_rs_runtime(emit_dir: Path) -> None:
         if bucket_dir.exists():
             for rs_file in bucket_dir.glob("*.rs"):
                 shutil.copy2(rs_file, emit_dir / rs_file.name)
+
+
+def _copy_java_runtime(emit_dir: Path) -> None:
+    """Copy Java runtime files to emit directory (flat)."""
+    java_runtime = ROOT / "src" / "runtime" / "java"
+    for bucket in ("built_in", "std"):
+        bucket_dir = java_runtime / bucket
+        if bucket_dir.exists():
+            for java_file in bucket_dir.glob("*.java"):
+                shutil.copy2(java_file, emit_dir / java_file.name)
+
+
+def _copy_cs_runtime(emit_dir: Path) -> None:
+    """Copy the native C# runtime files used by the toolchain2 CLI path."""
+    cs_runtime = ROOT / "src" / "runtime" / "cs"
+    if not cs_runtime.exists():
+        return
+    built_in = cs_runtime / "built_in" / "py_runtime.cs"
+    if built_in.exists():
+        dest = emit_dir / "built_in" / "py_runtime.cs"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(built_in, dest)
+    std_dir = cs_runtime / "std"
+    if std_dir.exists():
+        for cs_file in sorted(std_dir.glob("*.cs")):
+            dest = emit_dir / "std" / cs_file.name
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(cs_file, dest)
 
 
 def _copy_ts_runtime(emit_dir: Path) -> None:
@@ -314,6 +364,54 @@ def _run_target(
         if build.returncode != 0:
             return build
         return run_shell(shlex.quote(str(exe_path)), cwd=work_dir, env=env, timeout_sec=timeout_sec)
+
+    if target == "java":
+        stem = case_path.stem
+        entry_class = java_module_class_name(stem)
+        entry_java = emit_dir / (entry_class + ".java")
+        if not entry_java.exists():
+            return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_java}")
+        java_files = sorted(str(p) for p in emit_dir.rglob("*.java"))
+        if len(java_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .java files found")
+        build = run_shell(
+            "javac -sourcepath "
+            + shlex.quote(str(emit_dir))
+            + " "
+            + " ".join(shlex.quote(f) for f in java_files),
+            cwd=work_dir,
+            env=env,
+            timeout_sec=timeout_sec,
+        )
+        if build.returncode != 0:
+            return build
+        return run_shell(
+            "java -cp " + shlex.quote(str(emit_dir)) + " " + shlex.quote(entry_class),
+            cwd=work_dir,
+            env=env,
+            timeout_sec=timeout_sec,
+        )
+
+    if target == "cs":
+        cs_files = sorted(str(p) for p in emit_dir.rglob("*.cs"))
+        if len(cs_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .cs files found")
+        exe_path = emit_dir / (case_path.stem + "_cs.exe")
+        cmd = (
+            "mcs -warn:0 "
+            + shlex.quote(f"-out:{exe_path}")
+            + " "
+            + " ".join(shlex.quote(f) for f in cs_files)
+        )
+        build = run_shell(cmd, cwd=work_dir, env=env, timeout_sec=timeout_sec)
+        if build.returncode != 0:
+            return build
+        return run_shell(
+            "mono " + shlex.quote(str(exe_path)),
+            cwd=work_dir,
+            env=env,
+            timeout_sec=timeout_sec,
+        )
 
     if target == "ts":
         stem = case_path.stem

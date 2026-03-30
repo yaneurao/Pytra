@@ -38,14 +38,23 @@ class RuntimeMapping:
         "static_cast": "{target_type}({args})",
         "str.strip": "__pytra_strip"
       },
+      "types": {
+        "int64": "int64_t",
+        "str": "std::string",
+        "Exception": "std::runtime_error"
+      },
       "skip_modules": ["pytra.built_in.", "pytra.std.", "pytra.utils.", "pytra.core."]
     }
     """
     builtin_prefix: str = "__pytra_"
     calls: dict[str, str] = field(default_factory=dict)
+    types: dict[str, str] = field(default_factory=dict)
     skip_module_prefixes: list[str] = field(default_factory=list)
     skip_module_exact: set[str] = field(default_factory=set)
     implicit_promotions: set[str] = field(default_factory=set)
+    module_native_files: dict[str, str] = field(default_factory=dict)
+    call_adapters: dict[str, str] = field(default_factory=dict)
+    non_native_modules: set[str] = field(default_factory=set)
 
     def is_implicit_cast(self, from_type: str, to_type: str) -> bool:
         return (from_type + "->" + to_type) in self.implicit_promotions
@@ -55,7 +64,7 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
     """Load a mapping.json file into a RuntimeMapping."""
     if not mapping_path.exists():
         return RuntimeMapping()
-    text = mapping_path.read_text(encoding="utf-8")
+    text = mapping_path.read_text()
     raw_obj = json.loads_obj(text)
     if raw_obj is None:
         return RuntimeMapping()
@@ -75,6 +84,15 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
         for key, v in calls_raw.items():
             if isinstance(v, str):
                 calls[key] = v
+
+    types_raw: JsonVal = None
+    if "types" in raw:
+        types_raw = raw["types"]
+    types: dict[str, str] = {}
+    if isinstance(types_raw, dict):
+        for key, v in types_raw.items():
+            if isinstance(v, str):
+                types[key] = v
 
     skip_raw: JsonVal = None
     if "skip_modules" in raw:
@@ -109,12 +127,43 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
                     if isinstance(from_type, str) and isinstance(to_type, str):
                         implicit_promotions.add(from_type + "->" + to_type)
 
+    module_native_files_raw: JsonVal = None
+    if "module_native_files" in raw:
+        module_native_files_raw = raw["module_native_files"]
+    module_native_files: dict[str, str] = {}
+    if isinstance(module_native_files_raw, dict):
+        for key, v in module_native_files_raw.items():
+            if isinstance(v, str):
+                module_native_files[key] = v
+
+    call_adapters_raw: JsonVal = None
+    if "call_adapters" in raw:
+        call_adapters_raw = raw["call_adapters"]
+    call_adapters: dict[str, str] = {}
+    if isinstance(call_adapters_raw, dict):
+        for key, v in call_adapters_raw.items():
+            if isinstance(v, str):
+                call_adapters[key] = v
+
+    non_native_modules_raw: JsonVal = None
+    if "non_native_modules" in raw:
+        non_native_modules_raw = raw["non_native_modules"]
+    non_native_modules: set[str] = set()
+    if isinstance(non_native_modules_raw, list):
+        for item in non_native_modules_raw:
+            if isinstance(item, str):
+                non_native_modules.add(str(item))
+
     return RuntimeMapping(
         builtin_prefix=prefix_str,
         calls=calls,
+        types=types,
         skip_module_prefixes=skip,
         skip_module_exact=skip_exact,
         implicit_promotions=implicit_promotions,
+        module_native_files=module_native_files,
+        call_adapters=call_adapters,
+        non_native_modules=non_native_modules,
     )
 
 
@@ -209,6 +258,11 @@ def build_runtime_import_map(
             continue
         if not isinstance(local_name, str) or local_name == "":
             continue
+        # Skip module-resolved bindings (e.g. "from pytra.std import glob" where glob is a
+        # namespace, not a callable symbol). These are handled via import_alias_modules.
+        resolved_binding_kind = binding.get("resolved_binding_kind")
+        if isinstance(resolved_binding_kind, str) and resolved_binding_kind == "module":
+            continue
 
         module_id = binding.get("runtime_module_id")
         if not isinstance(module_id, str) or module_id == "":
@@ -241,16 +295,20 @@ def build_runtime_import_map(
             )
         )
         if is_native_runtime:
+            if module_id in mapping.non_native_modules:
+                # Module has its own compiled output file (not provided by py_runtime).
+                # Skip from runtime_imports so _emit_import_stmt emits a proper module import.
+                continue
             if symbol_name in mapping.calls:
                 # Use explicit mapping.calls entry (highest priority)
                 mapped = mapping.calls[symbol_name]
                 resolved_symbol = mapped if isinstance(mapped, str) and mapped != "" else symbol_name
-            elif not symbol_name.startswith(mapping.builtin_prefix):
-                # No prefix → use as-is
-                resolved_symbol = symbol_name
-            else:
+            elif symbol_name.startswith(mapping.builtin_prefix):
                 # Has prefix → resolve (may strip prefix)
                 resolved_symbol = resolve_runtime_symbol_name(symbol_name, mapping)
+            else:
+                # Same name in py_runtime (e.g. deque, Path, etc.)
+                resolved_symbol = symbol_name
         else:
             resolved_symbol = symbol_name
         runtime_imports[local_name] = resolved_symbol
@@ -299,12 +357,21 @@ def resolve_runtime_call(
     return ""
 
 
+def resolve_type(east3_type: str, mapping: RuntimeMapping) -> str:
+    """Resolve an EAST3 type name to a target language type string using mapping.json `types` table.
+
+    Returns the mapped type string, or "" if the type is not found in the mapping.
+    Callers should fall back to language-specific type logic when "" is returned.
+    """
+    return mapping.types.get(east3_type, "")
+
+
 def should_skip_module(module_id: str, mapping: RuntimeMapping) -> bool:
     """Check if a module should be skipped (provided by native runtime)."""
-    if module_id == "pytra.built_in.error" or module_id == "pytra.built_in.type_id_table":
-        return False
     if module_id in mapping.skip_module_exact:
         return True
+    if module_id == "pytra.built_in.error" or module_id == "pytra.built_in.type_id_table":
+        return False
     for prefix in mapping.skip_module_prefixes:
         if module_id.startswith(prefix):
             return True

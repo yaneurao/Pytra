@@ -34,6 +34,7 @@ class EmitContext:
     var_types: dict[str, str] = field(default_factory=dict)
     current_return_type: str = ""
     current_class_name: str = ""
+    class_names: set[str] = field(default_factory=set)
     renamed_symbols: dict[str, str] = field(default_factory=dict)
 
 
@@ -96,13 +97,31 @@ def _target_type_from_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     for key in ("decl_type", "annotation", "resolved_type"):
         text = _str(node, key)
         if text != "":
-            return cs_type(text, mapping=ctx.mapping)
+            return _render_type(ctx, text)
     target = node.get("target")
     if isinstance(target, dict):
         rt = _str(target, "resolved_type")
         if rt != "":
-            return cs_type(rt, mapping=ctx.mapping)
+            return _render_type(ctx, rt)
     return "object"
+
+
+def _render_type(ctx: EmitContext, resolved_type: str, *, for_return: bool = False) -> str:
+    if resolved_type in ctx.class_names:
+        return _safe_name(ctx, resolved_type)
+    return cs_type(resolved_type, mapping=ctx.mapping, for_return=for_return)
+
+
+def _arg_order_and_types(node: dict[str, JsonVal]) -> tuple[list[str], dict[str, str]]:
+    arg_order: list[str] = []
+    for item in _list(node, "arg_order"):
+        if isinstance(item, str):
+            arg_order.append(item)
+    arg_types: dict[str, str] = {}
+    for key, value in _dict(node, "arg_types").items():
+        if isinstance(key, str) and isinstance(value, str):
+            arg_types[key] = value
+    return (arg_order, arg_types)
 
 
 def _emit_constant(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -174,10 +193,67 @@ def _render_ifexp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     return "(" + test + " ? " + body + " : " + orelse + ")"
 
 
+def _emit_formatted_value(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
+    return "Convert.ToString(" + _emit_expr(ctx, node.get("value")) + ")"
+
+
+def _emit_fstring(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
+    parts: list[str] = []
+    for value in _list(node, "values"):
+        if not isinstance(value, dict):
+            continue
+        kind = _str(value, "kind")
+        if kind == "Constant":
+            raw = value.get("value")
+            if isinstance(raw, str):
+                parts.append(_quote_string(raw))
+            continue
+        if kind == "FormattedValue":
+            parts.append(_emit_formatted_value(ctx, value))
+            continue
+        parts.append("Convert.ToString(" + _emit_expr(ctx, value) + ")")
+    if len(parts) == 0:
+        return "\"\""
+    if len(parts) == 1:
+        return parts[0]
+    return "(" + " + ".join(parts) + ")"
+
+
+def _emit_box(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
+    value = node.get("value")
+    if isinstance(value, dict) and _str(value, "resolved_type") == "Callable":
+        return "new Action(" + _emit_expr(ctx, value) + ")"
+    return _emit_expr(ctx, value)
+
+
+def _emit_lambda(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
+    arg_order, arg_types = _arg_order_and_types(node)
+    if len(arg_order) == 0:
+        for arg in _list(node, "args"):
+            if isinstance(arg, dict):
+                arg_name = _str(arg, "arg")
+                if arg_name != "":
+                    arg_order.append(arg_name)
+                    if arg_name not in arg_types:
+                        arg_types[arg_name] = _str(arg, "resolved_type")
+    params: list[str] = []
+    for raw_arg_name in arg_order:
+        arg_name = _safe_name(ctx, raw_arg_name)
+        params.append(_render_type(ctx, arg_types.get(raw_arg_name, "")) + " " + arg_name)
+    return "(" + ", ".join(params) + ") => " + _emit_expr(ctx, node.get("body"))
+
+
 def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     owner = _emit_expr(ctx, node.get("value"))
     attr = _safe_cs_ident(_str(node, "attr"))
     return owner + "." + attr
+
+
+def _is_module_owner(ctx: EmitContext, node: JsonVal) -> bool:
+    if not isinstance(node, dict):
+        return False
+    owner_id = _str(node, "id")
+    return _str(node, "resolved_type") == "module" or owner_id in ctx.import_alias_modules
 
 
 def _call_builtin_name(node: dict[str, JsonVal]) -> str:
@@ -196,15 +272,46 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     runtime_call = _str(node, "runtime_call")
     builtin_name = _call_builtin_name(node)
     adapter = _str(node, "runtime_call_adapter_kind")
-    resolved = resolve_runtime_call(runtime_call, builtin_name, adapter, ctx.mapping)
+    func = node.get("func")
+    owner_expr = ""
+    prepend_owner = False
+    if isinstance(func, dict) and _str(func, "kind") == "Attribute":
+        owner_node = func.get("value")
+        owner_expr = _emit_expr(ctx, owner_node)
+        owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+        prepend_owner = not _is_module_owner(ctx, owner_node)
+        attr_name = _str(func, "attr")
+        if owner_type == "str" and attr_name == "join" and len(args) == 1:
+            return "string.Join(" + owner_expr + ", " + args[0] + ")"
+        if owner_type.startswith("dict[") and attr_name == "get" and len(args) >= 1:
+            default_expr = args[1] if len(args) > 1 else "default"
+            return "(" + owner_expr + ".TryGetValue(" + args[0] + ", out var __dict_value) ? __dict_value : " + default_expr + ")"
+    if isinstance(func, dict) and _str(func, "kind") == "Name":
+        func_name = _str(func, "id")
+        if func_name in ctx.import_alias_modules:
+            module_id = ctx.import_alias_modules.get(func_name, "")
+            if module_id != "" and not should_skip_module(module_id, ctx.mapping):
+                return _module_class_name(module_id) + "." + _safe_name(ctx, func_name) + "(" + ", ".join(args) + ")"
+        if _str(func, "resolved_type") == "type":
+            return "new " + _safe_name(ctx, func_name) + "(" + ", ".join(args) + ")"
+    if isinstance(func, dict) and _str(func, "kind") == "Lambda":
+        delegate_type = _render_type(ctx, _str(func, "resolved_type"))
+        return "((" + delegate_type + ")(" + _emit_expr(ctx, func) + "))(" + ", ".join(args) + ")"
+    resolved = ""
+    if runtime_call != "" or adapter != "":
+        resolved = resolve_runtime_call(runtime_call, builtin_name, adapter, ctx.mapping)
+    elif builtin_name in ctx.mapping.calls:
+        resolved = resolve_runtime_call(runtime_call, builtin_name, adapter, ctx.mapping)
     if resolved == "__CAST__":
         if len(args) == 1:
-            target_type = cs_type(_str(node, "resolved_type"), mapping=ctx.mapping)
+            target_type = _render_type(ctx, _str(node, "resolved_type"))
             return "((" + target_type + ")" + args[0] + ")"
         return args[0] if len(args) > 0 else ""
     if resolved != "" and not resolved.startswith("__"):
-        return resolved + "(" + ", ".join(args) + ")"
-    func = node.get("func")
+        call_args = list(args)
+        if prepend_owner and owner_expr != "":
+            call_args = [owner_expr] + call_args
+        return resolved + "(" + ", ".join(call_args) + ")"
     return _emit_expr(ctx, func) + "(" + ", ".join(args) + ")"
 
 
@@ -351,7 +458,18 @@ class _CsExprCommonRenderer(CommonRenderer):
             return _render_ifexp(self.ctx, node)
         if kind == "Tuple":
             items = [_emit_expr(self.ctx, item) for item in _list(node, "elements")]
-            return "Tuple.Create(" + ", ".join(items) + ")"
+            tuple_type = _render_type(self.ctx, _str(node, "resolved_type"))
+            return "new " + tuple_type + " { " + ", ".join(items) + " }"
+        if kind == "JoinedStr":
+            return _emit_fstring(self.ctx, node)
+        if kind == "FormattedValue":
+            return _emit_formatted_value(self.ctx, node)
+        if kind == "Box":
+            return _emit_box(self.ctx, node)
+        if kind == "Unbox":
+            return _emit_expr(self.ctx, node.get("value"))
+        if kind == "Lambda":
+            return _emit_lambda(self.ctx, node)
         return "/* unsupported:" + kind + " */"
 
 
@@ -361,6 +479,8 @@ def _emit_assign_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     target_text = _emit_expr(ctx, target)
     value_text = _emit_expr(ctx, value)
     declare = _bool(node, "declare") or _str(node, "kind") == "AnnAssign"
+    if isinstance(target, dict) and _str(target, "kind") == "Attribute":
+        declare = False
     if declare:
         decl_type = _target_type_from_stmt(ctx, node)
         ctx.var_types[target_text] = decl_type
@@ -403,35 +523,92 @@ def _emit_for_each(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     ctx.lines.append(indent + "}")
 
 
+def _for_target_name_and_type(target_node: JsonVal) -> tuple[str, str]:
+    if not isinstance(target_node, dict):
+        return ("_item", "")
+    kind = _str(target_node, "kind")
+    if kind in ("Name", "NameTarget"):
+        name = _str(target_node, "id")
+        target_type = _str(target_node, "target_type")
+        if target_type == "":
+            target_type = _str(target_node, "resolved_type")
+        return (name, target_type)
+    return ("_item", "")
+
+
+def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
+    target_node = node.get("target_plan")
+    if target_node is None:
+        target_node = node.get("target")
+    iter_plan = node.get("iter_plan")
+    body = _list(node, "body")
+    orelse = _list(node, "orelse")
+    target_name, target_type = _for_target_name_and_type(target_node)
+    safe_target = _safe_name(ctx, target_name) if target_name not in ("", "_item") else "_item"
+    if safe_target != "_item":
+        ctx.var_types[safe_target] = target_type
+    if isinstance(iter_plan, dict):
+        plan_kind = _str(iter_plan, "kind")
+        if plan_kind == "StaticRangeForPlan":
+            range_node = dict(iter_plan)
+            range_node["target"] = {"kind": "Name", "id": safe_target, "resolved_type": target_type}
+            range_node["body"] = body
+            _emit_for_range(ctx, range_node)
+            if len(orelse) > 0:
+                _emit_stmt_list(ctx, orelse)
+            return
+        if plan_kind == "RuntimeIterForPlan":
+            temp_node = {
+                "kind": "For",
+                "target": {"kind": "Name", "id": safe_target, "resolved_type": target_type},
+                "iter": iter_plan.get("iter_expr"),
+                "body": body,
+            }
+            _emit_for_each(ctx, temp_node)
+            if len(orelse) > 0:
+                _emit_stmt_list(ctx, orelse)
+            return
+    temp_node2 = {
+        "kind": "For",
+        "target": {"kind": "Name", "id": safe_target, "resolved_type": target_type},
+        "iter": node.get("iter"),
+        "body": body,
+    }
+    _emit_for_each(ctx, temp_node2)
+    if len(orelse) > 0:
+        _emit_stmt_list(ctx, orelse)
+
+
 def _emit_function(ctx: EmitContext, node: dict[str, JsonVal], *, force_public: bool = True, static_method: bool = True) -> None:
     name = _safe_name(ctx, _str(node, "name"))
     return_type = _str(node, "return_type")
     if return_type == "":
         return_type = "None"
     ctx.current_return_type = return_type
-    args = _list(node, "args")
-    arg_types = _dict(node, "arg_types")
+    arg_order, arg_types = _arg_order_and_types(node)
     params: list[str] = []
-    for arg in args:
-        if not isinstance(arg, dict):
+    for idx, raw_arg_name in enumerate(arg_order):
+        if ctx.current_class_name != "" and idx == 0 and raw_arg_name == "self":
             continue
-        arg_name = _safe_name(ctx, _str(arg, "arg"))
+        arg_name = _safe_name(ctx, raw_arg_name)
         src_type = ""
-        if arg_name in arg_types and isinstance(arg_types[arg_name], str):
-            src_type = str(arg_types[arg_name])
-        if src_type == "":
-            src_type = _str(arg, "resolved_type")
+        arg_type = arg_types.get(raw_arg_name)
+        if isinstance(arg_type, str):
+            src_type = arg_type
         if src_type == "":
             src_type = "object"
-        params.append(cs_type(src_type, mapping=ctx.mapping) + " " + arg_name)
+        params.append(_render_type(ctx, src_type) + " " + arg_name)
     modifiers: list[str] = []
     if force_public:
         modifiers.append("public")
     if static_method:
         modifiers.append("static")
-    signature = " ".join(modifiers + [cs_type(return_type, mapping=ctx.mapping, for_return=True), name])
     indent = "    " * ctx.indent_level
-    ctx.lines.append(indent + signature + "(" + ", ".join(params) + ") {")
+    if ctx.current_class_name != "" and _str(node, "name") == "__init__":
+        ctx.lines.append(indent + "public " + ctx.current_class_name + "(" + ", ".join(params) + ") {")
+    else:
+        signature = " ".join(modifiers + [_render_type(ctx, return_type, for_return=True), name])
+        ctx.lines.append(indent + signature + "(" + ", ".join(params) + ") {")
     ctx.indent_level += 1
     _emit_stmt_list(ctx, _list(node, "body"))
     ctx.indent_level -= 1
@@ -445,11 +622,14 @@ def _emit_class(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     ctx.indent_level += 1
     previous_class = ctx.current_class_name
     ctx.current_class_name = name
+    for field_name, field_type in _dict(node, "field_types").items():
+        if isinstance(field_name, str) and isinstance(field_type, str):
+            ctx.lines.append("    " * ctx.indent_level + "public " + _render_type(ctx, field_type) + " " + _safe_name(ctx, field_name) + ";")
     for stmt in _list(node, "body"):
         if not isinstance(stmt, dict):
             continue
         kind = _str(stmt, "kind")
-        if kind == "FunctionDef":
+        if kind == "FunctionDef" or kind == "ClosureDef":
             _emit_function(ctx, stmt, force_public=True, static_method=False)
         elif kind == "AnnAssign":
             field_name = _emit_expr(ctx, stmt.get("target"))
@@ -459,6 +639,15 @@ def _emit_class(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             if isinstance(value, dict):
                 init = _emit_expr(ctx, value)
             ctx.lines.append("    " * ctx.indent_level + "public " + field_type + " " + field_name + " = " + init + ";")
+        elif kind == "Assign":
+            field_name2 = _emit_expr(ctx, stmt.get("target"))
+            value2 = stmt.get("value")
+            field_type2 = "object"
+            init2 = "null"
+            if isinstance(value2, dict):
+                field_type2 = _render_type(ctx, _str(value2, "resolved_type"))
+                init2 = _emit_expr(ctx, value2)
+            ctx.lines.append("    " * ctx.indent_level + "public static " + field_type2 + " " + field_name2 + " = " + init2 + ";")
     ctx.current_class_name = previous_class
     ctx.indent_level -= 1
     ctx.lines.append(indent + "}")
@@ -478,6 +667,9 @@ def _emit_stmt_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         return
     if kind == "For":
         _emit_for_each(ctx, node)
+        return
+    if kind == "ForCore":
+        _emit_for_core(ctx, node)
         return
     if kind == "Break":
         ctx.lines.append(indent + "break;")
@@ -535,6 +727,15 @@ def emit_cs_module(east3_doc: dict[str, JsonVal]) -> str:
             if isinstance(key, str) and isinstance(value, str):
                 renamed_symbols[key] = value
 
+    body = _list(east3_doc, "body")
+    main_guard_body = _list(east3_doc, "main_guard_body")
+    class_names: set[str] = set()
+    for stmt in body:
+        if isinstance(stmt, dict) and _str(stmt, "kind") == "ClassDef":
+            name = _str(stmt, "name")
+            if name != "":
+                class_names.add(name)
+
     ctx = EmitContext(
         module_id=module_id,
         source_path=_str(east3_doc, "source_path"),
@@ -542,11 +743,9 @@ def emit_cs_module(east3_doc: dict[str, JsonVal]) -> str:
         mapping=mapping,
         import_alias_modules=build_import_alias_map(meta),
         runtime_imports=build_runtime_import_map(meta, mapping),
+        class_names=class_names,
         renamed_symbols=renamed_symbols,
     )
-
-    body = _list(east3_doc, "body")
-    main_guard_body = _list(east3_doc, "main_guard_body")
     class_name = _module_class_name(module_id)
 
     ctx.lines.append("using System;")

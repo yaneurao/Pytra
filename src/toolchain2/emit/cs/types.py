@@ -65,6 +65,7 @@ _TYPE_MAP: dict[str, str] = {
     "TypeError": "Exception",
     "IndexError": "Exception",
     "KeyError": "Exception",
+    "NameError": "Exception",
     "Path": "string",
 }
 
@@ -118,6 +119,21 @@ def _safe_cs_ident(name: str) -> str:
     return out
 
 
+def _callable_signature_parts(resolved_type: str) -> tuple[list[str], str] | None:
+    if not resolved_type.startswith("callable[") or not resolved_type.endswith("]"):
+        return None
+    inner = resolved_type[len("callable["):-1].strip()
+    if not inner.startswith("["):
+        return None
+    close = inner.find("]")
+    if close < 0:
+        return None
+    args_text = inner[1:close].strip()
+    ret_text = inner[close + 1:].lstrip(",").strip()
+    args = _split_generic_args(args_text) if args_text != "" else []
+    return (args, ret_text)
+
+
 def cs_type(resolved_type: str, *, mapping: "RuntimeMapping | None" = None, for_return: bool = False) -> str:
     if resolved_type == "" or resolved_type == "unknown":
         return "object"
@@ -151,7 +167,25 @@ def cs_type(resolved_type: str, *, mapping: "RuntimeMapping | None" = None, for_
         if len(parts2) == 0:
             return "object[]"
         rendered = [cs_type(part, mapping=mapping) for part in parts2]
-        return "Tuple<" + ", ".join(rendered) + ">"
+        first = rendered[0]
+        all_same = True
+        for item in rendered:
+            if item != first:
+                all_same = False
+                break
+        if all_same:
+            return first + "[]"
+        return "object[]"
+    callable_parts = _callable_signature_parts(resolved_type)
+    if callable_parts is not None:
+        arg_types, ret_type = callable_parts
+        rendered_args = [cs_type(part, mapping=mapping) for part in arg_types]
+        rendered_ret = cs_type(ret_type, mapping=mapping, for_return=True)
+        if rendered_ret == "void":
+            if len(rendered_args) == 0:
+                return "Action"
+            return "Action<" + ", ".join(rendered_args) + ">"
+        return "Func<" + ", ".join(rendered_args + [rendered_ret]) + ">"
     if resolved_type.endswith(" | None"):
         inner5 = resolved_type[:-7].strip()
         base = cs_type(inner5, mapping=mapping)

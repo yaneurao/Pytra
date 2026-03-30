@@ -2,7 +2,7 @@
   "builtin_prefix": "py_runtime.",
   "calls": {
     "env.target": "\"cs\"",
-    "py_print": "py_runtime.py_print",
+    "py_print": "py_runtime.print",
     "py_len": "py_runtime.py_len",
     "py_to_string": "Convert.ToString",
     "py_bool": "py_runtime.py_bool",
@@ -71,6 +71,7 @@
     "TypeError": "Exception",
     "IndexError": "Exception",
     "KeyError": "Exception",
+    "NameError": "Exception",
     "Path": "string"
   },
   "skip_modules": [
@@ -83,6 +84,9 @@
     "pytra.std.sys",
     "pytra.std.time",
     "pytra.core."
+  ],
+  "skip_modules_exact": [
+    "pytra.built_in.error"
   ],
   "implicit_promotions": [
     ["byte", "long"],

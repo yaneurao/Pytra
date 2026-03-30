@@ -34,7 +34,7 @@
 
 1. [x] [ID: P1-CS-EMITTER-S1] `src/toolchain2/emit/cs/` に C# emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/cs/` と TS emitter（`src/toolchain2/emit/ts/`）を参考にする。C# 固有のノード（namespace、using、property、LINQ 等）だけ override として残す（2026-03-30: `emit_cs_module()`、`types.py`、`toolchain2/emit/profiles/cs.json`、`pytra-cli2 --target cs` の emit/build 経路を追加）
 2. [x] [ID: P1-CS-EMITTER-S2] `src/runtime/cs/mapping.json` を作成し、runtime_call の写像を定義する。`types` テーブルも含める（spec-runtime-mapping.md §7）。`env.target` 必須エントリも忘れないこと（2026-03-30: `src/runtime/cs/mapping.json` を追加し、`env.target`、主要 built-in/runtime call、`types`、`implicit_promotions` を定義）
-3. [ ] [ID: P1-CS-EMITTER-S3] fixture 全件の C# emit 成功を確認する（`runtime_parity_check_fast.py --targets cs` の既存経路で確認する）
+3. [ ] [ID: P1-CS-EMITTER-S3] fixture 全件の C# emit 成功を確認する（`runtime_parity_check_fast.py --targets cs` の既存経路で確認する。2026-03-30: `--category core` は 22/22 pass）
 4. [ ] [ID: P1-CS-EMITTER-S4] C# runtime を toolchain2 の emit 出力と整合させる（旧 runtime の引き継ぎ or 再実装）
 5. [ ] [ID: P1-CS-EMITTER-S5] fixture + sample の C# compile + run parity を通す（`mcs` + `mono` または `dotnet run`）
 6. [ ] [ID: P1-CS-EMITTER-S6] stdlib の C# parity を通す（`--case-root stdlib`）

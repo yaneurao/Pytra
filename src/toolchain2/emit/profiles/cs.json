@@ -33,6 +33,16 @@
       "FloorDiv": "__floordiv",
       "Pow": "__pow"
     },
+    "cmp": {
+      "Eq": "==",
+      "NotEq": "!=",
+      "Lt": "<",
+      "LtE": "<=",
+      "Gt": ">",
+      "GtE": ">=",
+      "Is": "==",
+      "IsNot": "!="
+    },
     "bool": {
       "And": "&&",
       "Or": "||"
