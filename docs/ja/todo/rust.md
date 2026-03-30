@@ -28,9 +28,9 @@
 
 ### P0-EAST3-NARROWING-CAST: isinstance narrowing 後に Cast/Unbox ノードを挿入する
 
-EAST3 は isinstance narrowing 後に `resolved_type` を更新するが、明示的な Cast/Unbox ノードを挿入しない。Rust のように PyAny から具象型へのダウンキャストが必要な言語では、emitter が自前で narrowing 判定するしかなく、§1.1 違反になる。
+文脈: [docs/ja/plans/p0-east3-narrowing-cast.md](../plans/p0-east3-narrowing-cast.md)
 
-修正箇所: `src/toolchain2/compile/east2_to_east3_lowering.py` または `src/toolchain2/resolve/`
+EAST3 は isinstance narrowing 後に `resolved_type` を更新するが、明示的な Cast/Unbox ノードを挿入しない。Rust のように PyAny から具象型へのダウンキャストが必要な言語では、emitter が自前で narrowing 判定するしかなく、§1.1 違反になる。
 
 1. [ ] [ID: P0-EAST3-NARROW-S1] isinstance narrowing で `resolved_type` が変わった Name 参照に Cast/Unbox ノードを挿入する — 元の型と narrowing 後の型が異なる場合のみ
 2. [ ] [ID: P0-EAST3-NARROW-S2] Rust emitter の `_emit_name` workaround（`EAST3 DEFICIENCY WORKAROUND` コメント）を削除し、Cast/Unbox ノードをレンダリングするだけにする
