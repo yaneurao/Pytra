@@ -22,18 +22,14 @@ from pytra.std import sys
 from pytra.std import json
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
+from pytra.std.subprocess import run as subprocess_run
 from toolchain2.common.jv import deep_copy_json
 from toolchain2.compile.lower import lower_east2_to_east3
-from toolchain2.emit.cpp.runtime_bundle import write_helper_module_artifacts
-from toolchain2.emit.cpp.runtime_bundle import write_runtime_module_artifacts
-from toolchain2.emit.cpp.runtime_bundle import write_user_module_artifacts
 from toolchain2.link.linker import LinkResult
 from toolchain2.link.linker import link_modules
 from toolchain2.link.shared_types import LinkedModule
-from toolchain2.link.shared_types import linked_module_east_doc
 from toolchain2.link.shared_types import linked_module_id
 from toolchain2.link.shared_types import linked_module_is_entry
-from toolchain2.link.shared_types import linked_module_kind
 from toolchain2.link.shared_types import linked_module_mark_non_entry
 from toolchain2.link.shared_types import linked_module_source_path
 from toolchain2.optimize.optimizer import optimize_east3_doc_only
@@ -45,19 +41,29 @@ from toolchain2.resolve.py.resolver import resolve_file
 
 
 def _repo_root() -> Path:
-    """Return repository root by walking up from cwd until src/pytra-cli2.py is found."""
-    cur = Path(".").resolve()
-    while True:
-        if cur.joinpath("src").joinpath("pytra-cli2.py").exists():
-            return cur
-        parent = cur.parent
-        if str(parent) == str(cur):
-            return Path(".").resolve()
-        cur = parent
+    """Return repository root anchored to this script location."""
+    return Path(__file__).resolve().parent.parent
 
 
 def _unsupported_target_attr(module_name: str, attr_name: str) -> None:
     raise RuntimeError("selfhost-safe dynamic load is unavailable for " + module_name + "." + attr_name)
+
+
+def _src_dir() -> Path:
+    return _repo_root().joinpath("src")
+
+
+def _python() -> str:
+    return "python3"
+
+
+def _subprocess_env() -> dict[str, str]:
+    return {"PYTHONPATH": str(_src_dir())}
+
+
+def _run_subprocess(cmd: list[str]) -> int:
+    result = subprocess_run(cmd, env=_subprocess_env())
+    return result.returncode
 
 
 def _emit_go_module(_east_doc: dict[str, JsonVal]) -> str:
@@ -106,61 +112,6 @@ def _builtin_registry_paths() -> tuple[Path, Path, Path]:
         east1_root.joinpath("built_in").joinpath("containers.py.east1"),
         east1_root.joinpath("std"),
     )
-
-
-def _load_cpp_linked_modules(manifest_path: Path) -> list[LinkedModule]:
-    manifest_text = manifest_path.read_text(encoding="utf-8")
-    manifest_doc = json.loads(manifest_text).raw
-    if not isinstance(manifest_doc, dict):
-        raise RuntimeError("manifest root must be object: " + str(manifest_path))
-    typed_manifest_doc: dict[str, JsonVal] = manifest_doc
-    if "modules" not in typed_manifest_doc:
-        raise RuntimeError("manifest.modules must be list")
-    modules_raw_val: JsonVal = typed_manifest_doc["modules"]
-    if not isinstance(modules_raw_val, list):
-        raise RuntimeError("manifest.modules must be list")
-    modules_raw: list[JsonVal] = modules_raw_val
-    manifest_dir = manifest_path.parent
-    linked_modules: list[LinkedModule] = []
-    for index, entry in enumerate(modules_raw):
-        if not isinstance(entry, dict):
-            raise RuntimeError("manifest.modules[" + str(index) + "] must be object")
-        typed_entry: dict[str, JsonVal] = entry
-        module_id = typed_entry.get("module_id")
-        input_path_val = typed_entry.get("input")
-        output_rel = typed_entry.get("output")
-        source_path = typed_entry.get("source_path")
-        is_entry = typed_entry.get("is_entry")
-        module_kind = typed_entry.get("module_kind")
-        if not isinstance(module_id, str) or module_id == "":
-            raise RuntimeError("manifest.modules[" + str(index) + "].module_id must be non-empty string")
-        if not isinstance(input_path_val, str) or input_path_val == "":
-            raise RuntimeError("manifest.modules[" + str(index) + "].input must be non-empty string")
-        if not isinstance(output_rel, str) or output_rel == "":
-            raise RuntimeError("manifest.modules[" + str(index) + "].output must be non-empty string")
-        if not isinstance(source_path, str):
-            raise RuntimeError("manifest.modules[" + str(index) + "].source_path must be string")
-        if not isinstance(is_entry, bool):
-            raise RuntimeError("manifest.modules[" + str(index) + "].is_entry must be bool")
-        if not isinstance(module_kind, str) or module_kind == "":
-            raise RuntimeError("manifest.modules[" + str(index) + "].module_kind must be non-empty string")
-        east_path = manifest_dir.joinpath(output_rel)
-        east_text = east_path.read_text(encoding="utf-8")
-        east_doc = json.loads(east_text).raw
-        if not isinstance(east_doc, dict):
-            raise RuntimeError("linked EAST root must be object: " + str(east_path))
-        typed_east_doc: dict[str, JsonVal] = east_doc
-        linked_modules.append(
-            LinkedModule(
-                module_id=module_id,
-                input_path=input_path_val,
-                source_path=source_path,
-                is_entry=is_entry,
-                east_doc=typed_east_doc,
-                module_kind=module_kind,
-            )
-        )
-    return linked_modules
 
 
 def _copy_go_runtime_files(output_dir: Path) -> int:
@@ -223,12 +174,6 @@ def _module_source_path(module_id: str) -> Path:
     return Path("")
 
 
-def _helper_cpp_rel_path(module_id: str) -> str:
-    if module_id.startswith("pytra."):
-        return module_id[len("pytra."):].replace(".", "/")
-    return module_id.replace(".", "/")
-
-
 def _copy_json_doc(doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
     _copied_raw = deep_copy_json(doc)
     _ = _copied_raw
@@ -253,36 +198,6 @@ def _demote_non_entry_module(module: LinkedModule, entry_abs: str) -> None:
         return
     module.is_entry = False
     linked_module_mark_non_entry(module)
-
-
-def _emit_cpp_linked_module(module: LinkedModule, output_dir: Path) -> int:
-    module_id: str = linked_module_id(module)
-    east_doc: dict[str, JsonVal] = linked_module_east_doc(module)
-    module_kind: str = linked_module_kind(module)
-    source_path: str = linked_module_source_path(module)
-    if module_kind == "runtime":
-        count: int = write_runtime_module_artifacts(
-            module_id,
-            east_doc,
-            output_dir=output_dir,
-            source_path=source_path,
-        )
-        return count
-    if module_kind == "helper":
-        rel_header_path = _helper_cpp_rel_path(module_id) + ".h"
-        count = write_helper_module_artifacts(
-            module_id,
-            east_doc,
-            output_dir=output_dir,
-            rel_header_path=rel_header_path,
-        )
-        return count
-    count = write_user_module_artifacts(
-        module_id,
-        east_doc,
-        output_dir=output_dir,
-    )
-    return count
 
 
 def _linked_module_entry_path(module: LinkedModule) -> Path:
@@ -925,16 +840,9 @@ def _emit_ts(_manifest_path: Path, _output_dir: Path, *, strip_types: bool = Fal
 
 
 def _emit_cpp(manifest_path: Path, output_dir: Path) -> int:
-    """C++ emit: linked output → C++ source files (toolchain2 emitter)."""
-    linked_modules = _load_cpp_linked_modules(manifest_path)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    written = 0
-    for module in linked_modules:
-        written += _emit_cpp_linked_module(module, output_dir)
-
-    print("emitted: " + str(output_dir) + " (" + str(written) + " C++ files)")
-    return 0
+    """C++ emit: linked output → subprocess delegated C++ emitter."""
+    cmd = [_python(), "-m", "toolchain2.emit.cpp.cli", str(manifest_path), "--output-dir", str(output_dir)]
+    return _run_subprocess(cmd)
 
 
 # ---------------------------------------------------------------------------
@@ -1070,12 +978,9 @@ def _build_pipeline(inputs: list[str], output_dir_text: str, target: str, *, rs_
         print("error: no entry module found")
         return 1
 
-    output_dir.mkdir(parents=True, exist_ok=True)
-    written = 0
-    for m in link_result.linked_modules:
-        written += _emit_cpp_linked_module(m, output_dir)
-    print("build: emitted " + str(written) + " " + target + " files to " + str(output_dir))
-    return 0
+    linked_dir = work_dir.joinpath("linked")
+    _write_link_output(link_result, linked_dir, True)
+    return _emit_cpp(linked_dir.joinpath("manifest.json"), output_dir)
 
 
 # ---------------------------------------------------------------------------

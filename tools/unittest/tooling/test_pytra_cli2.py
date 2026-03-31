@@ -40,6 +40,11 @@ class PytraCli2Test(unittest.TestCase):
         self.assertTrue(Path(str(containers_path)).exists())
         self.assertTrue(Path(str(stdlib_dir)).exists())
 
+    def test_pytra_cli2_has_no_cpp_runtime_bundle_top_level_import(self) -> None:
+        source = _CLI2_PATH.read_text(encoding="utf-8")
+        self.assertNotIn("toolchain2.emit.cpp.runtime_bundle", source)
+        self.assertIn('"-m", "toolchain2.emit.cpp.cli"', source)
+
 
 if __name__ == "__main__":
     unittest.main()

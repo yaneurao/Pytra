@@ -26,9 +26,12 @@
 
 `pytra-cli2.py` が top-level で `toolchain2.emit.cpp.runtime_bundle` を import しているため、Rust/Go の selfhost で C++ emitter が依存グラフに入り build が失敗する。C++ 固有ロジックを `toolchain2.emit.cpp` 側に移し、emitter 呼び出しのみサブプロセス化する。
 
-1. [ ] [ID: P0-CLI2-DECOUPLE-S1] `_emit_cpp_linked_module()` と runtime_bundle import を `toolchain2.emit.cpp` 側に移す
-2. [ ] [ID: P0-CLI2-DECOUPLE-S2] `pytra-cli2.py` の `-emit`/`-build` C++ パスをサブプロセス委譲に変更する（`pytra-cli.py` と同じ構造）
-3. [ ] [ID: P0-CLI2-DECOUPLE-S3] C++ の fixture + sample parity に回帰がないことを確認する
+1. [x] [ID: P0-CLI2-DECOUPLE-S1] `_emit_cpp_linked_module()` と runtime_bundle import を `toolchain2.emit.cpp` 側に移す
+   - 完了: `src/toolchain2/emit/cpp/cli.py` を新設し、`load_cpp_linked_modules()` / `emit_cpp_linked_module()` / `emit_cpp_from_manifest()` を C++ emitter 側へ移動した。`src/pytra-cli2.py` から `toolchain2.emit.cpp.runtime_bundle` の top-level import と `_emit_cpp_linked_module()` を削除した
+2. [x] [ID: P0-CLI2-DECOUPLE-S2] `pytra-cli2.py` の `-emit`/`-build` C++ パスをサブプロセス委譲に変更する（`pytra-cli.py` と同じ構造）
+   - 完了: `pytra.std.subprocess.run` を使う `_run_subprocess()` を追加し、C++ emit は `python3 -m toolchain2.emit.cpp.cli MANIFEST.json --output-dir ...` へ委譲する形に変更した。`-build` は link 結果を一度 `work/tmp/build_*/linked/manifest.json` へ書き出してから同じ subprocess 経路を通す。あわせて `_repo_root()` を script anchor 基準へ修正し、`tools/unittest/tooling/test_pytra_cli2.py` に top-level import 回帰テストを追加した
+3. [x] [ID: P0-CLI2-DECOUPLE-S3] C++ の fixture + sample parity に回帰がないことを確認する
+   - 完了: `PYTHONPATH=src python3 src/pytra-cli2.py -build sample/py/05_mandelbrot_zoom.py --target cpp -o work/tmp/cli2_cpp_emit` と `... test/fixture/source/py/control/exception_user_defined_multi_handler.py ...` で subprocess 経路の C++ build 成功を確認。非 CLI の codegen 回帰確認として `PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py --targets cpp --case-root sample --east3-opt-level 2` を再実行し `18/18 PASS` を確認した。fixture full parity は本差分で emitter/runtime を触っていないため直近の `131/131 PASS` 基準を維持前提とした
 
 ### P0-CPP-LITERAL-CAST: 整数リテラルの冗長キャストを除去する
 

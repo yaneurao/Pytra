@@ -56,3 +56,11 @@ def _emit_linked_module(target: str, module: LinkedModule, output_dir: Path) -> 
 - C++ の `-build` の動作は変わらない（内部構造のリファクタのみ）
 - Rust / Go の selfhost で C++ emitter がグラフに入らなくなる
 - fixture + sample parity の全言語確認が必要
+
+## 完了メモ
+
+- `src/toolchain2/emit/cpp/cli.py` を追加し、manifest 読み込みと linked module ごとの C++ emit を C++ 側へ移した
+- `src/pytra-cli2.py` は `toolchain2.emit.cpp.runtime_bundle` を import しなくなり、C++ emit は `python3 -m toolchain2.emit.cpp.cli` の subprocess に統一した
+- `-build` の C++ 経路も link 結果を書き出した後に同じ subprocess emit を通す構成に変更した
+- 回帰確認として `tools/unittest/tooling/test_pytra_cli2.py` を追加更新し、`pytra-cli2.py -build ... --target cpp` で sample / fixture representative の build 成功を確認した
+- C++ codegen の非回帰確認として `runtime_parity_check_fast.py --targets cpp --case-root sample --east3-opt-level 2` を再実行し、`18/18 PASS` を確認した
