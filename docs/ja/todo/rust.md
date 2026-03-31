@@ -55,13 +55,27 @@ EAST3 lowering の問題。継承階層の基底クラスが `class_storage_hint
 5. [x] [ID: P7-RS-EMITTER-S5] fixture + sample の Rust compile + run parity を通す
    - 2026-03-31: `runtime_parity_check_fast.py --targets rs --case-root sample` で `18/18 PASS` を確認
 
+### P8-RS-LINT: emitter hardcode lint の Rust 残件を解消する
+
+文脈: [docs/ja/plans/p6-emitter-lint.md](../plans/p6-emitter-lint.md)
+
+1. [x] [ID: P8-RS-LINT-S1] `check_emitter_hardcode_lint.py --lang rs` の `class_name` 違反を 0 件にする
+   - 完了: `src/toolchain2/emit/rs/emitter.py` の `Path` / `ArgumentParser` 直書き double-quote 判定を解消し、`python3 tools/check/check_emitter_hardcode_lint.py --lang rs --verbose` で `class_name` 0 件を確認。
+2. [x] [ID: P8-RS-LINT-S2] `check_emitter_hardcode_lint.py --lang rs` の `skip pure py` 違反を 0 件にする
+   - 完了: `src/runtime/rs/mapping.json` から `pytra.std.random` の skip を外し、`src/pytra/std/{env.py,pathlib.py}` に native-marker を追加して Rust の `skip pure py` 違反を解消。`python3 tools/check/check_emitter_hardcode_lint.py --lang rs --verbose` で 0 件を確認し、代表 parity として `runtime_parity_check_fast.py --targets rs --case-root stdlib path_stringify pathlib_extended argparse_extended` も PASS。
+
 ### P9-RS-SELFHOST: Rust emitter で toolchain2 を Rust に変換し cargo build を通す
 
 前提: P7-RS-EMITTER 完了後に着手。
 
-1. [ ] [ID: P9-RS-SELFHOST-S0] selfhost 対象コード（`src/toolchain2/` 全 .py）で戻り値型の注釈が欠けている関数に型注釈を追加する — resolve が `inference_failure` にならない状態にする（P4/P6/P20 と共通。先に完了した側の成果を共有）
-2. [ ] [ID: P9-RS-SELFHOST-S1] toolchain2 全 .py を Rust に emit し、cargo build が通ることを確認する
-3. [ ] [ID: P9-RS-SELFHOST-S2] cargo build 失敗ケースを emitter/runtime の修正で解消する（EAST の workaround 禁止）
-4. [ ] [ID: P9-RS-SELFHOST-S3] selfhost 用 Rust golden を配置し、回帰テストとして維持する
-5. [ ] [ID: P9-RS-SELFHOST-S4] `run_selfhost_parity.py --selfhost-lang rs --emit-target rs --case-root fixture` で fixture parity PASS
-6. [ ] [ID: P9-RS-SELFHOST-S5] `run_selfhost_parity.py --selfhost-lang rs --emit-target rs --case-root sample` で sample parity PASS
+1. [x] [ID: P9-RS-SELFHOST-S0] selfhost 対象コード（`src/toolchain2/` 全 .py）で戻り値型の注釈が欠けている関数に型注釈を追加する — resolve が `inference_failure` にならない状態にする（P4/P6/P20 と共通。先に完了した側の成果を共有）
+   - 完了: `python3 -m unittest tools.unittest.selfhost.test_selfhost_return_annotations` で `src/toolchain2/` の戻り値注釈欠落が 0 件であることを確認。
+2. [ ] [ID: P9-RS-SELFHOST-S1] flat `include!` を Rust `mod` + `use` 構造に置換する — 文脈: [plan-rs-selfhost-mod-structure.md](../plans/plan-rs-selfhost-mod-structure.md)
+   - [ ] [ID: P9-RS-MOD-S1] Rust emitter の multifile_writer に mod 構造出力モードを追加する（1 EAST module = 1 Rust mod）
+   - [ ] [ID: P9-RS-MOD-S2] `lib.rs` / `Cargo.toml` の自動生成を実装する
+   - [ ] [ID: P9-RS-MOD-S3] cross-module `use crate::` パスの emit を実装する
+3. [ ] [ID: P9-RS-SELFHOST-S2] toolchain2 全 .py を Rust に emit し、cargo build が通ることを確認する
+4. [ ] [ID: P9-RS-SELFHOST-S3] cargo build 失敗ケースを emitter/runtime の修正で解消する（EAST の workaround 禁止）
+5. [ ] [ID: P9-RS-SELFHOST-S4] selfhost 用 Rust golden を配置し、回帰テストとして維持する
+6. [ ] [ID: P9-RS-SELFHOST-S5] `run_selfhost_parity.py --selfhost-lang rs --emit-target rs --case-root fixture` で fixture parity PASS
+7. [ ] [ID: P9-RS-SELFHOST-S6] `run_selfhost_parity.py --selfhost-lang rs --emit-target rs --case-root sample` で sample parity PASS
