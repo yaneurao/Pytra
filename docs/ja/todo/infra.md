@@ -20,16 +20,6 @@
 
 ## 未完了タスク
 
-### P0-CLI2-CPP-DECOUPLE: pytra-cli2.py から C++ 固有 import を分離
-
-文脈: [docs/ja/plans/plan-cli2-cpp-decouple.md](../plans/plan-cli2-cpp-decouple.md)
-
-`pytra-cli2.py` が top-level で `toolchain2.emit.cpp.runtime_bundle` を import しているため、Rust/Go の selfhost で C++ emitter が依存グラフに入り build が失敗する。C++ 固有ロジックを `toolchain2.emit.cpp` 側に移し、`pytra-cli2.py` を言語非依存にする。
-
-1. [ ] [ID: P0-CLI2-DECOUPLE-S1] `_emit_cpp_linked_module()` と runtime_bundle import を `toolchain2.emit.cpp` 側に移す
-2. [ ] [ID: P0-CLI2-DECOUPLE-S2] `pytra-cli2.py` の `-build` C++ パスをサブプロセス委譲に変更する（`pytra-cli.py` と同じ構造）
-3. [ ] [ID: P0-CLI2-DECOUPLE-S3] C++ の fixture + sample parity に回帰がないことを確認する
-
 ### P0-PARITY-CHANGELOG: parity 変化点ログの自動記録
 
 文脈: [docs/ja/plans/plan-parity-changelog.md](../plans/plan-parity-changelog.md)
