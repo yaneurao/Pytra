@@ -20,6 +20,13 @@
 
 ## 未完了タスク
 
+### P0-CPP-CALLABLE: callable 型（高階関数）の C++ parity を通す
+
+EAST3 の `GenericType(base="callable", args=[引数型, 戻り値型])` を `std::function<R(Args...)>` に変換する処理が C++ emitter にない。`callable_higher_order` fixture が compile + run parity PASS することを完了条件とする。
+
+1. [ ] [ID: P0-CPP-CALLABLE-S1] C++ emitter で `callable` 型を `std::function<R(Args...)>` に変換する処理を追加する
+2. [ ] [ID: P0-CPP-CALLABLE-S2] `callable_higher_order` fixture が C++ で compile + run parity PASS することを確認する
+
 ### P0-CLI2-RS-DECOUPLE: pytra-cli2.py から Rust emit 固有 import を分離
 
 文脈: [docs/ja/plans/plan-cli2-rs-decouple.md](../plans/plan-cli2-rs-decouple.md)
