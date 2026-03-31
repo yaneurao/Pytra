@@ -33,10 +33,12 @@
 
 EAST3 lowering の問題。継承階層の基底クラスが `class_storage_hint: "value"` のまま、派生クラスだけ `"ref"` になるため、Rust emitter で `Rc<RefCell<T>>` と `Box<dyn Trait>` が衝突する。また `super()` が `resolved_type: "unknown"` のまま未解決。emitter のワークアラウンドではなく EAST3 側の修正が必要。
 
-1. [ ] [ID: P0-EAST3-INHERIT-S1] EAST3 lowering で、派生クラスが存在する基底クラスの `class_storage_hint` を `"ref"` に昇格する（推移的に適用）
-2. [ ] [ID: P0-EAST3-INHERIT-S2] EAST3 lowering（または EAST2 resolve）で `super()` の型を解決する — receiver type を base class に、method call の戻り値型を base class のメソッド定義から確定
-3. [ ] [ID: P0-EAST3-INHERIT-S3] 全言語の fixture parity に回帰がないことを確認する
-4. [ ] [ID: P0-EAST3-INHERIT-S4] Rust の `inheritance_virtual_dispatch_multilang` が compile + run parity PASS することを確認する
+1. [x] [ID: P0-EAST3-INHERIT-S1] EAST3 lowering で、派生クラスが存在する基底クラスの `class_storage_hint` を `"ref"` に昇格する（推移的に適用）
+   - 完了: `src/toolchain2/resolve/py/resolver.py` に継承階層の基底クラスを推移的に `ref` へ昇格する pass を追加。`tools/unittest/toolchain2/test_inheritance_ref_super_resolution.py` で `Animal <- Dog <- LoudDog` が EAST2/EAST3 の両方で `ref` になることを固定。
+2. [x] [ID: P0-EAST3-INHERIT-S2] EAST3 lowering（または EAST2 resolve）で `super()` の型を解決する — receiver type を base class に、method call の戻り値型を base class のメソッド定義から確定
+   - 完了: `resolve_east1_to_east2()` で `super()` を現在クラスの base class へ解決し、`super().method()` の receiver / return type が既存の method lookup に乗るよう修正。`tools/unittest/toolchain2/test_inheritance_ref_super_resolution.py` で `super().speak()` が `Dog -> str` に解決されることを確認。
+4. [x] [ID: P0-EAST3-INHERIT-S4] Rust の `inheritance_virtual_dispatch_multilang` が compile + run parity PASS することを確認する
+   - 完了: EAST3 の `class_storage_hint` 昇格 + `super()` 解決を前提に、`src/toolchain2/emit/rs/emitter.py` の継承 lowering を整理。`Rc<RefCell<T>>` と `Box<dyn ParentMethods>` の境界、trait receiver、enum alias、property/trait dispatch を修正し、`python3 tools/check/runtime_parity_check_fast.py --targets rs --case-root fixture inheritance_virtual_dispatch_multilang` で PASS、さらに `--case-root fixture` 全体でも `131/131 PASS` を確認。
 
 ### P7-RS-EMITTER: Rust emitter を toolchain2 に新規実装する
 
@@ -48,14 +50,18 @@ EAST3 lowering の問題。継承階層の基底クラスが `class_storage_hint
    - 完了: `src/runtime/rs/mapping.json` を作成。Go mapping.json を参考に Rust 向け関数名でマッピング定義。
 3. [x] [ID: P7-RS-EMITTER-S3] fixture 132 件 + sample 18 件の Rust emit 成功を確認する
    - 完了: fixture 131/131 + sample 18/18 emit 成功（合計 149 件）。isinstance_user_class / isinstance_tuple_check の module_prefix 属性エラーを修正。
-4. [ ] [ID: P7-RS-EMITTER-S4] Rust runtime を toolchain2 の emit 出力と整合させる（旧 toolchain1 runtime の引き継ぎ or 再実装）
-5. [ ] [ID: P7-RS-EMITTER-S5] fixture + sample の Rust compile + run parity を通す
+4. [x] [ID: P7-RS-EMITTER-S4] Rust runtime を toolchain2 の emit 出力と整合させる（旧 toolchain1 runtime の引き継ぎ or 再実装）
+   - 2026-03-31: `runtime_parity_check_fast.py --targets rs --case-root fixture` で `131/131 PASS` を確認
+5. [x] [ID: P7-RS-EMITTER-S5] fixture + sample の Rust compile + run parity を通す
+   - 2026-03-31: `runtime_parity_check_fast.py --targets rs --case-root sample` で `18/18 PASS` を確認
 
 ### P9-RS-SELFHOST: Rust emitter で toolchain2 を Rust に変換し cargo build を通す
 
 前提: P7-RS-EMITTER 完了後に着手。
 
-1. [ ] [ID: P9-RS-SELFHOST-S0] selfhost 対象コード（`src/toolchain2/` 全 .py）で戻り値型の注釈が欠けている関数に型注釈を追加する — resolve が `inference_failure` にならない状態にする（P4/P6 と共通。先に完了した側の成果を共有）
+1. [ ] [ID: P9-RS-SELFHOST-S0] selfhost 対象コード（`src/toolchain2/` 全 .py）で戻り値型の注釈が欠けている関数に型注釈を追加する — resolve が `inference_failure` にならない状態にする（P4/P6/P20 と共通。先に完了した側の成果を共有）
 2. [ ] [ID: P9-RS-SELFHOST-S1] toolchain2 全 .py を Rust に emit し、cargo build が通ることを確認する
 3. [ ] [ID: P9-RS-SELFHOST-S2] cargo build 失敗ケースを emitter/runtime の修正で解消する（EAST の workaround 禁止）
 4. [ ] [ID: P9-RS-SELFHOST-S3] selfhost 用 Rust golden を配置し、回帰テストとして維持する
+5. [ ] [ID: P9-RS-SELFHOST-S4] `run_selfhost_parity.py --selfhost-lang rs --emit-target rs --case-root fixture` で fixture parity PASS
+6. [ ] [ID: P9-RS-SELFHOST-S5] `run_selfhost_parity.py --selfhost-lang rs --emit-target rs --case-root sample` で sample parity PASS

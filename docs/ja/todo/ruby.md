@@ -48,3 +48,5 @@
 1. [ ] [ID: P20-RUBY-SELFHOST-S0] selfhost 対象コードの型注釈補完（他言語と共通）
 2. [ ] [ID: P20-RUBY-SELFHOST-S1] toolchain2 全 .py を Ruby に emit し、実行できることを確認する
 3. [ ] [ID: P20-RUBY-SELFHOST-S2] selfhost 用 Ruby golden を配置する
+4. [ ] [ID: P20-RUBY-SELFHOST-S3] `run_selfhost_parity.py --selfhost-lang ruby --emit-target ruby --case-root fixture` で fixture parity PASS
+5. [ ] [ID: P20-RUBY-SELFHOST-S4] `run_selfhost_parity.py --selfhost-lang ruby --emit-target ruby --case-root sample` で sample parity PASS

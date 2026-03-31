@@ -53,3 +53,5 @@
 2. [ ] [ID: P3-CS-SELFHOST-S1] toolchain2 全 .py を C# に emit し、build が通ることを確認する
 3. [ ] [ID: P3-CS-SELFHOST-S2] build 失敗ケースを emitter/runtime の修正で解消する（EAST の workaround 禁止）
 4. [ ] [ID: P3-CS-SELFHOST-S3] selfhost 用 C# golden を配置し、回帰テストとして維持する
+5. [ ] [ID: P3-CS-SELFHOST-S4] `run_selfhost_parity.py --selfhost-lang cs --emit-target cs --case-root fixture` で fixture parity PASS
+6. [ ] [ID: P3-CS-SELFHOST-S5] `run_selfhost_parity.py --selfhost-lang cs --emit-target cs --case-root sample` で sample parity PASS
