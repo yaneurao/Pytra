@@ -1157,8 +1157,18 @@ def _emit_compare(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         comp_is_nominal = comp_type in ctx.class_names or _is_non_optional_type_node(comp)
         prev_is_none = prev == "::std::nullopt" or prev_type == "None"
         comp_is_none = right == "::std::nullopt" or comp_type == "None"
-        if op_str == "In": parts.append("py_contains(" + right + ", " + prev + ")")
-        elif op_str == "NotIn": parts.append("!py_contains(" + right + ", " + prev + ")")
+        if op_str == "In":
+            range_contains = _emit_range_call_contains_expr(ctx, comp, prev)
+            if range_contains != "":
+                parts.append(range_contains)
+            else:
+                parts.append("py_contains(" + right + ", " + prev + ")")
+        elif op_str == "NotIn":
+            range_contains = _emit_range_call_contains_expr(ctx, comp, prev)
+            if range_contains != "":
+                parts.append("!(" + range_contains + ")")
+            else:
+                parts.append("!py_contains(" + right + ", " + prev + ")")
         elif op_str == "Is":
             if prev_is_none and comp_is_none:
                 parts.append("true")
@@ -1206,6 +1216,43 @@ def _emit_compare(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         prev = right
         prev_node = comp
     return " && ".join(parts) if len(parts) > 1 else parts[0]
+
+
+def _emit_range_call_contains_expr(ctx: CppEmitContext, range_node: JsonVal, needle_expr: str) -> str:
+    if not isinstance(range_node, dict) or _str(range_node, "kind") != "Call":
+        return ""
+    if _str(range_node, "builtin_name") != "range":
+        return ""
+    args = _list(range_node, "args")
+    if len(args) == 0 or len(args) > 3:
+        return ""
+    start_expr = "int64(0)"
+    stop_expr = ""
+    step_expr = "int64(1)"
+    if len(args) == 1:
+        stop_expr = _emit_expr(ctx, args[0])
+    elif len(args) == 2:
+        start_expr = _emit_expr(ctx, args[0])
+        stop_expr = _emit_expr(ctx, args[1])
+    else:
+        start_expr = _emit_expr(ctx, args[0])
+        stop_expr = _emit_expr(ctx, args[1])
+        step_expr = _emit_expr(ctx, args[2])
+    if stop_expr == "":
+        return ""
+    pos_lane = (
+        "(" + step_expr + " > int64(0))"
+        + " && (" + needle_expr + " >= " + start_expr + ")"
+        + " && (" + needle_expr + " < " + stop_expr + ")"
+        + " && (((" + needle_expr + " - " + start_expr + ") % " + step_expr + ") == int64(0))"
+    )
+    neg_lane = (
+        "(" + step_expr + " < int64(0))"
+        + " && (" + needle_expr + " <= " + start_expr + ")"
+        + " && (" + needle_expr + " > " + stop_expr + ")"
+        + " && (((" + start_expr + " - " + needle_expr + ") % (-(" + step_expr + "))) == int64(0))"
+    )
+    return "((" + pos_lane + ") || (" + neg_lane + "))"
 
 
 def _emit_boolop(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:

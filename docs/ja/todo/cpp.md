@@ -24,8 +24,10 @@
 
 `test/fixture/source/py/collections/in_membership_iterable.py` が C++ で FAIL。大きい tuple (20要素)、range(1000)、range with step、str の `in`/`not in` を含むケース。C++ emitter / runtime が iterable の汎用 `contains` として正しく処理できていない可能性。
 
-1. [ ] [ID: P0-CPP-IN-MEMBER-S1] 失敗原因を特定する（compile error / runtime error / output mismatch）
-2. [ ] [ID: P0-CPP-IN-MEMBER-S2] C++ emitter / runtime を修正し、`in_membership_iterable` が compile + run parity PASS することを確認する
+1. [x] [ID: P0-CPP-IN-MEMBER-S1] 失敗原因を特定する（compile error / runtime error / output mismatch）
+2. [x] [ID: P0-CPP-IN-MEMBER-S2] C++ emitter / runtime を修正し、`in_membership_iterable` が compile + run parity PASS することを確認する
+   - 完了: 失敗原因は compile error で、`range(...)` を含む `in` / `not in` が `py_contains(rc_from_value(py_range(...)), needle)` に落ちる一方、C++ parity lane には `py_range` 宣言/実装の直接契約がなく `py_range` 未定義で落ちていた。
+   - 完了: `emitter.py` の `Compare(In/NotIn)` に `range` call 専用 lowering を追加し、`x in range(start, stop, step)` を `start/stop/step` の算術判定式へ直接展開するよう修正した。`PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py --targets cpp --case-root fixture --east3-opt-level 2 in_membership_iterable` は PASS。
 
 ### P0-CPP-CALLABLE: callable 型（高階関数）の C++ parity を通す
 
