@@ -59,3 +59,5 @@
 ## 決定ログ
 
 - 2026-03-31: 起票。まず compile failure の 3 件（`nested_closure_def`, `ok_generator_tuple_target`, `ok_typed_varargs_representative`）を優先し、その後に `output mismatch` の 2 件（`any_none`, `integer_promotion`）を詰める。
+- 2026-03-31: C++ emitter で local closure を visible local scope に登録し、mutable param を call graph ベースで補正した。`zip_ops.h` は `list_ops.h` への shim に整理し、`is None` は `py_is_none(...)`、stale な integer `numeric_promotion` cast は emit 時に無視する方針にした。
+- 2026-03-31: 検証完了。`PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py --targets cpp --case-root fixture --east3-opt-level 2` は `131/131 PASS`、`--case-root sample` は `18/18 PASS`。P6 の 5 件は全て解消。
