@@ -27,6 +27,14 @@
 
 ## 未完了タスク
 
+### P0-RS-TUPLE-UNPACK: tuple_unpack_variants fixture の Rust parity を通す
+
+文脈: [docs/ja/plans/plan-east-tuple-unpack-bugs.md](../plans/plan-east-tuple-unpack-bugs.md)
+
+前提: P0-EAST-TUPLE-UNPACK（infra TODO）で EAST 側のバグ 3 件（括弧付き左辺、comprehension + unpack）が修正された後に着手。
+
+1. [ ] [ID: P0-RS-TUPLE-UNPACK-S1] `tuple_unpack_variants` fixture が Rust で compile + run parity PASS することを確認する（失敗なら emitter を修正）
+
 ### P0-RS-TYPED-CONTAINER: typed_container_access fixture の Rust parity を通す
 
 文脈: [docs/ja/plans/plan-typed-container-access-parity.md](../plans/plan-typed-container-access-parity.md)
