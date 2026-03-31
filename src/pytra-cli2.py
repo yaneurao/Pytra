@@ -20,9 +20,9 @@ from __future__ import annotations
 
 from pytra.std import sys
 from pytra.std import json
+from pytra.std import subprocess as py_subprocess
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
-from pytra.std.subprocess import run as subprocess_run
 from toolchain2.common.jv import deep_copy_json
 from toolchain2.compile.lower import lower_east2_to_east3
 from toolchain2.link.linker import LinkResult
@@ -41,21 +41,8 @@ from toolchain2.resolve.py.resolver import resolve_file
 
 
 def _repo_root() -> Path:
-    """Return repository root from sys.path first, then cwd walk fallback."""
-    for path_entry in sys.path:
-        candidate = Path(path_entry).resolve()
-        if candidate.joinpath("pytra-cli2.py").exists():
-            return Path(candidate.parent)
-        if candidate.joinpath("src").joinpath("pytra-cli2.py").exists():
-            return candidate
-    cur = Path(".").resolve()
-    while True:
-        if cur.joinpath("src").joinpath("pytra-cli2.py").exists():
-            return cur
-        parent = cur.parent
-        if str(parent) == str(cur):
-            return Path(".").resolve()
-        cur = Path(parent)
+    """Return repository root anchored to current working directory."""
+    return Path(".").resolve()
 
 
 def _unsupported_target_attr(module_name: str, attr_name: str) -> None:
@@ -71,11 +58,13 @@ def _python() -> str:
 
 
 def _subprocess_env() -> dict[str, str]:
-    return {"PYTHONPATH": str(_src_dir())}
+    env: dict[str, str] = {}
+    env["PYTHONPATH"] = str(_src_dir())
+    return env
 
 
 def _run_subprocess(cmd: list[str]) -> int:
-    result = subprocess_run(cmd, env=_subprocess_env())
+    result = py_subprocess.run(cmd, env=_subprocess_env())
     return result.returncode
 
 
@@ -129,23 +118,50 @@ def _builtin_registry_paths() -> tuple[Path, Path, Path]:
 
 def _copy_go_runtime_files(output_dir: Path) -> int:
     """Copy native Go runtime files into the flat emit directory."""
-    _ = output_dir
-    _unsupported_target_attr("pytra-cli2", "_copy_go_runtime_files")
-    return 0
+    runtime_root = _repo_root().joinpath("src").joinpath("runtime").joinpath("go")
+    copied = 0
+    for bucket in ["built_in", "std"]:
+        for go_file in runtime_root.joinpath(bucket).glob("*.go"):
+            dst = output_dir.joinpath(go_file.name)
+            dst.write_text(go_file.read_text(encoding="utf-8"), encoding="utf-8")
+            copied += 1
+    output_dir.joinpath("go.mod").write_text(
+        "module pytra_selfhost_go\n\ngo 1.22\n",
+        encoding="utf-8",
+    )
+    return copied
 
 
 def _copy_cs_runtime_files(output_dir: Path) -> int:
     """Copy C# runtime files into the emit directory, preserving subdirectories."""
-    _ = output_dir
-    _unsupported_target_attr("pytra-cli2", "_copy_cs_runtime_files")
-    return 0
+    runtime_root = _repo_root().joinpath("src").joinpath("runtime").joinpath("cs")
+    copied = 0
+    if not runtime_root.exists():
+        return copied
+    for cs_file in runtime_root.glob("**/*.cs"):
+        rel_text = str(cs_file).replace(str(runtime_root) + "/", "")
+        dst = output_dir.joinpath(rel_text)
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text(cs_file.read_text(encoding="utf-8"), encoding="utf-8")
+        copied += 1
+    return copied
 
 
 def _copy_java_runtime_files(output_dir: Path) -> int:
     """Copy Java runtime files into the flat emit directory."""
-    _ = output_dir
-    _unsupported_target_attr("pytra-cli2", "_copy_java_runtime_files")
-    return 0
+    runtime_root = _repo_root().joinpath("src").joinpath("runtime").joinpath("java")
+    copied = 0
+    if not runtime_root.exists():
+        return copied
+    for bucket in ["built_in", "std"]:
+        bucket_dir = runtime_root.joinpath(bucket)
+        if not bucket_dir.exists():
+            continue
+        for java_file in bucket_dir.glob("*.java"):
+            dst = output_dir.joinpath(java_file.name)
+            dst.write_text(java_file.read_text(encoding="utf-8"), encoding="utf-8")
+            copied += 1
+    return copied
 
 
 def _module_source_path(module_id: str) -> Path:
@@ -836,7 +852,7 @@ def cmd_build(args: list[str]) -> int:
         print("error: at least one input .py file is required")
         return 1
 
-    if target not in ("cpp", "go", "rs", "cs", "java", "ts", "js"):
+    if target not in ["cpp", "go", "rs", "cs", "java", "ts", "js"]:
         print("error: unsupported target: " + target + " (available: cpp, go, rs, cs, java, ts, js)")
         return 1
 

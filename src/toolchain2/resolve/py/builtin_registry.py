@@ -135,9 +135,9 @@ class BuiltinRegistry:
 
     def find_stdlib_class(self, name: str) -> ClassSig | None:
         """Find a stdlib class by simple class name across loaded modules."""
-        seen: set[str] = set()
+        seen: set[int] = set()
         for mod in self.stdlib_modules.values():
-            mod_id = mod.module_id
+            mod_id = id(mod)
             if mod_id in seen:
                 continue
             seen.add(mod_id)
@@ -481,7 +481,7 @@ def load_builtin_registry(
             ("built_in", "pytra.built_in."),
         ):
             for module_dir in _candidate_module_dirs(stdlib_dir, group):
-                module_files = module_dir.glob("*.east") + module_dir.glob("*.east1")
+                module_files = sorted(module_dir.glob("*.east"), key=str) + sorted(module_dir.glob("*.east1"), key=str)
                 for module_file in module_files:
                     mod_name: str = _module_name_from_module_path(module_file, module_dir)
                     canonical: str = prefix + mod_name
