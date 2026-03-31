@@ -30,15 +30,30 @@ parity check の PASS 件数が変化したタイミングで `progress-preview/
 2. [x] [ID: P0-CHANGELOG-S2] `runtime_parity_check.py`（非 fast 版）にも同様のロジックを追加する — `_save_parity_results` 内に `prev_pass`/`curr_pass` 計算と `_append_parity_changelog` 呼び出しを追加
 3. [x] [ID: P0-CHANGELOG-S3] 動作確認 — parity check 実行後に changelog.md が正しく更新されることを確認する — ユニットテストで新規作成・行挿入・変化なし時スキップを確認
 
-### P20-EMIT-EXPECT: emitter テストのデータ駆動化
+### P20-DATA-DRIVEN-TESTS: unittest のデータ駆動化
 
 文脈: [docs/ja/plans/plan-emit-expect-data-driven-tests.md](../plans/plan-emit-expect-data-driven-tests.md)
 
-ステータス: **保留中** — 既存テストが他 agent により変更中のため、安定してから着手する。
+ステータス: **保留中** — 既存テストが他 agent により変更中のため、安定してから Phase 1 に着手する。
 
-1. [ ] [ID: P20-EMIT-EXPECT-S1] `test/fixture/emit-expect/<lang>/` に JSON テストケース形式を定義する
-2. [ ] [ID: P20-EMIT-EXPECT-S2] pytest parametrize ベースの汎用テストランナーを1本作成する
-3. [ ] [ID: P20-EMIT-EXPECT-S3] `test_common_renderer.py` の emitter 出力テストを段階的に JSON ケースへ移行する
+`tools/unittest/` の 269 スクリプトの大半は「入力 → パイプライン → 期待出力」のペアであり、JSON データで定義できる。テストランナーは 2 本（パイプライン用 + emit 用）だけにし、ケース追加は JSON ファイルを置くだけにする。
+
+**Phase 1: emit 層で方式を確立**
+
+1. [ ] [ID: P20-DDT-S1] `test/cases/emit/cpp/` に JSON テストケース 5〜10 件を作成する
+2. [ ] [ID: P20-DDT-S2] `tools/unittest/test_emit_cases.py` を実装する（pytest parametrize で JSON 走査）
+3. [ ] [ID: P20-DDT-S3] `test_common_renderer.py` の対応テストを JSON に移行し、元メソッドを削除する
+
+**Phase 2: パイプライン層に横展開**
+
+4. [ ] [ID: P20-DDT-S4] `test/cases/{east1,east2,east3}/` に JSON テストケースを作成する
+5. [ ] [ID: P20-DDT-S5] `tools/unittest/test_pipeline_cases.py` を実装する
+6. [ ] [ID: P20-DDT-S6] `tools/unittest/toolchain2/` の対応テストを段階的に JSON に移行する
+
+**Phase 3: 既存スクリプトの縮退**
+
+7. [ ] [ID: P20-DDT-S7] JSON に移行済みのテストメソッドを削除し、空になったスクリプトを削除する
+8. [ ] [ID: P20-DDT-S8] `tools/unittest/emit/<lang>/` の言語別スクリプトを段階的に JSON に移行する
 
 ### 保留中タスク
 
