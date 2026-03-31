@@ -27,6 +27,18 @@
 
 ## 未完了タスク
 
+### P0-COMMON-PEER-CLASS: CommonRenderer に peer module クラス情報参照を追加
+
+文脈: [docs/ja/plans/plan-common-renderer-peer-class-info.md](../plans/plan-common-renderer-peer-class-info.md)
+
+全 emitter が自モジュールの body からしかクラス情報を収集できず、peer module（import 先の linked EAST3）のクラス情報（`class_storage_hint`, method signature, property）を参照できない。CommonRenderer に `PeerClassRegistry` を追加し、linked bundle の peer module EAST3 から全言語共通でクラス情報を引けるようにする。
+
+1. [ ] [ID: P0-PEER-CLASS-S1] `PeerClassInfo` / `PeerClassRegistry` を CommonRenderer または code_emitter.py に追加する
+2. [ ] [ID: P0-PEER-CLASS-S2] linked bundle の peer module EAST3 を走査して registry を構築するローダーを実装する
+3. [ ] [ID: P0-PEER-CLASS-S3] Rust emitter の `_emit_attribute` / `_emit_call` で registry を参照し、`pytra.std.pathlib.Path` の method/property/ref-class が正しく emit されることを確認する
+4. [ ] [ID: P0-PEER-CLASS-S4] `path_stringify` / `pathlib_extended` fixture が Rust で compile + run parity PASS することを確認する
+5. [ ] [ID: P0-PEER-CLASS-S5] fixture + sample の全件 parity に回帰がないことを確認する
+
 ### P0-RS-SKIP-PURE-PY: skip_modules から pure Python モジュールを外す
 
 `check_emitter_hardcode_lint.py --lang rs` で `skip_pure_python` 違反 2 件。`mapping.json` の `skip_modules` に `pytra.std.pathlib` と `pytra.std.env` が入っているが、両方とも `@extern` なしの pure Python モジュールであり transpile すべき。正本ソースに `@extern` マーカーを足して lint を黙らせるのは禁止。
