@@ -192,6 +192,60 @@ struct IntOrStr {
 
 **再帰型であっても `object` への退化は禁止。** 各言語のポインタ / RC / GC 機構を使って ADT として表現する。
 
+## 4.1 ref class の共有参照（RC 管理）
+
+union / ADT の構成要素に ref class やミュータブルコンテナが含まれる場合、Python の参照共有セマンティクスを維持するために RC（参照カウント）が必要。各言語の対応:
+
+| 言語 | 共有参照の仕組み | 対応 |
+|---|---|---|
+| C++ | `std::shared_ptr<T>` | 標準ライブラリ |
+| Rust | `Rc<T>` / `Arc<T>` | 標準ライブラリ |
+| Swift | ARC | 言語組み込み（自動参照カウント） |
+| Nim | ARC or GC | 言語組み込み（選択可能） |
+| Zig | `SharedPtr(T)` | **自前実装が必要**（下記参照） |
+| Go / C# / Java / Kotlin / Scala / Dart | GC | RC 不要（GC が自動管理） |
+| TS / JS / Ruby / Lua / PHP / Julia | GC | RC 不要 |
+
+GC がある言語は RC 自体が不要であり、ref class もコンテナも GC が勝手に回収する。
+
+RC も GC もない言語は **Zig のみ**。Zig の Pytra runtime に `SharedPtr(T)` を自前実装する:
+
+```zig
+fn SharedPtr(comptime T: type) type {
+    return struct {
+        ptr: *T,
+        rc: *usize,
+
+        pub fn init(allocator: Allocator, value: T) !SharedPtr(T) {
+            const p = try allocator.create(T);
+            p.* = value;
+            const c = try allocator.create(usize);
+            c.* = 1;
+            return .{ .ptr = p, .rc = c };
+        }
+
+        pub fn clone(self: SharedPtr(T)) SharedPtr(T) {
+            self.rc.* += 1;
+            return self;
+        }
+
+        pub fn release(self: *SharedPtr(T), allocator: Allocator) void {
+            self.rc.* -= 1;
+            if (self.rc.* == 0) {
+                allocator.destroy(self.ptr);
+                allocator.destroy(self.rc);
+            }
+        }
+    };
+}
+```
+
+全言語で同じ意味論（共有参照 + 最後の参照者が解放）を持つ。名前は言語ごとに異なるが意味は同一:
+
+| 概念 | C++ | Rust | Zig | GC 言語 |
+|---|---|---|---|---|
+| 共有参照 | `std::shared_ptr<T>` | `Rc<T>` | `SharedPtr(T)` | 不要 |
+
 ## 5. EAST3 との関係
 
 ### 5.1 EAST3 の union 表現
