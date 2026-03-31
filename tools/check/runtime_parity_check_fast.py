@@ -313,6 +313,53 @@ def _copy_cs_runtime(emit_dir: Path) -> None:
             shutil.copy2(cs_file, dest)
 
 
+def _run_cs_via_dotnet(
+    emit_dir: Path,
+    case_path: Path,
+    *,
+    work_dir: Path,
+    env: dict[str, str],
+    timeout_sec: int,
+) -> subprocess.CompletedProcess[str]:
+    project_path = emit_dir / "PytraParity.csproj"
+    if not project_path.exists():
+        project_path.write_text(
+            "\n".join([
+                "<Project Sdk=\"Microsoft.NET.Sdk\">",
+                "  <PropertyGroup>",
+                "    <OutputType>Exe</OutputType>",
+                "    <TargetFramework>net8.0</TargetFramework>",
+                "    <ImplicitUsings>disable</ImplicitUsings>",
+                "    <Nullable>disable</Nullable>",
+                "    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>",
+                "    <LangVersion>latest</LangVersion>",
+                "  </PropertyGroup>",
+                "</Project>",
+                "",
+            ]),
+            encoding="utf-8",
+        )
+    build = run_shell(
+        "dotnet build "
+        + shlex.quote(str(project_path))
+        + " -nologo -v:q",
+        cwd=work_dir,
+        env=env,
+        timeout_sec=timeout_sec,
+    )
+    if build.returncode != 0:
+        return build
+    dll_path = emit_dir / "bin" / "Debug" / "net8.0" / "PytraParity.dll"
+    if not dll_path.exists():
+        return subprocess.CompletedProcess("", 1, "", f"dotnet output not found: {dll_path}")
+    return run_shell(
+        "dotnet " + shlex.quote(str(dll_path)),
+        cwd=work_dir,
+        env=env,
+        timeout_sec=timeout_sec,
+    )
+
+
 def _copy_ts_runtime(emit_dir: Path) -> None:
     """Copy TypeScript built-in runtime file to emit directory."""
     runtime_src = ROOT / "src" / "runtime" / "ts" / "built_in" / "py_runtime.ts"
@@ -471,6 +518,14 @@ def _run_target(
         cs_files = sorted(str(p) for p in emit_dir.rglob("*.cs"))
         if len(cs_files) == 0:
             return subprocess.CompletedProcess("", 1, "", "no .cs files found")
+        if shutil.which("mcs") is None or shutil.which("mono") is None:
+            return _run_cs_via_dotnet(
+                emit_dir,
+                case_path,
+                work_dir=work_dir,
+                env=env,
+                timeout_sec=timeout_sec,
+            )
         exe_path = emit_dir / (case_path.stem + "_cs.exe")
         cmd = (
             "mcs -warn:0 "

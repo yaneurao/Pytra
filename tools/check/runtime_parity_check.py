@@ -149,6 +149,15 @@ def _tool_env_for_target(target: Target) -> dict[str, str]:
 
 
 def can_run(target: Target) -> bool:
+    if target.name == "cs":
+        has_mono = True
+        for tool in target.needs:
+            if tool in ("mcs", "mono"):
+                if _resolve_tool_path(tool) == "":
+                    has_mono = False
+        if has_mono:
+            return True
+        return _resolve_tool_path("dotnet") != ""
     for tool in target.needs:
         if _resolve_tool_path(tool) == "":
             return False
