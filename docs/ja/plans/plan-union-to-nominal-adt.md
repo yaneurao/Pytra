@@ -18,8 +18,8 @@
 | 言語群 | union の表現 | 備考 |
 |---|---|---|
 | **Rust, Swift, Kotlin, Scala, Nim** | enum / tagged union | ネイティブサポート |
-| **Zig** | tagged union | 再帰型でポインタ必須だが tagged union 自体は使える |
-| **C++** | `std::variant` or 継承 | RC は必要なら外側で `shared_ptr` |
+| **Zig** | tagged union | 再帰型でポインタ必須。C++ と同じく再帰 ADT は RC 管理が課題 |
+| **C++** | `std::variant`（非再帰のみ） or 継承 | 再帰型は `std::variant` + ポインタだと RC 管理が壊れる。再帰 ADT は継承ベース or 既存 `object` 実装を維持 |
 | **TS/JS** | union type そのまま | 言語が union を直接サポート |
 | **C#, Java, Dart** | sealed class / abstract record | パターンマッチで網羅性チェック可能 |
 | **Go** | interface + struct | boilerplate は多いが表現可能 |
@@ -49,6 +49,22 @@ enum __Union_int_str {
 ```
 
 ただし、これは全言語で必要ではない（TS は anonymous union をそのまま使える）。言語 profile に `union_strategy: "nominal_adt" | "native_union" | "object_fallback"` を持たせ、emitter が参照する。
+
+### 再帰型の制約
+
+`JsonVal` のように自身を含む再帰的な ADT は、C++ と Zig でポインタが必要になる:
+
+- C++: `std::variant<..., std::unique_ptr<JsonVal>>` にすると RC 管理が壊れる（`unique_ptr` は共有不可、`shared_ptr` はアクセスに間接参照が必要で emitter が煩雑に）
+- Zig: 同じくポインタ必須で RC と相性が悪い
+- Rust: `Box<JsonVal>` で問題なし（所有権が明確）
+
+再帰 ADT に対する C++/Zig の選択肢:
+
+1. **継承ベース**: `class JsonVal { virtual ~JsonVal(); }` + 派生クラス。vtable で dispatch。RC は `shared_ptr<JsonVal>` で統一
+2. **既存 `object` 実装を維持**: 再帰 ADT だけ `object` ベースで処理（`type_id` + `rc<RcObject>`）
+3. **Rust 方式を模倣**: `std::variant<..., std::unique_ptr<JsonVal>>` + arena allocator で寿命管理
+
+現実的には、非再帰 union (`int | str`, `str | None`) は `std::variant` を使い、再帰 ADT (`JsonVal`) は継承ベースか既存 `object` を維持する二段構えが妥当。前回の検討で `std::variant` が全面採用できなかったのはこの再帰型の RC 問題が理由。
 
 ## `dict.items()` 等の iterable 問題との関係
 
@@ -89,7 +105,9 @@ enum __Union_int_str {
 
 ## 完了条件
 
-- `object` に退化するのは `Any` 型注釈がある場合のみ（Zig 含め全言語で nominal ADT を使用）
+- 非再帰 union は `std::variant` / enum 等の nominal ADT で表現される（`object` に退化しない）
+- 再帰 ADT は C++/Zig で継承ベース or 既存 `object` を使用（RC 管理の制約）
+- `object` に退化するのは `Any` 型注釈がある場合と再帰 ADT の C++/Zig のみ
 - union type を使った fixture が全言語で compile + run parity PASS
 - selfhost コードの `JsonVal` が `object` ではなく nominal ADT として処理される
 - box/unbox ノードが union → object 退化に起因するケースでは生成されない
