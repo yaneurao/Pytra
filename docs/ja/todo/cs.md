@@ -37,7 +37,7 @@
 3. [x] [ID: P1-CS-EMITTER-S3] fixture 全件の C# emit 成功を確認する（`runtime_parity_check_fast.py --targets cs` の既存経路で確認する。2026-03-31: fixture full sweep は 131/131 pass。`core` 22/22、`collections` 20/20、`control` 16/16、`imports` 7/7、`oop` 18/18、`strings` 12/12、`signature` 13/13、`typing` 23/23 も個別確認済み）
 4. [x] [ID: P1-CS-EMITTER-S4] C# runtime を toolchain2 の emit 出力と整合させる（旧 runtime の引き継ぎ or 再実装。2026-03-31: `src/runtime/cs/` に `type_id` / `pytra_isinstance` / container helper / `min` / `max` / display / exact POD helper を追加し、toolchain2 emit 出力と整合）
 5. [x] [ID: P1-CS-EMITTER-S5] fixture + sample の C# compile + run parity を通す（`mcs` + `mono` または `dotnet run`。2026-03-31: fixture は 131/131 pass。sample も 18/18 pass を個別 sweep で確認し、`17_monte_carlo_pi` / `18_mini_language_interpreter` を塞いでいた `pytra.std.pathlib` の `typing.cast` emit 崩れを解消）
-6. [ ] [ID: P1-CS-EMITTER-S6] stdlib の C# parity を通す（`--case-root stdlib`。2026-04-01: `runtime_parity_check_fast.py` に `dotnet` fallback を追加して `missing toolchain` を解消。実行時点で 16 cases 中 10 pass / 6 fail。残差: `json_indent_optional`, `math_extended`, `math_path_runtime_ir`, `path_stringify`, `pathlib_extended`, `re_extended`）
+6. [x] [ID: P1-CS-EMITTER-S6] stdlib の C# parity を通す（`--case-root stdlib`。2026-04-01: `runtime_parity_check_fast.py` に `dotnet` fallback を追加して `missing toolchain` を解消し、C# emitter/runtime を `Path` 型解決・optional nominal type の module qualification・cast 括弧・module-level function qualification・loop target alias・`py_runtime.index(string, string)` で補強。`PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py --targets cs --case-root stdlib` は 16/16 pass）
 
 ### P2-CS-LINT-FIX: C# emitter のハードコード違反を修正する
 

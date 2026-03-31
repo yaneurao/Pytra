@@ -105,7 +105,7 @@ def _skip_spaces(t: str, i: int) -> int:
     return i
 
 
-def match(pattern: str, text: str, flags: int = 0) -> Match | None:
+def _match_impl(pattern: str, text: str, flags: int = 0) -> Match | None:
     # ^([A-Za-z_][A-Za-z0-9_]*)\[(.*)\]$
     if pattern == r"^([A-Za-z_][A-Za-z0-9_]*)\[(.*)\]$":
         if not text.endswith("]"):
@@ -334,9 +334,9 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
         op_pos = -1
         op_txt = ""
         for op in ops:
-            p = text.find(op)
-            if p >= 0 and (op_pos < 0 or p < op_pos):
-                op_pos = p
+            found_at = text.find(op)
+            if found_at >= 0 and (op_pos < 0 or found_at < op_pos):
+                op_pos = found_at
                 op_txt = op
         if op_pos < 0:
             return None
@@ -521,7 +521,8 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
         # Validate left: dotted ident with optional [...]
         base_left = left
         if "[" in left and left.endswith("]"):
-            base_left = left[: left.index("[")]
+            bracket_pos = left.find("[")
+            base_left = left[:bracket_pos]
         if not _is_dotted_ident(base_left):
             return None
         return Match(text, [left, right])
@@ -541,14 +542,18 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
         if right == "" or "," not in left:
             return None
         parts: list[str] = left.split(",")
-        for p in parts:
-            if not _is_ident(p.strip()):
+        for part_name in parts:
+            if not _is_ident(part_name.strip()):
                 return None
         if len(parts) < 2:
             return None
         return Match(text, [left, right])
 
     raise ValueError(f"unsupported regex pattern in pytra.std.re: {pattern}")
+
+
+def match(pattern: str, text: str, flags: int = 0) -> Match | None:
+    return _match_impl(pattern, text, flags)
 
 
 class Pattern:
@@ -562,7 +567,7 @@ class Pattern:
         self._flags = flags
 
     def match(self, text: str) -> Match | None:
-        return match(self._pattern, text, self._flags)
+        return _match_impl(self._pattern, text, self._flags)
 
 
 def compile(pattern: str, flags: int = 0) -> Pattern:
@@ -574,13 +579,13 @@ def sub(pattern: str, repl: str, text: str, flags: int = 0) -> str:
     if pattern == r"\s+":
         out: list[str] = []
         in_ws = False
-        for ch in text:
-            if ch.isspace():
+        for ch_text in text:
+            if ch_text.isspace():
                 if not in_ws:
                     out.append(repl)
                     in_ws = True
             else:
-                out.append(ch)
+                out.append(ch_text)
                 in_ws = False
         return "".join(out)
 
@@ -598,9 +603,9 @@ def sub(pattern: str, repl: str, text: str, flags: int = 0) -> str:
 
     if pattern == r"[^0-9A-Za-z_]":
         out: list[str] = []
-        for ch in text:
-            if ch.isalnum() or ch == "_":
-                out.append(ch)
+        for ch_text in text:
+            if ch_text.isalnum() or ch_text == "_":
+                out.append(ch_text)
             else:
                 out.append(repl)
         return "".join(out)

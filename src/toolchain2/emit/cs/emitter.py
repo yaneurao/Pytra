@@ -47,8 +47,10 @@ class EmitContext:
     enum_constant_types: set[str] = field(default_factory=set)
     type_id_values: dict[str, int] = field(default_factory=dict)
     renamed_symbols: dict[str, str] = field(default_factory=dict)
+    module_function_names: set[str] = field(default_factory=set)
     temp_index: int = 0
     current_base_class_name: str = ""
+    current_function_name: str = ""
 
 
 def _str(node: JsonVal, key: str) -> str:
@@ -251,13 +253,55 @@ def _target_type_from_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     for key in ("decl_type", "annotation", "resolved_type"):
         text = _str(node, key)
         if text != "":
-            return _render_type(ctx, text)
+            rendered = _render_type(ctx, text)
+            qualified = _qualify_stmt_result_type(ctx, node, text, rendered)
+            if qualified != "":
+                return qualified
+            return rendered
     target = node.get("target")
     if isinstance(target, dict):
         rt = _str(target, "resolved_type")
         if rt != "":
-            return _render_type(ctx, rt)
+            rendered2 = _render_type(ctx, rt)
+            qualified2 = _qualify_stmt_result_type(ctx, node, rt, rendered2)
+            if qualified2 != "":
+                return qualified2
+            return rendered2
     return "object"
+
+
+def _qualify_stmt_result_type(
+    ctx: EmitContext,
+    node: dict[str, JsonVal],
+    resolved_type: str,
+    rendered_type: str,
+) -> str:
+    if resolved_type == "":
+        return ""
+    candidate_names = {_safe_cs_ident(resolved_type)}
+    if resolved_type.endswith(" | None"):
+        candidate_names.add(_safe_cs_ident(resolved_type[:-7].strip()))
+    if rendered_type not in candidate_names:
+        return ""
+    if resolved_type in ctx.class_names or resolved_type in ctx.trait_names or resolved_type in ctx.import_alias_modules:
+        return ""
+    value = node.get("value")
+    if not isinstance(value, dict) or _str(value, "kind") != "Call":
+        return ""
+    func = value.get("func")
+    if not isinstance(func, dict) or _str(func, "kind") != "Attribute":
+        return ""
+    owner = func.get("value")
+    if not _is_module_owner(ctx, owner):
+        return ""
+    module_id = ""
+    if isinstance(owner, dict):
+        module_id = _str(owner, "runtime_module_id")
+        if module_id == "":
+            module_id = ctx.import_alias_modules.get(_str(owner, "id"), "")
+    if module_id == "" or should_skip_module(module_id, ctx.mapping):
+        return ""
+    return _module_class_name(module_id) + "." + rendered_type
 
 
 def _render_type(ctx: EmitContext, resolved_type: str, *, for_return: bool = False) -> str:
@@ -744,6 +788,15 @@ def _emit_builtin_ctor(ctx: EmitContext, func_name: str, node: dict[str, JsonVal
     return "new " + target_type + "(" + ", ".join(args) + ")"
 
 
+def _render_cast_expr(ctx: EmitContext, node: dict[str, JsonVal], args: list[str]) -> str:
+    target_type = _render_type(ctx, _str(node, "resolved_type"))
+    if len(args) == 0:
+        return ""
+    if len(args) == 1:
+        return "((" + target_type + ")(" + args[0] + "))"
+    return "((" + target_type + ")(" + args[-1] + "))"
+
+
 def _render_param_default(
     ctx: EmitContext,
     arg_name: str,
@@ -808,9 +861,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         owner_node = func.get("value")
         attr_name = _str(func, "attr")
         if attr_name == "cast":
-            if len(args) >= 2:
-                return "((" + _render_type(ctx, _str(node, "resolved_type")) + ")" + args[1] + ")"
-            return args[-1] if len(args) > 0 else ""
+            return _render_cast_expr(ctx, node, args)
         if _is_super_call(owner_node) and ctx.current_base_class_name != "":
             return "base." + _safe_cs_ident(attr_name) + "(" + ", ".join(args) + ")"
         owner_expr = _emit_expr(ctx, owner_node)
@@ -823,9 +874,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if module_id == "":
                     module_id = ctx.import_alias_modules.get(_str(owner_node, "id"), "")
             if attr_name == "cast":
-                if len(args) >= 2:
-                    return "((" + _render_type(ctx, _str(node, "resolved_type")) + ")" + args[1] + ")"
-                return args[-1] if len(args) > 0 else ""
+                return _render_cast_expr(ctx, node, args)
             if is_cs_path_type(attr_name):
                 return "new " + _module_class_name(module_id) + ".Path(" + ", ".join(call_parts) + ")"
             resolved_module_call = _resolve_runtime_module_member(ctx.mapping, module_id, attr_name)
@@ -841,9 +890,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if isinstance(func, dict) and _str(func, "kind") == "Name":
         func_name = _str(func, "id")
         if func_name == "cast":
-            if len(args) >= 2:
-                return "((" + _render_type(ctx, _str(node, "resolved_type")) + ")" + args[1] + ")"
-            return args[-1] if len(args) > 0 else ""
+            return _render_cast_expr(ctx, node, args)
         if func_name in ctx.runtime_imports and "." in ctx.runtime_imports[func_name]:
             return _maybe_cast_dynamic_call(ctx, node, ctx.runtime_imports[func_name] + "(" + ", ".join(call_parts) + ")")
         if func_name == "str":
@@ -877,16 +924,21 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     elif builtin_name in ctx.mapping.calls:
         resolved = resolve_runtime_call(runtime_call, builtin_name, adapter, ctx.mapping)
     if resolved == "__CAST__":
-        if len(args) == 1:
-            target_type = _render_type(ctx, _str(node, "resolved_type"))
-            return "((" + target_type + ")" + args[0] + ")"
-        return args[0] if len(args) > 0 else ""
+        return _render_cast_expr(ctx, node, args)
     if resolved != "" and not resolved.startswith("__"):
         call_args = list(call_parts)
         if prepend_owner and owner_expr != "":
             call_args = [owner_expr] + call_args
         return _maybe_cast_dynamic_call(ctx, node, resolved + "(" + ", ".join(call_args) + ")")
     if isinstance(func, dict) and _str(func, "kind") == "Name":
+        if (
+            ctx.current_class_name != ""
+            and _str(func, "id") in ctx.module_function_names
+            and _str(func, "id") not in ctx.runtime_imports
+            and _str(func, "id") not in ctx.import_alias_modules
+        ):
+            qualified = _module_class_name(ctx.module_id) + "." + _safe_name(ctx, _str(func, "id"))
+            return _maybe_cast_dynamic_call(ctx, node, qualified + "(" + ", ".join(call_parts) + ")")
         return _maybe_cast_dynamic_call(ctx, node, _safe_name(ctx, _str(func, "id")) + "(" + ", ".join(call_parts) + ")")
     return _maybe_cast_dynamic_call(ctx, node, _emit_expr(ctx, func) + "(" + ", ".join(call_parts) + ")")
 
@@ -1477,6 +1529,10 @@ def _emit_for_each(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     target_kind = _str(target_node, "kind") if isinstance(target_node, dict) else ""
     loop_name = target
     declared_before = target in ctx.var_types
+    existing_type = ctx.var_types.get(target, "")
+    raw_target_name = _str(target_node, "id") if isinstance(target_node, dict) else ""
+    alias_name = ""
+    restore_alias = ""
     if target_kind == "Tuple":
         loop_name = _next_temp(ctx, "__tuple_item")
         ctx.var_types[loop_name] = "object[]"
@@ -1498,11 +1554,27 @@ def _emit_for_each(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             for bind_line in _tuple_target_bindings(ctx, target_node, loop_name, declare=True):
                 ctx.lines.append("    " * ctx.indent_level + bind_line)
         elif target_kind == "Name" and target_type == "char" and _str(target_node, "resolved_type") == "str":
-            ctx.var_types[target] = "str"
-            ctx.lines.append("    " * ctx.indent_level + "string " + target + " = " + loop_name + ".ToString();")
+            if declared_before:
+                alias_name = _next_temp(ctx, "__char_text")
+                ctx.lines.append("    " * ctx.indent_level + "string " + alias_name + " = " + loop_name + ".ToString();")
+                if raw_target_name != "":
+                    restore_alias = ctx.renamed_symbols.get(raw_target_name, "")
+                    ctx.renamed_symbols[raw_target_name] = alias_name
+            else:
+                ctx.var_types[target] = "str"
+                ctx.lines.append("    " * ctx.indent_level + "string " + target + " = " + loop_name + ".ToString();")
+        elif declared_before and target_kind in ("Name", "NameTarget") and existing_type != "" and existing_type != _str(target_node, "resolved_type"):
+            if raw_target_name != "":
+                restore_alias = ctx.renamed_symbols.get(raw_target_name, "")
+                ctx.renamed_symbols[raw_target_name] = loop_name
         elif declared_before and target_kind in ("Name", "NameTarget"):
             ctx.lines.append("    " * ctx.indent_level + target + " = " + loop_name + ";")
     _emit_stmt_list(ctx, _list(node, "body"))
+    if raw_target_name != "" and (alias_name != "" or (declared_before and existing_type != "" and existing_type != _str(target_node, "resolved_type"))):
+        if restore_alias == "":
+            ctx.renamed_symbols.pop(raw_target_name, None)
+        else:
+            ctx.renamed_symbols[raw_target_name] = restore_alias
     ctx.indent_level -= 1
     ctx.lines.append(indent + "}")
 
@@ -1585,6 +1657,8 @@ def _emit_aug_assign_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
 
 def _emit_function(ctx: EmitContext, node: dict[str, JsonVal], *, force_public: bool = True, static_method: bool = True) -> None:
+    saved_function_name = ctx.current_function_name
+    ctx.current_function_name = _str(node, "name")
     name = _safe_name(ctx, _str(node, "name"))
     return_type = _str(node, "return_type")
     if return_type == "":
@@ -1676,6 +1750,7 @@ def _emit_function(ctx: EmitContext, node: dict[str, JsonVal], *, force_public: 
     ctx.indent_level -= 1
     ctx.lines.append(indent + "}")
     ctx.var_types = saved_var_types
+    ctx.current_function_name = saved_function_name
 
 
 def _emit_class(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
@@ -1973,6 +2048,7 @@ def emit_cs_module(east3_doc: dict[str, JsonVal]) -> str:
     class_methods: dict[str, set[str]] = {}
     class_properties: dict[str, set[str]] = {}
     type_id_values: dict[str, int] = {}
+    module_function_names: set[str] = set()
     type_id_table = _dict(lp, "type_id_resolved_v1")
     for key, value in type_id_table.items():
         if isinstance(key, str) and isinstance(value, int):
@@ -2006,6 +2082,10 @@ def emit_cs_module(east3_doc: dict[str, JsonVal]) -> str:
                                 props.add(method_name)
                 class_methods[name] = methods
                 class_properties[name] = props
+        elif isinstance(stmt, dict) and _str(stmt, "kind") in ("FunctionDef", "ClosureDef"):
+            fn_name = _str(stmt, "name")
+            if fn_name != "":
+                module_function_names.add(fn_name)
 
     ctx = EmitContext(
         module_id=module_id,
@@ -2021,6 +2101,7 @@ def emit_cs_module(east3_doc: dict[str, JsonVal]) -> str:
         class_properties=class_properties,
         enum_constant_types=enum_constant_types,
         type_id_values=type_id_values,
+        module_function_names=module_function_names,
         renamed_symbols=renamed_symbols,
     )
     class_name = _module_class_name(module_id)

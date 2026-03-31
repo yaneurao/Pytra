@@ -69,7 +69,7 @@ _TYPE_MAP: dict[str, str] = {
     "Path": "string",
 }
 
-CS_PATH_TYPE_NAME = _TYPE_MAP["Path"]
+CS_PATH_TYPE_NAME = "Path"
 CS_EXCEPTION_BASE_NAME = _TYPE_MAP["Exception"]
 CS_PATH_MEMBER_NAMES: set[str] = {"parent", "parents", "name", "suffix", "stem"}
 CS_EXCEPTION_TYPE_NAMES: set[str] = {

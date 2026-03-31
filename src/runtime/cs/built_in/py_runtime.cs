@@ -765,6 +765,16 @@ namespace Pytra.CsModule
             throw new ArgumentException("value is not in list");
         }
 
+        public static long index(string source, string value)
+        {
+            int idx = source.IndexOf(value, StringComparison.Ordinal);
+            if (idx < 0)
+            {
+                throw new ArgumentException("substring is not in string");
+            }
+            return idx;
+        }
+
         public static string strip(string value)
         {
             return value.Trim();
