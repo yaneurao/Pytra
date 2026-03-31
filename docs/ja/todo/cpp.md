@@ -26,7 +26,8 @@
 
 前提: P0-EAST-TUPLE-UNPACK（infra TODO）で EAST 側のバグ 3 件（括弧付き左辺、comprehension + unpack）が修正された後に着手。
 
-1. [ ] [ID: P0-CPP-TUPLE-UNPACK-S1] `tuple_unpack_variants` fixture が C++ で compile + run parity PASS することを確認する（失敗なら emitter を修正）
+1. [x] [ID: P0-CPP-TUPLE-UNPACK-S1] `tuple_unpack_variants` fixture が C++ で compile + run parity PASS することを確認する（失敗なら emitter を修正）
+   - 完了: `tuple_unpack_variants` の C++ parity failure を parser/lowering/backend 連携で修正した。括弧付き左辺と bare RHS CSV の tuple parse、listcomp 後の tuple target 保持、nested/subscript を含む recursive tuple-unpack expansion、C++ emitter の tuple/list source 判定と unknown tuple source の `auto + std::get` fallback を追加し、`PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py --targets cpp --case-root fixture --east3-opt-level 2 tuple_unpack_variants` は PASS した。
 
 ### P0-CPP-TYPED-CONTAINER: typed_container_access fixture の C++ parity を通す
 
