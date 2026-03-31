@@ -54,25 +54,48 @@ fn process(x: IntOrStr) {
 
 | 言語 | 変換先 | isinstance 相当 |
 |---|---|---|
-| C++ | `std::variant<T1, T2, ...>` (非再帰) | `std::holds_alternative<T>(v)` / `std::visit` |
-| C++ | 継承ベース or `object` (再帰 ADT) | `dynamic_cast` / `type_id` |
+| C++ | `struct { std::variant<T1, T2, ...> value; }` | `std::holds_alternative<T>(v.value)` / `std::visit` |
 
-C++ では非再帰 union (`int | str`, `str | None`) は `std::variant` を使う。
+C++ では union を `struct` + `std::variant` の組み合わせで表現する。`using` による型エイリアスではなく `struct` で包む理由は:
 
-再帰 ADT (`JsonVal` のように自身を含む型) は `std::variant` + ポインタだと RC 管理が壊れるため、継承ベースか既存 `object` 実装を維持する。
+- `using` は定義時点で右辺の型が完全でなければならず、再帰型で前方参照できない
+- `struct` は宣言した時点で型名が存在し、メンバ定義は閉じ括弧までに確定すればよい
+- 再帰型の variant メンバ（`shared_ptr<vector<Self>>`）はポインタなので `Self` のサイズが未確定でも OK
+
+非再帰・再帰を問わず `struct` + `variant` で統一することで、emitter の出力パターンが1つになる。
 
 例（C++、非再帰）:
 ```cpp
-using IntOrStr = std::variant<int64_t, std::string>;
+struct IntOrStr {
+    std::variant<int64_t, std::string> value;
+};
 
-void process(IntOrStr x) {
-    if (std::holds_alternative<int64_t>(x)) {
-        std::cout << std::get<int64_t>(x) << std::endl;
+void process(const IntOrStr& x) {
+    if (std::holds_alternative<int64_t>(x.value)) {
+        std::cout << std::get<int64_t>(x.value) << std::endl;
     } else {
-        std::cout << std::get<std::string>(x) << std::endl;
+        std::cout << std::get<std::string>(x.value) << std::endl;
     }
 }
 ```
+
+例（C++、再帰 — JsonVal）:
+```cpp
+struct JsonVal {
+    struct Null {};
+    std::variant<
+        int64_t,
+        double,
+        bool,
+        std::string,
+        Null,
+        std::shared_ptr<std::vector<JsonVal>>,
+        std::shared_ptr<std::map<std::string, JsonVal>>
+    > value;
+};
+```
+
+再帰 variant は `shared_ptr` で包むことで RC 管理と前方参照を両立する。
 
 ### 3.3 sealed class / abstract record を持つ言語
 
