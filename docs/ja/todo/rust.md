@@ -27,6 +27,14 @@
 
 ## 未完了タスク
 
+### P0-RS-TYPED-CONTAINER: typed_container_access fixture の Rust parity を通す
+
+文脈: [docs/ja/plans/plan-typed-container-access-parity.md](../plans/plan-typed-container-access-parity.md)
+
+selfhost で必要な 4 パターン（dict.items() tuple unpack, typed dict.get(), typed list index, str cast）を網羅する fixture。EAST3 には全て情報が載っており、emitter が既存フィールドを正しく読めば解決する。
+
+1. [ ] [ID: P0-RS-TYPED-S1] `typed_container_access` fixture が Rust で compile + run parity PASS することを確認する（失敗なら emitter を修正）
+
 ### P0-LINKER-RECEIVER-HINT: linker に receiver_storage_hint を追加
 
 文脈: [docs/ja/plans/plan-common-renderer-peer-class-info.md](../plans/plan-common-renderer-peer-class-info.md)

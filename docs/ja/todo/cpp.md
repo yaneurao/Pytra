@@ -20,6 +20,14 @@
 
 ## 未完了タスク
 
+### P0-CPP-TYPED-CONTAINER: typed_container_access fixture の C++ parity を通す
+
+文脈: [docs/ja/plans/plan-typed-container-access-parity.md](../plans/plan-typed-container-access-parity.md)
+
+selfhost で必要な 4 パターン（dict.items() tuple unpack, typed dict.get(), typed list index, str cast）を網羅する fixture。EAST3 には全て情報が載っており、emitter が既存フィールドを正しく読めば解決する。
+
+1. [ ] [ID: P0-CPP-TYPED-S1] `typed_container_access` fixture が C++ で compile + run parity PASS することを確認する（失敗なら emitter を修正）
+
 ### P0-CPP-IN-MEMBERSHIP: in_membership_iterable fixture の C++ parity を通す
 
 `test/fixture/source/py/collections/in_membership_iterable.py` が C++ で FAIL。大きい tuple (20要素)、range(1000)、range with step、str の `in`/`not in` を含むケース。C++ emitter / runtime が iterable の汎用 `contains` として正しく処理できていない可能性。
