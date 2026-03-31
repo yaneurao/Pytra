@@ -17,7 +17,12 @@ from toolchain2.emit.common.code_emitter import (
 )
 from toolchain2.emit.common.common_renderer import CommonRenderer
 from toolchain2.emit.common.profile_loader import load_profile_doc
-from toolchain2.emit.cs.types import _safe_cs_ident, cs_type, cs_zero_value
+from toolchain2.emit.cs.types import (
+    _safe_cs_ident, cs_type, cs_zero_value,
+    CS_PATH_MEMBER_NAMES, CS_EXCEPTION_BASE_NAME,
+    PYTRA_STD_MODULE_PREFIX, PYTRA_BUILTIN_MODULE_PREFIX,
+    is_cs_exception_type, is_cs_path_type, is_pytra_type_id_name,
+)
 from toolchain2.link.expand_defaults import expand_cross_module_defaults
 
 
@@ -137,8 +142,8 @@ def _module_mapping_candidates(module_id: str) -> list[str]:
     out: list[str] = []
     for candidate in (
         module_id,
-        module_id[len("pytra.std."):] if module_id.startswith("pytra.std.") else "",
-        module_id[len("pytra.built_in."):] if module_id.startswith("pytra.built_in.") else "",
+        module_id[len(PYTRA_STD_MODULE_PREFIX):] if module_id.startswith(PYTRA_STD_MODULE_PREFIX) else "",
+        module_id[len(PYTRA_BUILTIN_MODULE_PREFIX):] if module_id.startswith(PYTRA_BUILTIN_MODULE_PREFIX) else "",
         module_id.split(".")[-1],
     ):
         if candidate != "" and candidate not in out:
@@ -160,7 +165,7 @@ def _resolve_runtime_module_member(mapping: RuntimeMapping, module_id: str, memb
             return mapped2
     if module_id != "" and not should_skip_module(module_id, mapping):
         return _module_class_name(module_id) + "." + safe_member
-    if module_id.startswith("pytra.std."):
+    if module_id.startswith(PYTRA_STD_MODULE_PREFIX):
         return module_id.split(".")[-1] + "_native." + safe_member
     return ""
 
@@ -260,7 +265,7 @@ def _render_type(ctx: EmitContext, resolved_type: str, *, for_return: bool = Fal
         return "long"
     if resolved_type in ctx.class_names:
         return _safe_name(ctx, resolved_type)
-    if resolved_type == "Path" and resolved_type in ctx.import_alias_modules:
+    if is_cs_path_type(resolved_type) and resolved_type in ctx.import_alias_modules:
         module_id = ctx.import_alias_modules.get(resolved_type, "")
         if module_id != "" and not should_skip_module(module_id, ctx.mapping):
             return _module_class_name(module_id) + "." + _safe_name(ctx, resolved_type)
@@ -329,7 +334,7 @@ def _expected_type_id_expr(ctx: EmitContext, node: JsonVal) -> str:
     type_name = _str(node, "type_object_of")
     if type_name == "":
         type_name = _str(node, "id")
-    if type_name.startswith("PYTRA_TID_"):
+    if is_pytra_type_id_name(type_name):
         return "py_runtime." + type_name
     builtin = _builtin_type_id_expr(type_name)
     if builtin != "":
@@ -376,7 +381,7 @@ def _emit_constant(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
 def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     ident = _str(node, "id")
-    if ident.startswith("PYTRA_TID_"):
+    if is_pytra_type_id_name(ident):
         return "py_runtime." + ident
     builtin_tid_alias = _builtin_type_id_alias_expr(ident)
     if builtin_tid_alias != "":
@@ -576,7 +581,7 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     owner = _emit_expr(ctx, owner_node)
     attr = _safe_cs_ident(attr_name)
     owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
-    if owner_type == "Path" and attr_name in ("parent", "parents", "name", "suffix", "stem"):
+    if is_cs_path_type(owner_type) and attr_name in CS_PATH_MEMBER_NAMES:
         return owner + "." + attr + "()"
     if attr_name in ctx.class_properties.get(owner_type, set()):
         return owner + "." + attr + "()"
@@ -732,7 +737,7 @@ def _emit_builtin_ctor(ctx: EmitContext, func_name: str, node: dict[str, JsonVal
         return "new " + target_type + "(" + args[0] + ")"
     if func_name == "tuple":
         return "new " + target_type + " { " + ", ".join(args) + " }"
-    if func_name in ("Exception", "BaseException", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError", "NameError", "SystemExit"):
+    if is_cs_exception_type(func_name):
         if len(args) == 0:
             return "new " + target_type + "()"
         return "new " + target_type + "(" + ", ".join(args) + ")"
@@ -821,7 +826,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if len(args) >= 2:
                     return "((" + _render_type(ctx, _str(node, "resolved_type")) + ")" + args[1] + ")"
                 return args[-1] if len(args) > 0 else ""
-            if attr_name == "Path":
+            if is_cs_path_type(attr_name):
                 return "new " + _module_class_name(module_id) + ".Path(" + ", ".join(call_parts) + ")"
             resolved_module_call = _resolve_runtime_module_member(ctx.mapping, module_id, attr_name)
             if resolved_module_call != "":
@@ -845,7 +850,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if len(args) == 0:
                 return "\"\""
             return "py_runtime.py_to_string(" + args[0] + ")"
-        if func_name == "Path" and func_name in ctx.import_alias_modules:
+        if is_cs_path_type(func_name) and func_name in ctx.import_alias_modules:
             module_id = ctx.import_alias_modules.get(func_name, "")
             if module_id != "" and not should_skip_module(module_id, ctx.mapping):
                 return "new " + _module_class_name(module_id) + "." + _safe_name(ctx, func_name) + "(" + ", ".join(call_parts) + ")"
@@ -1269,7 +1274,7 @@ class _CsStmtCommonRenderer(CommonRenderer):
         if name == "":
             name = "ex"
         type_node = handler.get("type")
-        type_name = "Exception"
+        type_name = CS_EXCEPTION_BASE_NAME
         if isinstance(type_node, dict):
             if _str(type_node, "kind") == "Name":
                 type_name = cs_type(_str(type_node, "id"), mapping=self.ctx.mapping)
@@ -1627,7 +1632,7 @@ def _emit_function(ctx: EmitContext, node: dict[str, JsonVal], *, force_public: 
         safe_vararg = _safe_name(ctx, vararg_name)
         vararg_list_type = "list[" + vararg_type + "]"
         ctx.var_types[safe_vararg] = vararg_list_type
-        if ctx.current_class_name == "Path" and _str(node, "name") == "joinpath":
+        if is_cs_path_type(ctx.current_class_name) and _str(node, "name") == "joinpath":
             params.append("params object[] " + safe_vararg)
         else:
             params.append(_render_type(ctx, vararg_list_type) + " " + safe_vararg)
