@@ -30,6 +30,15 @@ parity check の PASS 件数が変化したタイミングで `progress-preview/
 2. [x] [ID: P0-CHANGELOG-S2] `runtime_parity_check.py`（非 fast 版）にも同様のロジックを追加する — `_save_parity_results` 内に `prev_pass`/`curr_pass` 計算と `_append_parity_changelog` 呼び出しを追加
 3. [x] [ID: P0-CHANGELOG-S3] 動作確認 — parity check 実行後に changelog.md が正しく更新されることを確認する — ユニットテストで新規作成・行挿入・変化なし時スキップを確認
 
+### P1-LINT-CHANGELOG: emitter lint 変化点ログの自動記録
+
+文脈: [docs/ja/plans/plan-lint-changelog.md](../plans/plan-lint-changelog.md)
+
+emitter lint（ハードコード違反検出）の `pass_cats` が変化したタイミングで `progress-preview/changelog.md` に自動追記する。parity changelog と同じ `_append_parity_changelog` を `case_root="lint"` で再利用する。
+
+1. [x] [ID: P1-LINT-CHANGELOG-S1] `check_emitter_hardcode_lint.py` の `_write_results()` で既存 `emitter_lint.json` と比較し、変化があれば `_append_parity_changelog` を呼び出す — `case_root="lint"` で再利用。ロック・クールダウンも既存実装が適用される
+2. [x] [ID: P1-LINT-CHANGELOG-S2] 動作確認 — lint 実行後に changelog.md が正しく更新されることを確認する — pass_cats 変化時に `| ts | rs | lint | 4→6 (+2) |` 形式で先頭に挿入されることを確認
+
 ### P20-DATA-DRIVEN-TESTS: パイプライン系テストのデータ駆動化
 
 文脈: [docs/ja/plans/plan-emit-expect-data-driven-tests.md](../plans/plan-emit-expect-data-driven-tests.md)

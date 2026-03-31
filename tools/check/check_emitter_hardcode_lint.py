@@ -491,6 +491,17 @@ def write_progress_pages(
     parity_dir.mkdir(parents=True, exist_ok=True)
     json_path = parity_dir / "emitter_lint.json"
     total_cats = len(CATEGORIES)
+
+    # Load previous results for changelog comparison [P1-LINT-CHANGELOG-S1]
+    prev_pass_cats: dict[str, int | None] = {}
+    if json_path.exists():
+        try:
+            prev = json.loads(json_path.read_text(encoding="utf-8"))
+            for lang, data in prev.get("langs", {}).items():
+                prev_pass_cats[lang] = data.get("pass_cats")
+        except Exception:
+            pass
+
     json_data = {
         "timestamp": now,
         "langs": {
@@ -504,6 +515,24 @@ def write_progress_pages(
     }
     json_path.write_text(json.dumps(json_data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"  -> {json_path.relative_to(ROOT)}")
+
+    # Append changelog entries for changed langs [P1-LINT-CHANGELOG-S1]
+    try:
+        import sys as _sys
+        _tools_check = str(ROOT / "tools" / "check")
+        if _tools_check not in _sys.path:
+            _sys.path.insert(0, _tools_check)
+        from runtime_parity_check import _append_parity_changelog  # type: ignore
+        for lang, data in json_data["langs"].items():
+            curr = data.get("pass_cats")
+            if curr is None:
+                continue
+            prev = prev_pass_cats.get(lang)
+            if prev is None:
+                continue
+            _append_parity_changelog(lang, "lint", int(prev), int(curr), now)
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------------------
