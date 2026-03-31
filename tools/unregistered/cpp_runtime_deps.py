@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if str(ROOT / "src") not in sys.path:
@@ -87,6 +87,8 @@ def runtime_cpp_candidates_from_header(header: Path) -> list[Path]:
         out.append(header.with_name(name[:-len(".gen.h")] + ".ext.cpp"))
     elif name.endswith(".ext.h"):
         out.append(header.with_name(name[:-len(".ext.h")] + ".ext.cpp"))
+    if len(out) == 0:
+        out.extend(_runtime_cpp_candidates_from_generated_emit_header(header))
     return out
 
 
@@ -170,6 +172,24 @@ def _runtime_cpp_sources_from_header(header: Path) -> list[Path]:
     return []
 
 
+def _runtime_cpp_candidates_from_generated_emit_header(header: Path) -> list[Path]:
+    if header.suffix != ".h":
+        return []
+    bucket = header.parent.name
+    if bucket not in {"built_in", "std", "utils", "compiler"}:
+        return []
+    canonical = ROOT / "src" / "runtime" / "east" / bucket / header.name
+    if not canonical.exists():
+        return []
+    canonical_cpp = canonical.with_suffix(".cpp")
+    if canonical_cpp.exists():
+        return [canonical_cpp.resolve()]
+    indexed = _runtime_cpp_sources_from_header(canonical)
+    if len(indexed) > 0:
+        return indexed
+    return []
+
+
 def _load_header_source_index() -> dict[str, list[Path]]:
     global _HEADER_SOURCE_INDEX
     if isinstance(_HEADER_SOURCE_INDEX, dict):
@@ -238,7 +258,7 @@ def collect_runtime_cpp_sources(module_sources: list[str], include_dir: Path) ->
         if node in seen_nodes or not node.exists():
             continue
         seen_nodes.add(node)
-        if str(node).startswith(str(RUNTIME_ROOT)):
+        if node.suffix == ".h":
             for cpp_path in runtime_cpp_candidates_from_header(node):
                 if not cpp_path.exists():
                     continue

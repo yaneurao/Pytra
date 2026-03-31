@@ -212,3 +212,30 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
         self.assertNotIn("src/runtime/east/built_in/predicates.cpp", runtime_sources)
         self.assertNotIn("src/runtime/east/built_in/sequence.cpp", runtime_sources)
         self.assertNotIn("src/runtime/east/built_in/iter_ops.cpp", runtime_sources)
+
+    def test_collect_runtime_sources_from_generated_emit_runtime_header_maps_to_runtime_east_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            workdir = Path(td)
+            emit_dir = workdir / "emit"
+            (emit_dir / "built_in").mkdir(parents=True, exist_ok=True)
+            src = emit_dir / "main.cpp"
+            src.write_text(
+                '\n'.join(
+                    [
+                        '#include "built_in/string_ops.h"',
+                        "",
+                        "int main() {",
+                        '    return py_upper(str("a")) == str("A") ? 0 : 1;',
+                        "}",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (emit_dir / "built_in" / "string_ops.h").write_text(
+                "#pragma once\nstr py_upper(const str& s);\n",
+                encoding="utf-8",
+            )
+            runtime_sources = collect_runtime_cpp_sources([str(src)], emit_dir)
+
+        self.assertIn("src/runtime/east/built_in/string_ops.cpp", runtime_sources)
