@@ -1189,6 +1189,9 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     # Module attribute (e.g. math.pi, env.target) → use just the attr name (resolved to runtime)
     if obj_type == "module" or obj_id in ctx.import_alias_modules:
         module_id = ctx.import_alias_modules.get(obj_id, obj_id if obj_type == "module" else "")
+        qualified = obj_id + "." + attr if obj_id != "" else ""
+        if qualified in ctx.mapping.calls:
+            return ctx.mapping.calls[qualified]
         is_emitted_pytra_module = (
             module_id.startswith("pytra.")
             and not should_skip_module(module_id, ctx.mapping)
@@ -1205,10 +1208,6 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         if is_emitted_pytra_module:
             return safe_rs_ident(attr)
         runtime_symbol = _str(node, "runtime_symbol") or attr
-        # First try qualified name (alias.attr) in mapping.calls — handles "env.target": "\"rs\""
-        qualified = obj_id + "." + attr if obj_id != "" else ""
-        if qualified in ctx.mapping.calls:
-            return ctx.mapping.calls[qualified]
         resolved_runtime_call = _str(node, "resolved_runtime_call")
         runtime_call = _str(node, "runtime_call")
         resolved = resolve_runtime_symbol_name(runtime_symbol, ctx.mapping, resolved_runtime_call=resolved_runtime_call, runtime_call=runtime_call)

@@ -115,7 +115,14 @@
     "perf_counter": "perf_counter",
     "pytra_isinstance": "py_is_subtype",
     "png.write_rgb_png": "write_rgb_png",
-    "gif.save_gif": "save_gif"
+    "gif.save_gif": "save_gif",
+    "join": "py_join",
+    "splitext": "py_splitext",
+    "basename": "py_basename",
+    "dirname": "py_dirname",
+    "exists": "py_exists",
+    "glob": "py_glob",
+    "getcwd": "py_getcwd"
   },
   "module_native_files": {
     "pytra.std.math": "math_native.rs",
@@ -132,9 +139,7 @@
     "pytra.std.math",
     "pytra.std.os",
     "pytra.std.os_path",
-    "pytra.std.random",
     "pytra.std.sys",
-    "pytra.std.env",
     "pytra.std.time",
     "pytra.core."
   ]
