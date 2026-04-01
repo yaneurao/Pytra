@@ -146,6 +146,8 @@ def _java_ref_type(type_name: Any) -> str:
         return "pathlib.Path"
     if tn == "PyFile":
         return "PyRuntime.PyFile"
+    if tn == "callable" or tn.startswith("callable["):
+        return "java.util.function.Function<Object, Object>"
     if tn in {"bytes", "bytearray"}:
         return "java.util.ArrayList<Long>"
     if tn.startswith("list["):
@@ -197,6 +199,8 @@ def _java_type(type_name: Any, *, allow_void: bool) -> str:
         return "pathlib.Path"
     if tn == "PyFile":
         return "PyRuntime.PyFile"
+    if tn == "callable" or tn.startswith("callable["):
+        return "java.util.function.Function<Object, Object>"
     if tn == "bytes":
         return "java.util.ArrayList<Long>"
     if tn == "bytearray":
@@ -413,6 +417,22 @@ def _render_name_expr(expr: dict[str, Any]) -> str:
     relative_alias = _RELATIVE_IMPORT_NAME_ALIASES.get(ident, "")
     if relative_alias != "":
         return relative_alias
+    raw_id = expr.get("id")
+    if isinstance(raw_id, str) and raw_id in _CURRENT_FUNCTION_NAMES_JAVA[0]:
+        sig = _CURRENT_FUNCTION_SIGS_JAVA[0].get(raw_id)
+        if isinstance(sig, dict):
+            arg_order_any = sig.get("arg_order")
+            arg_order = arg_order_any if isinstance(arg_order_any, list) else []
+            arg_types_any = sig.get("arg_types")
+            arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
+            if len(arg_order) == 1:
+                arg_name = arg_order[0]
+                if isinstance(arg_name, str):
+                    arg_type_raw = arg_types.get(arg_name)
+                    arg_type = _java_type(arg_type_raw, allow_void=False)
+                    if arg_type == "void":
+                        arg_type = "Object"
+                    return "(__py_arg) -> " + _safe_ident(raw_id, "fn") + "(" + _cast_from_object("__py_arg", arg_type) + ")"
     return ident
 
 
@@ -790,6 +810,9 @@ _CURRENT_IMPORT_SYMBOLS: dict[str, dict[str, str]] = {}
 _RELATIVE_IMPORT_NAME_ALIASES: dict[str, str] = {}
 _IMPORT_ALIAS_MAP: list[dict[str, str]] = [{}]
 _CURRENT_MODULE_ID_JAVA: list[str] = [""]
+_CURRENT_CLASS_NAME_JAVA: list[str] = [""]
+_CURRENT_FUNCTION_NAMES_JAVA: list[set[str]] = [set()]
+_CURRENT_FUNCTION_SIGS_JAVA: list[dict[str, dict[str, Any]]] = [{}]
 _PENDING_CLOSURE_HELPERS: list[dict[str, Any]] = []
 _CURRENT_CLOSURE_HELPERS: list[dict[str, dict[str, Any]]] = [{}]
 
@@ -1308,6 +1331,18 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return "\"\""
         return _render_expr(args[0])
     func_any = expr.get("func")
+    if isinstance(func_any, dict) and func_any.get("kind") == "Name":
+        func_resolved = func_any.get("resolved_type")
+        func_resolved_str = func_resolved if isinstance(func_resolved, str) else ""
+        func_ident_any = func_any.get("id")
+        func_ident = func_ident_any if isinstance(func_ident_any, str) else ""
+        if (func_resolved_str == "callable" or func_resolved_str.startswith("callable[")) and func_ident not in _CURRENT_FUNCTION_NAMES_JAVA[0]:
+            func_expr = _safe_ident(func_ident, "fn")
+            arg_expr = _render_expr(args[0]) if len(args) > 0 else "null"
+            result_expr = func_expr + ".apply(" + arg_expr + ")"
+            resolved_java = _java_type(resolved_type, allow_void=False)
+            return _cast_from_object(result_expr, resolved_java)
+    func_any = expr.get("func")
     if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
         attr_name = _safe_ident(func_any.get("attr"), "")
         owner_for_super = func_any.get("value")
@@ -1334,11 +1369,16 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     si += 1
                 return java_call + "(" + ", ".join(rendered_stdlib_args) + ")"
         owner_expr = _render_expr(func_any.get("value"))
+        owner_resolved = owner_any.get("resolved_type") if isinstance(owner_any, dict) else ""
         if attr_name == "append" and len(args) == 1:
-            return owner_expr + ".add(" + _render_expr(args[0]) + ")"
+            arg_expr = _render_expr(args[0])
+            if isinstance(owner_resolved, str) and owner_resolved.startswith("list["):
+                elem_parts = _split_type_args(owner_resolved, "list")
+                if len(elem_parts) == 1:
+                    arg_expr = _cast_from_object(arg_expr, _java_type(elem_parts[0], allow_void=False))
+            return owner_expr + ".add(" + arg_expr + ")"
         if attr_name == "extend" and len(args) == 1:
             return owner_expr + ".addAll(" + _render_expr(args[0]) + ")"
-        owner_resolved = owner_any.get("resolved_type") if isinstance(owner_any, dict) else ""
         if isinstance(owner_resolved, str) and owner_resolved.startswith("dict[") and len(args) == 0:
             if attr_name == "keys":
                 return "PyRuntime.pyDictKeys(" + owner_expr + ")"
@@ -1354,6 +1394,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return "PyRuntime.__pytra_str_isdigit(" + owner_expr + ")"
         if attr_name == "isalpha" and len(args) == 0:
             return "PyRuntime.__pytra_str_isalpha(" + owner_expr + ")"
+        if attr_name == "upper" and len(args) == 0:
+            return owner_expr + ".toUpperCase()"
         if attr_name == "to_bytes" and len(args) >= 2:
             return (
                 "PyRuntime.__pytra_int_to_bytes("
@@ -2453,6 +2495,8 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             typed_ctor = _typed_empty_ctor(value_expr, expected_type)
             if isinstance(typed_ctor, str):
                 rendered = typed_ctor
+            if isinstance(value_expr, dict) and value_expr.get("kind") == "Call" and isinstance(value_expr.get("resolved_type"), str) and value_expr.get("resolved_type") == "unknown":
+                rendered = _cast_from_object(rendered, expected_type)
             return [indent + "return " + rendered + ";"]
         return [indent + "return;"]
     if kind == "Expr":
@@ -3137,11 +3181,17 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main",
     prev_relative_import_aliases = dict(_RELATIVE_IMPORT_NAME_ALIASES)
     prev_pending_closure_helpers = list(_PENDING_CLOSURE_HELPERS)
     prev_current_closure_helpers = dict(_CURRENT_CLOSURE_HELPERS[0])
+    prev_current_class_name = _CURRENT_CLASS_NAME_JAVA[0]
+    prev_current_function_names = set(_CURRENT_FUNCTION_NAMES_JAVA[0])
+    prev_current_function_sigs = dict(_CURRENT_FUNCTION_SIGS_JAVA[0])
     try:
         _CURRENT_IMPORT_SYMBOLS.clear()
         _RELATIVE_IMPORT_NAME_ALIASES.clear()
         _PENDING_CLOSURE_HELPERS.clear()
         _CURRENT_CLOSURE_HELPERS[0] = {}
+        _CURRENT_CLASS_NAME_JAVA[0] = ""
+        _CURRENT_FUNCTION_NAMES_JAVA[0] = set()
+        _CURRENT_FUNCTION_SIGS_JAVA[0] = {}
         _RELATIVE_IMPORT_NAME_ALIASES.update(_collect_relative_import_name_aliases(east_doc))
         meta = east_doc.get("meta") if isinstance(east_doc.get("meta"), dict) else {}
         from toolchain.emit.common.emitter.code_emitter import build_import_alias_map
@@ -3176,6 +3226,7 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main",
             # Sub-module: use module stem as class name
             parts = emit_module_id.split(".")
             main_class = _safe_ident(parts[-1] if len(parts) > 0 else class_name, "Module")
+        _CURRENT_CLASS_NAME_JAVA[0] = main_class
         functions: list[dict[str, Any]] = []
         classes: list[dict[str, Any]] = []
         i = 0
@@ -3186,6 +3237,10 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main",
                 kind = nd2.get("kind")
                 if kind == "FunctionDef":
                     functions.append(node)
+                    fn_name = nd2.get("name")
+                    if isinstance(fn_name, str) and fn_name != "":
+                        _CURRENT_FUNCTION_NAMES_JAVA[0].add(fn_name)
+                        _CURRENT_FUNCTION_SIGS_JAVA[0][fn_name] = nd2
                 elif kind == "ClassDef":
                     classes.append(node)
             i += 1
@@ -3328,3 +3383,6 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main",
         _PENDING_CLOSURE_HELPERS.clear()
         _PENDING_CLOSURE_HELPERS.extend(prev_pending_closure_helpers)
         _CURRENT_CLOSURE_HELPERS[0] = prev_current_closure_helpers
+        _CURRENT_CLASS_NAME_JAVA[0] = prev_current_class_name
+        _CURRENT_FUNCTION_NAMES_JAVA[0] = prev_current_function_names
+        _CURRENT_FUNCTION_SIGS_JAVA[0] = prev_current_function_sigs

@@ -45,7 +45,7 @@ Java は `instanceof` がネイティブにあるので `pytra_built_in_type_id_
 1. [x] [ID: P0-JAVA-NEWFIX-S1] `tuple_unpack_variants` が Java で compile + run parity PASS することを確認する（2026-04-01）— old EAST3 lowering の nested `FunctionDef -> ClosureDef` / non-Name listcomp target assignment 漏れを修正し、Java emitter の `ClosureDef` helper emit・unpack・`try/catch`・dynamic Eq・`print(bool)` を補正して `pytra-cli.py --target java --run` で `True`
 2. [x] [ID: P0-JAVA-NEWFIX-S2] `typed_container_access` が Java で compile + run parity PASS することを確認する（2026-04-01）— Java emitter に `dict.items/keys/values` lowering、`tuple_expanded` runtime-iter unpack、container assignment cast 補正、tuple 型の Java 化を追加し、`pytra-cli.py --target java --run` で `True`
 3. [x] [ID: P0-JAVA-NEWFIX-S3] `in_membership_iterable` が Java で compile + run parity PASS することを確認する（2026-04-01）— Java emitter の `In/NotIn` を `PyRuntime.pyIn` ベースへ寄せ、`range` を `PyRuntime.pyRange`、`set[T]` を `LinkedHashSet<T>` に lowering して `pytra-cli.py --target java --run` で `True`
-4. [ ] [ID: P0-JAVA-NEWFIX-S4] `callable_higher_order` が Java で compile + run parity PASS することを確認する
+4. [x] [ID: P0-JAVA-NEWFIX-S4] `callable_higher_order` が Java で compile + run parity PASS することを確認する（2026-04-01）— Java emitter に `callable` を `Function<Object,Object>` として扱う最小 higher-order support を追加し、関数値を cast 付き lambda に lowering、callable 呼び出しを `.apply(...)` に変換して `pytra-cli.py --target java --run` で `True`
 5. [ ] [ID: P0-JAVA-NEWFIX-S5] `object_container_access` が Java で compile + run parity PASS することを確認する
 
 ### P0-JAVA-LINT-V2: emitter hardcode lint の Java 残件を解消する
