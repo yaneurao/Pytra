@@ -6,6 +6,14 @@
 
 このドキュメントは、新しいターゲット言語の backend（emitter）を実装するとき、および既存 emitter をメンテナンスするときに従う規約です。
 
+## 0. パイプライン正本
+
+**emitter の正本は `src/toolchain2/emit/<lang>/` である。** 旧 toolchain1（`src/toolchain/emit/<lang>/`）は互換レイヤであり、新規開発・修正の対象ではない。
+
+- parity check は `runtime_parity_check_fast.py` を使う。これは toolchain2 パイプラインを通る。
+- 旧 `runtime_parity_check.py` は遅い互換スクリプトで、使用時に WARNING が表示される。
+- 旧 toolchain1 emitter のバグを修正しても、toolchain2 側に反映されなければ意味がない。
+
 ## 1. 原則
 
 - emitter は **EAST3 の情報だけ** を使ってコードを生成する。モジュール名やパスのハードコード禁止。
