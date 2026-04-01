@@ -239,6 +239,38 @@ def _check_skip_pure_python(lang_key: str) -> list[tuple[str, str, Path, int, st
     return hits
 
 
+RUNTIME_LINT_CACHE = ROOT / ".parity-results" / "emitter_lint_runtime.json"
+
+
+def _save_runtime_hits(hits: list[tuple[str, str, Path, int, str]], now: str) -> None:
+    """Save runtime lint hits to a JSON cache so that non-runtime runs can merge them."""
+    import json as _json
+    entries = [
+        {"lang": lang, "cat": cat, "file": str(fpath.relative_to(ROOT)), "lineno": lineno, "line": line}
+        for lang, cat, fpath, lineno, line in hits
+    ]
+    RUNTIME_LINT_CACHE.parent.mkdir(parents=True, exist_ok=True)
+    RUNTIME_LINT_CACHE.write_text(
+        _json.dumps({"timestamp": now, "hits": entries}, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _load_runtime_hits_cache() -> list[tuple[str, str, Path, int, str]]:
+    """Load previously saved runtime lint hits from cache."""
+    import json as _json
+    if not RUNTIME_LINT_CACHE.exists():
+        return []
+    try:
+        data = _json.loads(RUNTIME_LINT_CACHE.read_text(encoding="utf-8"))
+        return [
+            (e["lang"], e["cat"], ROOT / e["file"], e["lineno"], e["line"])
+            for e in data.get("hits", [])
+        ]
+    except Exception:
+        return []
+
+
 def collect_runtime_hits(
     filter_lang: str | None,
     filter_cat: str | None,
@@ -562,7 +594,10 @@ def _render_md(
     sep    = cat_sep + " | " + " | ".join(["---:"] * len(langs)) + " |"
     lines.append(header)
     lines.append(sep)
-    for cat, label in CATEGORY_LABELS.items():
+    all_labels = _all_category_labels(mat)
+    for cat, label in all_labels.items():
+        if cat not in mat:
+            continue
         cells = [_cell(mat[cat][l]) for l in langs]
         lines.append(f"| {label.strip()} | " + " | ".join(cells) + " |")
     # Totals rows [P0-PROGRESS-SUMMARY-S3]
@@ -615,7 +650,7 @@ def write_progress_pages(
     parity_dir = ROOT / ".parity-results"
     parity_dir.mkdir(parents=True, exist_ok=True)
     json_path = parity_dir / "emitter_lint.json"
-    total_cats = len(CATEGORIES)
+    total_cats = len(mat)
 
     # Load previous results for changelog comparison [P1-LINT-CHANGELOG-S1]
     prev_pass_cats: dict[str, int | None] = {}
@@ -679,8 +714,15 @@ def main() -> int:
     args = parser.parse_args()
 
     hits = collect_hits(args.lang, args.category)
+    runtime_hits: list[tuple[str, str, Path, int, str]] = []
     if args.include_runtime:
-        hits.extend(collect_runtime_hits(args.lang, args.category))
+        runtime_hits = collect_runtime_hits(args.lang, args.category)
+    else:
+        # Load cached runtime lint results so they are not lost on non-runtime runs
+        runtime_hits = _load_runtime_hits_cache()
+    hits.extend(runtime_hits)
+    # Always merge runtime categories into matrix when runtime hits exist
+    has_runtime = len(runtime_hits) > 0
 
     # 全18言語を README バッジ順で固定（toolchain2 未実装言語は 🟩0 で表示）
     if args.lang:
@@ -694,8 +736,12 @@ def main() -> int:
     total = len(hits)
     print(f"\n=== emitter hardcode lint — {total} 件の違反 ===\n")
 
-    mat = build_matrix(hits, all_langs, include_runtime=args.include_runtime)
+    mat = build_matrix(hits, all_langs, include_runtime=has_runtime)
     print_matrix(mat, all_langs)
+
+    # Save runtime hits to cache when --include-runtime is used
+    if args.include_runtime:
+        _save_runtime_hits(runtime_hits, now)
 
     if args.verbose and hits:
         print("\n--- 詳細 ---")
