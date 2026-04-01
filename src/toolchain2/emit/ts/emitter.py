@@ -2669,7 +2669,7 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         instance_fields = [(fn, ft) for fn, ft in fields if fn not in static_field_names]
         for fname, ftype in instance_fields:
             ann = _type_annotation(ctx, ftype)
-            _emit(ctx, fname + ann + ";")
+            _emit(ctx, fname + "!" + ann + ";")
         if len(instance_fields) > 0:
             _emit_blank(ctx)
 
