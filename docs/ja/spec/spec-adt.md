@@ -58,7 +58,7 @@ fn process(x: IntOrStr) {
 
 C++ では非再帰と再帰で表現が異なる:
 
-- **非再帰** (`int | str`): `using` による型エイリアスで `std::variant` を直接使う。`T | None` は `OptionalType` として `std::optional<T>` に写像し、`std::variant` には含めない（§5.2 参照）
+- **非再帰** (`int | str`, `str | bool | None`): `using` による型エイリアスで `std::variant` を直接使う。`T | None`（2型）は `OptionalType` として `std::optional<T>` に写像する（§5.2 参照）。3型以上の union に `None` が混在する場合は monostate 方式（`std::variant<..., std::monostate>`）も許容する（[spec-emitter-guide.md §12.4](./spec-emitter-guide.md) 参照）
 - **再帰** (`JsonVal` のように自身を含む型): `struct` で包む。`using` は定義時点で右辺の型が完全でなければならず前方参照できないが、`struct` は宣言した時点で型名が存在し、メンバ定義は閉じ括弧までに確定すればよい。再帰 variant メンバは `shared_ptr` で包むことで RC 管理と前方参照を両立する
 
 ### C++ variant の RC 管理ルール
@@ -69,7 +69,7 @@ variant の各構成要素を `T` で持つか `std::shared_ptr<T>` で持つか
 |---|---|---|
 | POD (`int`, `float`, `bool`) | `int64_t`, `double`, `bool` | 値型。コピーで OK |
 | `str` | `std::string` | immutable。コピーで OK |
-| `None`（`T \| None` の一部） | `std::optional` で表現（`std::monostate` は使わない） | `OptionalType` として正規化済み（§5.2） |
+| `None`（`T \| None` の一部） | `std::optional` で表現、または `std::monostate`（3型以上の union） | §5.2 および [spec-emitter-guide.md §12.4](./spec-emitter-guide.md) 参照 |
 | value class (`class_storage_hint: "value"`) | `T` | 値型。コピーで OK |
 | ref class (`class_storage_hint: "ref"`) | `std::shared_ptr<T>` | Python で共有される。RC 必須 |
 | `list[T]`, `dict[K,V]`, `set[T]` | `std::shared_ptr<container<...>>` | Python ではミュータブルで共有される |
@@ -88,9 +88,9 @@ using IntOrMyClass = std::variant<int64_t, std::shared_ptr<MyClass>>;
 // str | list[int]
 using StrOrList = std::variant<std::string, std::shared_ptr<std::vector<int64_t>>>;
 
-// int | str | None → OptionalType(inner=UnionType(int, str))
-using IntOrStr = std::variant<int64_t, std::string>;
-using IntOrStrOrNone = std::optional<IntOrStr>;
+// int | str | None — monostate 方式（現行 emitter）
+using IntOrStrOrNone = std::variant<int64_t, std::string, std::monostate>;
+// または optional+variant 方式: std::optional<std::variant<int64_t, std::string>>
 ```
 
 例（C++、非再帰）:

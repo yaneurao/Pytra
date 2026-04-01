@@ -37,7 +37,7 @@ emitter 側を修正して自動生成できるようにすることが本タス
 
 ## 方針
 
-> **Note (2026-04-01)**: When this plan was written, the approach used `std::monostate` inside variant for `None`. After EAST's `OptionalType` normalization (spec-east.md §6.4) was established, `T | None` maps to `OptionalType` → `std::optional<T>`. `T1 | T2 | None` becomes `std::optional<std::variant<T1, T2>>`, not `std::variant<..., std::monostate>`. See [spec-emitter-guide.md §12.4](../spec/spec-emitter-guide.md) and [spec-adt.md §5.2](../spec/spec-adt.md) for the current rules.
+> **Note (2026-04-01)**: The monostate approach in this plan is used by the current C++ emitter. After EAST's `OptionalType` normalization (spec-east.md §6.4) was established, `T | None` (2-type) maps to `std::optional<T>`. For 3+ type unions containing `None`, both monostate (`std::variant<..., std::monostate>`) and optional+variant (`std::optional<std::variant<...>>`) are permitted. See [spec-emitter-guide.md §12.4](../spec/spec-emitter-guide.md) for the current rules.
 
 一般ユニオン型（3 型以上、または `Optional[T]` でない 2 型ユニオン）を各言語の sum type に変換する。
 

@@ -1144,30 +1144,46 @@ EAST の `Any` / `Obj` / `unknown` は各言語の動的型に写像する:
 
 ### 12.4 Optional / union の型写像
 
-EAST の `type_expr` は `OptionalType` と `UnionType` を明確に区別する（[spec-east.md](./spec-east.md) §6.4）。emitter はこの区別を守って型を写像しなければならない。
+EAST の `type_expr` は `OptionalType` と `UnionType` を明確に区別する（[spec-east.md](./spec-east.md) §6.4）。emitter はこの区別を認識し、ターゲット言語に適した表現を選択する。
 
-#### 3 分類と写像ルール
+#### 3 分類
 
-| EAST `type_expr` | 意味 | C++ | Go | Rust | Java | C# | TS |
-|---|---|---|---|---|---|---|---|
-| `OptionalType(inner=T)` | `T \| None` | `std::optional<T>` | `*T` / nil | `Option<T>` | `T` (nullable ref) / `Optional<T>` | `T?` | `T \| null` |
-| `UnionType(general)` | `T1 \| T2` (None なし) | `std::variant<T1, T2>` | `any` | `enum { T1(T1), T2(T2) }` | `Object` | `object` | `T1 \| T2` |
-| `OptionalType(inner=UnionType)` | `T1 \| T2 \| None` | `std::optional<std::variant<T1, T2>>` | `any` | `Option<enum>` | `Object` | `object?` | `T1 \| T2 \| null` |
+| EAST `type_expr` | 意味 |
+|---|---|
+| `OptionalType(inner=T)` | `T \| None` |
+| `UnionType(general)` | `T1 \| T2`（None なし） |
+| `OptionalType(inner=UnionType)` | `T1 \| T2 \| None` |
+
+#### 言語別の写像例
+
+| EAST | C++ | Go | Rust | Java | C# | TS |
+|---|---|---|---|---|---|---|
+| `OptionalType(T)` | `std::optional<T>` | `*T` / nil | `Option<T>` | `T` (nullable) / `Optional<T>` | `T?` | `T \| null` |
+| `UnionType(general)` | `std::variant<T1, T2>` | `any` | `enum { T1(T1), T2(T2) }` | `Object` | `object` | `T1 \| T2` |
+| `OptionalType(UnionType)` | 下記参照 | `any` | `Option<enum>` | `Object` | `object?` | `T1 \| T2 \| null` |
+
+#### C++ の `OptionalType(inner=UnionType)` 写像
+
+`T1 | T2 | None` のように union に None が混在する場合、C++ では 2 つの方式が使える:
+
+- **monostate 方式**: `std::variant<T1, T2, std::monostate>` — フラットで型が短い。`is None` は `std::holds_alternative<std::monostate>(x)`。
+- **optional+variant 方式**: `std::optional<std::variant<T1, T2>>` — EAST の型構造に対応する。`is None` は `!x.has_value()`。
+
+現行 C++ emitter は monostate 方式を採用している。どちらの方式でも正当であり、emitter の判断に委ねる。
 
 #### None 値の写像
 
 | 言語 | None 値 |
 |---|---|
-| C++ | `std::nullopt` |
+| C++ | `std::nullopt` または `std::monostate{}` （emitter の方式に依存） |
 | Rust | `None` |
 | Go | `nil` |
 | TS/JS | `null` |
 | Java | `null` |
 | C# | `null` |
 
-#### 禁止事項
+#### 必須ルール
 
-- `None` を `std::variant` の型パラメータに入れてはならない。`None` は型ではなく値である。`T | None` は常に `OptionalType` として処理する。
 - `OptionalType` を `UnionType(options=[T, None])` のまま emit してはならない。EAST 側で正規化済みであり、emitter が再分類する必要はない。
 - `UnionType(union_mode=dynamic)` を general union と同じ写像で処理してはならない。`Any` / `object` を含む union は §12.3 の動的型写像に従う。
 
