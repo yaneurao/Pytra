@@ -473,6 +473,7 @@ def check_case(
         print(f"[ERROR] missing case: {case_stem}")
         _record("-", "case_missing", "missing case")
         return 1
+    case_stem = case_path.stem  # resolve glob pattern (e.g. "01_*") to actual stem
 
     enabled_supported_targets = [
         target_name
@@ -746,7 +747,7 @@ _CHANGELOG_HEADERS: dict[str, str] = {
 }
 
 
-_CHANGELOG_COOLDOWN_SEC = 600  # 10 minutes: prevent multiple agents from writing in the same window
+_CHANGELOG_COOLDOWN_SEC = 120  # 2 minutes: prevent multiple agents from writing in the same window
 
 
 def _append_parity_changelog(target: str, case_root: str, prev_pass: int, curr_pass: int, now: str) -> None:
@@ -801,6 +802,13 @@ def _append_parity_changelog(target: str, case_root: str, prev_pass: int, curr_p
 
 
 def main() -> int:
+    print("")
+    print("=" * 72)
+    print("WARNING! You are using the SLOW parity checker.")
+    print("Use runtime_parity_check_fast.py instead for 10x+ faster results.")
+    print("See: docs/ja/spec/spec-emitter-guide.md §13")
+    print("=" * 72)
+    print("")
     parser = argparse.ArgumentParser(description="Run runtime parity checks for stdlib/runtime cases")
     parser.add_argument(
         "cases",
