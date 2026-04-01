@@ -2,6 +2,19 @@
 
 from __future__ import annotations
 
+LUA_EXCEPTION_TYPE_NAMES: tuple[str, ...] = (
+    "Exception", "BaseException", "RuntimeError", "ValueError",
+    "TypeError", "IndexError", "KeyError", "StopIteration",
+    "AttributeError", "NameError", "NotImplementedError",
+    "OverflowError", "ZeroDivisionError", "AssertionError",
+    "OSError", "IOError", "FileNotFoundError", "PermissionError",
+)
+
+LUA_PATH_TYPE_NAMES: tuple[str, ...] = ("Path",)
+LUA_NON_INHERITABLE_BASES: tuple[str, ...] = ("object", "Exception", "BaseException")
+
+LUA_BUILTIN_MODULE_PREFIX = "pytra.built_in."
+
 
 _TYPE_MAP: dict[str, str] = {
     "int": "number",

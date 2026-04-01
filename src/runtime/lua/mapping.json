@@ -1,5 +1,5 @@
 {
-  "builtin_prefix": "__pytra",
+  "builtin_prefix": "__pytra_",
   "calls": {
     "env.target": "\"lua\"",
     "print": "__pytra_print",
@@ -116,6 +116,15 @@
     "py_assert_true": "__pytra_assert_true",
     "py_assert_eq": "__pytra_assert_eq",
     "py_assert_all": "__pytra_assert_all",
+    "ArgumentParser": "ArgumentParser",
+    "Path": "Path",
+    "deque": "deque",
+    "dumps": "pyJsonDumps",
+    "loads": "pyJsonLoads",
+    "loads_arr": "pyJsonLoads",
+    "sub": "sub",
+    "set_argv": "__pytra_set_argv",
+    "set_path": "__pytra_set_path",
     "pytra_isinstance": "pytra_isinstance"
   },
   "types": {
@@ -134,7 +143,6 @@
     "pytra.std.math",
     "pytra.std.os",
     "pytra.std.os_path",
-    "pytra.std.random",
     "pytra.std.sys",
     "pytra.std.time",
     "pytra.core.",

@@ -4,8 +4,8 @@
 
 # P1-LUA-EMITTER: Lua emitter を toolchain2 に新規実装する
 
-最終更新: 2026-03-31
-ステータス: 未着手
+最終更新: 2026-04-01
+ステータス: 進行中
 
 ## 背景
 
@@ -21,3 +21,6 @@
 ## 決定ログ
 
 - 2026-03-31: Lua backend 担当を新設。emitter guide に従い toolchain2 emitter を実装する方針。
+- 2026-04-01: `src/toolchain2/emit/lua/` と `src/runtime/lua/mapping.json` の実装存在を確認。fixture emit は 136/136 success。
+- 2026-04-01: `check_emitter_hardcode_lint.py --lang lua -v --no-write` を 0 件まで解消。
+- 2026-04-01: parity は未完了。代表残差は `add`, `deque_basic`, `class_instance`, `json_*`, `sys_extended`, `argparse_extended`, `pathlib_extended`。

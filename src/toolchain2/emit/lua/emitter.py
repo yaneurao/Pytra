@@ -15,6 +15,8 @@ from pytra.std.pathlib import Path
 from toolchain2.emit.lua.types import (
     lua_type, lua_zero_value, _safe_lua_ident, _split_generic_args,
     is_numeric_type, is_integer_type,
+    LUA_EXCEPTION_TYPE_NAMES, LUA_PATH_TYPE_NAMES, LUA_BUILTIN_MODULE_PREFIX,
+    LUA_NON_INHERITABLE_BASES,
 )
 from toolchain2.emit.common.code_emitter import (
     RuntimeMapping, load_runtime_mapping, resolve_runtime_call,
@@ -140,16 +142,7 @@ def _quote_string(value: str) -> str:
 
 
 def _is_exception_type_name(ctx: EmitContext, type_name: str) -> bool:
-    _BUILTIN_EXCEPTIONS: set[str] = set()
-    for _b in [
-        "Exception", "BaseException", "RuntimeError", "ValueError",
-        "TypeError", "IndexError", "KeyError", "StopIteration",
-        "AttributeError", "NameError", "NotImplementedError",
-        "OverflowError", "ZeroDivisionError", "AssertionError",
-        "OSError", "IOError", "FileNotFoundError", "PermissionError",
-    ]:
-        _BUILTIN_EXCEPTIONS.add(_b)
-    if type_name in _BUILTIN_EXCEPTIONS:
+    if type_name in LUA_EXCEPTION_TYPE_NAMES:
         return True
     base = ctx.class_bases.get(type_name, "")
     if base != "":
@@ -205,6 +198,8 @@ def _emit_expr(ctx: EmitContext, node: JsonVal) -> str:
         return _emit_range_expr(ctx, node)
     if kind == "Slice":
         return _emit_slice_expr(ctx, node)
+    if kind == "Box" or kind == "Unbox":
+        return _emit_expr(ctx, node.get("value"))
     return "nil --[[ unsupported expr: " + kind + " ]]"
 
 
@@ -270,7 +265,7 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if isinstance(owner_node, dict):
         owner_rt = _str(owner_node, "resolved_type")
         # Path properties
-        if owner_rt == "Path":
+        if owner_rt in LUA_PATH_TYPE_NAMES:
             if attr in ("name", "stem", "parent"):
                 owner = _emit_expr(ctx, owner_node)
                 return owner + "." + attr
@@ -479,8 +474,13 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if owner_rt == "str" or owner_rt == "string":
                     return _emit_str_method(ctx, owner, attr, arg_strs)
                 # Path methods
-                if owner_rt == "Path":
+                if owner_rt in LUA_PATH_TYPE_NAMES:
                     return _emit_path_method(ctx, owner, attr, arg_strs)
+                if attr == "as_str":
+                    return "tostring(" + owner + ")"
+                if attr == "as_arr":
+                    return owner
+                return owner + ":" + _safe_lua_ident(attr) + "(" + ", ".join(arg_strs) + ")"
 
         return callee + "(" + ", ".join(arg_strs) + ")"
 
@@ -601,7 +601,7 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if op == "RShift":
         return "(" + left + " >> " + right + ")"
     # Path concatenation
-    if op == "Div" and (left_rt == "Path" or right_rt == "Path"):
+    if op == "Div" and (left_rt in LUA_PATH_TYPE_NAMES or right_rt in LUA_PATH_TYPE_NAMES):
         return "__pytra_path_new(__pytra_path_join(" + left + ".path or " + left + ", tostring(" + right + ")))"
     # Multiplication with string/list (repeat)
     if op == "Mult":
@@ -1352,7 +1352,7 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
     _emit(ctx, safe + " = {}")
     _emit(ctx, safe + ".__index = " + safe)
-    if base_name != "" and base_name not in ("object", "Exception", "BaseException"):
+    if base_name != "" and base_name not in LUA_NON_INHERITABLE_BASES:
         base_safe = _safe_lua_ident(base_name)
         _emit(ctx, "setmetatable(" + safe + ", {__index = " + base_safe + "})")
     _emit_blank(ctx)
@@ -1362,12 +1362,15 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     ctx.current_class = safe
     ctx.in_class_body = True
 
+    has_init = False
     # Emit class body (methods and class-level assignments)
     for stmt in body:
         if not isinstance(stmt, dict):
             continue
         kind = _str(stmt, "kind")
         if kind == "FunctionDef":
+            if _str(stmt, "name") == "__init__":
+                has_init = True
             _emit_function_def(ctx, stmt)
         elif kind in ("Assign", "AnnAssign"):
             # Class-level field declarations or constants
@@ -1385,6 +1388,14 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             pass
         elif kind in ("comment", "blank"):
             _emit_stmt(ctx, stmt)
+
+    if not has_init:
+        _emit(ctx, "function " + safe + ".new()")
+        ctx.indent_level += 1
+        _emit(ctx, "return setmetatable({}, {__index = " + safe + "})")
+        ctx.indent_level -= 1
+        _emit(ctx, "end")
+        _emit_blank(ctx)
 
     ctx.current_class = saved_class
     ctx.in_class_body = saved_in_class
@@ -1658,7 +1669,7 @@ def emit_lua_module(east3_doc: dict[str, JsonVal]) -> str:
         return ""
 
     # built_in modules are provided by py_runtime
-    if module_id.startswith("pytra.built_in."):
+    if module_id.startswith(LUA_BUILTIN_MODULE_PREFIX):
         return ""
 
     renamed_symbols_raw = east3_doc.get("renamed_symbols")
@@ -1743,6 +1754,6 @@ def transpile_to_lua(east3_doc: dict[str, JsonVal]) -> str:
     emit_ctx = meta.get("emit_context", {}) if isinstance(meta, dict) else {}
     module_id = emit_ctx.get("module_id", "") if isinstance(emit_ctx, dict) else ""
     # built_in modules are provided by py_runtime, skip emit
-    if isinstance(module_id, str) and module_id.startswith("pytra.built_in."):
+    if isinstance(module_id, str) and module_id.startswith(LUA_BUILTIN_MODULE_PREFIX):
         return ""
     return emit_lua_module(east3_doc)

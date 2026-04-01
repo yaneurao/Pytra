@@ -313,6 +313,10 @@ function __pytra_path_mt:exists()
     return false
 end
 
+function __pytra_path_mt:joinpath(part)
+    return __pytra_path_new(__pytra_path_join(self.path, tostring(part)))
+end
+
 function __pytra_path_mt:mkdir()
     os.execute('mkdir -p "' .. self.path .. '"')
 end
@@ -643,6 +647,10 @@ function pyJsonDumps(v)
     return __pytra_json_encode(v)
 end
 
+dumps = pyJsonDumps
+loads = pyJsonLoads
+loads_arr = pyJsonLoads
+
 function __pytra_isinstance(obj, class_tbl)
     if type(obj) ~= "table" then
         return false
@@ -660,6 +668,137 @@ function __pytra_isinstance(obj, class_tbl)
         end
     end
     return false
+end
+
+function Path(path)
+    return __pytra_path_new(path)
+end
+
+function __pytra_set_argv(items)
+    __pytra_sys_argv = items or {}
+end
+
+function __pytra_set_path(items)
+    __pytra_sys_path = items or {}
+end
+
+function sub(pattern, repl, text, count)
+    local lua_pat = tostring(pattern):gsub("\\s", "%%s")
+    local limit = tonumber(count)
+    local out = string.gsub(tostring(text), lua_pat, tostring(repl), limit)
+    return out
+end
+
+deque = {}
+deque.__index = deque
+deque.__len = function(self)
+    return #self._items
+end
+function deque.new()
+    return setmetatable({ _items = {} }, deque)
+end
+setmetatable(deque, {
+    __call = function(_, ...)
+        return deque.new(...)
+    end,
+})
+function deque:append(value)
+    table.insert(self._items, value)
+end
+function deque:appendleft(value)
+    table.insert(self._items, 1, value)
+end
+function deque:popleft()
+    return table.remove(self._items, 1)
+end
+function deque:pop()
+    return table.remove(self._items)
+end
+function deque:clear()
+    self._items = {}
+end
+
+ArgumentParser = {}
+ArgumentParser.__index = ArgumentParser
+setmetatable(ArgumentParser, {
+    __call = function(_, prog)
+        return setmetatable({ prog = prog or "", specs = {} }, ArgumentParser)
+    end,
+})
+function ArgumentParser:add_argument(...)
+    local spec = { flags = { ... }, action = "", choices = nil, default = nil }
+    local args = { ... }
+    local last = args[#args]
+    if type(last) == "table" and last.flags == nil then
+        spec = last
+    end
+    spec.flags = {}
+    for i = 1, select("#", ...) do
+        local item = select(i, ...)
+        if type(item) == "string" then
+            spec.flags[#spec.flags + 1] = item
+        elseif type(item) == "table" then
+            if type(item.action) == "string" then spec.action = item.action end
+            if type(item.choices) == "table" then spec.choices = item.choices end
+            spec.default = item.default
+        end
+    end
+    self.specs[#self.specs + 1] = spec
+end
+function ArgumentParser:parse_args(argv)
+    local out = {}
+    local positionals = {}
+    for _, spec in ipairs(self.specs) do
+        local first = spec.flags[1]
+        if type(first) == "string" and string.sub(first, 1, 1) ~= "-" then
+            positionals[#positionals + 1] = spec
+        elseif spec.default ~= nil then
+            local key = string.gsub(spec.flags[#spec.flags], "^%-%-?", "")
+            out[key] = spec.default
+        elseif spec.action == "store_true" then
+            local key = string.gsub(spec.flags[#spec.flags], "^%-%-?", "")
+            out[key] = false
+        end
+    end
+    local pos_idx = 1
+    local i = 1
+    while i <= #argv do
+        local token = argv[i]
+        if type(token) == "string" and string.sub(token, 1, 1) == "-" then
+            local matched = nil
+            for _, spec in ipairs(self.specs) do
+                for _, flag in ipairs(spec.flags) do
+                    if flag == token then
+                        matched = spec
+                        break
+                    end
+                end
+                if matched ~= nil then break end
+            end
+            if matched ~= nil then
+                local key = string.gsub(matched.flags[#matched.flags], "^%-%-?", "")
+                if matched.action == "store_true" then
+                    out[key] = true
+                    i = i + 1
+                else
+                    local value = argv[i + 1]
+                    out[key] = value
+                    i = i + 2
+                end
+            else
+                i = i + 1
+            end
+        else
+            local spec = positionals[pos_idx]
+            if spec ~= nil then
+                local key = spec.flags[1]
+                out[key] = token
+                pos_idx = pos_idx + 1
+            end
+            i = i + 1
+        end
+    end
+    return out
 end
 
 -- Python stdlib shim tables so that EAST-generated code like
