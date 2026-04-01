@@ -130,35 +130,35 @@ namespace Pytra.CsModule
     // Python の print 相当を提供する最小ランタイム。
     public static class py_runtime
     {
-        public const long PYTRA_TID_NONE = 0;
-        public const long PYTRA_TID_BOOL = 1;
-        public const long PYTRA_TID_INT = 2;
-        public const long PYTRA_TID_FLOAT = 3;
-        public const long PYTRA_TID_STR = 4;
-        public const long PYTRA_TID_LIST = 5;
-        public const long PYTRA_TID_DICT = 6;
-        public const long PYTRA_TID_SET = 7;
-        public const long PYTRA_TID_OBJECT = 8;
-        public const long PYTRA_TID_BASE_EXCEPTION = 9;
-        public const long PYTRA_TID_EXCEPTION = 10;
-        public const long PYTRA_TID_RUNTIME_ERROR = 11;
-        public const long PYTRA_TID_VALUE_ERROR = 12;
-        public const long PYTRA_TID_TYPE_ERROR = 13;
-        public const long PYTRA_TID_INDEX_ERROR = 14;
-        public const long PYTRA_TID_KEY_ERROR = 15;
-        public const long PYTRA_TID_INT8 = 16;
-        public const long PYTRA_TID_INT16 = 17;
-        public const long PYTRA_TID_INT32 = 18;
-        public const long PYTRA_TID_INT64 = 19;
-        public const long PYTRA_TID_UINT8 = 20;
-        public const long PYTRA_TID_UINT16 = 21;
-        public const long PYTRA_TID_UINT32 = 22;
-        public const long PYTRA_TID_UINT64 = 23;
-        public const long PYTRA_TID_FLOAT32 = 24;
-        public const long PYTRA_TID_FLOAT64 = 25;
-        private const long PYTRA_USER_TYPE_ID_BASE = 1000;
+        private const long TYPE_NONE = 0;
+        private const long TYPE_BOOL = 1;
+        private const long TYPE_INT = 2;
+        private const long TYPE_FLOAT = 3;
+        private const long TYPE_STR = 4;
+        private const long TYPE_LIST = 5;
+        private const long TYPE_DICT = 6;
+        private const long TYPE_SET = 7;
+        private const long TYPE_OBJECT = 8;
+        private const long TYPE_BASE_EXCEPTION = 9;
+        private const long TYPE_EXCEPTION = 10;
+        private const long TYPE_RUNTIME_ERROR = 11;
+        private const long TYPE_VALUE_ERROR = 12;
+        private const long TYPE_TYPE_ERROR = 13;
+        private const long TYPE_INDEX_ERROR = 14;
+        private const long TYPE_KEY_ERROR = 15;
+        private const long TYPE_INT8 = 16;
+        private const long TYPE_INT16 = 17;
+        private const long TYPE_INT32 = 18;
+        private const long TYPE_INT64 = 19;
+        private const long TYPE_UINT8 = 20;
+        private const long TYPE_UINT16 = 21;
+        private const long TYPE_UINT32 = 22;
+        private const long TYPE_UINT64 = 23;
+        private const long TYPE_FLOAT32 = 24;
+        private const long TYPE_FLOAT64 = 25;
+        private const long USER_TYPE_ID_BASE = 1000;
 
-        private static long _pyNextTypeId = PYTRA_USER_TYPE_ID_BASE;
+        private static long _pyNextTypeId = USER_TYPE_ID_BASE;
         private static readonly List<long> _pyTypeIds = new List<long>();
         private static readonly Dictionary<long, long> _pyTypeBase = new Dictionary<long, long>();
         private static readonly Dictionary<long, List<long>> _pyTypeChildren = new Dictionary<long, List<long>>();
@@ -321,32 +321,32 @@ namespace Pytra.CsModule
             {
                 return;
             }
-            RegisterTypeNode(PYTRA_TID_NONE, -1);
-            RegisterTypeNode(PYTRA_TID_OBJECT, -1);
-            RegisterTypeNode(PYTRA_TID_INT, PYTRA_TID_OBJECT);
-            RegisterTypeNode(PYTRA_TID_BOOL, PYTRA_TID_INT);
-            RegisterTypeNode(PYTRA_TID_INT8, PYTRA_TID_INT);
-            RegisterTypeNode(PYTRA_TID_INT16, PYTRA_TID_INT);
-            RegisterTypeNode(PYTRA_TID_INT32, PYTRA_TID_INT);
-            RegisterTypeNode(PYTRA_TID_INT64, PYTRA_TID_INT);
-            RegisterTypeNode(PYTRA_TID_UINT8, PYTRA_TID_INT);
-            RegisterTypeNode(PYTRA_TID_UINT16, PYTRA_TID_INT);
-            RegisterTypeNode(PYTRA_TID_UINT32, PYTRA_TID_INT);
-            RegisterTypeNode(PYTRA_TID_UINT64, PYTRA_TID_INT);
-            RegisterTypeNode(PYTRA_TID_FLOAT, PYTRA_TID_OBJECT);
-            RegisterTypeNode(PYTRA_TID_FLOAT32, PYTRA_TID_FLOAT);
-            RegisterTypeNode(PYTRA_TID_FLOAT64, PYTRA_TID_FLOAT);
-            RegisterTypeNode(PYTRA_TID_STR, PYTRA_TID_OBJECT);
-            RegisterTypeNode(PYTRA_TID_LIST, PYTRA_TID_OBJECT);
-            RegisterTypeNode(PYTRA_TID_DICT, PYTRA_TID_OBJECT);
-            RegisterTypeNode(PYTRA_TID_SET, PYTRA_TID_OBJECT);
-            RegisterTypeNode(PYTRA_TID_BASE_EXCEPTION, PYTRA_TID_OBJECT);
-            RegisterTypeNode(PYTRA_TID_EXCEPTION, PYTRA_TID_BASE_EXCEPTION);
-            RegisterTypeNode(PYTRA_TID_RUNTIME_ERROR, PYTRA_TID_EXCEPTION);
-            RegisterTypeNode(PYTRA_TID_VALUE_ERROR, PYTRA_TID_EXCEPTION);
-            RegisterTypeNode(PYTRA_TID_TYPE_ERROR, PYTRA_TID_EXCEPTION);
-            RegisterTypeNode(PYTRA_TID_INDEX_ERROR, PYTRA_TID_EXCEPTION);
-            RegisterTypeNode(PYTRA_TID_KEY_ERROR, PYTRA_TID_EXCEPTION);
+            RegisterTypeNode(TYPE_NONE, -1);
+            RegisterTypeNode(TYPE_OBJECT, -1);
+            RegisterTypeNode(TYPE_INT, TYPE_OBJECT);
+            RegisterTypeNode(TYPE_BOOL, TYPE_INT);
+            RegisterTypeNode(TYPE_INT8, TYPE_INT);
+            RegisterTypeNode(TYPE_INT16, TYPE_INT);
+            RegisterTypeNode(TYPE_INT32, TYPE_INT);
+            RegisterTypeNode(TYPE_INT64, TYPE_INT);
+            RegisterTypeNode(TYPE_UINT8, TYPE_INT);
+            RegisterTypeNode(TYPE_UINT16, TYPE_INT);
+            RegisterTypeNode(TYPE_UINT32, TYPE_INT);
+            RegisterTypeNode(TYPE_UINT64, TYPE_INT);
+            RegisterTypeNode(TYPE_FLOAT, TYPE_OBJECT);
+            RegisterTypeNode(TYPE_FLOAT32, TYPE_FLOAT);
+            RegisterTypeNode(TYPE_FLOAT64, TYPE_FLOAT);
+            RegisterTypeNode(TYPE_STR, TYPE_OBJECT);
+            RegisterTypeNode(TYPE_LIST, TYPE_OBJECT);
+            RegisterTypeNode(TYPE_DICT, TYPE_OBJECT);
+            RegisterTypeNode(TYPE_SET, TYPE_OBJECT);
+            RegisterTypeNode(TYPE_BASE_EXCEPTION, TYPE_OBJECT);
+            RegisterTypeNode(TYPE_EXCEPTION, TYPE_BASE_EXCEPTION);
+            RegisterTypeNode(TYPE_RUNTIME_ERROR, TYPE_EXCEPTION);
+            RegisterTypeNode(TYPE_VALUE_ERROR, TYPE_EXCEPTION);
+            RegisterTypeNode(TYPE_TYPE_ERROR, TYPE_EXCEPTION);
+            RegisterTypeNode(TYPE_INDEX_ERROR, TYPE_EXCEPTION);
+            RegisterTypeNode(TYPE_KEY_ERROR, TYPE_EXCEPTION);
             RecomputeTypeRanges();
         }
 
@@ -355,7 +355,7 @@ namespace Pytra.CsModule
             long baseTid = baseTypeId;
             if (baseTid < 0)
             {
-                baseTid = PYTRA_TID_OBJECT;
+                baseTid = TYPE_OBJECT;
             }
             if (!_pyTypeBase.ContainsKey(baseTid))
             {
@@ -372,7 +372,7 @@ namespace Pytra.CsModule
             return typeId;
         }
 
-        public static long py_register_class_type(long baseTypeId = PYTRA_TID_OBJECT)
+        public static long py_register_class_type(long baseTypeId = TYPE_OBJECT)
         {
             EnsureBuiltinTypeTable();
             while (_pyTypeBase.ContainsKey(_pyNextTypeId))
@@ -401,109 +401,99 @@ namespace Pytra.CsModule
             return false;
         }
 
+        public static bool py_is_set(object value)
+        {
+            return value != null && IsSetLike(value);
+        }
+
         public static long py_runtime_value_type_id(object value)
         {
             EnsureBuiltinTypeTable();
             if (value == null)
             {
-                return PYTRA_TID_NONE;
+                return TYPE_NONE;
             }
             if (value is bool)
             {
-                return PYTRA_TID_BOOL;
+                return TYPE_BOOL;
             }
             if (value is sbyte)
             {
-                return PYTRA_TID_INT8;
+                return TYPE_INT8;
             }
             if (value is short)
             {
-                return PYTRA_TID_INT16;
+                return TYPE_INT16;
             }
             if (value is int)
             {
-                return PYTRA_TID_INT32;
+                return TYPE_INT32;
             }
             if (value is long)
             {
-                return PYTRA_TID_INT64;
+                return TYPE_INT64;
             }
             if (value is byte)
             {
-                return PYTRA_TID_UINT8;
+                return TYPE_UINT8;
             }
             if (value is ushort)
             {
-                return PYTRA_TID_UINT16;
+                return TYPE_UINT16;
             }
             if (value is uint)
             {
-                return PYTRA_TID_UINT32;
+                return TYPE_UINT32;
             }
             if (value is ulong)
             {
-                return PYTRA_TID_UINT64;
+                return TYPE_UINT64;
             }
             if (value is float)
             {
-                return PYTRA_TID_FLOAT32;
+                return TYPE_FLOAT32;
             }
             if (value is double || value is decimal)
             {
-                return PYTRA_TID_FLOAT64;
+                return TYPE_FLOAT64;
             }
             if (value is string)
             {
-                return PYTRA_TID_STR;
+                return TYPE_STR;
             }
             if (value is KeyNotFoundException)
             {
-                return PYTRA_TID_KEY_ERROR;
+                return TYPE_KEY_ERROR;
             }
             if (value is ArgumentOutOfRangeException)
             {
-                return PYTRA_TID_INDEX_ERROR;
+                return TYPE_INDEX_ERROR;
             }
             if (value is ArgumentException)
             {
-                return PYTRA_TID_VALUE_ERROR;
+                return TYPE_VALUE_ERROR;
             }
             if (value is InvalidCastException)
             {
-                return PYTRA_TID_TYPE_ERROR;
+                return TYPE_TYPE_ERROR;
             }
             if (value is Exception)
             {
-                return PYTRA_TID_EXCEPTION;
+                return TYPE_EXCEPTION;
             }
             if (value is IDictionary)
             {
-                return PYTRA_TID_DICT;
+                return TYPE_DICT;
             }
             if (IsSetLike(value))
             {
-                return PYTRA_TID_SET;
+                return TYPE_SET;
             }
             if (value is IList)
             {
-                return PYTRA_TID_LIST;
+                return TYPE_LIST;
             }
-
-            Type t = value.GetType();
-            FieldInfo field = t.GetField("PYTRA_TYPE_ID", BindingFlags.Public | BindingFlags.Static);
-            if (field != null)
-            {
-                object raw = field.GetValue(null);
-                if (raw is long taggedLong && _pyTypeBase.ContainsKey(taggedLong))
-                {
-                    return taggedLong;
-                }
-                if (raw is int taggedInt && _pyTypeBase.ContainsKey(taggedInt))
-                {
-                    return taggedInt;
-                }
-            }
-            return PYTRA_TID_OBJECT;
+            return TYPE_OBJECT;
         }
 
         private static long py_runtime_type_id(object value)
@@ -550,11 +540,6 @@ namespace Pytra.CsModule
         public static bool py_runtime_value_isinstance(object value, long expectedTypeId)
         {
             return py_runtime_type_id_is_subtype(py_runtime_value_type_id(value), expectedTypeId);
-        }
-
-        public static bool pytra_isinstance(long actualTypeId, long expectedTypeId)
-        {
-            return py_runtime_type_id_is_subtype(actualTypeId, expectedTypeId);
         }
 
         private static bool py_isinstance(object value, long expectedTypeId)
@@ -1226,17 +1211,52 @@ namespace Pytra.CsModule
             return text;
         }
 
-        private static string py_format_sequence(IEnumerable source)
+        private static string py_quote_string(string value)
+        {
+            string text = value ?? "";
+            text = text.Replace("\\", "\\\\");
+            text = text.Replace("'", "\\'");
+            text = text.Replace("\n", "\\n");
+            text = text.Replace("\r", "\\r");
+            text = text.Replace("\t", "\\t");
+            return "'" + text + "'";
+        }
+
+        private static string py_format_list(IEnumerable source)
         {
             var parts = new List<string>();
             foreach (object item in source)
             {
-                parts.Add(py_display(item));
+                parts.Add(py_repr(item));
             }
             return "[" + string.Join(", ", parts) + "]";
         }
 
-        private static string py_display(object value)
+        private static string py_format_tuple(Array source)
+        {
+            var parts = new List<string>();
+            foreach (object item in source)
+            {
+                parts.Add(py_repr(item));
+            }
+            if (parts.Count == 1)
+            {
+                return "(" + parts[0] + ",)";
+            }
+            return "(" + string.Join(", ", parts) + ")";
+        }
+
+        private static string py_format_dict(IDictionary source)
+        {
+            var parts = new List<string>();
+            foreach (DictionaryEntry entry in source)
+            {
+                parts.Add(py_repr(entry.Key) + ": " + py_repr(entry.Value));
+            }
+            return "{" + string.Join(", ", parts) + "}";
+        }
+
+        private static string py_repr(object value)
         {
             if (value == null)
             {
@@ -1264,7 +1284,16 @@ namespace Pytra.CsModule
             }
             if (value is string text)
             {
-                return text;
+                return py_quote_string(text);
+            }
+            MethodInfo reprMethod = value.GetType().GetMethod("__repr__", BindingFlags.Instance | BindingFlags.Public, null, Type.EmptyTypes, null);
+            if (reprMethod != null && reprMethod.ReturnType == typeof(string))
+            {
+                object rendered = reprMethod.Invoke(value, Array.Empty<object>());
+                if (rendered is string renderedText)
+                {
+                    return renderedText;
+                }
             }
             MethodInfo strMethod = value.GetType().GetMethod("__str__", BindingFlags.Instance | BindingFlags.Public, null, Type.EmptyTypes, null);
             if (strMethod != null && strMethod.ReturnType == typeof(string))
@@ -1275,13 +1304,71 @@ namespace Pytra.CsModule
                     return renderedText;
                 }
             }
+            if (value is IDictionary dictionary)
+            {
+                return py_format_dict(dictionary);
+            }
             if (value is Array array)
             {
-                return py_format_sequence(array);
+                return py_format_tuple(array);
             }
             if (value is IEnumerable enumerable)
             {
-                return py_format_sequence(enumerable);
+                return py_format_list(enumerable);
+            }
+            return Convert.ToString(value, CultureInfo.InvariantCulture);
+        }
+
+        private static string py_display(object value)
+        {
+            if (value == null)
+            {
+                return "None";
+            }
+            if (value is string text)
+            {
+                return text;
+            }
+            if (value is IDictionary dictionary)
+            {
+                return py_format_dict(dictionary);
+            }
+            if (value is Array array)
+            {
+                return py_format_tuple(array);
+            }
+            if (value is IEnumerable enumerable)
+            {
+                return py_format_list(enumerable);
+            }
+            if (value is bool boolean)
+            {
+                return boolean ? "True" : "False";
+            }
+            if (value is float f)
+            {
+                return py_format_float(f);
+            }
+            if (value is double d)
+            {
+                return py_format_float(d);
+            }
+            if (value is decimal m)
+            {
+                return py_format_float((double)m);
+            }
+            if (value is Exception ex)
+            {
+                return ex.Message;
+            }
+            MethodInfo strMethod = value.GetType().GetMethod("__str__", BindingFlags.Instance | BindingFlags.Public, null, Type.EmptyTypes, null);
+            if (strMethod != null && strMethod.ReturnType == typeof(string))
+            {
+                object rendered = strMethod.Invoke(value, Array.Empty<object>());
+                if (rendered is string renderedText)
+                {
+                    return renderedText;
+                }
             }
             return Convert.ToString(value, CultureInfo.InvariantCulture);
         }

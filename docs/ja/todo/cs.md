@@ -34,10 +34,14 @@
 
 C# は `is` / `switch` がネイティブにあるので `PYTRA_TID_*` 定数 (26個)、`pytra_isinstance`、`type_id_table` は不要。
 
-1. [ ] [ID: P0-CS-TYPEID-CLN-S1] `src/runtime/cs/built_in/py_runtime.cs` から `PYTRA_TID_*` 定数と `pytra_isinstance` を削除する
-2. [ ] [ID: P0-CS-TYPEID-CLN-S2] `src/runtime/cs/generated/built_in/type_id.cs` を削除する
-3. [ ] [ID: P0-CS-TYPEID-CLN-S3] C# emitter の isinstance を `x is Type t` に置換する
+1. [x] [ID: P0-CS-TYPEID-CLN-S1] `src/runtime/cs/built_in/py_runtime.cs` から `PYTRA_TID_*` 定数と `pytra_isinstance` を削除する
+   完了メモ: neutral internal type constants へ置換し、`pytra_isinstance` を削除。`py_is_set` と Python 風 container/tuple repr を runtime に追加して C# parity を維持。
+2. [x] [ID: P0-CS-TYPEID-CLN-S2] `src/runtime/cs/generated/built_in/type_id.cs` を削除する
+   完了メモ: 生成済み `type_id.cs` を削除。`check_emitter_hardcode_lint.py --lang cs --include-runtime` は 0 件。
+3. [x] [ID: P0-CS-TYPEID-CLN-S3] C# emitter の isinstance を `x is Type t` に置換する
+   完了メモ: toolchain2 C# emitter で builtin/user class/container の `isinstance` を native `is` 判定へ移行。legacy `PYTRA_TID_*` expected type も型名へ正規化。
 4. [ ] [ID: P0-CS-TYPEID-CLN-S4] fixture + sample + stdlib parity に回帰がないことを確認する
+   進捗メモ: `stdlib 16/16 PASS`。fixture は個別 blocker（`none_optional`, `typed_container_access`, `str_repr_containers`）を解消済みだが full rerun 未再実施。sample は run_failed を解消し、残りは artifact CRC mismatch 7 件（`01_mandelbrot`, `02_raytrace_spheres`, `03_julia_set`, `04_orbit_trap_julia`, `06_julia_parameter_sweep`, `14_raymarching_light_cycle`, `16_glass_sculpture_chaos`）。
 
 ### P3-CS-SELFHOST: C# emitter で toolchain2 を C# に変換し build を通す
 

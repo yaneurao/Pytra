@@ -552,9 +552,9 @@ def _dump_json_value(
     if isinstance(v, str):
         return _escape_str(str(v), ensure_ascii)
     if isinstance(v, list):
-        return _dump_json_list(v, ensure_ascii, indent, item_sep, key_sep, level)
+        return _dump_json_list(cast(list[JsonVal], v), ensure_ascii, indent, item_sep, key_sep, level)
     if isinstance(v, dict):
-        return _dump_json_dict(v, ensure_ascii, indent, item_sep, key_sep, level)
+        return _dump_json_dict(cast(dict[str, JsonVal], v), ensure_ascii, indent, item_sep, key_sep, level)
     raise TypeError("json.dumps unsupported type")
 
 

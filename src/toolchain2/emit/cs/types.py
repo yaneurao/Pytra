@@ -159,6 +159,13 @@ def _callable_signature_parts(resolved_type: str) -> tuple[list[str], str] | Non
 def cs_type(resolved_type: str, *, mapping: "RuntimeMapping | None" = None, for_return: bool = False) -> str:
     if resolved_type == "" or resolved_type == "unknown":
         return "object"
+    compact_optional = resolved_type.replace(" ", "")
+    if compact_optional.endswith("|None"):
+        inner = compact_optional[:-5]
+        base = cs_type(inner, mapping=mapping)
+        if _is_value_type(base):
+            return base + "?"
+        return base
 
     mapped = _mapping_lookup(resolved_type, mapping)
     if mapped != "":
@@ -208,12 +215,6 @@ def cs_type(resolved_type: str, *, mapping: "RuntimeMapping | None" = None, for_
                 return "Action"
             return "Action<" + ", ".join(rendered_args) + ">"
         return "Func<" + ", ".join(rendered_args + [rendered_ret]) + ">"
-    if resolved_type.endswith(" | None"):
-        inner5 = resolved_type[:-7].strip()
-        base = cs_type(inner5, mapping=mapping)
-        if _is_value_type(base):
-            return base + "?"
-        return base
     if "|" in resolved_type:
         return "object"
     return _safe_cs_ident(resolved_type)

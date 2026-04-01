@@ -328,72 +328,84 @@ def _render_type(ctx: EmitContext, resolved_type: str, *, for_return: bool = Fal
     return mapped_builtin
 
 
-def _builtin_type_id_expr(type_name: str) -> str:
-    return {
-        "none": "py_runtime.PYTRA_TID_NONE",
-        "None": "py_runtime.PYTRA_TID_NONE",
-        "bool": "py_runtime.PYTRA_TID_BOOL",
-        "int": "py_runtime.PYTRA_TID_INT",
-        "int8": "py_runtime.PYTRA_TID_INT8",
-        "int16": "py_runtime.PYTRA_TID_INT16",
-        "int32": "py_runtime.PYTRA_TID_INT32",
-        "int64": "py_runtime.PYTRA_TID_INT64",
-        "uint8": "py_runtime.PYTRA_TID_UINT8",
-        "uint16": "py_runtime.PYTRA_TID_UINT16",
-        "uint32": "py_runtime.PYTRA_TID_UINT32",
-        "uint64": "py_runtime.PYTRA_TID_UINT64",
-        "float": "py_runtime.PYTRA_TID_FLOAT",
-        "float32": "py_runtime.PYTRA_TID_FLOAT32",
-        "float64": "py_runtime.PYTRA_TID_FLOAT64",
-        "str": "py_runtime.PYTRA_TID_STR",
-        "list": "py_runtime.PYTRA_TID_LIST",
-        "dict": "py_runtime.PYTRA_TID_DICT",
-        "set": "py_runtime.PYTRA_TID_SET",
-        "bytes": "py_runtime.PYTRA_TID_LIST",
-        "bytearray": "py_runtime.PYTRA_TID_LIST",
-        "object": "py_runtime.PYTRA_TID_OBJECT",
-        "Obj": "py_runtime.PYTRA_TID_OBJECT",
-        "Any": "py_runtime.PYTRA_TID_OBJECT",
-    }.get(type_name, "")
-
-
-def _builtin_type_id_alias_expr(name: str) -> str:
-    return {
-        "NONE_TID": "py_runtime.PYTRA_TID_NONE",
-        "BOOL_TID": "py_runtime.PYTRA_TID_BOOL",
-        "INT_TID": "py_runtime.PYTRA_TID_INT",
-        "INT64_TID": "py_runtime.PYTRA_TID_INT64",
-        "FLOAT_TID": "py_runtime.PYTRA_TID_FLOAT",
-        "FLOAT64_TID": "py_runtime.PYTRA_TID_FLOAT64",
-        "STR_TID": "py_runtime.PYTRA_TID_STR",
-        "LIST_TID": "py_runtime.PYTRA_TID_LIST",
-        "DICT_TID": "py_runtime.PYTRA_TID_DICT",
-        "SET_TID": "py_runtime.PYTRA_TID_SET",
-        "OBJECT_TID": "py_runtime.PYTRA_TID_OBJECT",
-    }.get(name, "")
-
-
-def _expected_type_id_expr(ctx: EmitContext, node: JsonVal) -> str:
+def _expected_type_name(node: JsonVal) -> str:
     if not isinstance(node, dict):
         return ""
     type_name = _str(node, "type_object_of")
     if type_name == "":
         type_name = _str(node, "id")
-    if is_pytra_type_id_name(type_name):
-        return "py_runtime." + type_name
-    builtin = _builtin_type_id_expr(type_name)
-    if builtin != "":
-        return builtin
-    if type_name in ctx.type_id_values:
-        return str(ctx.type_id_values[type_name]) + "L"
-    fqcn_tid = _fqcn_to_tid_const(type_name)
-    if fqcn_tid in ctx.type_id_values:
-        return str(ctx.type_id_values[fqcn_tid]) + "L"
-    if type_name.endswith("_TID") and type_name in ctx.type_id_values:
-        return str(ctx.type_id_values[type_name]) + "L"
-    if type_name.endswith("_TID"):
-        return "py_runtime." + _safe_cs_ident(type_name)
-    return ""
+    legacy_type_names = {
+        "PYTRA_TID_NONE": "None",
+        "PYTRA_TID_BOOL": "bool",
+        "PYTRA_TID_INT": "int",
+        "PYTRA_TID_FLOAT": "float",
+        "PYTRA_TID_STR": "str",
+        "PYTRA_TID_LIST": "list",
+        "PYTRA_TID_DICT": "dict",
+        "PYTRA_TID_SET": "set",
+        "PYTRA_TID_OBJECT": "object",
+        "PYTRA_TID_INT8": "int8",
+        "PYTRA_TID_INT16": "int16",
+        "PYTRA_TID_INT32": "int32",
+        "PYTRA_TID_INT64": "int64",
+        "PYTRA_TID_UINT8": "uint8",
+        "PYTRA_TID_UINT16": "uint16",
+        "PYTRA_TID_UINT32": "uint32",
+        "PYTRA_TID_UINT64": "uint64",
+        "PYTRA_TID_FLOAT32": "float32",
+        "PYTRA_TID_FLOAT64": "float64",
+        "NONE_TID": "None",
+        "BOOL_TID": "bool",
+        "INT_TID": "int",
+        "INT64_TID": "int64",
+        "FLOAT_TID": "float",
+        "FLOAT64_TID": "float64",
+        "STR_TID": "str",
+        "LIST_TID": "list",
+        "DICT_TID": "dict",
+        "SET_TID": "set",
+        "OBJECT_TID": "object",
+    }
+    if type_name in legacy_type_names:
+        return legacy_type_names[type_name]
+    return type_name
+
+
+def _emit_builtin_isinstance_expr(ctx: EmitContext, boxed_expr: str, type_name: str) -> str:
+    cs_builtin_types: dict[str, str] = {
+        "bool": "bool",
+        "int8": "sbyte",
+        "int16": "short",
+        "int32": "int",
+        "int": "long",
+        "int64": "long",
+        "uint8": "byte",
+        "uint16": "ushort",
+        "uint32": "uint",
+        "uint64": "ulong",
+        "float": "double",
+        "float32": "float",
+        "float64": "double",
+        "str": "string",
+        "tuple": "object[]",
+    }
+    if type_name in ("None", "none"):
+        return "(" + boxed_expr + " == null)"
+    if type_name in ("list", "bytes", "bytearray"):
+        return "(" + boxed_expr + " is System.Collections.IList)"
+    if type_name == "dict":
+        return "(" + boxed_expr + " is System.Collections.IDictionary)"
+    if type_name == "set":
+        return "py_runtime.py_is_set(" + boxed_expr + ")"
+    if type_name in ("object", "Obj", "Any"):
+        return "(" + boxed_expr + " is object)"
+    cs_type_name = cs_builtin_types.get(type_name, "")
+    if cs_type_name != "":
+        return "(" + boxed_expr + " is " + cs_type_name + ")"
+    rendered_type = _render_type(ctx, type_name)
+    if rendered_type == "" or rendered_type == "object":
+        return ""
+    return "(" + boxed_expr + " is " + rendered_type + ")"
 
 
 def _arg_order_and_types(node: dict[str, JsonVal]) -> tuple[list[str], dict[str, str]]:
@@ -424,13 +436,53 @@ def _emit_constant(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     return str(value)
 
 
+def _legacy_type_id_name_expr(name: str) -> str:
+    return {
+        "PYTRA_TID_NONE": "0L",
+        "PYTRA_TID_BOOL": "1L",
+        "PYTRA_TID_INT": "2L",
+        "PYTRA_TID_FLOAT": "3L",
+        "PYTRA_TID_STR": "4L",
+        "PYTRA_TID_LIST": "5L",
+        "PYTRA_TID_DICT": "6L",
+        "PYTRA_TID_SET": "7L",
+        "PYTRA_TID_OBJECT": "8L",
+        "PYTRA_TID_BASE_EXCEPTION": "9L",
+        "PYTRA_TID_EXCEPTION": "10L",
+        "PYTRA_TID_RUNTIME_ERROR": "11L",
+        "PYTRA_TID_VALUE_ERROR": "12L",
+        "PYTRA_TID_TYPE_ERROR": "13L",
+        "PYTRA_TID_INDEX_ERROR": "14L",
+        "PYTRA_TID_KEY_ERROR": "15L",
+        "PYTRA_TID_INT8": "16L",
+        "PYTRA_TID_INT16": "17L",
+        "PYTRA_TID_INT32": "18L",
+        "PYTRA_TID_INT64": "19L",
+        "PYTRA_TID_UINT8": "20L",
+        "PYTRA_TID_UINT16": "21L",
+        "PYTRA_TID_UINT32": "22L",
+        "PYTRA_TID_UINT64": "23L",
+        "PYTRA_TID_FLOAT32": "24L",
+        "PYTRA_TID_FLOAT64": "25L",
+        "NONE_TID": "0L",
+        "BOOL_TID": "1L",
+        "INT_TID": "2L",
+        "INT64_TID": "19L",
+        "FLOAT_TID": "3L",
+        "FLOAT64_TID": "25L",
+        "STR_TID": "4L",
+        "LIST_TID": "5L",
+        "DICT_TID": "6L",
+        "SET_TID": "7L",
+        "OBJECT_TID": "8L",
+    }.get(name, "")
+
+
 def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     ident = _str(node, "id")
-    if is_pytra_type_id_name(ident):
-        return "py_runtime." + ident
-    builtin_tid_alias = _builtin_type_id_alias_expr(ident)
-    if builtin_tid_alias != "":
-        return builtin_tid_alias
+    legacy_tid = _legacy_type_id_name_expr(ident)
+    if legacy_tid != "":
+        return legacy_tid
     if ident in ctx.class_names or ident in ctx.trait_names or ident in ctx.enum_constant_types:
         return _safe_name(ctx, ident)
     if ident.endswith("_TID") and ident in ctx.type_id_values:
@@ -682,8 +734,10 @@ def _render_expr_with_preferred_type(ctx: EmitContext, node: JsonVal, preferred_
     if not isinstance(node, dict):
         return _emit_expr(ctx, node)
     kind = _str(node, "kind")
-    if kind in ("Box", "Unbox"):
+    if kind == "Box":
         return _render_expr_with_preferred_type(ctx, node.get("value"), preferred_type=preferred_type)
+    if kind == "Unbox":
+        return _emit_unbox(ctx, node)
     if kind == "Call" and _bool(node, "yields_dynamic") and preferred_type != "":
         return _coerce_dynamic_expr(ctx, _emit_expr(ctx, node), preferred_type)
     if preferred_type.startswith("callable[") and kind == "Name":
@@ -1262,10 +1316,14 @@ def _emit_unbox(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
 def _emit_isinstance_expr(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     value_expr = _emit_expr(ctx, node.get("value"))
-    expected_expr = _expected_type_id_expr(ctx, node.get("expected_type_id"))
-    if expected_expr == "":
+    boxed_expr = "((object)(" + value_expr + "))"
+    expected_type = _expected_type_name(node.get("expected_type_id"))
+    if expected_type == "":
         return "false"
-    return "py_runtime.pytra_isinstance(py_runtime.py_runtime_value_type_id(" + value_expr + "), " + expected_expr + ")"
+    rendered = _emit_builtin_isinstance_expr(ctx, boxed_expr, expected_type)
+    if rendered != "":
+        return rendered
+    return "false"
 
 
 class _CsStmtCommonRenderer(CommonRenderer):
@@ -1858,13 +1916,6 @@ def _emit_class(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         ctx.indent_level -= 1
         ctx.lines.append(indent + "}")
         return
-    class_tid = -1
-    for candidate in (fqcn, _str(node, "name"), _fqcn_to_tid_const(fqcn), _fqcn_to_tid_const(_str(node, "name"))):
-        if candidate in ctx.type_id_values:
-            class_tid = ctx.type_id_values[candidate]
-            break
-    if class_tid >= 0:
-        ctx.lines.append("    " * ctx.indent_level + "public static long PYTRA_TYPE_ID = " + str(class_tid) + "L;")
     emitted_fields: set[str] = set()
     is_dataclass = _bool(node, "dataclass")
     static_field_names: set[str] = set()
@@ -2156,33 +2207,6 @@ def emit_cs_module(east3_doc: dict[str, JsonVal]) -> str:
     ctx.lines.append("    public static class " + class_name)
     ctx.lines.append("    {")
     ctx.indent_level = 2
-
-    registrations: list[str] = []
-    for stmt in body:
-        if not isinstance(stmt, dict) or _str(stmt, "kind") != "ClassDef":
-            continue
-        raw_name = _str(stmt, "name")
-        if raw_name == "" or _is_trait_class(stmt) or _str(stmt, "base") in ("Enum", "IntEnum", "IntFlag"):
-            continue
-        fqcn = module_id + "." + raw_name if module_id != "" else raw_name
-        class_tid = ctx.type_id_values.get(fqcn, ctx.type_id_values.get(raw_name, -1))
-        if class_tid < 0:
-            continue
-        base_tid = _builtin_type_id_expr(_str(stmt, "base"))
-        if base_tid == "":
-            base_tid = _expected_type_id_expr(ctx, {"id": _str(stmt, "base")}) if _str(stmt, "base") != "" else ""
-        if base_tid == "":
-            base_tid = "py_runtime.PYTRA_TID_OBJECT"
-        registrations.append("py_runtime.py_register_type(" + str(class_tid) + "L, " + base_tid + ");")
-
-    if len(registrations) > 0:
-        ctx.lines.append("        static " + class_name + "()")
-        ctx.lines.append("        {")
-        for line in registrations:
-            ctx.lines.append("            " + line)
-        ctx.lines.append("        }")
-        if len(body) > 0:
-            ctx.lines.append("")
 
     for stmt in body:
         if not isinstance(stmt, dict):
