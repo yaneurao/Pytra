@@ -199,7 +199,7 @@ struct Object<void> {
     void* get() const { return cb ? cb->base_ptr : nullptr; }
 
     // Unbox a POD value from Object<void> — defined after PyBoxedValue in py_types.h
-    template<typename T, uint32_t TID>
+    template<typename T>
     const T& unbox() const;
 
 private:

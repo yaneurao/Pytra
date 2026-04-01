@@ -2999,7 +2999,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         cpp_code = emit_cpp_module(doc)
 
-        self.assertIn("return (py_list_at_ref(items, int64(0))).unbox<int64, PYTRA_TID_INT>();", cpp_code)
+        self.assertIn("return (py_list_at_ref(items, 0)).unbox<int64>();", cpp_code)
         self.assertNotIn("static_cast<int64>(py_list_at_ref(items, int64(0)))", cpp_code)
 
     def test_cpp_emitter_boxes_empty_unknown_dict_as_string_key_object_values(self) -> None:
@@ -4334,8 +4334,8 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         cpp_code = emit_cpp_module(doc)
 
-        self.assertIn("py_runtime_object_isinstance(dyn, static_cast<pytra_type_id>(PYTRA_TID_LIST))", cpp_code)
-        self.assertIn("py_runtime_value_isinstance(items, PYTRA_TID_DICT)", cpp_code)
+        self.assertIn("py_is_list(dyn)", cpp_code)
+        self.assertIn("py_is_dict(items)", cpp_code)
 
     def test_cpp_emitter_iterates_dicts_as_keys_for_direct_for_loops(self) -> None:
         doc = _module_doc(

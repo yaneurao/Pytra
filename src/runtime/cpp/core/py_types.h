@@ -206,7 +206,7 @@ struct PyBoxedValue {
 };
 
 // Object<void>::unbox — deferred definition (PyBoxedValue must be complete)
-template<typename T, uint32_t TID>
+template<typename T>
 inline const T& Object<void>::unbox() const {
     return static_cast<PyBoxedValue<T>*>(cb->base_ptr)->value;
 }

@@ -833,23 +833,63 @@ def _is_top_level_union_type(type_name: str) -> bool:
 
 
 def _union_lane_matches_expected(lane: str, expected_name: str) -> bool:
-    if expected_name in ("int", "int64", "PYTRA_TID_INT"):
+    expected_name = _normalize_expected_type_name(expected_name)
+    if expected_name in ("int", "int64"):
         return lane in ("int", "int64")
-    if expected_name in ("float", "float64", "PYTRA_TID_FLOAT"):
+    if expected_name in ("float", "float64"):
         return lane in ("float", "float64")
-    if expected_name in ("bool", "PYTRA_TID_BOOL"):
+    if expected_name == "bool":
         return lane == "bool"
-    if expected_name in ("str", "PYTRA_TID_STR"):
+    if expected_name == "str":
         return lane == "str"
-    if expected_name in ("dict", "PYTRA_TID_DICT"):
+    if expected_name == "dict":
         return lane.startswith("dict[")
-    if expected_name in ("list", "PYTRA_TID_LIST"):
+    if expected_name == "list":
         return lane.startswith("list[")
-    if expected_name in ("set", "PYTRA_TID_SET"):
+    if expected_name == "set":
         return lane.startswith("set[")
-    if expected_name in ("None", "none", "PYTRA_TID_NONE"):
+    if expected_name in ("None", "none"):
         return lane in ("None", "none")
+    if expected_name == "object":
+        return True
     return lane == expected_name
+
+
+def _normalize_expected_type_name(expected_name: str) -> str:
+    return {
+        "PYTRA_TID_NONE": "None",
+        "PYTRA_TID_BOOL": "bool",
+        "PYTRA_TID_INT": "int64",
+        "PYTRA_TID_FLOAT": "float64",
+        "PYTRA_TID_STR": "str",
+        "PYTRA_TID_LIST": "list",
+        "PYTRA_TID_DICT": "dict",
+        "PYTRA_TID_SET": "set",
+        "PYTRA_TID_OBJECT": "object",
+    }.get(expected_name, expected_name)
+
+
+def _emit_builtin_isinstance(value_expr: str, expected_name: str) -> str:
+    normalized = _normalize_expected_type_name(expected_name)
+    if normalized in ("None", "none"):
+        return "py_is_none(" + value_expr + ")"
+    if normalized in ("int", "int64"):
+        return "py_is_int(" + value_expr + ")"
+    if normalized in ("float", "float64"):
+        return "py_is_float(" + value_expr + ")"
+    if normalized == "bool":
+        return "py_is_bool(" + value_expr + ")"
+    if normalized == "str":
+        return "py_is_str(" + value_expr + ")"
+    if normalized == "list":
+        return "py_is_list(" + value_expr + ")"
+    if normalized == "dict":
+        return "py_is_dict(" + value_expr + ")"
+    if normalized == "set":
+        return "py_is_set(" + value_expr + ")"
+    if normalized == "object":
+        return "py_is_object(" + value_expr + ")"
+    return ""
 
 
 def _select_union_lane(union_type: str, target_type: str) -> str:
@@ -2338,13 +2378,13 @@ def _emit_box(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 
 def _emit_object_unbox(value_expr: str, target: str) -> str:
     if target == "str":
-        return "(" + value_expr + ").unbox<str, PYTRA_TID_STR>()"
+        return "(" + value_expr + ").unbox<str>()"
     if target in ("int", "int64"):
-        return "(" + value_expr + ").unbox<int64, PYTRA_TID_INT>()"
+        return "(" + value_expr + ").unbox<int64>()"
     if target in ("float", "float64"):
-        return "(" + value_expr + ").unbox<float64, PYTRA_TID_FLOAT>()"
+        return "(" + value_expr + ").unbox<float64>()"
     if target == "bool":
-        return "(" + value_expr + ").unbox<bool, PYTRA_TID_BOOL>()"
+        return "(" + value_expr + ").unbox<bool>()"
     return value_expr
 
 
@@ -2354,7 +2394,7 @@ def _emit_isinstance(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     if expected_trait_fqcn != "":
         _emit_fail(ctx, "unexpected_trait_isinstance", expected_trait_fqcn)
     expected = node.get("expected_type_id")
-    expected_name = _str(expected, "id") if isinstance(expected, dict) else ""
+    expected_name = _normalize_expected_type_name(_str(expected, "id") if isinstance(expected, dict) else "")
     value_expr = _emit_expr(ctx, value)
     value_type = _effective_resolved_type(value)
     if _is_top_level_union_type(value_type):
@@ -2367,6 +2407,9 @@ def _emit_isinstance(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         if len(checks) == 0:
             return "false"
         return "(" + " || ".join(checks) + ")"
+    builtin_check = _emit_builtin_isinstance(value_expr, expected_name)
+    if builtin_check != "":
+        return builtin_check
     exact_pod_cpp_types = {
         "bool": "bool",
         "int8": "int8",
@@ -2383,34 +2426,6 @@ def _emit_isinstance(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     cpp_exact_type = exact_pod_cpp_types.get(expected_name, "")
     if cpp_exact_type != "":
         return "py_runtime_value_exact_is<" + cpp_exact_type + ">(" + value_expr + ")"
-    tid = {
-        "None": "PYTRA_TID_NONE",
-        "bool": "PYTRA_TID_BOOL",
-        "int": "PYTRA_TID_INT",
-        "int64": "PYTRA_TID_INT",
-        "float": "PYTRA_TID_FLOAT",
-        "float64": "PYTRA_TID_FLOAT",
-        "str": "PYTRA_TID_STR",
-        "list": "PYTRA_TID_LIST",
-        "dict": "PYTRA_TID_DICT",
-        "set": "PYTRA_TID_SET",
-        "object": "PYTRA_TID_OBJECT",
-        "PYTRA_TID_NONE": "PYTRA_TID_NONE",
-        "PYTRA_TID_BOOL": "PYTRA_TID_BOOL",
-        "PYTRA_TID_INT": "PYTRA_TID_INT",
-        "PYTRA_TID_FLOAT": "PYTRA_TID_FLOAT",
-        "PYTRA_TID_STR": "PYTRA_TID_STR",
-        "PYTRA_TID_LIST": "PYTRA_TID_LIST",
-        "PYTRA_TID_DICT": "PYTRA_TID_DICT",
-        "PYTRA_TID_SET": "PYTRA_TID_SET",
-        "PYTRA_TID_OBJECT": "PYTRA_TID_OBJECT",
-    }.get(expected_name, "")
-    if tid == "":
-        class_type_id = _lookup_class_type_id(ctx, expected_name)
-        if class_type_id is not None:
-            tid = str(class_type_id)
-    if tid == "":
-        return "false"
     if _is_top_level_union_type(value_type):
         lanes = _split_top_level_union_type(value_type)
         checks: list[str] = []
@@ -2421,11 +2436,20 @@ def _emit_isinstance(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         if len(checks) == 0:
             return "false"
         return "(" + " || ".join(checks) + ")"
+    class_type_id = _lookup_class_type_id(ctx, expected_name)
+    if class_type_id is not None and value_type in ("object", "Any", "Obj", "unknown"):
+        return (
+            "([&]() -> bool { auto __pytra_value = "
+            + value_expr
+            + "; return static_cast<bool>(__pytra_value) && __pytra_value.isinstance(&"
+            + expected_name
+            + "::PYTRA_TYPE_INFO); }())"
+        )
     if value_type in ("object", "Any", "Obj", "unknown") or "|" in value_type:
-        return "py_runtime_object_isinstance(" + value_expr + ", static_cast<pytra_type_id>(" + tid + "))"
-    if _lookup_class_type_id(ctx, expected_name) is not None:
+        return "false"
+    if class_type_id is not None:
         return "true" if _is_known_class_subtype(ctx, value_type, expected_name) else "false"
-    return "py_runtime_value_isinstance(" + value_expr + ", " + tid + ")"
+    return "false"
 
 
 def _emit_obj_type_id(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:

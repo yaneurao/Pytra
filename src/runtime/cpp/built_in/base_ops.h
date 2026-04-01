@@ -60,6 +60,128 @@ static inline bool py_is_none(const object& v) { return !static_cast<bool>(v); }
 template <class T>
 static inline bool py_is_none(const T&) { return false; }
 
+static inline bool py_is_bool(const object& v) {
+    return static_cast<bool>(v) && v.type_id() == PYTRA_TID_BOOL;
+}
+
+template <class T>
+static inline bool py_is_bool(const T&) {
+    return ::std::is_same_v<::std::decay_t<T>, bool>;
+}
+
+static inline bool py_is_int(const object& v) {
+    return static_cast<bool>(v) && v.type_id() == PYTRA_TID_INT;
+}
+
+template <class T>
+static inline bool py_is_int(const T&) {
+    using Decayed = ::std::decay_t<T>;
+    return ::std::is_same_v<Decayed, int> || ::std::is_same_v<Decayed, int64>;
+}
+
+static inline bool py_is_float(const object& v) {
+    return static_cast<bool>(v) && v.type_id() == PYTRA_TID_FLOAT;
+}
+
+template <class T>
+static inline bool py_is_float(const T&) {
+    using Decayed = ::std::decay_t<T>;
+    return ::std::is_same_v<Decayed, float> || ::std::is_same_v<Decayed, float64>;
+}
+
+static inline bool py_is_str(const object& v) {
+    return static_cast<bool>(v) && v.type_id() == PYTRA_TID_STR;
+}
+
+template <class T>
+static inline bool py_is_str(const T&) {
+    return ::std::is_same_v<::std::decay_t<T>, str>;
+}
+
+template <class T>
+static inline bool py_is_list(const list<T>&) { return true; }
+
+template <class T>
+static inline bool py_is_list(const Object<list<T>>&) { return true; }
+
+static inline bool py_is_list(const object& v) {
+    return static_cast<bool>(v) && v.type_id() == PYTRA_TID_LIST;
+}
+
+template <class T>
+static inline bool py_is_list(const T&) { return false; }
+
+template <class K, class V>
+static inline bool py_is_dict(const dict<K, V>&) { return true; }
+
+template <class K, class V>
+static inline bool py_is_dict(const Object<dict<K, V>>&) { return true; }
+
+static inline bool py_is_dict(const object& v) {
+    return static_cast<bool>(v) && v.type_id() == PYTRA_TID_DICT;
+}
+
+template <class T>
+static inline bool py_is_dict(const T&) { return false; }
+
+template <class T>
+static inline bool py_is_set(const set<T>&) { return true; }
+
+template <class T>
+static inline bool py_is_set(const Object<set<T>>&) { return true; }
+
+static inline bool py_is_set(const object& v) {
+    return static_cast<bool>(v) && v.type_id() == PYTRA_TID_SET;
+}
+
+template <class T>
+static inline bool py_is_set(const T&) { return false; }
+
+static inline bool py_is_object(const object&) { return true; }
+
+template <class T>
+static inline bool py_is_object(const T&) { return true; }
+
+template <class... Ts>
+static inline bool py_is_bool(const ::std::variant<Ts...>& v) {
+    return ::std::visit([](const auto& item) -> bool { return py_is_bool(item); }, v);
+}
+
+template <class... Ts>
+static inline bool py_is_int(const ::std::variant<Ts...>& v) {
+    return ::std::visit([](const auto& item) -> bool { return py_is_int(item); }, v);
+}
+
+template <class... Ts>
+static inline bool py_is_float(const ::std::variant<Ts...>& v) {
+    return ::std::visit([](const auto& item) -> bool { return py_is_float(item); }, v);
+}
+
+template <class... Ts>
+static inline bool py_is_str(const ::std::variant<Ts...>& v) {
+    return ::std::visit([](const auto& item) -> bool { return py_is_str(item); }, v);
+}
+
+template <class... Ts>
+static inline bool py_is_list(const ::std::variant<Ts...>& v) {
+    return ::std::visit([](const auto& item) -> bool { return py_is_list(item); }, v);
+}
+
+template <class... Ts>
+static inline bool py_is_dict(const ::std::variant<Ts...>& v) {
+    return ::std::visit([](const auto& item) -> bool { return py_is_dict(item); }, v);
+}
+
+template <class... Ts>
+static inline bool py_is_set(const ::std::variant<Ts...>& v) {
+    return ::std::visit([](const auto& item) -> bool { return py_is_set(item); }, v);
+}
+
+template <class... Ts>
+static inline bool py_is_object(const ::std::variant<Ts...>& v) {
+    return ::std::visit([](const auto& item) -> bool { return py_is_object(item); }, v);
+}
+
 // py_str_slice: str のスライス（境界クランプ付き）。
 // 旧 py_slice(const str&, ...) を改名。emitter は str スライス時にこちらを使用する。
 static inline str py_str_slice(const str& v, int64 lo, int64 up) {
