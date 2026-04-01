@@ -59,6 +59,7 @@ class EmitContext:
     expr_renderer: object | None = None
     stmt_renderer: object | None = None
     symbol_name_cache: dict[str, str] = field(default_factory=dict)
+    function_signatures: dict[str, tuple[list[str], str]] = field(default_factory=dict)
 
 
 def _emit(ctx: EmitContext, line: str) -> None:
@@ -349,7 +350,26 @@ def _wrap_callable_arg(ctx: EmitContext, arg_node: JsonVal, rendered: str) -> st
         name = _str(node, "id")
         mapped_name = _java_symbol_name(ctx, name)
         if name in ctx.function_names or mapped_name in ctx.function_names:
-            return "() -> " + mapped_name + "()"
+            sig = ctx.function_signatures.get(name)
+            if sig is None:
+                sig = ctx.function_signatures.get(mapped_name)
+            if sig is not None:
+                arg_types, _return_type = sig
+                if len(arg_types) == 0:
+                    if parsed is None:
+                        return "(__unused) -> { " + mapped_name + "(); return null; }"
+                    return "() -> " + mapped_name + "()"
+                params: list[str] = []
+                call_args: list[str] = []
+                for idx, arg_type in enumerate(arg_types):
+                    param = "arg" + str(idx)
+                    params.append(param)
+                    if parsed is None:
+                        call_args.append(_emit_cast_expr(ctx, arg_type, param))
+                    else:
+                        call_args.append(param)
+                return "(" + ", ".join(params) + ") -> " + mapped_name + "(" + ", ".join(call_args) + ")"
+            return rendered
         if parsed is not None:
             return _emit_callable_bridge(ctx, node, mapped_name + ".invoke")
         return rendered
@@ -495,6 +515,8 @@ def _emit_container_method_call(ctx: EmitContext, owner_node: JsonVal, attr: str
     if _is_list_type(owner_type):
         if attr == "append" and len(arg_strs) >= 1:
             return owner_access + ".add(" + arg_strs[0] + ")"
+        if attr == "extend" and len(arg_strs) >= 1:
+            return owner_access + ".addAll(" + arg_strs[0] + ")"
         if attr == "index" and len(arg_strs) >= 1:
             return "PyRuntime.pyListIndex(" + owner_access + ", " + arg_strs[0] + ")"
         if attr == "pop":
@@ -502,6 +524,12 @@ def _emit_container_method_call(ctx: EmitContext, owner_node: JsonVal, attr: str
             return "PyRuntime.pyPop(" + owner_access + ", " + idx_expr + ")"
         if attr == "clear":
             return owner_access + ".clear()"
+    if owner_type == "str":
+        if attr == "upper":
+            return owner_access + ".toUpperCase()"
+    if owner_type == "Path":
+        if attr == "exists":
+            return owner_access + ".exists()"
     if _is_dict_type(owner_type) or _is_dynamic_type(owner_type):
         if attr == "get":
             if _is_dynamic_type(owner_type):
@@ -798,11 +826,42 @@ def _emit_constant(node: dict[str, JsonVal]) -> str:
     return str(value)
 
 
+def _unwrap_node(node: JsonVal) -> JsonVal:
+    current = node
+    while isinstance(current, dict) and _str(current, "kind") in ("Box", "Unbox"):
+        inner = current.get("value")
+        if not isinstance(inner, dict):
+            break
+        current = inner
+    return current
+
+
+def _normalize_runtime_module_id(module_id: str) -> str:
+    if module_id.startswith("pytra.std."):
+        return module_id[len("pytra.std."):]
+    return module_id
+
+
+def _module_owner_info(ctx: EmitContext, owner_node: JsonVal) -> tuple[bool, str, str]:
+    node = _unwrap_node(owner_node)
+    if not isinstance(node, dict):
+        return (False, "", "")
+    runtime_module_id = _str(node, "runtime_module_id")
+    if runtime_module_id != "":
+        owner_key = _str(node, "repr")
+        if owner_key == "" and _str(node, "kind") == "Name":
+            owner_key = _str(node, "id")
+        return (True, owner_key, runtime_module_id)
+    if _str(node, "kind") == "Name":
+        owner_id = _str(node, "id")
+        if owner_id in ctx.import_alias_modules:
+            return (True, owner_id, ctx.import_alias_modules[owner_id])
+    return (False, "", "")
+
+
 def _is_module_owner(ctx: EmitContext, owner_node: JsonVal) -> bool:
-    if not isinstance(owner_node, dict):
-        return False
-    owner_id = _str(owner_node, "id")
-    return _effective_type(owner_node) == "module" or owner_id in ctx.import_alias_modules
+    is_module, _owner_key, _module_id = _module_owner_info(ctx, owner_node)
+    return is_module
 
 
 def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -816,15 +875,18 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             type_args = _list(owner_node, "args")
             if len(type_args) >= 1:
                 return "PyRuntime.pyTypeName(" + _emit_expr(ctx, type_args[0]) + ")"
-    if _is_module_owner(ctx, owner_node):
-        owner_id = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
+    is_module_owner, owner_key, owner_module_id = _module_owner_info(ctx, owner_node)
+    if is_module_owner:
         mod_id = _str(node, "runtime_module_id")
         if mod_id == "":
-            mod_id = ctx.import_alias_modules.get(owner_id, "")
+            mod_id = owner_module_id
+        qualified = _str(node, "repr")
+        if qualified == "":
+            qualified = owner_key + "." + attr if owner_key != "" else attr
+        if qualified in ctx.mapping.calls:
+            return ctx.mapping.calls[qualified]
+        mod_id = _normalize_runtime_module_id(mod_id)
         if should_skip_module(mod_id, ctx.mapping):
-            qualified = owner_id + "." + attr if owner_id != "" else attr
-            if qualified in ctx.mapping.calls:
-                return ctx.mapping.calls[qualified]
             resolved = resolve_runtime_symbol_name(
                 attr,
                 ctx.mapping,
@@ -912,8 +974,15 @@ def _emit_expr_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64",
             "float32", "float64",
         }
-        value_expr = "PyRuntime.pyRuntimeValueTypeId(" + _emit_expr(ctx, node.get("value")) + ")"
+        expected_name = ""
         expected_node = node.get("expected_type_id")
+        if isinstance(expected_node, dict):
+            expected_name = _str(expected_node, "id")
+            if expected_name == "":
+                expected_name = _str(expected_node, "type_object_of")
+        if expected_name in ctx.class_names or expected_name in ctx.class_bases:
+            return "(" + _emit_expr(ctx, node.get("value")) + " instanceof " + _safe_java_ident(expected_name) + ")"
+        value_expr = "PyRuntime.pyRuntimeValueTypeId(" + _emit_expr(ctx, node.get("value")) + ")"
         if isinstance(expected_node, dict):
             expected_tid = _str(expected_node, "id")
             actual_type = _node_type(ctx, node.get("value"))
@@ -1006,6 +1075,8 @@ def _runtime_call_name(ctx: EmitContext, node: dict[str, JsonVal], func: JsonVal
 
 
 def _emit_cast_expr(ctx: EmitContext, target_type: str, arg_code: str) -> str:
+    if target_type == "":
+        return arg_code
     optional_inner = _optional_inner_type(target_type)
     if optional_inner != "":
         nullable_arg = arg_code
@@ -1053,6 +1124,8 @@ def _emit_builtin_placeholder(ctx: EmitContext, fn_name: str, all_arg_strs: list
         return "new HashSet<>(java.util.Arrays.asList(" + ", ".join(all_arg_strs) + "))"
     if fn_name == "__LIST_APPEND__" and len(all_arg_strs) >= 2:
         return owner + ".add(" + all_arg_strs[1] + ")"
+    if fn_name == "__LIST_EXTEND__" and len(all_arg_strs) >= 2:
+        return owner + ".addAll(" + all_arg_strs[1] + ")"
     if fn_name == "__DICT_GET__":
         if len(all_arg_strs) >= 3:
             return _maybe_cast_dynamic_call(
@@ -1078,6 +1151,13 @@ def _emit_builtin_placeholder(ctx: EmitContext, fn_name: str, all_arg_strs: list
         return owner + ".add(" + all_arg_strs[1] + ")"
     if fn_name in ("__SET_DISCARD__", "__SET_REMOVE__") and len(all_arg_strs) >= 2:
         return owner + ".remove(" + all_arg_strs[1] + ")"
+    if fn_name == "PyRuntime.pyRange":
+        if len(all_arg_strs) == 1:
+            return "PyRuntime.pyRange(0, (int) PyRuntime.pyToLong(" + all_arg_strs[0] + "), 1)"
+        if len(all_arg_strs) == 2:
+            return "PyRuntime.pyRange((int) PyRuntime.pyToLong(" + all_arg_strs[0] + "), (int) PyRuntime.pyToLong(" + all_arg_strs[1] + "), 1)"
+        if len(all_arg_strs) >= 3:
+            return "PyRuntime.pyRange((int) PyRuntime.pyToLong(" + all_arg_strs[0] + "), (int) PyRuntime.pyToLong(" + all_arg_strs[1] + "), (int) PyRuntime.pyToLong(" + all_arg_strs[2] + "))"
     return ""
 
 
@@ -1115,7 +1195,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         fn_name = _runtime_call_name(ctx, node, func)
         runtime_owner = node.get("runtime_owner")
         if isinstance(runtime_owner, dict):
-            arg_strs = [_emit_expr(ctx, runtime_owner)] + arg_strs
+            if not _is_module_owner(ctx, runtime_owner):
+                arg_strs = [_emit_expr(ctx, runtime_owner)] + arg_strs
+        if fn_name == "PyRuntime.pyToString" and len(args) >= 1:
+            first_arg_type = _node_type(ctx, args[0])
+            if first_arg_type.startswith("tuple["):
+                return "PyRuntime.pyTupleToString(" + arg_strs[0] + ")"
         arg_strs = _wrap_stdout_callable_args(fn_name, arg_strs)
         placeholder = _emit_builtin_placeholder(ctx, fn_name, arg_strs, node)
         if placeholder != "":
@@ -1132,15 +1217,18 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             special = _emit_container_method_call(ctx, owner_node, attr, arg_strs, node)
             if special != "":
                 return special
-            if _is_module_owner(ctx, owner_node):
-                owner_id = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
+            is_module_owner, owner_key, owner_module_id = _module_owner_info(ctx, owner_node)
+            if is_module_owner:
                 mod_id = _str(node, "runtime_module_id")
                 if mod_id == "":
-                    mod_id = ctx.import_alias_modules.get(owner_id, "")
+                    mod_id = owner_module_id
+                qualified = _str(func, "repr")
+                if qualified == "":
+                    qualified = owner_key + "." + attr if owner_key != "" else attr
+                if qualified in ctx.mapping.calls:
+                    return ctx.mapping.calls[qualified] + "(" + ", ".join(arg_strs) + ")"
+                mod_id = _normalize_runtime_module_id(mod_id)
                 if should_skip_module(mod_id, ctx.mapping):
-                    qualified = owner_id + "." + attr if owner_id != "" else attr
-                    if qualified in ctx.mapping.calls:
-                        return ctx.mapping.calls[qualified] + "(" + ", ".join(arg_strs) + ")"
                     resolved = resolve_runtime_symbol_name(
                         attr,
                         ctx.mapping,
@@ -1174,6 +1262,28 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return _emit_attribute(ctx, func) + "(" + ", ".join(arg_strs) + ")"
         if func_kind == "Name":
             fn_id = _str(func, "id")
+            if fn_id == "pytra_isinstance" and len(args) >= 2:
+                actual_arg = args[0]
+                expected_arg = args[1]
+                if (
+                    isinstance(actual_arg, dict)
+                    and _str(actual_arg, "kind") == "ObjTypeId"
+                    and isinstance(expected_arg, dict)
+                    and _str(expected_arg, "kind") == "Name"
+                ):
+                    tid_name = _str(expected_arg, "id")
+                    expected_class = ""
+                    for fqcn in ctx.linked_type_ids:
+                        if _fqcn_to_tid_const(fqcn) != tid_name:
+                            continue
+                        if "." not in fqcn:
+                            continue
+                        candidate = fqcn.rsplit(".", 1)[1]
+                        if candidate in ctx.class_names or candidate in ctx.class_bases:
+                            expected_class = candidate
+                            break
+                    if expected_class != "":
+                        return "(((Object) (" + _emit_expr(ctx, actual_arg.get("value")) + ")) instanceof " + _safe_java_ident(expected_class) + ")"
             vararg_type = ctx.function_varargs.get(fn_id, "")
             if vararg_type != "" and len(args) >= 1:
                 last_arg = args[-1]
@@ -1204,6 +1314,16 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             func_type = _str(func, "resolved_type")
             if _parse_callable_type(func_type) is not None:
                 return _java_symbol_name(ctx, fn_id) + ".invoke(" + ", ".join(arg_strs) + ")"
+            if (
+                func_type in ("Callable", "callable")
+                and fn_id not in ctx.function_names
+                and _java_symbol_name(ctx, fn_id) not in ctx.function_names
+            ):
+                result = _java_symbol_name(ctx, fn_id) + ".apply(" + (arg_strs[0] if len(arg_strs) >= 1 else "null") + ")"
+                result_type = _str(node, "resolved_type")
+                if result_type != "" and not _is_dynamic_type(result_type):
+                    return _emit_cast_expr(ctx, result_type, result)
+                return result
             runtime_call = _str(node, "runtime_call")
             resolved_runtime_call = _str(node, "resolved_runtime_call")
             adapter_kind = _str(node, "runtime_call_adapter_kind")
@@ -1968,6 +2088,13 @@ def _collect_module_class_info(ctx: EmitContext, body: list[JsonVal]) -> None:
             if name != "":
                 ctx.function_names.add(name)
                 ctx.function_names.add(_java_symbol_name(ctx, name))
+                arg_order, arg_types = _arg_order_and_types(stmt)
+                positional_arg_types: list[str] = []
+                for idx, arg_name in enumerate(arg_order):
+                    if idx == 0 and arg_name == "self":
+                        continue
+                    positional_arg_types.append(arg_types.get(arg_name, "Object"))
+                ctx.function_signatures[name] = (positional_arg_types, _function_return_type(stmt))
                 vararg_name = _str(stmt, "vararg_name")
                 vararg_type = _str(stmt, "vararg_type")
                 if vararg_name != "":
@@ -1998,7 +2125,15 @@ def _build_java_runtime_import_map(meta: dict[str, JsonVal], mapping: RuntimeMap
         module_id = binding.get("runtime_module_id")
         if not isinstance(module_id, str) or module_id == "":
             module_id = binding.get("module_id")
+        normalized_module_id = _normalize_runtime_module_id(module_id if isinstance(module_id, str) else "")
         if module_id != "pytra.built_in.type_id_table":
+            if normalized_module_id == "" or not should_skip_module(normalized_module_id, mapping):
+                continue
+            export_name = binding.get("export_name")
+            symbol_name = export_name if isinstance(export_name, str) and export_name != "" else local_name
+            resolved = resolve_runtime_symbol_name(symbol_name, mapping)
+            if resolved != "":
+                runtime_imports[local_name] = resolved
             continue
         export_name = binding.get("export_name")
         if not isinstance(export_name, str) or export_name == "":

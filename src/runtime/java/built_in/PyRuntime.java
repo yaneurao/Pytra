@@ -76,6 +76,14 @@ final class PyRuntime {
         }
     }
 
+    private static String pyRepr(Object v) {
+        if (v instanceof String) {
+            String s = (String) v;
+            return "'" + s.replace("\\", "\\\\").replace("'", "\\'") + "'";
+        }
+        return pyToString(v);
+    }
+
     static String pyToString(Object v) {
         if (v == null) {
             return "None";
@@ -99,7 +107,7 @@ final class PyRuntime {
             List<?> list = (List<?>) v;
             StringJoiner sj = new StringJoiner(", ", "[", "]");
             for (Object it : list) {
-                sj.add(pyToString(it));
+                sj.add(pyRepr(it));
             }
             return sj.toString();
         }
@@ -107,11 +115,23 @@ final class PyRuntime {
             Map<?, ?> map = (Map<?, ?>) v;
             StringJoiner sj = new StringJoiner(", ", "{", "}");
             for (Map.Entry<?, ?> e : map.entrySet()) {
-                sj.add(pyToString(e.getKey()) + ": " + pyToString(e.getValue()));
+                sj.add(pyRepr(e.getKey()) + ": " + pyRepr(e.getValue()));
             }
             return sj.toString();
         }
         return String.valueOf(v);
+    }
+
+    static String pyTupleToString(List<?> value) {
+        StringJoiner sj = new StringJoiner(", ", "(", ")");
+        for (Object item : value) {
+            sj.add(pyRepr(item));
+        }
+        String text = sj.toString();
+        if (value.size() == 1) {
+            return text.substring(0, text.length() - 1) + ",)";
+        }
+        return text;
     }
 
     static void pyPrint(Object... values) {
@@ -796,6 +816,10 @@ final class PyRuntime {
 
     static String pyStrReplace(String value, String oldValue, String newValue) {
         return value.replace(oldValue, newValue);
+    }
+
+    static String pyStrUpper(String value) {
+        return value.toUpperCase();
     }
 
     static ArrayList<Object> pyDictKeys(Object value) {
