@@ -38,6 +38,46 @@ const pyTypeOrder = new Map<number, number>();
 const pyTypeMin = new Map<number, number>();
 const pyTypeMax = new Map<number, number>();
 
+function _pyDeepEq(a: unknown, b: unknown): boolean {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (!_pyDeepEq(a[i], b[i])) return false;
+    }
+    return true;
+  }
+  return Object.is(a, b);
+}
+
+const _NativeSet = globalThis.Set;
+class PySet<T = any> extends _NativeSet<T> {
+  constructor(items?: Iterable<T>) {
+    super();
+    if (items) {
+      for (const item of items) this.add(item);
+    }
+  }
+  override add(value: T): this {
+    if (!this.has(value)) super.add(value);
+    return this;
+  }
+  override has(value: T): boolean {
+    if (super.has(value)) return true;
+    for (const item of super.values()) {
+      if (_pyDeepEq(item, value)) return true;
+    }
+    return false;
+  }
+  override delete(value: T): boolean {
+    if (super.delete(value)) return true;
+    for (const item of super.values()) {
+      if (_pyDeepEq(item, value)) return super.delete(item);
+    }
+    return false;
+  }
+}
+(globalThis as unknown as { Set: SetConstructor }).Set = PySet as unknown as SetConstructor;
+
 function containsInt(items: number[], value: number): boolean {
   let i = 0;
   while (i < items.length) {
@@ -411,7 +451,11 @@ export function pyBool(value: unknown): boolean {
 }
 
 /** Python の range 相当配列を返す。 */
-export function pyRange(start: number, stop: number, step = 1): number[] {
+export function pyRange(start: number, stop?: number, step = 1): number[] {
+  if (stop === undefined) {
+    stop = start;
+    start = 0;
+  }
   if (step === 0) {
     throw new Error("range() arg 3 must not be zero");
   }

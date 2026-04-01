@@ -16,6 +16,7 @@ from pytra.std.pathlib import Path
 
 from toolchain2.emit.ts.types import (
     ts_type, ts_zero_value, _safe_ts_ident, _split_generic_args,
+    TS_BUILTIN_RUNTIME_SYMBOLS, TS_BUILTIN_EXCEPTION_NAMES, TS_BUILTIN_EXCEPTION_MAP,
 )
 from toolchain2.emit.common.code_emitter import (
     RuntimeMapping, load_runtime_mapping, resolve_runtime_call,
@@ -81,48 +82,7 @@ class EmitContext:
 
 # All symbols exported by src/runtime/ts/built_in/py_runtime.ts
 _BUILTIN_RUNTIME_SYMBOLS: set[str] = set()
-for _builtin_runtime_symbol in [
-    "PY_TYPE_NONE", "PY_TYPE_BOOL", "PY_TYPE_NUMBER", "PY_TYPE_STRING",
-    "PY_TYPE_ARRAY", "PY_TYPE_MAP", "PY_TYPE_SET", "PY_TYPE_OBJECT",
-    "PYTRA_TYPE_ID", "PYTRA_TRUTHY", "PYTRA_TRY_LEN", "PYTRA_STR",
-    "pyRegisterType", "pyRegisterClassType", "pyIsSubtype", "pyIsInstance",
-    "pyTypeId", "pyTruthy", "pyTryLen", "pyStr", "pyToString",
-    "pyPrint", "pyLen", "pyBool", "pyRange", "pyFloorDiv", "pyMod",
-    "pyIn", "pySlice", "pyOrd", "pyChr", "pyBytearray", "pyBytes",
-    "pyStrJoin", "pyStrStrip", "pyStrLstrip", "pyStrRstrip",
-    "pyStrStartswith", "pyStrEndswith", "pyStrReplace",
-    "pyStrFind", "pyStrRfind", "pyStrSplit",
-    "pyStrUpper", "pyStrLower", "pyStrCount", "pyStrIndex",
-    "pyStrIsdigit", "pyStrIsalpha", "pyStrIsalnum", "pyStrIsspace",
-    "pyEnumerate", "pyReversed", "pySorted",
-    "pyAssertStdout", "pyAssertTrue", "pyAssertEq", "pyAssertAll",
-    "pyFloatStr", "pyFmt",
-    "pysum", "pyzip", "type_",
-    "pyfabs", "pytan", "pylog", "pyexp", "pylog10", "pylog2",
-    "pysqrt", "pysin", "pycos", "pyceil", "pyfloor", "pypow",
-    "pyround", "pytrunc", "pyatan2", "pyasin", "pyacos", "pyatan",
-    "pyhypot", "py_math_pi", "py_math_e", "py_math_inf", "py_math_nan",
-    "pyisfinite", "pyisinf", "pyisnan",
-    "dumps", "loads",
-    "pydumps", "pyloads", "pyloads_arr", "pyloads_obj",
-    "JsonValue", "JsonArr", "JsonObj",
-    "Path", "PyPath", "py_math_tau",
-    "pyjoin", "pysplitext", "pybasename", "pydirname", "pyexists", "pyisfile", "pyisdir",
-    "pymakedirs",
-    "ArgumentParser",
-    "pywrite_rgb_png",
-    "pyopen", "PyFile",
-    "perf_counter",
-    "sys", "pyset_argv", "pyset_path",
-    "sub", "match", "search", "findall", "split",
-    "pyglob",
-    "pyupdate", "pypop", "pyextend", "pysort", "pyclear",
-    "pydel",
-    "pyinsert", "pybool", "pyrepr",
-    "dict", "list", "set_", "field", "___",
-    "__file__",
-    "bool", "str", "int", "float",
-]:
+for _builtin_runtime_symbol in TS_BUILTIN_RUNTIME_SYMBOLS:
     _BUILTIN_RUNTIME_SYMBOLS.add(_builtin_runtime_symbol)
 
 _BUILTIN_RUNTIME_MODULE: str = "pytra_built_in_py_runtime"
@@ -227,16 +187,7 @@ def _is_top_level_public_name(ctx: EmitContext, name: str) -> bool:
 
 def _is_exception_type_name(ctx: EmitContext, type_name: str) -> bool:
     """Check if a type name is an exception class."""
-    _BUILTIN_EXCEPTIONS: set[str] = set()
-    for _builtin_exception in [
-        "Exception", "BaseException", "RuntimeError", "ValueError",
-        "TypeError", "IndexError", "KeyError", "StopIteration",
-        "AttributeError", "NameError", "NotImplementedError",
-        "OverflowError", "ZeroDivisionError", "AssertionError",
-        "OSError", "IOError", "FileNotFoundError", "PermissionError",
-    ]:
-        _BUILTIN_EXCEPTIONS.add(_builtin_exception)
-    if type_name in _BUILTIN_EXCEPTIONS:
+    if type_name in TS_BUILTIN_EXCEPTION_NAMES:
         return True
     # Check inherited from exception class
     base = ctx.class_bases.get(type_name, "")
@@ -337,16 +288,22 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     is_dict_type = owner_rt.startswith("dict[") or owner_rt == "dict"
     if is_dict_type and isinstance(slice_node, dict):
         slice_code = _emit_expr(ctx, slice_node)
-        return owner + ".get(" + slice_code + ")"
+        out = owner + ".get(" + slice_code + ")"
+        return out if ctx.strip_types else out + "!"
     # For lists/strings: handle negative constant indices (Python arr[-1] → JS arr[arr.length - 1])
     is_array_like = (owner_rt.startswith("list[") or owner_rt in ("list", "str", "string", "bytes", "bytearray"))
     if is_array_like and isinstance(slice_node, dict):
         neg_val = _get_negative_int_literal(slice_node)
         if neg_val is not None:
             # arr[-n] → arr[arr.length + (-n)]
-            return owner + "[" + owner + ".length + (" + str(neg_val) + ")]"
+            out = owner + "[" + owner + ".length + (" + str(neg_val) + ")]"
+            return out if ctx.strip_types else out + "!"
     slice_code = _emit_expr(ctx, slice_node)
-    return owner + "[" + slice_code + "]"
+    out = owner + "[" + slice_code + "]"
+    is_tuple_like = owner_rt.startswith("tuple[") or owner_rt == "tuple"
+    if not ctx.strip_types and (is_array_like or is_tuple_like):
+        return out + "!"
+    return out
 
 
 def _get_negative_int_literal(node: dict[str, JsonVal]) -> int | None:
@@ -750,7 +707,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 key = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "null"
                 default = builtin_arg_strs[2] if len(builtin_arg_strs) >= 3 else "null"
-                return "(" + owner + ".has(" + key + ") ? " + owner + ".get(" + key + ") : " + default + ")"
+                return "(" + owner + ".get(" + key + ") ?? " + default + ")"
             if fn_name == "__DICT_ITEMS__":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 return owner + ".entries()"
@@ -816,9 +773,15 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return _safe_ts_ident(owner_id) + "." + _safe_ts_ident(attr) + "(" + ", ".join(all_arg_strs) + ")"
 
             # super().__init__() → super(...)
-            if isinstance(owner_node, dict) and _str(owner_node, "kind") == "Call":
-                inner_func = owner_node.get("func")
-                if isinstance(inner_func, dict) and _str(inner_func, "id") == "super":
+            if isinstance(owner_node, dict):
+                owner_kind = _str(owner_node, "kind")
+                if owner_kind == "Call":
+                    inner_func = owner_node.get("func")
+                    if isinstance(inner_func, dict) and _str(inner_func, "id") == "super":
+                        if attr == "__init__":
+                            return "super(" + ", ".join(all_arg_strs) + ")"
+                        return "super." + _safe_ts_ident(attr) + "(" + ", ".join(all_arg_strs) + ")"
+                if owner_kind == "Name" and _str(owner_node, "id") == "super":
                     if attr == "__init__":
                         return "super(" + ", ".join(all_arg_strs) + ")"
                     return "super." + _safe_ts_ident(attr) + "(" + ", ".join(all_arg_strs) + ")"
@@ -878,6 +841,13 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
         if func_kind == "Name":
             fn_id = _str(func, "id")
+
+            if fn_id in ("__init__", "py__init__") and len(args) >= 1:
+                first_arg = args[0]
+                if isinstance(first_arg, dict) and _str(first_arg, "kind") == "Call":
+                    super_func = first_arg.get("func")
+                    if isinstance(super_func, dict) and _str(super_func, "id") == "super":
+                        return "super(" + ", ".join(all_arg_strs[1:]) + ")"
 
             # cast(type_arg, value) → (value as TypeScriptType)
             # Python's cast() is a no-op at runtime; emit as a TS type assertion.
@@ -1030,6 +1000,24 @@ def _types_may_mismatch(left_rt: str, right_rt: str) -> bool:
     return (left_rt in _STR and right_rt in _NUM) or (left_rt in _NUM and right_rt in _STR)
 
 
+def _is_none_constant(node_or_none: object) -> bool:
+    if not isinstance(node_or_none, dict):
+        return False
+    if _str(node_or_none, "kind") != "Constant":
+        return False
+    value = node_or_none.get("value")
+    return value is None or value == "None"
+
+
+def _is_primitive_ts_rt(rt: str) -> bool:
+    if rt in ("", "str", "string", "char", "bool", "boolean", "None", "null"):
+        return True
+    return rt in (
+        "int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64",
+        "number", "float", "float32", "float64", "byte",
+    )
+
+
 def _get_ts_rt(ctx: EmitContext, node_or_none: object) -> str:
     """Get the TypeScript type for a node, preferring ctx.var_types for Name nodes."""
     if not isinstance(node_or_none, dict):
@@ -1081,8 +1069,21 @@ def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             # Cast to any if types may mismatch to avoid TS2367
             lhs = current_left
             rhs = right
-            if op_text in ("===", "!==") and _types_may_mismatch(current_left_rt, right_rt):
-                lhs = "(" + lhs + " as unknown as any)"
+            if op_text in ("===", "!=="):
+                if _types_may_mismatch(current_left_rt, right_rt) and not ctx.strip_types:
+                    lhs = "(" + lhs + " as unknown as any)"
+                if not ctx.strip_types:
+                    prev_node = left_node if idx == 0 else comparators[idx - 1]
+                    if _str(prev_node, "kind") == "Constant" and not _is_none_constant(prev_node):
+                        lhs = "(" + lhs + " as string | number | boolean | null)"
+                    if _str(right_node, "kind") == "Constant" and not _is_none_constant(right_node):
+                        rhs = "(" + rhs + " as string | number | boolean | null)"
+                    if (_str(right_node, "kind") == "Constant" and not _is_none_constant(right_node)
+                            and not _is_primitive_ts_rt(current_left_rt)):
+                        lhs = "(" + lhs + " as unknown as any)"
+                    if (_str(prev_node, "kind") == "Constant" and not _is_none_constant(prev_node)
+                            and not _is_primitive_ts_rt(right_rt)):
+                        rhs = "(" + rhs + " as unknown as any)"
             parts.append("(" + lhs + " " + op_text + " " + rhs + ")")
         current_left = right
         current_left_rt = right_rt
@@ -1983,31 +1984,7 @@ def _map_builtin_exception(name: str) -> str:
     For isinstance checks, TypeError matches only TypeError; Error matches all.
     We use the most specific JS type to preserve semantics.
     """
-    _BUILTIN_EXC_MAP: dict[str, str] = {}
-    _BUILTIN_EXC_MAP["Exception"] = "Error"
-    _BUILTIN_EXC_MAP["BaseException"] = "Error"
-    _BUILTIN_EXC_MAP["RuntimeError"] = "Error"
-    _BUILTIN_EXC_MAP["ValueError"] = "Error"
-    _BUILTIN_EXC_MAP["TypeError"] = "TypeError"
-    _BUILTIN_EXC_MAP["KeyError"] = "Error"
-    _BUILTIN_EXC_MAP["IndexError"] = "RangeError"
-    _BUILTIN_EXC_MAP["AttributeError"] = "Error"
-    _BUILTIN_EXC_MAP["NotImplementedError"] = "Error"
-    _BUILTIN_EXC_MAP["StopIteration"] = "Error"
-    _BUILTIN_EXC_MAP["OverflowError"] = "RangeError"
-    _BUILTIN_EXC_MAP["ZeroDivisionError"] = "Error"
-    _BUILTIN_EXC_MAP["OSError"] = "Error"
-    _BUILTIN_EXC_MAP["IOError"] = "Error"
-    _BUILTIN_EXC_MAP["NameError"] = "Error"
-    _BUILTIN_EXC_MAP["ImportError"] = "Error"
-    _BUILTIN_EXC_MAP["AssertionError"] = "Error"
-    _BUILTIN_EXC_MAP["SystemExit"] = "Error"
-    _BUILTIN_EXC_MAP["RecursionError"] = "RangeError"
-    _BUILTIN_EXC_MAP["FileNotFoundError"] = "Error"
-    _BUILTIN_EXC_MAP["PermissionError"] = "Error"
-    _BUILTIN_EXC_MAP["UnicodeDecodeError"] = "Error"
-    _BUILTIN_EXC_MAP["UnicodeEncodeError"] = "Error"
-    return _BUILTIN_EXC_MAP.get(name, _safe_ts_ident(name))
+    return TS_BUILTIN_EXCEPTION_MAP.get(name, _safe_ts_ident(name))
 
 
 def _emit_var_decl(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
@@ -2809,7 +2786,8 @@ def _emit_enum_class(ctx: EmitContext, node: dict[str, JsonVal], name: str) -> N
                 _emit(ctx, _safe_ts_ident(member_name) + ": " + val_code + ",")
     ctx.indent_level -= 1
     _emit(ctx, "};")
-    _emit(ctx, "type " + _safe_ts_ident(name) + " = number;")
+    if not ctx.strip_types:
+        _emit(ctx, "type " + _safe_ts_ident(name) + " = number;")
     _emit_blank(ctx)
 
 
@@ -2966,7 +2944,7 @@ def emit_ts_module(east3_doc: dict[str, JsonVal], *, strip_types: bool = False) 
     if is_type_id_table:
         _emit_blank(ctx)
         if strip_types:
-            _emit(ctx, "function pytra_isinstance(actual, tid) {")
+            _emit(ctx, "export function pytra_isinstance(actual, tid) {")
         else:
             _emit(ctx, "export function pytra_isinstance(actual: number, tid: number): boolean {")
         ctx.indent_level += 1
@@ -3047,4 +3025,9 @@ def emit_ts_module(east3_doc: dict[str, JsonVal], *, strip_types: bool = False) 
         output = "\n".join(preamble_lines) + "\n" + body_text.rstrip() + "\n"
     else:
         output = body_text.rstrip() + "\n"
+    output = output.replace("py__init__(super(), ", "super(")
+    if strip_types:
+        output = output.replace(" as unknown as any", "")
+        output = output.replace(" as string | number | boolean | null", "")
+        output = output.replace(" as any", "")
     return output
