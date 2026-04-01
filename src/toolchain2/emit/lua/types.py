@@ -11,7 +11,7 @@ LUA_EXCEPTION_TYPE_NAMES: tuple[str, ...] = (
 )
 
 LUA_PATH_TYPE_NAMES: tuple[str, ...] = ("Path",)
-LUA_NON_INHERITABLE_BASES: tuple[str, ...] = ("object", "Exception", "BaseException")
+LUA_NON_INHERITABLE_BASES: tuple[str, ...] = ("object",)
 
 LUA_BUILTIN_MODULE_PREFIX = "pytra.built_in."
 LUA_PYTRA_ISINSTANCE_NAME = "pytra_isinstance"

@@ -7,7 +7,7 @@
     "py_len": "__pytra_len",
     "len": "__pytra_len",
     "str": "tostring",
-    "py_to_string": "tostring",
+    "py_to_string": "__pytra_to_string",
     "static_cast": "__CAST__",
     "int": "__pytra_int",
     "float": "__pytra_float",

@@ -45,6 +45,20 @@ function __pytra_repr(v)
     if tv ~= "table" then
         return tostring(v)
     end
+    if type(v.msg) == "string" then
+        return v.msg
+    end
+    local mt = getmetatable(v)
+    if type(mt) == "table" then
+        local mt_str = mt.__str__
+        if type(mt_str) == "function" then
+            return mt_str(v)
+        end
+        local mt_index = mt.__index
+        if type(mt_index) == "table" and type(mt_index.__str__) == "function" then
+            return mt_index.__str__(v)
+        end
+    end
     if v.path ~= nil then
         return tostring(v.path)
     end
@@ -77,6 +91,26 @@ function __pytra_repr(v)
         parts[#parts + 1] = __pytra_repr(k) .. ": " .. __pytra_repr(v[k])
     end
     return "{" .. table.concat(parts, ", ") .. "}"
+end
+
+function __pytra_to_string(v)
+    if type(v) == "table" then
+        if type(v.msg) == "string" then
+            return v.msg
+        end
+        local mt = getmetatable(v)
+        if type(mt) == "table" then
+            local mt_str = mt.__str__
+            if type(mt_str) == "function" then
+                return mt_str(v)
+            end
+            local mt_index = mt.__index
+            if type(mt_index) == "table" and type(mt_index.__str__) == "function" then
+                return mt_index.__str__(v)
+            end
+        end
+    end
+    return tostring(v)
 end
 
 function __pytra_repeat_seq(a, b)
@@ -1406,7 +1440,7 @@ end
 
 -- Format helper for f-strings
 function __pytra_fmt(v, spec)
-    if spec == "" then return tostring(v) end
+    if spec == "" then return __pytra_to_string(v) end
     -- Simple numeric format specs
     local width, prec, ftype = spec:match("^(%d*)%.?(%d*)([fdegsx%%]?)$")
     if ftype == "f" or ftype == "e" or ftype == "g" then
@@ -1417,13 +1451,13 @@ function __pytra_fmt(v, spec)
         return string.format("%d", v)
     end
     if ftype == "s" then
-        return tostring(v)
+        return __pytra_to_string(v)
     end
     if ftype == "x" then
         return string.format("%x", v)
     end
     -- Fallback
-    return tostring(v)
+    return __pytra_to_string(v)
 end
 
 -- Assertion helpers

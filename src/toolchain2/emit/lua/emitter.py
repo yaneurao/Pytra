@@ -60,6 +60,7 @@ class EmitContext:
     temp_counter: int = 0
     is_type_id_table: bool = False
     current_exc_var: str = ""
+    catch_stack: list[tuple[str, str]] = field(default_factory=list)
     vararg_functions: set[str] = field(default_factory=set)
     declared_locals: set[str] = field(default_factory=set)
     in_class_body: bool = False
@@ -209,6 +210,201 @@ def _emit_isinstance_expr(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if expected_id == "PYTRA_TID_STR":
         return '(type(' + value + ') == "string")'
     return "false"
+
+
+def _split_union_types(type_name: str) -> list[str]:
+    parts: list[str] = []
+    current: list[str] = []
+    depth = 0
+    for ch in type_name:
+        if ch in "(<[":
+            depth += 1
+        elif ch in ")>]":
+            depth -= 1
+        if ch == "|" and depth == 0:
+            part = "".join(current).strip()
+            if part != "":
+                parts.append(part)
+            current = []
+            continue
+        current.append(ch)
+    tail = "".join(current).strip()
+    if tail != "":
+        parts.append(tail)
+    return parts
+
+
+def _is_union_error_return_type(ctx: EmitContext, type_name: str) -> bool:
+    if type_name.startswith("multi_return[") and type_name.endswith("]"):
+        inner = type_name[len("multi_return["):-1]
+        parts = _split_generic_args(inner)
+        return len(parts) == 2 and (parts[1] == "PytraError" or _is_exception_type_name(ctx, parts[1]))
+    if type_name == "PytraError" or _is_exception_type_name(ctx, type_name):
+        return True
+    parts = _split_union_types(type_name)
+    if len(parts) < 2:
+        return False
+    has_error = False
+    for part in parts:
+        if part == "PytraError" or _is_exception_type_name(ctx, part):
+            has_error = True
+    return has_error
+
+
+def _union_error_value_type(ctx: EmitContext, type_name: str) -> str:
+    if type_name.startswith("multi_return[") and type_name.endswith("]"):
+        inner = type_name[len("multi_return["):-1]
+        parts = _split_generic_args(inner)
+        if len(parts) == 2 and (parts[1] == "PytraError" or _is_exception_type_name(ctx, parts[1])):
+            return parts[0]
+        return ""
+    if type_name == "PytraError" or _is_exception_type_name(ctx, type_name):
+        return "None"
+    for part in _split_union_types(type_name):
+        if part == "PytraError" or _is_exception_type_name(ctx, part):
+            continue
+        return part
+    return ""
+
+
+def _is_none_error_return_type(ctx: EmitContext, type_name: str) -> bool:
+    if not _is_union_error_return_type(ctx, type_name):
+        return False
+    value_type = _union_error_value_type(ctx, type_name)
+    return value_type in ("", "None", "none", "nil")
+
+
+def _emit_error_propagation(ctx: EmitContext, err_code: str, *, allow_current_catch: bool) -> None:
+    if len(ctx.catch_stack) > 0:
+        target_index = len(ctx.catch_stack) - 1 if allow_current_catch else len(ctx.catch_stack) - 2
+        if target_index >= 0:
+            catch_err_var, catch_label = ctx.catch_stack[target_index]
+            _emit(ctx, catch_err_var + " = " + err_code)
+            _emit(ctx, "goto " + catch_label)
+            return
+    if _is_none_error_return_type(ctx, ctx.current_return_type):
+        _emit(ctx, "return " + err_code)
+        return
+    if _is_union_error_return_type(ctx, ctx.current_return_type):
+        _emit(ctx, "return nil, " + err_code)
+        return
+    _emit(ctx, "error(" + err_code + ")")
+
+
+def _emit_error_return(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
+    value = node.get("value")
+    if isinstance(value, dict):
+        err_code = _emit_expr(ctx, value)
+    elif ctx.current_exc_var != "":
+        err_code = _lua_symbol_name(ctx, ctx.current_exc_var)
+    else:
+        err_code = _quote_string("raise")
+    _emit_error_propagation(ctx, err_code, allow_current_catch=False)
+
+
+def _emit_error_check(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
+    call_node = node.get("call")
+    if not isinstance(call_node, dict):
+        return
+    ok_target = node.get("ok_target")
+    ok_type = _str(node, "ok_type")
+    on_error = _str(node, "on_error")
+    call_code = _emit_expr(ctx, call_node)
+    err_tmp = _next_temp(ctx, "err")
+    if ok_target is None or ok_type in ("", "None", "none", "nil"):
+        _emit(ctx, "local " + err_tmp + " = " + call_code)
+        _emit(ctx, "if " + err_tmp + " ~= nil then")
+        ctx.indent_level += 1
+        _emit_error_propagation(ctx, err_tmp, allow_current_catch=(on_error == "catch"))
+        ctx.indent_level -= 1
+        _emit(ctx, "end")
+        return
+
+    ok_tmp = _next_temp(ctx, "ok")
+    _emit(ctx, "local " + ok_tmp + ", " + err_tmp + " = " + call_code)
+    _emit(ctx, "if " + err_tmp + " ~= nil then")
+    ctx.indent_level += 1
+    _emit_error_propagation(ctx, err_tmp, allow_current_catch=(on_error == "catch"))
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    assign_node: dict[str, JsonVal] = {
+        "kind": "Assign",
+        "target": ok_target,
+        "value": {"kind": "Name", "id": ok_tmp, "resolved_type": ok_type},
+        "declare": isinstance(ok_target, dict) and _str(ok_target, "kind") == "Name" and _lua_symbol_name(ctx, _str(ok_target, "id")) not in ctx.declared_locals,
+        "decl_type": ok_type,
+        "resolved_type": ok_type,
+    }
+    _emit_assign(ctx, assign_node)
+
+
+def _emit_error_catch(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
+    body = _list(node, "body")
+    handlers = _list(node, "handlers")
+    finalbody = _list(node, "finalbody")
+    catch_err_var = _next_temp(ctx, "caught_err")
+    handler_label = _next_temp(ctx, "catch_handler")
+    matched_var = _next_temp(ctx, "catch_matched")
+
+    _emit(ctx, "local " + catch_err_var + " = nil")
+    _emit(ctx, "local " + matched_var + " = false")
+    _emit(ctx, "repeat")
+    ctx.indent_level += 1
+    ctx.catch_stack.append((catch_err_var, handler_label))
+    _emit_body(ctx, body)
+    ctx.indent_level -= 1
+    _emit(ctx, "until true")
+    _emit(ctx, "::" + handler_label + "::")
+
+    if len(handlers) > 0:
+        _emit(ctx, "if " + catch_err_var + " ~= nil then")
+        ctx.indent_level += 1
+        first = True
+        for handler in handlers:
+            if not isinstance(handler, dict):
+                continue
+            exc_type_node = handler.get("type")
+            exc_type = ""
+            if isinstance(exc_type_node, dict):
+                exc_type = _str(exc_type_node, "id")
+                if exc_type == "":
+                    exc_type = _str(exc_type_node, "resolved_type")
+            elif isinstance(exc_type_node, str):
+                exc_type = exc_type_node
+            if exc_type == "":
+                cond = "true"
+            else:
+                cond = "__pytra_isinstance(" + catch_err_var + ", " + _safe_lua_ident(exc_type) + ")"
+            prefix = "if " if first else "elseif "
+            _emit(ctx, prefix + cond + " then")
+            ctx.indent_level += 1
+            exc_name = _str(handler, "name")
+            saved_exc_var = ctx.current_exc_var
+            if exc_name != "":
+                safe_exc = _lua_symbol_name(ctx, exc_name)
+                _emit(ctx, "local " + safe_exc + " = " + catch_err_var)
+                ctx.current_exc_var = exc_name
+            else:
+                ctx.current_exc_var = catch_err_var
+            _emit(ctx, matched_var + " = true")
+            _emit(ctx, catch_err_var + " = nil")
+            _emit_body(ctx, _list(handler, "body"))
+            ctx.current_exc_var = saved_exc_var
+            ctx.indent_level -= 1
+            first = False
+        if not first:
+            _emit(ctx, "end")
+        ctx.indent_level -= 1
+        _emit(ctx, "end")
+
+    _emit_body(ctx, finalbody)
+
+    _emit(ctx, "if " + catch_err_var + " ~= nil and not " + matched_var + " then")
+    ctx.indent_level += 1
+    _emit_error_propagation(ctx, catch_err_var, allow_current_catch=False)
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    ctx.catch_stack.pop()
 
 
 # ---------------------------------------------------------------------------
@@ -569,8 +765,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
         # Exception constructors
         if _is_exception_type_name(ctx, func_id):
-            msg = arg_strs[0] if len(arg_strs) > 0 else '"' + func_id + '"'
-            return msg
+            return _safe_lua_ident(func_id) + ".new(" + ", ".join(arg_strs) + ")"
 
         # Method calls on objects (obj:method pattern)
         if _str(func_node, "kind") == "Attribute":
@@ -1066,8 +1261,12 @@ def _emit_stmt(ctx: EmitContext, node: JsonVal) -> None:
             _emit(ctx, "-- " + text)
     elif kind == "blank":
         _emit_blank(ctx)
-    elif kind in ("ErrorReturn", "ErrorCheck", "ErrorCatch"):
-        pass  # native_throw style: no-op
+    elif kind == "ErrorReturn":
+        _emit_error_return(ctx, node)
+    elif kind == "ErrorCheck":
+        _emit_error_check(ctx, node)
+    elif kind == "ErrorCatch":
+        _emit_error_catch(ctx, node)
     elif kind == "Match":
         _emit_match(ctx, node)
     elif kind == "Delete":
@@ -1100,8 +1299,21 @@ def _emit_return(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             parts = [_emit_expr(ctx, e) for e in elements]
             _emit(ctx, "return " + ", ".join(parts))
             return
-        _emit(ctx, "return " + _emit_expr(ctx, value))
+        value_code = _emit_expr(ctx, value)
+        if _is_union_error_return_type(ctx, ctx.current_return_type):
+            if _is_none_error_return_type(ctx, ctx.current_return_type):
+                _emit(ctx, "return " + value_code)
+            else:
+                _emit(ctx, "return " + value_code + ", nil")
+            return
+        _emit(ctx, "return " + value_code)
     else:
+        if _is_union_error_return_type(ctx, ctx.current_return_type):
+            _emit(ctx, "return nil")
+            return
+        if _is_exception_type_name(ctx, ctx.current_return_type):
+            _emit(ctx, "return nil")
+            return
         _emit(ctx, "return")
 
 
@@ -1550,13 +1762,7 @@ def _emit_init_method(ctx: EmitContext, cls: str, arg_names: list[str], body: li
     _emit(ctx, "function " + cls + ".new(" + ", ".join(arg_names) + ")")
     ctx.indent_level += 1
     base_name = ctx.class_bases.get(cls, "")
-    if base_name != "" and base_name not in LUA_NON_INHERITABLE_BASES:
-        _emit(ctx, "local self = " + _safe_lua_ident(base_name) + ".new()")
-        _emit(ctx, "setmetatable(self, " + cls + ")")
-    else:
-        _emit(ctx, "local self = setmetatable({}, " + cls + ")")
-    saved_locals = ctx.declared_locals
-    ctx.declared_locals = set()
+    super_init_args: list[str] = []
     filtered_body: list[JsonVal] = []
     for stmt in body:
         if not isinstance(stmt, dict) or _str(stmt, "kind") != "Expr":
@@ -1574,8 +1780,20 @@ def _emit_init_method(ctx: EmitContext, cls: str, arg_names: list[str], body: li
         if _str(func, "attr") == "__init__" and isinstance(owner, dict) and _str(owner, "kind") == "Call":
             owner_func = owner.get("func")
             if isinstance(owner_func, dict) and _str(owner_func, "id") == "super":
+                super_init_args = [_emit_expr(ctx, arg) for arg in _list(value, "args")]
                 continue
         filtered_body.append(stmt)
+    if base_name != "" and base_name not in LUA_NON_INHERITABLE_BASES:
+        base_ctor_args = ", ".join(super_init_args)
+        if base_ctor_args != "":
+            _emit(ctx, "local self = " + _safe_lua_ident(base_name) + ".new(" + base_ctor_args + ")")
+        else:
+            _emit(ctx, "local self = " + _safe_lua_ident(base_name) + ".new()")
+        _emit(ctx, "setmetatable(self, " + cls + ")")
+    else:
+        _emit(ctx, "local self = setmetatable({}, " + cls + ")")
+    saved_locals = ctx.declared_locals
+    ctx.declared_locals = set()
     _emit_body(ctx, filtered_body)
     ctx.declared_locals = saved_locals
     _emit(ctx, "return self")
@@ -1593,6 +1811,8 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     base_name = ctx.class_bases.get(name, "")
     if len(bases) > 0 and isinstance(bases[0], dict):
         base_name = _str(bases[0], "id")
+    elif _str(node, "base") != "":
+        base_name = _str(node, "base")
 
     _emit(ctx, safe + " = {}")
     _emit(ctx, safe + ".__index = " + safe)
@@ -1844,6 +2064,8 @@ def _collect_module_class_info(ctx: EmitContext, body: list[JsonVal]) -> None:
         bases = _list(stmt, "bases")
         if len(bases) > 0 and isinstance(bases[0], dict):
             ctx.class_bases[name] = _str(bases[0], "id")
+        elif _str(stmt, "base") != "":
+            ctx.class_bases[name] = _str(stmt, "base")
         # Collect methods
         cls_body = _list(stmt, "body")
         methods: dict[str, dict[str, JsonVal]] = {}
@@ -1912,8 +2134,8 @@ def emit_lua_module(east3_doc: dict[str, JsonVal]) -> str:
     if should_skip_module(module_id, mapping):
         return ""
 
-    # built_in modules are provided by py_runtime
-    if module_id.startswith(LUA_BUILTIN_MODULE_PREFIX):
+    # built_in.error is emitted as pure Python exception classes.
+    if module_id.startswith(LUA_BUILTIN_MODULE_PREFIX) and module_id != "pytra.built_in.error":
         return ""
 
     renamed_symbols_raw = east3_doc.get("renamed_symbols")
@@ -1975,6 +2197,14 @@ def emit_lua_module(east3_doc: dict[str, JsonVal]) -> str:
         _emit(ctx, '-- Load runtime')
         _emit(ctx, 'local __script_dir = debug.getinfo(1, "S").source:match("^@(.*[\\\\/])") or ""')
         _emit(ctx, 'dofile(__script_dir .. "built_in/py_runtime.lua")')
+        _emit(ctx, 'local __error_mod = __script_dir .. "pytra_built_in_error.lua"')
+        _emit(ctx, 'local __error_fp = io.open(__error_mod, "r")')
+        _emit(ctx, 'if __error_fp ~= nil then')
+        ctx.indent_level += 1
+        _emit(ctx, '__error_fp:close()')
+        _emit(ctx, 'dofile(__error_mod)')
+        ctx.indent_level -= 1
+        _emit(ctx, 'end')
         _emit_blank(ctx)
 
     # Emit module body (skip imports, already handled by runtime)
@@ -2013,7 +2243,7 @@ def transpile_to_lua(east3_doc: dict[str, JsonVal]) -> str:
     meta = east3_doc.get("meta", {})
     emit_ctx = meta.get("emit_context", {}) if isinstance(meta, dict) else {}
     module_id = emit_ctx.get("module_id", "") if isinstance(emit_ctx, dict) else ""
-    # built_in modules are provided by py_runtime, skip emit
-    if isinstance(module_id, str) and module_id.startswith(LUA_BUILTIN_MODULE_PREFIX):
+    # built_in.error is emitted as pure Python exception classes.
+    if isinstance(module_id, str) and module_id.startswith(LUA_BUILTIN_MODULE_PREFIX) and module_id != "pytra.built_in.error":
         return ""
     return emit_lua_module(east3_doc)
