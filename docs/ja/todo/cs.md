@@ -40,8 +40,8 @@ C# は `is` / `switch` がネイティブにあるので `PYTRA_TID_*` 定数 (2
    完了メモ: 生成済み `type_id.cs` を削除。`check_emitter_hardcode_lint.py --lang cs --include-runtime` は 0 件。
 3. [x] [ID: P0-CS-TYPEID-CLN-S3] C# emitter の isinstance を `x is Type t` に置換する
    完了メモ: toolchain2 C# emitter で builtin/user class/container の `isinstance` を native `is` 判定へ移行。legacy `PYTRA_TID_*` expected type も型名へ正規化。
-4. [ ] [ID: P0-CS-TYPEID-CLN-S4] fixture + sample + stdlib parity に回帰がないことを確認する
-   進捗メモ: `stdlib 16/16 PASS`。fixture は個別 blocker（`none_optional`, `typed_container_access`, `str_repr_containers`）を解消済みだが full rerun 未再実施。sample は run_failed を解消し、残りは artifact CRC mismatch 7 件（`01_mandelbrot`, `02_raytrace_spheres`, `03_julia_set`, `04_orbit_trap_julia`, `06_julia_parameter_sweep`, `14_raymarching_light_cycle`, `16_glass_sculpture_chaos`）。
+4. [x] [ID: P0-CS-TYPEID-CLN-S4] fixture + sample + stdlib parity に回帰がないことを確認する
+   完了メモ: `PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py --targets cs --east3-opt-level 1` → fixture `137/137 PASS`、`--case-root sample` → sample `18/18 PASS`、`--case-root stdlib` → stdlib `16/16 PASS`。sample の PNG CRC mismatch は C# emitter の `/` precedence/cast bug 修正で解消。
 
 ### P3-CS-SELFHOST: C# emitter で toolchain2 を C# に変換し build を通す
 

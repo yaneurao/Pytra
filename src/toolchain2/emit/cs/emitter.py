@@ -1076,8 +1076,8 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         left = _emit_expr(ctx, node.get("left"))
         right = _emit_expr(ctx, node.get("right"))
         if _str(node, "resolved_type") == "float32":
-            return "(((float)" + left + ") / " + right + ")"
-        return "(((double)" + left + ") / " + right + ")"
+            return "(((float)(" + left + ")) / (" + right + "))"
+        return "(((double)(" + left + ")) / (" + right + "))"
     if op == "Add":
         result_type = _str(node, "resolved_type")
         if result_type.startswith("list[") or result_type in ("bytes", "bytearray"):
