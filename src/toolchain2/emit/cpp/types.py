@@ -55,8 +55,8 @@ _TYPE_MAP: dict[str, str] = {
 
 
 def _cpp_variant_lane_type(resolved_type: str) -> str:
-    if resolved_type in ("None", "none"):
-        return "::std::monostate"
+    # None is no longer a variant lane — it is handled via std::optional wrapping.
+    # This function should not receive "None"; if it does, fall through to cpp_signature_type.
     return cpp_signature_type(resolved_type)
 
 
@@ -141,7 +141,14 @@ def cpp_type(resolved_type: str, *, prefer_value_container: bool = False) -> str
     if _is_top_level_union(resolved_type):
         lanes = _split_top_level_union(resolved_type)
         if len(lanes) > 0:
-            return "::std::variant<" + ", ".join(_cpp_variant_lane_type(lane) for lane in lanes) + ">"
+            non_none = [l for l in lanes if l not in ("None", "none")]
+            has_none = len(non_none) < len(lanes)
+            if has_none and len(non_none) == 0:
+                return "void"
+            variant = "::std::variant<" + ", ".join(_cpp_variant_lane_type(lane) for lane in non_none) + ">"
+            if has_none:
+                return "::std::optional<" + variant + ">"
+            return variant
 
     # User class → ClassName (by value or shared_ptr depending on context)
     return resolved_type
@@ -167,7 +174,14 @@ def cpp_signature_type(resolved_type: str, *, prefer_value_container: bool = Fal
     if _is_top_level_union(resolved_type):
         lanes = _split_top_level_union(resolved_type)
         if len(lanes) > 0:
-            return "::std::variant<" + ", ".join(_cpp_variant_lane_type(lane) for lane in lanes) + ">"
+            non_none = [l for l in lanes if l not in ("None", "none")]
+            has_none = len(non_none) < len(lanes)
+            if has_none and len(non_none) == 0:
+                return "void"
+            variant = "::std::variant<" + ", ".join(_cpp_variant_lane_type(lane) for lane in non_none) + ">"
+            if has_none:
+                return "::std::optional<" + variant + ">"
+            return variant
     return cpp_type(resolved_type, prefer_value_container=prefer_value_container)
 
 

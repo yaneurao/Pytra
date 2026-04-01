@@ -689,7 +689,13 @@ def _object_box_container_target(resolved_type: str) -> str:
 def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> str:
     if not isinstance(node, dict):
         return _emit_expr(ctx, node)
+    if _str(node, "kind") == "Box" and target_type not in ("Any", "Obj", "object"):
+        inner = node.get("value")
+        if isinstance(inner, dict):
+            return _emit_expr_as_type(ctx, inner, target_type)
     node_type = _effective_resolved_type(node)
+    if _optional_inner_type(target_type) != "" and node_type == "None":
+        return "::std::nullopt"
     if _is_top_level_union_type(target_type):
         if _str(node, "kind") == "Dict":
             lane = _select_union_lane(target_type, "dict")
@@ -708,7 +714,31 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
             return expr
         if _is_top_level_union_type(node_type):
             return _emit_union_narrow_expr(expr, node_type, target_type)
+        lane = _select_union_lane(target_type, node_type)
+        if lane != "" and is_container_resolved_type(node_type) and is_container_resolved_type(lane) and node_type != lane:
+            return cpp_signature_type(target_type) + "(" + _emit_covariant_copy_expr(
+                ctx,
+                source_expr=expr,
+                source_type=node_type,
+                target_type=lane,
+            ) + ")"
+        if node_type == "None":
+            return "::std::nullopt"
         return cpp_signature_type(target_type) + "(" + expr + ")"
+    if is_container_resolved_type(target_type):
+        expr = _emit_expr(ctx, node)
+        if node_type == target_type:
+            return expr
+        source_type = _expr_storage_type(ctx, node)
+        if source_type in ("", "unknown"):
+            source_type = node_type
+        if is_container_resolved_type(source_type) and source_type != target_type:
+            return _emit_covariant_copy_expr(
+                ctx,
+                source_expr=expr,
+                source_type=source_type,
+                target_type=target_type,
+            )
     if target_type in ("Any", "Obj", "object"):
         widened_container_type = _object_box_container_target(_effective_resolved_type(node))
         if widened_container_type != "":
@@ -965,11 +995,25 @@ def _select_union_lane(union_type: str, target_type: str) -> str:
     return ""
 
 
+def _union_has_none(union_type: str) -> bool:
+    lanes = _split_top_level_union_type(union_type)
+    return any(l in ("None", "none") for l in lanes)
+
+
+def _unwrap_optional_variant(value_expr: str, union_type: str) -> str:
+    """If the union contains None, the C++ type is optional<variant>.
+    Return an expression that unwraps the optional to get the inner variant."""
+    if _union_has_none(union_type):
+        return "(*" + value_expr + ")"
+    return value_expr
+
+
 def _emit_union_get_expr(value_expr: str, union_type: str, target_type: str) -> str:
     lane = _select_union_lane(union_type, target_type)
     if lane == "":
         return value_expr
-    return "::std::get<" + cpp_signature_type(lane) + ">(" + value_expr + ")"
+    inner = _unwrap_optional_variant(value_expr, union_type)
+    return "::std::get<" + cpp_signature_type(lane) + ">(" + inner + ")"
 
 
 def _emit_union_narrow_expr(value_expr: str, source_type: str, target_type: str) -> str:
@@ -2239,11 +2283,13 @@ def _emit_comp_lambda(ctx: CppEmitContext, node: dict[str, JsonVal], comp_kind: 
 def _emit_covariant_copy(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     source_expr = _emit_expr(ctx, node.get("source"))
     target_type = _str(node, "target_type")
+    source_type = _effective_resolved_type(node.get("source"))
     source_elem_type = _str(node, "source_elem_type")
     target_elem_type = _str(node, "target_elem_type")
     plain_ct = cpp_type(target_type, prefer_value_container=True)
     out_name = _next_temp(ctx, "__cov")
     val_name = _next_temp(ctx, "__item")
+    key_name = _next_temp(ctx, "__key")
     push_expr = val_name
     if target_elem_type not in ("", "unknown", "Any", "JsonVal", "object", "Obj"):
         if target_elem_type != source_elem_type:
@@ -2256,6 +2302,96 @@ def _emit_covariant_copy(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 },
                 target_elem_type,
             )
+    if target_type.startswith("dict[") and source_type.startswith("dict["):
+        source_parts = _container_type_args(source_type)
+        target_parts = _container_type_args(target_type)
+        source_key_type = source_parts[0] if len(source_parts) == 2 else ""
+        target_key_type = target_parts[0] if len(target_parts) == 2 else ""
+        key_expr = key_name
+        if target_key_type not in ("", "unknown", source_key_type):
+            key_expr = _emit_expr_as_type(
+                ctx,
+                {
+                    "kind": "Name",
+                    "id": key_name,
+                    "resolved_type": source_key_type if source_key_type != "" else target_key_type,
+                },
+                target_key_type,
+            )
+        return (
+            "([&]() {\n"
+            + "    " + plain_ct + " " + out_name + ";\n"
+            + "    for (auto const& [" + key_name + ", " + val_name + "] : " + source_expr + ") {\n"
+            + "        " + out_name + "[" + key_expr + "] = " + push_expr + ";\n"
+            + "    }\n"
+            + "    return " + _wrap_container_value_expr(target_type, out_name) + ";\n"
+            + "}())"
+        )
+    return (
+        "([&]() {\n"
+        + "    " + plain_ct + " " + out_name + ";\n"
+        + "    for (auto const& " + val_name + " : " + source_expr + ") {\n"
+        + "        " + out_name + ".push_back(" + push_expr + ");\n"
+        + "    }\n"
+        + "    return " + _wrap_container_value_expr(target_type, out_name) + ";\n"
+        + "}())"
+    )
+
+
+def _emit_covariant_copy_expr(
+    ctx: CppEmitContext,
+    *,
+    source_expr: str,
+    source_type: str,
+    target_type: str,
+) -> str:
+    source_elem_type = ""
+    target_elem_type = ""
+    source_parts = _container_type_args(source_type)
+    target_parts = _container_type_args(target_type)
+    if len(source_parts) > 0:
+        source_elem_type = source_parts[-1]
+    if len(target_parts) > 0:
+        target_elem_type = target_parts[-1]
+    plain_ct = cpp_type(target_type, prefer_value_container=True)
+    out_name = _next_temp(ctx, "__cov")
+    val_name = _next_temp(ctx, "__item")
+    key_name = _next_temp(ctx, "__key")
+    push_expr = val_name
+    if target_elem_type not in ("", "unknown", "Any", "JsonVal", "object", "Obj"):
+        if target_elem_type != source_elem_type:
+            push_expr = _emit_expr_as_type(
+                ctx,
+                {
+                    "kind": "Name",
+                    "id": val_name,
+                    "resolved_type": source_elem_type if source_elem_type != "" else target_elem_type,
+                },
+                target_elem_type,
+            )
+    if target_type.startswith("dict[") and source_type.startswith("dict["):
+        source_key_type = source_parts[0] if len(source_parts) == 2 else ""
+        target_key_type = target_parts[0] if len(target_parts) == 2 else ""
+        key_expr = key_name
+        if target_key_type not in ("", "unknown", source_key_type):
+            key_expr = _emit_expr_as_type(
+                ctx,
+                {
+                    "kind": "Name",
+                    "id": key_name,
+                    "resolved_type": source_key_type if source_key_type != "" else target_key_type,
+                },
+                target_key_type,
+            )
+        return (
+            "([&]() {\n"
+            + "    " + plain_ct + " " + out_name + ";\n"
+            + "    for (auto const& [" + key_name + ", " + val_name + "] : " + source_expr + ") {\n"
+            + "        " + out_name + "[" + key_expr + "] = " + push_expr + ";\n"
+            + "    }\n"
+            + "    return " + _wrap_container_value_expr(target_type, out_name) + ";\n"
+            + "}())"
+        )
     return (
         "([&]() {\n"
         + "    " + plain_ct + " " + out_name + ";\n"
@@ -2371,16 +2507,21 @@ def _emit_box(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     value_expr = _emit_expr(ctx, value)
     value_type = _effective_resolved_type(value)
     if _is_top_level_union_type(value_type):
-        return (
+        union_lanes = _split_top_level_union_type(value_type)
+        has_none = any(l in ("None", "none") for l in union_lanes)
+        visit_body = (
             "::std::visit([&](const auto& __pytra_v) -> object { "
             + "using __PytraLane = ::std::decay_t<decltype(__pytra_v)>; "
-            + "if constexpr (::std::is_same_v<__PytraLane, ::std::monostate>) return object(); "
-            + "else if constexpr (::std::is_same_v<__PytraLane, int64> || ::std::is_same_v<__PytraLane, float64> || ::std::is_same_v<__PytraLane, bool> || ::std::is_same_v<__PytraLane, str>) return object(__pytra_v); "
+            + "if constexpr (::std::is_same_v<__PytraLane, int64> || ::std::is_same_v<__PytraLane, float64> || ::std::is_same_v<__PytraLane, bool> || ::std::is_same_v<__PytraLane, str>) return object(__pytra_v); "
             + "else return object(__pytra_v); "
             + "}, "
-            + value_expr
-            + ")"
         )
+        if has_none:
+            return (
+                "(py_is_none(" + value_expr + ") ? object() : "
+                + visit_body + "*" + value_expr + "))"
+            )
+        return visit_body + value_expr + ")"
     if is_container_resolved_type(target_type):
         if isinstance(value, dict):
             value_kind = _str(value, "kind")
@@ -2460,14 +2601,21 @@ def _emit_isinstance(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     value_type = _effective_resolved_type(value)
     if _is_top_level_union_type(value_type):
         lanes = _split_top_level_union_type(value_type)
+        inner = _unwrap_optional_variant(value_expr, value_type)
+        has_none = _union_has_none(value_type)
         checks: list[str] = []
         for lane in lanes:
+            if lane in ("None", "none"):
+                continue
             if not _union_lane_matches_nominal_expected(ctx, lane, expected_name):
                 continue
-            checks.append("::std::holds_alternative<" + cpp_signature_type(lane) + ">(" + value_expr + ")")
+            checks.append("::std::holds_alternative<" + cpp_signature_type(lane) + ">(" + inner + ")")
         if len(checks) == 0:
             return "false"
-        return "(" + " || ".join(checks) + ")"
+        result = "(" + " || ".join(checks) + ")"
+        if has_none:
+            result = "(" + value_expr + ".has_value() && " + result + ")"
+        return result
     builtin_check = _emit_builtin_isinstance(value_expr, expected_name)
     if builtin_check != "":
         return builtin_check
@@ -2489,14 +2637,21 @@ def _emit_isinstance(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         return "py_runtime_value_exact_is<" + cpp_exact_type + ">(" + value_expr + ")"
     if _is_top_level_union_type(value_type):
         lanes = _split_top_level_union_type(value_type)
+        inner = _unwrap_optional_variant(value_expr, value_type)
+        has_none = _union_has_none(value_type)
         checks: list[str] = []
         for lane in lanes:
+            if lane in ("None", "none"):
+                continue
             if not _union_lane_matches_nominal_expected(ctx, lane, expected_name):
                 continue
-            checks.append("::std::holds_alternative<" + cpp_signature_type(lane) + ">(" + value_expr + ")")
+            checks.append("::std::holds_alternative<" + cpp_signature_type(lane) + ">(" + inner + ")")
         if len(checks) == 0:
             return "false"
-        return "(" + " || ".join(checks) + ")"
+        result = "(" + " || ".join(checks) + ")"
+        if has_none:
+            result = "(" + value_expr + ".has_value() && " + result + ")"
+        return result
     class_type_id = _lookup_class_type_id(ctx, expected_name)
     if class_type_id is not None and value_type in ("object", "Any", "Obj", "unknown"):
         return (
@@ -2812,7 +2967,7 @@ def _emit_return(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
         _emit(ctx, "(void)(" + _emit_expr(ctx, value) + ");")
         _emit(ctx, "return;")
     else:
-        _emit(ctx, "return " + _emit_expr(ctx, value) + ";")
+        _emit(ctx, "return " + _emit_expr_as_type(ctx, value, ctx.current_return_type) + ";")
 
 
 def _emit_for_core(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
@@ -3762,14 +3917,30 @@ def _emit_cast_expr(ctx: CppEmitContext, target_node: JsonVal, value_node: JsonV
     if _optional_inner_type(storage_type) == target_name:
         return "(*(" + value_expr + "))"
     if _is_top_level_union_type(storage_type):
+        source_lane = _select_union_lane(storage_type, target_name)
         lane_expr = _emit_union_get_expr(value_expr, storage_type, target_name)
         if lane_expr != value_expr:
+            if source_lane != "" and is_container_resolved_type(source_lane) and is_container_resolved_type(target_name) and source_lane != target_name:
+                return _emit_covariant_copy_expr(
+                    ctx,
+                    source_expr=lane_expr,
+                    source_type=source_lane,
+                    target_type=target_name,
+                )
             return lane_expr
     if _is_top_level_union_type(value_type):
         if _is_top_level_union_type(target_name):
             return _emit_union_narrow_expr(value_expr, value_type, target_name)
+        source_lane = _select_union_lane(value_type, target_name)
         lane_expr = _emit_union_get_expr(value_expr, value_type, target_name)
         if lane_expr != value_expr:
+            if source_lane != "" and is_container_resolved_type(source_lane) and is_container_resolved_type(target_name) and source_lane != target_name:
+                return _emit_covariant_copy_expr(
+                    ctx,
+                    source_expr=lane_expr,
+                    source_type=source_lane,
+                    target_type=target_name,
+                )
             return lane_expr
     if target_name in (value_type, static_value_type, storage_type):
         return value_expr

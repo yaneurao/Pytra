@@ -303,15 +303,17 @@ template <class... Ts>
 static inline ::std::string py_to_string(const ::std::variant<Ts...>& v) {
     return ::std::visit(
         [](const auto& item) -> ::std::string {
-            using T = ::std::decay_t<decltype(item)>;
-            if constexpr (::std::is_same_v<T, ::std::monostate>) {
-                return "None";
-            } else {
-                return py_to_string(item);
-            }
+            return py_to_string(item);
         },
         v
     );
+}
+
+// optional<variant> stringification: nullopt → "None"
+template <class... Ts>
+static inline ::std::string py_to_string(const ::std::optional<::std::variant<Ts...>>& v) {
+    if (!v.has_value()) return "None";
+    return py_to_string(*v);
 }
 
 template <class... Ts>

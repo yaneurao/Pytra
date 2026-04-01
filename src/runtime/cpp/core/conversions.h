@@ -53,12 +53,18 @@ template <class... Ts>
 static inline bool py_variant_to_bool(const ::std::variant<Ts...>& v) {
     return ::std::visit([](const auto& x) -> bool {
         using T = ::std::decay_t<decltype(x)>;
-        if constexpr (::std::is_same_v<T, ::std::monostate>) return false;
-        else if constexpr (::std::is_same_v<T, bool>) return x;
+        if constexpr (::std::is_same_v<T, bool>) return x;
         else if constexpr (::std::is_same_v<T, str>) return !x.empty();
         else if constexpr (::std::is_arithmetic_v<T>) return x != 0;
         else return true;
     }, v);
+}
+
+// optional<variant> truthiness: nullopt is falsy, otherwise delegate to variant
+template <class... Ts>
+static inline bool py_variant_to_bool(const ::std::optional<::std::variant<Ts...>>& v) {
+    if (!v.has_value()) return false;
+    return py_variant_to_bool(*v);
 }
 
 template <class T>
