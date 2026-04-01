@@ -62,8 +62,8 @@ def run_callable_higher_order() -> bool:
     checks.append(py_assert_eq(apply_twice(negate, 7), 7, "apply_twice_negate"))
 
     # apply to list (map pattern)
-    checks.append(py_assert_eq(apply_to_list(double, [1, 2, 3]), [2, 4, 6], "map_double"))
-    checks.append(py_assert_eq(apply_to_list(negate, [10, 20]), [-10, -20], "map_negate"))
+    checks.append(py_assert_eq(str(apply_to_list(double, [1, 2, 3])), str([2, 4, 6]), "map_double"))
+    checks.append(py_assert_eq(str(apply_to_list(negate, [10, 20])), str([-10, -20]), "map_negate"))
 
     return py_assert_all(checks, "callable_higher_order")
 
