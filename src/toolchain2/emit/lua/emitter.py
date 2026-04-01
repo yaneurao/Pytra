@@ -1449,6 +1449,9 @@ def _emit_stmt(ctx: EmitContext, node: JsonVal) -> None:
     if kind == "Expr":
         value = node.get("value")
         if isinstance(value, dict):
+            if _str(value, "kind") == "Name" and _str(value, "id") == "break":
+                _emit(ctx, "break")
+                return
             if _str(value, "kind") == "Name" and _str(value, "id") == "continue":
                 ctx.needs_continue_label = True
                 _emit(ctx, "goto __continue__")
@@ -1575,7 +1578,8 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     declare = _bool(node, "declare")
     unused = _bool(node, "unused")
 
-    if unused:
+    target_name = _str(target, "id") if isinstance(target, dict) else ""
+    if unused and target_name == "_":
         # Still evaluate the value for side effects
         if isinstance(value, dict):
             val_code = _emit_expr(ctx, value)
