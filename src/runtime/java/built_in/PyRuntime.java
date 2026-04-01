@@ -32,54 +32,38 @@ final class PyRuntime {
 
     static long pyRuntimeValueTypeId(Object value) {
         if (value == null) {
-            return __pytra_tid("NONE_TID", __PYTRA_NONE_TID);
+            return __PYTRA_NONE_TID;
         }
         if (value instanceof Boolean) {
-            return __pytra_tid("BOOL_TID", __PYTRA_BOOL_TID);
+            return __PYTRA_BOOL_TID;
         }
         if (value instanceof Integer || value instanceof Long || value instanceof Short || value instanceof Byte) {
-            return __pytra_tid("INT_TID", __PYTRA_INT_TID);
+            return __PYTRA_INT_TID;
         }
         if (value instanceof Float || value instanceof Double) {
-            return __pytra_tid("FLOAT_TID", __PYTRA_FLOAT_TID);
+            return __PYTRA_FLOAT_TID;
         }
         if (value instanceof String) {
-            return __pytra_tid("STR_TID", __PYTRA_STR_TID);
+            return __PYTRA_STR_TID;
         }
         if (value instanceof Map<?, ?>) {
-            return __pytra_tid("DICT_TID", __PYTRA_DICT_TID);
+            return __PYTRA_DICT_TID;
         }
         if (value instanceof java.util.Set<?>) {
-            return __pytra_tid("SET_TID", __PYTRA_SET_TID);
+            return __PYTRA_SET_TID;
         }
         if (value instanceof List<?> || value instanceof byte[]) {
-            return __pytra_tid("LIST_TID", __PYTRA_LIST_TID);
+            return __PYTRA_LIST_TID;
         }
         Long userTid = __pytra_user_type_id(value);
         if (userTid != null) {
             return userTid.longValue();
         }
-        return __pytra_tid("OBJECT_TID", __PYTRA_OBJECT_TID);
+        return __PYTRA_OBJECT_TID;
     }
 
     static boolean pytraIsinstance(long actualTypeId, long tid) {
-        long[] span = __pytra_type_span(tid);
-        long minTid = span[0];
-        long maxTid = span[1];
-        return minTid <= actualTypeId && actualTypeId <= maxTid;
-    }
-
-    private static long __pytra_tid(String fieldName, long fallback) {
-        try {
-            Class<?> cls = Class.forName("pytra_built_in_type_id_table");
-            java.lang.reflect.Field field = cls.getField(fieldName);
-            Object value = field.get(null);
-            if (value instanceof Number) {
-                return ((Number) value).longValue();
-            }
-        } catch (ReflectiveOperationException _err) {
-        }
-        return fallback;
+        return actualTypeId == tid;
     }
 
     private static Long __pytra_user_type_id(Object value) {
@@ -90,27 +74,6 @@ final class PyRuntime {
         } catch (ReflectiveOperationException _err) {
             return null;
         }
-    }
-
-    private static long[] __pytra_type_span(long tid) {
-        try {
-            Class<?> cls = Class.forName("pytra_built_in_type_id_table");
-            java.lang.reflect.Field field = cls.getField("id_table");
-            Object tableObj = field.get(null);
-            if (tableObj instanceof java.util.List<?>) {
-                java.util.List<?> table = (java.util.List<?>) tableObj;
-                int base = (int) (tid * 2L);
-                if (base >= 0 && (base + 1) < table.size()) {
-                    Object lo = table.get(base);
-                    Object hi = table.get(base + 1);
-                    if (lo instanceof Number && hi instanceof Number) {
-                        return new long[] { ((Number) lo).longValue(), ((Number) hi).longValue() };
-                    }
-                }
-            }
-        } catch (ReflectiveOperationException _err) {
-        }
-        return new long[] { tid, tid };
     }
 
     static String pyToString(Object v) {

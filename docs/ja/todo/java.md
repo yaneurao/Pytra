@@ -34,8 +34,8 @@
 
 Java は `instanceof` がネイティブにあるので `pytra_built_in_type_id_table` クラス参照は不要。
 
-1. [ ] [ID: P0-JAVA-TYPEID-CLN-S1] `src/runtime/java/built_in/PyRuntime.java` から `type_id_table` クラス参照を削除する
-2. [ ] [ID: P0-JAVA-TYPEID-CLN-S2] Java emitter の isinstance を `x instanceof Type` に置換する
+1. [x] [ID: P0-JAVA-TYPEID-CLN-S1] `src/runtime/java/built_in/PyRuntime.java` から `type_id_table` クラス参照を削除する（2026-04-01）— `pytra_built_in_type_id_table` への反射 lookup を廃止し、built-in type id は runtime 内定数へ直結
+2. [x] [ID: P0-JAVA-TYPEID-CLN-S2] Java emitter の isinstance を `x instanceof Type` に置換する（2026-04-01）— 既存 emitter 実装 [java_native_emitter.py](/workspace/Pytra/src/toolchain/emit/java/emitter/java_native_emitter.py) の `_render_isinstance_check` が `instanceof` のみを使っていることを確認
 3. [ ] [ID: P0-JAVA-TYPEID-CLN-S3] fixture + sample + stdlib parity に回帰がないことを確認する
 
 ### P0-JAVA-NEW-FIXTURES: 新規 fixture の Java parity を通す
