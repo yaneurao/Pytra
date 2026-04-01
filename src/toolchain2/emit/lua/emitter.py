@@ -198,6 +198,19 @@ def _emit_linked_type_id_isinstance(ctx: EmitContext, args: list[JsonVal]) -> st
     return _isinstance_lua_check(obj, type_name)
 
 
+def _emit_isinstance_expr(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
+    value = _emit_expr(ctx, node.get("value"))
+    expected = node.get("expected_type_id")
+    expected_id = _str(expected, "id") if isinstance(expected, dict) else ""
+    if expected_id == "PYTRA_TID_DICT":
+        return '(type(' + value + ') == "table")'
+    if expected_id == "PYTRA_TID_LIST":
+        return '(type(' + value + ') == "table")'
+    if expected_id == "PYTRA_TID_STR":
+        return '(type(' + value + ') == "string")'
+    return "false"
+
+
 # ---------------------------------------------------------------------------
 # Expression rendering
 # ---------------------------------------------------------------------------
@@ -246,6 +259,8 @@ def _emit_expr(ctx: EmitContext, node: JsonVal) -> str:
         return _emit_range_expr(ctx, node)
     if kind == "Slice":
         return _emit_slice_expr(ctx, node)
+    if kind == "IsInstance":
+        return _emit_isinstance_expr(ctx, node)
     if kind == "Box" or kind == "Unbox":
         return _emit_expr(ctx, node.get("value"))
     return "nil --[[ unsupported expr: " + kind + " ]]"
@@ -349,6 +364,11 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         mapped = ctx.mapping.calls.get(resolved_rt_call, "")
         if mapped != "":
             call_name = mapped
+
+    if call_name.startswith("__LIST_") and isinstance(func_node, dict) and _str(func_node, "kind") == "Attribute":
+        owner_node = func_node.get("value")
+        if isinstance(owner_node, dict):
+            arg_strs = [_emit_expr(ctx, owner_node)] + arg_strs
 
     # Special markers
     if call_name == "__CAST__":
@@ -502,6 +522,11 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return "table.insert(" + arg_strs[0] + ", (" + arg_strs[1] + ") + 1, " + arg_strs[2] + ")"
         return "nil"
 
+    if call_name == "__LIST_INDEX__":
+        if len(arg_strs) >= 2:
+            return "__pytra_list_index(" + arg_strs[0] + ", " + arg_strs[1] + ")"
+        return "-1"
+
     if call_name == "__LIST_POP__":
         if len(arg_strs) >= 2:
             return "table.remove(" + arg_strs[0] + ", (" + arg_strs[1] + ") + 1)"
@@ -555,9 +580,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 owner = _emit_expr(ctx, owner_node)
                 owner_rt = _str(owner_node, "resolved_type")
                 owner_id = _str(owner_node, "id")
+                dispatch_kind = _str(node, "call_dispatch_kind")
                 if owner_rt == "module" or owner_id in ctx.import_alias_modules:
                     return owner + "." + _safe_lua_ident(attr) + "(" + ", ".join(arg_strs) + ")"
-                if owner_id in ctx.class_names and attr in ctx.class_static_methods.get(owner_id, set()):
+                if dispatch_kind == "static_method" or (owner_id in ctx.class_names and attr in ctx.class_static_methods.get(owner_id, set())):
                     return owner + "." + _safe_lua_ident(attr) + "(" + ", ".join(arg_strs) + ")"
                 # String methods
                 if owner_rt == "str" or owner_rt == "string":
@@ -672,6 +698,14 @@ def _get_negative_int_literal(node: dict[str, JsonVal]) -> int | None:
     return None
 
 
+def _is_lua_one(code: str) -> bool:
+    return code.replace(" ", "") in ("1", "(1)")
+
+
+def _is_lua_minus_one(code: str) -> bool:
+    return code.replace(" ", "") in ("-1", "(-1)")
+
+
 def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     left = _emit_expr(ctx, node.get("left"))
     right = _emit_expr(ctx, node.get("right"))
@@ -687,6 +721,9 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     # String concatenation
     if op == "Add" and (left_rt == "str" or right_rt == "str"):
         return "(" + left + " .. " + right + ")"
+    if op == "Add":
+        if left_rt.startswith("list[") or right_rt.startswith("list[") or left_rt == "list" or right_rt == "list":
+            return "__pytra_list_concat(" + left + ", " + right + ")"
     # Floor division
     if op == "FloorDiv":
         return "__pytra_floordiv(" + left + ", " + right + ")"
@@ -876,18 +913,21 @@ def _emit_list_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     result += " local __r = {};"
     iter_rt = _str(iter_node, "resolved_type") if isinstance(iter_node, dict) else ""
     is_dict = iter_rt.startswith("dict[") or iter_rt == "dict"
+    is_str = iter_rt in ("str", "string")
     if isinstance(iter_node, dict) and _str(iter_node, "kind") == "RangeExpr":
         start = _emit_expr(ctx, iter_node.get("start")) if isinstance(iter_node.get("start"), dict) else "0"
         stop = _emit_expr(ctx, iter_node.get("stop")) if isinstance(iter_node.get("stop"), dict) else "0"
         step = _emit_expr(ctx, iter_node.get("step")) if isinstance(iter_node.get("step"), dict) else "1"
-        if step == "1":
+        if _is_lua_one(step):
             result += " for " + target_code + " = " + start + ", " + stop + " - 1 do"
-        elif step == "-1":
+        elif _is_lua_minus_one(step):
             result += " for " + target_code + " = " + start + ", " + stop + " + 1, -1 do"
         else:
             result += " for " + target_code + " = " + start + ", " + stop + " - 1, " + step + " do"
     elif is_dict:
         result += " for " + target_code + ", _ in pairs(" + iter_code + ") do"
+    elif is_str:
+        result += " for __i = 1, #" + iter_code + " do local " + target_code + " = string.sub(" + iter_code + ", __i, __i);"
     elif isinstance(target, dict) and _str(target, "kind") == "Tuple":
         temp_item = "__item"
         result += " for _, " + temp_item + " in ipairs(" + iter_code + ") do"
@@ -1219,6 +1259,10 @@ def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     target_plan = _dict(node, "target_plan")
     iter_plan = _dict(node, "iter_plan")
 
+    if _str(iter_plan, "kind") == "StaticRangeForPlan":
+        _emit_static_range_for(ctx, node)
+        return
+
     if not isinstance(target, dict) and len(target_plan) > 0:
         if _str(target_plan, "kind") == "NameTarget":
             target_code = _lua_symbol_name(ctx, _str(target_plan, "id"))
@@ -1244,9 +1288,9 @@ def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         start_code = _emit_expr(ctx, start_node) if isinstance(start_node, dict) else "0"
         stop_code = _emit_expr(ctx, stop_node) if isinstance(stop_node, dict) else "0"
         step_code = _emit_expr(ctx, step_node) if isinstance(step_node, dict) else "1"
-        if step_code == "1":
+        if _is_lua_one(step_code):
             _emit(ctx, "for " + target_code + " = " + start_code + ", " + stop_code + " - 1 do")
-        elif step_code == "-1":
+        elif _is_lua_minus_one(step_code):
             _emit(ctx, "for " + target_code + " = " + start_code + ", " + stop_code + " + 1, -1 do")
         else:
             _emit(ctx, "for " + target_code + " = " + start_code + ", " + stop_code + " - 1, " + step_code + " do")
@@ -1300,9 +1344,9 @@ def _emit_for_range_inner(ctx: EmitContext, node: dict[str, JsonVal], body: list
     stop_code = _emit_expr(ctx, stop_node) if isinstance(stop_node, dict) else "0"
     step_code = _emit_expr(ctx, step_node) if isinstance(step_node, dict) else "1"
 
-    if step_code == "1":
+    if _is_lua_one(step_code):
         _emit(ctx, "for " + target_code + " = " + start_code + ", " + stop_code + " - 1 do")
-    elif step_code == "-1":
+    elif _is_lua_minus_one(step_code):
         _emit(ctx, "for " + target_code + " = " + start_code + ", " + stop_code + " + 1, -1 do")
     else:
         _emit(ctx, "for " + target_code + " = " + start_code + ", " + stop_code + " - 1, " + step_code + " do")
@@ -1385,7 +1429,13 @@ def _emit_static_range_for(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     target = node.get("target")
     body = _list(node, "body")
     plan = _dict(node, "iter_plan")
-    target_code = _emit_expr(ctx, target) if isinstance(target, dict) else "_i"
+    target_plan = _dict(node, "target_plan")
+    if isinstance(target, dict):
+        target_code = _emit_expr(ctx, target)
+    elif _str(target_plan, "kind") == "NameTarget":
+        target_code = _lua_symbol_name(ctx, _str(target_plan, "id"))
+    else:
+        target_code = "_i"
 
     start_node = plan.get("start") if plan else None
     stop_node = plan.get("stop") if plan else None
@@ -1394,9 +1444,9 @@ def _emit_static_range_for(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     stop_code = _emit_expr(ctx, stop_node) if isinstance(stop_node, dict) else "0"
     step_code = _emit_expr(ctx, step_node) if isinstance(step_node, dict) else "1"
 
-    if step_code == "1":
+    if _is_lua_one(step_code):
         _emit(ctx, "for " + target_code + " = " + start_code + ", " + stop_code + " - 1 do")
-    elif step_code == "-1":
+    elif _is_lua_minus_one(step_code):
         _emit(ctx, "for " + target_code + " = " + start_code + ", " + stop_code + " + 1, -1 do")
     else:
         _emit(ctx, "for " + target_code + " = " + start_code + ", " + stop_code + " - 1, " + step_code + " do")
@@ -1442,7 +1492,15 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 if a == "self":
                     continue
                 arg_names.append(_lua_symbol_name(ctx, a))
-    else:
+    arg_types = _dict(node, "arg_types")
+    if len(arg_types) > 0:
+        for a in arg_types.keys():
+            if a == "self":
+                continue
+            safe_a = _lua_symbol_name(ctx, a)
+            if safe_a not in arg_names:
+                arg_names.append(safe_a)
+    if len(arg_names) == 0:
         # Fallback: try "args" list
         args = _list(node, "args")
         for a in args:

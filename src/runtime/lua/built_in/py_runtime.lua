@@ -17,19 +17,66 @@ function __pytra_print(...)
     local parts = {}
     for i = 1, argc do
         local v = select(i, ...)
-        if v == true then
-            parts[i] = "True"
-        elseif v == false then
-            parts[i] = "False"
-        elseif v == nil then
-            parts[i] = "None"
-        elseif type(v) == "number" then
-            parts[i] = string.format("%.17g", v)
-        else
-            parts[i] = tostring(v)
-        end
+        parts[i] = __pytra_repr(v)
     end
     io.write(table.concat(parts, " ") .. "\n")
+end
+
+function __pytra_repr(v)
+    if v == true then
+        return "True"
+    end
+    if v == false then
+        return "False"
+    end
+    if v == nil then
+        return "None"
+    end
+    local tv = type(v)
+    if tv == "number" then
+        if math.type ~= nil and math.type(v) == "float" and v == math.floor(v) then
+            return string.format("%.1f", v)
+        end
+        return string.format("%.17g", v)
+    end
+    if tv == "string" then
+        return v
+    end
+    if tv ~= "table" then
+        return tostring(v)
+    end
+    if v.path ~= nil then
+        return tostring(v.path)
+    end
+    if v._items ~= nil and type(v._items) == "table" then
+        return __pytra_repr(v._items)
+    end
+    local n = #v
+    local is_array = true
+    local key_count = 0
+    for k, _ in pairs(v) do
+        key_count = key_count + 1
+        if type(k) ~= "number" or k < 1 or math.floor(k) ~= k or k > n then
+            is_array = false
+        end
+    end
+    if is_array and key_count == n then
+        local parts = {}
+        for i = 1, n do
+            parts[#parts + 1] = __pytra_repr(v[i])
+        end
+        return "[" .. table.concat(parts, ", ") .. "]"
+    end
+    local keys = {}
+    for k, _ in pairs(v) do
+        keys[#keys + 1] = k
+    end
+    table.sort(keys, function(a, b) return tostring(a) < tostring(b) end)
+    local parts = {}
+    for _, k in ipairs(keys) do
+        parts[#parts + 1] = __pytra_repr(k) .. ": " .. __pytra_repr(v[k])
+    end
+    return "{" .. table.concat(parts, ", ") .. "}"
 end
 
 function __pytra_repeat_seq(a, b)
@@ -122,6 +169,57 @@ function __pytra_list_extend(items, other)
     for i = 1, #other do
         items[#items + 1] = other[i]
     end
+end
+
+function __pytra_list_concat(left, right)
+    local out = {}
+    if type(left) == "table" then
+        for i = 1, #left do
+            out[#out + 1] = left[i]
+        end
+    end
+    if type(right) == "table" then
+        for i = 1, #right do
+            out[#out + 1] = right[i]
+        end
+    end
+    return out
+end
+
+function __pytra_list_index(items, value)
+    if type(items) ~= "table" then
+        return -1
+    end
+    for i = 1, #items do
+        if items[i] == value then
+            return i - 1
+        end
+    end
+    return -1
+end
+
+function zip(a, b)
+    local out = {}
+    if type(a) ~= "table" or type(b) ~= "table" then
+        return out
+    end
+    local n = #a
+    if #b < n then n = #b end
+    for i = 1, n do
+        out[#out + 1] = { a[i], b[i] }
+    end
+    return out
+end
+
+function sum(items)
+    local total = 0
+    if type(items) ~= "table" then
+        return total
+    end
+    for i = 1, #items do
+        total = total + (tonumber(items[i]) or 0)
+    end
+    return total
 end
 
 function __pytra_bytes(v)

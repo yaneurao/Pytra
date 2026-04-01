@@ -25,4 +25,5 @@
 - 2026-04-01: `check_emitter_hardcode_lint.py --lang lua -v --no-write` を 0 件まで解消。
 - 2026-04-01: parity は未完了。代表残差は `add`, `deque_basic`, `class_instance`, `json_*`, `sys_extended`, `argparse_extended`, `pathlib_extended`。
 - 2026-04-01: stdlib parity は `16/16 pass` まで回復。Path/json/sys/png/glob/deque/ArgumentParser、class 継承、list/bytearray/string method、linked `pytra_isinstance` を Lua runtime/emitter に実装。
-- 2026-04-01: fixture parity は `109/136 pass`。残差は comprehension/range、exception 伝播、dict/set wrapper、`isinstance_narrowing`、`staticmethod` などの emitter/runtime 細部。
+- 2026-04-01: fixture parity は `119/137 pass` まで改善。`StaticRangeForPlan`、staticmethod dispatch、varargs 復元、list concat、zip/sum、table repr を追加。
+- 2026-04-01: sample parity は `1/18 pass`。画像 artifact、loop/continue、helper 関数不足、sample 特有の lowered パターンが残る。
