@@ -50,7 +50,8 @@ union type を `object` に退化させず `std::variant` で表現する。`wor
 
 **Phase 2: object 型を削除**
 
-5. [ ] [ID: P0-CPP-VARIANT-S5] C++ emitter の `object` 型出力を全て `std::variant` に置換する
+5. [x] [ID: P0-CPP-VARIANT-S5] C++ emitter の `object` 型出力を全て `std::variant` に置換する
+   - 完了: `src/toolchain2/emit/cpp/types.py` / `src/toolchain2/emit/cpp/emitter.py` を更新し、general union の宣言・container・`dict.get` default・`list.append`・`isinstance`・cast / unbox・tuple unpack を `std::variant` / `std::holds_alternative` / `std::get` / `std::visit` ベースへ置換した。`src/runtime/cpp/built_in/base_ops.h` では `str(variant)` / `str(tuple)` / container repr の差分を補正し、`type_alias_pep695`, `any_basic`, `any_dict_items`, `any_list_mixed`, `any_none`, `object_container_access`, `nested_types`, `typing/str_repr_containers` の C++ parity PASS を確認した。さらに union を含む fixture + sample 16 case を fresh emit して entry module `.cpp` を走査し、`Object<dict<str, object>>`, `Object<list<object>>`, `.unbox<`, `.as<dict<str, object>>`, `py_runtime_object_isinstance(...)`, `dict<object, object>{}` が case 本体に残っていないことを確認した。
 6. [ ] [ID: P0-CPP-VARIANT-S6] `PYTRA_TID_*` / `py_runtime_object_type_id` / `object.h` の `object` クラスを削除する
 7. [ ] [ID: P0-CPP-VARIANT-S7] fixture 全件 + sample 全件が `object` 型なしで PASS することを確認する
 

@@ -29,6 +29,33 @@ template <class K, class V> class dict;
 // Forward declare Object<T> so list/dict constructors can reference it.
 template <typename T> struct Object;
 
+namespace pytra::runtime::cpp::detail {
+
+template <class T>
+inline void hash_combine(::std::size_t& seed, const T& value) {
+    seed ^= ::std::hash<T>{}(value) + 0x9e3779b97f4a7c15ULL + (seed << 6U) + (seed >> 2U);
+}
+
+template <class Tuple, ::std::size_t... I>
+inline ::std::size_t tuple_hash_impl(const Tuple& value, ::std::index_sequence<I...>) {
+    ::std::size_t seed = 0;
+    (hash_combine(seed, ::std::get<I>(value)), ...);
+    return seed;
+}
+
+}  // namespace pytra::runtime::cpp::detail
+
+namespace std {
+
+template <class... Ts>
+struct hash<::std::tuple<Ts...>> {
+    ::std::size_t operator()(const ::std::tuple<Ts...>& value) const noexcept {
+        return ::pytra::runtime::cpp::detail::tuple_hash_impl(value, ::std::index_sequence_for<Ts...>{});
+    }
+};
+
+}  // namespace std
+
 #include "core/str.h"
 #include "core/list.h"
 #include "core/dict.h"

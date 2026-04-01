@@ -33,6 +33,8 @@ class CppCollectionExprEmitter:
         elements = self.any_to_list(expr_d.get("elements"))
         for e in elements:
             rv = self.render_expr(e)
+            if self.normalize_type_name(elem_t) == "None" or t == "list<::std::monostate>":
+                rv = "::std::monostate{}"
             brace_pos = rv.find("{")
             if brace_pos > 0:
                 cand = rv[:brace_pos].strip()
@@ -75,6 +77,8 @@ class CppCollectionExprEmitter:
             target_t = elem_types[i] if i < len(elem_types) else ""
             src_t0 = self.get_expr_type(e)
             src_t = src_t0 if isinstance(src_t0, str) else ""
+            if self.normalize_type_name(target_t) == "None":
+                item = "::std::monostate{}"
             if target_t != "" and not self.is_any_like_type(target_t) and src_t != target_t:
                 item = self.apply_cast(item, target_t)
             rendered_items.append(item)
@@ -90,7 +94,12 @@ class CppCollectionExprEmitter:
         elements = self.any_to_list(expr_d.get("elements"))
         rendered: list[str] = []
         for e in elements:
-            rendered.append(self.render_expr(e))
+            item = self.render_expr(e)
+            elem_t0 = self.get_expr_type(e)
+            elem_t = self.normalize_type_name(elem_t0 if isinstance(elem_t0, str) else "")
+            if elem_t == "None" or t == "set<::std::monostate>":
+                item = "::std::monostate{}"
+            rendered.append(item)
         sep = ", "
         items = sep.join(rendered)
         return f"{t}{{{items}}}"
@@ -168,6 +177,10 @@ class CppCollectionExprEmitter:
             val_node = kv.get("value")
             k = self.render_expr(key_node)
             v = self.render_expr(val_node)
+            if self.normalize_type_name(key_t) == "None":
+                k = "::std::monostate{}"
+            if self.normalize_type_name(val_t) == "None":
+                v = "::std::monostate{}"
             if self.is_any_like_type(key_t):
                 k = self._box_expr_for_any(k, key_node)
             if self.is_any_like_type(val_t):

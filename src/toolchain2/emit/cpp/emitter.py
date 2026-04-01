@@ -642,6 +642,14 @@ def _wrap_expr_for_target_type(ctx: CppEmitContext, target_type: str, value_expr
             if len(_split_generic_args(inner)) == 2:
                 return "py_dict_get_opt(" + inner + ")"
         return value_expr
+    if isinstance(value_node, dict):
+        value_kind = _str(value_node, "kind")
+        if value_kind == "Dict":
+            return _emit_dict_literal_for_target_type(ctx, value_node, target_type)
+        if value_kind == "List":
+            return _emit_list_literal_for_target_type(ctx, value_node, target_type)
+        if value_kind == "Set":
+            return _emit_set_literal_for_target_type(ctx, value_node, target_type)
     if isinstance(value_node, dict) and _effective_resolved_type(value_node) == target_type:
         return value_expr
     trimmed = value_expr.strip()
@@ -681,6 +689,26 @@ def _object_box_container_target(resolved_type: str) -> str:
 def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> str:
     if not isinstance(node, dict):
         return _emit_expr(ctx, node)
+    node_type = _effective_resolved_type(node)
+    if _is_top_level_union_type(target_type):
+        if _str(node, "kind") == "Dict":
+            lane = _select_union_lane(target_type, "dict")
+            if lane != "":
+                return cpp_signature_type(target_type) + "(" + _emit_dict_literal_for_target_type(ctx, node, lane) + ")"
+        if _str(node, "kind") == "List":
+            lane = _select_union_lane(target_type, "list")
+            if lane != "":
+                return cpp_signature_type(target_type) + "(" + _emit_list_literal_for_target_type(ctx, node, lane) + ")"
+        if _str(node, "kind") == "Set":
+            lane = _select_union_lane(target_type, "set")
+            if lane != "":
+                return cpp_signature_type(target_type) + "(" + _emit_set_literal_for_target_type(ctx, node, lane) + ")"
+        expr = _emit_expr(ctx, node)
+        if node_type == target_type:
+            return expr
+        if _is_top_level_union_type(node_type):
+            return _emit_union_narrow_expr(expr, node_type, target_type)
+        return cpp_signature_type(target_type) + "(" + expr + ")"
     if target_type in ("Any", "Obj", "object"):
         widened_container_type = _object_box_container_target(_effective_resolved_type(node))
         if widened_container_type != "":
@@ -771,6 +799,109 @@ def _optional_inner_type(type_name: str) -> str:
     if not cpp_t.startswith("::std::optional<"):
         return ""
     return inner
+
+
+def _split_top_level_union_type(type_name: str) -> list[str]:
+    parts: list[str] = []
+    depth = 0
+    current: list[str] = []
+    i = 0
+    while i < len(type_name):
+        ch = type_name[i]
+        if ch in "[<(":
+            depth += 1
+            current.append(ch)
+        elif ch in "]>)":
+            depth -= 1
+            current.append(ch)
+        elif ch == "|" and depth == 0:
+            part = "".join(current).strip()
+            if part != "":
+                parts.append(part)
+            current = []
+        else:
+            current.append(ch)
+        i += 1
+    tail = "".join(current).strip()
+    if tail != "":
+        parts.append(tail)
+    return parts
+
+
+def _is_top_level_union_type(type_name: str) -> bool:
+    return len(_split_top_level_union_type(type_name)) > 1
+
+
+def _union_lane_matches_expected(lane: str, expected_name: str) -> bool:
+    if expected_name in ("int", "int64", "PYTRA_TID_INT"):
+        return lane in ("int", "int64")
+    if expected_name in ("float", "float64", "PYTRA_TID_FLOAT"):
+        return lane in ("float", "float64")
+    if expected_name in ("bool", "PYTRA_TID_BOOL"):
+        return lane == "bool"
+    if expected_name in ("str", "PYTRA_TID_STR"):
+        return lane == "str"
+    if expected_name in ("dict", "PYTRA_TID_DICT"):
+        return lane.startswith("dict[")
+    if expected_name in ("list", "PYTRA_TID_LIST"):
+        return lane.startswith("list[")
+    if expected_name in ("set", "PYTRA_TID_SET"):
+        return lane.startswith("set[")
+    if expected_name in ("None", "none", "PYTRA_TID_NONE"):
+        return lane in ("None", "none")
+    return lane == expected_name
+
+
+def _select_union_lane(union_type: str, target_type: str) -> str:
+    lanes = _split_top_level_union_type(union_type)
+    for lane in lanes:
+        if lane == target_type:
+            return lane
+    if target_type in ("int", "int64"):
+        for lane in lanes:
+            if lane in ("int", "int64"):
+                return lane
+    if target_type in ("float", "float64"):
+        for lane in lanes:
+            if lane in ("float", "float64"):
+                return lane
+    if target_type == "dict" or target_type.startswith("dict["):
+        for lane in lanes:
+            if lane.startswith("dict["):
+                return lane
+    if target_type == "list" or target_type.startswith("list["):
+        for lane in lanes:
+            if lane.startswith("list["):
+                return lane
+    if target_type == "set" or target_type.startswith("set["):
+        for lane in lanes:
+            if lane.startswith("set["):
+                return lane
+    return ""
+
+
+def _emit_union_get_expr(value_expr: str, union_type: str, target_type: str) -> str:
+    lane = _select_union_lane(union_type, target_type)
+    if lane == "":
+        return value_expr
+    return "::std::get<" + cpp_signature_type(lane) + ">(" + value_expr + ")"
+
+
+def _emit_union_narrow_expr(value_expr: str, source_type: str, target_type: str) -> str:
+    target_cpp = cpp_signature_type(target_type)
+    if source_type == target_type:
+        return value_expr
+    return (
+        "::std::visit([&](const auto& __pytra_v) -> " + target_cpp + " { "
+        + "using __PytraLane = ::std::decay_t<decltype(__pytra_v)>; "
+        + "if constexpr (::std::is_constructible_v<" + target_cpp + ", __PytraLane>) { "
+        + "return " + target_cpp + "(__pytra_v); "
+        + "} "
+        + "throw ::std::runtime_error(\"variant narrowing failed\"); "
+        + "}, "
+        + value_expr
+        + ")"
+    )
 
 
 def _node_type_mirror(node: JsonVal) -> str:
@@ -1282,7 +1413,13 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         return _emit_builtin_call(ctx, node)
     func = node.get("func")
     args = _list(node, "args")
-    arg_strs = [_emit_expr(ctx, a) for a in args]
+    arg_strs: list[str] = []
+    for a in args:
+        expected_type = _str(a, "call_arg_type") if isinstance(a, dict) else ""
+        if expected_type in ("Obj", "Any", "object") and isinstance(a, dict):
+            arg_strs.append(_emit_expr_as_type(ctx, a, "object"))
+        else:
+            arg_strs.append(_emit_expr(ctx, a))
     keywords = _list(node, "keywords")
     keyword_strs: list[str] = []
     for kw in keywords:
@@ -1485,6 +1622,23 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     call_arg_strs = arg_strs
     if isinstance(func, dict) and _str(func, "kind") == "Attribute":
         call_arg_strs = [_emit_expr(ctx, func.get("value"))] + arg_strs
+    if rc == "list.append" and isinstance(func, dict) and _str(func, "kind") == "Attribute" and len(args) >= 1:
+        owner_node = func.get("value")
+        owner_type = _effective_resolved_type(owner_node)
+        if owner_type.startswith("list[") and owner_type.endswith("]"):
+            item_type = owner_type[5:-1]
+            call_arg_strs = [_emit_expr(ctx, owner_node), _emit_expr_as_type(ctx, args[0], item_type)]
+    if rc == "dict.get" and isinstance(func, dict) and _str(func, "kind") == "Attribute" and len(args) >= 2:
+        owner_node = func.get("value")
+        owner_type = _effective_resolved_type(owner_node)
+        if owner_type.startswith("dict[") and owner_type.endswith("]"):
+            dparts = _container_type_args(owner_type)
+            if len(dparts) == 2:
+                value_type = dparts[1]
+                rendered_args = [_emit_expr(ctx, args[0])]
+                if len(args) >= 2:
+                    rendered_args.append(_emit_expr_as_type(ctx, args[1], value_type))
+                call_arg_strs = [_emit_expr(ctx, owner_node)] + rendered_args
 
     if bn in ("min", "max") and len(args) >= 2:
         target_type = _str(node, "resolved_type")
@@ -1500,6 +1654,10 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             arg_kind = _str(args[0], "kind")
             arg_type = _str(args[0], "resolved_type")
             storage_type = _expr_storage_type(ctx, args[0])
+            if _is_top_level_union_type(storage_type):
+                return _emit_union_get_expr(arg_strs[0], storage_type, rt)
+            if _is_top_level_union_type(arg_type):
+                return _emit_union_get_expr(arg_strs[0], arg_type, rt)
             if _optional_inner_type(storage_type) == rt:
                 return "(*(" + arg_strs[0] + "))"
             if arg_kind == "Unbox" and arg_type in ("Obj", "Any", "object", "unknown"):
@@ -1528,6 +1686,15 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         if len(args) >= 1 and isinstance(args[0], dict):
             arg_kind = _str(args[0], "kind")
             arg_type = _str(args[0], "resolved_type")
+            storage_type = _expr_storage_type(ctx, args[0])
+            if _is_top_level_union_type(storage_type):
+                lane = _select_union_lane(storage_type, "str")
+                if lane != "":
+                    return _emit_union_get_expr(arg_strs[0], storage_type, "str")
+            if _is_top_level_union_type(arg_type):
+                lane = _select_union_lane(arg_type, "str")
+                if lane != "":
+                    return _emit_union_get_expr(arg_strs[0], arg_type, "str")
             if arg_kind == "Unbox":
                 unbox_value = args[0].get("value")
                 unbox_storage_type = _expr_storage_type(ctx, unbox_value)
@@ -1769,8 +1936,10 @@ def _emit_list_literal(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 
 def _emit_dict_literal(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     rt = _str(node, "resolved_type")
-    plain_ct = cpp_type(rt, prefer_value_container=True)
     entries = _list(node, "entries")
+    if len(entries) == 0 and rt in ("", "unknown", "dict[unknown,unknown]"):
+        return "rc_from_value(dict<str, object>{})"
+    plain_ct = cpp_type(rt, prefer_value_container=True)
     if len(entries) > 0:
         parts = []
         for e in entries:
@@ -2011,6 +2180,14 @@ def _emit_unbox(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         target = target_mirror
     if target == "" or target == "object":
         return value_expr
+    if _is_top_level_union_type(storage_type):
+        lane_expr = _emit_union_get_expr(value_expr, storage_type, target)
+        if lane_expr != value_expr:
+            return lane_expr
+    if _is_top_level_union_type(value_type):
+        lane_expr = _emit_union_get_expr(value_expr, value_type, target)
+        if lane_expr != value_expr:
+            return lane_expr
     if (
         target == "str"
         and storage_type not in ("", "unknown")
@@ -2090,6 +2267,17 @@ def _emit_box(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             return "object(rc_from_value(set<object>{}))"
     value_expr = _emit_expr(ctx, value)
     value_type = _effective_resolved_type(value)
+    if _is_top_level_union_type(value_type):
+        return (
+            "::std::visit([&](const auto& __pytra_v) -> object { "
+            + "using __PytraLane = ::std::decay_t<decltype(__pytra_v)>; "
+            + "if constexpr (::std::is_same_v<__PytraLane, ::std::monostate>) return object(); "
+            + "else if constexpr (::std::is_same_v<__PytraLane, int64> || ::std::is_same_v<__PytraLane, float64> || ::std::is_same_v<__PytraLane, bool> || ::std::is_same_v<__PytraLane, str>) return object(__pytra_v); "
+            + "else return object(__pytra_v); "
+            + "}, "
+            + value_expr
+            + ")"
+        )
     if is_container_resolved_type(target_type):
         if isinstance(value, dict):
             value_kind = _str(value, "kind")
@@ -2168,6 +2356,17 @@ def _emit_isinstance(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     expected = node.get("expected_type_id")
     expected_name = _str(expected, "id") if isinstance(expected, dict) else ""
     value_expr = _emit_expr(ctx, value)
+    value_type = _effective_resolved_type(value)
+    if _is_top_level_union_type(value_type):
+        lanes = _split_top_level_union_type(value_type)
+        checks: list[str] = []
+        for lane in lanes:
+            if not _union_lane_matches_expected(lane, expected_name):
+                continue
+            checks.append("::std::holds_alternative<" + cpp_signature_type(lane) + ">(" + value_expr + ")")
+        if len(checks) == 0:
+            return "false"
+        return "(" + " || ".join(checks) + ")"
     exact_pod_cpp_types = {
         "bool": "bool",
         "int8": "int8",
@@ -2184,7 +2383,6 @@ def _emit_isinstance(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     cpp_exact_type = exact_pod_cpp_types.get(expected_name, "")
     if cpp_exact_type != "":
         return "py_runtime_value_exact_is<" + cpp_exact_type + ">(" + value_expr + ")"
-    value_type = _effective_resolved_type(value)
     tid = {
         "None": "PYTRA_TID_NONE",
         "bool": "PYTRA_TID_BOOL",
@@ -2213,6 +2411,16 @@ def _emit_isinstance(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             tid = str(class_type_id)
     if tid == "":
         return "false"
+    if _is_top_level_union_type(value_type):
+        lanes = _split_top_level_union_type(value_type)
+        checks: list[str] = []
+        for lane in lanes:
+            if not _union_lane_matches_expected(lane, expected_name):
+                continue
+            checks.append("::std::holds_alternative<" + cpp_signature_type(lane) + ">(" + value_expr + ")")
+        if len(checks) == 0:
+            return "false"
+        return "(" + " || ".join(checks) + ")"
     if value_type in ("object", "Any", "Obj", "unknown") or "|" in value_type:
         return "py_runtime_object_isinstance(" + value_expr + ", static_cast<pytra_type_id>(" + tid + "))"
     if _lookup_class_type_id(ctx, expected_name) is not None:
@@ -2287,8 +2495,9 @@ def _emit_ifexp(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             orelse_expr = "::std::optional<" + cpp_signature_type(optional_inner) + ">(" + orelse_expr + ")"
         return "(" + test + " ? " + body_expr + " : " + orelse_expr + ")"
     if "|" in resolved_type:
-        body = _emit_expr_as_type(ctx, body_node, "object")
-        orelse = _emit_expr_as_type(ctx, orelse_node, "object")
+        union_cpp = cpp_signature_type(resolved_type)
+        body = union_cpp + "(" + _emit_expr(ctx, body_node) + ")"
+        orelse = union_cpp + "(" + _emit_expr(ctx, orelse_node) + ")"
         return "(" + test + " ? " + body + " : " + orelse + ")"
     body = _emit_expr(ctx, body_node)
     orelse = _emit_expr(ctx, orelse_node)
@@ -2457,6 +2666,18 @@ def _emit_assign(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, name + " = " + val_code + ";")
         else:
             dt = _str(node, "decl_type")
+            if _cpp_type_is_unknownish(dt) and isinstance(value, dict) and _str(value, "kind") == "Subscript":
+                sub_value = value.get("value")
+                sub_slice = value.get("slice")
+                sub_source_type = normalize_cpp_container_alias(_expr_storage_type(ctx, sub_value))
+                if sub_source_type == "":
+                    sub_source_type = normalize_cpp_container_alias(_effective_resolved_type(sub_value))
+                if sub_source_type.startswith("tuple[") and isinstance(sub_slice, dict) and _str(sub_slice, "kind") == "Constant":
+                    iv = sub_slice.get("value")
+                    if isinstance(iv, int):
+                        parts = split_generic_types(sub_source_type[6:-1])
+                        if 0 <= iv < len(parts):
+                            dt = parts[iv]
             _register_local_storage(ctx, name, dt)
             _declare_local_visible(ctx, name)
             if _cpp_type_is_unknownish(dt):
@@ -2552,7 +2773,30 @@ def _emit_for_core(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
                 iter_expr = iter_plan.get("iter_expr")
                 iter_code = _emit_expr(ctx, iter_expr) if iter_expr else "{}"
                 iter_type = _effective_resolved_type(iter_expr)
+                if iter_type in ("", "unknown") and isinstance(iter_expr, dict) and _str(iter_expr, "kind") == "Call":
+                    func = iter_expr.get("func")
+                    if isinstance(func, dict) and _str(func, "kind") == "Attribute" and _str(func, "attr") == "items":
+                        owner_node = func.get("value")
+                        owner_type = normalize_cpp_container_alias(_expr_storage_type(ctx, owner_node))
+                        if owner_type == "":
+                            owner_type = normalize_cpp_container_alias(_effective_resolved_type(owner_node))
+                        if isinstance(owner_node, dict) and _str(owner_node, "kind") == "Unbox":
+                            unbox_value = owner_node.get("value")
+                            source_union = normalize_cpp_container_alias(_expr_storage_type(ctx, unbox_value))
+                            if source_union == "":
+                                source_union = normalize_cpp_container_alias(_effective_resolved_type(unbox_value))
+                            if _is_top_level_union_type(source_union):
+                                lane = _select_union_lane(source_union, "dict")
+                                if lane != "":
+                                    owner_type = lane
+                        owner_type = _select_union_lane(owner_type, "dict") if _is_top_level_union_type(owner_type) else owner_type
+                        if owner_type.startswith("dict[") and owner_type.endswith("]"):
+                            parts = _container_type_args(owner_type)
+                            if len(parts) == 2:
+                                iter_type = "tuple[" + parts[0] + "," + parts[1] + "]"
                 target_type = _str(target_plan, "target_type") if isinstance(target_plan, dict) else ""
+                if target_type == "" and iter_type.startswith("tuple["):
+                    target_type = iter_type
                 if iter_type == "str" and target_type == "str":
                     iter_tmp = _next_temp(ctx, "__iter")
                     idx_name = _next_temp(ctx, "__str_idx")
@@ -3428,6 +3672,16 @@ def _emit_cast_expr(ctx: CppEmitContext, target_node: JsonVal, value_node: JsonV
     value_kind = _str(value_node, "kind") if isinstance(value_node, dict) else ""
     if target_name == "":
         return value_expr
+    if _is_top_level_union_type(storage_type):
+        lane_expr = _emit_union_get_expr(value_expr, storage_type, target_name)
+        if lane_expr != value_expr:
+            return lane_expr
+    if _is_top_level_union_type(value_type):
+        if _is_top_level_union_type(target_name):
+            return _emit_union_narrow_expr(value_expr, value_type, target_name)
+        lane_expr = _emit_union_get_expr(value_expr, value_type, target_name)
+        if lane_expr != value_expr:
+            return lane_expr
     if target_name in (value_type, static_value_type, storage_type):
         return value_expr
     if (

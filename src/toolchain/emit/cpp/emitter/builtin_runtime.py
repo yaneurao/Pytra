@@ -299,6 +299,28 @@ class CppBuiltinRuntimeEmitter:
             if len(arg_nodes) >= 2:
                 default_node: Any = arg_nodes[1]
                 default_t = self.normalize_type_name(self.get_expr_type(default_node))
+                default_t_unusable = (
+                    default_t in {"", "unknown"}
+                    or "::" in default_t
+                    or default_t.startswith("rc<")
+                    or default_t.startswith("Object<")
+                )
+                if default_t_unusable:
+                    default_node_d = self.any_to_dict_or_empty(default_node)
+                    if self._node_kind_from_dict(default_node_d) == "Call":
+                        default_fn = self.any_to_dict_or_empty(default_node_d.get("func"))
+                        if self._node_kind_from_dict(default_fn) == "Name" and self.any_dict_get_str(default_fn, "id", "") == "deque":
+                            default_args = self.any_to_list(default_node_d.get("args"))
+                            if len(default_args) == 0:
+                                out_hint = self.normalize_type_name(self.any_to_str(expr.get("resolved_type")))
+                                if out_hint.startswith("deque[") and out_hint.endswith("]"):
+                                    default_t = out_hint
+                            elif len(default_args) == 1:
+                                src_t = self.normalize_type_name(self.get_expr_type(default_args[0]))
+                                if src_t.startswith("list[") and src_t.endswith("]"):
+                                    default_t = "deque[" + src_t[5:-1] + "]"
+                                elif src_t.startswith("tuple[") and src_t.endswith("]"):
+                                    default_t = "deque[" + src_t[6:-1] + "]"
                 get_default_node: dict[str, Any] = {
                     "kind": "DictGetDefault",
                     "owner": owner_node,

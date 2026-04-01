@@ -2775,6 +2775,8 @@ class CodeEmitter:
             return True
         if expr_txt == "object{}":
             return True
+        if self._text_has_prefix(expr_txt, "object("):
+            return True
         return False
 
     def infer_rendered_arg_type(

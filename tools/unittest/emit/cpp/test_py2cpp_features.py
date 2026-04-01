@@ -40,6 +40,7 @@ from src.toolchain.emit.cpp.cli import (
     _runtime_module_tail_from_source_path,
     _runtime_namespace_for_tail,
     _runtime_output_rel_tail,
+    build_cpp_header_from_east,
     build_module_east_map,
     build_module_symbol_index,
     build_module_type_schema,
@@ -52,6 +53,7 @@ from src.toolchain.emit.cpp.cli import (
     resolve_module_name,
     transpile_to_cpp,
 )
+from src.toolchain.frontends.type_expr import parse_type_expr_text
 try:
     from test.unit.backends.representative_contract_support import (
         assert_no_representative_escape,
@@ -6159,15 +6161,99 @@ def head(xs: tuple[int, ...]) -> int:
             transpile_to_cpp(east)
 
 
-    def test_type_alias_pep695_transpile_generates_tagged_struct(self) -> None:
-        src_py = find_fixture_case("type_alias_pep695")
-        east = load_east(src_py)
+    def test_type_alias_pep695_transpile_generates_variant_alias(self) -> None:
+        east = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "TypeAlias",
+                    "name": "Scalar",
+                    "type_expr": "int64|float64",
+                    "value": {
+                        "kind": "TypeExpr",
+                        "type_expr": parse_type_expr_text("int | float"),
+                        "resolved_type": "type",
+                    },
+                },
+                {
+                    "kind": "FunctionDef",
+                    "name": "pick",
+                    "args": [{"arg": "x"}],
+                    "arg_order": ["x"],
+                    "arg_types": {"x": "int64|float64"},
+                    "arg_type_exprs": {"x": parse_type_expr_text("int | float")},
+                    "arg_usage": {"x": "readonly"},
+                    "arg_defaults": {},
+                    "return_type": "int64|float64",
+                    "return_type_expr": parse_type_expr_text("int | float"),
+                    "body": [{"kind": "Return", "value": {"kind": "Name", "id": "x", "resolved_type": "int64|float64"}}],
+                },
+            ],
+            "meta": {},
+        }
         cpp = transpile_to_cpp(east)
-        # Object<T> mode: type alias emits `using Scalar = object;`
-        self.assertIn("using Scalar = object;", cpp)
-        self.assertIn("PYTRA_TID_INT", cpp)
+        self.assertIn("using Scalar = ::std::variant<int64, float64>;", cpp)
         self.assertIn("const Scalar&", cpp)
-        self.assertNotIn("::std::variant", cpp)
+        self.assertIn("::std::variant", cpp)
+
+    def test_recursive_type_alias_transpile_generates_variant_struct(self) -> None:
+        east = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "TypeAlias",
+                    "name": "JsonVal",
+                    "type_expr": "None|bool|int64|float64|str|list[JsonVal]|dict[str, JsonVal]",
+                    "value": {
+                        "kind": "TypeExpr",
+                        "type_expr": parse_type_expr_text("None | bool | int | float | str | list[JsonVal] | dict[str, JsonVal]"),
+                        "resolved_type": "type",
+                    },
+                },
+                {
+                    "kind": "FunctionDef",
+                    "name": "pick",
+                    "args": [{"arg": "x"}],
+                    "arg_order": ["x"],
+                    "arg_types": {"x": "JsonVal"},
+                    "arg_type_exprs": {"x": parse_type_expr_text("JsonVal")},
+                    "arg_usage": {"x": "readonly"},
+                    "arg_defaults": {},
+                    "return_type": "JsonVal",
+                    "return_type_expr": parse_type_expr_text("JsonVal"),
+                    "body": [{"kind": "Return", "value": {"kind": "Name", "id": "x", "resolved_type": "JsonVal"}}],
+                },
+            ],
+            "meta": {},
+        }
+        cpp = transpile_to_cpp(east)
+        self.assertIn("struct JsonVal : ::std::variant<", cpp)
+        self.assertNotIn("using JsonVal =", cpp)
+        self.assertIn("JsonVal(const list<JsonVal>& v) : base_type(rc_from_value(v)) {}", cpp)
+        self.assertIn("JsonVal(const dict<str, JsonVal>& v) : base_type(rc_from_value(v)) {}", cpp)
+
+    def test_recursive_type_alias_header_generates_variant_struct(self) -> None:
+        east = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "TypeAlias",
+                    "name": "JsonVal",
+                    "type_expr": "None|bool|int64|float64|str|list[JsonVal]|dict[str, JsonVal]",
+                    "value": {
+                        "kind": "TypeExpr",
+                        "type_expr": parse_type_expr_text("None | bool | int | float | str | list[JsonVal] | dict[str, JsonVal]"),
+                        "resolved_type": "type",
+                    },
+                }
+            ],
+            "meta": {},
+        }
+        header = build_cpp_header_from_east(east, ROOT / "work/tmp/jsonval.py", ROOT / "work/tmp/jsonval.h")
+        self.assertIn("struct JsonVal : ::std::variant<", header)
+        self.assertIn("Object<list<JsonVal>>", header)
+        self.assertIn("Object<dict<str, JsonVal>>", header)
+        self.assertNotIn("using JsonVal =", header)
 
 
 if __name__ == "__main__":

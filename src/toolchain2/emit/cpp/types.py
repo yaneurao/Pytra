@@ -132,9 +132,10 @@ def cpp_type(resolved_type: str, *, prefer_value_container: bool = False) -> str
                 cpp_ret = cpp_signature_type(ret_raw)
                 return "::std::function<" + cpp_ret + "(" + cpp_params + ")>"
 
-    # General union → object (variant 導入までは fail-closed)
     if _is_top_level_union(resolved_type):
-        return "object"
+        lanes = _split_top_level_union(resolved_type)
+        if len(lanes) > 0:
+            return "::std::variant<" + ", ".join(cpp_signature_type(lane) for lane in lanes) + ">"
 
     # User class → ClassName (by value or shared_ptr depending on context)
     return resolved_type
@@ -158,7 +159,9 @@ def cpp_signature_type(resolved_type: str, *, prefer_value_container: bool = Fal
             prefer_value_container=prefer_value_container,
         ) + ">"
     if _is_top_level_union(resolved_type):
-        return "object"
+        lanes = _split_top_level_union(resolved_type)
+        if len(lanes) > 0:
+            return "::std::variant<" + ", ".join(cpp_signature_type(lane) for lane in lanes) + ">"
     return cpp_type(resolved_type, prefer_value_container=prefer_value_container)
 
 

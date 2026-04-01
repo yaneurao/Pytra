@@ -511,6 +511,10 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
             call_ret_t = self.normalize_type_name(self._infer_call_expr_type(node_for_base))
             if call_ret_t not in {"", "unknown"}:
                 return call_ret_t
+        if kind == "IfExp":
+            inferred_ifexp_t = self.normalize_type_name(self._infer_expr_type_shallow(node_for_base))
+            if inferred_ifexp_t not in {"", "unknown"}:
+                return inferred_ifexp_t
         if kind == "BinOp":
             numeric_t = self.normalize_type_name(self._infer_numeric_expr_type(node_for_base))
             if numeric_t != "":
@@ -565,6 +569,100 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
                 if self._node_kind_from_dict(sl_node) != "Slice":
                     return "str"
         return ""
+
+    def _merge_inferred_types(self, left_t: str, right_t: str) -> str:
+        """2つの推論型から最小の EAST union を組み立てる。"""
+        left_norm = self.normalize_type_name(left_t)
+        right_norm = self.normalize_type_name(right_t)
+        if left_norm in {"", "unknown"}:
+            return right_norm
+        if right_norm in {"", "unknown"}:
+            return left_norm
+        if left_norm == right_norm:
+            return left_norm
+        parts: list[str] = []
+        for raw in (left_norm, right_norm):
+            if self._contains_text(raw, "|"):
+                for part in self.split_union(raw):
+                    pn = self.normalize_type_name(part)
+                    if pn != "" and pn not in parts:
+                        parts.append(pn)
+                continue
+            if raw not in parts:
+                parts.append(raw)
+        if len(parts) == 0:
+            return ""
+        if len(parts) == 1:
+            return parts[0]
+        return " | ".join(parts)
+
+    def _infer_expr_type_shallow(self, expr: Any, local_env: dict[str, str] | None = None) -> str:
+        """unknown の式に対して emitter 局所の軽量推論を行う。"""
+        node = self.any_to_dict_or_empty(expr)
+        if len(node) == 0:
+            return ""
+        direct_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))
+        if direct_t not in {"", "unknown"}:
+            return direct_t
+        kind = self._node_kind_from_dict(node)
+        env = local_env if isinstance(local_env, dict) else {}
+        if kind == "Name":
+            name = self.any_dict_get_str(node, "id", "")
+            if name != "":
+                env_t = self.normalize_type_name(self.any_to_str(env.get(name)))
+                if env_t not in {"", "unknown"}:
+                    return env_t
+                declared_t = self.normalize_type_name(self.any_to_str(self.declared_var_types.get(name)))
+                if declared_t not in {"", "unknown"}:
+                    return declared_t
+        if kind == "Call":
+            call_ret_t = self.normalize_type_name(self._infer_call_expr_type(node))
+            if call_ret_t not in {"", "unknown"}:
+                return call_ret_t
+        if kind == "IfExp":
+            body_t = self.normalize_type_name(self._infer_expr_type_shallow(node.get("body"), env))
+            orelse_t = self.normalize_type_name(self._infer_expr_type_shallow(node.get("orelse"), env))
+            return self._merge_inferred_types(body_t, orelse_t)
+        if kind == "BinOp":
+            numeric_t = self.normalize_type_name(self._infer_numeric_expr_type(node))
+            if numeric_t != "":
+                return numeric_t
+        return ""
+
+    def _infer_function_return_type_from_stmt(self, stmt: dict[str, Any]) -> str:
+        """未注釈関数の戻り値型を body から局所推論する。"""
+        declared_ret = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
+        if declared_ret not in {"", "unknown"}:
+            return declared_ret
+        body = self._dict_stmt_list(stmt.get("body"))
+        local_env: dict[str, str] = {}
+        inferred_ret = ""
+        for body_stmt in body:
+            kind = self._node_kind_from_dict(body_stmt)
+            if kind in {"FunctionDef", "ClassDef"}:
+                continue
+            if kind in {"Assign", "AnnAssign"}:
+                target = self.any_to_dict_or_empty(body_stmt.get("target"))
+                if self._node_kind_from_dict(target) == "Name":
+                    name = self.any_dict_get_str(target, "id", "")
+                    if name != "":
+                        target_t = self.normalize_type_name(
+                            self.any_dict_get_str(body_stmt, "annotation", "")
+                            or self.any_dict_get_str(body_stmt, "decl_type", "")
+                        )
+                        if target_t in {"", "unknown"}:
+                            target_t = self.normalize_type_name(
+                                self._infer_expr_type_shallow(body_stmt.get("value"), local_env)
+                            )
+                        if target_t not in {"", "unknown"}:
+                            local_env[name] = target_t
+                continue
+            if kind != "Return":
+                continue
+            value = body_stmt.get("value")
+            value_t = self.normalize_type_name(self._infer_expr_type_shallow(value, local_env))
+            inferred_ret = self._merge_inferred_types(inferred_ret, value_t)
+        return inferred_ret
 
     # module/import helpers moved to backends.cpp.emitter.module.CppModuleEmitter.
 
@@ -896,7 +994,9 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
         if len(parts) != 1:
             return "list<object>"
         elem = self.normalize_type_name(parts[0])
-        if elem in {"", "unknown", "Any", "object", "None"}:
+        if elem == "None":
+            return "list<::std::monostate>"
+        if elem in {"", "unknown", "Any", "object"}:
             return "list<object>"
         if elem == "uint8":
             return "bytearray"
@@ -953,6 +1053,8 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
             for elem in elems:
                 item_txt = self.render_expr(elem)
                 elem_t = self.normalize_type_name(self.get_expr_type(elem))
+                if inner_t == "None":
+                    item_txt = "::std::monostate{}"
                 if inner_t != "" and self.is_any_like_type(elem_t) and self._can_runtime_cast_target(inner_t):
                     item_txt = self._coerce_any_expr_to_target_via_unbox(
                         item_txt,
@@ -2006,6 +2108,15 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
             return rendered_expr[: -len(tail_b)] + ", " + typed_default + ")"
         return rendered_expr
 
+    def _rewrite_nullopt_literal_for_monostate_target(self, rendered_expr: str, east_target_t: str) -> str:
+        """`None` literal が monostate lane に入る場合は `nullopt` ではなく `monostate{}` に揃える。"""
+        if rendered_expr == "":
+            return rendered_expr
+        cpp_t = self._cpp_type_text(east_target_t)
+        if "::std::monostate" not in cpp_t:
+            return rendered_expr
+        return rendered_expr.replace("::std::nullopt", "::std::monostate{}").replace("std::nullopt", "::std::monostate{}")
+
     def _rewrite_empty_collection_literal_for_typed_target(
         self,
         rendered_expr: str,
@@ -2340,18 +2451,22 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
         type_expr = self.any_to_str(stmt.get("type_expr"))
         if name == "" or type_expr == "":
             return
-        # Multi-type union → tagged struct
+        if self._contains_identifier_token(type_expr, name):
+            non_none, has_none = self.split_union_non_none(type_expr)
+            if len(non_none) >= 2:
+                self._tagged_union_types[name] = non_none
+                self._tagged_union_has_none[name] = has_none
+            if not self.emit_main:
+                self._type_alias_reverse_map[type_expr] = name
+                return
+            self._emit_recursive_variant_struct(name, type_expr)
+            self._type_alias_reverse_map[type_expr] = name
+            return
+        cpp_t = self._cpp_type_text(type_expr)
         non_none, has_none = self.split_union_non_none(type_expr)
         if len(non_none) >= 2:
             self._tagged_union_types[name] = non_none
             self._tagged_union_has_none[name] = has_none
-            self._type_alias_reverse_map[type_expr] = name
-            # runtime モード（header が別途生成される）では struct 定義をスキップ
-            if not self.emit_main:
-                return
-            self._emit_tagged_union_struct(name, non_none, has_none)
-            return
-        cpp_t = self._cpp_type_text(type_expr)
         if not self.emit_main:
             # runtime モードでは using は header 側で出力済み
             self._type_alias_reverse_map[type_expr] = name
@@ -2359,41 +2474,70 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
         self.emit(f"using {name} = {cpp_t};")
         self._type_alias_reverse_map[type_expr] = name
 
-    @staticmethod
-    def _pytra_tid_for_east_type(east_type: str) -> str:
-        """EAST 型名から PYTRA_TID 定数名を返す。"""
-        t = east_type.strip()
-        if t == "None":
-            return "PYTRA_TID_NONE"
-        if t == "bool":
-            return "PYTRA_TID_BOOL"
-        if t in {"int", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
-            return "PYTRA_TID_INT"
-        if t in {"float", "float32", "float64"}:
-            return "PYTRA_TID_FLOAT"
-        if t == "str":
-            return "PYTRA_TID_STR"
-        if t.startswith("list[") or t == "list":
-            return "PYTRA_TID_LIST"
-        if t.startswith("dict[") or t == "dict":
-            return "PYTRA_TID_DICT"
-        if t.startswith("set[") or t == "set":
-            return "PYTRA_TID_SET"
-        return f"{t}::PYTRA_TYPE_ID"
+    def _contains_identifier_token(self, text: str, token: str) -> bool:
+        if text == "" or token == "":
+            return False
+        n = len(text)
+        m = len(token)
+        i = 0
+        while i + m <= n:
+            if text[i : i + m] == token:
+                left_ok = i == 0 or not self._is_ident_char(text[i - 1])
+                right_ok = i + m == n or not self._is_ident_char(text[i + m])
+                if left_ok and right_ok:
+                    return True
+            i += 1
+        return False
 
     @staticmethod
-    def _tagged_union_field_name(east_type: str) -> str:
-        """EAST 型名からフィールド名を生成する。"""
-        return east_type.lower().replace("[", "_").replace("]", "").replace(",", "_").replace(" ", "") + "_val"
+    def _is_ident_char(ch: str) -> bool:
+        return (ch >= "A" and ch <= "Z") or (ch >= "a" and ch <= "z") or (ch >= "0" and ch <= "9") or ch == "_"
 
-    def _emit_tagged_union_struct(self, name: str, non_none: list[str], has_none: bool) -> None:
-        """type X = A | B | ... — object = tagged value なので typedef のみ。"""
-        # 登録
-        self._tagged_union_types[name] = non_none
-        self._tagged_union_has_none[name] = has_none
+    def _recursive_union_alt_cpp_type(self, alias_name: str, east_type: str) -> tuple[str, str]:
+        base_cpp = self._cpp_type_text(east_type)
+        if self._contains_identifier_token(east_type, alias_name) and (
+            base_cpp.startswith("list<") or base_cpp.startswith("dict<") or base_cpp.startswith("set<")
+        ):
+            return "Object<" + base_cpp + ">", base_cpp
+        return base_cpp, base_cpp
 
-        # object の別名として emit
-        self.emit(f"using {name} = object;")
+    def _emit_recursive_variant_struct(self, name: str, type_expr: str) -> None:
+        parts = self.split_union(type_expr)
+        non_none: list[str] = []
+        has_none = False
+        for part in parts:
+            part_norm = self.normalize_type_name(part)
+            if part_norm == "":
+                continue
+            if part_norm == "None":
+                has_none = True
+            else:
+                non_none.append(part_norm)
+        variant_parts: list[str] = []
+        extra_ctors: list[tuple[str, str]] = []
+        for part in non_none:
+            alt_cpp, source_cpp = self._recursive_union_alt_cpp_type(name, part)
+            if alt_cpp not in variant_parts:
+                variant_parts.append(alt_cpp)
+            if alt_cpp != source_cpp:
+                extra_ctors.append((source_cpp, alt_cpp))
+        if has_none:
+            variant_parts.append("::std::monostate")
+        base_type = "::std::variant<" + join_str_list(", ", variant_parts) + ">"
+        self.emit(f"struct {name} : {base_type} {{")
+        self.indent += 1
+        self.emit(f"using base_type = {base_type};")
+        self.emit("using base_type::base_type;")
+        self.emit("using base_type::operator=;")
+        if has_none:
+            self.emit(f"{name}() : base_type(::std::monostate{{}}) {{}}")
+        else:
+            self.emit(f"{name}() = default;")
+        for source_cpp, _ in extra_ctors:
+            self.emit(f"{name}(const {source_cpp}& v) : base_type(rc_from_value(v)) {{}}")
+            self.emit(f"{name}({source_cpp}&& v) : base_type(rc_from_value(::std::move(v))) {{}}")
+        self.indent -= 1
+        self.emit("};")
         self.emit("")
 
     def _emit_noop_stmt(self, stmt: dict[str, Any]) -> None:
@@ -2492,9 +2636,11 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
         name = self.any_dict_get_str(stmt, "name", "fn")
         emitted_name = self.rename_if_reserved(str(name), self.reserved_words, self.rename_prefix, self.renamed_symbols)
         return_type_expr = stmt.get("return_type_expr")
-        ret = self.cpp_signature_type(
-            return_type_expr if self._is_type_expr_payload(return_type_expr) else stmt.get("return_type")
-        )
+        inferred_return_t = self._infer_function_return_type_from_stmt(stmt)
+        return_type_source: Any = return_type_expr if self._is_type_expr_payload(return_type_expr) else stmt.get("return_type")
+        if self.normalize_type_name(self.any_to_str(stmt.get("return_type"))) in {"", "unknown"} and inferred_return_t not in {"", "unknown"}:
+            return_type_source = inferred_return_t
+        ret = self.cpp_signature_type(return_type_source)
         arg_types = self.any_to_dict_or_empty(stmt.get("arg_types"))
         arg_type_exprs = self.any_to_dict_or_empty(stmt.get("arg_type_exprs"))
         arg_usage = self.any_to_dict_or_empty(stmt.get("arg_usage"))
@@ -2646,7 +2792,9 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
                     self.declared_var_types[an] = self.normalize_type_name(at)
         if vararg_name != "" and vararg_list_t != "":
             self.declared_var_types[vararg_name] = vararg_list_t
-        self.current_function_return_type = self.any_to_str(stmt.get("return_type"))
+        self.current_function_return_type = (
+            inferred_return_t if inferred_return_t not in {"", "unknown"} else self.any_to_str(stmt.get("return_type"))
+        )
         self.current_function_return_abi_mode = "default"
         docstring = self.any_to_str(stmt.get("docstring"))
         if docstring != "":
@@ -2719,12 +2867,14 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
         if not v_is_dict:
             self.emit(self.syntax_text("return_void", "return;"))
             return
-        rv = self.render_expr(stmt.get("value"))
         ret_t = self.current_function_return_type
+        render_value_node: Any = stmt.get("value")
+        render_value_node = self._hint_expr_result_type(value_node, ret_t)
+        rv = self.render_expr(render_value_node)
         if ret_t != "":
             rv = self._rewrite_nullopt_default_for_typed_target(rv, ret_t)
             rv = self._rewrite_empty_collection_literal_for_typed_target(rv, value_node, ret_t)
-        expr_t0 = self.get_expr_type(stmt.get("value"))
+        expr_t0 = self.get_expr_type(render_value_node)
         expr_t = expr_t0 if isinstance(expr_t0, str) else ""
         ret_abi_mode = self.any_to_str(getattr(self, "current_function_return_abi_mode", "default"))
         if ret_abi_mode in {"value", "value_readonly", "value_mut"}:
@@ -2751,6 +2901,47 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
                 {"value": rv},
             )
         )
+
+    def _hint_expr_result_type(self, value_node: dict[str, Any], target_t: str) -> Any:
+        """Inject a typed result hint for expressions whose local resolved_type is still too weak."""
+        target_norm = self.normalize_type_name(target_t)
+        if len(value_node) == 0 or target_norm in {"", "unknown", "Any", "object"}:
+            return value_node
+        value_kind = self._node_kind_from_dict(value_node)
+        if value_kind == "Unbox":
+            inner_node = self.any_to_dict_or_empty(value_node.get("value"))
+            hinted_inner = self._hint_expr_result_type(inner_node, target_norm)
+            if hinted_inner is inner_node:
+                return value_node
+            hinted_value = dict(value_node)
+            hinted_value["value"] = hinted_inner
+            return hinted_value
+        value_resolved_t = self.normalize_type_name(self.any_dict_get_str(value_node, "resolved_type", ""))
+        if (
+            value_kind == "ListComp"
+            and target_norm.startswith("list[")
+            and target_norm.endswith("]")
+            and value_resolved_t in {"", "unknown", "list[unknown]"}
+        ):
+            hinted_value = dict(value_node)
+            hinted_value["resolved_type"] = target_norm
+            return hinted_value
+        if (
+            value_kind == "Call"
+            and self.any_dict_get_str(value_node, "lowered_kind", "") == "BuiltinCall"
+            and self.any_dict_get_str(value_node, "runtime_call", "") == "dict.get"
+            and value_resolved_t in {"", "unknown", "Any", "object"}
+        ):
+            hinted_value = dict(value_node)
+            hinted_value["resolved_type"] = target_norm
+            return hinted_value
+        if value_kind == "DictGetDefault":
+            out_t = self.normalize_type_name(self.any_dict_get_str(value_node, "out_type", ""))
+            if out_t in {"", "unknown", "Any", "object"}:
+                hinted_value = dict(value_node)
+                hinted_value["out_type"] = target_norm
+                return hinted_value
+        return value_node
 
     def _render_value_return_list_ctor(self, value_node: dict[str, Any], ret_t: str) -> str:
         """`@abi(ret="value")` の `return list(x)` を value-list 返却へ正規化する。"""
@@ -2948,14 +3139,19 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
         float_out_types = {"float32", "float64"}
         if out_norm == "bool" or out_norm == "str" or out_norm in int_out_types or out_norm in float_out_types:
             return out_norm
-        if out_norm.startswith("list[") or out_norm.startswith("dict["):
+        if out_norm.startswith("list[") or out_norm.startswith("dict[") or out_norm.startswith("set[") or out_norm.startswith("deque["):
             return out_norm
         if out_norm in {"", "unknown", "Any", "object"}:
             if default_norm == "bool" or default_norm == "str":
                 return default_norm
             if default_norm in int_out_types or default_norm in float_out_types:
                 return default_norm
-            if default_norm.startswith("list[") or default_norm.startswith("dict["):
+            if (
+                default_norm.startswith("list[")
+                or default_norm.startswith("dict[")
+                or default_norm.startswith("set[")
+                or default_norm.startswith("deque[")
+            ):
                 return default_norm
             return "object"
         return out_norm
@@ -2972,6 +3168,13 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
             if eff_t in {"", "unknown", "Any", "object"}:
                 return default_expr
             return self._none_default_expr_for_type(eff_t)
+        if eff_t.startswith("deque[") and eff_t.endswith("]"):
+            direct_deque_ctor = self._render_zero_arg_deque_ctor_for_target(default_node, eff_t)
+            if direct_deque_ctor != "":
+                return direct_deque_ctor
+            direct_deque_ctor = self._render_single_arg_deque_ctor_for_target(default_node, eff_t)
+            if direct_deque_ctor != "":
+                return direct_deque_ctor
         if eff_t in {"", "unknown", "Any", "object"}:
             return self._box_any_target_value(default_expr, default_node)
         if eff_t == "str":
@@ -3034,7 +3237,12 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
     ) -> str:
         """`dict[str, object]` / optional object-dict の `get(key, default)` を式展開する。"""
         key_expr = self._coerce_dict_key_expr(owner_node, key_expr, key_node)
-        effective_t = self._objectish_dict_get_effective_type(out_t, default_t)
+        default_t_effective = self.normalize_type_name(default_t)
+        if default_t_effective in {"", "unknown"}:
+            fallback_default_t = self.get_expr_type(default_node)
+            if isinstance(fallback_default_t, str):
+                default_t_effective = self.normalize_type_name(fallback_default_t)
+        effective_t = self._objectish_dict_get_effective_type(out_t, default_t_effective)
         typed_default = self._objectish_dict_get_default_expr_for_type(effective_t, default_expr, default_node)
         owner_tmp = self.next_tmp("__dict")
         key_tmp = self.next_tmp("__dict_key")
@@ -3491,8 +3699,23 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
         CppEmitter 側で明示オーバーライドして、IfExp の各部分式が
         `CppEmitter.render_expr` を通るようにする。
         """
+        target_t = self.normalize_type_name(self.any_dict_get_str(expr, "resolved_type", ""))
+        body_node = self.any_to_dict_or_empty(expr.get("body"))
+        orelse_node = self.any_to_dict_or_empty(expr.get("orelse"))
         body = self.render_expr(expr.get("body"))
         orelse = self.render_expr(expr.get("orelse"))
+        if self._contains_text(target_t, "|") and not self.is_any_like_type(target_t):
+            body_t = self.normalize_type_name(self.get_expr_type(body_node))
+            if body_t in {"", "unknown"}:
+                body_t = self.normalize_type_name(self._infer_expr_type_shallow(body_node))
+            orelse_t = self.normalize_type_name(self.get_expr_type(orelse_node))
+            if orelse_t in {"", "unknown"}:
+                orelse_t = self.normalize_type_name(self._infer_expr_type_shallow(orelse_node))
+            target_cpp_t = self._cpp_type_text(target_t)
+            if body_t not in {"", "unknown"} and body_t != target_t:
+                body = f"{target_cpp_t}({body})"
+            if orelse_t not in {"", "unknown"} and orelse_t != target_t:
+                orelse = f"{target_cpp_t}({orelse})"
         casts = self._dict_stmt_list(expr.get("casts"))
         for c in casts:
             on = self.any_to_str(c.get("on"))
@@ -3502,8 +3725,6 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
             elif on == "orelse":
                 orelse = self.apply_cast(orelse, to_t)
         test_node = self.any_to_dict_or_empty(expr.get("test"))
-        body_node = self.any_to_dict_or_empty(expr.get("body"))
-        orelse_node = self.any_to_dict_or_empty(expr.get("orelse"))
         if self._is_isinstance_ctor_ifexp_pattern(test_node, body_node, orelse_node):
             if not self.is_boxed_object_expr(orelse):
                 orelse = f"object({orelse})"
@@ -4530,6 +4751,9 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
                 return value_expr
             if self._is_safe_widening_cast(source_t, target_t):
                 return value_expr
+            variant_alt_cpp_t = self._variant_alt_cpp_type_for_target_type(source_t, target_t)
+            if variant_alt_cpp_t != "":
+                return f"::std::get<{variant_alt_cpp_t}>({value_expr})"
         # cast(T, v) が内包されている場合、Unbox は冗長（cast が既に対象型を生成済み）。
         if source_t in {"", "unknown"}:
             vn_dict = self.any_to_dict_or_empty(value_node)
@@ -5059,5 +5283,3 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
         return
 
     # type conversion / any-boundary helpers moved to backends.cpp.emitter.type_bridge.CppTypeBridgeEmitter.
-
-

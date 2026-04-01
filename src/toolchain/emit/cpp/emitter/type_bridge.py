@@ -29,6 +29,34 @@ _SAFE_WIDENING_PAIRS: set[tuple[str, str]] = {
 class CppTypeBridgeEmitter:
     """Type conversion and Any-boundary helpers extracted from CppEmitter."""
 
+    def _variant_union_parts_for_type(self, value_t: str) -> tuple[list[str], bool]:
+        t_norm = self.normalize_type_name(value_t)
+        tagged_union_types = getattr(self, "_tagged_union_types", {})
+        tagged_union_has_none = getattr(self, "_tagged_union_has_none", {})
+        alias_map = getattr(self, "_type_alias_reverse_map", {})
+        union_name = alias_map.get(t_norm, "")
+        if union_name == "" and t_norm in tagged_union_types:
+            union_name = t_norm
+        if union_name != "" and union_name in tagged_union_types:
+            return list(tagged_union_types.get(union_name, [])), bool(tagged_union_has_none.get(union_name, False))
+        if "|" in t_norm:
+            non_none, has_none = self.split_union_non_none(t_norm)
+            if len(non_none) >= 2:
+                return non_none, has_none
+        return [], False
+
+    def _variant_alt_cpp_type_for_target_type(self, source_t: str, target_t: str) -> str:
+        union_parts, _ = self._variant_union_parts_for_type(source_t)
+        if len(union_parts) == 0:
+            return ""
+        target_norm = self.normalize_type_name(target_t)
+        if target_norm == "None":
+            return "::std::monostate"
+        for part in union_parts:
+            if self.normalize_type_name(part) == target_norm:
+                return self._cpp_type_text(part)
+        return ""
+
     def _is_safe_widening_cast(self, src_t: str, dst_t: str) -> bool:
         """src_t → dst_t が C++ 暗黙変換で安全に行われる widening cast かを返す。同型は False。"""
         if src_t in {"", "unknown"} or dst_t in {"", "unknown"}:
@@ -102,11 +130,13 @@ class CppTypeBridgeEmitter:
         )
 
     def _is_concrete_type_for_typed_list(self, east_type: str, _depth: int = 0) -> bool:
-        """typed list 判定向けに Any/unknown/None を含まない concrete 型か判定する。"""
+        """typed list 判定向けに Any/unknown を含まない concrete 型か判定する。"""
         if _depth > 20:
             return False
         t_norm = self.normalize_type_name(east_type)
-        if t_norm in {"", "unknown", "Any", "object", "None"}:
+        if t_norm == "None":
+            return True
+        if t_norm in {"", "unknown", "Any", "object"}:
             return False
         if self._contains_text(t_norm, "|"):
             for part in self.split_union(t_norm):
@@ -170,6 +200,8 @@ class CppTypeBridgeEmitter:
             return True
         elem_t = self.normalize_type_name(list_inner[0])
         if elem_t == "object":
+            return False
+        if elem_t == "None":
             return False
         # list[RefClass] は pyobj モデルでも typed container へ寄せる。
         if elem_t in self.ref_classes:
@@ -630,14 +662,21 @@ class CppTypeBridgeEmitter:
                     return f"::std::optional<{self._cpp_type_text(non_none[0], pyobj_ref_lists=pyobj_ref_lists)}>"
                 if (not has_none) and len(non_none) == 1:
                     return self._cpp_type_text(non_none[0], pyobj_ref_lists=pyobj_ref_lists)
-                # 一般ユニオン（2型以上）→ object（tagged value）
-                # Register union info for isinstance/cast.
+                # 一般ユニオン（2型以上）→ std::variant<...>。
+                # Narrowing / cast の object 経路互換のため union metadata は引き続き登録する。
                 tagged_union_types = getattr(self, "_tagged_union_types", {})
                 tagged_union_has_none = getattr(self, "_tagged_union_has_none", {})
                 # Use east_type as key for inline union lookup.
                 tagged_union_types[east_type] = non_none
                 tagged_union_has_none[east_type] = has_none
-                return "object"
+                variant_parts: list[str] = []
+                for part in non_none:
+                    cpp_part = self._cpp_type_text(part, pyobj_ref_lists=pyobj_ref_lists)
+                    if cpp_part not in variant_parts:
+                        variant_parts.append(cpp_part)
+                if has_none:
+                    variant_parts.append("::std::monostate")
+                return "::std::variant<" + join_str_list(", ", variant_parts) + ">"
         if east_type == "None":
             return "void"
         if east_type == "PyFile":
@@ -650,7 +689,7 @@ class CppTypeBridgeEmitter:
                 return "object"
             list_elem = list_inner[0]
             if list_elem == "None":
-                return "list<object>"
+                return "list<::std::monostate>"
             if list_elem == "uint8":
                 return "bytearray"
             if self.is_any_like_type(list_elem):
@@ -662,7 +701,7 @@ class CppTypeBridgeEmitter:
         if len(deque_inner) == 1:
             deque_elem = deque_inner[0]
             if deque_elem == "None":
-                return "::std::deque<object>"
+                return "::std::deque<::std::monostate>"
             if self.is_any_like_type(deque_elem):
                 return "::std::deque<object>"
             if deque_elem == "unknown":
@@ -672,7 +711,7 @@ class CppTypeBridgeEmitter:
         if len(set_inner) == 1:
             set_elem = set_inner[0]
             if set_elem == "None":
-                return "set<object>"
+                return "set<::std::monostate>"
             if set_elem == "unknown":
                 return "set<str>"
             return f"set<{self._cpp_type_text(set_elem, pyobj_ref_lists=pyobj_ref_lists)}>"
@@ -682,7 +721,7 @@ class CppTypeBridgeEmitter:
             dict_val = dict_inner[1]
             if dict_val == "None":
                 key_t = dict_key if dict_key not in {"", "unknown"} else "str"
-                return f"dict<{self._cpp_type_text(key_t, pyobj_ref_lists=pyobj_ref_lists)}, object>"
+                return f"dict<{self._cpp_type_text(key_t, pyobj_ref_lists=pyobj_ref_lists)}, ::std::monostate>"
             if self.is_any_like_type(dict_val):
                 return (
                     f"dict<{self._cpp_type_text(dict_key if dict_key != 'unknown' else 'str', pyobj_ref_lists=pyobj_ref_lists)}, "

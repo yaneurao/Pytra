@@ -424,14 +424,10 @@ def build_cpp_header_from_east(
             alias_name = dict_any_get_str(st, "name")
             type_expr = dict_any_get_str(st, "type_expr")
             if alias_name != "" and type_expr != "":
-                # Multi-type union → tagged struct
-                _parts = [p.strip() for p in type_expr.split("|") if p.strip() != ""]
-                _non_none = [p for p in _parts if p != "None"]
-                _has_none = len(_non_none) < len(_parts)
-                if len(_non_none) >= 2:
-                    _struct_lines = _build_tagged_union_struct_lines(alias_name, _non_none, _has_none, ref_classes, class_names)
-                    for sl in _struct_lines:
+                if _contains_identifier_token(type_expr, alias_name):
+                    for sl in _build_recursive_variant_struct_lines(alias_name, type_expr, ref_classes, class_names):
                         alias_lines.append(sl)
+                    used_types.add(alias_name)
                 else:
                     cpp_t = _header_cpp_type_from_east(type_expr, ref_classes, class_names)
                     used_types.add(cpp_t)
@@ -1424,68 +1420,52 @@ def _header_runtime_types_include(used_types: set[str], has_class_blocks: bool) 
     return ""
 
 
-def _pytra_tid_for_east_type(east_type: str) -> str:
-    """EAST 型名から PYTRA_TID 定数名を返す。"""
-    t = east_type.strip()
-    if t == "None":
-        return "PYTRA_TID_NONE"
-    if t == "bool":
-        return "PYTRA_TID_BOOL"
-    if t in {"int", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
-        return "PYTRA_TID_INT"
-    if t in {"float", "float32", "float64"}:
-        return "PYTRA_TID_FLOAT"
-    if t == "str":
-        return "PYTRA_TID_STR"
-    if t.startswith("list[") or t == "list":
-        return "PYTRA_TID_LIST"
-    if t.startswith("dict[") or t == "dict":
-        return "PYTRA_TID_DICT"
-    if t.startswith("set[") or t == "set":
-        return "PYTRA_TID_SET"
-    return t + "::PYTRA_TYPE_ID"
-
-
-def _tagged_union_field_name(east_type: str) -> str:
-    """EAST 型名からフィールド名を生成する。"""
-    return east_type.lower().replace("[", "_").replace("]", "").replace(",", "_").replace(" ", "") + "_val"
-
-
 # inline union struct 定義の蓄積用グローバル
 _HEADER_INLINE_UNION_EMITTED: set[str] = set()
 _HEADER_INLINE_UNION_LINES: list[str] = []
 
 
-def _build_tagged_union_struct_lines(
-    name: str, non_none: list[str], has_none: bool,
-    ref_classes: set[str], class_names: set[str],
+def _header_recursive_union_alt_cpp_type(alias_name: str, east_type: str, ref_classes: set[str], class_names: set[str]) -> tuple[str, str]:
+    base_cpp = _header_cpp_type_from_east(east_type, ref_classes, class_names)
+    if _contains_identifier_token(east_type, alias_name) and (
+        base_cpp.startswith("list<") or base_cpp.startswith("dict<") or base_cpp.startswith("set<")
+    ):
+        return "Object<" + base_cpp + ">", base_cpp
+    return base_cpp, base_cpp
+
+
+def _build_recursive_variant_struct_lines(
+    name: str,
+    type_expr: str,
+    ref_classes: set[str],
+    class_names: set[str],
 ) -> list[str]:
-    """type X = A | B | ... から C++ tagged struct 定義行を生成する。"""
-    lines: list[str] = []
-    tag_entries: list[tuple[str, str, str]] = []  # (tid_expr, cpp_type, field_name)
-    for p in non_none:
-        cpp_t = _header_cpp_type_from_east(p, ref_classes, class_names)
-        tid_expr = _pytra_tid_for_east_type(p)
-        field_name = _tagged_union_field_name(p)
-        if name in cpp_t or p == name:
-            if cpp_t.startswith("list<"):
-                cpp_t = "Object<" + cpp_t + ">"
-            elif cpp_t.startswith("dict<"):
-                cpp_t = "Object<" + cpp_t + ">"
-        tag_entries.append((tid_expr, cpp_t, field_name))
-    lines.append("struct " + name + " {")
-    lines.append("    pytra_type_id tag;")
-    for _, cpp_t, field_name in tag_entries:
-        lines.append("    " + cpp_t + " " + field_name + ";")
-    lines.append("")
-    default_tid = "PYTRA_TID_NONE" if has_none else tag_entries[0][0]
-    lines.append("    " + name + "() : tag(" + default_tid + ") {}")
-    for tid_expr, cpp_t, field_name in tag_entries:
-        lines.append("    " + name + "(const " + cpp_t + "& v) : tag(" + tid_expr + "), " + field_name + "(v) {}")
+    parts = split_top_level_union(type_expr)
+    non_none = [part.strip() for part in parts if part.strip() != "" and part.strip() != "None"]
+    has_none = len(non_none) < len(parts)
+    variant_parts: list[str] = []
+    extra_ctors: list[tuple[str, str]] = []
+    for part in non_none:
+        alt_cpp, source_cpp = _header_recursive_union_alt_cpp_type(name, part, ref_classes, class_names)
+        if alt_cpp not in variant_parts:
+            variant_parts.append(alt_cpp)
+        if alt_cpp != source_cpp:
+            extra_ctors.append((source_cpp, alt_cpp))
     if has_none:
-        lines.append("    " + name + "(::std::monostate) : tag(PYTRA_TID_NONE) {}")
+        variant_parts.append("::std::monostate")
+    lines: list[str] = []
+    lines.append("struct " + name + " : " + "::std::variant<" + join_str_list(", ", variant_parts) + "> {")
+    lines.append("    using base_type = ::std::variant<" + join_str_list(", ", variant_parts) + ">;")
+    lines.append("    using base_type::base_type;")
+    lines.append("    using base_type::operator=;")
+    if has_none:
+        lines.append("    " + name + "() : base_type(::std::monostate{}) {}")
+    elif len(variant_parts) > 0:
+        lines.append("    " + name + "() = default;")
+    for source_cpp, alt_cpp in extra_ctors:
+        lines.append("    " + name + "(const " + source_cpp + "& v) : base_type(rc_from_value(v)) {}")
+        lines.append("    " + name + "(" + source_cpp + "&& v) : base_type(rc_from_value(::std::move(v))) {}")
     lines.append("};")
-    lines.append("")
     return lines
 
 
@@ -1547,34 +1527,34 @@ def _header_cpp_type_from_east(
         if len(folded) == 1:
             only = folded[0]
             return _header_cpp_type_from_east(only, ref_classes, class_names)
-        # 一般ユニオン（2型以上）→ tagged struct
-        has_none = len(non_none) < len(parts)
-        name_parts: list[str] = []
-        for p in non_none:
-            name_parts.append(p.replace("[", "_").replace("]", "").replace(",", "_").replace(" ", ""))
-        if has_none:
-            name_parts.append("None")
-        struct_name = "_Union_" + "_".join(name_parts)
-        # inline union struct 定義をグローバルに蓄積
-        if struct_name not in _HEADER_INLINE_UNION_EMITTED:
-            _HEADER_INLINE_UNION_EMITTED.add(struct_name)
-            _HEADER_INLINE_UNION_LINES.extend(
-                _build_tagged_union_struct_lines(struct_name, non_none, has_none, ref_classes, class_names)
-            )
-        return struct_name
+        variant_parts: list[str] = []
+        for p in folded:
+            cpp_t = _header_cpp_type_from_east(p, ref_classes, class_names)
+            if cpp_t not in variant_parts:
+                variant_parts.append(cpp_t)
+        if len(non_none) < len(parts):
+            variant_parts.append("::std::monostate")
+        return "::std::variant<" + join_str_list(", ", variant_parts) + ">"
     if t.startswith("list[") and t.endswith("]"):
         inner = t[5:-1].strip()
+        if inner == "None":
+            return "list<::std::monostate>"
         return "list<" + _header_cpp_type_from_east(inner, ref_classes, class_names) + ">"
     if t.startswith("deque[") and t.endswith("]"):
         inner = t[6:-1].strip()
+        if inner == "None":
+            return "::std::deque<::std::monostate>"
         return "::std::deque<" + _header_cpp_type_from_east(inner, ref_classes, class_names) + ">"
     if t.startswith("set[") and t.endswith("]"):
         inner = t[4:-1].strip()
+        if inner == "None":
+            return "set<::std::monostate>"
         return "set<" + _header_cpp_type_from_east(inner, ref_classes, class_names) + ">"
     if t.startswith("dict[") and t.endswith("]"):
         inner = split_type_args(t[5:-1].strip())
         if len(inner) == 2:
-            return "dict<" + _header_cpp_type_from_east(inner[0], ref_classes, class_names) + ", " + _header_cpp_type_from_east(inner[1], ref_classes, class_names) + ">"
+            val_cpp = "::std::monostate" if inner[1].strip() == "None" else _header_cpp_type_from_east(inner[1], ref_classes, class_names)
+            return "dict<" + _header_cpp_type_from_east(inner[0], ref_classes, class_names) + ", " + val_cpp + ">"
         return "dict<str, object>"
     if t.startswith("tuple[") and t.endswith("]"):
         homogeneous_tuple_item_t = _header_homogeneous_tuple_ellipsis_item_type(t)
@@ -1598,7 +1578,9 @@ def _header_cpp_type_from_east(
 
 def _header_is_concrete_type_for_typed_list(east_t: str) -> bool:
     txt = east_t.strip()
-    if txt in {"", "unknown", "Any", "object", "None"}:
+    if txt == "None":
+        return True
+    if txt in {"", "unknown", "Any", "object"}:
         return False
     parts_union = split_top_level_union(txt)
     if len(parts_union) > 1:

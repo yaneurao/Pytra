@@ -127,6 +127,44 @@ CATEGORY_LABELS: dict[str, str] = {
     "skip_pure_python":  "skip pure py  ",
 }
 
+# Runtime lint categories (only checked with --include-runtime)
+RUNTIME_CATEGORIES: dict[str, list[str]] = {
+    "rt:type_id": [
+        r'PYTRA_TYPE_ID',
+        r'PYTRA_TID_',
+        r'pytra_isinstance',
+        r'py_runtime_object_type_id',
+        r'py_tid_',
+        r'type_id_table',
+    ],
+}
+
+RUNTIME_CATEGORY_LABELS: dict[str, str] = {
+    "rt:type_id":        "rt: type_id   ",
+}
+
+# Runtime file extensions per language
+_RUNTIME_EXTENSIONS: dict[str, list[str]] = {
+    "cpp":    [".h", ".cpp"],
+    "rs":     [".rs"],
+    "go":     [".go"],
+    "ts":     [".ts"],
+    "js":     [".js"],
+    "cs":     [".cs"],
+    "java":   [".java"],
+    "ruby":   [".rb"],
+    "lua":    [".lua"],
+    "php":    [".php"],
+    "nim":    [".nim"],
+    "swift":  [".swift"],
+    "kotlin": [".kt"],
+    "scala":  [".scala"],
+    "dart":   [".dart"],
+    "zig":    [".zig"],
+    "julia":  [".jl"],
+    "ps1":    [".ps1"],
+}
+
 
 # ---------------------------------------------------------------------------
 # Pure Python module detection for skip_pure_python category
@@ -198,6 +236,57 @@ def _check_skip_pure_python(lang_key: str) -> list[tuple[str, str, Path, int, st
         if _is_pure_python_module(entry):
             line = f"skip_modules contains \"{entry}\" but {entry} is pure Python (no @extern)"
             hits.append((lang_key, "skip_pure_python", mapping_path, 0, line))
+    return hits
+
+
+def collect_runtime_hits(
+    filter_lang: str | None,
+    filter_cat: str | None,
+) -> list[tuple[str, str, Path, int, str]]:
+    """Collect lint hits from src/runtime/<lang>/ source files."""
+    hits: list[tuple[str, str, Path, int, str]] = []
+    runtime_root = ROOT / "src" / "runtime"
+
+    # lang_key → runtime directory name
+    lang_dir_map: dict[str, str] = {k: d for k, d in ALL_LANGS_ORDERED}
+    # JS shares TS runtime alias
+    lang_dir_map["js"] = "js"
+
+    for lang_key, runtime_dir_name in lang_dir_map.items():
+        if filter_lang and lang_key != filter_lang:
+            continue
+        exts = _RUNTIME_EXTENSIONS.get(lang_key, [])
+        if len(exts) == 0:
+            continue
+        runtime_dir = runtime_root / runtime_dir_name
+        if not runtime_dir.exists():
+            continue
+        for fpath in sorted(runtime_dir.rglob("*")):
+            if not fpath.is_file():
+                continue
+            if fpath.suffix not in exts:
+                continue
+            if "__pycache__" in str(fpath):
+                continue
+            # Skip generated files
+            if "generated" in str(fpath):
+                continue
+            try:
+                lines = fpath.read_text(encoding="utf-8").splitlines()
+            except Exception:
+                continue
+            for lineno, raw in enumerate(lines, 1):
+                stripped = raw.strip()
+                # Skip comment lines (varies by language, simple heuristic)
+                if stripped.startswith("//") or stripped.startswith("--") or stripped.startswith("#"):
+                    continue
+                for cat, patterns in RUNTIME_CATEGORIES.items():
+                    if filter_cat and cat != filter_cat:
+                        continue
+                    for pat in patterns:
+                        if re.search(pat, raw):
+                            hits.append((lang_key, cat, fpath, lineno, stripped[:120]))
+                            break
     return hits
 
 
@@ -553,9 +642,13 @@ def main() -> int:
                         help="対象カテゴリを絞り込む（例: module_name）")
     parser.add_argument("--no-write", action="store_true",
                         help="docs/progress/ への書き出しをスキップする")
+    parser.add_argument("--include-runtime", action="store_true",
+                        help="src/runtime/ のソースファイルも検査対象に含める（手動実行用）")
     args = parser.parse_args()
 
     hits = collect_hits(args.lang, args.category)
+    if args.include_runtime:
+        hits.extend(collect_runtime_hits(args.lang, args.category))
 
     # 全18言語を README バッジ順で固定（toolchain2 未実装言語は 🟩0 で表示）
     if args.lang:

@@ -30,12 +30,13 @@ class CppTypeTest(unittest.TestCase):
         self.assertEqual(em._cpp_type_text("Any|None"), "object")
         self.assertEqual(em._cpp_type_text("bytes|bytearray|None"), "bytes")
 
-    def test_general_union_emits_object(self) -> None:
+    def test_general_union_emits_variant(self) -> None:
         em = CppEmitter({"body": []}, {}, emit_main=False)
-        self.assertEqual(em._cpp_type_text("int64|bool"), "object")
+        self.assertEqual(em._cpp_type_text("int64|bool"), "::std::variant<int64, bool>")
+        self.assertEqual(em._cpp_type_text("int64|bool|None"), "::std::variant<int64, bool, ::std::monostate>")
         self.assertEqual(
             _header_cpp_type_from_east("int64|bool", set(), set()),
-            "_Union_int64_bool",
+            "::std::variant<int64, bool>",
         )
 
     def test_list_type_text_can_switch_to_pyobj_model(self) -> None:
@@ -52,12 +53,28 @@ class CppTypeTest(unittest.TestCase):
             "::std::deque<float64>",
         )
 
-    def test_type_expr_path_emits_general_union_as_tagged_struct(self) -> None:
+    def test_none_only_containers_use_monostate_not_object(self) -> None:
+        em = CppEmitter({"body": []}, {}, emit_main=False)
+        self.assertEqual(em._cpp_type_text("list[None]"), "list<::std::monostate>")
+        self.assertEqual(em._cpp_list_value_model_type_text("list[None]"), "list<::std::monostate>")
+        self.assertEqual(em._cpp_type_text("deque[None]"), "::std::deque<::std::monostate>")
+        self.assertEqual(em._cpp_type_text("set[None]"), "set<::std::monostate>")
+        self.assertEqual(em._cpp_type_text("dict[str, None]"), "dict<str, ::std::monostate>")
+        self.assertEqual(_header_cpp_type_from_east("list[None]", set(), set()), "list<::std::monostate>")
+        self.assertEqual(_header_cpp_type_from_east("deque[None]", set(), set()), "::std::deque<::std::monostate>")
+        self.assertEqual(_header_cpp_type_from_east("set[None]", set(), set()), "set<::std::monostate>")
+        self.assertEqual(_header_cpp_type_from_east("dict[str, None]", set(), set()), "dict<str, ::std::monostate>")
+
+    def test_type_expr_path_emits_general_union_as_variant(self) -> None:
         em = CppEmitter({"body": []}, {}, emit_main=False)
         result = em.cpp_type(parse_type_expr_text("int | bool"))
-        self.assertEqual(result, "object")
+        self.assertEqual(result, "::std::variant<int64, bool>")
         result2 = em.cpp_signature_type(parse_type_expr_text("list[int | bool]"))
-        self.assertEqual(result2, "rc<list<object>>")
+        self.assertEqual(result2, "Object<list<::std::variant<int64, bool>>>")
+
+    def test_list_none_signature_uses_typed_monostate_list(self) -> None:
+        em = CppEmitter({"body": []}, {}, emit_main=False)
+        self.assertEqual(em.cpp_signature_type(parse_type_expr_text("list[None]")), "Object<list<::std::monostate>>")
 
 
 if __name__ == "__main__":

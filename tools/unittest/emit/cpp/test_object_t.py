@@ -209,6 +209,28 @@ int main() {
 ''', "object_list_dict")
         self.assertEqual(out, "object list/dict ok")
 
+    def test_set_with_tuple_keys_uses_runtime_tuple_hash(self) -> None:
+        out = self._compile_and_run(r'''
+#include "core/py_types.h"
+#include <cassert>
+#include <iostream>
+
+int main() {
+    set<::std::tuple<str, str>> seen{};
+    seen.add(::std::make_tuple(str("base"), str("trait")));
+    seen.add(::std::make_tuple(str("foo"), str("bar")));
+    seen.add(::std::make_tuple(str("base"), str("trait")));
+
+    assert(seen.size() == 2);
+    assert(seen.find(::std::make_tuple(str("base"), str("trait"))) != seen.end());
+    assert(seen.find(::std::make_tuple(str("x"), str("y"))) == seen.end());
+
+    std::cout << "tuple set ok" << std::endl;
+    return 0;
+}
+''', "tuple_set")
+        self.assertEqual(out, "tuple set ok")
+
 
 if __name__ == "__main__":
     unittest.main()

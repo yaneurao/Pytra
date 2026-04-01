@@ -7,6 +7,38 @@ from toolchain.misc.transpile_cli import join_str_list
 class CppRuntimeExprEmitter:
     """Runtime/path/type_id expression helpers extracted from CppEmitter."""
 
+    def _variant_alt_cpp_type_for_expected_type_id(self, expected_type_id_node: Any, union_parts: list[str], has_none: bool) -> str:
+        node = self.any_to_dict_or_empty(expected_type_id_node)
+        kind = self._node_kind_from_dict(node)
+        raw_name = ""
+        if kind == "Name":
+            raw_name = self.any_to_str(node.get("id")).strip()
+        elif kind == "Attribute":
+            owner = self.any_to_dict_or_empty(node.get("value"))
+            if self._node_kind_from_dict(owner) == "Name" and self.any_to_str(node.get("attr")).strip() == "PYTRA_TYPE_ID":
+                raw_name = self.any_to_str(owner.get("id")).strip()
+        builtin_map = {
+            "PYTRA_TID_NONE": "None",
+            "PYTRA_TID_BOOL": "bool",
+            "PYTRA_TID_INT": "int64",
+            "PYTRA_TID_FLOAT": "float64",
+            "PYTRA_TID_STR": "str",
+            "None": "None",
+            "bool": "bool",
+            "int": "int64",
+            "int64": "int64",
+            "float": "float64",
+            "float64": "float64",
+            "str": "str",
+        }
+        target_t = builtin_map.get(raw_name, self.normalize_type_name(raw_name) if raw_name != "" else "")
+        if target_t == "None":
+            return "::std::monostate" if has_none else ""
+        for part in union_parts:
+            if self.normalize_type_name(part) == target_t:
+                return self._cpp_type_text(part)
+        return ""
+
     def _render_object_iter_or_raise_expr(self, value_expr: str) -> str:
         helper_call = self._render_cpp_helper_call("cpp.object_iter", "object_iter_or_raise", [value_expr])
         if helper_call != "":
@@ -290,18 +322,12 @@ class CppRuntimeExprEmitter:
         expected_type_id_expr = self._render_type_id_operand_expr(expr_d.get("expected_type_id"))
         if expected_type_id_expr == "":
             return "false"
-        # tagged union (= object) の場合は tag 比較に変換
         value_t = self.normalize_type_name(self.get_expr_type(value_node))
-        tagged_union_types = getattr(self, "_tagged_union_types", {})
-        alias_map = getattr(self, "_type_alias_reverse_map", {})
-        union_name = alias_map.get(value_t, "")
-        if union_name == "" and value_t in tagged_union_types:
-            union_name = value_t
-        if union_name == "" and "|" in value_t:
-            if value_t in tagged_union_types:
-                union_name = value_t
-        if union_name in tagged_union_types:
-            return f"({value_expr}).tag == {expected_type_id_expr}"
+        union_parts, has_none = self._variant_union_parts_for_type(value_t)
+        if len(union_parts) > 0:
+            alt_cpp_t = self._variant_alt_cpp_type_for_expected_type_id(expr_d.get("expected_type_id"), union_parts, has_none)
+            if alt_cpp_t != "":
+                return f"::std::holds_alternative<{alt_cpp_t}>({value_expr})"
         # Object<T> mode: use g_type_table interval check
         linker_ti = getattr(self, "_linker_type_info_table", {})
         if len(linker_ti) > 0:

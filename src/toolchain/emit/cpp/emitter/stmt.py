@@ -202,11 +202,14 @@ class CppStatementEmitter:
         val = self.any_to_dict_or_empty(stmt.get("value"))
         val_is_dict: bool = len(val) > 0
         rendered_val: str = ""
-        if val_is_dict:
-            rendered_val = self.render_expr(stmt.get("value"))
         ann_t_str = self.any_dict_get_str(stmt, "annotation", "")
         ann_fallback = ann_text_fallback if ann_text_fallback not in {"", "{}", "None"} else ""
         ann_t_str = ann_t_str if ann_t_str != "" else (decl_hint if decl_hint != "" else ann_fallback)
+        render_value_node: Any = stmt.get("value")
+        if val_is_dict and ann_t_str not in {"", "unknown", "Any", "object"}:
+            render_value_node = self._hint_expr_result_type(val, ann_t_str)
+        if val_is_dict:
+            rendered_val = self.render_expr(render_value_node)
         ann_t_norm = self.normalize_type_name(ann_t_str)
         ref_first_list_ann = self._is_pyobj_ref_first_list_target_expr(
             stmt.get("target"),
@@ -222,6 +225,7 @@ class CppStatementEmitter:
             t = self._cpp_list_value_model_type_text(ann_t_str)
         if rendered_val != "" and ann_t_str != "":
             rendered_val = self._rewrite_nullopt_default_for_typed_target(rendered_val, ann_t_str)
+            rendered_val = self._rewrite_nullopt_literal_for_monostate_target(rendered_val, ann_t_str)
         if ann_t_str in {"byte", "uint8"} and val_is_dict:
             byte_val = self._byte_from_str_expr(stmt.get("value"))
             if byte_val != "":
@@ -260,8 +264,15 @@ class CppStatementEmitter:
                     rendered_val = f"{t}{{}}"
             elif force_typed_list_ann and vkind == "List":
                 list_items: list[str] = []
+                ann_elem_t = ""
+                if ann_t_norm.startswith("list[") and ann_t_norm.endswith("]"):
+                    ann_parts = self.split_generic(ann_t_norm[5:-1])
+                    if len(ann_parts) == 1:
+                        ann_elem_t = self.normalize_type_name(ann_parts[0])
                 for elem in self._dict_stmt_list(val.get("elements")):
                     item_txt = self.render_expr(elem)
+                    if ann_elem_t == "None":
+                        item_txt = "::std::monostate{}"
                     if ann_t_norm == "list[str]":
                         elem_t = self.normalize_type_name(self.get_expr_type(elem))
                         if self.is_any_like_type(elem_t):
@@ -282,7 +293,7 @@ class CppStatementEmitter:
                 if rendered_trim.startswith("[&]() -> list<object> {"):
                     rendered_val = rendered_val.replace("[&]() -> list<object> {", f"[&]() -> {t} {{", 1)
                     rendered_val = rendered_val.replace("list<object> __out;", f"{t} __out;", 1)
-        val_t0 = self.get_expr_type(stmt.get("value"))
+        val_t0 = self.get_expr_type(render_value_node)
         val_t = val_t0 if isinstance(val_t0, str) else ""
         # Tagged union → concrete type: insert unbox.
         if rendered_val != "" and ann_t_str != "" and val_t != "":
@@ -326,12 +337,12 @@ class CppStatementEmitter:
             if has_none and len(non_none_norm) == 1 and non_none_norm[0] == ann_norm:
                 rendered_val = f"({rendered_val}).value()"
         if (not ref_first_list_ann) and self._can_runtime_cast_target(ann_t_str) and self.is_any_like_type(val_t) and rendered_val != "" and ".as<" not in rendered_val and ".unbox<" not in rendered_val:
-            rendered_val = self._coerce_any_expr_to_target_via_unbox(
-                rendered_val,
-                stmt.get("value"),
-                ann_t_str,
-                f"annassign:{target}",
-            )
+                rendered_val = self._coerce_any_expr_to_target_via_unbox(
+                    rendered_val,
+                    render_value_node,
+                    ann_t_str,
+                    f"annassign:{target}",
+                )
         if (
             (not ref_first_list_ann)
             and force_typed_list_ann
@@ -758,6 +769,11 @@ class CppStatementEmitter:
                 if call_picked not in {"", "unknown"}:
                     picked = call_picked
                     logical_picked = picked
+            if picked in {"", "unknown", "Any", "object"} and isinstance(value, dict):
+                inferred_picked = self.normalize_type_name(self._infer_expr_type_shallow(value))
+                if inferred_picked not in {"", "unknown"}:
+                    picked = inferred_picked
+                    logical_picked = picked
             runtime_alias_target = self._is_pyobj_ref_first_list_target_expr(target_obj, logical_picked)
             if runtime_alias_target:
                 logical_picked = d0 if d0 != "" else (d1 if d1 != "" else d2)
@@ -775,7 +791,13 @@ class CppStatementEmitter:
             self.declared_var_types[texpr] = logical_picked if runtime_alias_target else picked
             if dtype.startswith("list<") and self.is_plain_name_expr(target_obj) and len(self.scope_stack) >= 2:
                 self.current_function_value_list_locals.add(texpr)
-            rval = self._render_assign_value_with_subscript_index_hoist(value)
+            render_value = value
+            if (
+                isinstance(value, dict)
+                and picked not in {"", "unknown", "Any", "object"}
+            ):
+                render_value = self._hint_expr_result_type(value, picked)
+            rval = self._render_assign_value_with_subscript_index_hoist(render_value)
             rval = self._rewrite_nullopt_default_for_typed_target(rval, picked)
             rval_trim = self._trim_ws(rval)
             if dtype.startswith("list<") and rval_trim.startswith("[&]() -> list<object> {"):
@@ -787,7 +809,7 @@ class CppStatementEmitter:
                     rval = str(byte_val)
             if isinstance(value, dict) and self._node_kind_from_dict(value) == "BoolOp" and picked != "bool":
                 rval = self.render_boolop(stmt.get("value"), True)
-            rval_t0 = self.get_expr_type(stmt.get("value"))
+            rval_t0 = self.get_expr_type(render_value)
             rval_t = rval_t0 if isinstance(rval_t0, str) else ""
             if self._can_runtime_cast_target(picked) and self.is_any_like_type(rval_t):
                 rval = self._coerce_any_expr_to_target_via_unbox(
@@ -843,7 +865,14 @@ class CppStatementEmitter:
                 rval = str(byte_val)
         if isinstance(value, dict) and self._node_kind_from_dict(value) == "BoolOp" and t_target != "bool":
             rval = self.render_boolop(stmt.get("value"), True)
-        rval_t0 = self.get_expr_type(stmt.get("value"))
+        hinted_value = value
+        if isinstance(value, dict) and t_target not in {"", "unknown", "Any", "object"}:
+            hinted_value = self._hint_expr_result_type(value, t_target)
+            if hinted_value is not value:
+                rval = self._render_assign_value_with_subscript_index_hoist(hinted_value)
+                if t_target != "":
+                    rval = self._rewrite_nullopt_default_for_typed_target(rval, t_target)
+        rval_t0 = self.get_expr_type(hinted_value)
         rval_t = rval_t0 if isinstance(rval_t0, str) else ""
         # T|None → T: optional unwrapping when assigning to a non-optional target
         if (
@@ -2120,10 +2149,11 @@ class CppStatementEmitter:
             if ret_abi_mode == "":
                 ret_abi_mode = "default"
         return_type_expr = stmt.get("return_type_expr")
-        ret = self.cpp_signature_type(
-            return_type_expr if self._is_type_expr_payload(return_type_expr) else stmt.get("return_type"),
-            runtime_abi_mode=ret_abi_mode,
-        )
+        inferred_return_t = self._infer_function_return_type_from_stmt(stmt)
+        return_type_source: Any = return_type_expr if self._is_type_expr_payload(return_type_expr) else stmt.get("return_type")
+        if self.normalize_type_name(self.any_to_str(stmt.get("return_type"))) in {"", "unknown"} and inferred_return_t not in {"", "unknown"}:
+            return_type_source = inferred_return_t
+        ret = self.cpp_signature_type(return_type_source, runtime_abi_mode=ret_abi_mode)
         ret_t_norm = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
         if is_generator:
             elem_type_for_cpp = yield_value_type
@@ -2342,7 +2372,9 @@ class CppStatementEmitter:
                         self.declared_var_types[an] = self.normalize_type_name(at)
         if vararg_name != "" and vararg_list_t != "":
             self.declared_var_types[vararg_name] = vararg_list_t
-        self.current_function_return_type = self.any_to_str(stmt.get("return_type"))
+        self.current_function_return_type = (
+            inferred_return_t if inferred_return_t not in {"", "unknown"} else self.any_to_str(stmt.get("return_type"))
+        )
         self.current_function_return_abi_mode = ret_abi_mode
         self.current_function_is_generator = is_generator
         self.current_function_yield_type = yield_value_type if yield_value_type != "" else "Any"

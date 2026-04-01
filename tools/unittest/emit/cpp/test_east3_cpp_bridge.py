@@ -284,11 +284,9 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         emitter.emit_stmt(stmt)
         text = "\n".join(emitter.lines)
-        self.assertTrue(
-            ("_Union_" in text) or ("list<object>" in text)
-        )
+        self.assertIn("list<::std::variant<int64, bool>> value", text)
 
-    def test_emit_function_accepts_general_union_type_expr_as_tagged_struct(self) -> None:
+    def test_emit_function_accepts_general_union_type_expr_as_variant(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         stmt = {
             "kind": "FunctionDef",
@@ -305,9 +303,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         emitter.emit_stmt(stmt)
         text = "\n".join(emitter.lines)
-        self.assertTrue(
-            ("_Union_" in text) or ("object" in text)
-        )
+        self.assertIn("::std::variant<int64, bool> pick(const ::std::variant<int64, bool>& x)", text)
 
     def test_emit_stmt_annassign_empty_dict_with_marker_uses_brace_shorthand(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -689,6 +685,66 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(
             emitter.render_expr(is_subtype),
             "py_runtime_type_id_is_subtype(1001, 1000)",
+        )
+
+    def test_render_expr_is_instance_uses_holds_alternative_for_general_union(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        union_name = {"kind": "Name", "id": "v", "resolved_type": "int64|bool"}
+        is_instance = {
+            "kind": "IsInstance",
+            "value": union_name,
+            "expected_type_id": {"kind": "Name", "id": "PYTRA_TID_INT", "resolved_type": "int64"},
+            "resolved_type": "bool",
+        }
+        self.assertEqual(
+            emitter.render_expr(is_instance),
+            "::std::holds_alternative<int64>(v)",
+        )
+
+    def test_render_expr_is_instance_uses_monostate_for_union_none_lane(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        union_name = {"kind": "Name", "id": "v", "resolved_type": "int64|bool|None"}
+        is_instance = {
+            "kind": "IsInstance",
+            "value": union_name,
+            "expected_type_id": {"kind": "Name", "id": "PYTRA_TID_NONE", "resolved_type": "int64"},
+            "resolved_type": "bool",
+        }
+        self.assertEqual(
+            emitter.render_expr(is_instance),
+            "::std::holds_alternative<::std::monostate>(v)",
+        )
+
+    def test_render_expr_unbox_uses_std_get_for_general_union_lane(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        union_name = {"kind": "Name", "id": "v", "resolved_type": "int64|bool"}
+        unbox_expr = {
+            "kind": "Unbox",
+            "value": union_name,
+            "target": "int64",
+            "ctx": "assign:x",
+            "resolved_type": "int64",
+        }
+        self.assertEqual(
+            emitter.render_expr(unbox_expr),
+            "::std::get<int64>(v)",
+        )
+
+    def test_render_expr_unbox_uses_std_get_for_type_alias_union_lane(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter._tagged_union_types["Scalar"] = ["int64", "float64"]
+        emitter._tagged_union_has_none["Scalar"] = False
+        union_name = {"kind": "Name", "id": "v", "resolved_type": "Scalar"}
+        unbox_expr = {
+            "kind": "Unbox",
+            "value": union_name,
+            "target": "float64",
+            "ctx": "assign:x",
+            "resolved_type": "float64",
+        }
+        self.assertEqual(
+            emitter.render_expr(unbox_expr),
+            "::std::get<float64>(v)",
         )
 
     def test_cpp_helper_lane_materializes_object_iter_helper_artifact(self) -> None:

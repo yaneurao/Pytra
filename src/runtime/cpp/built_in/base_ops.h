@@ -2,6 +2,7 @@
 #define PYTRA_NATIVE_BUILT_IN_BASE_OPS_H
 
 #include <charconv>
+#include <algorithm>
 #include <cstring>
 #include <limits>
 #include <sstream>
@@ -149,6 +150,43 @@ static inline ::std::string py_to_string(const ::std::optional<T>& v) {
     return py_to_string(*v);
 }
 
+static inline ::std::string py_repr(const str& v);
+static inline ::std::string py_repr(bool v);
+template <class T>
+static inline ::std::string py_repr(const T& v);
+
+template <class... Ts>
+static inline ::std::string py_to_string(const ::std::variant<Ts...>& v) {
+    return ::std::visit(
+        [](const auto& item) -> ::std::string {
+            using T = ::std::decay_t<decltype(item)>;
+            if constexpr (::std::is_same_v<T, ::std::monostate>) {
+                return "None";
+            } else {
+                return py_to_string(item);
+            }
+        },
+        v
+    );
+}
+
+template <class... Ts>
+static inline ::std::string py_to_string(const ::std::tuple<Ts...>& v) {
+    ::std::string result = "(";
+    bool first = true;
+    ::std::apply(
+        [&](const auto&... items) {
+            ((result += (first ? "" : ", "), result += py_repr(items), first = false), ...);
+        },
+        v
+    );
+    if constexpr (sizeof...(Ts) == 1) {
+        result += ",";
+    }
+    result += ")";
+    return result;
+}
+
 // py_repr: Python repr()-like formatting for collection elements.
 // Used by py_to_string for containers.
 static inline ::std::string py_repr(const str& v) {
@@ -159,6 +197,10 @@ static inline ::std::string py_repr(bool v) {
 }
 template <class T>
 static inline ::std::string py_repr(const T& v) {
+    using DT = ::std::decay_t<T>;
+    if constexpr (!::std::is_same_v<DT, bool> && !::std::is_arithmetic_v<DT> && ::std::is_convertible_v<T, bool>) {
+        return py_repr(static_cast<bool>(v));
+    }
     return py_to_string(v);
 }
 
@@ -196,11 +238,16 @@ static inline ::std::string py_to_string(const Object<set<T>>& v) {
 template <class K, class V>
 static inline ::std::string py_to_string(const Object<dict<K, V>>& d) {
     if (!d) return "{}";
+    ::std::vector<::std::string> entries;
+    for (const auto& kv : *d) {
+        entries.push_back(py_repr(kv.first) + ": " + py_repr(kv.second));
+    }
+    ::std::sort(entries.begin(), entries.end());
     ::std::string result = "{";
     bool first = true;
-    for (const auto& kv : *d) {
+    for (const auto& entry : entries) {
         if (!first) result += ", ";
-        result += py_repr(kv.first) + ": " + py_repr(kv.second);
+        result += entry;
         first = false;
     }
     result += "}";

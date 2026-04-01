@@ -846,6 +846,41 @@ def new_nodes() -> list[Node]:
         )
         self.assertNotIn("return list<object>{};", cpp)
 
+    def test_list_none_uses_monostate_list_not_object_list(self) -> None:
+        src = """def f() -> list[None]:
+    xs: list[None] = [None, None]
+    return xs
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "typed_none_list.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("Object<list<::std::monostate>> f()", cpp)
+        self.assertIn("Object<list<::std::monostate>> xs = rc_list_from_value(list<::std::monostate>{::std::monostate{}, ::std::monostate{}});", cpp)
+        self.assertIn("return xs;", cpp)
+        self.assertNotIn("list<object>", cpp)
+
+    def test_none_only_dict_and_set_use_monostate_not_object(self) -> None:
+        src = """def f() -> dict[str, None]:
+    d: dict[str, None] = {"a": None, "b": None}
+    s: set[None] = {None}
+    return d
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "typed_none_dict_set.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("dict<str, ::std::monostate> f()", cpp)
+        self.assertIn('dict<str, ::std::monostate> d = dict<str, ::std::monostate>{{"a", ::std::monostate{}}, {"b", ::std::monostate{}}};', cpp)
+        self.assertIn("set<::std::monostate> s = set<::std::monostate>{::std::monostate{}};", cpp)
+        self.assertNotIn("dict<str, object>", cpp)
+        self.assertNotIn("set<object>", cpp)
+        self.assertNotIn("::std::nullopt", cpp)
+
     def test_dynamic_tuple_index_falls_back_to_py_at(self) -> None:
         src = """def pick(i: int) -> object:
     t: tuple[int, int, int] = (10, 20, 30)
@@ -916,10 +951,11 @@ def new_nodes() -> list[Node]:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("int64(([&]() -> object {", cpp)
+        self.assertIn("int64 x = ([&]() -> int64 {", cpp)
         self.assertNotIn("py_dict_get_default(", cpp)
         self.assertNotIn("dict_get_node(", cpp)
         self.assertNotIn("dict_get_int(", cpp)
+        self.assertNotIn("([&]() -> object {", cpp)
 
     def test_dict_get_object_none_default_in_return_uses_typed_default(self) -> None:
         src = """def f(d: dict[str, object]) -> int:
@@ -931,9 +967,10 @@ def new_nodes() -> list[Node]:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("return ([&]() -> object {", cpp)
+        self.assertIn("return ([&]() -> int64 {", cpp)
         self.assertNotIn("py_dict_get_default(", cpp)
         self.assertNotIn("dict_get_node(", cpp)
+        self.assertNotIn("py_to_int64(([&]() -> object {", cpp)
 
     def test_annassign_dict_object_value_is_not_reboxed(self) -> None:
         src = """def f(x: object) -> dict[str, object]:
@@ -960,9 +997,10 @@ def new_nodes() -> list[Node]:
             cpp = transpile_to_cpp(east, emit_main=False)
 
         self.assertIn("([&]() -> int64 {", cpp)
-        self.assertIn("py_object_try_cast<int64>(", cpp)
+        self.assertIn(".as<int64>()) return *__dict_cast;", cpp)
         self.assertNotIn("dict_get_int(", cpp)
         self.assertNotIn('return d.get("k", 3);', cpp)
+        self.assertNotIn("py_to_int64(([&]() -> int64 {", cpp)
 
     def test_optional_dict_object_get_bool_uses_typed_wrapper(self) -> None:
         src = """def f(d: dict[str, object] | None) -> bool:
@@ -1022,6 +1060,67 @@ def new_nodes() -> list[Node]:
         self.assertIn("return py_to<list<int64>>(__dict_it_", cpp)
         self.assertNotIn("dict_get_list(", cpp)
 
+    def test_optional_dict_object_get_set_uses_typed_wrapper(self) -> None:
+        src = """def f(d: dict[str, object] | None) -> set[int]:
+    return d.get("k", {1, 2})
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "optional_dict_object_get_set.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("([&]() -> set<int64> {", cpp)
+        self.assertIn("if (auto __dict_cast = __dict_it_", cpp)
+        self.assertIn(".as<set<int64>>()) return *__dict_cast;", cpp)
+        self.assertNotIn("return __dict_it_", cpp)
+
+    def test_optional_dict_object_get_deque_uses_typed_wrapper(self) -> None:
+        src = """from pytra.std.collections import deque
+
+def f(d: dict[str, object] | None) -> deque[int]:
+    return d.get("k", deque([1, 2]))
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "optional_dict_object_get_deque.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("([&]() -> ::std::deque<int64> {", cpp)
+        self.assertIn(".as<::std::deque<int64>>()) return *__dict_cast;", cpp)
+        self.assertNotIn("return __dict_it_", cpp)
+
+    def test_return_list_comp_uses_function_return_type_hint(self) -> None:
+        src = """def linear(x: list[float], w: list[list[float]]) -> list[float]:
+    return [sum(wi * xi for wi, xi in zip(wo, x)) for wo in w]
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "return_list_comp_hint.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("[&]() -> list<float64> {", cpp)
+        self.assertNotIn("list<object> __out;", cpp)
+        self.assertNotIn("return object(__out);", cpp)
+
+    def test_untyped_ifexp_function_infers_variant_return(self) -> None:
+        src = """def pick_union(flag: bool):
+    out = 1 if flag else "x"
+    return out
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "pick_union_variant.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("::std::variant<int64, str> pick_union(bool flag)", cpp)
+        self.assertIn('::std::variant<int64, str> out = (flag ? ::std::variant<int64, str>(1) : ::std::variant<int64, str>("x"));', cpp)
+        self.assertIn("return out;", cpp)
+        self.assertNotIn("return object(out);", cpp)
+
     def test_none_constant_for_any_like_uses_object_empty(self) -> None:
         src = """def f() -> object:
     x: object = None
@@ -1036,10 +1135,26 @@ def new_nodes() -> list[Node]:
         self.assertTrue(
             ("object x = object{};" in cpp)
             or ("object x = make_object(::std::nullopt);" in cpp)
-            or ("object x = object(object(::std::nullopt));" in cpp)
             or ("object x = object(::std::nullopt);" in cpp)
         )
         self.assertNotIn("make_object(1)", cpp)
+        self.assertNotIn("object(object(", cpp)
+
+    def test_object_annassign_constant_is_not_double_boxed(self) -> None:
+        src = """def f() -> object:
+    x: object = None
+    y: object = "x"
+    return y
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "object_annassign_box.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("object x = object(::std::nullopt);", cpp)
+        self.assertIn('object y = object("x");', cpp)
+        self.assertNotIn("object(object(", cpp)
 
     def test_list_any_object_element_is_not_double_boxed(self) -> None:
         src = """def f() -> list[object]:
