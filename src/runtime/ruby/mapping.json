@@ -13,6 +13,7 @@
     "float": "__pytra_float",
     "max": "__pytra_max",
     "min": "__pytra_min",
+    "sum": "__pytra_sum",
     "py_max": "__pytra_max",
     "py_min": "__pytra_min",
     "py_int_from_str": "__pytra_int",
