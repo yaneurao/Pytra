@@ -20,6 +20,18 @@
 
 ## 未完了タスク
 
+### P0-RUNTIME-CALL-COVERAGE: EAST runtime_call と mapping.json の双方向カバレッジ lint
+
+EAST3 が生成する `runtime_call` と mapping.json の `calls` テーブルの整合を自動検証する。
+
+検証方向:
+1. **EAST → mapping.json**: fixture/sample/stdlib の EAST3 golden に出現する全 `runtime_call` が、各言語の mapping.json `calls` に登録されているか。未登録なら emitter が黙って壊れる。
+2. **mapping.json → fixture**: mapping.json `calls` に登録されている runtime_call が、いずれかの fixture/sample/stdlib EAST3 golden に出現しているか。未カバーなら死んだエントリか、テスト不足。
+
+1. [ ] [ID: P0-RTCALL-COV-S1] `tools/check/check_runtime_call_coverage.py` を作成する — EAST3 golden を走査して runtime_call を収集し、全言語の mapping.json `calls` と双方向で突き合わせる
+2. [ ] [ID: P0-RTCALL-COV-S2] 未カバーの runtime_call に対して fixture を追加する（`list.clear`, `list.reverse`, `list.sort`, `set.clear`, `dict.pop`, `dict.setdefault` 等）
+3. [ ] [ID: P0-RTCALL-COV-S3] `run_local_ci.py` に組み込む
+
 ### P5-PARITY-STREAMING: runtime_parity_check_fast.py のストリーミング出力
 
 C++ fixture parity（137件、20分超）で完了まで stdout が返らず、進捗が見えない問題。
