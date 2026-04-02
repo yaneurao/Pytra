@@ -25,6 +25,7 @@ class ScalaRenderer(CommonRenderer):
         self.current_class_name: str | None = None
         self.import_symbols: dict[str, str] = {}
         self.module_function_names: set[str] = set()
+        self.local_function_aliases: dict[str, str] = {}
 
     def render_module(self, east3_doc: dict[str, JsonVal]) -> str:
         module_id = self._str(east3_doc, "module_id")
@@ -47,6 +48,10 @@ class ScalaRenderer(CommonRenderer):
             for stmt in self._list(east3_doc, "body")
             if isinstance(stmt, dict) and self._str(stmt, "kind") in ("FunctionDef", "ClosureDef")
         }
+        self.local_function_aliases = {}
+        for emitted_name in self.module_function_names:
+            if emitted_name.startswith("__pytra_") and len(emitted_name) > len("__pytra_"):
+                self.local_function_aliases[emitted_name[len("__pytra_"):]] = emitted_name
         is_entry = False
         if isinstance(meta, dict):
             emit_context = meta.get("emit_context")
@@ -317,6 +322,8 @@ class ScalaRenderer(CommonRenderer):
                 return "this"
             if ident in self.import_symbols:
                 return self.import_symbols[ident]
+            if ident in self.local_function_aliases:
+                return _safe_scala_ident(self.local_function_aliases[ident])
             return _safe_scala_ident(ident)
         if kind == "Attribute":
             owner = self._emit_expr(node.get("value"))
@@ -333,6 +340,9 @@ class ScalaRenderer(CommonRenderer):
             index = self._emit_expr(slice_node)
             return owner + "(" + index + ")"
         if kind == "List":
+            elems = [self._emit_expr(elem) for elem in self._list(node, "elements")]
+            return "mutable.ArrayBuffer(" + ", ".join(elems) + ")"
+        if kind == "Tuple":
             elems = [self._emit_expr(elem) for elem in self._list(node, "elements")]
             return "mutable.ArrayBuffer(" + ", ".join(elems) + ")"
         if kind == "Dict":
@@ -395,7 +405,16 @@ class ScalaRenderer(CommonRenderer):
             if len(comparators) == 1 and len(ops) == 1:
                 right = self._emit_expr(comparators[0])
                 op = ops[0] if isinstance(ops[0], str) else self._str(ops[0], "kind")
-                op_text = {"Eq": "==", "NotEq": "!=", "Lt": "<", "LtE": "<=", "Gt": ">", "GtE": ">="}.get(op, op)
+                op_text = {
+                    "Eq": "==",
+                    "NotEq": "!=",
+                    "Lt": "<",
+                    "LtE": "<=",
+                    "Gt": ">",
+                    "GtE": ">=",
+                    "Is": "==",
+                    "IsNot": "!=",
+                }.get(op, op)
                 return left + " " + op_text + " " + right
         if kind == "UnaryOp":
             operand = self._emit_expr(node.get("operand"))
