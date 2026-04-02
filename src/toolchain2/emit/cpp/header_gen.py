@@ -7,7 +7,99 @@ import re
 from pytra.std.json import JsonVal
 
 from toolchain2.emit.cpp.runtime_paths import collect_cpp_dependency_module_ids, cpp_include_for_module
-from toolchain2.emit.cpp.types import cpp_param_decl, cpp_signature_type, collect_cpp_type_vars
+from toolchain2.emit.cpp.types import cpp_param_decl, cpp_signature_type, collect_cpp_type_vars, cpp_alias_union_expansion
+
+
+def _split_top_level_union(text: str) -> list[str]:
+    out: list[str] = []
+    depth = 0
+    current: list[str] = []
+    for ch in text:
+        if ch in "[<(":
+            depth += 1
+        elif ch in "]>)":
+            depth -= 1
+        elif ch == "|" and depth == 0:
+            part = "".join(current).strip()
+            if part != "":
+                out.append(part)
+            current = []
+            continue
+        current.append(ch)
+    tail = "".join(current).strip()
+    if tail != "":
+        out.append(tail)
+    return out
+
+
+def _recursive_alias_lane_cpp(alias_name: str, lane: str) -> str:
+    if lane == "list[" + alias_name + "]":
+        return "Object<list<" + alias_name + ">>"
+    if lane == "dict[str," + alias_name + "]":
+        return "Object<dict<str, " + alias_name + ">>"
+    if lane == "set[" + alias_name + "]":
+        return "Object<set<" + alias_name + ">>"
+    return cpp_signature_type(lane)
+
+
+def _emit_recursive_union_alias_decl(lines: list[str], node: dict[str, JsonVal]) -> bool:
+    name = _str(node, "name")
+    value = cpp_alias_union_expansion(name)
+    if value == "":
+        value = _str(node, "value")
+    if name == "" or value == "":
+        return False
+    lanes = _split_top_level_union(value)
+    if len(lanes) == 0:
+        return False
+    non_none = [lane for lane in lanes if lane not in ("None", "none")]
+    has_none = len(non_none) < len(lanes)
+    recursive_lanes = [
+        lane for lane in non_none
+        if lane in ("list[" + name + "]", "dict[str," + name + "]", "set[" + name + "]")
+    ]
+    if len(recursive_lanes) == 0:
+        return False
+    lane_cpp = [_recursive_alias_lane_cpp(name, lane) for lane in non_none]
+    variant_type = "::std::variant<" + ", ".join(lane_cpp) + ">"
+    base_type = "::std::optional<" + variant_type + ">" if has_none else variant_type
+
+    lines.append("struct " + name + " : " + base_type + " {")
+    lines.append("    using base_type = " + base_type + ";")
+    lines.append("    using base_type::base_type;")
+    lines.append("    using base_type::operator=;")
+    if has_none:
+        lines.append("    " + name + "() : base_type(::std::nullopt) {}")
+    else:
+        lines.append("    " + name + "() : base_type() {}")
+    for lane in recursive_lanes:
+        if lane == "list[" + name + "]":
+            lines.append(
+                "    " + name + "(const list<" + name + ">& v) : base_type(" + variant_type + "(rc_from_value(v))) {}"
+            )
+            lines.append(
+                "    " + name + "(list<" + name + ">&& v) : base_type(" + variant_type + "(rc_from_value(::std::move(v)))) {}"
+            )
+        elif lane == "dict[str," + name + "]":
+            lines.append(
+                "    " + name + "(const dict<str, " + name + ">& v) : base_type(" + variant_type + "(rc_from_value(v))) {}"
+            )
+            lines.append(
+                "    " + name + "(dict<str, " + name + ">&& v) : base_type(" + variant_type + "(rc_from_value(::std::move(v)))) {}"
+            )
+        elif lane == "set[" + name + "]":
+            lines.append(
+                "    " + name + "(const set<" + name + ">& v) : base_type(" + variant_type + "(rc_from_value(v))) {}"
+            )
+            lines.append(
+                "    " + name + "(set<" + name + ">&& v) : base_type(" + variant_type + "(rc_from_value(::std::move(v)))) {}"
+            )
+    lines.append("};")
+    lines.append(
+        "static inline ::std::string py_to_string(const " + name + "& v) { return py_to_string(static_cast<const " + name + "::base_type&>(v)); }"
+    )
+    lines.append("")
+    return True
 
 
 def build_cpp_header_from_east3(
@@ -82,7 +174,10 @@ def _emit_decl(lines: list[str], stmt: JsonVal) -> None:
     if not isinstance(stmt, dict):
         return
     kind = _str(stmt, "kind")
-    if kind in ("Import", "ImportFrom", "TypeAlias", "Pass"):
+    if kind in ("Import", "ImportFrom", "Pass"):
+        return
+    if kind == "TypeAlias":
+        _emit_recursive_union_alias_decl(lines, stmt)
         return
     if kind == "Expr":
         value = stmt.get("value")

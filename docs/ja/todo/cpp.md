@@ -83,8 +83,10 @@ selfhost で必要な動的型パターン（`dict[str, object]` の items() unp
 
 monostate → `std::optional<std::variant<...>>` 移行（commit f8c4c618b）で JSON stdlib 3件が compile failure。JsonValue の resolved_type が展開されて `list<optional<variant<...>>>` になるのが原因。
 
-1. [ ] [ID: P0-CPP-OPT-VAR-S1] JsonValue の resolved_type 展開が optional\<variant\> に巻き込まれる原因を調査し、NominalAdtType の型写像を修正する
-2. [ ] [ID: P0-CPP-OPT-VAR-S2] json_extended / json_indent_optional / json_nested が C++ parity PASS することを確認する
+1. [x] [ID: P0-CPP-OPT-VAR-S1] JsonValue の resolved_type 展開が optional\<variant\> に巻き込まれる原因を調査し、NominalAdtType の型写像を修正する
+   - 完了: `src/toolchain2/emit/cpp/types.py` に `JsonVal` の nominal 正規化と alias union 展開を追加し、`src/runtime/cpp/mapping.json` / `src/toolchain2/emit/cpp/runtime_paths.py` / `src/toolchain2/emit/cpp/header_gen.py` / `src/toolchain2/emit/cpp/emitter.py` を更新した。linked EAST3 で `list[Any]` / `dict[str,Any]` に崩れていた `JsonVal` を emitter 内で `JsonVal`, `list[JsonVal]`, `dict[str,JsonVal]` へ戻し、recursive alias header を `struct JsonVal : ::std::optional<::std::variant<...>>` として一貫して出力するようにした。
+2. [x] [ID: P0-CPP-OPT-VAR-S2] json_extended / json_indent_optional / json_nested が C++ parity PASS することを確認する
+   - 完了: `src/toolchain2/emit/cpp/emitter.py` で local container storage を正規化し、recursive `JsonVal` container local が `.as<...>()` に落ちないように修正した。`src/toolchain2/emit/cpp/header_gen.py` では `py_to_string(const JsonVal&)` forwarder を生成し、`src/runtime/cpp/built_in/base_ops.h` に `py_to_string(bool)` を追加して `dumps(True)` を Python と同じ `"true"` に揃えた。`PYTHONPATH=/workspace/Pytra/src python3 src/pytra-cli2.py -build test/stdlib/source/py/json/json_extended.py -o work/tmp/json_extended_build --target cpp` と `... json_indent_optional.py ...` の emit 後、`runtime_parity_check._run_cpp_emit_dir(...)` で compile + run を確認した。現行ツリーに `json_nested.py` は存在しないため、std/json 配下の実在 2 case で確認している。
 3. [ ] [ID: P0-CPP-OPT-VAR-S3] fixture + sample に回帰がないことを確認する
 
 ### P20-CPP-SELFHOST: C++ emitter で toolchain2 を C++ に変換し g++ build を通す

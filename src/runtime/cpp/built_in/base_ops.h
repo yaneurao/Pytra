@@ -237,6 +237,10 @@ static inline ::std::string py_to_string(const ::std::string& v) {
     return v;
 }
 
+static inline ::std::string py_to_string(bool v) {
+    return v ? "True" : "False";
+}
+
 // Python-like float formatting: shortest round-trip representation.
 // Matches Python's str(float) output (e.g. 1.2246467991473532e-16, not 1.22465e-16).
 static inline ::std::string py_to_string(double v) {

@@ -1508,7 +1508,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         self.assertEqual(dep_ids, ["pytra.built_in.contains"])
 
-    def test_cpp_runtime_paths_skip_jsonval_type_only_symbol_imports(self) -> None:
+    def test_cpp_runtime_paths_include_jsonval_type_only_symbol_imports(self) -> None:
         dep_ids = collect_cpp_dependency_module_ids(
             "app.main",
             {
@@ -1530,14 +1530,14 @@ def has_key(env: dict[str, int], name: str) -> bool:
             },
         )
 
-        self.assertEqual(dep_ids, ["pytra.built_in.type_id"])
+        self.assertEqual(dep_ids, ["pytra.std.json", "pytra.built_in.type_id"])
 
-    def test_cpp_signature_type_maps_jsonval_alias_to_object(self) -> None:
-        self.assertEqual(cpp_signature_type("JsonVal"), "object")
-        self.assertEqual(cpp_signature_type("dict[str,JsonVal]"), "Object<dict<str, object>>")
+    def test_cpp_signature_type_maps_jsonval_alias_to_recursive_nominal_type(self) -> None:
+        self.assertEqual(cpp_signature_type("JsonVal"), "JsonVal")
+        self.assertEqual(cpp_signature_type("dict[str,JsonVal]"), "Object<dict<str, JsonVal>>")
         self.assertEqual(
             cpp_signature_type("None | bool | str"),
-            "::std::variant<::std::monostate, bool, str>",
+            "::std::optional<::std::variant<bool, str>>",
         )
 
     def test_cpp_runtime_bundle_keeps_template_runtime_helpers_header_only(self) -> None:
@@ -4625,9 +4625,14 @@ def has_key(env: dict[str, int], name: str) -> bool:
             "pytra.std.json",
             body=[
                 {
+                    "kind": "TypeAlias",
+                    "name": "JsonVal",
+                    "value": "None | bool | int64 | float64 | str | list[JsonVal] | dict[str,JsonVal]",
+                },
+                {
                     "kind": "ClassDef",
                     "name": "JsonObj",
-                    "field_types": {"raw": "dict[str,object]"},
+                    "field_types": {"raw": "dict[str,JsonVal]"},
                     "body": [
                         {
                             "kind": "FunctionDef",
@@ -4644,7 +4649,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
                 {
                     "kind": "ClassDef",
                     "name": "JsonValue",
-                    "field_types": {"raw": "object"},
+                    "field_types": {"raw": "JsonVal"},
                     "body": [],
                 },
             ],
@@ -4652,9 +4657,59 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         header_text = build_cpp_header_from_east3("pytra.std.json", doc, rel_header_path="std/json.h")
 
+        self.assertIn("struct JsonVal :", header_text)
+        self.assertIn(
+            "static inline ::std::string py_to_string(const JsonVal& v) { return py_to_string(static_cast<const JsonVal::base_type&>(v)); }",
+            header_text,
+        )
         self.assertIn("struct JsonObj;", header_text)
         self.assertIn("struct JsonValue;", header_text)
         self.assertLess(header_text.index("struct JsonValue;"), header_text.index("struct JsonObj {"))
+
+    def test_cpp_emitter_keeps_recursive_json_container_locals_typed(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "f",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_usage": {},
+                    "return_type": "dict[str,JsonVal]",
+                    "body": [
+                        {
+                            "kind": "AnnAssign",
+                            "target": {"kind": "Name", "id": "out", "resolved_type": "dict[str,None | bool | int64 | float64 | str | list[Any] | dict[str,Any]]"},
+                            "annotation": "dict[str,None | bool | int64 | float64 | str | list[Any] | dict[str,Any]]",
+                            "declare": True,
+                            "decl_type": "dict[str,None | bool | int64 | float64 | str | list[Any] | dict[str,Any]]",
+                            "value": {"kind": "Dict", "resolved_type": "dict[str,None | bool | int64 | float64 | str | list[]]", "entries": []},
+                        },
+                        {
+                            "kind": "Assign",
+                            "target": {
+                                "kind": "Subscript",
+                                "value": {"kind": "Name", "id": "out", "resolved_type": "dict[str,None | bool | int64 | float64 | str | list[Any] | dict[str,Any]]"},
+                                "slice": {"kind": "Constant", "value": "k", "resolved_type": "str"},
+                                "resolved_type": "None | bool | int64 | float64 | str | list[Any] | dict[str,Any]",
+                            },
+                            "declare": False,
+                            "value": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                        },
+                        {"kind": "Return", "value": {"kind": "Name", "id": "out", "resolved_type": "dict[str,None | bool | int64 | float64 | str | list[Any] | dict[str,Any]]"}},
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("Object<dict<str, JsonVal>> out = rc_from_value(dict<str, JsonVal>{});", cpp_code)
+        self.assertIn("(*(out))[str(\"k\")] = 1;", cpp_code)
+        self.assertIn("return out;", cpp_code)
+        self.assertNotIn("(out).as<dict<str, JsonVal>>()", cpp_code)
 
     def test_cpp_header_gen_preserves_exception_class_inheritance(self) -> None:
         doc = _module_doc(
