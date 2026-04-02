@@ -639,12 +639,12 @@ export function pyBytearray(arg: number | number[] = 0): number[] {
 /** Python の bytes 相当。引数なし or ArrayLike<number> を受け取る。 */
 export function pyBytes(value?: ArrayLike<number>): number[] {
   if (!value) return _mkGrowBuf();
-  if (value instanceof Uint8Array) return value as unknown as number[];
+  if (value instanceof Uint8Array) return Array.from(value, (item) => item & 255);
   // Proxy over _GrowBytes: extract snapshot
   const snap = (value as unknown as { _snap?: () => Uint8Array })._snap;
-  if (typeof snap === 'function') return snap.call(value) as unknown as number[];
+  if (typeof snap === 'function') return Array.from(snap.call(value), (item) => item & 255);
   // Regular number[] or other ArrayLike
-  return new Uint8Array(Array.from(value as unknown as Iterable<number>)) as unknown as number[];
+  return Array.from(value as ArrayLike<number>, (item) => item & 255);
 }
 
 /** Python の collections.deque 相当。 */
