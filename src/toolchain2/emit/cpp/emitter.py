@@ -2614,15 +2614,6 @@ def _emit_unbox(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     target_mirror = _node_type_mirror(node)
     if target_mirror != "":
         target = target_mirror
-    if isinstance(value, dict) and _str(value, "kind") == "Unbox":
-        inner_target = _str(value, "target")
-        if inner_target == "":
-            inner_target = _str(value, "resolved_type")
-        inner_target_mirror = _node_type_mirror(value)
-        if inner_target_mirror != "":
-            inner_target = inner_target_mirror
-        if inner_target == target and target != "":
-            return _emit_expr(ctx, value)
     if isinstance(value, dict) and _str(value, "kind") == "Name":
         value_expr = _emit_name_storage(value)
     else:
