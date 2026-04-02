@@ -39,6 +39,16 @@ class DummyRenderer(CommonRenderer):
         return "catch (...) {"
 
 
+class BoundaryRenderer(DummyRenderer):
+    def render_expr_extension(self, node: dict) -> str:
+        kind = self._str(node, "kind")
+        if kind == "Box":
+            return "BOX(" + self.render_expr(node.get("value")) + ")"
+        if kind == "Unbox":
+            return "UNBOX(" + self.render_expr(node.get("value")) + ")"
+        raise RuntimeError("unexpected expr kind: " + kind)
+
+
 class CommonRendererTests(unittest.TestCase):
     def test_profile_loader_returns_full_profile_doc(self) -> None:
         profile = load_profile_doc("go")
@@ -284,6 +294,61 @@ class CommonRendererTests(unittest.TestCase):
         )
 
         self.assertEqual(rendered, "py_is_none(v)")
+
+    def test_common_renderer_collapses_nested_box_with_same_target(self) -> None:
+        renderer = BoundaryRenderer("cpp")
+
+        rendered = renderer.render_expr(
+            {
+                "kind": "Box",
+                "resolved_type": "object",
+                "value": {
+                    "kind": "Box",
+                    "resolved_type": "object",
+                    "value": {"kind": "Name", "id": "x"},
+                },
+            }
+        )
+
+        self.assertEqual(rendered, "BOX(x)")
+
+    def test_common_renderer_collapses_nested_unbox_with_same_target(self) -> None:
+        renderer = BoundaryRenderer("cpp")
+
+        rendered = renderer.render_expr(
+            {
+                "kind": "Unbox",
+                "target": "int64",
+                "resolved_type": "int64",
+                "value": {
+                    "kind": "Unbox",
+                    "target": "int64",
+                    "resolved_type": "int64",
+                    "value": {"kind": "Name", "id": "x"},
+                },
+            }
+        )
+
+        self.assertEqual(rendered, "UNBOX(x)")
+
+    def test_common_renderer_keeps_nested_unbox_when_target_differs(self) -> None:
+        renderer = BoundaryRenderer("cpp")
+
+        rendered = renderer.render_expr(
+            {
+                "kind": "Unbox",
+                "target": "int64",
+                "resolved_type": "int64",
+                "value": {
+                    "kind": "Unbox",
+                    "target": "float64",
+                    "resolved_type": "float64",
+                    "value": {"kind": "Name", "id": "x"},
+                },
+            }
+        )
+
+        self.assertEqual(rendered, "UNBOX(UNBOX(x))")
 
     def test_cpp_tuple_unpack_reuses_existing_locals_instead_of_redeclaring(self) -> None:
         ctx = CppEmitContext()

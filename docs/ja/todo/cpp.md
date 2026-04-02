@@ -121,7 +121,8 @@ monostate → `std::optional<std::variant<...>>` 移行（commit f8c4c618b）で
 
 C++ parity で発生した `optional` の二重 deref や callable 引数の不要 bridge は、backend 固有の記法ではなく box/unbox/cast 正規化の共通不足が原因である。backend ごとの止血を減らすため、backend 非依存の冪等化は CommonRenderer に移す。
 
-1. [ ] [ID: P0-CMN-BOXUNBOX-S1] CommonRenderer に box/unbox/cast 正規化の共通入口を追加する
+1. [x] [ID: P0-CMN-BOXUNBOX-S1] CommonRenderer に box/unbox/cast 正規化の共通入口を追加する
+   - 完了: `src/toolchain2/emit/common/common_renderer.py` に `_normalize_boundary_expr()` と `_boundary_target_name()` を追加し、`render_expr()` 入口で同一 target の `Box(Box(x))` / `Unbox(Unbox(x))` を backend 非依存で畳み込むようにした。`tools/unittest/toolchain2/test_common_renderer.py` に共通回帰を追加し、既存の C++ `nested optional unbox` 回帰と JSON stdlib parity (`json_extended`, `json_indent_optional`, `json_unicode_escape`) が維持されることを確認した。
 2. [ ] [ID: P0-CMN-BOXUNBOX-S2] C++ emitter の optional / callable / target-type path を共通正規化へ切り替える
 3. [ ] [ID: P0-CMN-BOXUNBOX-S3] `json_extended`, `json_indent_optional`, `json_unicode_escape`, `callable_higher_order` の C++ parity が PASS することを確認する
 

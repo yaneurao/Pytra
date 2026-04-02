@@ -237,6 +237,32 @@ class CommonRenderer:
     def _quote_string(self, value: str) -> str:
         return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
 
+    def _boundary_target_name(self, node: JsonVal) -> str:
+        if not isinstance(node, dict):
+            return ""
+        kind = self._str(node, "kind")
+        if kind == "Unbox":
+            target = self._str(node, "target")
+            if target != "":
+                return target
+        return self._str(node, "resolved_type")
+
+    def _normalize_boundary_expr(self, node: JsonVal) -> JsonVal:
+        current = node
+        while isinstance(current, dict):
+            kind = self._str(current, "kind")
+            if kind not in ("Box", "Unbox"):
+                return current
+            inner = current.get("value")
+            if not isinstance(inner, dict) or self._str(inner, "kind") != kind:
+                return current
+            outer_target = self._boundary_target_name(current)
+            inner_target = self._boundary_target_name(inner)
+            if outer_target == "" or outer_target != inner_target:
+                return current
+            current = inner
+        return current
+
     def _format_condition(self, rendered: str) -> str:
         return "(" + rendered + ")" if self._condition_parens() else rendered
 
@@ -428,6 +454,7 @@ class CommonRenderer:
     def render_expr(self, node: JsonVal) -> str:
         if not isinstance(node, dict):
             raise RuntimeError("common renderer expected dict expr node")
+        node = self._normalize_boundary_expr(node)
         kind = self._str(node, "kind")
         if kind == "Constant":
             return self.render_constant(node)
