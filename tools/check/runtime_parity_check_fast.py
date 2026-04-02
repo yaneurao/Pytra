@@ -738,9 +738,9 @@ def _maybe_refresh_selfhost_python() -> None:
 
     Reads existing .parity-results/*.json and writes selfhost_python.json so
     that gen_backend_progress.py always has up-to-date selfhost matrix data.
-    呼び出しは _maybe_regenerate_progress() の後に置くこと。
-    こうすることで「今サイクルの progress は前サイクルの selfhost を使い、
-    次サイクルの progress は今サイクルの新鮮な selfhost を使う」連鎖になる。
+    呼び出しは _maybe_regenerate_progress() の前に置くこと。
+    こうすることで「今サイクルの parity 結果 → selfhost_python.json → progress summary」
+    の順に反映され、1サイクル遅延なく最新状態が summary に出る。
     [P0-SELFHOST-REFRESH-S1]
     """
     marker = ROOT / ".parity-results" / "selfhost_python.json"
@@ -1091,9 +1091,9 @@ def main() -> int:
     if _acquire_gen_lock():
         try:
             _maybe_run_emitter_lint()
+            _maybe_refresh_selfhost_python()
             _maybe_regenerate_progress()
             _maybe_regenerate_benchmark()
-            _maybe_refresh_selfhost_python()
         finally:
             _release_gen_lock()
     return exit_code

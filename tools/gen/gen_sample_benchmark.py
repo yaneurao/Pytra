@@ -104,10 +104,6 @@ def load_timing_data() -> dict[str, dict[str, float]]:
 
 def _fmt(val: float) -> str:
     """Format elapsed seconds for table cell."""
-    if val >= 100:
-        return f"{val:.0f}"
-    if val >= 10:
-        return f"{val:.3f}"
     return f"{val:.3f}"
 
 

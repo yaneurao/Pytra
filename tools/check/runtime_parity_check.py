@@ -721,6 +721,31 @@ def _save_parity_results(records: list[CheckRecord], case_root: str, targets: se
         out_path.write_text(json.dumps(doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         _append_parity_changelog(target, case_root, prev_pass, curr_pass, now)
 
+    if case_root == "sample":
+        _maybe_regenerate_benchmark()
+
+
+def _maybe_regenerate_benchmark() -> None:
+    """Auto-run gen_sample_benchmark.py if >3 minutes since last generation."""
+    marker = ROOT / "sample-preview" / "README-ja.md"
+    if marker.exists() and (time.time() - marker.stat().st_mtime) < 180:
+        return
+    gen_script = ROOT / "tools" / "gen" / "gen_sample_benchmark.py"
+    if not gen_script.exists():
+        return
+    # Only run if benchmark data exists
+    if not (ROOT / ".parity-results" / "python_sample.json").exists():
+        return
+    try:
+        subprocess.run(
+            ["python3", str(gen_script)],
+            cwd=str(ROOT),
+            timeout=30,
+            capture_output=True,
+        )
+    except Exception:
+        pass
+
 
 _CHANGELOG_PATHS = [
     ROOT / "docs" / "ja" / "progress-preview" / "changelog.md",
