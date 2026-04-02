@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-03-31
+最終更新: 2026-04-02
 
 ## 運用ルール
 
@@ -42,7 +42,7 @@
 
 ### P2-NIM-LINT-FIX: Nim emitter のハードコード違反を修正する
 
-1. [ ] [ID: P2-NIM-LINT-S1] `check_emitter_hardcode_lint.py` で Nim の違反が 0 件になることを確認する
+1. [x] [ID: P2-NIM-LINT-S1] `check_emitter_hardcode_lint.py` で Nim の違反が 0 件になることを確認する — 完了: 2026-04-02 (`--lang nim --include-runtime --no-write` で 0 件)
 
 ### P20-NIM-SELFHOST: Nim emitter で toolchain2 を Nim に変換し実行できるようにする
 

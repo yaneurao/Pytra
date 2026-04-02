@@ -55,6 +55,7 @@ class RuntimeMapping:
     module_native_files: dict[str, str] = field(default_factory=dict)
     call_adapters: dict[str, str] = field(default_factory=dict)
     non_native_modules: set[str] = field(default_factory=set)
+    exception_types: set[str] = field(default_factory=set)
 
     def is_implicit_cast(self, from_type: str, to_type: str) -> bool:
         return (from_type + "->" + to_type) in self.implicit_promotions
@@ -78,6 +79,7 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
     module_native_files: dict[str, str] = {}
     call_adapters: dict[str, str] = {}
     non_native_modules: set[str] = set()
+    exception_types: set[str] = set()
 
     prefix = raw_obj.get_str("builtin_prefix")
     if prefix is not None:
@@ -136,6 +138,12 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
             if isinstance(item, str):
                 non_native_modules.add(item)
 
+    exception_types_arr = raw_obj.get_arr("exception_types")
+    if exception_types_arr is not None:
+        for item in exception_types_arr.raw:
+            if isinstance(item, str):
+                exception_types.add(item)
+
     return RuntimeMapping(
         builtin_prefix=prefix_str,
         calls=calls,
@@ -146,6 +154,7 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
         module_native_files=module_native_files,
         call_adapters=call_adapters,
         non_native_modules=non_native_modules,
+        exception_types=exception_types,
     )
 
 

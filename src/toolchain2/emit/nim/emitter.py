@@ -148,17 +148,23 @@ def _nim_string(text: str) -> str:
     return '"' + out + '"'
 
 
+def _export_marker(name: str, *, top_level: bool) -> str:
+    if not top_level:
+        return ""
+    if name.startswith("_"):
+        return ""
+    return "*"
+
+
+def _is_super_call(node: JsonVal) -> bool:
+    if not isinstance(node, dict) or _str(node, "kind") != "Call":
+        return False
+    func = node.get("func")
+    return isinstance(func, dict) and _str(func, "kind") == "Name" and _str(func, "id") == "super"
+
+
 def _is_exception_type_name(ctx: EmitContext, type_name: str) -> bool:
-    _BUILTIN_EXCEPTIONS: set[str] = set()
-    for _exc in [
-        "Exception", "BaseException", "RuntimeError", "ValueError",
-        "TypeError", "IndexError", "KeyError", "StopIteration",
-        "AttributeError", "NameError", "NotImplementedError",
-        "OverflowError", "ZeroDivisionError", "AssertionError",
-        "OSError", "IOError", "FileNotFoundError", "PermissionError",
-    ]:
-        _BUILTIN_EXCEPTIONS.add(_exc)
-    if type_name in _BUILTIN_EXCEPTIONS:
+    if type_name in ctx.mapping.exception_types:
         return True
     base = ctx.class_bases.get(type_name, "")
     if base != "":
@@ -646,6 +652,7 @@ def _resolve_runtime_call_name(ctx: EmitContext, node: dict[str, JsonVal]) -> st
 def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     func_node = node.get("func")
     args = _list(node, "args")
+    builtin_name = _str(node, "builtin_name")
 
     # Check for runtime call resolution
     runtime_name = _resolve_runtime_call_name(ctx, node)
@@ -697,6 +704,11 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     # Resolved runtime name -> direct call
     if runtime_name != "":
         arg_strs = [_emit_expr(ctx, a) for a in args]
+        if builtin_name == "print":
+            rendered_args: list[str] = []
+            for arg_code in arg_strs:
+                rendered_args.append("py_to_string(" + arg_code + ")")
+            return runtime_name + "(" + ", ".join(rendered_args) + ")"
         return runtime_name + "(" + ", ".join(arg_strs) + ")"
 
     # Method call on object (attribute call)
@@ -888,7 +900,7 @@ def _emit_method_call(ctx: EmitContext, func_node: dict[str, JsonVal], args: lis
             return owner_code + ".clear()"
 
     # super() call
-    if attr == "__init__" and isinstance(owner_node, dict) and _str(owner_node, "repr") == "super()":
+    if attr == "__init__" and _is_super_call(owner_node):
         base = ctx.current_base_class
         if base == "":
             base = ctx.class_bases.get(ctx.current_class, "")
@@ -1482,7 +1494,7 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     if is_method:
         _emit(ctx, "proc " + safe_name + "*(" + ", ".join(params) + ")" + ret_ann + " =")
     else:
-        export_marker = "*" if ctx.indent_level == 0 else ""
+        export_marker = _export_marker(safe_name, top_level=ctx.indent_level == 0)
         _emit(ctx, "proc " + safe_name + export_marker + "(" + ", ".join(params) + ")" + ret_ann + " =")
 
     # Save context and emit body

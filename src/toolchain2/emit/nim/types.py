@@ -77,7 +77,7 @@ def _safe_nim_ident(name: str) -> str:
         return "unnamed"
     # Nim identifiers cannot start with underscore in public context;
     # however private identifiers can. Use backtick escaping for keywords.
-    if out[0].isdigit():
+    if out[0] == "_" or out[0].isdigit():
         out = "v" + out
     if out in _NIM_KEYWORDS:
         out = "`" + out + "`"
