@@ -48,10 +48,49 @@ _TYPE_MAP: dict[str, str] = {
     "Any": "object",
     "Obj": "object",
     "object": "object",
-    "JsonVal": "object",
+    "JsonVal": "JsonVal",
     "Node": "Object<dict<str, object>>",
     "Callable": "::std::function<object(object)>",
 }
+
+
+_CPP_ALIAS_UNION_EXPANSIONS: dict[str, str] = {
+    "JsonVal": "None | bool | int64 | float64 | str | list[JsonVal] | dict[str,JsonVal]",
+}
+
+_JSONVAL_EXPANDED_NORMS: set[str] = {
+    "None|bool|int64|float64|str|list[Any]|dict[str,Any]",
+    "bool|int64|float64|str|list[Any]|dict[str,Any]|None",
+}
+_JSONVAL_INNER_EXPANDED_NORM: str = "bool|int64|float64|str|list[Any]|dict[str,Any]"
+_JSONVAL_INNER_CANON: str = "bool | int64 | float64 | str | list[JsonVal] | dict[str,JsonVal]"
+
+
+def _norm_type_text(text: str) -> str:
+    return "".join(ch for ch in text if ch != " " and ch != "\n" and ch != "\t")
+
+
+def normalize_cpp_nominal_adt_type(resolved_type: str) -> str:
+    norm = _norm_type_text(resolved_type)
+    if norm in _JSONVAL_EXPANDED_NORMS:
+        return "JsonVal"
+    if norm == _JSONVAL_INNER_EXPANDED_NORM:
+        return _JSONVAL_INNER_CANON
+    if resolved_type.startswith("list[") and resolved_type.endswith("]"):
+        inner = resolved_type[5:-1].strip()
+        if _norm_type_text(inner) in _JSONVAL_EXPANDED_NORMS:
+            return "list[JsonVal]"
+    if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
+        inner = resolved_type[5:-1]
+        parts = _split_generic_args(inner)
+        if len(parts) == 2 and _norm_type_text(parts[0]) == "str" and _norm_type_text(parts[1]) in _JSONVAL_EXPANDED_NORMS:
+            return "dict[str,JsonVal]"
+    return resolved_type
+
+
+def cpp_alias_union_expansion(resolved_type: str) -> str:
+    normalized = normalize_cpp_nominal_adt_type(resolved_type)
+    return _CPP_ALIAS_UNION_EXPANSIONS.get(normalized, "")
 
 
 def _cpp_variant_lane_type(resolved_type: str) -> str:
@@ -61,6 +100,7 @@ def _cpp_variant_lane_type(resolved_type: str) -> str:
 
 
 def normalize_cpp_container_alias(resolved_type: str) -> str:
+    resolved_type = normalize_cpp_nominal_adt_type(resolved_type)
     if resolved_type == "Node":
         return "dict[str,JsonVal]"
     return resolved_type
@@ -93,6 +133,7 @@ def cpp_container_value_type(resolved_type: str) -> str:
 
 def cpp_type(resolved_type: str, *, prefer_value_container: bool = False) -> str:
     """Convert an EAST3 resolved_type to a C++ type string."""
+    resolved_type = normalize_cpp_nominal_adt_type(resolved_type)
     if resolved_type == "" or resolved_type == "unknown":
         return "auto"
 
@@ -159,6 +200,7 @@ def cpp_signature_type(resolved_type: str, *, prefer_value_container: bool = Fal
 
     `unknown` / general union は `auto` にせず fail-closed で `object` に倒す。
     """
+    resolved_type = normalize_cpp_nominal_adt_type(resolved_type)
     if resolved_type == "" or resolved_type == "unknown":
         return "object"
     if resolved_type in ("Callable", "callable"):

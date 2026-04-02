@@ -104,7 +104,7 @@
     "Any": "object",
     "Obj": "object",
     "object": "object",
-    "JsonVal": "object",
+    "JsonVal": "JsonVal",
     "Callable": "object",
     "PyFile": "pytra::runtime::cpp::base::PyFile"
   },
