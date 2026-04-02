@@ -747,15 +747,9 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
         left_any = expr.get("left")
         right_any = expr.get("right")
         if isinstance(left_any, dict) and left_any.get("kind") == "List":
-            elems_any = left_any.get("elements")
-            elems = elems_any if isinstance(elems_any, list) else []
-            if len(elems) == 1:
-                return "__pytra_list_repeat(" + _render_expr(elems[0]) + ", " + _render_expr(right_any) + ")"
+            return "__pytra_list_repeat(" + _render_expr(left_any) + ", " + _render_expr(right_any) + ")"
         if isinstance(right_any, dict) and right_any.get("kind") == "List":
-            elems_any = right_any.get("elements")
-            elems = elems_any if isinstance(elems_any, list) else []
-            if len(elems) == 1:
-                return "__pytra_list_repeat(" + _render_expr(elems[0]) + ", " + _render_expr(left_any) + ")"
+            return "__pytra_list_repeat(" + _render_expr(right_any) + ", " + _render_expr(left_any) + ")"
 
     left_node = expr.get("left")
     right_node = expr.get("right")
@@ -791,6 +785,10 @@ def _compare_op_symbol(op: Any) -> str:
     if op == "Eq":
         return "=="
     if op == "NotEq":
+        return "!="
+    if op == "Is":
+        return "=="
+    if op == "IsNot":
         return "!="
     if op == "Lt":
         return "<"
@@ -1163,6 +1161,12 @@ def _render_call_via_runtime_call(
     args: list[Any],
     expr: dict[str, Any],
 ) -> str:
+    if runtime_call == "py_to_string" and len(args) == 1:
+        arg0 = args[0]
+        if isinstance(arg0, dict):
+            resolved_arg_type = arg0.get("resolved_type")
+            if isinstance(resolved_arg_type, str) and resolved_arg_type.startswith("tuple["):
+                return "__pytra_tuple_str(" + _render_expr(arg0) + ")"
     if runtime_call == "py_assert_true":
         rendered_assert_args: list[str] = []
         i = 0
@@ -1283,6 +1287,18 @@ def _render_call_via_runtime_call(
         return "__pytra_makedirs(" + ", ".join(rendered_runtime_args) + ")"
     if runtime_symbol == "":
         return ""
+    if runtime_symbol in {"__pytra_extend", "__pytra_discard", "__pytra_remove", "__pytra_set_add"} and len(args) > 0:
+        rendered_runtime_args: list[str] = []
+        first_arg = args[0]
+        if isinstance(first_arg, dict) and first_arg.get("kind") == "Name":
+            rendered_runtime_args.append("&" + _render_expr(first_arg))
+        else:
+            rendered_runtime_args.append(_render_expr(first_arg))
+        i = 1
+        while i < len(args):
+            rendered_runtime_args.append(_render_expr(args[i]))
+            i += 1
+        return runtime_symbol + "(" + ", ".join(rendered_runtime_args) + ")"
     if runtime_call.find(".") >= 0:
         rendered_call_args: list[str] = []
         i = 0
@@ -1400,6 +1416,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if callee_name == "str" or callee_name == "py_to_string":
         if len(args) == 0:
             return '""'
+        if isinstance(args[0], dict):
+            resolved_arg_type = args[0].get("resolved_type")
+            if isinstance(resolved_arg_type, str) and resolved_arg_type.startswith("tuple["):
+                return "__pytra_tuple_str(" + _render_expr(args[0]) + ")"
         return _to_str_expr(_render_expr(args[0]))
     if callee_name == "len":
         if len(args) == 0:
@@ -1551,6 +1571,12 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             if len(args) == 1:
                 return "__pytra_dict_get(" + owner_expr + ", " + _render_expr(args[0]) + ", __pytra_any_default())"
             return "__pytra_any_default()"
+        if attr_name == "items" and len(args) == 0:
+            return "__pytra_items(" + owner_expr + ")"
+        if attr_name == "keys" and len(args) == 0:
+            return "__pytra_keys(" + owner_expr + ")"
+        if attr_name == "values" and len(args) == 0:
+            return "__pytra_values(" + owner_expr + ")"
         rendered_args: list[str] = []
         i = 0
         while i < len(args):
@@ -1594,6 +1620,8 @@ def _render_isinstance_check(lhs: str, typ: Any) -> str:
             return "__pytra_is_str(" + lhs + ")"
         if name in {"list", "bytes", "bytearray"}:
             return "__pytra_is_list(" + lhs + ")"
+        if name in {"dict", "PYTRA_TID_DICT"}:
+            return "__pytra_is_dict(" + lhs + ")"
         if name in _CLASS_NAMES[0]:
             return "__pytra_is_" + name + "(" + lhs + ")"
         return "false"
@@ -2673,6 +2701,10 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if kind == "AugAssign":
         lhs = _target_name(sd2.get("target"))
         rhs = _render_expr(sd2.get("value"))
+        lhs_type_any = _type_map(ctx).get(lhs)
+        lhs_type = lhs_type_any if isinstance(lhs_type_any, str) else ""
+        if lhs_type not in {"", "Any"} and _needs_cast(sd2.get("value"), lhs_type, _type_map(ctx)):
+            rhs = _cast_from_any(rhs, lhs_type)
         op = sd2.get("op")
         if op == "Add":
             return [indent + lhs + " += " + rhs]

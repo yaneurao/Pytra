@@ -144,6 +144,13 @@ func __pytra_int(_ v: Any?) -> Int64 {
 
 func __pytra_float(_ v: Any?) -> Double {
     guard let value = v else { return 0.0 }
+    let mirror = Mirror(reflecting: value)
+    if mirror.displayStyle == .optional {
+        if let child = mirror.children.first {
+            return __pytra_float(child.value)
+        }
+        return 0.0
+    }
     if let d = value as? Double { return d }
     if let f = value as? Float { return Double(f) }
     if let i = value as? Int64 { return Double(i) }
@@ -155,13 +162,62 @@ func __pytra_float(_ v: Any?) -> Double {
 
 func __pytra_str(_ v: Any?) -> String {
     guard let value = v else { return "" }
+    let mirror = Mirror(reflecting: value)
+    if mirror.displayStyle == .optional {
+        if let child = mirror.children.first {
+            return __pytra_str(child.value)
+        }
+        return ""
+    }
     if let s = value as? String { return s }
     if let b = value as? Bool { return b ? "True" : "False" }
+    if let arr = value as? [Any] {
+        let parts = arr.map { __pytra_repr_item($0) }
+        return "[" + parts.joined(separator: ", ") + "]"
+    }
+    if let dict = value as? [AnyHashable: Any] {
+        let parts = dict.keys
+            .sorted { __pytra_str($0.base) < __pytra_str($1.base) }
+            .map { key in __pytra_repr_item(key.base) + ": " + __pytra_repr_item(dict[key]) }
+        return "{" + parts.joined(separator: ", ") + "}"
+    }
     return String(describing: value)
 }
 
 func __pytra_py_to_string(_ v: Any?) -> String {
     return __pytra_str(v)
+}
+
+func __pytra_repr_item(_ v: Any?) -> String {
+    guard let value = v else { return "" }
+    let mirror = Mirror(reflecting: value)
+    if mirror.displayStyle == .optional {
+        if let child = mirror.children.first {
+            return __pytra_repr_item(child.value)
+        }
+        return ""
+    }
+    if let s = value as? String { return "'" + s + "'" }
+    if let b = value as? Bool { return b ? "True" : "False" }
+    if let arr = value as? [Any] {
+        let parts = arr.map { __pytra_repr_item($0) }
+        return "[" + parts.joined(separator: ", ") + "]"
+    }
+    if let dict = value as? [AnyHashable: Any] {
+        let parts = dict.keys
+            .sorted { __pytra_str($0.base) < __pytra_str($1.base) }
+            .map { key in __pytra_repr_item(key.base) + ": " + __pytra_repr_item(dict[key]) }
+        return "{" + parts.joined(separator: ", ") + "}"
+    }
+    return __pytra_str(value)
+}
+
+func __pytra_tuple_str(_ v: Any?) -> String {
+    let arr = __pytra_as_list(v)
+    if arr.count == 1 {
+        return "(" + __pytra_repr_item(arr[0]) + ",)"
+    }
+    return "(" + arr.map { __pytra_repr_item($0) }.joined(separator: ", ") + ")"
 }
 
 func __pytra_len(_ v: Any?) -> Int64 {
@@ -355,11 +411,22 @@ func __pytra_keys(_ dict: Any?) -> [Any] {
     return []
 }
 
+func __pytra_items(_ dict: Any?) -> [Any] {
+    if let map = dict as? [AnyHashable: Any] {
+        return map.keys.map { key in [key.base, map[key] ?? __pytra_any_default()] as [Any] }
+    }
+    return []
+}
+
 func __pytra_values(_ dict: Any?) -> [Any] {
     if let map = dict as? [AnyHashable: Any] {
         return Array(map.values)
     }
     return []
+}
+
+func __pytra_py_int_from_str(_ value: Any?) -> Int64 {
+    return __pytra_int(value)
 }
 
 func __pytra_deque_appendleft(_ items: inout [Any], _ value: Any?) {
@@ -401,8 +468,26 @@ func __pytra_py_print(_ args: Any...) {
     Swift.print(args.map { __pytra_str($0) }.joined(separator: " "))
 }
 
-func __pytra_static_cast(_ v: Any?) -> Int64 {
-    return __pytra_int(v)
+func __pytra_static_cast<T>(_ v: Any?) -> T {
+    if T.self == Int64.self {
+        return __pytra_int(v) as! T
+    }
+    if T.self == Double.self {
+        return __pytra_float(v) as! T
+    }
+    if T.self == Bool.self {
+        return __pytra_truthy(v) as! T
+    }
+    if T.self == String.self {
+        return __pytra_str(v) as! T
+    }
+    if T.self == [Any].self {
+        return __pytra_as_list(v) as! T
+    }
+    if T.self == [AnyHashable: Any].self {
+        return __pytra_as_dict(v) as! T
+    }
+    return v as! T
 }
 
 func __pytra_makedirs(_ path: Any?, _ existOk: Any? = nil) {
@@ -487,6 +572,10 @@ func __pytra_is_list(_ v: Any?) -> Bool {
     return v is [Any]
 }
 
+func __pytra_is_dict(_ v: Any?) -> Bool {
+    return v is [AnyHashable: Any]
+}
+
 // --- bytearray / bytes ---
 
 func __pytra_bytearray(_ size: Any?) -> [Any] {
@@ -506,7 +595,17 @@ func __pytra_bytes(_ v: Any?) -> [Any] {
 
 func __pytra_list_repeat(_ value: Any?, _ count: Any?) -> [Any] {
     let n = Int(__pytra_int(count))
-    return [Any](repeating: value as Any, count: max(n, 0))
+    if n <= 0 {
+        return []
+    }
+    if let list = value as? [Any] {
+        var out: [Any] = []
+        for _ in 0..<n {
+            out.append(contentsOf: list)
+        }
+        return out
+    }
+    return [Any](repeating: value as Any, count: n)
 }
 
 func __pytra_range(_ start: Any?, _ stop: Any?, _ step: Any?) -> [Any] {
