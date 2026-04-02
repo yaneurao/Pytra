@@ -55,19 +55,22 @@ union type を `object` に退化させず `std::variant` で表現する。`wor
 
 5. [x] [ID: P0-CPP-VARIANT-S5] C++ emitter の `object` 型出力を全て `std::variant` に置換する
    - 完了: `src/toolchain2/emit/cpp/types.py` / `src/toolchain2/emit/cpp/emitter.py` を更新し、general union の宣言・container・`dict.get` default・`list.append`・`isinstance`・cast / unbox・tuple unpack を `std::variant` / `std::holds_alternative` / `std::get` / `std::visit` ベースへ置換した。`src/runtime/cpp/built_in/base_ops.h` では `str(variant)` / `str(tuple)` / container repr の差分を補正し、`type_alias_pep695`, `union_basic`, `union_dict_items`, `union_list_mixed`, `optional_none`, `object_container_access`, `nested_types`, `typing/str_repr_containers` の C++ parity PASS を確認した。さらに union を含む fixture + sample 16 case を fresh emit して entry module `.cpp` を走査し、`Object<dict<str, object>>`, `Object<list<object>>`, `.unbox<`, `.as<dict<str, object>>`, `py_runtime_object_isinstance(...)`, `dict<object, object>{}` が case 本体に残っていないことを確認した。
-6. [ ] [ID: P0-CPP-VARIANT-S6] `PYTRA_TID_*` / `py_runtime_object_type_id` / `object.h` の `object` クラスを削除する
-7. [ ] [ID: P0-CPP-VARIANT-S7] fixture 全件 + sample 全件が `object` 型なしで PASS することを確認する
+6. [ ] [ID: P0-CPP-VARIANT-S6] `object.h` の `object` クラス削除に向けた blocker を分離し、削除順を固定する
+   - メモ: `PYTRA_TID_*` と `py_runtime_object_type_id` の cleanup は `P0-CPP-TYPEID-CLN` で概ね完了済み。現状の blocker は `src/toolchain2/compile/lower.py` の `resolved_type="object"` / iter boundary、`src/toolchain2/emit/cpp/emitter.py` の `Box` / `Unbox` / generic callable bridge、`src/runtime/cpp/std/{argparse,pathlib}.*` と tuple index fallback などの `object` 実使用パス。`object.h` 本体は `S8` / `S10` より前には削除しない。
+7. [ ] [ID: P0-CPP-VARIANT-S6A] C++ runtime / emitter に残っている不要な `PYTRA_TID_OBJECT` / object-type-id 正規化の残骸を削除する
+8. [ ] [ID: P0-CPP-VARIANT-S6B] `object.h` の `Object<void>` / `using object = Object<void>` を削除する前提として、runtime stdlib の object seam を inventory 化し、owner を `S8` / `S10` / follow-up plan に振り分ける
+9. [ ] [ID: P0-CPP-VARIANT-S7] fixture 全件 + sample 全件が `object` 型なしで PASS することを確認する
 
 **Phase 3: box/unbox 削除**
 
-8. [ ] [ID: P0-CPP-VARIANT-S8] C++ emitter の box/unbox 処理を削除し、variant 代入 / `std::get` に置換する
-9. [ ] [ID: P0-CPP-VARIANT-S9] `yields_dynamic` 依存コードを C++ emitter から削除する
+10. [ ] [ID: P0-CPP-VARIANT-S8] C++ emitter の box/unbox 処理を削除し、variant 代入 / `std::get` に置換する
+11. [ ] [ID: P0-CPP-VARIANT-S9] `yields_dynamic` 依存コードを C++ emitter から削除する
 
 **Phase 4: EAST から object 退化 / box / unbox を削除**
 
-10. [ ] [ID: P0-CPP-VARIANT-S10] lower.py の Boxing（`resolved_type="object"` 生成）と iter boundary を削除する
-11. [ ] [ID: P0-CPP-VARIANT-S11] EAST3 validation に「`resolved_type: "object"` ならエラー」を追加する
-12. [ ] [ID: P0-CPP-VARIANT-S12] 全言語の fixture + sample が PASS することを確認する
+12. [ ] [ID: P0-CPP-VARIANT-S10] lower.py の Boxing（`resolved_type="object"` 生成）と iter boundary を削除する
+13. [ ] [ID: P0-CPP-VARIANT-S11] EAST3 validation に「`resolved_type: "object"` ならエラー」を追加する
+14. [ ] [ID: P0-CPP-VARIANT-S12] 全言語の fixture + sample が PASS することを確認する
 
 ### P0-CPP-OBJECT-CONTAINER: object_container_access fixture の C++ parity を通す
 
