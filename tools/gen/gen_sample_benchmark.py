@@ -199,7 +199,7 @@ def replace_benchmark_section(content: str, timing: dict[str, dict[str, float]],
     rows = build_table_rows(existing_rows, timing, lang)
 
     import datetime
-    now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     note = f"> 最終自動更新: {now}" if lang == "ja" else f"> Last auto-updated: {now}"
 
     new_region = "\n".join([header, sep] + rows) + "\n\n" + note + "\n\n"

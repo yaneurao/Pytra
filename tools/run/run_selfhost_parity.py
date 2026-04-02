@@ -65,7 +65,7 @@ PARITY_LANGS = [
 # ---------------------------------------------------------------------------
 
 def _now() -> str:
-    return datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 # ---------------------------------------------------------------------------

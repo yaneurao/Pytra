@@ -911,7 +911,7 @@ def _save_python_results(records: list[CheckRecord], case_root: str) -> None:
         except Exception:
             pass
 
-    now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     results: dict[str, object] = dict(existing)
     for rec in records:
         if rec.target != "python" or rec.elapsed_sec is None:

@@ -829,7 +829,7 @@ def main() -> int:
         all_langs = ALL_LANG_KEYS
 
     import datetime
-    now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     total = len(hits)
     print(f"\n=== emitter hardcode lint — {total} 件の違反 ===\n")

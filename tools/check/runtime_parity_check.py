@@ -685,7 +685,7 @@ def _save_parity_results(records: list[CheckRecord], case_root: str, targets: se
         if rec.target in by_target:
             by_target[rec.target].append(rec)
 
-    now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     for target, recs in by_target.items():
         out_path = parity_dir / f"{target}_{case_root}.json"

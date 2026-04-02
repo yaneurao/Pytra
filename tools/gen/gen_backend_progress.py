@@ -1076,7 +1076,7 @@ def main() -> int:
     selfhost_data = _load_selfhost_results()
     lint_results = _load_lint_results()
 
-    generated_at = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     ja_pages = _render_ja(fixture_cases, sample_cases, stdlib_cases, fixture_results, sample_results, stdlib_results, selfhost_data, lint_results, generated_at)
     en_pages = _render_en(fixture_cases, sample_cases, stdlib_cases, fixture_results, sample_results, stdlib_results, selfhost_data, lint_results, generated_at)
