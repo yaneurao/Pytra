@@ -65,7 +65,8 @@ union type を `object` に退化させず `std::variant` で表現する。`wor
 **Phase 3: box/unbox 削除**
 
 10. [ ] [ID: P0-CPP-VARIANT-S8] C++ emitter の box/unbox 処理を削除し、variant 代入 / `std::get` に置換する
-11. [ ] [ID: P0-CPP-VARIANT-S9] `yields_dynamic` 依存コードを C++ emitter から削除する
+11. [x] [ID: P0-CPP-VARIANT-S9] `yields_dynamic` 依存コードを C++ emitter から削除する
+   - 完了: `src/toolchain2/emit/cpp/` 配下を grep し、`yields_dynamic` / `yield_dynamic` / `dynamic_yield` 参照が 0 件であることを確認した。C++ backend はすでに `yields_dynamic` metadata に依存しておらず、`type_ignore_from_import`, `callable_higher_order`, `typed_container_access`, `trait_basic`, `trait_with_inheritance` の parity PASS を再確認した。
 
 **Phase 4: EAST から object 退化 / box / unbox を削除**
 
