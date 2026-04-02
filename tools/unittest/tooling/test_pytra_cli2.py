@@ -17,6 +17,8 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
+from toolchain2.link.shared_types import LinkedModule
+
 _CLI2_PATH = ROOT / "src" / "pytra-cli2.py"
 _SPEC = importlib.util.spec_from_file_location("pytra_cli2_mod", str(_CLI2_PATH))
 if _SPEC is None or _SPEC.loader is None:
@@ -50,6 +52,21 @@ class PytraCli2Test(unittest.TestCase):
         call_args = optimize_one.call_args[0]
         self.assertEqual(str(call_args[0]), "mod.east3")
         self.assertEqual(call_args[1:], ("", False, "always", "debug"))
+
+    def test_optimize_linked_runtime_modules_skips_user_modules(self) -> None:
+        user = LinkedModule("app.main", "", "", True, {"kind": "Module", "east_stage": 3}, "user")
+        runtime = LinkedModule("pytra.utils.png", "", "", False, {"kind": "Module", "east_stage": 3}, "runtime")
+        helper = LinkedModule("__linked_helper__.x", "", "", False, {"kind": "Module", "east_stage": 3}, "helper")
+        with patch.object(pytra_cli2_mod, "optimize_east3_doc_only", side_effect=lambda doc, **_: {"kind": "Module", "optimized": doc.get("kind")}) as optimize_doc:
+            pytra_cli2_mod._optimize_linked_runtime_modules(
+                [user, runtime, helper],
+                opt_level=1,
+                debug_flags={"negative_index_mode": "const_only", "bounds_check_mode": "off"},
+            )
+        self.assertEqual(optimize_doc.call_count, 2)
+        self.assertNotIn("optimized", user.east_doc)
+        self.assertEqual(runtime.east_doc.get("optimized"), "Module")
+        self.assertEqual(helper.east_doc.get("optimized"), "Module")
 
     def test_repo_root_is_anchored_to_script_not_cwd(self) -> None:
         old_cwd = os.getcwd()

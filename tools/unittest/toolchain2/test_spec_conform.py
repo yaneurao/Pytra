@@ -158,6 +158,108 @@ class Toolchain2SpecConformTests(unittest.TestCase):
             },
         )
 
+    def test_subscript_access_annotation_marks_monotonic_while_index_fastpath(self) -> None:
+        subscript = {
+            "kind": "Subscript",
+            "value": {"kind": "Name", "id": "raw", "resolved_type": "bytes"},
+            "slice": {"kind": "Name", "id": "i", "resolved_type": "int64"},
+            "resolved_type": "uint8",
+        }
+        doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "i"},
+                    "value": {"kind": "Constant", "value": 0, "resolved_type": "int64"},
+                },
+                {
+                    "kind": "While",
+                    "test": {
+                        "kind": "Compare",
+                        "left": {"kind": "Name", "id": "i", "resolved_type": "int64"},
+                        "ops": ["Lt"],
+                        "comparators": [{"kind": "Name", "id": "n", "resolved_type": "int64"}],
+                    },
+                    "body": [
+                        {"kind": "Expr", "value": subscript},
+                        {
+                            "kind": "AugAssign",
+                            "target": {"kind": "Name", "id": "i"},
+                            "op": "Add",
+                            "value": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                        },
+                    ],
+                    "orelse": [],
+                },
+            ],
+        }
+
+        result = SubscriptAccessAnnotationPass().run(doc, make_pass_context(opt_level=1))
+
+        self.assertTrue(result.changed)
+        self.assertEqual(
+            subscript.get("meta", {}).get("subscript_access_v1"),
+            {
+                "schema_version": "subscript_access_v1",
+                "negative_index": "skip",
+                "bounds_check": "off",
+                "reason": "for_range_index",
+            },
+        )
+
+    def test_subscript_access_annotation_tracks_non_negative_alias_assignment(self) -> None:
+        subscript = {
+            "kind": "Subscript",
+            "value": {"kind": "Name", "id": "raw", "resolved_type": "bytes"},
+            "slice": {"kind": "Name", "id": "j", "resolved_type": "int64"},
+            "resolved_type": "uint8",
+        }
+        doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "i"},
+                    "value": {"kind": "Constant", "value": 0, "resolved_type": "int64"},
+                },
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "j"},
+                    "value": {"kind": "Name", "id": "i", "resolved_type": "int64"},
+                },
+                {
+                    "kind": "While",
+                    "test": {
+                        "kind": "Compare",
+                        "left": {"kind": "Name", "id": "j", "resolved_type": "int64"},
+                        "ops": ["Lt"],
+                        "comparators": [{"kind": "Name", "id": "n", "resolved_type": "int64"}],
+                    },
+                    "body": [
+                        {"kind": "Expr", "value": subscript},
+                        {
+                            "kind": "AugAssign",
+                            "target": {"kind": "Name", "id": "j"},
+                            "op": "Add",
+                            "value": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                        },
+                    ],
+                    "orelse": [],
+                },
+            ],
+        }
+
+        result = SubscriptAccessAnnotationPass().run(doc, make_pass_context(opt_level=1))
+
+        self.assertTrue(result.changed)
+        self.assertEqual(
+            subscript.get("meta", {}).get("subscript_access_v1", {}).get("bounds_check"),
+            "off",
+        )
+
     def test_optimize_east3_document_registers_subscript_access_annotation_pass(self) -> None:
         subscript = {
             "kind": "Subscript",

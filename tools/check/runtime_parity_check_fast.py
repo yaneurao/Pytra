@@ -51,6 +51,7 @@ from toolchain2.emit.php.emitter import emit_php_module  # type: ignore
 from toolchain2.link.linker import link_modules  # type: ignore
 from toolchain2.emit.cpp.runtime_paths import runtime_rel_tail_for_module  # type: ignore
 from toolchain2.optimize.optimizer import optimize_east3_document  # type: ignore
+from toolchain2.optimize.optimizer import optimize_east3_doc_only  # type: ignore
 from toolchain2.optimize.optimizer import resolve_bounds_check_mode  # type: ignore
 from toolchain2.optimize.optimizer import resolve_negative_index_mode  # type: ignore
 from toolchain2.parse.py.parse_python import parse_python_file  # type: ignore
@@ -106,6 +107,36 @@ def _get_registry():
     return _REGISTRY
 
 
+def _optimizer_debug_flags(
+    negative_index_mode: str,
+    bounds_check_mode: str,
+) -> dict[str, JsonVal]:
+    return {
+        "negative_index_mode": resolve_negative_index_mode(negative_index_mode),
+        "bounds_check_mode": resolve_bounds_check_mode(bounds_check_mode),
+    }
+
+
+def _optimize_linked_runtime_modules_in_place(
+    linked_modules: list[object],
+    *,
+    opt_level: int,
+    debug_flags: dict[str, JsonVal],
+) -> None:
+    for module in linked_modules:
+        module_kind = getattr(module, "module_kind", "")
+        if module_kind not in ("runtime", "helper"):
+            continue
+        east_doc = getattr(module, "east_doc", None)
+        if not isinstance(east_doc, dict):
+            continue
+        module.east_doc = optimize_east3_doc_only(
+            east_doc,
+            opt_level=opt_level,
+            debug_flags=debug_flags,
+        )
+
+
 # ---------------------------------------------------------------------------
 # In-memory transpile
 # ---------------------------------------------------------------------------
@@ -126,6 +157,7 @@ def _transpile_in_memory(
     try:
         # js is TS with strip_types=True; pipeline uses "ts" profile
         pipeline_target = "ts" if target == "js" else target
+        optimizer_debug_flags = _optimizer_debug_flags(negative_index_mode, bounds_check_mode)
 
         # 1. Parse
         east1_doc = parse_python_file(str(case_path))
@@ -144,10 +176,7 @@ def _transpile_in_memory(
         east3_opt, _report = optimize_east3_document(
             east3_doc,
             opt_level=east3_opt_level,
-            debug_flags={
-                "negative_index_mode": resolve_negative_index_mode(negative_index_mode),
-                "bounds_check_mode": resolve_bounds_check_mode(bounds_check_mode),
-            },
+            debug_flags=optimizer_debug_flags,
         )
 
         # 5. Link — write east3-opt to temp file for link_modules
@@ -159,6 +188,11 @@ def _transpile_in_memory(
             encoding="utf-8",
         )
         link_result = link_modules([str(link_path)], target=pipeline_target, dispatch_mode="native")
+        _optimize_linked_runtime_modules_in_place(
+            link_result.linked_modules,
+            opt_level=east3_opt_level,
+            debug_flags=optimizer_debug_flags,
+        )
 
         # 6. Emit
         emit_dir = output_dir / "emit"

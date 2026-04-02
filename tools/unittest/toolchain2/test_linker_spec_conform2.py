@@ -2529,6 +2529,42 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         self.assertIn("return py_list_at_ref(items, i);", cpp_code)
 
+    def test_cpp_emitter_uses_typed_append_for_bytearray_owner(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "push",
+                    "arg_types": {"raw": "bytearray", "b": "uint8"},
+                    "arg_order": ["raw", "b"],
+                    "arg_defaults": {},
+                    "arg_usage": {"raw": "reassigned", "b": "readonly"},
+                    "return_type": "None",
+                    "body": [
+                        {
+                            "kind": "Expr",
+                            "value": {
+                                "kind": "Call",
+                                "func": {
+                                    "kind": "Attribute",
+                                    "value": {"kind": "Name", "id": "raw", "resolved_type": "bytearray"},
+                                    "attr": "append",
+                                },
+                                "args": [{"kind": "Name", "id": "b", "resolved_type": "uint8"}],
+                                "resolved_type": "None",
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("py_list_append_mut(raw, b);", cpp_code)
+        self.assertNotIn("object(b)", cpp_code)
+
     def test_emitters_treat_runtime_call_int_as_cast_without_link_normalization(self) -> None:
         doc = _fixture_doc("test/fixture/east3-opt/typing/intenum_basic.east3")
 

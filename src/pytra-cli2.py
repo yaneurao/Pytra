@@ -216,6 +216,22 @@ def _optimizer_debug_flags(
     }
 
 
+def _optimize_linked_runtime_modules(
+    linked_modules: list[LinkedModule],
+    *,
+    opt_level: int,
+    debug_flags: dict[str, JsonVal],
+) -> None:
+    for module in linked_modules:
+        if module.module_kind not in ("runtime", "helper"):
+            continue
+        module.east_doc = optimize_east3_doc_only(
+            module.east_doc,
+            opt_level=opt_level,
+            debug_flags=debug_flags,
+        )
+
+
 def _demote_non_entry_module(module: LinkedModule, entry_abs: str) -> None:
     source_path: str = linked_module_source_path(module)
     sp_abs = str(Path(source_path).resolve()) if source_path != "" else ""
@@ -1033,6 +1049,11 @@ def _build_pipeline(
         east3_opt_paths.append(str(out_path))
 
     link_result = link_modules(east3_opt_paths, target=target, dispatch_mode="native")
+    _optimize_linked_runtime_modules(
+        link_result.linked_modules,
+        opt_level=1,
+        debug_flags=optimizer_debug_flags,
+    )
     # Only the first input is the actual entry module; demote others
     if len(inputs) >= 1:
         entry_abs = str(Path(inputs[0]).resolve())

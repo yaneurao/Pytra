@@ -1677,6 +1677,14 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             runtime_call = _str(node, "runtime_call")
             resolved_runtime_call = _str(node, "resolved_runtime_call")
             builtin_name = _str(node, "builtin_name")
+            if attr == "append" and len(args) >= 1:
+                item_type = ""
+                if owner_type.startswith("list[") and owner_type.endswith("]"):
+                    item_type = owner_type[5:-1]
+                elif owner_type in ("bytes", "bytearray"):
+                    item_type = "uint8"
+                if item_type != "":
+                    return "py_list_append_mut(" + owner + ", " + _emit_expr_as_type(ctx, args[0], item_type) + ")"
             if _is_zero_arg_super_call(owner_node):
                 base_name = ctx.class_bases.get(ctx.current_class, "")
                 if base_name != "":
@@ -1860,8 +1868,12 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     if rc == "list.append" and isinstance(func, dict) and _str(func, "kind") == "Attribute" and len(args) >= 1:
         owner_node = func.get("value")
         owner_type = _effective_resolved_type(owner_node)
+        item_type = ""
         if owner_type.startswith("list[") and owner_type.endswith("]"):
             item_type = owner_type[5:-1]
+        elif owner_type in ("bytes", "bytearray"):
+            item_type = "uint8"
+        if item_type != "":
             call_arg_strs = [_emit_expr(ctx, owner_node), _emit_expr_as_type(ctx, args[0], item_type)]
     if rc == "dict.get" and isinstance(func, dict) and _str(func, "kind") == "Attribute" and len(args) >= 1:
         owner_node = func.get("value")

@@ -15,6 +15,12 @@ from unittest.mock import patch
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
 RUNTIME_PARITY_CHECK = ROOT / "tools" / "check" / "runtime_parity_check.py"
 RUNTIME_PARITY_CHECK_FAST = ROOT / "tools" / "check" / "runtime_parity_check_fast.py"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
+
+from toolchain2.link.shared_types import LinkedModule
 
 
 def _load_runtime_parity_module():
@@ -270,6 +276,21 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         self.assertEqual(code, 0)
         transpile_mock.assert_called_once()
         self.assertEqual(transpile_mock.call_args.args[3:], (1, "always", "debug"))
+
+    def test_runtime_parity_check_fast_optimizes_linked_runtime_modules_only(self) -> None:
+        user = LinkedModule("app.main", "", "", True, {"kind": "Module", "east_stage": 3}, "user")
+        runtime = LinkedModule("pytra.utils.png", "", "", False, {"kind": "Module", "east_stage": 3}, "runtime")
+        helper = LinkedModule("__linked_helper__.x", "", "", False, {"kind": "Module", "east_stage": 3}, "helper")
+        with patch.object(self.rpc_fast, "optimize_east3_doc_only", side_effect=lambda doc, **_: {"kind": "Module", "optimized": doc.get("kind")}) as optimize_doc:
+            self.rpc_fast._optimize_linked_runtime_modules_in_place(
+                [user, runtime, helper],
+                opt_level=1,
+                debug_flags={"negative_index_mode": "const_only", "bounds_check_mode": "off"},
+            )
+        self.assertEqual(optimize_doc.call_count, 2)
+        self.assertNotIn("optimized", user.east_doc)
+        self.assertEqual(runtime.east_doc.get("optimized"), "Module")
+        self.assertEqual(helper.east_doc.get("optimized"), "Module")
 
     def test_build_targets_includes_scala_entry(self) -> None:
         case_path = ROOT / "sample" / "py" / "01_mandelbrot.py"
