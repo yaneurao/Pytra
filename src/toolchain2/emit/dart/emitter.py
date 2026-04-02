@@ -239,17 +239,17 @@ def _dart_string(text: str) -> str:
 
 def _module_id_to_import_path(module_id: str, ext: str, root_rel_prefix: str) -> str:
     """module_id から機械的にインポートパスを生成する (§3)."""
-    rel = module_id
-    if rel.startswith("pytra."):
-        rel = rel[len("pytra."):]
+    parts = module_id.split(".")
+    rel_parts = parts[1:] if len(parts) >= 2 and parts[0] == "pytra" else parts
+    rel = ".".join(rel_parts)
     return root_rel_prefix + rel.replace(".", "/") + ext
 
 
 def _module_id_to_native_import_path(module_id: str, ext: str, root_rel_prefix: str) -> str:
     """module_id から _native ファイルのインポートパスを生成する (§4)."""
-    rel = module_id
-    if rel.startswith("pytra."):
-        rel = rel[len("pytra."):]
+    parts = module_id.split(".")
+    rel_parts = parts[1:] if len(parts) >= 2 and parts[0] == "pytra" else parts
+    rel = ".".join(rel_parts)
     return root_rel_prefix + rel.replace(".", "/") + "_native" + ext
 
 
@@ -2944,9 +2944,10 @@ _REPO_ROOT = Path(__file__).resolve().parents[5]
 
 def _has_handwritten_runtime(module_id: str) -> bool:
     """Check if a hand-written .dart file exists in src/runtime/dart/ for this module."""
-    if not module_id.startswith("pytra."):
+    parts = module_id.split(".")
+    if len(parts) < 2 or parts[0] != "pytra":
         return False
-    rel = module_id[len("pytra."):]
+    rel = ".".join(parts[1:])
     runtime_path = _REPO_ROOT / "src" / "runtime" / "dart" / (rel.replace(".", "/") + ".dart")
     return runtime_path.exists()
 
