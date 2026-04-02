@@ -66,6 +66,7 @@ union type を `object` に退化させず `std::variant` で表現する。`wor
 **Phase 3: box/unbox 削除**
 
 10. [ ] [ID: P0-CPP-VARIANT-S8] C++ emitter の box/unbox 処理を削除し、variant 代入 / `std::get` に置換する
+   - 進捗: fresh `parity-fast` の generated C++ entry `.cpp` を走査し、`.unbox<...>()` / `.as<...>()` が 0 件であることを確認した。残っている `object(` は explicit object 境界と `built_in/type_id.cpp` が中心。
 11. [x] [ID: P0-CPP-VARIANT-S9] `yields_dynamic` 依存コードを C++ emitter から削除する
    - 完了: `src/toolchain2/emit/cpp/` 配下を grep し、`yields_dynamic` / `yield_dynamic` / `dynamic_yield` 参照が 0 件であることを確認した。C++ backend はすでに `yields_dynamic` metadata に依存しておらず、`type_ignore_from_import`, `callable_higher_order`, `typed_container_access`, `trait_basic`, `trait_with_inheritance` の parity PASS を再確認した。
 
@@ -75,8 +76,10 @@ union type を `object` に退化させず `std::variant` で表現する。`wor
    - メモ: `iter.init` / `iter.next` は `ObjIterInit` / `ObjIterNext` として lower されるが、現行 `src/toolchain2/emit/cpp/emitter.py` は direct ノードを処理せず、`src/runtime/cpp/` に `py_iter_or_raise` / `py_next_or_stop` free helper も存在しない。したがって `S10` は `resolved_type="object"` の Boxing 削減と、C++ 向け iter runtime 契約の再導入/整理を分離して進める必要がある。
 13. [x] [ID: P0-CPP-VARIANT-S10A] `S10` の blocker として、C++ 向け iter boundary 削除に必要な runtime 契約を棚卸しする
    - 完了: `src/toolchain2/compile/lower.py` の `ObjIterInit` / `ObjIterNext` 生成点、`src/toolchain2/emit/cpp/emitter.py` が direct ノード未対応であること、`src/runtime/cpp/` に `py_iter_or_raise` / `py_next_or_stop` 実装が存在しないことを確認した。`S10` は `resolved_type="object"` Boxing 削減と iter runtime 契約整備を別 tranche で進める。
-14. [ ] [ID: P0-CPP-VARIANT-S11] EAST3 validation に「`resolved_type: "object"` ならエラー」を追加する
-15. [ ] [ID: P0-CPP-VARIANT-S12] 全言語の fixture + sample が PASS することを確認する
+14. [ ] [ID: P0-CPP-VARIANT-S10B] C++ 向け `ObjIterInit` / `ObjIterNext` の runtime 契約を決め、`S10` から分離する
+   - 文脈: [p0-cpp-iter-boundary-runtime-contract.md](../plans/p0-cpp-iter-boundary-runtime-contract.md)
+15. [ ] [ID: P0-CPP-VARIANT-S11] EAST3 validation に「`resolved_type: "object"` ならエラー」を追加する
+16. [ ] [ID: P0-CPP-VARIANT-S12] 全言語の fixture + sample が PASS することを確認する
 
 ### P0-CPP-OBJECT-CONTAINER: object_container_access fixture の C++ parity を通す
 
