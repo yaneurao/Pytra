@@ -11,10 +11,11 @@
 | 領域 | ファイル |
 |---|---|
 | C++ backend | [cpp.md](./cpp.md) |
-| Go backend | [go.md](./go.md) |
 | Rust backend | [rust.md](./rust.md) |
-| TS/JS backend | [ts.md](./ts.md) |
 | C# backend | [cs.md](./cs.md) |
+| TS/JS backend | [ts.md](./ts.md) |
+| Dart backend | [dart.md](./dart.md) |
+| Go backend | [go.md](./go.md) |
 | JVM backend (Java / Scala / Kotlin) | [java.md](./java.md) |
 | Ruby backend | [ruby.md](./ruby.md) |
 | Lua backend | [lua.md](./lua.md) |
