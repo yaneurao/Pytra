@@ -25,6 +25,7 @@ fun __pytra_truthy(v: Any?): Boolean {
     if (v is Double) return v != 0.0
     if (v is String) return v.isNotEmpty()
     if (v is List<*>) return v.isNotEmpty()
+    if (v is Set<*>) return v.isNotEmpty()
     if (v is Map<*, *>) return v.isNotEmpty()
     return true
 }
@@ -64,8 +65,13 @@ fun __pytra_len(v: Any?): Long {
     if (v == null) return 0L
     if (v is String) return v.length.toLong()
     if (v is List<*>) return v.size.toLong()
+    if (v is Set<*>) return v.size.toLong()
     if (v is Map<*, *>) return v.size.toLong()
-    return 0L
+    return try {
+        __pytra_int(v.javaClass.getMethod("__len__").invoke(v))
+    } catch (_: Throwable) {
+        0L
+    }
 }
 
 fun __pytra_index(i: Long, n: Long): Long {
@@ -81,7 +87,7 @@ fun __pytra_get_index(container: Any?, index: Any?): Any? {
         return container[i.toInt()]
     }
     if (container is Map<*, *>) {
-        return container[__pytra_str(index)] ?: __pytra_any_default()
+        return container[index] ?: __pytra_any_default()
     }
     if (container is String) {
         if (container.isEmpty()) return ""
@@ -105,8 +111,8 @@ fun __pytra_set_index(container: Any?, index: Any?, value: Any?) {
     }
     if (container is MutableMap<*, *>) {
         @Suppress("UNCHECKED_CAST")
-        val map = container as MutableMap<Any, Any?>
-        map[__pytra_str(index)] = value
+        val map = container as MutableMap<Any?, Any?>
+        map[index] = value
     }
 }
 
@@ -151,14 +157,16 @@ fun __pytra_isalpha(v: Any?): Boolean {
 
 fun __pytra_contains(container: Any?, value: Any?): Boolean {
     if (container is List<*>) {
-        val needle = __pytra_str(value)
         for (item in container) {
-            if (__pytra_str(item) == needle) return true
+            if (item == value) return true
         }
         return false
     }
+    if (container is Set<*>) {
+        return container.contains(value)
+    }
     if (container is Map<*, *>) {
-        return container.containsKey(__pytra_str(value))
+        return container.containsKey(value)
     }
     if (container is String) {
         return container.contains(__pytra_str(value))
@@ -235,6 +243,51 @@ fun __pytra_enumerate(v: Any?): MutableList<Any?> {
     return out
 }
 
+fun __pytra_range(vararg args: Any?): MutableList<Any?> {
+    var start = 0L
+    var stop = 0L
+    var step = 1L
+    if (args.size == 1) {
+        stop = __pytra_int(args[0])
+    } else if (args.size >= 2) {
+        start = __pytra_int(args[0])
+        stop = __pytra_int(args[1])
+        if (args.size >= 3) {
+            step = __pytra_int(args[2])
+        }
+    }
+    val out = mutableListOf<Any?>()
+    if (step == 0L) return out
+    var i = start
+    if (step > 0L) {
+        while (i < stop) {
+            out.add(i)
+            i += step
+        }
+    } else {
+        while (i > stop) {
+            out.add(i)
+            i += step
+        }
+    }
+    return out
+}
+
+fun __pytra_set_new(v: Any? = null): MutableSet<Any?> {
+    if (v == null) {
+        return linkedSetOf()
+    }
+    if (v is Set<*>) {
+        @Suppress("UNCHECKED_CAST")
+        return (v as Set<Any?>).toMutableSet()
+    }
+    if (v is List<*>) {
+        @Suppress("UNCHECKED_CAST")
+        return (v as List<Any?>).toMutableSet()
+    }
+    return linkedSetOf()
+}
+
 fun __pytra_as_list(v: Any?): MutableList<Any?> {
     if (v is MutableList<*>) {
         @Suppress("UNCHECKED_CAST")
@@ -244,18 +297,22 @@ fun __pytra_as_list(v: Any?): MutableList<Any?> {
         @Suppress("UNCHECKED_CAST")
         return (v as List<Any?>).toMutableList()
     }
+    if (v is Set<*>) {
+        @Suppress("UNCHECKED_CAST")
+        return (v as Set<Any?>).toMutableList()
+    }
     return mutableListOf()
 }
 
-fun __pytra_as_dict(v: Any?): MutableMap<Any, Any?> {
+fun __pytra_as_dict(v: Any?): MutableMap<Any?, Any?> {
     if (v is MutableMap<*, *>) {
         @Suppress("UNCHECKED_CAST")
-        return v as MutableMap<Any, Any?>
+        return v as MutableMap<Any?, Any?>
     }
     if (v is Map<*, *>) {
-        val out = mutableMapOf<Any, Any?>()
+        val out = mutableMapOf<Any?, Any?>()
         for ((k, valAny) in v) {
-            if (k != null) out[k] = valAny
+            out[k] = valAny
         }
         return out
     }

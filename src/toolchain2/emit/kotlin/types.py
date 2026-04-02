@@ -71,6 +71,8 @@ def kotlin_type(resolved_type: str) -> str:
         return "Boolean"
     if resolved_type == "str":
         return "String"
+    if resolved_type in ("bytes", "bytearray"):
+        return "MutableList<Long>"
     if resolved_type in ("None", "none"):
         return "Unit"
     if resolved_type in ("Any", "object", "unknown", "JsonVal"):
@@ -95,6 +97,12 @@ def kotlin_type(resolved_type: str) -> str:
 
 def kotlin_zero_value(resolved_type: str) -> str:
     kt = kotlin_type(resolved_type)
+    if resolved_type.startswith("list["):
+        return "mutableListOf()"
+    if resolved_type.startswith("set["):
+        return "linkedSetOf()"
+    if resolved_type.startswith("dict["):
+        return "linkedMapOf()"
     if kt == "Long":
         return "0L"
     if kt == "Double":

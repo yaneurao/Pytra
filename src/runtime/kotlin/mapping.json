@@ -6,6 +6,8 @@
     "py_print": "__pytra_print",
     "py_len": "__pytra_len",
     "len": "__pytra_len",
+    "range": "__pytra_range",
+    "set": "__pytra_set_new",
     "str": "__pytra_str",
     "py_to_string": "__pytra_str",
     "bytearray": "__pytra_bytearray",

@@ -27,6 +27,8 @@ class KotlinRenderer(CommonRenderer):
         self.local_function_aliases: dict[str, str] = {}
         self.module_class_names: set[str] = set()
         self.class_has_init: dict[str, bool] = {}
+        self._tmp_counter = 0
+        self._local_var_scopes: list[set[str]] = []
 
     def _collect_class_fields(self, node: dict[str, JsonVal]) -> list[tuple[str, str]]:
         fields: list[tuple[str, str]] = []
@@ -61,6 +63,15 @@ class KotlinRenderer(CommonRenderer):
                 fields.append((attr, decl_type))
         return fields
 
+    def _next_tmp(self, prefix: str) -> str:
+        self._tmp_counter += 1
+        return prefix + str(self._tmp_counter)
+
+    def _render_type(self, resolved_type: str) -> str:
+        if resolved_type in self.import_symbols:
+            return self.import_symbols[resolved_type]
+        return kotlin_type(resolved_type)
+
     def _emit_store_target(self, target: JsonVal, value_code: str) -> None:
         if not isinstance(target, dict):
             raise RuntimeError("kotlin emitter: store target must be dict")
@@ -72,6 +83,49 @@ class KotlinRenderer(CommonRenderer):
             self._emit(self._emit_expr(target) + " = " + value_code)
             return
         raise RuntimeError("kotlin emitter: unsupported store target: " + kind)
+
+    def _is_declared_local(self, name: str) -> bool:
+        if len(self._local_var_scopes) == 0:
+            return False
+        return name in self._local_var_scopes[-1]
+
+    def _declare_local(self, name: str) -> None:
+        if len(self._local_var_scopes) == 0:
+            return
+        self._local_var_scopes[-1].add(name)
+
+    def _emit_boolop_value_expr(self, values: list[JsonVal], is_and: bool) -> str:
+        if len(values) == 0:
+            return "false" if is_and else "null"
+        expr = self._emit_expr(values[-1])
+        for value in reversed(values[:-1]):
+            tmp_name = self._next_tmp("__pytraBoolop")
+            current = self._emit_expr(value)
+            if is_and:
+                expr = "run { val " + tmp_name + " = " + current + "; if (__pytra_truthy(" + tmp_name + ")) " + expr + " else " + tmp_name + " }"
+            else:
+                expr = "run { val " + tmp_name + " = " + current + "; if (__pytra_truthy(" + tmp_name + ")) " + tmp_name + " else " + expr + " }"
+        return expr
+
+    def _emit_comp_loops(self, generators: list[JsonVal], index: int, leaf_stmt: str) -> str:
+        if index >= len(generators):
+            return leaf_stmt
+        gen = generators[index]
+        if not isinstance(gen, dict):
+            return leaf_stmt
+        target = gen.get("target")
+        target_name = self._for_target_name(target)
+        iter_expr = self._emit_expr(gen.get("iter"))
+        inner = self._emit_comp_loops(generators, index + 1, leaf_stmt)
+        filters = [self._emit_expr(cond) for cond in self._list(gen, "ifs") if isinstance(cond, dict)]
+        if len(filters) > 0:
+            inner = "if (" + " && ".join(filters) + ") { " + inner + " }"
+        return "for (" + target_name + " in " + iter_expr + ") { " + inner + " }"
+
+    def _emit_comp_expr(self, node: dict[str, JsonVal], result_type: str, init_expr: str, leaf_stmt: str) -> str:
+        result_name = self._next_tmp("__pytraComp")
+        body = self._emit_comp_loops(self._list(node, "generators"), 0, leaf_stmt.replace("__RESULT__", result_name))
+        return "run { val " + result_name + ": " + result_type + " = " + init_expr + "; " + body + "; " + result_name + " }"
 
     def render_module(self, east3_doc: dict[str, JsonVal]) -> str:
         module_id = self._str(east3_doc, "module_id")
@@ -111,6 +165,7 @@ class KotlinRenderer(CommonRenderer):
                 for item in self._list(stmt, "body")
             )
         self.local_function_aliases = {}
+        self._tmp_counter = 0
         for emitted_name in self.module_function_names:
             if emitted_name.startswith("__pytra_") and len(emitted_name) > len("__pytra_"):
                 self.local_function_aliases[emitted_name[len("__pytra_"):]] = emitted_name
@@ -168,7 +223,11 @@ class KotlinRenderer(CommonRenderer):
                 self._emit(self._emit_expr(target) + " = " + value)
                 return
             target_name = _safe_kotlin_ident(self._str(target, "id"))
-            self._emit("var " + target_name + ": " + kotlin_type(decl_type) + " = " + value)
+            if self._is_declared_local(target_name):
+                self._emit(target_name + " = " + value)
+            else:
+                self._emit("var " + target_name + ": " + self._render_type(decl_type) + " = " + value)
+                self._declare_local(target_name)
             return
         if kind == "Assign":
             target = node.get("target")
@@ -177,7 +236,11 @@ class KotlinRenderer(CommonRenderer):
                 self._emit(self._emit_expr(target) + " = " + value)
                 return
             target_name = _safe_kotlin_ident(self._str(target, "id"))
-            self._emit("var " + target_name + " = " + value)
+            if self._is_declared_local(target_name):
+                self._emit(target_name + " = " + value)
+            else:
+                self._emit("var " + target_name + " = " + value)
+                self._declare_local(target_name)
             return
         if kind == "ImportFrom":
             module_name = self._str(node, "module")
@@ -254,7 +317,8 @@ class KotlinRenderer(CommonRenderer):
         if kind == "Expr":
             value = node.get("value")
             if isinstance(value, dict) and self._str(value, "kind") == "Constant" and isinstance(value.get("value"), str):
-                self._emit("// " + str(value.get("value")))
+                for line in str(value.get("value")).splitlines():
+                    self._emit("// " + line)
             else:
                 self._emit(self._emit_expr(value))
             return
@@ -295,21 +359,26 @@ class KotlinRenderer(CommonRenderer):
         arg_types = node.get("arg_types")
         arg_type_map = arg_types if isinstance(arg_types, dict) else {}
         params: list[str] = []
+        local_scope: set[str] = set()
         for arg in arg_order:
             if not isinstance(arg, str):
                 continue
             if is_method and arg == "self":
                 continue
-            params.append(_safe_kotlin_ident(arg) + ": " + kotlin_type(arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"))
-        return_type = kotlin_type(self._str(node, "return_type"))
+            safe_arg = _safe_kotlin_ident(arg)
+            params.append(safe_arg + ": " + self._render_type(arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"))
+            local_scope.add(safe_arg)
+        return_type = self._render_type(self._str(node, "return_type"))
         self._emit("fun " + name + "(" + ", ".join(params) + "): " + return_type + " {")
         self.state.indent_level += 1
+        self._local_var_scopes.append(local_scope)
         body = self._list(node, "body")
         if len(body) == 0:
             self._emit("Unit")
         else:
             for stmt in body:
                 self._emit_stmt(stmt)
+        self._local_var_scopes.pop()
         self.state.indent_level -= 1
         self._emit("}")
 
@@ -327,7 +396,7 @@ class KotlinRenderer(CommonRenderer):
             if safe_field_name in seen_instance_fields:
                 continue
             seen_instance_fields.add(safe_field_name)
-            self._emit("var " + safe_field_name + ": " + kotlin_type(decl_type) + " = " + kotlin_zero_value(decl_type))
+            self._emit("var " + safe_field_name + ": " + self._render_type(decl_type) + " = " + kotlin_zero_value(decl_type))
         for stmt in self._list(node, "body"):
             if not isinstance(stmt, dict):
                 continue
@@ -357,7 +426,7 @@ class KotlinRenderer(CommonRenderer):
             self._emit("companion object {")
             self.state.indent_level += 1
             for field_name, decl_type, value in class_fields:
-                self._emit("var " + field_name + ": " + kotlin_type(decl_type) + " = " + value)
+                self._emit("var " + field_name + ": " + self._render_type(decl_type) + " = " + value)
             self.state.indent_level -= 1
             self._emit("}")
         self.state.indent_level -= 1
@@ -440,14 +509,30 @@ class KotlinRenderer(CommonRenderer):
             return owner + "." + _safe_kotlin_ident(self._str(node, "attr"))
         if kind == "Subscript":
             owner = self._emit_expr(node.get("value"))
+            owner_node = node.get("value")
+            owner_type = self._str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
             slice_node = node.get("slice")
             if isinstance(slice_node, dict) and self._str(slice_node, "kind") == "Slice":
                 lower_node = slice_node.get("lower")
                 upper_node = slice_node.get("upper")
                 lower = self._emit_expr(lower_node) if isinstance(lower_node, dict) else "0"
                 upper = self._emit_expr(upper_node) if isinstance(upper_node, dict) else owner + ".size"
-                return owner + ".slice(" + lower + " until " + upper + ")"
+                if owner_type.startswith("list[") or owner_type.startswith("tuple[") or owner_type in ("list", "tuple", "bytes", "bytearray"):
+                    return owner + ".slice((" + lower + ").toInt() until (" + upper + ").toInt()).toMutableList()"
+                return owner + ".slice((" + lower + ").toInt() until (" + upper + ").toInt())"
             index = self._emit_expr(slice_node)
+            if owner_type.startswith("dict["):
+                key_node = slice_node if isinstance(slice_node, dict) else None
+                key_code = index
+                if isinstance(key_node, dict):
+                    key_type = self._str(key_node, "resolved_type")
+                    if key_type == "str":
+                        key_code = self._emit_expr(key_node)
+                return owner + "[" + key_code + "]"
+            if owner_type in ("str", "string"):
+                return owner + "[__pytra_index(__pytra_int(" + index + "), " + owner + ".length.toLong()).toInt()].toString()"
+            if owner_type.startswith("list[") or owner_type.startswith("tuple[") or owner_type in ("list", "tuple", "bytes", "bytearray"):
+                return owner + "[__pytra_index(__pytra_int(" + index + "), " + owner + ".size.toLong()).toInt()]"
             return owner + "[(" + index + ").toInt()]"
         if kind == "List":
             elems = [self._emit_expr(elem) for elem in self._list(node, "elements")]
@@ -455,6 +540,34 @@ class KotlinRenderer(CommonRenderer):
         if kind == "Tuple":
             elems = [self._emit_expr(elem) for elem in self._list(node, "elements")]
             return "mutableListOf(" + ", ".join(elems) + ")"
+        if kind == "Set":
+            elems = [self._emit_expr(elem) for elem in self._list(node, "elements")]
+            return "linkedSetOf(" + ", ".join(elems) + ")"
+        if kind == "ListComp":
+            elt_code = self._emit_expr(node.get("elt"))
+            return self._emit_comp_expr(
+                node,
+                kotlin_type(self._str(node, "resolved_type")),
+                "mutableListOf()",
+                "__RESULT__.add(" + elt_code + ")",
+            )
+        if kind == "SetComp":
+            elt_code = self._emit_expr(node.get("elt"))
+            return self._emit_comp_expr(
+                node,
+                kotlin_type(self._str(node, "resolved_type")),
+                "linkedSetOf()",
+                "__RESULT__.add(" + elt_code + ")",
+            )
+        if kind == "DictComp":
+            key_code = self._emit_expr(node.get("key"))
+            value_code = self._emit_expr(node.get("value"))
+            return self._emit_comp_expr(
+                node,
+                kotlin_type(self._str(node, "resolved_type")),
+                "linkedMapOf()",
+                "__RESULT__[" + key_code + "] = " + value_code,
+            )
         if kind == "Lambda":
             arg_order = self._list(node, "arg_order")
             arg_types = node.get("arg_types")
@@ -484,9 +597,7 @@ class KotlinRenderer(CommonRenderer):
         if kind == "Unbox" or kind == "Box":
             return self._emit_expr(node.get("value"))
         if kind == "BoolOp":
-            op = " && " if self._str(node, "op") == "And" else " || "
-            values = [self._emit_expr(elem) for elem in self._list(node, "values")]
-            return "(" + op.join(values) + ")"
+            return self._emit_boolop_value_expr(self._list(node, "values"), self._str(node, "op") == "And")
         if kind == "IfExp":
             test = self._emit_expr(node.get("test"))
             body = self._emit_expr(node.get("body"))
@@ -512,26 +623,57 @@ class KotlinRenderer(CommonRenderer):
                 owner_expr = self._emit_expr(owner_node)
                 owner_type = self._str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
                 arg_nodes = self._list(node, "args")
+                if owner_expr == "pytra_built_in_error" and attr.endswith("Error"):
+                    first_arg = self._emit_expr(arg_nodes[0]) if len(arg_nodes) > 0 else "\"error\""
+                    return "RuntimeException(" + first_arg + ".toString())"
                 if owner_type in ("str", "string"):
                     if attr == "join" and len(arg_nodes) == 1:
                         return "__pytra_join(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
                 if owner_type.startswith("dict[") and attr == "get" and len(arg_nodes) == 2:
                     return owner_expr + ".getOrElse(" + self._emit_expr(arg_nodes[0]) + ") { " + self._emit_expr(arg_nodes[1]) + " }"
+                if owner_type.startswith("dict["):
+                    if attr == "clear" and len(arg_nodes) == 0:
+                        return owner_expr + ".clear()"
+                    if attr == "pop" and len(arg_nodes) == 1:
+                        result_type = self._str(node, "resolved_type")
+                        zero = kotlin_zero_value(result_type)
+                        return "(" + owner_expr + ".remove(" + self._emit_expr(arg_nodes[0]) + ") ?: " + zero + ")"
+                    if attr == "setdefault" and len(arg_nodes) == 2:
+                        return owner_expr + ".getOrPut(" + self._emit_expr(arg_nodes[0]) + ") { " + self._emit_expr(arg_nodes[1]) + " }"
+                    if attr == "keys" and len(arg_nodes) == 0:
+                        return owner_expr + ".keys.toMutableList()"
+                    if attr == "values" and len(arg_nodes) == 0:
+                        return owner_expr + ".values.toMutableList()"
                 if owner_type.startswith("list[") or owner_type in ("list", "bytes", "bytearray"):
                     if attr == "append" and len(arg_nodes) == 1:
                         return owner_expr + ".add(" + self._emit_expr(arg_nodes[0]) + ")"
+                    if attr == "clear" and len(arg_nodes) == 0:
+                        return owner_expr + ".clear()"
+                    if attr == "pop" and len(arg_nodes) == 0:
+                        return owner_expr + ".removeAt(" + owner_expr + ".size - 1)"
+                if owner_type.startswith("set[") or owner_type == "set":
+                    if attr == "discard" and len(arg_nodes) == 1:
+                        return owner_expr + ".remove(" + self._emit_expr(arg_nodes[0]) + ")"
             if isinstance(func, dict) and self._str(func, "kind") == "Name":
                 func_id = self._str(func, "id")
                 mapped = self.mapping.calls.get(func_id)
                 if isinstance(mapped, str) and mapped != "":
                     func_name = mapped
-                elif func_id in self.module_class_names or self._str(node, "resolved_type") == func_id:
+                if func_id in self.import_symbols:
+                    import_path = self.import_symbols[func_id]
+                    if import_path.startswith("pytra_built_in_error.") and func_id.endswith("Error"):
+                        first_arg = self._emit_expr(self._list(node, "args")[0]) if len(self._list(node, "args")) > 0 else "\"error\""
+                        return "RuntimeException(" + first_arg + ".toString())"
+                elif not (isinstance(mapped, str) and mapped != "") and (func_id in self.module_class_names or self._str(node, "resolved_type") == func_id):
                     ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
                     class_name = func_name if "." in func_name else _safe_kotlin_ident(func_id)
                     tmp_name = "__pytraObj"
                     if self.class_has_init.get(func_id, True):
                         return "run { val " + tmp_name + " = " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
                     return class_name + "(" + ", ".join(ctor_args) + ")"
+            if func_name.startswith("pytra_built_in_error.") and func_name.endswith("Error"):
+                first_arg = self._emit_expr(self._list(node, "args")[0]) if len(self._list(node, "args")) > 0 else "\"error\""
+                return "RuntimeException(" + first_arg + ".toString())"
             args: list[str] = []
             for arg in self._list(node, "args"):
                 if isinstance(arg, dict) and self._str(arg, "kind") == "Name":
@@ -546,14 +688,26 @@ class KotlinRenderer(CommonRenderer):
                 args.append(self._emit_expr(arg))
             if isinstance(func, dict) and self._str(func, "kind") == "Lambda":
                 return "(" + func_name + ")(" + ", ".join(args) + ")"
-            return func_name + "(" + ", ".join(args) + ")"
+            call_expr = func_name + "(" + ", ".join(args) + ")"
+            resolved_type = self._str(node, "resolved_type")
+            if func_name in ("__pytra_bytes", "__pytra_bytearray", "__pytra_set_new", "__pytra_list_repeat") and resolved_type != "":
+                return "(" + call_expr + " as " + self._render_type(resolved_type) + ")"
+            return call_expr
         if kind == "BinOp":
             left = self._emit_expr(node.get("left"))
             right = self._emit_expr(node.get("right"))
             op = self._str(node, "op")
+            left_node = node.get("left")
+            right_node = node.get("right")
+            left_type = self._str(left_node, "resolved_type") if isinstance(left_node, dict) else ""
+            right_type = self._str(right_node, "resolved_type") if isinstance(right_node, dict) else ""
+            if op == "Mult" and (left_type.startswith("list[") or left_type in ("list", "bytes", "bytearray")):
+                return "(__pytra_list_repeat(" + left + ", " + right + ") as " + self._render_type(self._str(node, "resolved_type")) + ")"
+            if op == "Mult" and (right_type.startswith("list[") or right_type in ("list", "bytes", "bytearray")):
+                return "(__pytra_list_repeat(" + right + ", " + left + ") as " + self._render_type(self._str(node, "resolved_type")) + ")"
             if op == "Div":
                 return left + ".toDouble() / " + right + ".toDouble()"
-            op_text = {"Add": "+", "Sub": "-", "Mult": "*", "Div": "/"}.get(op, op)
+            op_text = {"Add": "+", "Sub": "-", "Mult": "*", "Div": "/", "Mod": "%"}.get(op, op)
             return "(" + left + " " + op_text + " " + right + ")"
         if kind == "Compare":
             left = self._emit_expr(node.get("left"))
@@ -562,6 +716,10 @@ class KotlinRenderer(CommonRenderer):
             if len(comparators) == 1 and len(ops) == 1:
                 right = self._emit_expr(comparators[0])
                 op = ops[0] if isinstance(ops[0], str) else self._str(ops[0], "kind")
+                if op == "In":
+                    return "__pytra_contains(" + right + ", " + left + ")"
+                if op == "NotIn":
+                    return "!__pytra_contains(" + right + ", " + left + ")"
                 op_text = {
                     "Eq": "==",
                     "NotEq": "!=",
