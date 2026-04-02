@@ -4,7 +4,7 @@
 
 # P1-LUA-EMITTER: Lua emitter を toolchain2 に新規実装する
 
-最終更新: 2026-04-01
+最終更新: 2026-04-02
 ステータス: 進行中
 
 ## 背景
@@ -31,3 +31,5 @@
 - 2026-04-01: `dict.get/items` owner 補完、`continue` lowering 吸収、`import math` shim、`ArgumentParser.add_argument` keyword 反映、dataclass default constructor 生成、`sys.set_argv/set_path` と `re.sub(count=0)` の runtime 整合を追加。stdlib は `16/16 pass` に回復、fixture は `115/137 pass` まで改善。
 - 2026-04-01: Lua emitter/runtime を継続修正。`type(v).__name__`、bare re-raise、truthiness、property getter、tuple-return unpack、dict/set comprehension、`range(1引数)`、union 経由 dict dispatch、`deque`/container `len()` を修正し、fixture は `131/137 pass`、stdlib は `16/16 pass` に改善。現行の残差は `class_tuple_assign`, `reversed_enumerate`, `ok_fstring_format_spec`, `ok_lambda_default`, `object_container_access`, `str_repr_containers`。
 - 2026-04-01: class field の `decl_type` 回収、Lambda `args[].default` 対応、`str([])/str({})` の静的型付き emit、float repr の条件分岐を追加し、fixture は `137/137 pass`、stdlib は `16/16 pass` に回復。sample は `1/18 pass` で、syntax error 系、row/base nil 系、artifact missing が残る。
+- 2026-04-02: pure-Python generated module の load を emitter guide に沿って修正。`pytra.utils.png/gif` を Lua runtime shim に逃がさず `dofile()` で接続し、module alias import も `runtime_module_id` ベースで読ませるよう変更。`continue` label は inner `do ... end` で包んで syntax error を解消。
+- 2026-04-02: `__pytra_bytearray_append` を Python `bytearray.append(int(...))` に寄せて整数化し、hot path を `table.insert()` から direct append に変更。`03_julia_set` は `--cmd-timeout-sec 600` で PASS、PNG helper 単体も byte-level 一致。残る sample 差分は主に性能で、`07_game_of_life_loop` と `18_mini_language_interpreter` は 600s timeout を確認。

@@ -312,7 +312,12 @@ function __pytra_bytearray(v)
 end
 
 function __pytra_bytearray_append(self, value)
-    table.insert(self, tonumber(value) or 0)
+    local n = tonumber(value) or 0
+    if n >= 0 then
+        self[#self + 1] = math.floor(n)
+        return
+    end
+    self[#self + 1] = math.ceil(n)
 end
 
 function __pytra_list_clear(items)

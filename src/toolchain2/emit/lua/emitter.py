@@ -65,6 +65,7 @@ class EmitContext:
     declared_locals: set[str] = field(default_factory=set)
     in_class_body: bool = False
     needs_continue_label: bool = False
+    loaded_module_files: set[str] = field(default_factory=set)
 
 
 # ---------------------------------------------------------------------------
@@ -141,6 +142,20 @@ def _lua_symbol_name(ctx: EmitContext, name: str) -> str:
 
 def _quote_string(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t").replace("\0", "\\0") + '"'
+
+
+def _lua_module_filename(module_id: str) -> str:
+    return module_id.replace(".", "_") + ".lua"
+
+
+def _emit_module_alias_table(ctx: EmitContext, local_name: str) -> None:
+    safe_local = _lua_symbol_name(ctx, local_name)
+    alias_expr = 'setmetatable({}, { __index = _G })'
+    if safe_local not in ctx.declared_locals:
+        ctx.declared_locals.add(safe_local)
+        _emit(ctx, "local " + safe_local + " = " + alias_expr)
+    else:
+        _emit(ctx, safe_local + " = " + alias_expr)
 
 
 def _is_exception_type_name(ctx: EmitContext, type_name: str) -> bool:
@@ -1042,15 +1057,15 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return "__pytra_floordiv(" + left + ", " + right + ")"
     # Bitwise ops (Lua 5.4 has native bitwise)
     if op == "BitAnd":
-        return "(" + left + " & " + right + ")"
+        return "(__pytra_int(" + left + ") & __pytra_int(" + right + "))"
     if op == "BitOr":
-        return "(" + left + " | " + right + ")"
+        return "(__pytra_int(" + left + ") | __pytra_int(" + right + "))"
     if op == "BitXor":
-        return "(" + left + " ~ " + right + ")"
+        return "(__pytra_int(" + left + ") ~ __pytra_int(" + right + "))"
     if op == "LShift":
-        return "(" + left + " << " + right + ")"
+        return "(__pytra_int(" + left + ") << __pytra_int(" + right + "))"
     if op == "RShift":
-        return "(" + left + " >> " + right + ")"
+        return "(__pytra_int(" + left + ") >> __pytra_int(" + right + "))"
     # Path concatenation
     if op == "Div" and (left_rt in LUA_PATH_TYPE_NAMES or right_rt in LUA_PATH_TYPE_NAMES):
         return "__pytra_path_new(__pytra_path_join(" + left + ".path or " + left + ", tostring(" + right + ")))"
@@ -1533,8 +1548,19 @@ def _emit_body_with_continue(ctx: EmitContext, body: list[JsonVal]) -> None:
     """Emit body and add ::__continue__:: label if needed."""
     saved = ctx.needs_continue_label
     ctx.needs_continue_label = False
+    start_index = len(ctx.lines)
     _emit_body(ctx, body)
     if ctx.needs_continue_label:
+        body_lines = ctx.lines[start_index:]
+        del ctx.lines[start_index:]
+        _emit(ctx, "do")
+        extra_indent = "    "
+        for line in body_lines:
+            if line == "":
+                ctx.lines.append("")
+            else:
+                ctx.lines.append(extra_indent + line)
+        _emit(ctx, "end")
         _emit(ctx, "::__continue__::")
     ctx.needs_continue_label = saved
 
@@ -2172,6 +2198,13 @@ def _emit_import_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                     _emit(ctx, "local " + safe_local + " = __pytra_math_module()")
                 else:
                     _emit(ctx, safe_local + " = __pytra_math_module()")
+            elif mod_name != "" and not should_skip_module(mod_name, ctx.mapping):
+                module_file = _lua_module_filename(mod_name)
+                if module_file not in ctx.loaded_module_files:
+                    ctx.loaded_module_files.add(module_file)
+                    _emit(ctx, 'dofile(__script_dir .. "' + module_file + '")')
+                if local_name != "":
+                    _emit_module_alias_table(ctx, local_name)
         return
     if kind == "ImportFrom":
         module = _str(node, "module")
@@ -2179,8 +2212,33 @@ def _emit_import_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             return
         if module.startswith("typing") or module.startswith("__future__") or module.startswith("dataclasses"):
             return
-        # For Lua, use dofile/require for user modules
-        # Skip for most stdlib modules already handled by runtime
+        names = _list(node, "names")
+        loaded_any = False
+        for item in names:
+            if not isinstance(item, dict):
+                continue
+            local_name = _str(item, "asname")
+            if local_name == "":
+                local_name = _str(item, "name")
+            module_id = ctx.import_alias_modules.get(local_name, module)
+            if module_id == "" or should_skip_module(module_id, ctx.mapping):
+                continue
+            module_file = _lua_module_filename(module_id)
+            if module_file in ctx.loaded_module_files:
+                loaded_any = True
+                if module_id != module and local_name != "":
+                    _emit_module_alias_table(ctx, local_name)
+                continue
+            ctx.loaded_module_files.add(module_file)
+            _emit(ctx, 'dofile(__script_dir .. "' + module_file + '")')
+            if module_id != module and local_name != "":
+                _emit_module_alias_table(ctx, local_name)
+            loaded_any = True
+        if not loaded_any:
+            module_file = _lua_module_filename(module)
+            if module_file not in ctx.loaded_module_files:
+                ctx.loaded_module_files.add(module_file)
+                _emit(ctx, 'dofile(__script_dir .. "' + module_file + '")')
     # Module imports are typically handled by runtime in Lua
 
 
