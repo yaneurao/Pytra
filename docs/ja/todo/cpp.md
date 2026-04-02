@@ -88,7 +88,8 @@ selfhost で必要な動的型パターン（`dict[str, object]` の items() unp
 2. [x] [ID: P0-SUB-BOUNDS-S2] EAST optimizer に `--negative-index-mode` / `--bounds-check-mode` を追加し、`Subscript` ノードにメタデータを付与するパスを実装する。`runtime_parity_check_fast.py` にも同オプションを追加して optimizer に引き回す
    - 2026-04-02: `SubscriptAccessAnnotationPass` を toolchain2 optimizer に追加し、`pytra-cli2 -optimize/-build` と `runtime_parity_check_fast.py` から `negative_index_mode` / `bounds_check_mode` を optimizer debug flags として引き回すよう更新。toolchain2 / tooling の単体回帰を追加。
 3. [ ] [ID: P0-SUB-BOUNDS-S1.5] `--east3-opt-level` を `--opt-level` に改名し、`--opt-level` が `negative_index_mode` / `bounds_check_mode` のデフォルトを決定するよう統合する（全 CLI・optimizer・spec・tutorial）
-4. [ ] [ID: P0-SUB-BOUNDS-S3] C++ emitter でメタデータに基づく direct index / py_list_at_ref の分岐を実装する
+4. [x] [ID: P0-SUB-BOUNDS-S3] C++ emitter でメタデータに基づく direct index / py_list_at_ref の分岐を実装する
+   - 2026-04-02: `toolchain2` C++ emitter が `Subscript.meta.subscript_access_v1` を読み、`bounds_check=off` の list/bytes/bytearray access を direct `operator[]` に切り替えるよう更新。`negative_index=normalize` は direct path でも `py_len(...)` ベースで正規化し、metadata 不正時は従来の `py_list_at_ref` に fail-close する targeted 回帰を追加。
 5. [ ] [ID: P0-SUB-BOUNDS-S4] sample 01 (mandelbrot) の C++ 実行時間が改善されることを確認する
 6. [ ] [ID: P0-SUB-BOUNDS-S5] fixture + sample + stdlib parity に回帰がないことを確認する
 7. [ ] [ID: P0-SUB-BOUNDS-S6] negative index の回帰 fixture を追加する（`a[-1]` が optimizer の誤判定で壊れないことを検証）

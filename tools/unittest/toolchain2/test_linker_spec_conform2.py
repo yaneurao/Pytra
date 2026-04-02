@@ -2408,7 +2408,126 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         cpp_code = emit_cpp_module(doc)
 
-        self.assertIn("return py_list_at_ref(stack, (py_len(stack) - int64(1)));", cpp_code)
+        self.assertIn("return py_list_at_ref(stack, (py_len(stack) - 1));", cpp_code)
+
+    def test_cpp_emitter_uses_direct_list_index_when_subscript_bounds_check_is_off(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "at_fast",
+                    "arg_types": {"items": "list[int64]", "i": "int64"},
+                    "arg_order": ["items", "i"],
+                    "arg_defaults": {},
+                    "arg_usage": {"items": "readonly", "i": "readonly"},
+                    "return_type": "int64",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Subscript",
+                                "value": {"kind": "Name", "id": "items", "resolved_type": "list[int64]"},
+                                "slice": {"kind": "Name", "id": "i", "resolved_type": "int64"},
+                                "resolved_type": "int64",
+                                "meta": {
+                                    "subscript_access_v1": {
+                                        "schema_version": "subscript_access_v1",
+                                        "negative_index": "skip",
+                                        "bounds_check": "off",
+                                        "reason": "for_range_index",
+                                    }
+                                },
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("return (*(items))[static_cast<::std::size_t>(i)];", cpp_code)
+        self.assertNotIn("py_list_at_ref(items, i)", cpp_code)
+
+    def test_cpp_emitter_normalizes_negative_index_in_direct_list_fastpath(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "at_tail",
+                    "arg_types": {"items": "list[int64]", "i": "int64"},
+                    "arg_order": ["items", "i"],
+                    "arg_defaults": {},
+                    "arg_usage": {"items": "readonly", "i": "readonly"},
+                    "return_type": "int64",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Subscript",
+                                "value": {"kind": "Name", "id": "items", "resolved_type": "list[int64]"},
+                                "slice": {"kind": "Name", "id": "i", "resolved_type": "int64"},
+                                "resolved_type": "int64",
+                                "meta": {
+                                    "subscript_access_v1": {
+                                        "schema_version": "subscript_access_v1",
+                                        "negative_index": "normalize",
+                                        "bounds_check": "off",
+                                        "reason": "optimizer_default",
+                                    }
+                                },
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("return (*(items))[static_cast<::std::size_t>(((i) < 0 ? (py_len(items) + (i)) : (i)))];", cpp_code)
+        self.assertNotIn("py_list_at_ref(items, i)", cpp_code)
+
+    def test_cpp_emitter_fails_closed_without_valid_subscript_access_hint(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "at_safe",
+                    "arg_types": {"items": "list[int64]", "i": "int64"},
+                    "arg_order": ["items", "i"],
+                    "arg_defaults": {},
+                    "arg_usage": {"items": "readonly", "i": "readonly"},
+                    "return_type": "int64",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Subscript",
+                                "value": {"kind": "Name", "id": "items", "resolved_type": "list[int64]"},
+                                "slice": {"kind": "Name", "id": "i", "resolved_type": "int64"},
+                                "resolved_type": "int64",
+                                "meta": {
+                                    "subscript_access_v1": {
+                                        "schema_version": "v0",
+                                        "negative_index": "skip",
+                                        "bounds_check": "off",
+                                        "reason": "broken",
+                                    }
+                                },
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("return py_list_at_ref(items, i);", cpp_code)
 
     def test_emitters_treat_runtime_call_int_as_cast_without_link_normalization(self) -> None:
         doc = _fixture_doc("test/fixture/east3-opt/typing/intenum_basic.east3")

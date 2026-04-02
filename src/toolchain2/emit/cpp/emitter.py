@@ -2130,6 +2130,54 @@ def _emit_subscript_index(ctx: CppEmitContext, value: str, slice_node: JsonVal) 
     return idx
 
 
+def _subscript_access_hint(node: dict[str, JsonVal]) -> dict[str, JsonVal] | None:
+    meta_obj = node.get("meta")
+    meta = meta_obj if isinstance(meta_obj, dict) else None
+    if meta is None:
+        return None
+    hint_obj = meta.get("subscript_access_v1")
+    hint = hint_obj if isinstance(hint_obj, dict) else None
+    if hint is None:
+        return None
+    if _str(hint, "schema_version") != "subscript_access_v1":
+        return None
+    negative_index = _str(hint, "negative_index")
+    bounds_check = _str(hint, "bounds_check")
+    if negative_index not in ("normalize", "skip"):
+        return None
+    if bounds_check not in ("full", "off"):
+        return None
+    return hint
+
+
+def _emit_direct_subscript_index(ctx: CppEmitContext, value: str, slice_node: JsonVal, negative_index: str) -> str:
+    raw_idx = _emit_expr(ctx, slice_node)
+    if negative_index != "normalize":
+        return raw_idx
+    if isinstance(slice_node, dict):
+        kind = _str(slice_node, "kind")
+        if kind == "Constant":
+            iv = slice_node.get("value")
+            if isinstance(iv, int) and not isinstance(iv, bool) and iv < 0:
+                return _emit_subscript_index(ctx, value, slice_node)
+        if kind == "UnaryOp" and _str(slice_node, "op") == "USub":
+            return _emit_subscript_index(ctx, value, slice_node)
+    size_expr = "py_len(" + value + ")"
+    return "((" + raw_idx + ") < 0 ? (" + size_expr + " + (" + raw_idx + ")) : (" + raw_idx + "))"
+
+
+def _emit_direct_container_subscript(
+    ctx: CppEmitContext,
+    value: str,
+    value_node: JsonVal,
+    idx: str,
+) -> str:
+    base = value
+    if _uses_ref_container_storage(ctx, value_node):
+        base = "(*(" + value + "))"
+    return base + "[static_cast<::std::size_t>(" + idx + ")]"
+
+
 def _emit_subscript(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     value = _emit_expr(ctx, node.get("value"))
     sl = node.get("slice")
@@ -2154,6 +2202,10 @@ def _emit_subscript(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     if value_type == "str":
         return "py_str_slice(" + value + ", " + idx + ", (" + idx + " + int64(1)))"
     if value_type.startswith("list[") or value_type in ("bytes", "bytearray"):
+        hint = _subscript_access_hint(node)
+        if hint is not None and _str(hint, "bounds_check") == "off":
+            direct_idx = _emit_direct_subscript_index(ctx, value, sl, _str(hint, "negative_index"))
+            return _emit_direct_container_subscript(ctx, value, value_node, direct_idx)
         return "py_list_at_ref(" + value + ", " + idx + ")"
     if value_type.startswith("dict["):
         return "py_at(" + value + ", " + idx + ")"
@@ -2172,6 +2224,10 @@ def _emit_subscript_store_target(ctx: CppEmitContext, node: dict[str, JsonVal]) 
             value_type = spec_type
     idx = _emit_subscript_index(ctx, value, sl)
     if value_type.startswith("list[") or value_type in ("bytes", "bytearray"):
+        hint = _subscript_access_hint(node)
+        if hint is not None and _str(hint, "bounds_check") == "off":
+            direct_idx = _emit_direct_subscript_index(ctx, value, sl, _str(hint, "negative_index"))
+            return _emit_direct_container_subscript(ctx, value, value_node, direct_idx)
         return "py_list_at_ref(" + value + ", " + idx + ")"
     if value_type.startswith("dict["):
         if _uses_ref_container_storage(ctx, value_node):
