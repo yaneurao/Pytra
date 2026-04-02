@@ -42,6 +42,13 @@ class PytraKeyError extends PytraException {
   PytraKeyError([super.message = ""]);
 }
 
+class PytraSystemExit extends PytraException {
+  final int code;
+  PytraSystemExit([this.code = 0, String message = ""]) : super(message);
+  @override
+  String toString() => message.isEmpty ? "SystemExit($code)" : message;
+}
+
 typedef BaseException = PytraBaseException;
 typedef Exception = PytraException;
 typedef RuntimeError = PytraRuntimeError;
@@ -61,6 +68,7 @@ typedef OverflowError = PytraException;
 typedef PermissionError = PytraException;
 typedef RecursionError = PytraException;
 typedef StopIteration = PytraException;
+typedef SystemExit = PytraSystemExit;
 typedef ZeroDivisionError = PytraException;
 
 // --- print / repr ---

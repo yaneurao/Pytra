@@ -469,9 +469,6 @@ class DartNativeEmitter:
 
     def _dart_arg_type(self, stmt: dict[str, Any], arg_name: str) -> str:
         """Get the Dart type for a function argument.
-
-        Container types use ``dynamic`` to avoid type mismatch with
-        runtime helpers that pass ``List<dynamic>``.
         """
         arg_types_any = stmt.get("arg_types")
         arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
@@ -1238,7 +1235,7 @@ class DartNativeEmitter:
                     self._emit_tuple_assign(target_any, stmt.get("value"))
                     return
                 target = self._render_target(target_any)
-                value = self._render_expr(stmt.get("value"))
+                value = self._coerce_assignment_expr(target_any, self._render_expr(stmt.get("value")))
                 if isinstance(target_any, dict) and td2.get("kind") == "Name":
                     target_name = _safe_ident(td2.get("id"), "value")
                     if target_name.startswith("__tup_"):
@@ -1278,7 +1275,7 @@ class DartNativeEmitter:
                     self._emit_tuple_assign(targets[0], stmt.get("value"))
                     return
                 target = self._render_target(targets[0])
-                value = self._render_expr(stmt.get("value"))
+                value = self._coerce_assignment_expr(targets[0], self._render_expr(stmt.get("value")))
                 if targets[0].get("kind") == "Name":
                     target_name = _safe_ident(targets[0].get("id"), "value")
                     if target_name.startswith("__tup_"):
@@ -1439,6 +1436,8 @@ class DartNativeEmitter:
         name = _safe_ident(stmt.get("name"), "fn")
         arg_order_any = stmt.get("arg_order")
         args = arg_order_any if isinstance(arg_order_any, list) else []
+        arg_defaults_any = stmt.get("arg_defaults")
+        arg_defaults = arg_defaults_any if isinstance(arg_defaults_any, dict) else {}
         arg_names: list[str] = []
         for a in args:
             arg_names.append(_safe_ident(a, "arg"))
@@ -1449,11 +1448,20 @@ class DartNativeEmitter:
             self._emit_extern_function(stmt, name, arg_names)
             return
         param_parts: list[str] = []
+        optional_parts: list[str] = []
         for a_raw, a_safe in zip(args, arg_names):
             raw_name = a_raw if isinstance(a_raw, str) else a_safe
             at = self._dart_arg_type(stmt, raw_name)
-            param_parts.append(at + " " + a_safe)
-        params = ", ".join(param_parts)
+            if raw_name in arg_defaults:
+                default_node = arg_defaults[raw_name]
+                default_val = self._render_param_default_expr(default_node)
+                optional_parts.append(at + " " + a_safe + " = " + default_val)
+            else:
+                param_parts.append(at + " " + a_safe)
+        if len(optional_parts) > 0:
+            params = ", ".join(param_parts + ["[" + ", ".join(optional_parts) + "]"]) if len(param_parts) > 0 else "[" + ", ".join(optional_parts) + "]"
+        else:
+            params = ", ".join(param_parts)
         ret_type = self._dart_return_type(stmt)
         # Rename top-level functions that conflict with class method names
         emit_name = self._fn_emit_name(name) if self.current_class_name == "" else name
@@ -1499,7 +1507,7 @@ class DartNativeEmitter:
             dk_key = raw_name if isinstance(raw_name, str) else a_safe
             if dk_key in arg_defaults:
                 default_node = arg_defaults[dk_key]
-                default_val = self._render_expr(default_node) if isinstance(default_node, dict) else "null"
+                default_val = self._render_param_default_expr(default_node)
                 optional_parts.append("dynamic " + a_safe + " = " + default_val)
             else:
                 param_parts.append(at + " " + a_safe)
@@ -1670,6 +1678,8 @@ class DartNativeEmitter:
         is_static = "staticmethod" in decorators
         arg_order_any = stmt.get("arg_order")
         arg_order = arg_order_any if isinstance(arg_order_any, list) else []
+        arg_defaults_any = stmt.get("arg_defaults")
+        arg_defaults = arg_defaults_any if isinstance(arg_defaults_any, dict) else {}
         args: list[str] = []
         raw_args: list[str] = []
         for i_idx, arg in enumerate(arg_order):
@@ -1684,10 +1694,19 @@ class DartNativeEmitter:
         self.current_class_name = cls_name
         self.current_class_base_name = base_name
         param_parts: list[str] = []
+        optional_parts: list[str] = []
         for a_raw, a_safe in zip(raw_args, args):
             at = self._dart_arg_type(stmt, a_raw)
-            param_parts.append(at + " " + a_safe)
-        params = ", ".join(param_parts)
+            if a_raw in arg_defaults:
+                default_node = arg_defaults[a_raw]
+                default_val = self._render_param_default_expr(default_node)
+                optional_parts.append(at + " " + a_safe + " = " + default_val)
+            else:
+                param_parts.append(at + " " + a_safe)
+        if len(optional_parts) > 0:
+            params = ", ".join(param_parts + ["[" + ", ".join(optional_parts) + "]"]) if len(param_parts) > 0 else "[" + ", ".join(optional_parts) + "]"
+        else:
+            params = ", ".join(param_parts)
         static_prefix = "static " if is_static else ""
         if method_name == "__init__":
             super_args, body_stmts = self._extract_super_init(stmt.get("body"))
@@ -2219,7 +2238,8 @@ class DartNativeEmitter:
             value = self._render_expr(ed.get("value"))
             expected_any = ed.get("expected_type_id")
             if isinstance(expected_any, dict) and expected_any.get("kind") == "Name":
-                expected = _safe_ident(expected_any.get("id"), "object")
+                expected_raw = expected_any.get("id")
+                expected = expected_raw if isinstance(expected_raw, str) and expected_raw != "" else "object"
                 if expected in {"int", "int64", "PYTRA_TID_INT"}:
                     return "(" + value + " is int)"
                 if expected in {"float", "float64", "PYTRA_TID_FLOAT"}:
@@ -2647,6 +2667,58 @@ class DartNativeEmitter:
         if isinstance(resolved, str) and resolved != "":
             return self._dart_type(resolved)
         return ""
+
+    def _render_param_default_expr(self, default_any: Any) -> str:
+        if not isinstance(default_any, dict):
+            return "null"
+        kind = default_any.get("kind")
+        if kind == "List":
+            elems_any = default_any.get("elements")
+            elems = elems_any if isinstance(elems_any, list) else []
+            rendered = [self._render_expr(elem) for elem in elems]
+            return "const [" + ", ".join(rendered) + "]"
+        if kind == "Tuple":
+            elems_any = default_any.get("elements")
+            elems = elems_any if isinstance(elems_any, list) else []
+            rendered = [self._render_expr(elem) for elem in elems]
+            return "const [" + ", ".join(rendered) + "]"
+        if kind == "Dict":
+            keys_any = default_any.get("keys")
+            values_any = default_any.get("values")
+            keys = keys_any if isinstance(keys_any, list) else []
+            values = values_any if isinstance(values_any, list) else []
+            pairs: list[str] = []
+            i = 0
+            while i < len(keys) and i < len(values):
+                pairs.append(self._render_expr(keys[i]) + ": " + self._render_expr(values[i]))
+                i += 1
+            return "const {" + ", ".join(pairs) + "}"
+        if kind == "Set":
+            elems_any = default_any.get("elements")
+            elems = elems_any if isinstance(elems_any, list) else []
+            rendered = [self._render_expr(elem) for elem in elems]
+            return "const {" + ", ".join(rendered) + "}"
+        return self._render_expr(default_any)
+
+    def _coerce_assignment_expr(self, target_any: Any, value_expr: str) -> str:
+        if not isinstance(target_any, dict):
+            return value_expr
+        if target_any.get("kind") == "Attribute":
+            owner_any = target_any.get("value")
+            if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
+                owner_name = _safe_ident(owner_any.get("id"), "")
+                if owner_name in {"self", "self_"} and self.current_class_name != "":
+                    field_name = _safe_ident(target_any.get("attr"), "field")
+                    field_types = self._class_field_types.get(self.current_class_name, {})
+                    field_type = field_types.get(field_name, "")
+                    dart_t = self._dart_type(field_type) if field_type != "" else ""
+                    if dart_t.startswith("List<"):
+                        return dart_t + ".from(" + value_expr + ")"
+                    if dart_t.startswith("Map<"):
+                        return dart_t + ".from(" + value_expr + ")"
+                    if dart_t.startswith("Set<"):
+                        return dart_t + ".from(" + value_expr + ")"
+        return value_expr
 
     def _render_set_comp(self, ed: dict[str, Any]) -> str:
         gens_any = ed.get("generators")

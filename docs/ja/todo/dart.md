@@ -36,8 +36,8 @@
 3. [ ] [ID: P1-DART-EMITTER-S3] fixture 全件の Dart emit 成功を確認する — 2026-04-02: control / typing は PASS。`ok_typed_varargs_representative` は emitter 既知の未対応（typed `*args`）として parity skip に整理
 4. [ ] [ID: P1-DART-EMITTER-S4] Dart runtime を toolchain2 の emit 出力と整合させる
 5. [ ] [ID: P1-DART-EMITTER-S5] fixture の Dart run parity を通す（`dart run`） — 2026-04-02: 既知 unsupported 1 件を除く fixture parity は PASS
-6. [ ] [ID: P1-DART-EMITTER-S6] stdlib の Dart parity を通す（`--case-root stdlib`）
-7. [ ] [ID: P1-DART-EMITTER-S7] sample の Dart parity を通す（`--case-root sample`）
+6. [x] [ID: P1-DART-EMITTER-S6] stdlib の Dart parity を通す（`--case-root stdlib`） — 2026-04-02: 16/16 PASS
+7. [x] [ID: P1-DART-EMITTER-S7] sample の Dart parity を通す（`--case-root sample`） — 2026-04-02: 18/18 PASS
 
 ### P2-DART-LINT: emitter hardcode lint の Dart 違反を解消する
 
