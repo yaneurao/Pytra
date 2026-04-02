@@ -1907,6 +1907,60 @@ def f() -> str:
         self.assertEqual(boxed_arg.get("target"), "bool|int64|float64|str|list[Any]|dict[str,Any]|None")
         self.assertEqual(boxed_arg.get("resolved_type"), "bool|int64|float64|str|list[Any]|dict[str,Any]|None")
 
+    def test_compile_cpp_lowering_avoids_object_resolved_type_for_representative_dynamic_cases(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "f",
+                    "arg_types": {"xs": "Any"},
+                    "arg_order": ["xs"],
+                    "arg_defaults": {},
+                    "arg_usage": {"xs": "readonly"},
+                    "return_type": "Any",
+                    "body": [
+                        {
+                            "kind": "AnnAssign",
+                            "target": {"kind": "Name", "id": "values"},
+                            "decl_type": "list[Any]",
+                            "value": {
+                                "kind": "List",
+                                "resolved_type": "list[int64]",
+                                "elements": [
+                                    {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                                    {"kind": "Constant", "value": 2, "resolved_type": "int64"},
+                                ],
+                            },
+                            "resolved_type": "None",
+                        },
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Call",
+                                "lowered_kind": "BuiltinCall",
+                                "runtime_call": "py_iter_or_raise",
+                                "semantic_tag": "iter.init",
+                                "resolved_type": "unknown",
+                                "func": {"kind": "Name", "id": "iter", "resolved_type": "unknown"},
+                                "args": [{"kind": "Name", "id": "xs", "resolved_type": "Any"}],
+                                "keywords": [],
+                            },
+                        },
+                    ],
+                }
+            ],
+        }
+
+        east3 = lower_east2_to_east3(east2, target_language="cpp")
+        object_nodes = [
+            node
+            for node in _walk(east3)
+            if isinstance(node, dict) and node.get("resolved_type") == "object"
+        ]
+
+        self.assertEqual(object_nodes, [])
+
     def test_compile_preserves_tuple_unpack_value_type_for_static_tuple_calls(self) -> None:
         source = """
 def pair() -> tuple[int, int]:
