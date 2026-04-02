@@ -49,6 +49,8 @@ toolchain2 ではこのオプションが移行されておらず、C++ runtime 
 - `docs/en/spec/spec-options.md` に旧 emitter オプションとして `--negative-index-mode` / `--bounds-check-mode` / `-O0`~`-O3` が記載されている
 - `docs/ja/spec/archive/20260328-spec-options.md` に日本語版（archive 済み）
 - いずれも「emitter のオプション」として書かれており、EAST optimizer のオプションとしての記述はない
+- `docs/ja/tutorial/transpiler-cli.md` にも `--bounds-check-mode` が emitter CLI オプションとして記載
+- `docs/ja/tutorial/advanced-usage.md` に `-O3` が記載
 - toolchain2 にはこれらが一切移行されていない
 - spec-east.md / spec-east3-optimizer.md にも該当記述なし
 
@@ -61,7 +63,8 @@ toolchain2 ではこのオプションが移行されておらず、C++ runtime 
 - [ ] fixture + sample parity に回帰がない
 - [ ] spec-options.md を更新し、EAST optimizer のオプションとして再定義する（emitter オプションの記述を削除）
 - [ ] spec-east3-optimizer.md に `subscript_access_v1` パスを追記する
-- [ ] user guide / tutorial の CLI ヘルプにオプションが反映されている
+- [ ] `docs/ja/tutorial/transpiler-cli.md` のオプション欄を更新する（emitter オプションではなく EAST optimizer オプションとして記述）
+- [ ] `docs/ja/tutorial/advanced-usage.md` の `-O3` 記述を更新する
 
 ## サブタスク
 
