@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-03-31
+最終更新: 2026-04-02
 
 ## 運用ルール
 
@@ -19,6 +19,13 @@
 完了済みタスクは [アーカイブ](archive/20260331.md) を参照。
 
 ## 未完了タスク
+
+### P5-PARITY-STREAMING: runtime_parity_check_fast.py のストリーミング出力
+
+C++ fixture parity（137件、20分超）で完了まで stdout が返らず、進捗が見えない問題。
+
+1. [ ] [ID: P5-PARITY-STREAM-S1] `tools/check/runtime_parity_check_fast.py` の各ケース完了時に即座に stdout へ結果行を flush する（バッファリングをやめる）
+2. [ ] [ID: P5-PARITY-STREAM-S2] 既存の summary 出力フォーマットとの互換を維持する
 
 ### P20-DATA-DRIVEN-TESTS: パイプライン系テストのデータ駆動化
 
