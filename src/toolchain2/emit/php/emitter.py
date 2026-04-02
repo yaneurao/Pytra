@@ -1991,6 +1991,7 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             param_type.startswith("list[") or param_type == "list"
             or param_type.startswith("dict[") or param_type == "dict"
             or param_type.startswith("set[") or param_type == "set"
+            or param_type == "bytearray" or param_type == "bytes"
         )
         if not is_mutable_container:
             return False

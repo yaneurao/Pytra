@@ -37,7 +37,7 @@
 2. [x] [ID: P1-PHP-EMITTER-S2] `src/runtime/php/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義 — 完了
 3. [x] [ID: P1-PHP-EMITTER-S3] fixture 全件の PHP emit 成功を確認する — 完了: 1362 件全件 emit 成功（エラー 0 件）
 4. [x] [ID: P1-PHP-EMITTER-S4] PHP runtime を toolchain2 の emit 出力と整合させる — 完了: 既存 PHP runtime と整合済み、parity check に PHP target を追加
-5. [ ] [ID: P1-PHP-EMITTER-S5] fixture + sample の PHP run parity を通す（`php`） — 進捗: fixture `140/140 PASS`。sample は helper callable / `break` / runtime helper 不足を解消し、`18_mini_language_interpreter` などの run failure を除去。残りは主に PNG/GIF artifact mismatch
+5. [x] [ID: P1-PHP-EMITTER-S5] fixture + sample の PHP run parity を通す（`php`） — 完了: `runtime_parity_check_fast.py --targets php --east3-opt-level 1` で fixture `140/140 PASS`、`--case-root sample` で `18/18 PASS`
 6. [x] [ID: P1-PHP-EMITTER-S6] stdlib の PHP parity を通す（`--case-root stdlib`） — 完了: `runtime_parity_check_fast.py --targets php --case-root stdlib --east3-opt-level 1` で `16/16 PASS`
 
 ### P2-PHP-LINT-FIX: PHP emitter のハードコード違反を修正する
