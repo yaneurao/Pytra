@@ -1546,6 +1546,36 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         self.assertEqual(dep_ids, ["pytra.std.json", "pytra.built_in.type_id"])
 
+    def test_runtime_discovery_keeps_jsonval_runtime_module_for_cpp(self) -> None:
+        module_map = {
+            "/tmp/app.main.east3.json": _module_doc(
+                "app.main",
+                meta_extra={
+                    "import_bindings": [
+                        {
+                            "module_id": "pytra.std.json",
+                            "export_name": "JsonVal",
+                            "local_name": "JsonVal",
+                            "binding_kind": "symbol",
+                            "runtime_module_id": "pytra.std.json",
+                            "runtime_group": "std",
+                        }
+                    ]
+                },
+                body=[
+                    {
+                        "kind": "ImportFrom",
+                        "module": "pytra.std.json",
+                        "names": [{"name": "JsonVal"}],
+                    }
+                ],
+            )
+        }
+
+        discovered = discover_runtime_modules(module_map, target="cpp")
+
+        self.assertTrue(any(path.endswith("src/runtime/east/std/json.east") for path in discovered))
+
     def test_cpp_signature_type_maps_jsonval_alias_to_recursive_nominal_type(self) -> None:
         self.assertEqual(cpp_signature_type("JsonVal"), "JsonVal")
         self.assertEqual(cpp_signature_type("dict[str,JsonVal]"), "Object<dict<str, JsonVal>>")
@@ -1983,6 +2013,109 @@ def has_key(env: dict[str, int], name: str) -> bool:
         cpp_code = emit_cpp_module(doc)
 
         self.assertIn("Object<list<str>> ks = rc_list_from_value(py_dict_keys(d));", cpp_code)
+
+    def test_cpp_emitter_wraps_container_value_on_reassignment(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "run_case",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_usage": {},
+                    "return_type": "None",
+                    "body": [
+                        {
+                            "kind": "Assign",
+                            "target": {"kind": "Name", "id": "items", "resolved_type": "list[int64]"},
+                            "declare": True,
+                            "decl_type": "list[int64]",
+                            "declare_init": True,
+                            "value": {
+                                "kind": "List",
+                                "elements": [{"kind": "Constant", "value": 1, "resolved_type": "int64"}],
+                                "resolved_type": "list[int64]",
+                            },
+                        },
+                        {
+                            "kind": "Assign",
+                            "target": {"kind": "Name", "id": "items", "resolved_type": "list[int64]"},
+                            "declare": False,
+                            "value": {
+                                "kind": "Subscript",
+                                "value": {"kind": "Name", "id": "items", "resolved_type": "list[int64]"},
+                                "slice": {
+                                    "kind": "Slice",
+                                    "lower": {"kind": "Constant", "value": 0, "resolved_type": "int64"},
+                                    "upper": {"kind": "Constant", "value": 0, "resolved_type": "int64"},
+                                },
+                                "resolved_type": "list[int64]",
+                            },
+                        },
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("items = rc_from_value(py_list_slice_copy(items, 0, 0));", cpp_code)
+
+    def test_cpp_emitter_wraps_container_value_on_self_field_reassignment(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "ClassDef",
+                    "name": "Queue",
+                    "field_types": {"items": "list[int64]"},
+                    "body": [
+                        {
+                            "kind": "FunctionDef",
+                            "name": "clear",
+                            "arg_types": {"self": "Queue"},
+                            "arg_order": ["self"],
+                            "arg_defaults": {},
+                            "arg_usage": {"self": "readonly"},
+                            "return_type": "None",
+                            "body": [
+                                {
+                                    "kind": "Assign",
+                                    "target": {
+                                        "kind": "Attribute",
+                                        "value": {"kind": "Name", "id": "self", "resolved_type": "Queue"},
+                                        "attr": "items",
+                                        "resolved_type": "list[int64]",
+                                    },
+                                    "declare": False,
+                                    "value": {
+                                        "kind": "Subscript",
+                                        "value": {
+                                            "kind": "Attribute",
+                                            "value": {"kind": "Name", "id": "self", "resolved_type": "Queue"},
+                                            "attr": "items",
+                                            "resolved_type": "list[int64]",
+                                        },
+                                        "slice": {
+                                            "kind": "Slice",
+                                            "lower": {"kind": "Constant", "value": 0, "resolved_type": "int64"},
+                                            "upper": {"kind": "Constant", "value": 0, "resolved_type": "int64"},
+                                        },
+                                        "resolved_type": "list[int64]",
+                                    },
+                                }
+                            ],
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("this->items = rc_from_value(py_list_slice_copy(this->items, 0, 0));", cpp_code)
 
     def test_go_emitter_wraps_container_builtin_results_as_ref_handles(self) -> None:
         doc = _module_doc(
@@ -4724,6 +4857,35 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn("(*(out))[str(\"k\")] = 1;", cpp_code)
         self.assertIn("return out;", cpp_code)
         self.assertNotIn("(out).as<dict<str, JsonVal>>()", cpp_code)
+
+    def test_cpp_emitter_boxes_optional_scalar_without_variant_visit(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Name", "id": "py_assert_eq"},
+                        "args": [
+                            {
+                                "kind": "Box",
+                                "resolved_type": "object",
+                                "value": {"kind": "Name", "id": "a", "resolved_type": "int64 | None"},
+                            },
+                            {"kind": "Box", "resolved_type": "object", "value": {"kind": "Constant", "value": 42, "resolved_type": "int64"}},
+                        ],
+                        "resolved_type": "bool",
+                    },
+                }
+            ],
+        )
+        doc["meta"] = {"module_id": "app.main"}
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("(py_is_none(a) ? object() : object(*a))", cpp_code)
+        self.assertNotIn("std::visit", cpp_code)
 
     def test_cpp_header_gen_preserves_exception_class_inheritance(self) -> None:
         doc = _module_doc(

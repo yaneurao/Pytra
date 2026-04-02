@@ -178,11 +178,13 @@ def _append_runtime_dep(
         new_deps.append((east_path, east_path))
 
 
-def _is_type_only_symbol_binding(module_id: str, export_name: str) -> bool:
+def _is_type_only_symbol_binding(module_id: str, export_name: str, *, target: str = "") -> bool:
+    if target == "cpp" and module_id == "pytra.std.json" and export_name == "JsonVal":
+        return False
     return (module_id + "::" + export_name) in _TYPE_ONLY_SYMBOL_BINDING_KEYS
 
 
-def _import_from_is_type_only(module_id: str, names_val: JsonVal) -> bool:
+def _import_from_is_type_only(module_id: str, names_val: JsonVal, *, target: str = "") -> bool:
     if not isinstance(names_val, list) or len(names_val) == 0:
         return False
     saw_symbol = False
@@ -193,7 +195,7 @@ def _import_from_is_type_only(module_id: str, names_val: JsonVal) -> bool:
         if not isinstance(sym, str) or sym == "":
             return False
         saw_symbol = True
-        if not _is_type_only_symbol_binding(module_id, sym):
+        if not _is_type_only_symbol_binding(module_id, sym, target=target):
             return False
     return saw_symbol
 
@@ -279,7 +281,7 @@ def discover_runtime_modules(
                             and not (
                                 isinstance(export_name, str)
                                 and export_name != ""
-                                and _is_type_only_symbol_binding(mod_id, export_name)
+                                and _is_type_only_symbol_binding(mod_id, export_name, target=target)
                             )
                         ):
                             _append_runtime_dep(new_deps, seen_paths, mod_id, required=True)
@@ -295,7 +297,7 @@ def discover_runtime_modules(
                         mod = stmt.get("module")
                         if isinstance(mod, str) and mod != "":
                             names_val = stmt.get("names")
-                            if _import_from_is_type_only(mod, names_val):
+                            if _import_from_is_type_only(mod, names_val, target=target):
                                 continue
                             _append_runtime_dep(new_deps, seen_paths, mod, required=True)
                             # Sub-module imports: from pytra.utils import png → pytra.utils.png
