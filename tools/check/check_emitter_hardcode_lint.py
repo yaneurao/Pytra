@@ -137,10 +137,14 @@ RUNTIME_CATEGORIES: dict[str, list[str]] = {
         r'py_tid_',
         r'type_id_table',
     ],
+    # rt:call_coverage — custom check (not grep-based); patterns list is empty.
+    # Logic in _collect_rt_call_coverage_hits().
+    "rt:call_coverage": [],
 }
 
 RUNTIME_CATEGORY_LABELS: dict[str, str] = {
     "rt:type_id":        "rt: type_id   ",
+    "rt:call_coverage":  "rt: call_cov  ",
 }
 
 # Runtime file extensions per language
@@ -164,6 +168,93 @@ _RUNTIME_EXTENSIONS: dict[str, list[str]] = {
     "julia":  [".jl"],
     "ps1":    [".ps1"],
 }
+
+
+# ---------------------------------------------------------------------------
+# rt:call_coverage — mapping.json calls vs EAST3 golden runtime_calls
+# ---------------------------------------------------------------------------
+
+_EAST3_ROOTS_FOR_COVERAGE = [
+    ROOT / "test" / "fixture" / "east3",
+    ROOT / "test" / "sample" / "east3",
+    ROOT / "test" / "stdlib" / "east3",
+]
+
+_GOLDEN_CALLS_CACHE: set[str] | None = None
+
+
+def _collect_golden_runtime_calls() -> set[str]:
+    """Walk all EAST3 golden files and collect runtime_call / resolved_runtime_call values."""
+    global _GOLDEN_CALLS_CACHE
+    if _GOLDEN_CALLS_CACHE is not None:
+        return _GOLDEN_CALLS_CACHE
+
+    import json as _json
+
+    def _walk(node: object, result: set[str]) -> None:
+        if isinstance(node, dict):
+            for key in ("runtime_call", "resolved_runtime_call"):
+                val = node.get(key)
+                if isinstance(val, str) and val:
+                    result.add(val)
+            for v in node.values():
+                _walk(v, result)
+        elif isinstance(node, list):
+            for item in node:
+                _walk(item, result)
+
+    calls: set[str] = set()
+    for root in _EAST3_ROOTS_FOR_COVERAGE:
+        if not root.exists():
+            continue
+        for path in root.rglob("*.east3"):
+            try:
+                doc = _json.loads(path.read_text(encoding="utf-8"))
+                _walk(doc, calls)
+            except Exception:
+                pass
+
+    _GOLDEN_CALLS_CACHE = calls
+    return calls
+
+
+_COVERAGE_META_PREFIXES = ("env.",)
+
+
+def _collect_rt_call_coverage_hits(
+    filter_lang: str | None,
+) -> list[tuple[str, str, Path, int, str]]:
+    """Return hits for mapping.json calls entries not covered by any EAST3 golden."""
+    import json as _json
+
+    all_golden = _collect_golden_runtime_calls()
+    hits: list[tuple[str, str, Path, int, str]] = []
+
+    # lang_key → runtime directory name (JS uses its own js/ dir, not ts/)
+    lang_dir_map: dict[str, str] = {k: d for k, d in ALL_LANGS_ORDERED}
+    lang_dir_map["js"] = "js"
+
+    runtime_root = ROOT / "src" / "runtime"
+
+    for lang_key, runtime_dir_name in sorted(lang_dir_map.items()):
+        if filter_lang and lang_key != filter_lang:
+            continue
+        mapping_path = runtime_root / runtime_dir_name / "mapping.json"
+        if not mapping_path.exists():
+            continue
+        try:
+            doc = _json.loads(mapping_path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        calls = doc.get("calls", {})
+        for key in sorted(calls):
+            if any(key.startswith(p) for p in _COVERAGE_META_PREFIXES):
+                continue
+            if key not in all_golden:
+                line = f"calls[\"{key}\"] not found in any EAST3 golden"
+                hits.append((lang_key, "rt:call_coverage", mapping_path, 0, line))
+
+    return hits
 
 
 # ---------------------------------------------------------------------------
@@ -315,10 +406,17 @@ def collect_runtime_hits(
                 for cat, patterns in RUNTIME_CATEGORIES.items():
                     if filter_cat and cat != filter_cat:
                         continue
+                    if not patterns:
+                        continue  # custom check, not grep-based
                     for pat in patterns:
                         if re.search(pat, raw):
                             hits.append((lang_key, cat, fpath, lineno, stripped[:120]))
                             break
+
+    # rt:call_coverage: custom check (not grep-based)
+    if not filter_cat or filter_cat == "rt:call_coverage":
+        hits.extend(_collect_rt_call_coverage_hits(filter_lang))
+
     return hits
 
 
