@@ -396,7 +396,22 @@ def _emit_set_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 def _emit_tuple_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     elements = _list(node, "elements")
     elem_strs = [_emit_expr(ctx, e) for e in elements]
-    return "[" + ", ".join(elem_strs) + "]"
+    return "pyTuple(" + ", ".join(elem_strs) + ")"
+
+
+def _emit_binding_pattern(node: JsonVal) -> str:
+    if not isinstance(node, dict):
+        return "_item"
+    kind = _str(node, "kind")
+    if kind in ("Name", "NameTarget"):
+        name = _str(node, "id")
+        if name == "":
+            name = _str(node, "repr")
+        return _safe_ts_ident(name) if name != "" else "_item"
+    if kind == "Tuple":
+        items = _list(node, "elements")
+        return "[" + ", ".join(_emit_binding_pattern(item) for item in items) + "]"
+    return "_item"
 
 
 def _ts_condition_expr(ctx: EmitContext, node: JsonVal) -> str:
@@ -717,7 +732,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     return "<" + ts_array_type(elem_type) + ">[]"
                 return "[]"
             if fn_name == "__TUPLE_CTOR__":
-                return "[" + ", ".join(all_arg_strs) + "]"
+                return "pyTuple(" + ", ".join(all_arg_strs) + ")"
             if fn_name == "__SET_CTOR__":
                 rt = _str(node, "resolved_type")
                 if not ctx.strip_types and rt.startswith("set[") and rt.endswith("]"):
@@ -727,6 +742,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if fn_name == "__LIST_APPEND__":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 item = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "null"
+                if not ctx.strip_types:
+                    item = "(" + item + " as any)"
                 return owner + ".push(" + item + ")"
             if fn_name == "__LIST_POP__":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
@@ -786,6 +803,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     mapped_cast = ctx.mapping.calls[fn_id_cast]
                     if isinstance(mapped_cast, str) and mapped_cast not in ("", "__CAST__"):
                         mapped_safe = mapped_cast if "." in mapped_cast else _safe_ts_ident(mapped_cast)
+                        if mapped_cast == "Math.trunc":
+                            return mapped_safe + "(Number(" + all_arg_strs[0] + "))"
                         return mapped_safe + "(" + all_arg_strs[0] + ")"
                 return all_arg_strs[0]
             return "null"
@@ -1378,7 +1397,7 @@ def _comp_filter_code(ctx: EmitContext, gen: dict, iter_code: str) -> str:
     if not isinstance(ifs, list) or len(ifs) == 0:
         return iter_code
     target_node = gen.get("target")
-    target_code = _emit_expr(ctx, target_node) if isinstance(target_node, dict) else "_item"
+    target_code = _emit_binding_pattern(target_node)
     filter_parts = [_emit_expr(ctx, cond) for cond in ifs if isinstance(cond, dict)]
     if not filter_parts:
         return iter_code
@@ -1397,7 +1416,7 @@ def _emit_list_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     iter_code = _comp_iter_code(ctx, gen)
     iter_code = _comp_filter_code(ctx, gen, iter_code)
     target_node = gen.get("target")
-    target_code = _emit_expr(ctx, target_node) if isinstance(target_node, dict) else "_item"
+    target_code = _emit_binding_pattern(target_node)
     return iter_code + ".map((" + target_code + ") => " + elt + ")"
 
 
@@ -1412,7 +1431,7 @@ def _emit_set_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     iter_code = _comp_iter_code(ctx, gen)
     iter_code = _comp_filter_code(ctx, gen, iter_code)
     target_node = gen.get("target")
-    target_code = _emit_expr(ctx, target_node) if isinstance(target_node, dict) else "_item"
+    target_code = _emit_binding_pattern(target_node)
     return "new Set(" + iter_code + ".map((" + target_code + ") => " + elt + "))"
 
 
@@ -1428,7 +1447,7 @@ def _emit_dict_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     iter_code = _comp_iter_code(ctx, gen)
     iter_code = _comp_filter_code(ctx, gen, iter_code)
     target_node = gen.get("target")
-    target_code = _emit_expr(ctx, target_node) if isinstance(target_node, dict) else "_item"
+    target_code = _emit_binding_pattern(target_node)
     return "new Map(" + iter_code + ".map((" + target_code + ") => [" + key + ", " + value + "]))"
 
 

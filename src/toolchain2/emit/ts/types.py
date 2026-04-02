@@ -100,6 +100,7 @@ TS_BUILTIN_RUNTIME_SYMBOLS: tuple[str, ...] = (
     "pyupdate", "pypop", "pyextend", "pysort", "pyclear",
     "pydel",
     "pyinsert", "pybool", "pyrepr",
+    "pyTuple", "pyTupleToString",
     "dict", "list", "set_", "field", "___",
     "__file__",
     "bool", "str", "int", "float",

@@ -27,6 +27,7 @@ export const PY_TYPE_OBJECT = 7;
 export const PYTRA_TRUTHY = Symbol.for("pytra.py_truthy");
 export const PYTRA_TRY_LEN = Symbol.for("pytra.py_try_len");
 export const PYTRA_STR = Symbol.for("pytra.py_str");
+const PYTRA_TUPLE = Symbol.for("pytra.tuple");
 
 const PYTRA_USER_TYPE_ID_BASE = 1000;
 let pyNextTypeId = PYTRA_USER_TYPE_ID_BASE;
@@ -284,6 +285,26 @@ function asTagged(value: unknown): PytraTagged | null {
   return null;
 }
 
+function isPyTuple(value: unknown): value is unknown[] {
+  return Array.isArray(value) && Object.prototype.hasOwnProperty.call(value, PYTRA_TUPLE);
+}
+
+export function pyTuple<T extends unknown[]>(...items: T): T {
+  Object.defineProperty(items, PYTRA_TUPLE, {
+    value: true,
+    enumerable: false,
+    configurable: false,
+    writable: false,
+  });
+  return items;
+}
+
+export function pyTupleToString(value: unknown[]): string {
+  const parts = value.map((item) => pyrepr(item));
+  if (value.length === 1) return "(" + parts[0] + ",)";
+  return "(" + parts.join(", ") + ")";
+}
+
 /** 値の type_id を返す（minify 耐性のある tag dispatch 用）。 */
 export function pyTypeId(value: unknown): number {
   initBuiltinTypeBases();
@@ -390,9 +411,10 @@ export function pyStr(value: unknown): string {
     case PY_TYPE_STRING:
       return value as string;
     case PY_TYPE_ARRAY:
-      return `[${(value as unknown[]).map((v) => pyToString(v)).join(", ")}]`;
+      if (isPyTuple(value)) return pyTupleToString(value);
+      return `[${(value as unknown[]).map((v) => pyrepr(v)).join(", ")}]`;
     case PY_TYPE_MAP: {
-      const entries = Array.from((value as Map<unknown, unknown>).entries()).map(([k, v]) => `${pyToString(k)}: ${pyToString(v)}`);
+      const entries = Array.from((value as Map<unknown, unknown>).entries()).map(([k, v]) => `${pyrepr(k)}: ${pyrepr(v)}`);
       return `{${entries.join(", ")}}`;
     }
     case PY_TYPE_SET: {
@@ -1577,8 +1599,11 @@ export function pyrepr(x: any): string {
   if (x === null) return "None";
   if (x === true) return "True";
   if (x === false) return "False";
-  if (typeof x === "string") return JSON.stringify(x);
-  if (Array.isArray(x)) return "[" + x.map(pyrepr).join(", ") + "]";
+  if (typeof x === "string") return "'" + x.replaceAll("\\", "\\\\").replaceAll("'", "\\'") + "'";
+  if (Array.isArray(x)) {
+    if (isPyTuple(x)) return pyTupleToString(x);
+    return "[" + x.map(pyrepr).join(", ") + "]";
+  }
   if (x instanceof Map) {
     const entries = Array.from(x.entries()).map(([k, v]) => pyrepr(k) + ": " + pyrepr(v));
     return "{" + entries.join(", ") + "}";

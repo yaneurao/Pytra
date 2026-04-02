@@ -16,6 +16,7 @@ const PY_TYPE_OBJECT = 7;
 const PYTRA_TRUTHY = Symbol.for("pytra.py_truthy");
 const PYTRA_TRY_LEN = Symbol.for("pytra.py_try_len");
 const PYTRA_STR = Symbol.for("pytra.py_str");
+const PYTRA_TUPLE = Symbol.for("pytra.tuple");
 
 const PYTRA_USER_TYPE_ID_BASE = 1000;
 let _pyNextTypeId = PYTRA_USER_TYPE_ID_BASE;
@@ -277,6 +278,26 @@ function pyTypeId(value) {
   return PY_TYPE_OBJECT;
 }
 
+function _isPyTuple(value) {
+  return Array.isArray(value) && Object.prototype.hasOwnProperty.call(value, PYTRA_TUPLE);
+}
+
+function pyTuple(...items) {
+  Object.defineProperty(items, PYTRA_TUPLE, {
+    value: true,
+    enumerable: false,
+    configurable: false,
+    writable: false,
+  });
+  return items;
+}
+
+function pyTupleToString(value) {
+  const parts = value.map((item) => pyrepr(item));
+  if (value.length === 1) return `(${parts[0]},)`;
+  return `(${parts.join(", ")})`;
+}
+
 /** bool 境界の共通 truthy 判定。 */
 function pyTruthy(value) {
   const typeId = pyTypeId(value);
@@ -351,9 +372,10 @@ function pyStr(value) {
     case PY_TYPE_STRING:
       return value;
     case PY_TYPE_ARRAY:
-      return `[${value.map((v) => pyToString(v)).join(", ")}]`;
+      if (_isPyTuple(value)) return pyTupleToString(value);
+      return `[${value.map((v) => pyrepr(v)).join(", ")}]`;
     case PY_TYPE_MAP: {
-      const entries = Array.from(value.entries()).map(([k, v]) => `${pyToString(k)}: ${pyToString(v)}`);
+      const entries = Array.from(value.entries()).map(([k, v]) => `${pyrepr(k)}: ${pyrepr(v)}`);
       return `{${entries.join(", ")}}`;
     }
     case PY_TYPE_SET: {
@@ -377,6 +399,22 @@ function pyStr(value) {
 /** Python 風の文字列表現へ変換する。 */
 function pyToString(value) {
   return pyStr(value);
+}
+
+function pyrepr(x) {
+  if (x === null || x === undefined) return "None";
+  if (x === true) return "True";
+  if (x === false) return "False";
+  if (typeof x === "string") return "'" + x.replaceAll("\\", "\\\\").replaceAll("'", "\\'") + "'";
+  if (Array.isArray(x)) {
+    if (_isPyTuple(x)) return pyTupleToString(x);
+    return "[" + x.map(pyrepr).join(", ") + "]";
+  }
+  if (x instanceof Map) {
+    const entries = Array.from(x.entries()).map(([k, v]) => pyrepr(k) + ": " + pyrepr(v));
+    return "{" + entries.join(", ") + "}";
+  }
+  return String(x);
 }
 
 /** Python の print 相当（空白区切りで表示）。 */
@@ -1285,6 +1323,8 @@ export {
   pyReversed,
   pySorted,
   pyFmt,
+  pyTuple,
+  pyTupleToString,
   bool,
   pyopen,
 };

@@ -127,7 +127,7 @@ P0-TS-REMOVE-TYPE-ID で emitter の export は撤去したが、`src/runtime/ts
 
 1. [x] [ID: P0-TS-RT-TYPEID-S1] `src/runtime/ts/built_in/py_runtime.ts` から `PYTRA_TYPE_ID` の定義と全参照を削除する（2026-04-02）
 2. [x] [ID: P0-TS-RT-TYPEID-S2] `src/runtime/js/built_in/py_runtime.js` から同様に削除する（2026-04-02）
-3. [ ] [ID: P0-TS-RT-TYPEID-S3] fixture + sample + stdlib の TS/JS parity に回帰がないことを確認する
+3. [x] [ID: P0-TS-RT-TYPEID-S3] fixture + sample + stdlib の TS/JS parity に回帰がないことを確認する（2026-04-02）— fixture 137/137, sample 18/18, stdlib 16/16 PASS
 
 ### P12-TS-SELFHOST: TS emitter で toolchain2 を TypeScript に変換し tsc build を通す
 
