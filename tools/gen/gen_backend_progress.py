@@ -490,10 +490,12 @@ def _build_selfhost_matrix_en(selfhost_data: dict[str, dict[str, object]]) -> li
 
 
 def _selfhost_summary_cell(selfhost_data: dict[str, dict[str, object]], emit_lang: str) -> str:
-    """Cell for selfhost row in summary: '🟩<br>P/T' or '🟥<br>P/T' or '⬜'.
+    """Cell for selfhost row in summary: '🟩<br>P/T' or '🟨<br>P/T' or '🟥<br>P/T' or '⬜'.
 
     Counts PASS/FAIL across all selfhost source rows (Python + SELFHOST_LANGS)
     for the given emit language — matches the totals row in backend-progress-selfhost.md.
+
+    🟩 all pass, 🟨 partial (1+ pass, not all), 🟥 none pass, ⬜ untested.
     """
     source_langs = ["python"] + list(SELFHOST_LANGS)
     icons = [_selfhost_stage_icon(selfhost_data.get(sl, {}), emit_lang) for sl in source_langs]
@@ -502,7 +504,12 @@ def _selfhost_summary_cell(selfhost_data: dict[str, dict[str, object]], emit_lan
         return "⬜<br>&nbsp;"
     passed = tested.count("🟩")
     total = len(icons)  # PASS + FAIL + 未実行
-    icon = "🟩" if passed == total else "🟥"
+    if passed == total:
+        icon = "🟩"
+    elif passed > 0:
+        icon = "🟨"
+    else:
+        icon = "🟥"
     return f"{icon}<br>{passed}/{total}"
 
 
