@@ -17,6 +17,7 @@
 | Dart backend | [dart.md](./dart.md) |
 | Go backend | [go.md](./go.md) |
 | JVM backend (Java / Scala / Kotlin) | [java.md](./java.md) |
+| Swift backend | [swift.md](./swift.md) |
 | Ruby backend | [ruby.md](./ruby.md) |
 | Lua backend | [lua.md](./lua.md) |
 | PHP backend | [php.md](./php.md) |
