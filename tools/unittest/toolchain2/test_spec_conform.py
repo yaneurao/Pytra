@@ -808,6 +808,27 @@ def main() -> None:
 
         self.assertEqual(main_ref.get("resolved_type"), "Callable")
 
+    def test_resolver_refines_bare_callable_param_from_renamed_main_callsite(self) -> None:
+        source = """
+from pytra.typing import Callable  # type:ignore
+
+def takes_cb(cb: Callable) -> bool:
+    return cb is not None
+
+def main() -> None:
+    print(takes_cb(main))
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+
+        takes_cb = next(
+            node
+            for node in _walk(east2)
+            if node.get("kind") == "FunctionDef" and node.get("name") == "takes_cb"
+        )
+
+        self.assertEqual(takes_cb.get("arg_types", {}).get("cb"), "callable[[],None]")
+
     def test_resolver_resolves_class_object_fields_staticmethods_and_enum_members(self) -> None:
         source = """
 from pytra.enum import IntEnum

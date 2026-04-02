@@ -1538,8 +1538,6 @@ def _callable_type_needs_refinement(type_str: str, ctx: ResolveContext) -> bool:
     if type_str in ("callable", "Callable"):
         return True
     params, ret = _parse_callable_signature(type_str, ctx)
-    if len(params) == 0:
-        return True
     if _is_unknown_like_type(ret):
         return True
     for param in params:
@@ -1651,6 +1649,10 @@ def _refine_callable_params_from_calls(module_doc: dict[str, JsonVal], ctx: Reso
 
     def _local_function_callable_type(name: str) -> str:
         fn_def = functions.get(name)
+        if not isinstance(fn_def, dict):
+            renamed = ctx.renamed_symbols.get(name, "")
+            if renamed != "":
+                fn_def = functions.get(renamed)
         if not isinstance(fn_def, dict):
             return ""
         arg_order_obj = fn_def.get("arg_order")
