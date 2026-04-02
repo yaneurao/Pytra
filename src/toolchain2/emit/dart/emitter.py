@@ -9,6 +9,10 @@ from toolchain.emit.common.emitter.code_emitter import (
     build_import_alias_map,
     reject_backend_homogeneous_tuple_ellipsis_type_exprs,
 )
+from toolchain2.emit.common.code_emitter import (
+    RuntimeMapping,
+    load_runtime_mapping,
+)
 
 from toolchain.frontends.runtime_symbol_index import (
     canonical_runtime_module_id,
@@ -345,6 +349,8 @@ class DartNativeEmitter:
         self.class_names: set[str] = set()
         self.intflag_classes: set[str] = set()  # classes extending IntEnum/IntFlag → use int type
         self.imported_modules: set[str] = set()
+        self.import_alias_modules: dict[str, str] = {}
+        self._module_aliases: dict[str, str] = {}
         self.function_names: set[str] = set()
         self.relative_import_name_aliases: dict[str, str] = {}
         self.current_class_name: str = ""
@@ -360,12 +366,95 @@ class DartNativeEmitter:
         # emit_context (injected by emit_all_modules)
         meta_any = east_doc.get("meta")
         meta = meta_any if isinstance(meta_any, dict) else {}
+        self.import_alias_modules = build_import_alias_map(meta)
+        mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "dart" / "mapping.json"
+        self._mapping: RuntimeMapping = load_runtime_mapping(mapping_path)
         emit_ctx_any = meta.get("emit_context")
         emit_ctx = emit_ctx_any if isinstance(emit_ctx_any, dict) else {}
         self._module_id: str = emit_ctx.get("module_id", "") if isinstance(emit_ctx.get("module_id"), str) else ""
         self._root_rel_prefix: str = emit_ctx.get("root_rel_prefix", "./") if isinstance(emit_ctx.get("root_rel_prefix"), str) else "./"
         self._is_entry: bool = bool(emit_ctx.get("is_entry", False))
         self._has_extern_delegation: bool = False
+
+    def _walk_nodes(self, root: Any) -> list[dict[str, Any]]:
+        out: list[dict[str, Any]] = []
+        if isinstance(root, dict):
+            out.append(root)
+            for value in root.values():
+                out.extend(self._walk_nodes(value))
+        elif isinstance(root, list):
+            for item in root:
+                out.extend(self._walk_nodes(item))
+        return out
+
+    def _next_module_alias(self, base_alias: str) -> str:
+        alias = _safe_ident(base_alias, "mod")
+        if alias not in self.imported_modules:
+            return alias
+        seq = 2
+        while True:
+            candidate = alias + "_" + str(seq)
+            if candidate not in self.imported_modules:
+                return candidate
+            seq += 1
+
+    def _resolve_module_attr_module_id(self, node: Any) -> str:
+        if not isinstance(node, dict) or node.get("kind") != "Attribute":
+            return ""
+        owner_node = node.get("value")
+        attr_raw = node.get("attr") if isinstance(node.get("attr"), str) else ""
+        if attr_raw == "":
+            return ""
+        owner_module_id = ""
+        if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
+            owner_name = _safe_ident(owner_node.get("id"), "")
+            owner_module_id = self.import_alias_modules.get(owner_name, "")
+        elif isinstance(owner_node, dict) and owner_node.get("kind") == "Attribute":
+            owner_module_id = self._resolve_module_attr_module_id(owner_node)
+        if owner_module_id == "":
+            return ""
+        resolved = resolve_import_binding_doc(owner_module_id, attr_raw, "symbol")
+        if resolved.get("resolved_binding_kind") != "module":
+            return ""
+        runtime_mod = resolved.get("runtime_module_id")
+        if not isinstance(runtime_mod, str) or runtime_mod == "":
+            return ""
+        return canonical_runtime_module_id(runtime_mod)
+
+    def _resolve_module_owner_alias(self, owner_node: Any) -> str:
+        if not isinstance(owner_node, dict):
+            return ""
+        if owner_node.get("kind") == "Name":
+            owner_name = _safe_ident(owner_node.get("id"), "")
+            module_id = self.import_alias_modules.get(owner_name, "")
+            if module_id != "" and owner_name in self.imported_modules:
+                return owner_name
+            return ""
+        if owner_node.get("kind") != "Attribute":
+            return ""
+        module_id = self._resolve_module_attr_module_id(owner_node)
+        if module_id == "":
+            return ""
+        return self._module_aliases.get(module_id, "")
+
+    def _lookup_mapped_call(self, runtime_module_id: str, attr: str) -> str:
+        if runtime_module_id != "":
+            if runtime_module_id + "." + attr in self._mapping.calls:
+                return self._mapping.calls[runtime_module_id + "." + attr]
+            module_parts = runtime_module_id.split(".")
+            if len(module_parts) >= 3 and module_parts[0] == "pytra" and module_parts[1] == "std":
+                short_key = ".".join(module_parts[2:]) + "." + attr
+                if short_key in self._mapping.calls:
+                    return self._mapping.calls[short_key]
+        return self._mapping.calls.get(attr, "")
+
+    def _expand_mapped_call(self, mapped: str, rendered_args: list[str]) -> str:
+        if mapped.startswith("__NUM_METHOD__:"):
+            method_name = mapped[len("__NUM_METHOD__:"):]
+            if len(rendered_args) == 0:
+                return "0"
+            return "(" + rendered_args[0] + " as num)." + method_name + "()"
+        return ""
 
     # --- type mapping ---
 
@@ -911,6 +1000,7 @@ class DartNativeEmitter:
         self.class_names = set()
         self.intflag_classes = set()
         self.imported_modules = set()
+        self._module_aliases = {}
         self.function_names = set()
         self._function_return_types = {}
         self._class_field_types = {}
@@ -1030,6 +1120,7 @@ class DartNativeEmitter:
         # Use build_import_alias_map + resolve_import_binding_doc (§3/§7)
         meta_any = self.east_doc.get("meta")
         meta = meta_any if isinstance(meta_any, dict) else {}
+        self.import_alias_modules = build_import_alias_map(meta)
         # Track which module_ids we've already emitted import statements for
         imported_module_paths: dict[str, str] = {}  # module_id -> dart alias
         mod_alias_seq = 0
@@ -1060,12 +1151,8 @@ class DartNativeEmitter:
                     imp_path = _module_id_to_import_path(mod_canon, ".dart", rt_prefix)
                     dart_import_lines.append("import '" + imp_path + "' as " + alias_txt + ";")
                     imported_module_paths[mod_canon] = alias_txt
+                    self._module_aliases[mod_canon] = alias_txt
                     self.imported_modules.add(alias_txt)
-                    # Auto-import os_path when os is imported (for os.path.* usage)
-                    if mod_canon == "pytra.std.os" and "pytra.std.os_path" not in imported_module_paths:
-                        os_path_imp = _module_id_to_import_path("pytra.std.os_path", ".dart", rt_prefix)
-                        dart_import_lines.append("import '" + os_path_imp + "' as os_path;")
-                        imported_module_paths["pytra.std.os_path"] = "os_path"
             elif stmt_kind == "ImportFrom":
                 mod = stmt.get("module")
                 if not isinstance(mod, str):
@@ -1104,12 +1191,8 @@ class DartNativeEmitter:
                         imp_path = _module_id_to_import_path(mod_canon, ".dart", rt_prefix)
                         dart_import_lines.append("import '" + imp_path + "' as " + alias_txt + ";")
                         imported_module_paths[mod_canon] = alias_txt
+                        self._module_aliases[mod_canon] = alias_txt
                         self.imported_modules.add(alias_txt)
-                        # Auto-import os_path when os is imported (for os.path.* usage)
-                        if mod_canon == "pytra.std.os" and "pytra.std.os_path" not in imported_module_paths:
-                            os_path_imp = _module_id_to_import_path("pytra.std.os_path", ".dart", rt_prefix)
-                            dart_import_lines.append("import '" + os_path_imp + "' as os_path;")
-                            imported_module_paths["pytra.std.os_path"] = "os_path"
                     else:
                         # Symbol import (e.g., from pytra.std.time import perf_counter)
                         if mod_canon not in imported_module_paths:
@@ -1127,6 +1210,33 @@ class DartNativeEmitter:
                             self.relative_import_name_aliases[alias_txt] = mod_alias + "." + sym_safe
                         else:
                             alias_lines.append("var " + alias_txt + " = " + mod_alias + "." + sym_safe + ";")
+        for node in self._walk_nodes(body):
+            runtime_module_id = node.get("runtime_module_id") if isinstance(node, dict) and isinstance(node.get("runtime_module_id"), str) else ""
+            if runtime_module_id != "":
+                runtime_mod_canon = canonical_runtime_module_id(runtime_module_id)
+                runtime_parts = runtime_mod_canon.split(".")
+                if (
+                    runtime_mod_canon != ""
+                    and runtime_mod_canon not in imported_module_paths
+                    and len(runtime_parts) >= 3
+                    and runtime_parts[0] == "pytra"
+                    and runtime_parts[1] in {"std", "utils"}
+                ):
+                    runtime_alias = self._next_module_alias(runtime_mod_canon.split(".")[-1])
+                    runtime_path = _module_id_to_import_path(runtime_mod_canon, ".dart", rt_prefix)
+                    dart_import_lines.append("import '" + runtime_path + "' as " + runtime_alias + ";")
+                    imported_module_paths[runtime_mod_canon] = runtime_alias
+                    self._module_aliases[runtime_mod_canon] = runtime_alias
+                    self.imported_modules.add(runtime_alias)
+            nested_module_id = self._resolve_module_attr_module_id(node)
+            if nested_module_id == "" or nested_module_id in imported_module_paths:
+                continue
+            nested_alias = self._next_module_alias(nested_module_id.split(".")[-1])
+            nested_path = _module_id_to_import_path(nested_module_id, ".dart", rt_prefix)
+            dart_import_lines.append("import '" + nested_path + "' as " + nested_alias + ";")
+            imported_module_paths[nested_module_id] = nested_alias
+            self._module_aliases[nested_module_id] = nested_alias
+            self.imported_modules.add(nested_alias)
         # If this module has @extern delegation, add the __native import (§4/§5.1)
         if self._has_extern_delegation and self._module_id != "":
             native_path = _module_id_to_native_import_path(self._module_id, ".dart", rt_prefix)
@@ -2450,6 +2560,10 @@ class DartNativeEmitter:
                 if len(rendered_args) == 0:
                     return "<int>[]"
                 return "pytraBytes(" + rendered_args[0] + ")"
+            mapped_name = self._mapping.calls.get(raw_fn_name, "")
+            mapped_expr = self._expand_mapped_call(mapped_name, rendered_args)
+            if mapped_expr != "":
+                return mapped_expr
             if fn_name in self.class_names:
                 return fn_name + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
             # Use alias if calling a top-level function that conflicts with a class method name
@@ -2470,26 +2584,23 @@ class DartNativeEmitter:
                             return "/* super().__init__() */"
                         if self.current_class_base_name != "":
                             return "super." + attr + "(" + ", ".join(rendered_args) + ")"
-            # os.path.func(args) → os_path.func(args)
-            if isinstance(owner_node, dict) and owner_node.get("kind") == "Attribute":
-                sub_owner = owner_node.get("value")
-                sub_attr = owner_node.get("attr")
-                if (isinstance(sub_owner, dict) and sub_owner.get("kind") == "Name"
-                        and _safe_ident(sub_owner.get("id"), "") == "os"
-                        and sub_attr == "path"):
-                    return "os_path." + attr + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
+            module_alias = self._resolve_module_owner_alias(owner_node)
+            runtime_module_id = expr.get("runtime_module_id") if isinstance(expr.get("runtime_module_id"), str) else ""
+            if runtime_module_id == "" and isinstance(owner_node, dict) and owner_node.get("kind") == "Attribute":
+                runtime_module_id = self._resolve_module_attr_module_id(owner_node)
+            if module_alias == "" and runtime_module_id != "":
+                module_alias = self._module_aliases.get(canonical_runtime_module_id(runtime_module_id), "")
+            mapped_name = self._lookup_mapped_call(runtime_module_id, raw_attr)
+            mapped_expr = self._expand_mapped_call(mapped_name, rendered_args)
+            if mapped_expr != "":
+                return mapped_expr
+            if module_alias != "":
+                return module_alias + "." + attr + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
             owner = self._render_expr(owner_node)
             owner_type = self._lookup_expr_type(owner_node)
             if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
                 owner_name = _safe_ident(owner_node.get("id"), "")
                 if owner_name in self.imported_modules:
-                    # Dart math: floor/ceil/fabs are instance methods, not top-level
-                    if owner_name == "math" and attr in {"floor", "ceil"}:
-                        if len(rendered_args) >= 1:
-                            return "(" + rendered_args[0] + " as num)." + attr + "()"
-                    if owner_name == "math" and attr == "fabs":
-                        if len(rendered_args) >= 1:
-                            return "(" + rendered_args[0] + " as num).abs()"
                     return owner + "." + attr + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
             # String methods
             if owner_type == "str" or attr in {
@@ -2828,7 +2939,8 @@ def emit_dart_module(east_doc: dict[str, Any]) -> str:
     emit_ctx_any = meta.get("emit_context")
     emit_ctx = emit_ctx_any if isinstance(emit_ctx_any, dict) else {}
     module_id = emit_ctx.get("module_id", "") if isinstance(emit_ctx.get("module_id"), str) else ""
-    if module_id.startswith("pytra.built_in."):
+    module_parts = module_id.split(".")
+    if len(module_parts) >= 3 and module_parts[0] == "pytra" and module_parts[1] == "built_in":
         return ""
     # Skip modules that have hand-written runtime replacements
     if _has_handwritten_runtime(module_id):
