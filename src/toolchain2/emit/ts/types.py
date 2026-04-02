@@ -97,7 +97,7 @@ TS_BUILTIN_RUNTIME_SYMBOLS: tuple[str, ...] = (
     "sys", "pyset_argv", "pyset_path",
     "sub", "match", "search", "findall", "split",
     "pyglob",
-    "pyupdate", "pypop", "pyextend", "pysort", "pyclear",
+    "pyupdate", "pypop", "pysetdefault", "pyextend", "pysort", "pyreverse", "pyclear",
     "pydel",
     "pyinsert", "pybool", "pyrepr",
     "pyTuple", "pyTupleToString",

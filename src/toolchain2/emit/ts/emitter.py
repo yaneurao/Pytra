@@ -296,9 +296,17 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if is_array_like and isinstance(slice_node, dict):
         neg_val = _get_negative_int_literal(slice_node)
         if neg_val is not None:
-            # arr[-n] → arr[arr.length + (-n)]
-            out = owner + "[" + owner + ".length + (" + str(neg_val) + ")]"
-            return out if ctx.strip_types else out + "!"
+            # Preserve Python semantics for negative constant indices:
+            # normalize once, then raise if still out of range.
+            idx_expr = "__owner.length + (" + str(neg_val) + ")"
+            return (
+                "((__owner) => { const __idx = "
+                + idx_expr
+                + "; if (__idx < 0 || __idx >= __owner.length) { throw new RangeError(\"index out of range\"); } "
+                + "return __owner[__idx]; })("
+                + owner
+                + ")"
+            )
     slice_code = _emit_expr(ctx, slice_node)
     out = owner + "[" + slice_code + "]"
     is_tuple_like = owner_rt.startswith("tuple[") or owner_rt == "tuple"
@@ -634,7 +642,6 @@ def _translate_method_name(owner_rt: str, attr: str) -> str:
         _LIST_MAP["count"] = "filter"
         _LIST_MAP["reverse"] = "reverse"
         _LIST_MAP["sort"] = "sort"
-        _LIST_MAP["extend"] = "push"
         _LIST_MAP["insert"] = "splice"
         _LIST_MAP["remove"] = "splice"
         return _LIST_MAP.get(attr, attr)
@@ -880,6 +887,9 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     if isinstance(mapped, str) and mapped != "":
                         mapped_safe = mapped if "." in mapped else _safe_ts_ident(mapped)
                         return mapped_safe + "(" + ", ".join([owner_code] + all_arg_strs) + ")"
+            is_list_like_owner = owner_rt.startswith("list[") or owner_rt in ("list", "bytes", "bytearray")
+            if attr == "extend" and is_list_like_owner and len(all_arg_strs) >= 1:
+                return "pyextend(" + owner_code + ", " + all_arg_strs[0] + ")"
             # TS-specific: Python list methods → JS array methods
             ts_attr = _translate_method_name(owner_rt, attr)
             # obj.get(key, default) → (obj.get(key) ?? default)
@@ -889,6 +899,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 key_s = all_arg_strs[0]
                 default_s = all_arg_strs[1]
                 return "(" + owner_code + ".get(" + key_s + ") ?? " + default_s + ")"
+            if ts_attr == "setdefault" and (owner_rt.startswith("dict[") or owner_rt == "dict") and len(all_arg_strs) >= 2:
+                key_s = all_arg_strs[0]
+                default_s = all_arg_strs[1]
+                return "pysetdefault(" + owner_code + ", " + key_s + ", " + default_s + ")"
             return owner_code + "." + ts_attr + "(" + ", ".join(all_arg_strs) + ")"
 
         if func_kind == "Name":
