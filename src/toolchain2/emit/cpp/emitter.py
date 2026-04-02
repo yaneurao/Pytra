@@ -959,7 +959,6 @@ def _normalize_expected_type_name(expected_name: str) -> str:
         "PYTRA_TID_LIST": "list",
         "PYTRA_TID_DICT": "dict",
         "PYTRA_TID_SET": "set",
-        "PYTRA_TID_OBJECT": "object",
     }.get(expected_name, expected_name)
 
 
@@ -977,7 +976,6 @@ def _builtin_type_id_value(type_name: str) -> int | None:
         "list": 5,
         "dict": 6,
         "set": 7,
-        "object": 8,
     }.get(normalized)
 
 

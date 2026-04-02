@@ -48,7 +48,8 @@ Phase 1（variant 出力追加）、Phase 2 の S5 まで完了済み（[archive
 **Phase 2: object 型を削除（残）**
 
 1. [ ] [ID: P0-CPP-VARIANT-S6] `object.h` の `object` クラス削除に向けた blocker を分離し、削除順を固定する
-2. [ ] [ID: P0-CPP-VARIANT-S6A] C++ runtime / emitter に残っている不要な `PYTRA_TID_OBJECT` / object-type-id 正規化の残骸を削除する
+2. [x] [ID: P0-CPP-VARIANT-S6A] C++ runtime / emitter に残っている不要な `PYTRA_TID_OBJECT` / object-type-id 正規化の残骸を削除する
+   - 完了メモ: `isinstance(x, object)` / `issubclass(X, object)` は lower で constant `True` に潰すようにし、`_builtin_type_id_symbol()` から `object -> PYTRA_TID_OBJECT` を削除した。あわせて C++ emitter の `PYTRA_TID_OBJECT -> object` 正規化も撤去し、`src/toolchain2/emit/cpp`, `src/toolchain2/compile`, `src/runtime/cpp` 直下の `PYTRA_TID_OBJECT` 残件は 0 を確認した。
 3. [ ] [ID: P0-CPP-VARIANT-S7] fixture 全件 + sample 全件が `object` 型なしで PASS することを確認する
 
 **Phase 3: box/unbox 削除**

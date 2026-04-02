@@ -1994,6 +1994,43 @@ def f() -> int:
         self.assertEqual(x_assign.get("decl_type"), "int64")
         self.assertEqual(x_assign.get("value", {}).get("resolved_type"), "int64")
 
+    def test_compile_lowers_isinstance_object_to_true_without_type_id_object(self) -> None:
+        source = """
+def f(x: int) -> bool:
+    return isinstance(x, object)
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+        east3 = lower_east2_to_east3(east2, target_language="cpp")
+
+        return_nodes = [node for node in _walk(east3) if node.get("kind") == "Return"]
+        self.assertEqual(len(return_nodes), 1)
+        value = return_nodes[0].get("value")
+        self.assertIsInstance(value, dict)
+        self.assertEqual(value.get("kind"), "Constant")
+        self.assertEqual(value.get("value"), True)
+        self.assertFalse(any(node.get("id") == "PYTRA_TID_OBJECT" for node in _walk(east3)))
+
+    def test_compile_lowers_issubclass_object_to_true_without_type_id_object(self) -> None:
+        source = """
+class A:
+    pass
+
+def f() -> bool:
+    return issubclass(A, object)
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+        east3 = lower_east2_to_east3(east2, target_language="cpp")
+
+        return_nodes = [node for node in _walk(east3) if node.get("kind") == "Return"]
+        target = next(node for node in return_nodes if isinstance(node.get("value"), dict))
+        value = target.get("value")
+        self.assertIsInstance(value, dict)
+        self.assertEqual(value.get("kind"), "Constant")
+        self.assertEqual(value.get("value"), True)
+        self.assertFalse(any(node.get("id") == "PYTRA_TID_OBJECT" for node in _walk(east3)))
+
     def test_compile_unboxes_optional_tuple_before_unpack(self) -> None:
         source = """
 def f(separators: tuple[str, str] | None) -> str:

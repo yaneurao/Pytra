@@ -1404,7 +1404,6 @@ def _builtin_type_id_symbol(type_name: str) -> str:
         "None": "PYTRA_TID_NONE",
         "str": "PYTRA_TID_STR", "list": "PYTRA_TID_LIST",
         "dict": "PYTRA_TID_DICT", "set": "PYTRA_TID_SET",
-        "object": "PYTRA_TID_OBJECT",
     }
     return table.get(type_name, "")
 
@@ -1590,6 +1589,18 @@ def _lower_isinstance_call(
         fo = _const_bool_node(False)
         _copy_source_span_and_repr(out_call, fo)
         return fo
+    for spec in specs:
+        if not isinstance(spec, dict):
+            continue
+        type_ref_expr = spec.get("type_ref_expr")
+        if not isinstance(type_ref_expr, dict):
+            continue
+        if type_ref_expr.get("kind") != NAME:
+            continue
+        if _normalize_type_predicate_target_name(jv_str(type_ref_expr.get("id", ""))) == "object":
+            to = _const_bool_node(True)
+            _copy_source_span_and_repr(out_call, to)
+            return to
     checks: list[Node] = []
     for spec in specs:
         spec_node: Node = cast(dict[str, JsonVal], spec)
@@ -1628,6 +1639,18 @@ def _lower_issubclass_call(
         fo = _const_bool_node(False)
         _copy_source_span_and_repr(out_call, fo)
         return fo
+    for spec in specs:
+        if not isinstance(spec, dict):
+            continue
+        type_ref_expr = spec.get("type_ref_expr")
+        if not isinstance(type_ref_expr, dict):
+            continue
+        if type_ref_expr.get("kind") != NAME:
+            continue
+        if _normalize_type_predicate_target_name(jv_str(type_ref_expr.get("id", ""))) == "object":
+            to = _const_bool_node(True)
+            _copy_source_span_and_repr(out_call, to)
+            return to
     checks: list[Node] = []
     for spec in specs:
         spec_node: Node = cast(dict[str, JsonVal], spec)
