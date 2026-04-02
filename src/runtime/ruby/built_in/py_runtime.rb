@@ -335,7 +335,57 @@ def ord(ch)
 end
 
 def chr(n)
-  __pytra_int(n).chr
+  __pytra_int(n).chr(Encoding::UTF_8)
+end
+
+class PytraSys
+  attr_accessor :argv, :path
+  def initialize
+    @argv = ARGV
+    @path = []
+  end
+  def set_argv(values)
+    @argv = values
+    ARGV.replace(values)
+  end
+  def set_path(values)
+    @path = values
+  end
+  def write_stderr(text)
+    Kernel.write_stderr(text)
+  end
+  def write_stdout(text)
+    Kernel.write_stdout(text)
+  end
+end
+
+class PytraPathModule
+  def join(*parts)
+    File.join(*parts.map { |p| __pytra_str(p) })
+  end
+  def splitext(path)
+    __pytra_splitext(path)
+  end
+  def basename(path)
+    File.basename(__pytra_str(path))
+  end
+  def dirname(path)
+    File.dirname(__pytra_str(path))
+  end
+  def exists(path)
+    File.exist?(__pytra_str(path))
+  end
+end
+
+PYTRA_SYS = PytraSys.new
+PYTRA_PATH = PytraPathModule.new
+
+def sys
+  PYTRA_SYS
+end
+
+def __pytra_path
+  PYTRA_PATH
 end
 
 def __pytra_reversed(v)
