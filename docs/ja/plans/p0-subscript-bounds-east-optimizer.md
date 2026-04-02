@@ -70,9 +70,13 @@ toolchain2 ではこのオプションが移行されておらず、C++ runtime 
 
 1. [ ] [ID: P0-SUB-BOUNDS-S1] `meta.subscript_access_v1` スキーマを spec-east.md に定義する
 2. [ ] [ID: P0-SUB-BOUNDS-S2] EAST optimizer に `--negative-index-mode` / `--bounds-check-mode` を追加し、`Subscript` ノードにメタデータを付与するパスを実装する
+   - `optimize_east3_document()` の引数に `negative_index_mode` / `bounds_check_mode` を追加する
+   - `runtime_parity_check_fast.py` にも `--negative-index-mode` / `--bounds-check-mode` CLI オプションを追加し、optimizer に引き回す
+   - parity check のデフォルトは旧 toolchain と同じ `const_only` + `off` にする
 3. [ ] [ID: P0-SUB-BOUNDS-S3] C++ emitter でメタデータに基づく direct index / py_list_at_ref の分岐を実装する
 4. [ ] [ID: P0-SUB-BOUNDS-S4] sample 01 (mandelbrot) の C++ 実行時間が改善されることを確認する
 5. [ ] [ID: P0-SUB-BOUNDS-S5] fixture + sample + stdlib parity に回帰がないことを確認する
+6. [ ] [ID: P0-SUB-BOUNDS-S6] negative index の回帰 fixture を追加する — `a[-1]` / `a[-2]` を含む fixture で、optimizer が誤って `negative_index: skip` を付けた場合に FAIL になることを検証する
 
 ## 決定ログ
 
