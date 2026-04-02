@@ -20,6 +20,18 @@
 
 ## 未完了タスク
 
+### P0-OPAQUE-STORAGE-HINT: @extern class に class_storage_hint:"opaque" と meta.opaque_v1 を付与する
+
+compile/resolve が `@extern class`（メソッドシグネチャのみ、フィールドなし）を検出したとき、`class_storage_hint: "opaque"` と `meta.opaque_v1` を付与する。現状は `"value"` になっており `meta.opaque_v1` も付かない。emitter は `class_storage_hint` を見て rc の要否を判断する（`"opaque"` → 生ポインタ、rc なし）。
+
+spec: [docs/ja/spec/spec-opaque-type.md](../spec/spec-opaque-type.md)
+fixture: `test/fixture/source/py/oop/extern_opaque_basic.py`
+
+1. [ ] [ID: P0-OPAQUE-HINT-S1] compile/resolve で `@extern class`（body が全て `FunctionDef` + `...`）を検出し `class_storage_hint: "opaque"` を設定する
+2. [ ] [ID: P0-OPAQUE-HINT-S2] `ClassDef.meta.opaque_v1` を付与する（`schema_version: 1`）
+3. [ ] [ID: P0-OPAQUE-HINT-S3] `extern_opaque_basic` fixture の EAST3 golden で `class_storage_hint: "opaque"` と `meta.opaque_v1` が付いていることを確認する
+4. [ ] [ID: P0-OPAQUE-HINT-S4] フィールドを持つ `@extern class` は `"opaque"` にならないことを確認する（`"ref"` のまま）
+
 ### P0-ITER-OPS-REMOVAL: iter_ops.py を削除し typed lowering に完全移行する
 
 `src/pytra/built_in/iter_ops.py` は `object` ベースの `py_reversed_object` / `py_enumerate_object` を定義しているが、EAST3 の typed lowering が整備された現在は不要。この object ベースのヘルパーが残っていることで、C++ の object 退化削除（P0-CPP-VARIANT Phase 4）がブロックされている。
