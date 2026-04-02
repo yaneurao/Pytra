@@ -458,6 +458,8 @@ def _cast_from_any(expr: str, swift_type: str) -> str:
 
 def _render_name_expr(expr: dict[str, Any]) -> str:
     ident = _safe_ident(expr.get("id"), "value")
+    if ident == "main" and _MAIN_CALL_ALIAS[0] != "":
+        return _MAIN_CALL_ALIAS[0]
     return _RELATIVE_IMPORT_NAME_ALIASES[0].get(ident, ident)
 
 
@@ -827,6 +829,13 @@ def _is_math_constant(expr: dict[str, Any]) -> bool:
 def _render_attribute_expr(expr: dict[str, Any]) -> str:
     value_any = expr.get("value")
     attr = _safe_ident(expr.get("attr"), "field")
+    if isinstance(value_any, dict) and value_any.get("kind") == "Name":
+        owner_module = value_any.get("runtime_module_id")
+        if owner_module == "pytra.std.env" and attr == "target":
+            return "\"swift\""
+        owner_type = value_any.get("resolved_type")
+        if owner_type == "type":
+            return _safe_ident(value_any.get("id"), "Type") + "." + attr
     semantic_tag_any = expr.get("semantic_tag")
     semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
     runtime_call, _ = _resolved_runtime_call(expr)
@@ -838,6 +847,10 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
         resolved_source_any = expr.get("resolved_runtime_source")
         resolved_source = resolved_source_any if isinstance(resolved_source_any, str) else ""
         if resolved_source == "module_attr":
+            runtime_module = _runtime_module_id(expr)
+            runtime_name = _runtime_symbol_name(expr)
+            if runtime_module == "pytra.std.env" and runtime_name == "target":
+                return "\"swift\""
             adapter = expr.get("runtime_call_adapter_kind", "")
             adapter = adapter if isinstance(adapter, str) else ""
             runtime_symbol = _resolved_runtime_symbol(resolved_runtime, adapter)
@@ -1032,6 +1045,22 @@ def _render_call_via_runtime_call(
             return runtime_symbol + "(" + ", ".join(rendered_runtime_args) + ")"
         return ""
     runtime_symbol = _resolved_runtime_symbol(runtime_call, adapter)
+    runtime_module = _runtime_module_id(expr)
+    runtime_name = _runtime_symbol_name(expr)
+    if runtime_module == "pytra.utils.png" and runtime_name == "write_rgb_png":
+        rendered_runtime_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_runtime_args.append(_render_expr(args[i]))
+            i += 1
+        return "write_rgb_png(" + ", ".join(rendered_runtime_args) + ")"
+    if runtime_module == "pytra.std.os" and runtime_name == "makedirs":
+        rendered_runtime_args = []
+        i = 0
+        while i < len(args):
+            rendered_runtime_args.append(_render_expr(args[i]))
+            i += 1
+        return "__pytra_makedirs(" + ", ".join(rendered_runtime_args) + ")"
     if runtime_symbol == "":
         return ""
     if runtime_call.find(".") >= 0:
@@ -2496,10 +2525,11 @@ def _emit_function(
 ) -> list[str]:
     name = _safe_ident(fn.get("name"), "func")
     is_init = receiver_name is not None and name == "__init__"
-
-    # @extern functions → delegate to _native module
     decorators_any = fn.get("decorators")
     decorators = decorators_any if isinstance(decorators_any, list) else []
+    is_staticmethod = receiver_name is not None and "staticmethod" in decorators
+
+    # @extern functions → delegate to _native module
     if "extern" in decorators and receiver_name is None:
         return_type = _swift_type(fn.get("return_type"), allow_void=True)
         drop_self = False
@@ -2527,10 +2557,13 @@ def _emit_function(
 
     lines: list[str] = []
     if is_init:
-        lines.append(indent + "init(" + ", ".join(params) + ") {")
+        init_prefix = "override " if receiver_name is not None and in_class_name is not None and _class_has_base_method(in_class_name, "__init__") else ""
+        lines.append(indent + init_prefix + "init(" + ", ".join(params) + ") {")
     else:
         fn_prefix = ""
-        if receiver_name is not None and in_class_name is not None and _class_has_base_method(in_class_name, name):
+        if is_staticmethod:
+            fn_prefix = "static "
+        elif receiver_name is not None and in_class_name is not None and _class_has_base_method(in_class_name, name):
             fn_prefix = "override "
         sig = indent + fn_prefix + "func " + name + "(" + ", ".join(params) + ")"
         if return_type != "Void":
@@ -2629,26 +2662,49 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     base_any = cls.get("base")
     base_name = _safe_ident(base_any, "") if isinstance(base_any, str) else ""
     extends = ": " + base_name if base_name != "" else ""
+    is_dataclass = bool(cls.get("dataclass"))
 
     lines: list[str] = []
     lines.append(indent + "class " + class_name + extends + " {")
 
     field_types_any = cls.get("field_types")
     field_types = field_types_any if isinstance(field_types_any, dict) else {}
-    field_specs: list[tuple[str, str, str]] = []
+    body_any = cls.get("body")
+    body = body_any if isinstance(body_any, list) else []
+    annassign_specs: dict[str, tuple[str, str | None]] = {}
+    i = 0
+    while i < len(body):
+        node = body[i]
+        if isinstance(node, dict) and node.get("kind") == "AnnAssign":
+            target_any = node.get("target")
+            if isinstance(target_any, dict) and target_any.get("kind") == "Name":
+                raw_name = target_any.get("id")
+                if isinstance(raw_name, str) and raw_name != "":
+                    field_name = _safe_ident(raw_name, "field")
+                    field_type = _swift_type(node.get("decl_type") or node.get("annotation"), allow_void=False)
+                    default_expr = None
+                    if node.get("value") is not None:
+                        default_expr = _render_expr(node.get("value"))
+                    annassign_specs[field_name] = (field_type, default_expr)
+        i += 1
+    field_specs: list[tuple[str, str, str, str | None, bool]] = []
     for raw_name, raw_type in field_types.items():
         if not isinstance(raw_name, str):
             continue
         field_name = _safe_ident(raw_name, "field")
         field_type = _swift_type(raw_type, allow_void=False)
-        default = _default_return_expr(field_type)
-        if default == "":
-            default = "__pytra_any_default()"
-        field_specs.append((field_name, field_type, default))
-        lines.append(indent + "    var " + field_name + ": " + field_type + " = " + default)
-
-    body_any = cls.get("body")
-    body = body_any if isinstance(body_any, list) else []
+        default_expr = annassign_specs.get(field_name, (field_type, None))[1]
+        default_value = default_expr if default_expr is not None else _default_return_expr(field_type)
+        if default_value == "":
+            default_value = "__pytra_any_default()"
+        is_static_field = (not is_dataclass) and field_name in annassign_specs
+        field_specs.append((field_name, field_type, default_value, default_expr, is_static_field))
+        if is_dataclass:
+            lines.append(indent + "    var " + field_name + ": " + field_type + " = " + default_value)
+        elif is_static_field:
+            lines.append(indent + "    static var " + field_name + ": " + field_type + " = " + default_value)
+        else:
+            lines.append(indent + "    var " + field_name + ": " + field_type + " = " + default_value)
 
     has_init = False
     i = 0
@@ -2671,21 +2727,29 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     if not has_init:
         if len(body) > 0:
             lines.append("")
-        lines.append(indent + "    init() {")
+        init_prefix = "override " if base_name != "" else ""
+        lines.append(indent + "    " + init_prefix + "init() {")
         if base_name != "":
             lines.append(indent + "        super.init()")
-        for field_name, _, default in field_specs:
-            lines.append(indent + "        self." + field_name + " = " + default)
+        for field_name, _, default_value, _, is_static_field in field_specs:
+            if is_static_field:
+                continue
+            lines.append(indent + "        self." + field_name + " = " + default_value)
         lines.append(indent + "    }")
-        if len(field_specs) > 0:
+        init_fields = [spec for spec in field_specs if not spec[4]]
+        if len(init_fields) > 0:
             lines.append("")
             params: list[str] = []
-            for field_name, field_type, _ in field_specs:
-                params.append("_ " + field_name + ": " + field_type)
-            lines.append(indent + "    init(" + ", ".join(params) + ") {")
+            for field_name, field_type, _, default_expr, _ in init_fields:
+                param = "_ " + field_name + ": " + field_type
+                if is_dataclass and default_expr is not None:
+                    param += " = " + default_expr
+                params.append(param)
+            init_prefix = "override " if base_name != "" else ""
+            lines.append(indent + "    " + init_prefix + "init(" + ", ".join(params) + ") {")
             if base_name != "":
                 lines.append(indent + "        super.init()")
-            for field_name, _, _ in field_specs:
+            for field_name, _, _, _, _ in init_fields:
                 lines.append(indent + "        self." + field_name + " = " + field_name)
             lines.append(indent + "    }")
 
@@ -3129,21 +3193,6 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
         lines.extend(_emit_class(classes[i], indent=""))
         i += 1
 
-    i = 0
-    while i < len(functions):
-        fn_comments = _leading_comment_lines(functions[i], "// ")
-        if len(fn_comments) > 0:
-            lines.append("")
-            lines.extend(fn_comments)
-        lines.append("")
-        lines.extend(_emit_function(functions[i], indent="", receiver_name=None))
-        i += 1
-
-    # §4: extern() variable declarations (e.g., pi, e)
-    if len(extern_var_lines) > 0:
-        lines.append("")
-        lines.extend(extern_var_lines)
-
     has_user_main = False
     has_pytra_main = False
     user_main_symbol = "main"
@@ -3161,6 +3210,24 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
         has_user_main = True
         user_main_symbol = "__pytra_main"
         _MAIN_CALL_ALIAS[0] = "__pytra_main"
+    elif has_user_main:
+        _MAIN_CALL_ALIAS[0] = "main"
+
+    i = 0
+    while i < len(functions):
+        fn_comments = _leading_comment_lines(functions[i], "// ")
+        if len(fn_comments) > 0:
+            lines.append("")
+            lines.extend(fn_comments)
+        lines.append("")
+        lines.extend(_emit_function(functions[i], indent="", receiver_name=None))
+        i += 1
+
+    # §4: extern() variable declarations (e.g., pi, e)
+    if len(extern_var_lines) > 0:
+        lines.append("")
+        lines.extend(extern_var_lines)
+
     if has_user_main:
         lines.append("")
         lines.append("func __pytra_entry_main() {")
@@ -3213,7 +3280,13 @@ def emit_swift_module(east_doc: dict[str, Any]) -> str:
     emit_ctx = emit_ctx_any if isinstance(emit_ctx_any, dict) else {}
     module_id_any = emit_ctx.get("module_id")
     module_id = module_id_any if isinstance(module_id_any, str) else ""
-    if module_id.startswith("pytra.built_in.") or module_id.startswith("pytra.utils."):
+    if (
+        module_id.startswith("pytra.built_in.")
+        or module_id.startswith("pytra.utils.")
+        or module_id == "pytra.std.os"
+        or module_id == "pytra.std.env"
+        or module_id == "pytra.std.os_path"
+    ):
         return ""
     return transpile_to_swift_native(east_doc)
 

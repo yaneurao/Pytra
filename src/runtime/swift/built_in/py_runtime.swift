@@ -327,6 +327,18 @@ func __pytra_static_cast(_ v: Any?) -> Int64 {
     return __pytra_int(v)
 }
 
+func __pytra_makedirs(_ path: Any?, _ existOk: Any? = nil) {
+    let p = __pytra_str(path)
+    let ok = __pytra_truthy(existOk)
+    do {
+        try FileManager.default.createDirectory(atPath: p, withIntermediateDirectories: true)
+    } catch {
+        if !ok {
+            return
+        }
+    }
+}
+
 func __pytra_min(_ a: Any?, _ b: Any?) -> Any {
     let af = __pytra_float(a)
     let bf = __pytra_float(b)
