@@ -32,6 +32,10 @@ def __pytra_float(v)
   v.to_f
 end
 
+def __pytra_cast(_type_hint, value)
+  value
+end
+
 def __pytra_div(a, b)
   lhs = __pytra_float(a)
   rhs = __pytra_float(b)
@@ -249,6 +253,33 @@ def __pytra_isalpha(v)
   !!(s =~ /\A[A-Za-z]+\z/)
 end
 
+def __pytra_lstrip(s, chars = nil)
+  txt = __pytra_str(s)
+  return txt.lstrip if chars.nil?
+  cut = __pytra_str(chars)
+  i = 0
+  while i < txt.length && cut.include?(txt[i])
+    i += 1
+  end
+  txt[i..] || ""
+end
+
+def __pytra_rstrip(s, chars = nil)
+  txt = __pytra_str(s)
+  return txt.rstrip if chars.nil?
+  cut = __pytra_str(chars)
+  i = txt.length - 1
+  while i >= 0 && cut.include?(txt[i])
+    i -= 1
+  end
+  return "" if i < 0
+  txt[0..i]
+end
+
+def __pytra_strip(s, chars = nil)
+  __pytra_rstrip(__pytra_lstrip(s, chars), chars)
+end
+
 def __pytra_contains(container, item)
   return false if container.nil?
   return container.key?(item) if container.is_a?(Hash)
@@ -266,10 +297,21 @@ def __pytra_print(*args)
   puts(args.map { |x| __pytra_str(x) }.join(" "))
 end
 
+def write_stderr(text)
+  $stderr.write(__pytra_str(text))
+end
+
+def write_stdout(text)
+  $stdout.write(__pytra_str(text))
+end
+
 # Python built-in `open(path, mode)` shim.
 class PyFile
   def initialize(path, mode)
     @io = File.open(path, mode)
+  end
+  def read
+    @io.read
   end
   def write(data)
     if data.is_a?(Array)
@@ -480,6 +522,19 @@ end
 def __pytra_makedirs(path, *args)
   require 'fileutils'
   FileUtils.mkdir_p(__pytra_str(path))
+end
+
+def __pytra_os_mkdir(path, exist_ok = false)
+  dir = __pytra_str(path)
+  return if exist_ok && File.exist?(dir)
+  Dir.mkdir(dir)
+end
+
+def __pytra_splitext(path)
+  txt = __pytra_str(path)
+  ext = File.extname(txt)
+  return [txt, ""] if ext == ""
+  [txt[0...-ext.length], ext]
 end
 
 # sum built-in

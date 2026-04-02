@@ -156,6 +156,7 @@ def ruby_exception_class(resolved_type: str) -> str:
         "OverflowError": "RangeError",
         "NotImplementedError": "NotImplementedError",
         "StopIteration": "StopIteration",
+        "SystemExit": "SystemExit",
     }
     return mapping.get(resolved_type, "RuntimeError")
 
@@ -175,6 +176,7 @@ def ruby_is_builtin_exception(type_name: str) -> bool:
         "OverflowError",
         "NotImplementedError",
         "StopIteration",
+        "SystemExit",
         "ArithmeticError",
         "LookupError",
         "AttributeError",
