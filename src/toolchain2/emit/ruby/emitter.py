@@ -179,6 +179,18 @@ def _should_skip_module_ruby(module_id: str, mapping: RuntimeMapping) -> bool:
     return should_skip_module(module_id, mapping)
 
 
+def _is_type_only_import_from(module: str, names: list[JsonVal]) -> bool:
+    if module != "pytra.std.json":
+        return False
+    imported_names: list[str] = []
+    for item in names:
+        if isinstance(item, dict):
+            imported_names.append(_str(item, "name"))
+        elif isinstance(item, str):
+            imported_names.append(item)
+    return len(imported_names) > 0 and all(name == "JsonVal" for name in imported_names)
+
+
 def _is_function_symbol(ctx: EmitContext, name: str) -> bool:
     if name in ctx.function_names:
         return True
@@ -369,11 +381,14 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return ctx.runtime_imports[name]
     if name in ctx.class_names:
         return _ruby_class_name(name)
+    local_name = _ruby_local_name(ctx, name)
+    if name in ctx.var_types or local_name in ctx.var_types:
+        return local_name
     if _is_ruby_constant_like(name):
         return _ruby_constant_name(name)
     if _is_function_symbol(ctx, name):
         return "method(:" + _ruby_symbol_name(ctx, name) + ")"
-    return _ruby_local_name(ctx, name)
+    return local_name
 
 
 def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -1546,6 +1561,21 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     safe_name = _ruby_local_name(ctx, name) if name != "" else "_"
     if name != "" and ctx.current_class == "" and ctx.current_return_type == "" and _is_ruby_constant_like(name):
         safe_name = _ruby_constant_name(name)
+    anno = node.get("annotation")
+    if name != "" and not (ctx.current_class == "" and ctx.current_return_type == "" and _is_ruby_constant_like(name)):
+        declared_type = ""
+        if isinstance(anno, dict):
+            declared_type = _str(anno, "resolved_type")
+            if declared_type == "":
+                declared_type = _str(anno, "repr")
+        elif isinstance(anno, str):
+            declared_type = anno
+        if declared_type == "":
+            declared_type = _str(node, "decl_type")
+        if declared_type == "":
+            declared_type = _str(node, "resolved_type")
+        if declared_type != "":
+            ctx.var_types[safe_name] = declared_type
     # Check for extern_var_v1
     meta = _dict(node, "meta")
     extern_v1 = meta.get("extern_var_v1")
@@ -1786,9 +1816,9 @@ def _emit_var_decl(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 def _emit_swap(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     left = node.get("left")
     right = node.get("right")
-    left_name = _safe_ruby_ident(_str(left, "id")) if isinstance(left, dict) else "_"
-    right_name = _safe_ruby_ident(_str(right, "id")) if isinstance(right, dict) else "_"
-    _emit(ctx, left_name + ", " + right_name + " = " + right_name + ", " + left_name)
+    left_code = _emit_expr(ctx, left) if isinstance(left, dict) else "_"
+    right_code = _emit_expr(ctx, right) if isinstance(right, dict) else "_"
+    _emit(ctx, left_code + ", " + right_code + " = " + right_code + ", " + left_code)
 
 
 def _emit_multi_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
@@ -1946,6 +1976,8 @@ def _emit_import_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         module = _str(node, "module")
         names = _list(node, "names")
         if module in ("pytra.std", "pytra.utils"):
+            return
+        if _is_type_only_import_from(module, names):
             return
         # Skip standard library and built-in modules
         if _should_skip_module_ruby(module, ctx.mapping):
@@ -2186,6 +2218,7 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     bases = _list(node, "bases")
     body = _list(node, "body")
     decorators = _list(node, "decorators")
+    is_dataclass = _bool(node, "dataclass")
 
     safe_name = _ruby_class_name(name)
 
@@ -2235,6 +2268,29 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         for fname, _ in fields:
             field_names.append(":" + fname)
         _emit(ctx, "attr_accessor " + ", ".join(field_names))
+    if is_dataclass and len(fields) > 0 and not is_enum:
+        ctor_params: list[str] = []
+        for fname, _ in fields:
+            default_expr: JsonVal = None
+            for stmt in body:
+                if not isinstance(stmt, dict):
+                    continue
+                if _str(stmt, "kind") != "AnnAssign":
+                    continue
+                target = stmt.get("target")
+                if isinstance(target, dict) and _str(target, "id") == fname:
+                    default_expr = stmt.get("value")
+                    break
+            if isinstance(default_expr, dict):
+                ctor_params.append(fname + " = " + _emit_expr(ctx, default_expr))
+            else:
+                ctor_params.append(fname)
+        _emit(ctx, "def initialize(" + ", ".join(ctor_params) + ")")
+        ctx.indent_level += 1
+        for fname, _ in fields:
+            _emit(ctx, "@" + fname + " = " + fname)
+        ctx.indent_level -= 1
+        _emit(ctx, "end")
     class_member_names: list[str] = []
     for stmt in body:
         if not isinstance(stmt, dict):
@@ -2531,6 +2587,9 @@ def transpile_to_ruby(east3_doc: dict[str, JsonVal]) -> str:
                 continue
             runtime_module_id = binding.get("runtime_module_id")
             if not isinstance(runtime_module_id, str) or runtime_module_id == "":
+                continue
+            export_name = binding.get("export_name")
+            if runtime_module_id == "pytra.std.json" and export_name == "JsonVal":
                 continue
             if _should_skip_module_ruby(runtime_module_id, ctx.mapping):
                 continue
