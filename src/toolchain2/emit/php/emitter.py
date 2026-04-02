@@ -137,21 +137,30 @@ def _php_var(name: str) -> str:
     return "$" + name
 
 
+def _php_string(value: str) -> str:
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$") + '"'
+
+
 def _is_exception_type_name(ctx: EmitContext, type_name: str) -> bool:
     """Check if a type name is an exception class."""
-    exc_names: set[str] = {
-        "Exception", "BaseException", "RuntimeError", "ValueError",
-        "TypeError", "IndexError", "KeyError", "IOError", "OSError",
-        "ArithmeticError", "LookupError", "NotImplementedError",
-        "StopIteration", "FileNotFoundError", "PermissionError",
-    }
-    if type_name in exc_names:
+    if php_type(type_name).startswith("\\"):
         return True
     fqcn = ctx.module_id + "." + type_name
     if fqcn in ctx.exception_type_ids:
         return True
     if type_name in ctx.exception_type_ids:
         return True
+    return False
+
+
+def _class_extends_exception(ctx: EmitContext, class_name: str) -> bool:
+    current = class_name
+    seen: set[str] = set()
+    while current != "" and current not in seen:
+        seen.add(current)
+        if _is_exception_type_name(ctx, current):
+            return True
+        current = ctx.class_bases.get(current, "")
     return False
 
 
@@ -264,12 +273,15 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     name = _str(node, "id")
     if name == "":
         name = _str(node, "repr")
+    safe_name = _safe_php_ident(name)
     if name == "None":
         return "null"
     if name == "True":
         return "true"
     if name == "False":
         return "false"
+    if name in ctx.var_types or safe_name in ctx.var_types:
+        return _php_var(safe_name)
     # Check runtime_imports for mapped names
     if name in ctx.runtime_imports:
         return ctx.runtime_imports[name]
@@ -289,15 +301,25 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     # Module-level constants (UPPER_CASE) don't get $ prefix when used as constants
     if rt == "module":
         return _php_symbol_name(ctx, name)
-    # Callable variables use PHP variable call syntax elsewhere
+    if safe_name in ctx.var_types and (rt.startswith("callable[") or rt.startswith("Callable[") or rt in ("callable", "Callable")):
+        return _php_var(safe_name)
     if rt.startswith("callable[") or rt.startswith("Callable[") or rt in ("callable", "Callable"):
-        return _php_var(_php_symbol_name(ctx, name))
+        return _php_symbol_name(ctx, name)
+    # Callable variables use PHP variable call syntax elsewhere
     return _php_var(_php_symbol_name(ctx, name))
 
 
 def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     owner_node = node.get("value")
     attr = _str(node, "attr")
+    owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+    owner_id = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
+    if attr == "line" and (
+        (owner_rt != "" and _class_extends_exception(ctx, owner_rt))
+        or (owner_id == "self" and _class_extends_exception(ctx, ctx.current_class))
+        or (owner_id != "" and owner_id == ctx.current_exc_var)
+    ):
+        attr = "_pytra_line"
     if attr == "__name__" and isinstance(owner_node, dict) and _str(owner_node, "kind") == "Call":
         owner_func = owner_node.get("func")
         if isinstance(owner_func, dict) and _str(owner_func, "kind") == "Name" and _str(owner_func, "id") == "type":
@@ -306,6 +328,8 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return "type(" + _emit_expr(ctx, args[0]) + ")->__name__"
     # Handle 'self.field' → '$this->field'
     if isinstance(owner_node, dict) and _str(owner_node, "id") == "self":
+        if attr in ctx.class_property_methods.get(owner_rt, set()):
+            return "$this->" + attr + "()"
         return "$this->" + attr
     # Handle module constant access (e.g. math.pi, sys.argv)
     if isinstance(owner_node, dict):
@@ -324,8 +348,13 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 mod_short = mod_id.rsplit(".", 1)[-1]
                 qualified_key = mod_short + "." + runtime_symbol
                 if qualified_key in ctx.mapping.calls:
-                    return ctx.mapping.calls[qualified_key]
+                    resolved = ctx.mapping.calls[qualified_key]
+                    if resolved in ("__pytra_argv", "__pytra_path"):
+                        return '$GLOBALS["' + resolved + '"]'
+                    return resolved
                 resolved = resolve_runtime_symbol_name(runtime_symbol, ctx.mapping)
+                if resolved in ("__pytra_argv", "__pytra_path"):
+                    return '$GLOBALS["' + resolved + '"]'
                 return resolved
     # Class static access: ClassName::attr
     if isinstance(owner_node, dict):
@@ -337,6 +366,10 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return owner_id + "::" + attr
             return owner_id + "::$" + attr
     owner = _emit_expr(ctx, owner_node)
+    if isinstance(owner_node, dict):
+        owner_rt = _str(owner_node, "resolved_type")
+        if attr in ctx.class_property_methods.get(owner_rt, set()):
+            return owner + "->" + attr + "()"
     # Check if owner is a class name (no $)
     if isinstance(owner_node, dict):
         owner_id = _str(owner_node, "id")
@@ -368,9 +401,6 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     # For strings: use indexing
     is_str = owner_rt == "str" or owner_rt == "string"
     if is_str and isinstance(slice_node, dict):
-        neg_val = _get_negative_int_literal(slice_node)
-        if neg_val is not None:
-            return owner + "[strlen(" + owner + ") + (" + str(neg_val) + ")]"
         slice_code = _emit_expr(ctx, slice_node)
         return owner + "[__pytra_index(" + owner + ", " + slice_code + ")]"
     # For dicts: key access
@@ -384,9 +414,8 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         or owner_rt.startswith("tuple[") or owner_rt == "tuple"
     )
     if is_array_like and isinstance(slice_node, dict):
-        neg_val = _get_negative_int_literal(slice_node)
-        if neg_val is not None:
-            return owner + "[count(" + owner + ") + (" + str(neg_val) + ")]"
+        slice_code = _emit_expr(ctx, slice_node)
+        return owner + "[__pytra_index(" + owner + ", " + slice_code + ")]"
     slice_code = _emit_expr(ctx, slice_node)
     return owner + "[" + slice_code + "]"
 
@@ -515,13 +544,13 @@ def _emit_fstring(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                         precision = precision[1:]
                     parts.append("number_format(" + expr_code + ", " + precision + ", '.', '')")
                 elif format_spec.endswith("d"):
-                    parts.append("strval(intval(" + expr_code + "))")
+                    parts.append("sprintf('%" + format_spec + "', intval(" + expr_code + "))")
                 else:
                     parts.append("sprintf('%" + format_spec + "', " + expr_code + ")")
             elif fmt_rt in ("int64", "int32", "int", "float64", "float32", "float", "bool"):
-                parts.append("strval(" + expr_code + ")")
+                parts.append("py_to_string(" + expr_code + ")")
             else:
-                parts.append("strval(" + expr_code + ")")
+                parts.append("py_to_string(" + expr_code + ")")
         else:
             parts.append(_emit_expr(ctx, v))
     if len(parts) == 0:
@@ -533,8 +562,8 @@ def _emit_fstring(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
 def _emit_lambda(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     arg_order = _list(node, "arg_order")
+    raw_args = _list(node, "args")
     if len(arg_order) == 0:
-        raw_args = _list(node, "args")
         for arg in raw_args:
             if isinstance(arg, dict):
                 arg_name = _str(arg, "arg")
@@ -546,10 +575,21 @@ def _emit_lambda(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         a_str = a if isinstance(a, str) else ""
         if a_str == "self":
             continue
-        params.append(_php_var(_safe_php_ident(a_str)))
+        param_code = _php_var(_safe_php_ident(a_str))
+        for raw_arg in raw_args:
+            if not isinstance(raw_arg, dict) or _str(raw_arg, "arg") != a_str:
+                continue
+            default_node = raw_arg.get("default")
+            if isinstance(default_node, dict):
+                param_code += " = " + _emit_expr(ctx, default_node)
+            break
+        params.append(param_code)
     body_code = _emit_expr(ctx, body_node)
     # Check for captures
     captures = _list(node, "captures")
+    if len(captures) == 0:
+        param_names = {_safe_php_ident(a if isinstance(a, str) else "") for a in arg_order}
+        captures = [name for name in sorted(ctx.var_types.keys()) if name not in ("",) and name not in param_names]
     use_clause = ""
     if len(captures) > 0:
         use_vars: list[str] = []
@@ -563,6 +603,13 @@ def _emit_lambda(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if len(use_vars) > 0:
             use_clause = " use (" + ", ".join(use_vars) + ")"
     return "function(" + ", ".join(params) + ")" + use_clause + " { return " + body_code + "; }"
+
+
+def _normalize_isinstance_type_name(type_name: str) -> str:
+    parts = type_name.split("_")
+    if len(parts) >= 3 and parts[0] == "PYTRA" and parts[1] == "TID":
+        return parts[-1].lower()
+    return type_name
 
 
 def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -584,6 +631,7 @@ def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             type_name = _str(expected_type_id, "type_object_of")
             if type_name == "":
                 type_name = _str(expected_type_id, "id")
+    type_name = _normalize_isinstance_type_name(type_name)
     # Map to PHP type check
     if type_name in ("int", "int64", "int32"):
         return "is_int(" + obj_code + ")"
@@ -595,18 +643,6 @@ def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return "is_bool(" + obj_code + ")"
     if type_name in ("list", "dict", "set", "tuple"):
         return "is_array(" + obj_code + ")"
-    if type_name.startswith("PYTRA_TID_"):
-        suffix = type_name[len("PYTRA_TID_"):]
-        if suffix in ("INT", "INT64", "INT32"):
-            return "is_int(" + obj_code + ")"
-        if suffix in ("FLOAT", "FLOAT64", "FLOAT32"):
-            return "is_float(" + obj_code + ")"
-        if suffix in ("STR", "STRING"):
-            return "is_string(" + obj_code + ")"
-        if suffix == "BOOL":
-            return "is_bool(" + obj_code + ")"
-        if suffix in ("LIST", "DICT", "SET", "TUPLE"):
-            return "is_array(" + obj_code + ")"
     return obj_code + " instanceof " + _safe_php_ident(type_name)
 
 
@@ -632,7 +668,15 @@ def _emit_range_expr(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
 def _comp_iter_code(ctx: EmitContext, gen: dict) -> str:
     iter_node = gen.get("iter")
-    return _emit_expr(ctx, iter_node) if isinstance(iter_node, dict) else "[]"
+    if not isinstance(iter_node, dict):
+        return "[]"
+    iter_code = _emit_expr(ctx, iter_node)
+    iter_rt = _str(iter_node, "resolved_type")
+    if iter_rt in ("str", "string"):
+        return "__pytra_str_iter(" + iter_code + ")"
+    if iter_rt.startswith("set[") or iter_rt == "set":
+        return "__pytra_set_iter(" + iter_code + ")"
+    return iter_code
 
 
 def _emit_list_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -816,6 +860,15 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if isinstance(kw, dict):
             kw_strs.append(_emit_expr(ctx, kw.get("value")))
     all_arg_strs = arg_strs + kw_strs
+    spread_arg = ""
+    if isinstance(func, dict) and _str(func, "kind") == "Name":
+        fn_id = _str(func, "id")
+        if fn_id in ctx.vararg_functions and len(args) >= 1:
+            packed_arg = args[-1]
+            if isinstance(packed_arg, dict) and _str(packed_arg, "kind") in ("List", "Tuple"):
+                spread_arg = "..." + _emit_expr(ctx, packed_arg)
+                arg_strs = [_emit_expr(ctx, a) for a in args[:-1]]
+                all_arg_strs = arg_strs + kw_strs
 
     # BuiltinCall: runtime function
     lowered = _str(node, "lowered_kind")
@@ -829,6 +882,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
         fn_name = _resolve_runtime_call_name(ctx, node, func)
         if fn_name != "" and fn_name != "__CAST__" and fn_name != "__PANIC__":
+            runtime_symbol = _str(node, "runtime_symbol")
             if fn_name == "__LIST_CTOR__":
                 if len(all_arg_strs) >= 1:
                     return "array_values(" + all_arg_strs[0] + ")"
@@ -907,6 +961,39 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if fn_name == "__SET_CLEAR__":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 return owner + " = []"
+            if runtime_symbol == "str.strip":
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else '""'
+                return "trim(" + owner + ")"
+            if runtime_symbol == "str.rstrip":
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else '""'
+                return "rtrim(" + owner + ")"
+            if runtime_symbol == "str.lstrip":
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else '""'
+                return "ltrim(" + owner + ")"
+            if runtime_symbol == "str.startswith":
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else '""'
+                arg0 = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else '""'
+                return "__pytra_str_startswith(" + owner + ", " + arg0 + ")"
+            if runtime_symbol == "str.endswith":
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else '""'
+                arg0 = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else '""'
+                return "__pytra_str_endswith(" + owner + ", " + arg0 + ")"
+            if runtime_symbol == "str.replace":
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else '""'
+                old = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else '""'
+                new = builtin_arg_strs[2] if len(builtin_arg_strs) >= 3 else '""'
+                return "str_replace(" + old + ", " + new + ", " + owner + ")"
+            if runtime_symbol == "str.join":
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else '""'
+                arg0 = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "[]"
+                return "implode(" + owner + ", " + arg0 + ")"
+            if fn_name == "py_to_string" or runtime_symbol == "str":
+                value = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else '""'
+                value_node = args[0] if len(args) >= 1 and isinstance(args[0], dict) else None
+                value_rt = _str(value_node, "resolved_type") if isinstance(value_node, dict) else ""
+                if value_rt != "":
+                    return "py_to_string(" + value + ", " + _php_string(value_rt) + ")"
+                return "py_to_string(" + value + ")"
             # Generic runtime call
             return fn_name + "(" + ", ".join(builtin_arg_strs) + ")"
 
@@ -939,7 +1026,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             msg = all_arg_strs[0] if len(all_arg_strs) >= 1 else '""'
             return _exception_ctor_expr(fn_id, msg)
         if _is_function_symbol(ctx, fn_id):
-            return _php_symbol_name(ctx, fn_id) + "(" + ", ".join(all_arg_strs) + ")"
+            call_args = list(all_arg_strs)
+            if spread_arg != "":
+                call_args.append(spread_arg)
+            return _php_symbol_name(ctx, fn_id) + "(" + ", ".join(call_args) + ")"
 
     # Static method call: ClassName.method(args) → ClassName::method(args)
     if isinstance(func, dict) and _str(func, "kind") == "Attribute":
@@ -968,6 +1058,25 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if attr == "__init__":
                 return "parent::__construct(" + ", ".join(all_arg_strs) + ")"
             return "parent::" + _safe_php_ident(attr) + "(" + ", ".join(all_arg_strs) + ")"
+        if isinstance(owner_val, dict):
+            owner_id = _str(owner_val, "id")
+            owner_rt = _str(owner_val, "resolved_type")
+            if owner_rt == "module" or owner_id in ctx.import_alias_modules:
+                mod_id = _str(node, "runtime_module_id")
+                if mod_id == "":
+                    mod_id = ctx.import_alias_modules.get(owner_id, "")
+                runtime_symbol = _str(node, "runtime_symbol")
+                resolved_runtime_call = _str(node, "resolved_runtime_call")
+                if runtime_symbol == "":
+                    runtime_symbol = attr
+                if should_skip_module(mod_id, ctx.mapping):
+                    callee = resolve_runtime_symbol_name(
+                        runtime_symbol,
+                        ctx.mapping,
+                        resolved_runtime_call=resolved_runtime_call,
+                    )
+                    return callee + "(" + ", ".join(all_arg_strs) + ")"
+                return _safe_php_ident(runtime_symbol) + "(" + ", ".join(all_arg_strs) + ")"
         owner_code = _emit_expr(ctx, owner_val)
         # self.method() → $this->method()
         if isinstance(owner_val, dict) and _str(owner_val, "id") == "self":
@@ -1077,7 +1186,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if isinstance(func, dict) and _str(func, "kind") in ("Lambda", "ClosureExpr", "IfExp"):
         fn_code = "(" + fn_code + ")"
     # If fn_code starts with $ it's a variable call
-    return fn_code + "(" + ", ".join(all_arg_strs) + ")"
+    call_args = list(all_arg_strs)
+    if spread_arg != "":
+        call_args.append(spread_arg)
+    return fn_code + "(" + ", ".join(call_args) + ")"
 
 
 # ---------------------------------------------------------------------------
@@ -1215,7 +1327,13 @@ def _emit_expr_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         return
     if vk == "Name":
         name_id = _str(value, "id")
-        if name_id in ("continue", "break", "del", "else", "pass"):
+        if name_id == "break":
+            _emit(ctx, "break;")
+            return
+        if name_id == "continue":
+            _emit(ctx, "continue;")
+            return
+        if name_id in ("del", "else", "pass"):
             return
         if _str(value, "resolved_type") == "unknown" and name_id in ("else", "pass", "Python", "Blank"):
             return
@@ -1390,7 +1508,7 @@ def _emit_raise(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         exc_code = _emit_expr(ctx, exc)
         exc_rt = _str(exc, "resolved_type")
         # If it's already an exception object, throw directly
-        if exc_rt in ("Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError"):
+        if _is_exception_type_name(ctx, exc_rt):
             if not exc_code.startswith("new "):
                 exc_code = "new \\RuntimeException((string)" + exc_code + ")"
         _emit(ctx, "throw " + exc_code + ";")
@@ -1425,12 +1543,19 @@ def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 php_exc_type = _safe_php_ident(type_name)
         catch_var = handler_name if handler_name != "" else "__e"
         saved_exc = ctx.current_exc_var
+        saved_var_type = ctx.var_types.get(catch_var)
         ctx.current_exc_var = catch_var
+        if type_name != "":
+            ctx.var_types[catch_var] = type_name
         _emit(ctx, "} catch (" + php_exc_type + " " + _php_var(catch_var) + ") {")
         ctx.indent_level += 1
         _emit_body(ctx, _list(handler, "body"))
         ctx.indent_level -= 1
         ctx.current_exc_var = saved_exc
+        if saved_var_type is None:
+            ctx.var_types.pop(catch_var, None)
+        else:
+            ctx.var_types[catch_var] = saved_var_type
     if len(finalbody) > 0:
         _emit(ctx, "} finally {")
         ctx.indent_level += 1
@@ -1527,6 +1652,8 @@ def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 iter_rt = _str(iter_node, "resolved_type") if isinstance(iter_node, dict) else ""
             if iter_rt in ("str", "string"):
                 iter_code = "str_split(" + iter_code + ")"
+            if iter_rt.startswith("set[") or iter_rt == "set":
+                iter_code = "__pytra_set_iter(" + iter_code + ")"
             # Dict iteration → foreach with key => value
             is_dict = iter_rt.startswith("dict[") or iter_rt == "dict"
             if is_dict:
@@ -1561,6 +1688,8 @@ def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     iter_rt = _str(iter_node, "resolved_type") if isinstance(iter_node, dict) else ""
     if iter_rt in ("str", "string"):
         iter_code = "str_split(" + iter_code + ")"
+    if iter_rt.startswith("set[") or iter_rt == "set":
+        iter_code = "__pytra_set_iter(" + iter_code + ")"
     _emit(ctx, "foreach (" + iter_code + " as " + _php_var(safe_target) + ") {")
     ctx.indent_level += 1
     _emit_body(ctx, body)
@@ -1842,6 +1971,60 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     saved_ret = ctx.current_return_type
     ctx.current_return_type = return_type
 
+    mutable_methods = {
+        "append", "extend", "insert", "pop", "clear", "sort", "reverse",
+        "update", "add", "discard", "remove",
+    }
+
+    def _root_name(expr: JsonVal) -> str:
+        if not isinstance(expr, dict):
+            return ""
+        kind = _str(expr, "kind")
+        if kind == "Name":
+            return _str(expr, "id")
+        if kind in ("Attribute", "Subscript"):
+            return _root_name(expr.get("value"))
+        return ""
+
+    def _param_needs_by_ref(param_name: str, param_type: str) -> bool:
+        is_mutable_container = (
+            param_type.startswith("list[") or param_type == "list"
+            or param_type.startswith("dict[") or param_type == "dict"
+            or param_type.startswith("set[") or param_type == "set"
+        )
+        if not is_mutable_container:
+            return False
+
+        def _walk(n: JsonVal) -> bool:
+            if isinstance(n, dict):
+                kind = _str(n, "kind")
+                if kind in ("Assign", "AnnAssign"):
+                    target = n.get("target")
+                    if isinstance(target, dict) and _str(target, "kind") == "Subscript" and _root_name(target) == param_name:
+                        return True
+                elif kind == "AugAssign":
+                    target = n.get("target")
+                    if isinstance(target, dict):
+                        if _str(target, "kind") == "Name" and _str(target, "id") == param_name:
+                            return True
+                        if _str(target, "kind") == "Subscript" and _root_name(target) == param_name:
+                            return True
+                elif kind == "Call":
+                    func_node = n.get("func")
+                    if isinstance(func_node, dict) and _str(func_node, "kind") == "Attribute":
+                        if _root_name(func_node.get("value")) == param_name and _str(func_node, "attr") in mutable_methods:
+                            return True
+                for value in n.values():
+                    if _walk(value):
+                        return True
+            elif isinstance(n, list):
+                for value in n:
+                    if _walk(value):
+                        return True
+            return False
+
+        return _walk(body)
+
     # Build parameter list
     params: list[str] = []
     for a in arg_order:
@@ -1854,7 +2037,8 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         a_type = a_type_val if isinstance(a_type_val, str) else ""
         safe_a = _safe_php_ident(a_str)
         ctx.var_types[safe_a] = a_type
-        params.append(_php_var(safe_a))
+        by_ref = _param_needs_by_ref(a_str, a_type)
+        params.append(("&" if by_ref else "") + _php_var(safe_a))
 
     # Handle varargs
     vararg_name_raw = _str(node, "vararg_name")
@@ -1866,7 +2050,14 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     # Return type
     ret_ann = ""
     if return_type in ("None", "none", "void", ""):
+        has_value_return = False
+        for stmt in body:
+            if isinstance(stmt, dict) and _str(stmt, "kind") == "Return" and isinstance(stmt.get("value"), dict):
+                has_value_return = True
+                break
         if fn_name == "__construct":
+            ret_ann = ""
+        elif has_value_return:
             ret_ann = ""
         else:
             ret_ann = ": void"
@@ -1995,6 +2186,11 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
     # Emit field declarations
     fields = _collect_class_fields(ctx, node)
+    is_enum_like = base_class in ("Enum", "IntEnum", "IntFlag")
+    if is_enum_like:
+        fields = []
+    field_names = {fname for fname, _ in fields}
+    field_defaults: dict[str, JsonVal] = {}
     static_field_names: set[str] = set()
     for stmt in body:
         if not isinstance(stmt, dict):
@@ -2005,16 +2201,51 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         if isinstance(target, dict):
             tid = _str(target, "id")
             if tid != "":
+                if tid in field_names and isinstance(stmt.get("value"), dict):
+                    field_defaults[tid] = stmt.get("value")
+                    continue
                 static_field_names.add(tid)
         elif isinstance(target, str) and target != "":
+            if target in field_names and isinstance(stmt.get("value"), dict):
+                field_defaults[target] = stmt.get("value")
+                continue
             static_field_names.add(target)
     for fname, ftype in fields:
+        emit_name = fname
+        if _class_extends_exception(ctx, name) and fname == "line":
+            emit_name = "_pytra_line"
         if fname in static_field_names:
             continue
         pt = php_type(ftype)
-        _emit(ctx, "public " + _php_var(fname) + ";")
+        _emit(ctx, "public " + _php_var(emit_name) + ";")
 
     if len(fields) > 0:
+        _emit_blank(ctx)
+
+    has_init = False
+    for stmt in body:
+        if isinstance(stmt, dict) and _str(stmt, "kind") in ("FunctionDef", "ClosureDef") and _str(stmt, "name") == "__init__":
+            has_init = True
+            break
+    if len(fields) > 0 and not has_init:
+        ctor_params: list[str] = []
+        for fname, _ftype in fields:
+            param = _php_var(_safe_php_ident(fname))
+            default_node = field_defaults.get(fname)
+            if isinstance(default_node, dict):
+                param += " = " + _emit_expr(ctx, default_node)
+            else:
+                param += " = " + php_zero_value(_ftype)
+            ctor_params.append(param)
+        _emit(ctx, "public function __construct(" + ", ".join(ctor_params) + ") {")
+        ctx.indent_level += 1
+        for fname, _ftype in fields:
+            emit_name = fname
+            if _class_extends_exception(ctx, name) and fname == "line":
+                emit_name = "_pytra_line"
+            _emit(ctx, "$this->" + emit_name + " = " + _php_var(_safe_php_ident(fname)) + ";")
+        ctx.indent_level -= 1
+        _emit(ctx, "}")
         _emit_blank(ctx)
 
     # Emit methods
@@ -2035,9 +2266,13 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                         continue
                 tid = _str(target, "id")
                 if tid != "" and value is not None:
+                    if tid in field_names:
+                        continue
                     val_code = _emit_expr(ctx, value)
                     _emit(ctx, "public static " + _php_var(_safe_php_ident(tid)) + " = " + val_code + ";")
             elif isinstance(target, str) and value is not None:
+                if target in field_names:
+                    continue
                 val_code = _emit_expr(ctx, value)
                 _emit(ctx, "public static " + _php_var(_safe_php_ident(target)) + " = " + val_code + ";")
             continue
@@ -2201,11 +2436,18 @@ def emit_php_module(east3_doc: dict[str, JsonVal]) -> str:
             mod_id = binding.get("module_id")
             if not isinstance(mod_id, str):
                 continue
-            if mod_id in mapping.module_native_files:
-                native_file = mapping.module_native_files[mod_id]
+            runtime_mod_id = binding.get("runtime_module_id")
+            runtime_mod = runtime_mod_id if isinstance(runtime_mod_id, str) and runtime_mod_id != "" else mod_id
+            if runtime_mod in mapping.module_native_files:
+                native_file = mapping.module_native_files[runtime_mod]
                 if native_file not in ctx.required_files:
                     ctx.required_files.add(native_file)
                     _emit(ctx, "require_once __DIR__ . '/" + native_file + "';")
+            elif runtime_mod.startswith("pytra.") and not should_skip_module(runtime_mod, mapping):
+                module_file = runtime_mod.replace(".", "_") + ".php"
+                if module_file not in ctx.required_files:
+                    ctx.required_files.add(module_file)
+                    _emit(ctx, "require_once __DIR__ . '/" + module_file + "';")
 
     _emit_blank(ctx)
 

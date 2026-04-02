@@ -12,23 +12,7 @@ function __pytra_print(...$args): void {
     }
     $parts = [];
     foreach ($args as $arg) {
-        if (is_bool($arg)) {
-            $parts[] = $arg ? "True" : "False";
-            continue;
-        }
-        if ($arg === null) {
-            $parts[] = "None";
-            continue;
-        }
-        if (is_array($arg)) {
-            $parts[] = __pytra_repr_array($arg);
-            continue;
-        }
-        if ($arg instanceof \Throwable) {
-            $parts[] = $arg->getMessage();
-            continue;
-        }
-        $parts[] = (string)$arg;
+        $parts[] = py_to_string($arg);
     }
     echo implode(" ", $parts) . PHP_EOL;
 }
@@ -53,7 +37,13 @@ function __pytra_repr_value($v): string {
         if (floor($v) == $v && !is_infinite($v) && abs($v) < 1e15) {
             return number_format($v, 1, '.', '');
         }
-        return (string)$v;
+        $mag = abs($v);
+        if ($mag > 0.0 && ($mag < 1e-4 || $mag >= 1e16)) {
+            $out = strtolower(sprintf('%.16e', $v));
+            return preg_replace('/e([+-])0+(\d+)$/', 'e$1$2', $out) ?? $out;
+        }
+        $out = rtrim(rtrim(sprintf('%.15F', $v), '0'), '.');
+        return $out === '-0' ? '0' : $out;
     }
     if (is_string($v)) { return "'" . $v . "'"; }
     if (is_array($v)) { return __pytra_repr_array($v); }
@@ -67,6 +57,28 @@ function __pytra_repr_array($v): string {
         $items[] = __pytra_repr_value($item);
     }
     return "[" . implode(", ", $items) . "]";
+}
+
+function __pytra_repr_dict(array $v): string {
+    if (count($v) === 0) {
+        return "{}";
+    }
+    $items = [];
+    foreach ($v as $k => $item) {
+        $items[] = __pytra_repr_value($k) . ": " . __pytra_repr_value($item);
+    }
+    return "{" . implode(", ", $items) . "}";
+}
+
+function __pytra_repr_tuple(array $v): string {
+    $items = [];
+    foreach ($v as $item) {
+        $items[] = __pytra_repr_value($item);
+    }
+    if (count($items) === 1) {
+        return "(" . $items[0] . ",)";
+    }
+    return "(" . implode(", ", $items) . ")";
 }
 
 function __pytra_len($v): int {
@@ -133,11 +145,344 @@ function __pytra_float($v): float {
     return 0.0;
 }
 
-function py_to_string($v): string {
+function py_to_string($v, string $type_hint = ""): string {
+    if (is_bool($v)) {
+        return $v ? "True" : "False";
+    }
+    if ($v === null) {
+        return "None";
+    }
+    if (is_int($v)) {
+        return (string)$v;
+    }
+    if (is_float($v)) {
+        if (floor($v) == $v && !is_infinite($v) && abs($v) < 1e15) {
+            return number_format($v, 1, '.', '');
+        }
+        $mag = abs($v);
+        if ($mag > 0.0 && ($mag < 1e-4 || $mag >= 1e16)) {
+            $out = strtolower(sprintf('%.16e', $v));
+            return preg_replace('/e([+-])0+(\d+)$/', 'e$1$2', $out) ?? $out;
+        }
+        $out = rtrim(rtrim(sprintf('%.15F', $v), '0'), '.');
+        return $out === '-0' ? '0' : $out;
+    }
+    if (is_string($v)) {
+        return $v;
+    }
+    if ($v instanceof \Throwable) {
+        return $v->getMessage();
+    }
     if (is_array($v)) {
+        if ($type_hint === "tuple" || str_starts_with($type_hint, "tuple[")) {
+            return __pytra_repr_tuple($v);
+        }
+        if ($type_hint === "dict" || str_starts_with($type_hint, "dict[")) {
+            return __pytra_repr_dict($v);
+        }
+        if ($type_hint === "set" || str_starts_with($type_hint, "set[")) {
+            if (count($v) === 0) {
+                return "set()";
+            }
+            $items = [];
+            foreach ($v as $item) {
+                $items[] = __pytra_repr_value($item);
+            }
+            return "{" . implode(", ", $items) . "}";
+        }
+        if (!__pytra_array_is_list_like($v)) {
+            return __pytra_repr_dict($v);
+        }
         return __pytra_repr_array($v);
     }
     return (string)$v;
+}
+
+$GLOBALS['__pytra_argv'] = [];
+$GLOBALS['__pytra_path'] = [];
+
+function __pytra_set_argv($items): void {
+    $GLOBALS['__pytra_argv'] = is_array($items) ? array_values($items) : [];
+}
+
+function __pytra_set_path($items): void {
+    $GLOBALS['__pytra_path'] = is_array($items) ? array_values($items) : [];
+}
+
+class __PytraPath {
+    public string $path;
+
+    public function __construct($raw) {
+        $this->path = (string)$raw;
+    }
+
+    public function __toString(): string {
+        return $this->path;
+    }
+
+    public function __get(string $name) {
+        if ($name === 'parent') {
+            $dir = dirname($this->path);
+            return new __PytraPath($dir === '.' ? '' : $dir);
+        }
+        if ($name === 'name') {
+            return basename($this->path);
+        }
+        if ($name === 'stem') {
+            $base = basename($this->path);
+            $pos = strrpos($base, '.');
+            return $pos === false ? $base : substr($base, 0, $pos);
+        }
+        return null;
+    }
+
+    public function joinpath(...$parts): __PytraPath {
+        $items = [$this->path];
+        foreach ($parts as $part) {
+            $items[] = (string)$part;
+        }
+        return new __PytraPath(__pytra_join(...$items));
+    }
+
+    public function mkdir($parents = false, $exist_ok = false): void {
+        __pytra_makedirs($this->path, (bool)$exist_ok);
+    }
+
+    public function write_text($text): void {
+        $parent = dirname($this->path);
+        if ($parent !== '' && $parent !== '.' && !is_dir($parent)) {
+            mkdir($parent, 0777, true);
+        }
+        file_put_contents($this->path, (string)$text);
+    }
+
+    public function read_text(): string {
+        $raw = @file_get_contents($this->path);
+        return $raw === false ? '' : $raw;
+    }
+
+    public function exists(): bool {
+        return file_exists($this->path);
+    }
+}
+
+function Path($raw): __PytraPath {
+    return new __PytraPath($raw);
+}
+
+function __pytra_join(...$parts): string {
+    $clean = [];
+    foreach ($parts as $part) {
+        $text = (string)$part;
+        if ($text === '') {
+            continue;
+        }
+        $clean[] = trim($text, '/');
+    }
+    if (count($clean) === 0) {
+        return '';
+    }
+    $joined = implode('/', $clean);
+    if (str_starts_with((string)$parts[0], '/')) {
+        return '/' . $joined;
+    }
+    return $joined;
+}
+
+function __pytra_splitext($path): array {
+    $text = (string)$path;
+    $base = basename($text);
+    $pos = strrpos($base, '.');
+    if ($pos === false || $pos === 0) {
+        return [$text, ''];
+    }
+    $root = substr($text, 0, strlen($text) - (strlen($base) - $pos));
+    $ext = substr($base, $pos);
+    return [$root . substr($base, 0, $pos), $ext];
+}
+
+function __pytra_basename($path): string {
+    return basename((string)$path);
+}
+
+function __pytra_dirname($path): string {
+    $dir = dirname((string)$path);
+    return $dir === '.' ? '' : $dir;
+}
+
+function __pytra_exists($path): bool {
+    return file_exists((string)$path);
+}
+
+class __PytraJsonValue {
+    public $raw;
+
+    public function __construct($raw) {
+        $this->raw = $raw;
+    }
+
+    public function as_str(): string {
+        return is_string($this->raw) ? $this->raw : py_to_string($this->raw);
+    }
+}
+
+function __pytra_dumps($value, $ensure_ascii = true, $indent = null, $separators = null): string {
+    $flags = 0;
+    if (!$ensure_ascii) {
+        $flags |= JSON_UNESCAPED_UNICODE;
+    }
+    if ($indent !== null) {
+        $flags |= JSON_PRETTY_PRINT;
+    }
+    $out = json_encode($value, $flags);
+    if (!is_string($out)) {
+        return 'null';
+    }
+    if ($indent !== null) {
+        $indent_width = (int)$indent;
+        if ($indent_width > 0 && $indent_width !== 4) {
+            $lines = explode("\n", $out);
+            foreach ($lines as $idx => $line) {
+                if (preg_match('/^( +)/', $line, $m) === 1) {
+                    $levels = intdiv(strlen($m[1]), 4);
+                    $lines[$idx] = str_repeat(' ', $levels * $indent_width) . substr($line, strlen($m[1]));
+                }
+            }
+            $out = implode("\n", $lines);
+        }
+    }
+    return $out;
+}
+
+function dumps($value, $ensure_ascii = true, $indent = null, $separators = null): string {
+    return __pytra_dumps($value, $ensure_ascii, $indent, $separators);
+}
+
+function __pytra_loads($text): ?__PytraJsonValue {
+    $raw = json_decode((string)$text, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        return null;
+    }
+    return new __PytraJsonValue($raw);
+}
+
+function __pytra_loads_arr($text): ?__PytraJsonValue {
+    $value = __pytra_loads($text);
+    if ($value === null || !is_array($value->raw)) {
+        return null;
+    }
+    return $value;
+}
+
+function __pytra_loads_obj($text): ?__PytraJsonValue {
+    $value = __pytra_loads($text);
+    if ($value === null || !is_array($value->raw) || __pytra_array_is_list_like($value->raw)) {
+        return null;
+    }
+    return $value;
+}
+
+function sub($pattern, $replacement, $text, $count = 0): string {
+    $delim = '/' . str_replace('/', '\/', (string)$pattern) . '/';
+    $limit = (int)$count;
+    if ($limit <= 0) {
+        $limit = -1;
+    }
+    $out = preg_replace($delim, (string)$replacement, (string)$text, $limit);
+    return is_string($out) ? $out : (string)$text;
+}
+
+class __PytraArgumentParser {
+    private array $specs = [];
+
+    public function __construct($prog = '') {}
+
+    public function add_argument(...$args): void {
+        if (count($args) === 0) {
+            return;
+        }
+        $entry = [
+            'short' => null,
+            'long' => null,
+            'name' => '',
+            'action' => '',
+            'choices' => null,
+            'default' => null,
+            'positional' => false,
+        ];
+        if (count($args) === 1) {
+            $entry['name'] = (string)$args[0];
+            $entry['positional'] = true;
+        } elseif (count($args) === 2 && is_string($args[0]) && str_starts_with((string)$args[0], '--') && is_string($args[1]) && !str_starts_with((string)$args[1], '--')) {
+            $entry['long'] = (string)$args[0];
+            $entry['name'] = ltrim((string)$args[0], '-');
+            $entry['action'] = (string)$args[1];
+        } else {
+            $entry['short'] = (string)$args[0];
+            $entry['long'] = (string)$args[1];
+            $entry['name'] = ltrim((string)$args[1], '-');
+            if (isset($args[2]) && is_string($args[2])) {
+                $entry['action'] = (string)$args[2];
+            } elseif (isset($args[2]) && is_array($args[2])) {
+                $entry['choices'] = $args[2];
+            }
+            if (isset($args[3])) {
+                $entry['default'] = $args[3];
+            }
+        }
+        $this->specs[] = $entry;
+    }
+
+    public function parse_args($argv): array {
+        $items = is_array($argv) ? array_values($argv) : [];
+        $result = [];
+        $positionals = [];
+        foreach ($this->specs as $spec) {
+            if ($spec['positional']) {
+                $positionals[] = $spec;
+                continue;
+            }
+            if ($spec['action'] === 'store_true') {
+                $result[$spec['name']] = false;
+            } else {
+                $result[$spec['name']] = $spec['default'];
+            }
+        }
+        $pos_index = 0;
+        for ($i = 0; $i < count($items); $i += 1) {
+            $item = $items[$i];
+            $matched = null;
+            foreach ($this->specs as $spec) {
+                if ($spec['positional']) {
+                    continue;
+                }
+                if ($item === $spec['short'] || $item === $spec['long']) {
+                    $matched = $spec;
+                    break;
+                }
+            }
+            if ($matched !== null) {
+                if ($matched['action'] === 'store_true') {
+                    $result[$matched['name']] = true;
+                    continue;
+                }
+                if ($i + 1 < count($items)) {
+                    $result[$matched['name']] = $items[$i + 1];
+                    $i += 1;
+                }
+                continue;
+            }
+            if ($pos_index < count($positionals)) {
+                $result[$positionals[$pos_index]['name']] = $item;
+                $pos_index += 1;
+            }
+        }
+        return $result;
+    }
+}
+
+function ArgumentParser($prog = ''): __PytraArgumentParser {
+    return new __PytraArgumentParser($prog);
 }
 
 function __native_sqrt($x) { return sqrt($x); }
@@ -202,6 +547,9 @@ function __pytra_index($container, $index): int {
     if ($i < 0) {
         $i += $n;
     }
+    if ($i < 0 || $i >= $n) {
+        throw new \OutOfRangeException("index out of range");
+    }
     return $i;
 }
 
@@ -227,14 +575,16 @@ function __pytra_assert_true($cond, string $label = ''): bool {
 }
 
 function __pytra_assert_eq($actual, $expected, string $label = ''): bool {
-    $ok = strval($actual) === strval($expected);
+    $actual_s = py_to_string($actual);
+    $expected_s = py_to_string($expected);
+    $ok = $actual_s === $expected_s;
     if ($ok) {
         return true;
     }
     if ($label !== '') {
-        __pytra_print('[assert_eq] ' . $label . ': actual=' . strval($actual) . ', expected=' . strval($expected));
+        __pytra_print('[assert_eq] ' . $label . ': actual=' . $actual_s . ', expected=' . $expected_s);
     } else {
-        __pytra_print('[assert_eq] actual=' . strval($actual) . ', expected=' . strval($expected));
+        __pytra_print('[assert_eq] actual=' . $actual_s . ', expected=' . $expected_s);
     }
     return false;
 }
@@ -366,6 +716,19 @@ function __pytra_range(...$args): array {
     return $out;
 }
 
+function __pytra_makedirs($path, $exist_ok = false): void {
+    $path_s = (string)$path;
+    if ($path_s === '') {
+        return;
+    }
+    if ($exist_ok && is_dir($path_s)) {
+        return;
+    }
+    if (!is_dir($path_s)) {
+        mkdir($path_s, 0777, true);
+    }
+}
+
 function __pytra_sum($items, $start = 0) {
     $total = $start;
     foreach ($items as $item) {
@@ -474,6 +837,26 @@ function __pytra_zip(...$iterables): array {
         $out[] = $row;
     }
     return $out;
+}
+
+function __pytra_str_iter($value): array {
+    if (!is_string($value) || $value === '') {
+        return [];
+    }
+    return preg_split('//u', $value, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+}
+
+function __pytra_set_iter($value): array {
+    if ($value instanceof __PytraSet) {
+        return iterator_to_array($value, false);
+    }
+    if (is_array($value)) {
+        if (__pytra_array_is_list_like($value)) {
+            return array_values($value);
+        }
+        return array_keys($value);
+    }
+    return [];
 }
 
 class __PytraDeque implements \Countable {

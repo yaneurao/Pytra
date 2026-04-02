@@ -63,6 +63,11 @@ _PHP_KEYWORDS: set[str] = {
     "while", "xor", "yield",
 }
 
+_PHP_RESERVED_IDENTIFIERS: set[str] = {
+    "ParseError",
+    "Serializable",
+}
+
 
 def _safe_php_ident(name: str) -> str:
     """Make a string safe as a PHP identifier (without $ prefix)."""
@@ -78,6 +83,8 @@ def _safe_php_ident(name: str) -> str:
     if out[0].isdigit():
         out = "_" + out
     if out in _PHP_KEYWORDS:
+        out = out + "_"
+    if out in _PHP_RESERVED_IDENTIFIERS:
         out = out + "_"
     return out
 
