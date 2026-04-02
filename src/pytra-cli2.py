@@ -207,12 +207,13 @@ def _optimize_cpp_doc(east3_doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
 
 
 def _optimizer_debug_flags(
+    opt_level: int,
     negative_index_mode: str,
     bounds_check_mode: str,
 ) -> dict[str, JsonVal]:
     return {
-        "negative_index_mode": resolve_negative_index_mode(negative_index_mode),
-        "bounds_check_mode": resolve_bounds_check_mode(bounds_check_mode),
+        "negative_index_mode": resolve_negative_index_mode(negative_index_mode, opt_level),
+        "bounds_check_mode": resolve_bounds_check_mode(bounds_check_mode, opt_level),
     }
 
 
@@ -557,7 +558,7 @@ def _optimize_one(
     optimized_doc = optimize_east3_doc_only(
         typed_east3_doc,
         opt_level=opt_level,
-        debug_flags=_optimizer_debug_flags(negative_index_mode, bounds_check_mode),
+        debug_flags=_optimizer_debug_flags(opt_level, negative_index_mode, bounds_check_mode),
     )
     out_path = Path(output_text) if output_text != "" else input_path
 
@@ -1050,7 +1051,7 @@ def _build_pipeline(
 
     # 4. Optimize
     east3_opt_docs: list[tuple[str, dict[str, JsonVal]]] = []
-    optimizer_debug_flags = _optimizer_debug_flags(negative_index_mode, bounds_check_mode)
+    optimizer_debug_flags = _optimizer_debug_flags(opt_level, negative_index_mode, bounds_check_mode)
     for inp, east3_doc in east3_docs:
         east3_opt_docs.append((
             inp,

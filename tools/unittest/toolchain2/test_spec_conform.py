@@ -61,8 +61,12 @@ def _load_registry() -> BuiltinRegistry:
 class Toolchain2SpecConformTests(unittest.TestCase):
     def test_optimizer_mode_normalizers_accept_defaults_and_reject_invalid(self) -> None:
         self.assertEqual(resolve_negative_index_mode(""), "const_only")
+        self.assertEqual(resolve_negative_index_mode("", 0), "always")
+        self.assertEqual(resolve_negative_index_mode("", 2), "off")
         self.assertEqual(resolve_negative_index_mode("always"), "always")
         self.assertEqual(resolve_bounds_check_mode(""), "off")
+        self.assertEqual(resolve_bounds_check_mode("", 0), "always")
+        self.assertEqual(resolve_bounds_check_mode("", 2), "off")
         self.assertEqual(resolve_bounds_check_mode("debug"), "debug")
         with self.assertRaisesRegex(ValueError, "invalid --negative-index-mode"):
             resolve_negative_index_mode("maybe")

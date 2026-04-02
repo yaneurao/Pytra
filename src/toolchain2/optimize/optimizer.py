@@ -196,20 +196,28 @@ def resolve_east3_opt_level(opt_level: str | int) -> int:
     return resolve_opt_level(opt_level)
 
 
-def resolve_negative_index_mode(mode: str) -> str:
+def resolve_negative_index_mode(mode: str, opt_level: str | int = 1) -> str:
     """Normalize --negative-index-mode value."""
     text = mode.strip()
     if text == "":
+        level = resolve_opt_level(opt_level)
+        if level == 0:
+            return "always"
+        if level == 2:
+            return "off"
         return "const_only"
     if text in ("always", "const_only", "off"):
         return text
     raise ValueError("invalid --negative-index-mode: " + text)
 
 
-def resolve_bounds_check_mode(mode: str) -> str:
+def resolve_bounds_check_mode(mode: str, opt_level: str | int = 1) -> str:
     """Normalize --bounds-check-mode value."""
     text = mode.strip()
     if text == "":
+        level = resolve_opt_level(opt_level)
+        if level == 0:
+            return "always"
         return "off"
     if text in ("always", "debug", "off"):
         return text

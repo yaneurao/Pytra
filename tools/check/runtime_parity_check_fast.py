@@ -109,12 +109,13 @@ def _get_registry():
 
 
 def _optimizer_debug_flags(
+    opt_level: int,
     negative_index_mode: str,
     bounds_check_mode: str,
 ) -> dict[str, JsonVal]:
     return {
-        "negative_index_mode": resolve_negative_index_mode(negative_index_mode),
-        "bounds_check_mode": resolve_bounds_check_mode(bounds_check_mode),
+        "negative_index_mode": resolve_negative_index_mode(negative_index_mode, opt_level),
+        "bounds_check_mode": resolve_bounds_check_mode(bounds_check_mode, opt_level),
     }
 
 
@@ -158,7 +159,7 @@ def _transpile_in_memory(
     try:
         # js is TS with strip_types=True; pipeline uses "ts" profile
         pipeline_target = "ts" if target == "js" else target
-        optimizer_debug_flags = _optimizer_debug_flags(negative_index_mode, bounds_check_mode)
+        optimizer_debug_flags = _optimizer_debug_flags(opt_level, negative_index_mode, bounds_check_mode)
 
         # 1. Parse
         east1_doc = parse_python_file(str(case_path))
@@ -1149,8 +1150,8 @@ def main() -> int:
         f"SUMMARY cases={len(stems)} pass={pass_cases} fail={fail_cases} "
         f"targets={','.join(sorted(enabled_targets))} "
         f"opt_level={args.opt_level} "
-        f"negative_index_mode={resolve_negative_index_mode(args.negative_index_mode)} "
-        f"bounds_check_mode={resolve_bounds_check_mode(args.bounds_check_mode)} "
+        f"negative_index_mode={resolve_negative_index_mode(args.negative_index_mode, args.opt_level)} "
+        f"bounds_check_mode={resolve_bounds_check_mode(args.bounds_check_mode, args.opt_level)} "
         f"elapsed={elapsed:.1f}s"
     )
     if len(category_counts) > 0:
@@ -1162,8 +1163,8 @@ def main() -> int:
         summary = {
             "case_root": args.case_root,
             "opt_level": args.opt_level,
-            "negative_index_mode": resolve_negative_index_mode(args.negative_index_mode),
-            "bounds_check_mode": resolve_bounds_check_mode(args.bounds_check_mode),
+            "negative_index_mode": resolve_negative_index_mode(args.negative_index_mode, args.opt_level),
+            "bounds_check_mode": resolve_bounds_check_mode(args.bounds_check_mode, args.opt_level),
             "targets": sorted(enabled_targets),
             "cases": stems,
             "case_total": len(stems),
