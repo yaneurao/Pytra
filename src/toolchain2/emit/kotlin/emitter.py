@@ -60,10 +60,132 @@ class KotlinRenderer(CommonRenderer):
             value = self._emit_expr(node.get("value"))
             self._emit("var " + target_name + " = " + value)
             return
+        if kind == "ImportFrom":
+            module_name = self._str(node, "module")
+            self._emit("// import from " + module_name)
+            return
+        if kind == "Import":
+            self._emit("// import")
+            return
+        if kind == "FunctionDef":
+            self._emit_function_def(node)
+            return
+        if kind == "ForCore":
+            self._emit_for_core(node)
+            return
+        if kind == "If":
+            test = self._emit_expr(node.get("test"))
+            self._emit("if (" + test + ") {")
+            self.state.indent_level += 1
+            for stmt in self._list(node, "body"):
+                self._emit_stmt(stmt)
+            self.state.indent_level -= 1
+            orelse = self._list(node, "orelse")
+            if len(orelse) == 0:
+                self._emit("}")
+            else:
+                self._emit("} else {")
+                self.state.indent_level += 1
+                for stmt in orelse:
+                    self._emit_stmt(stmt)
+                self.state.indent_level -= 1
+                self._emit("}")
+            return
+        if kind == "While":
+            test = self._emit_expr(node.get("test"))
+            self._emit("while (" + test + ") {")
+            self.state.indent_level += 1
+            for stmt in self._list(node, "body"):
+                self._emit_stmt(stmt)
+            self.state.indent_level -= 1
+            self._emit("}")
+            return
+        if kind == "AugAssign":
+            target = self._emit_expr(node.get("target"))
+            value = self._emit_expr(node.get("value"))
+            op = self._str(node, "op")
+            op_text = {"Add": "+", "Sub": "-", "Mult": "*", "Div": "/"}.get(op, op)
+            self._emit(target + " = " + target + " " + op_text + " " + value)
+            return
+        if kind == "Return":
+            value = node.get("value")
+            if isinstance(value, dict):
+                self._emit("return " + self._emit_expr(value))
+            else:
+                self._emit("return Unit")
+            return
         if kind == "Expr":
             self._emit(self._emit_expr(node.get("value")))
             return
         raise RuntimeError("kotlin emitter: unsupported stmt kind: " + kind)
+
+    def _emit_function_def(self, node: dict[str, JsonVal]) -> None:
+        name = _safe_kotlin_ident(self._str(node, "name"))
+        arg_order = self._list(node, "arg_order")
+        arg_types = node.get("arg_types")
+        arg_type_map = arg_types if isinstance(arg_types, dict) else {}
+        params: list[str] = []
+        for arg in arg_order:
+            if not isinstance(arg, str):
+                continue
+            params.append(_safe_kotlin_ident(arg) + ": " + kotlin_type(arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"))
+        return_type = kotlin_type(self._str(node, "return_type"))
+        self._emit("fun " + name + "(" + ", ".join(params) + "): " + return_type + " {")
+        self.state.indent_level += 1
+        body = self._list(node, "body")
+        if len(body) == 0:
+            self._emit("Unit")
+        else:
+            for stmt in body:
+                self._emit_stmt(stmt)
+        self.state.indent_level -= 1
+        self._emit("}")
+
+    def _for_target_name(self, node: JsonVal) -> str:
+        if not isinstance(node, dict):
+            return "item"
+        name = self._str(node, "id")
+        if name == "":
+            return "item"
+        return _safe_kotlin_ident(name)
+
+    def _emit_for_core(self, node: dict[str, JsonVal]) -> None:
+        target_node = node.get("target_plan")
+        if target_node is None:
+            target_node = node.get("target")
+        target_name = self._for_target_name(target_node)
+        iter_plan = node.get("iter_plan")
+        body = self._list(node, "body")
+        if isinstance(iter_plan, dict) and self._str(iter_plan, "kind") == "StaticRangeForPlan":
+            start = self._emit_expr(iter_plan.get("start"))
+            stop = self._emit_expr(iter_plan.get("stop"))
+            step_node = iter_plan.get("step")
+            step = self._emit_expr(step_node) if isinstance(step_node, dict) else "1L"
+            idx_name = "_idx_" + target_name
+            descending = self._str(iter_plan, "range_mode") == "descending"
+            cmp_op = ">" if descending else "<"
+            update = idx_name + " = " + idx_name + (" - " if descending else " + ") + step.replace("-", "")
+            self._emit("var " + idx_name + " = " + start)
+            self._emit("while (" + idx_name + " " + cmp_op + " " + stop + ") {")
+            self.state.indent_level += 1
+            self._emit("val " + target_name + " = " + idx_name)
+            for stmt in body:
+                self._emit_stmt(stmt)
+            self._emit(update)
+            self.state.indent_level -= 1
+            self._emit("}")
+            return
+        iter_expr = "emptyList<Any?>()"
+        if isinstance(iter_plan, dict) and self._str(iter_plan, "kind") == "RuntimeIterForPlan":
+            iter_expr = self._emit_expr(iter_plan.get("iter_expr"))
+        elif isinstance(node.get("iter"), dict):
+            iter_expr = self._emit_expr(node.get("iter"))
+        self._emit("for (" + target_name + " in " + iter_expr + ") {")
+        self.state.indent_level += 1
+        for stmt in body:
+            self._emit_stmt(stmt)
+        self.state.indent_level -= 1
+        self._emit("}")
 
     def _emit_expr(self, node: JsonVal) -> str:
         if not isinstance(node, dict):
@@ -83,9 +205,45 @@ class KotlinRenderer(CommonRenderer):
                 return self._quote_string(value)
         if kind == "Name":
             return _safe_kotlin_ident(self._str(node, "id"))
+        if kind == "Attribute":
+            owner = self._emit_expr(node.get("value"))
+            return owner + "." + _safe_kotlin_ident(self._str(node, "attr"))
+        if kind == "Subscript":
+            owner = self._emit_expr(node.get("value"))
+            index = self._emit_expr(node.get("slice"))
+            return owner + "[" + index + "]"
         if kind == "List":
             elems = [self._emit_expr(elem) for elem in self._list(node, "elements")]
             return "mutableListOf(" + ", ".join(elems) + ")"
+        if kind == "Unbox" or kind == "Box":
+            return self._emit_expr(node.get("value"))
+        if kind == "Call":
+            func = node.get("func")
+            func_name = self._emit_expr(func)
+            args = [self._emit_expr(arg) for arg in self._list(node, "args")]
+            return func_name + "(" + ", ".join(args) + ")"
+        if kind == "BinOp":
+            left = self._emit_expr(node.get("left"))
+            right = self._emit_expr(node.get("right"))
+            op = self._str(node, "op")
+            op_text = {"Add": "+", "Sub": "-", "Mult": "*", "Div": "/"}.get(op, op)
+            return left + " " + op_text + " " + right
+        if kind == "Compare":
+            left = self._emit_expr(node.get("left"))
+            comparators = self._list(node, "comparators")
+            ops = self._list(node, "ops")
+            if len(comparators) == 1 and len(ops) == 1:
+                right = self._emit_expr(comparators[0])
+                op = ops[0] if isinstance(ops[0], str) else self._str(ops[0], "kind")
+                op_text = {"Eq": "==", "NotEq": "!=", "Lt": "<", "LtE": "<=", "Gt": ">", "GtE": ">="}.get(op, op)
+                return left + " " + op_text + " " + right
+        if kind == "UnaryOp":
+            operand = self._emit_expr(node.get("operand"))
+            op = self._str(node, "op")
+            if op == "Not":
+                return "!" + operand
+            if op == "USub":
+                return "-" + operand
         raise RuntimeError("kotlin emitter: unsupported expr kind: " + kind)
 
 
