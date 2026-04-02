@@ -249,6 +249,41 @@ func __pytra_tuple_str(_ v: Any?) -> String {
     return "(" + arr.map { __pytra_repr_item($0) }.joined(separator: ", ") + ")"
 }
 
+func __pytra_type_name(_ v: Any?) -> String {
+    guard let value = v else { return "NoneType" }
+    if value is PytraNone { return "NoneType" }
+    if value is Int64 || value is Int { return "int" }
+    if value is Double { return "float" }
+    if value is Bool { return "bool" }
+    if value is String { return "str" }
+    if value is [Any] { return "list" }
+    if value is [AnyHashable: Any] { return "dict" }
+    return String(describing: type(of: value))
+}
+
+func __pytra_format_value(_ v: Any?, _ spec: String) -> String {
+    if spec == "" {
+        return __pytra_str(v)
+    }
+    if spec.hasSuffix("d") {
+        let width = Int(spec.dropLast()) ?? 0
+        let body = String(__pytra_int(v))
+        if width <= body.count {
+            return body
+        }
+        return String(repeating: " ", count: width - body.count) + body
+    }
+    if spec.hasSuffix("f") {
+        let core = String(spec.dropLast())
+        var precision = 6
+        if core.hasPrefix(".") {
+            precision = Int(core.dropFirst()) ?? precision
+        }
+        return String(format: "%.\(precision)f", __pytra_float(v))
+    }
+    return __pytra_str(v)
+}
+
 func __pytra_len(_ v: Any?) -> Int64 {
     guard let value = v else { return 0 }
     if let s = value as? String { return Int64(s.count) }
@@ -262,6 +297,14 @@ func __pytra_index(_ i: Int64, _ n: Int64) -> Int64 {
         return i + n
     }
     return i
+}
+
+func __pytra_index(_ items: [Any], _ needle: Any?) -> Int64 {
+    return __pytra_list_index(items, needle)
+}
+
+func __pytra_index(_ text: String, _ needle: Any?) -> Int64 {
+    return __pytra_index_str(text, needle)
 }
 
 func __pytra_getIndex(_ container: Any?, _ index: Any?) throws -> Any {
@@ -751,6 +794,19 @@ func __pytra_index_str(_ v: Any?, _ sub: Any?) -> Int64 {
     return __pytra_find(v, sub)
 }
 
+func __pytra_list_index(_ v: Any?, _ needle: Any?) -> Int64 {
+    let items = __pytra_as_list(v)
+    let target = __pytra_str(needle)
+    var i = 0
+    while i < items.count {
+        if __pytra_str(items[i]) == target {
+            return Int64(i)
+        }
+        i += 1
+    }
+    return -1
+}
+
 func __pytra_isalnum(_ v: Any?) -> Bool {
     let s = __pytra_str(v)
     if s.isEmpty { return false }
@@ -764,6 +820,38 @@ func __pytra_lower(_ v: Any?) -> String { return __pytra_str(v).lowercased() }
 
 func __pytra_extend(_ items: inout [Any], _ extra: Any?) {
     items.append(contentsOf: __pytra_as_list(extra))
+}
+
+func __pytra_sum(_ items: Any?) -> Any {
+    let arr = __pytra_as_list(items)
+    var sawFloat = false
+    var floatTotal = 0.0
+    var intTotal: Int64 = 0
+    for item in arr {
+        if item is Double {
+            sawFloat = true
+            floatTotal += __pytra_float(item)
+        } else {
+            intTotal += __pytra_int(item)
+        }
+    }
+    if sawFloat {
+        return Double(intTotal) + floatTotal
+    }
+    return intTotal
+}
+
+func __pytra_zip(_ left: Any?, _ right: Any?) -> [Any] {
+    let lhs = __pytra_as_list(left)
+    let rhs = __pytra_as_list(right)
+    let count = min(lhs.count, rhs.count)
+    var out: [Any] = []
+    var i = 0
+    while i < count {
+        out.append([lhs[i], rhs[i]])
+        i += 1
+    }
+    return out
 }
 
 func __pytra_set_ctor() -> [Any] {
