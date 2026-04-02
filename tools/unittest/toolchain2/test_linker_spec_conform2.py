@@ -1521,6 +1521,10 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertEqual(runtime_rel_tail_for_module("pytra.core.py_runtime"), "core/py_runtime")
         self.assertEqual(cpp_include_for_module("pytra.core.py_runtime"), "core/py_runtime.h")
         self.assertEqual(cpp_include_for_module("pytra.std"), "")
+        self.assertEqual(runtime_rel_tail_for_module("time"), "std/time")
+        self.assertEqual(runtime_rel_tail_for_module("pathlib"), "std/pathlib")
+        self.assertEqual(cpp_include_for_module("time"), "std/time.h")
+        self.assertEqual(cpp_include_for_module("pathlib"), "std/pathlib.h")
         self.assertTrue(is_runtime_internal_helper_module("pytra.core.list"))
         self.assertFalse(is_runtime_internal_helper_module("pytra.core.py_runtime"))
         self.assertTrue(is_type_only_dependency_module_id("pytra.typing"))
@@ -3505,7 +3509,33 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         cpp_code = emit_cpp_module(doc)
 
-        self.assertIn('p.add_argument(str("-m"), str("--mode"), str(""), str(""), str(""), str(""), rc_list_from_value(list<str>{str("a"), str("b")}), str("a"));', cpp_code)
+        self.assertIn('p.add_argument(str("-m"), str("--mode"), str(""), str(""), str(""), str(""), rc_from_value(list<str>{str("a"), str("b")}), str("a"));', cpp_code)
+
+    def test_cpp_runtime_bundle_json_scalar_optional_helpers_unbox_variant_lane(self) -> None:
+        runtime_path = resolve_runtime_east_path("pytra.std.json")
+        self.assertNotEqual(runtime_path, "")
+
+        doc = _fixture_doc(str(Path(runtime_path).relative_to(ROOT)))
+        meta = doc.setdefault("meta", {})
+        assert isinstance(meta, dict)
+        meta["linked_program_v1"] = {"module_id": "pytra.std.json"}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            header_path, source_path = emit_runtime_module_artifacts(
+                "pytra.std.json",
+                doc,
+                output_dir=Path(tmp),
+                source_path=str(ROOT / "src" / "pytra" / "std" / "json.py"),
+            )
+            _ = header_path
+            source_text = Path(source_path).read_text(encoding="utf-8")
+
+        self.assertIn('return ::std::optional<str>(::std::get<str>((*raw)));', source_text)
+        self.assertIn('return ::std::optional<int64>(::std::get<int64>((*raw)));', source_text)
+        self.assertIn('return ::std::optional<float64>(::std::get<float64>((*raw)));', source_text)
+        self.assertNotIn('return ::std::optional<str>(raw);', source_text)
+        self.assertNotIn('return ::std::optional<int64>(raw);', source_text)
+        self.assertNotIn('return ::std::optional<float64>(raw);', source_text)
 
     def test_cpp_emitter_boxes_any_dict_literals_with_object_values(self) -> None:
         doc = _module_doc(

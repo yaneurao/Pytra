@@ -89,6 +89,13 @@ def resolve_runtime_module_rel_tail(module_id: str) -> str:
         if module_id.startswith(prefix):
             name = module_id[len(prefix):]
             return bucket + "/" + name.replace(".", "/")
+    if module_id != "" and "." not in module_id:
+        bare_std = "std/" + module_id
+        east_path = _RUNTIME_EAST_ROOT / (bare_std + ".east")
+        cpp_header = _REPO_ROOT / "src" / "runtime" / "cpp" / (bare_std + ".h")
+        cpp_source = _REPO_ROOT / "src" / "runtime" / "cpp" / (bare_std + ".cpp")
+        if east_path.exists() or cpp_header.exists() or cpp_source.exists():
+            return bare_std
     return ""
 
 

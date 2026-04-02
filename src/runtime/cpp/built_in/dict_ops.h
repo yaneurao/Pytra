@@ -140,6 +140,102 @@ static inline void py_dict_clear_mut(Object<dict<K, V>>& d) {
     py_dict_clear_mut(*d);
 }
 
+template <class K, class V, class Q>
+static inline V py_dict_pop_mut(dict<K, V>& d, const Q& key) {
+    const K k = [&]() -> K {
+        if constexpr (py_is_cstr_like<Q>::value) {
+            return py_coerce_cstr_typed_value<K>(key);
+        } else if constexpr (::std::is_same_v<K, Q>) {
+            return key;
+        } else if constexpr (::std::is_convertible_v<Q, K>) {
+            return static_cast<K>(key);
+        } else {
+            return K(key);
+        }
+    }();
+    return d.pop(k);
+}
+
+template <class K, class V, class Q>
+static inline V py_dict_pop_mut(Object<dict<K, V>>& d, const Q& key) {
+    return py_dict_pop_mut(*d, key);
+}
+
+template <class K, class V, class Q, class D>
+static inline V py_dict_pop_mut(dict<K, V>& d, const Q& key, const D& default_value) {
+    const K k = [&]() -> K {
+        if constexpr (py_is_cstr_like<Q>::value) {
+            return py_coerce_cstr_typed_value<K>(key);
+        } else if constexpr (::std::is_same_v<K, Q>) {
+            return key;
+        } else if constexpr (::std::is_convertible_v<Q, K>) {
+            return static_cast<K>(key);
+        } else {
+            return K(key);
+        }
+    }();
+    if constexpr (::std::is_same_v<V, D>) {
+        return d.pop(k, default_value);
+    } else if constexpr (::std::is_convertible_v<D, V>) {
+        return d.pop(k, static_cast<V>(default_value));
+    } else {
+        return d.pop(k, V(default_value));
+    }
+}
+
+template <class K, class V, class Q, class D>
+static inline V py_dict_pop_mut(Object<dict<K, V>>& d, const Q& key, const D& default_value) {
+    return py_dict_pop_mut(*d, key, default_value);
+}
+
+template <class K, class V, class Q>
+static inline V py_dict_setdefault_mut(dict<K, V>& d, const Q& key) {
+    const K k = [&]() -> K {
+        if constexpr (py_is_cstr_like<Q>::value) {
+            return py_coerce_cstr_typed_value<K>(key);
+        } else if constexpr (::std::is_same_v<K, Q>) {
+            return key;
+        } else if constexpr (::std::is_convertible_v<Q, K>) {
+            return static_cast<K>(key);
+        } else {
+            return K(key);
+        }
+    }();
+    return d.setdefault(k);
+}
+
+template <class K, class V, class Q>
+static inline V py_dict_setdefault_mut(Object<dict<K, V>>& d, const Q& key) {
+    return py_dict_setdefault_mut(*d, key);
+}
+
+template <class K, class V, class Q, class D>
+static inline V py_dict_setdefault_mut(dict<K, V>& d, const Q& key, const D& default_value) {
+    const K k = [&]() -> K {
+        if constexpr (py_is_cstr_like<Q>::value) {
+            return py_coerce_cstr_typed_value<K>(key);
+        } else if constexpr (::std::is_same_v<K, Q>) {
+            return key;
+        } else if constexpr (::std::is_convertible_v<Q, K>) {
+            return static_cast<K>(key);
+        } else {
+            return K(key);
+        }
+    }();
+    if constexpr (::std::is_same_v<V, D>) {
+        return d.setdefault(k, default_value);
+    } else if constexpr (::std::is_convertible_v<D, V>) {
+        return d.setdefault(k, static_cast<V>(default_value));
+    } else {
+        return d.setdefault(k, V(default_value));
+    }
+}
+
+template <class K, class V, class Q, class D>
+static inline V py_dict_setdefault_mut(Object<dict<K, V>>& d, const Q& key, const D& default_value) {
+    return py_dict_setdefault_mut(*d, key, default_value);
+}
+
 template <class K, class V>
 static inline list<::std::tuple<K, V>> py_dict_items(const dict<K, V>& d) {
     return d.items();
