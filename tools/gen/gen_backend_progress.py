@@ -33,8 +33,8 @@ STDLIB_ROOT = ROOT / "test" / "stdlib" / "source" / "py"
 PARITY_DIR = ROOT / ".parity-results"
 
 PARITY_LANGS = [
-    "cpp", "rs", "cs", "powershell", "js", "ts", "dart", "go", "java",
-    "swift", "kotlin", "ruby", "lua", "scala", "php", "nim", "julia", "zig",
+    "cpp", "rs", "cs", "powershell", "js", "ts", "dart", "go",
+    "java", "scala", "kotlin", "swift", "ruby", "lua", "php", "nim", "julia", "zig",
 ]
 SELFHOST_LANGS = PARITY_LANGS
 
