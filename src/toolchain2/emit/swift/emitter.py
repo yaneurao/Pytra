@@ -1428,7 +1428,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         while i < len(args):
             rendered_main_args.append(_render_expr(args[i]))
             i += 1
-        return _MAIN_CALL_ALIAS[0] + "(" + ", ".join(rendered_main_args) + ")"
+        call_code = _MAIN_CALL_ALIAS[0] + "(" + ", ".join(rendered_main_args) + ")"
+        if _MAIN_CALL_ALIAS[0] in _THROWING_FUNCTIONS[0]:
+            return "try " + call_code
+        return call_code
     semantic_tag_any = expr.get("semantic_tag")
     semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
     if semantic_tag == "stdlib.symbol.Path":
