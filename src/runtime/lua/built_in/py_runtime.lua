@@ -427,6 +427,43 @@ function __pytra_bytes_alias(v)
     return __pytra_bytes(v)
 end
 
+function __pytra_seq_get_checked(seq, idx)
+    local n = #seq
+    local i = tonumber(idx) or 0
+    if i < 0 then
+        i = i + n
+    end
+    if i < 0 or i >= n then
+        return nil, IndexError.new("index out of range")
+    end
+    return seq[i + 1], nil
+end
+
+function __pytra_str_get_checked(s, idx)
+    local n = #s
+    local i = tonumber(idx) or 0
+    if i < 0 then
+        i = i + n
+    end
+    if i < 0 or i >= n then
+        return nil, IndexError.new("string index out of range")
+    end
+    local j = i + 1
+    return string.sub(s, j, j), nil
+end
+
+function __pytra_str_byte_get_checked(s, idx)
+    local n = #s
+    local i = tonumber(idx) or 0
+    if i < 0 then
+        i = i + n
+    end
+    if i < 0 or i >= n then
+        return nil, IndexError.new("string index out of range")
+    end
+    return string.byte(s, i + 1), nil
+end
+
 function __pytra_slice(seq, start_idx, stop_idx)
     if type(seq) == "string" then
         local n = #seq

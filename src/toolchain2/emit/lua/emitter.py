@@ -284,6 +284,10 @@ def _is_boolean_type(type_name: str) -> bool:
     return type_name in ("bool", "boolean")
 
 
+def _is_numeric_type(type_name: str) -> bool:
+    return type_name in ("int", "float")
+
+
 def _is_union_error_return_type(ctx: EmitContext, type_name: str) -> bool:
     if type_name.startswith("multi_return[") and type_name.endswith("]"):
         inner = type_name[len("multi_return["):-1]
@@ -322,6 +326,24 @@ def _is_none_error_return_type(ctx: EmitContext, type_name: str) -> bool:
         return False
     value_type = _union_error_value_type(ctx, type_name)
     return value_type in ("", "None", "none", "nil")
+
+
+def _is_guaranteed_lua_truthy_expr(node: JsonVal) -> bool:
+    if not isinstance(node, dict):
+        return False
+    kind = _str(node, "kind")
+    if kind in ("List", "Tuple", "Dict"):
+        return True
+    if kind != "Constant":
+        return False
+    value = node.get("value")
+    if value is True:
+        return True
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        return value != ""
+    return False
 
 
 def _emit_error_propagation(ctx: EmitContext, err_code: str, *, allow_current_catch: bool) -> None:
@@ -683,6 +705,15 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if call_name == "__pytra_bytes" and copy_elision_safe:
         return "__pytra_bytes_alias(" + arg_strs[0] + ")"
 
+    if call_name == "__pytra_len" and len(args) >= 1:
+        arg0 = args[0]
+        arg0_code = arg_strs[0]
+        arg0_rt = _str(arg0, "resolved_type") if isinstance(arg0, dict) else ""
+        if arg0_rt in ("str", "string", "list", "tuple", "bytearray") or arg0_rt.startswith("list[") or arg0_rt.startswith("tuple["):
+            return "#(" + arg0_code + ")"
+        if _type_contains(arg0_rt, "deque"):
+            return "#(" + arg0_code + "._items)"
+
     # Container operation markers
     if call_name == "__LIST_APPEND__":
         if len(arg_strs) >= 2:
@@ -1018,10 +1049,9 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if value_rt == "byte":
                 return "string.byte(" + owner + ", " + idx + ")"
             return "string.sub(" + owner + ", " + idx + ", " + idx + ")"
-        idx = slice_code + " + 1"
         if value_rt == "byte":
-            return "string.byte(" + owner + ", " + idx + ")"
-        return "string.sub(" + owner + ", " + idx + ", " + idx + ")"
+            return "string.byte(" + owner + ", " + slice_code + " + 1)"
+        return "string.sub(" + owner + ", " + slice_code + " + 1, " + slice_code + " + 1)"
     # Fallback
     if isinstance(slice_node, dict):
         slice_code = _emit_expr(ctx, slice_node)
@@ -1042,6 +1072,30 @@ def _get_negative_int_literal(node: dict[str, JsonVal]) -> int | None:
             if isinstance(v, int) and v > 0:
                 return -v
     return None
+
+
+def _emit_checked_subscript_call(ctx: EmitContext, value: JsonVal) -> str:
+    if not isinstance(value, dict) or _str(value, "kind") != "Subscript":
+        return ""
+    owner_node = value.get("value")
+    if not isinstance(owner_node, dict):
+        return ""
+    owner = _emit_expr(ctx, owner_node)
+    owner_rt = _str(owner_node, "resolved_type")
+    slice_node = value.get("slice")
+    if not isinstance(slice_node, dict) or _str(slice_node, "kind") == "Slice":
+        return ""
+    slice_code = _emit_expr(ctx, slice_node)
+    is_list_type = owner_rt.startswith("list[") or owner_rt in ("list", "bytes", "bytearray")
+    is_tuple_type = owner_rt.startswith("tuple[") or owner_rt == "tuple"
+    if is_list_type or is_tuple_type:
+        return "__pytra_seq_get_checked(" + owner + ", " + slice_code + ")"
+    if owner_rt in ("str", "string"):
+        value_rt = _str(value, "resolved_type")
+        if value_rt == "byte":
+            return "__pytra_str_byte_get_checked(" + owner + ", " + slice_code + ")"
+        return "__pytra_str_get_checked(" + owner + ", " + slice_code + ")"
+    return ""
 
 
 def _is_lua_one(code: str) -> bool:
@@ -1124,6 +1178,7 @@ def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return left
     parts: list[str] = []
     current_left = left
+    current_left_node = node.get("left")
     for idx, comparator in enumerate(comparators):
         op_obj = ops[idx] if idx < len(ops) else None
         op_name = op_obj if isinstance(op_obj, str) else ""
@@ -1132,9 +1187,17 @@ def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         right = _emit_expr(ctx, comparator)
         cmp_op = _cmp_op_text(op_name)
         if cmp_op == "__IN__":
-            parts.append("__pytra_contains(" + right + ", " + current_left + ")")
+            right_rt = _str(comparator, "resolved_type") if isinstance(comparator, dict) else ""
+            if _type_contains(right_rt, "dict"):
+                parts.append("(" + right + "[" + current_left + "] ~= nil)")
+            else:
+                parts.append("__pytra_contains(" + right + ", " + current_left + ")")
         elif cmp_op == "__NOT_IN__":
-            parts.append("(not __pytra_contains(" + right + ", " + current_left + "))")
+            right_rt = _str(comparator, "resolved_type") if isinstance(comparator, dict) else ""
+            if _type_contains(right_rt, "dict"):
+                parts.append("(" + right + "[" + current_left + "] == nil)")
+            else:
+                parts.append("(not __pytra_contains(" + right + ", " + current_left + "))")
         elif cmp_op == "__IS__":
             parts.append("(" + current_left + " == " + right + ")")
         elif cmp_op == "__IS_NOT__":
@@ -1142,6 +1205,7 @@ def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         else:
             parts.append("(" + current_left + " " + cmp_op + " " + right + ")")
         current_left = right
+        current_left_node = comparator
     if len(parts) == 1:
         return parts[0]
     return "(" + " and ".join(parts) + ")"
@@ -1194,8 +1258,14 @@ def _emit_boolop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
 def _emit_condition(ctx: EmitContext, node: JsonVal) -> str:
     expr = _emit_expr(ctx, node)
-    if isinstance(node, dict) and _is_boolean_type(_str(node, "resolved_type")):
-        return expr
+    if isinstance(node, dict):
+        resolved_type = _str(node, "resolved_type")
+        if _is_boolean_type(resolved_type):
+            return expr
+        if _is_numeric_type(resolved_type):
+            return "(" + expr + " ~= 0)"
+        if resolved_type in ("str", "string"):
+            return "(#" + expr + " ~= 0)"
     return "__pytra_truthy(" + expr + ")"
 
 
@@ -1241,9 +1311,16 @@ def _emit_tuple_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
 
 def _emit_ifexp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
-    test = _emit_condition(ctx, node.get("test"))
-    body = _emit_expr(ctx, node.get("body"))
-    orelse = _emit_expr(ctx, node.get("orelse"))
+    test_node = node.get("test")
+    body_node = node.get("body")
+    orelse_node = node.get("orelse")
+    test = _emit_condition(ctx, test_node)
+    body = _emit_expr(ctx, body_node)
+    orelse = _emit_expr(ctx, orelse_node)
+    if _is_guaranteed_lua_truthy_expr(body_node):
+        return "((" + test + ") and (" + body + ") or (" + orelse + "))"
+    if _is_guaranteed_lua_truthy_expr(orelse_node):
+        return "((not (" + test + ")) and (" + orelse + ") or (" + body + "))"
     return "(__pytra_ternary(" + test + ", " + body + ", " + orelse + "))"
 
 
@@ -1656,7 +1733,19 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
     if isinstance(target, dict):
         target_code = _emit_assign_target(ctx, target)
-        val_code = _emit_expr(ctx, value)
+        checked_call = _emit_checked_subscript_call(ctx, value) if isinstance(value, dict) else ""
+        if checked_call != "":
+            err_tmp = _next_temp(ctx, "err")
+            ok_tmp = _next_temp(ctx, "ok")
+            _emit(ctx, "local " + ok_tmp + ", " + err_tmp + " = " + checked_call)
+            _emit(ctx, "if " + err_tmp + " ~= nil then")
+            ctx.indent_level += 1
+            _emit_error_propagation(ctx, err_tmp, allow_current_catch=True)
+            ctx.indent_level -= 1
+            _emit(ctx, "end")
+            val_code = ok_tmp
+        else:
+            val_code = _emit_expr(ctx, value)
         target_rt = _str(target, "resolved_type")
         value_rt = _str(value, "resolved_type") if isinstance(value, dict) else ""
         if isinstance(value, dict) and _str(value, "kind") == "Call":
