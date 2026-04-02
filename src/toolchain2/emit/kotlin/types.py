@@ -46,6 +46,8 @@ def _safe_kotlin_ident(name: str) -> str:
 
 
 def kotlin_type(resolved_type: str) -> str:
+    if resolved_type in ("Callable", "callable"):
+        return "() -> Any?"
     if resolved_type in ("int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"):
         return "Long"
     if resolved_type in ("float", "float32", "float64"):
@@ -71,6 +73,8 @@ def kotlin_type(resolved_type: str) -> str:
         return "MutableMap<Any?, Any?>"
     if resolved_type.startswith("tuple["):
         return "List<Any?>"
+    if (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) and resolved_type.endswith("]"):
+        return "() -> Any?"
     if "|" in resolved_type:
         return "Any?"
     return _safe_kotlin_ident(resolved_type)

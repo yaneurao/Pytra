@@ -22,22 +22,62 @@ class KotlinRenderer(CommonRenderer):
         super().__init__("kotlin")
         self.mapping = mapping
         self.current_class_name: str | None = None
+        self.import_symbols: dict[str, str] = {}
+        self.module_function_names: set[str] = set()
 
     def render_module(self, east3_doc: dict[str, JsonVal]) -> str:
         module_id = self._str(east3_doc, "module_id")
+        meta = east3_doc.get("meta")
         if module_id == "":
-            meta = east3_doc.get("meta")
             if isinstance(meta, dict):
                 module_id = self._str(meta, "module_id")
+        self.import_symbols = {}
+        if isinstance(meta, dict):
+            import_symbols = meta.get("import_symbols")
+            if isinstance(import_symbols, dict):
+                for local_name, spec in import_symbols.items():
+                    if isinstance(local_name, str) and isinstance(spec, dict):
+                        mod = self._str(spec, "module")
+                        name = self._str(spec, "name")
+                        if mod != "" and name != "":
+                            self.import_symbols[local_name] = _safe_kotlin_ident(mod.replace(".", "_")) + "." + _safe_kotlin_ident(name)
+        self.module_function_names = {
+            self._str(stmt, "name")
+            for stmt in self._list(east3_doc, "body")
+            if isinstance(stmt, dict) and self._str(stmt, "kind") in ("FunctionDef", "ClosureDef")
+        }
+        is_entry = False
+        if isinstance(meta, dict):
+            emit_context = meta.get("emit_context")
+            if isinstance(emit_context, dict):
+                is_entry = bool(emit_context.get("is_entry"))
+            if not is_entry:
+                is_entry = bool(meta.get("is_entry"))
         object_name = _safe_kotlin_ident(module_id.replace(".", "_") if module_id != "" else "Main")
         self._emit("object " + object_name + " {")
         self.state.indent_level += 1
         body = self._list(east3_doc, "body")
+        main_guard_body = self._list(east3_doc, "main_guard_body")
         if len(body) == 0:
             self._emit("// bootstrap scaffold")
         else:
             for stmt in body:
                 self._emit_stmt(stmt)
+        if len(main_guard_body) > 0:
+            self._emit("@JvmStatic")
+            self._emit("fun main(args: Array<String>) {")
+            self.state.indent_level += 1
+            for stmt in main_guard_body:
+                self._emit_stmt(stmt)
+            self.state.indent_level -= 1
+            self._emit("}")
+        elif is_entry:
+            self._emit("@JvmStatic")
+            self._emit("fun main(args: Array<String>) {")
+            self.state.indent_level += 1
+            self._emit("_case_main()")
+            self.state.indent_level -= 1
+            self._emit("}")
         self.state.indent_level -= 1
         self._emit("}")
         return self.finish()
@@ -272,6 +312,8 @@ class KotlinRenderer(CommonRenderer):
             ident = self._str(node, "id")
             if ident == "self" and self.current_class_name is not None:
                 return "this"
+            if ident in self.import_symbols:
+                return self.import_symbols[ident]
             return _safe_kotlin_ident(ident)
         if kind == "Attribute":
             owner = self._emit_expr(node.get("value"))
@@ -322,7 +364,20 @@ class KotlinRenderer(CommonRenderer):
         if kind == "Call":
             func = node.get("func")
             func_name = self._emit_expr(func)
-            args = [self._emit_expr(arg) for arg in self._list(node, "args")]
+            if isinstance(func, dict) and self._str(func, "kind") == "Name":
+                func_id = self._str(func, "id")
+                mapped = self.mapping.calls.get(func_id)
+                if isinstance(mapped, str) and mapped != "":
+                    func_name = mapped
+            args: list[str] = []
+            for arg in self._list(node, "args"):
+                if isinstance(arg, dict) and self._str(arg, "kind") == "Name":
+                    arg_id = self._str(arg, "id")
+                    resolved_type = self._str(arg, "resolved_type")
+                    if arg_id in self.module_function_names or resolved_type.startswith("callable[") or resolved_type.startswith("Callable["):
+                        args.append("{ " + _safe_kotlin_ident(arg_id) + "() }")
+                        continue
+                args.append(self._emit_expr(arg))
             return func_name + "(" + ", ".join(args) + ")"
         if kind == "BinOp":
             left = self._emit_expr(node.get("left"))

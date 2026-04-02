@@ -222,6 +222,11 @@ def _transpile_in_memory(
             _copy_java_runtime(emit_dir)
         elif target == "scala":
             for m in link_result.linked_modules:
+                _inject_basic_module_id(
+                    m.east_doc,
+                    m.module_id,
+                    is_entry=bool(getattr(m, "is_entry", False)),
+                )
                 code = emit_scala_module(m.east_doc)
                 if code.strip() == "":
                     continue
@@ -231,6 +236,11 @@ def _transpile_in_memory(
             _copy_scala_runtime(emit_dir)
         elif target == "kotlin":
             for m in link_result.linked_modules:
+                _inject_basic_module_id(
+                    m.east_doc,
+                    m.module_id,
+                    is_entry=bool(getattr(m, "is_entry", False)),
+                )
                 code = emit_kotlin_module(m.east_doc)
                 if code.strip() == "":
                     continue
@@ -399,6 +409,27 @@ def _inject_dart_emit_context(
         "root_rel_prefix": root_rel_prefix,
         "is_entry": is_entry,
     }
+
+
+def _inject_basic_module_id(
+    east_doc: dict[str, object],
+    module_id: str,
+    *,
+    is_entry: bool = False,
+) -> None:
+    east_doc["module_id"] = module_id
+    meta = east_doc.get("meta")
+    if not isinstance(meta, dict):
+        meta = {}
+        east_doc["meta"] = meta
+    meta["module_id"] = module_id
+    meta["is_entry"] = is_entry
+    emit_context = meta.get("emit_context")
+    if not isinstance(emit_context, dict):
+        emit_context = {}
+        meta["emit_context"] = emit_context
+    emit_context["module_id"] = module_id
+    emit_context["is_entry"] = is_entry
 
 
 def _copy_dart_runtime(emit_dir: Path) -> None:
