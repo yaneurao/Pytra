@@ -72,8 +72,11 @@ union type を `object` に退化させず `std::variant` で表現する。`wor
 **Phase 4: EAST から object 退化 / box / unbox を削除**
 
 12. [ ] [ID: P0-CPP-VARIANT-S10] lower.py の Boxing（`resolved_type="object"` 生成）と iter boundary を削除する
-13. [ ] [ID: P0-CPP-VARIANT-S11] EAST3 validation に「`resolved_type: "object"` ならエラー」を追加する
-14. [ ] [ID: P0-CPP-VARIANT-S12] 全言語の fixture + sample が PASS することを確認する
+   - メモ: `iter.init` / `iter.next` は `ObjIterInit` / `ObjIterNext` として lower されるが、現行 `src/toolchain2/emit/cpp/emitter.py` は direct ノードを処理せず、`src/runtime/cpp/` に `py_iter_or_raise` / `py_next_or_stop` free helper も存在しない。したがって `S10` は `resolved_type="object"` の Boxing 削減と、C++ 向け iter runtime 契約の再導入/整理を分離して進める必要がある。
+13. [x] [ID: P0-CPP-VARIANT-S10A] `S10` の blocker として、C++ 向け iter boundary 削除に必要な runtime 契約を棚卸しする
+   - 完了: `src/toolchain2/compile/lower.py` の `ObjIterInit` / `ObjIterNext` 生成点、`src/toolchain2/emit/cpp/emitter.py` が direct ノード未対応であること、`src/runtime/cpp/` に `py_iter_or_raise` / `py_next_or_stop` 実装が存在しないことを確認した。`S10` は `resolved_type="object"` Boxing 削減と iter runtime 契約整備を別 tranche で進める。
+14. [ ] [ID: P0-CPP-VARIANT-S11] EAST3 validation に「`resolved_type: "object"` ならエラー」を追加する
+15. [ ] [ID: P0-CPP-VARIANT-S12] 全言語の fixture + sample が PASS することを確認する
 
 ### P0-CPP-OBJECT-CONTAINER: object_container_access fixture の C++ parity を通す
 
