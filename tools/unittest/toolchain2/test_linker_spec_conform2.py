@@ -5049,6 +5049,187 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn('::dumps(str("abc"))', cpp_code)
         self.assertNotIn('::dumps(object(str("abc")))', cpp_code)
 
+    def test_cpp_emitter_uses_function_signature_for_optional_arg_after_narrowing(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "f",
+                    "arg_order": ["indent"],
+                    "arg_types": {"indent": "int64 | None"},
+                    "arg_usage": {"indent": "readonly"},
+                    "arg_defaults": {},
+                    "return_type": "int64",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "helper"},
+                                "args": [{"kind": "Name", "id": "indent", "resolved_type": "int64"}],
+                                "function_signature_v1": {
+                                    "arg_order": ["indent"],
+                                    "arg_types": {"indent": "int64 | None"},
+                                    "arg_usage": {"indent": "readonly"},
+                                    "return_type": "int64",
+                                },
+                                "resolved_type": "int64",
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("return ::helper(indent);", cpp_code)
+        self.assertNotIn("return ::helper((*(indent)));", cpp_code)
+
+    def test_cpp_emitter_cast_expr_avoids_double_optional_deref_for_narrowed_name(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "indent_value",
+                    "arg_order": ["indent"],
+                    "arg_types": {"indent": "int64 | None"},
+                    "arg_usage": {"indent": "readonly"},
+                    "arg_defaults": {},
+                    "return_type": "int64",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "cast"},
+                                "args": [
+                                    {"kind": "Name", "id": "int64", "resolved_type": "type"},
+                                    {"kind": "Name", "id": "indent", "resolved_type": "int64"},
+                                ],
+                                "resolved_type": "int64",
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("return (*(indent));", cpp_code)
+        self.assertNotIn("return (*((*(indent))));", cpp_code)
+
+    def test_cpp_emitter_passes_named_callable_without_object_lambda_bridge(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "apply_int",
+                    "arg_order": ["fn", "x"],
+                    "arg_types": {"fn": "callable", "x": "int64"},
+                    "arg_usage": {"fn": "readonly", "x": "readonly"},
+                    "arg_defaults": {},
+                    "return_type": "int64",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "fn", "resolved_type": "callable"},
+                                "args": [{"kind": "Name", "id": "x", "resolved_type": "int64"}],
+                                "resolved_type": "int64",
+                            },
+                        }
+                    ],
+                },
+                {
+                    "kind": "FunctionDef",
+                    "name": "double_",
+                    "arg_order": ["x"],
+                    "arg_types": {"x": "int64"},
+                    "arg_usage": {"x": "readonly"},
+                    "arg_defaults": {},
+                    "return_type": "int64",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "BinOp",
+                                "left": {"kind": "Name", "id": "x", "resolved_type": "int64"},
+                                "op": "Mult",
+                                "right": {"kind": "Constant", "value": 2, "resolved_type": "int64"},
+                                "resolved_type": "int64",
+                            },
+                        }
+                    ],
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Name", "id": "apply_int"},
+                        "args": [
+                            {"kind": "Name", "id": "double_", "resolved_type": "callable"},
+                            {"kind": "Constant", "value": 5, "resolved_type": "int64"},
+                        ],
+                        "function_signature_v1": {
+                            "arg_order": ["fn", "x"],
+                            "arg_types": {"fn": "callable", "x": "int64"},
+                            "arg_usage": {"fn": "readonly", "x": "readonly"},
+                            "return_type": "int64",
+                        },
+                        "resolved_type": "int64",
+                    },
+                },
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("::apply_int(double_, 5)", cpp_code)
+        self.assertNotIn("([&](object) -> object", cpp_code)
+
+    def test_cpp_emitter_deduplicates_nested_optional_unbox(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "indent_value",
+                    "arg_order": ["indent"],
+                    "arg_types": {"indent": "int64 | None"},
+                    "arg_usage": {"indent": "readonly"},
+                    "arg_defaults": {},
+                    "return_type": "int64",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Unbox",
+                                "target": "int64",
+                                "resolved_type": "int64",
+                                "value": {
+                                    "kind": "Unbox",
+                                    "target": "int64",
+                                    "resolved_type": "int64",
+                                    "value": {"kind": "Name", "id": "indent", "resolved_type": "int64"},
+                                },
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("return (*(indent));", cpp_code)
+        self.assertNotIn("return (*((*(indent))));", cpp_code)
+
     def test_cpp_header_gen_emits_forward_decls_before_class_bodies(self) -> None:
         doc = _module_doc(
             "pytra.std.json",
