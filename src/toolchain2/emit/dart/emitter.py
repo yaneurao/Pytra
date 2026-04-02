@@ -2665,6 +2665,8 @@ class DartNativeEmitter:
                     return owner + ".indexOf(" + rendered_args[0] + ")"
                 if attr == "rfind" and len(rendered_args) >= 1:
                     return owner + ".lastIndexOf(" + rendered_args[0] + ")"
+                if attr == "index" and len(rendered_args) >= 1:
+                    return owner + ".indexOf(" + rendered_args[0] + ")"
                 if attr == "replace" and len(rendered_args) >= 2:
                     return owner + ".replaceAll(" + rendered_args[0] + ", " + rendered_args[1] + ")"
                 if attr == "split":
@@ -2677,30 +2679,33 @@ class DartNativeEmitter:
                 if attr == "lower":
                     return owner + ".toLowerCase()"
             # List methods
-            if attr == "append" and len(rendered_args) == 1:
-                return owner + ".add(" + rendered_args[0] + ")"
-            if attr == "extend" and len(rendered_args) == 1:
-                return owner + ".addAll(" + self._coerce_iterable_arg(owner_type, rendered_args[0]) + ")"
-            if attr == "pop":
-                if len(rendered_args) == 0:
-                    return owner + ".removeLast()"
-                return owner + ".removeAt(" + rendered_args[0] + ")"
-            if attr == "insert" and len(rendered_args) == 2:
-                return owner + ".insert(" + rendered_args[0] + ", " + rendered_args[1] + ")"
-            if attr == "remove" and len(rendered_args) == 1:
-                return owner + ".remove(" + rendered_args[0] + ")"
-            if attr == "discard" and len(rendered_args) == 1:
-                return owner + ".remove(" + rendered_args[0] + ")"
-            if attr == "add" and len(rendered_args) == 1:
-                return owner + ".add(" + rendered_args[0] + ")"
-            if attr == "index" and len(rendered_args) >= 1:
-                return owner + ".indexOf(" + rendered_args[0] + ")"
-            if attr == "sort":
-                return owner + ".sort()"
-            if attr == "reverse":
-                return "(" + owner + " = " + owner + ".reversed.toList())"
-            if attr == "copy":
-                return "List.from(" + owner + ")"
+            is_list_like = owner_type.startswith("list[") or owner_type in ("list", "bytes", "bytearray")
+            if is_list_like:
+                if attr == "append" and len(rendered_args) == 1:
+                    return owner + ".add(" + rendered_args[0] + ")"
+                if attr == "extend" and len(rendered_args) == 1:
+                    return owner + ".addAll(" + self._coerce_iterable_arg(owner_type, rendered_args[0]) + ")"
+                if attr == "pop":
+                    if len(rendered_args) == 0:
+                        return owner + ".removeLast()"
+                    return owner + ".removeAt(" + rendered_args[0] + ")"
+                if attr == "insert" and len(rendered_args) == 2:
+                    return owner + ".insert(" + rendered_args[0] + ", " + rendered_args[1] + ")"
+                if attr == "remove" and len(rendered_args) == 1:
+                    return owner + ".remove(" + rendered_args[0] + ")"
+                if attr == "index" and len(rendered_args) >= 1:
+                    return owner + ".indexOf(" + rendered_args[0] + ")"
+                if attr == "sort":
+                    return owner + ".sort()"
+                if attr == "reverse":
+                    return "(" + owner + " = " + owner + ".reversed.toList())"
+                if attr == "copy":
+                    return "List.from(" + owner + ")"
+            if owner_type.startswith("set[") or owner_type == "set":
+                if attr == "discard" and len(rendered_args) == 1:
+                    return owner + ".remove(" + rendered_args[0] + ")"
+                if attr == "add" and len(rendered_args) == 1:
+                    return owner + ".add(" + rendered_args[0] + ")"
             # Dict methods
             if raw_attr == "get":
                 key = rendered_args[0] if len(rendered_args) >= 1 else "null"
@@ -2714,6 +2719,10 @@ class DartNativeEmitter:
                 return "((" + owner + ") as Map).entries.map((e) => [e.key, e.value]).toList()"
             if attr == "update" and len(rendered_args) == 1:
                 return owner + ".addAll(" + self._coerce_iterable_arg(owner_type, rendered_args[0]) + ")"
+            if attr == "pop" and len(rendered_args) >= 1:
+                return owner + ".remove(" + rendered_args[0] + ")!"
+            if attr == "setdefault" and len(rendered_args) >= 2:
+                return owner + ".putIfAbsent(" + rendered_args[0] + ", () => " + rendered_args[1] + ")"
             return owner + "." + attr + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
         # Lambda immediate call: (lambda x: body)(arg) → ((x) => body)(arg)
         if isinstance(func_any, dict) and func_any.get("kind") == "Lambda":
