@@ -4,14 +4,103 @@
 // §6: py_runtime provides ONLY Python built-in function equivalents.
 // pytra.std.* functions (math, time, etc.) are in std/*_native.dart files.
 
+import 'dart:core';
+import 'dart:core' as core;
+import 'dart:collection';
 import 'dart:io';
+
+class PytraBaseException implements core.Exception {
+  final String message;
+  PytraBaseException([this.message = ""]);
+  @override
+  String toString() => message.isEmpty ? "BaseException" : message;
+}
+
+class PytraException extends PytraBaseException {
+  PytraException([super.message = ""]);
+  @override
+  String toString() => message.isEmpty ? "Exception" : message;
+}
+
+class PytraRuntimeError extends PytraException {
+  PytraRuntimeError([super.message = ""]);
+}
+
+class PytraValueError extends PytraException {
+  PytraValueError([super.message = ""]);
+}
+
+class PytraTypeError extends PytraException {
+  PytraTypeError([super.message = ""]);
+}
+
+class PytraIndexError extends PytraException {
+  PytraIndexError([super.message = ""]);
+}
+
+class PytraKeyError extends PytraException {
+  PytraKeyError([super.message = ""]);
+}
+
+typedef BaseException = PytraBaseException;
+typedef Exception = PytraException;
+typedef RuntimeError = PytraRuntimeError;
+typedef ValueError = PytraValueError;
+typedef TypeError = PytraTypeError;
+typedef IndexError = PytraIndexError;
+typedef KeyError = PytraKeyError;
+typedef AssertionError = PytraException;
+typedef AttributeError = PytraException;
+typedef FileNotFoundError = PytraException;
+typedef IOError = PytraException;
+typedef ImportError = PytraException;
+typedef NameError = PytraException;
+typedef NotImplementedError = PytraException;
+typedef OSError = PytraException;
+typedef OverflowError = PytraException;
+typedef PermissionError = PytraException;
+typedef RecursionError = PytraException;
+typedef StopIteration = PytraException;
+typedef ZeroDivisionError = PytraException;
 
 // --- print / repr ---
 String pytraPrintRepr(dynamic v) {
+  return pytraStr(v);
+}
+
+String _pytraRepr(dynamic v) {
   if (v == true) return 'True';
   if (v == false) return 'False';
   if (v == null) return 'None';
+  if (v is String) {
+    return "'" + v.replaceAll("\\", "\\\\").replaceAll("'", "\\'") + "'";
+  }
+  if (v is List) return "[" + v.map(_pytraRepr).join(", ") + "]";
+  if (v is Map) {
+    return "{" + v.entries.map((e) => _pytraRepr(e.key) + ": " + _pytraRepr(e.value)).join(", ") + "}";
+  }
+  if (v is Set) {
+    if (v.isEmpty) return "set()";
+    return "{" + v.map(_pytraRepr).join(", ") + "}";
+  }
   return v.toString();
+}
+
+String pytraStr(dynamic v) {
+  if (v is String) return v;
+  return _pytraRepr(v);
+}
+
+String pytraTupleStr(List<dynamic> v) {
+  if (v.length == 1) return "(" + _pytraRepr(v[0]) + ",)";
+  return "(" + v.map(_pytraRepr).join(", ") + ")";
+}
+
+List<dynamic> pytraTupleView(dynamic v) {
+  if (v is List<dynamic>) return v;
+  if (v is List) return List<dynamic>.from(v);
+  if (v is Iterable) return List<dynamic>.from(v);
+  return <dynamic>[];
 }
 
 void pytraPrint(List<dynamic> args) {
@@ -42,6 +131,69 @@ bool pytraContains(dynamic container, dynamic value) {
   return false;
 }
 
+bool pytraDeepEquals(dynamic a, dynamic b) {
+  if (identical(a, b)) return true;
+  if (a is List && b is List) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!pytraDeepEquals(a[i], b[i])) return false;
+    }
+    return true;
+  }
+  if (a is Set && b is Set) {
+    if (a.length != b.length) return false;
+    for (final item in a) {
+      if (!b.contains(item)) return false;
+    }
+    return true;
+  }
+  if (a is Map && b is Map) {
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      if (!b.containsKey(entry.key)) return false;
+      if (!pytraDeepEquals(entry.value, b[entry.key])) return false;
+    }
+    return true;
+  }
+  return a == b;
+}
+
+int pytraDeepHash(dynamic value) {
+  if (value is List) {
+    return Object.hashAll(value.map(pytraDeepHash));
+  }
+  if (value is Set) {
+    final hashes = value.map(pytraDeepHash).toList()..sort();
+    return Object.hashAll(hashes);
+  }
+  if (value is Map) {
+    final entries = value.entries
+        .map((e) => Object.hash(pytraDeepHash(e.key), pytraDeepHash(e.value)))
+        .toList()
+      ..sort();
+    return Object.hashAll(entries);
+  }
+  return value.hashCode;
+}
+
+LinkedHashSet<dynamic> pytraNewSet() {
+  return LinkedHashSet<dynamic>(equals: pytraDeepEquals, hashCode: pytraDeepHash);
+}
+
+LinkedHashSet<dynamic> pytraSetLiteral(List<dynamic> elements) {
+  final out = pytraNewSet();
+  out.addAll(elements);
+  return out;
+}
+
+LinkedHashSet<dynamic> pytraSetFrom(dynamic iterable) {
+  final out = pytraNewSet();
+  if (iterable is Iterable) {
+    out.addAll(iterable);
+  }
+  return out;
+}
+
 // --- sequence repeat (* operator) ---
 dynamic pytraRepeatSeq(dynamic a, dynamic b) {
   dynamic seq = a;
@@ -59,6 +211,25 @@ dynamic pytraRepeatSeq(dynamic a, dynamic b) {
     return out;
   }
   return (a is num ? a : 0) * (b is num ? b : 0);
+}
+
+dynamic pytraIndex(dynamic container, dynamic indexValue) {
+  final index = indexValue is int ? indexValue : pytraInt(indexValue);
+  if (container is List) {
+    final idx = index < 0 ? container.length + index : index;
+    if (idx < 0 || idx >= container.length) {
+      throw IndexError("list index out of range");
+    }
+    return container[idx];
+  }
+  if (container is String) {
+    final idx = index < 0 ? container.length + index : index;
+    if (idx < 0 || idx >= container.length) {
+      throw IndexError("string index out of range");
+    }
+    return container[idx];
+  }
+  return null;
 }
 
 // --- string predicates ---

@@ -350,6 +350,7 @@ class DartNativeEmitter:
         self.relative_import_name_aliases: dict[str, str] = {}
         self.current_class_name: str = ""
         self.current_class_base_name: str = ""
+        self.current_class_is_trait: bool = False
         self._local_type_stack: list[dict[str, str]] = [{}]  # [0] = module-level frame
         self._ref_var_stack: list[set[str]] = []
         self._local_var_stack: list[set[str]] = []
@@ -808,7 +809,7 @@ class DartNativeEmitter:
         for stmt in body:
             self._emit_stmt(stmt)
         # Emit main guard — only for entry modules (§8)
-        if self._is_entry and len(main_guard) > 0:
+        if self._is_entry:
             self._emit_line("")
             self._emit_line("void main() {")
             self.indent += 1
@@ -1152,7 +1153,7 @@ class DartNativeEmitter:
         if kind == "ClassDef":
             self._emit_class_def(stmt)
             return
-        if kind == "FunctionDef":
+        if kind == "FunctionDef" or kind == "ClosureDef":
             self._emit_function_def(stmt)
             return
         if kind == "Return":
@@ -1240,6 +1241,17 @@ class DartNativeEmitter:
                 value = self._render_expr(stmt.get("value"))
                 if isinstance(target_any, dict) and td2.get("kind") == "Name":
                     target_name = _safe_ident(td2.get("id"), "value")
+                    if target_name.startswith("__tup_"):
+                        is_module_level = len(self._local_var_stack) == 0
+                        already_declared = not is_module_level and target_name in self._current_local_vars()
+                        tuple_value = "pytraTupleView(" + value + ")"
+                        if not already_declared:
+                            if not is_module_level:
+                                self._current_local_vars().add(target_name)
+                            self._emit_line("var " + target + " = " + tuple_value + ";")
+                            return
+                        self._emit_line(target + " = " + tuple_value + ";")
+                        return
                     decl_type_any = stmt.get("decl_type")
                     decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
                     if decl_type == "":
@@ -1269,6 +1281,17 @@ class DartNativeEmitter:
                 value = self._render_expr(stmt.get("value"))
                 if targets[0].get("kind") == "Name":
                     target_name = _safe_ident(targets[0].get("id"), "value")
+                    if target_name.startswith("__tup_"):
+                        is_module_level = len(self._local_var_stack) == 0
+                        already_declared = not is_module_level and target_name in self._current_local_vars()
+                        tuple_value = "pytraTupleView(" + value + ")"
+                        if not already_declared:
+                            if not is_module_level:
+                                self._current_local_vars().add(target_name)
+                            self._emit_line("var " + target + " = " + tuple_value + ";")
+                            return
+                        self._emit_line(target + " = " + tuple_value + ";")
+                        return
                     decl_type_any = stmt.get("decl_type")
                     decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
                     if decl_type == "":
@@ -1322,26 +1345,10 @@ class DartNativeEmitter:
             return
         if kind == "Raise":
             exc_any = stmt.get("exc")
-            if isinstance(exc_any, dict) and exc_any.get("kind") == "Call":
-                fn_any = exc_any.get("func")
-                if isinstance(fn_any, dict) and fn_any.get("kind") == "Name":
-                    fn_name = _safe_ident(fn_any.get("id"), "")
-                    if fn_name in {"RuntimeError", "ValueError", "TypeError", "Exception", "AssertionError",
-                                   "IndexError", "KeyError", "AttributeError", "NotImplementedError",
-                                   "StopIteration", "OverflowError", "ZeroDivisionError",
-                                   "FileNotFoundError", "OSError", "IOError", "PermissionError",
-                                   "ImportError", "NameError", "RecursionError"}:
-                        args_any = exc_any.get("args")
-                        args = args_any if isinstance(args_any, list) else []
-                        if len(args) > 0:
-                            self._emit_line("throw Exception(" + self._render_expr(args[0]) + ");")
-                            return
-                        self._emit_line("throw Exception('error');")
-                        return
             if isinstance(exc_any, dict):
-                self._emit_line("throw Exception(" + self._render_expr(exc_any) + ".toString());")
+                self._emit_line("throw " + self._render_expr(exc_any) + ";")
             else:
-                self._emit_line("throw Exception('error');")
+                self._emit_line("rethrow;")
             return
         if kind == "Try":
             body = self._dict_list(stmt.get("body"))
@@ -1361,10 +1368,17 @@ class DartNativeEmitter:
                     if isinstance(h, dict):
                         hd: dict[str, Any] = h
                         handler_name = hd.get("name")
+                        handler_type = self._render_except_handler_type(hd.get("type"))
                         if isinstance(handler_name, str) and handler_name != "":
-                            self._emit_line("} catch (" + _safe_ident(handler_name, "e") + ") {")
+                            if handler_type != "":
+                                self._emit_line("} on " + handler_type + " catch (" + _safe_ident(handler_name, "e") + ") {")
+                            else:
+                                self._emit_line("} catch (" + _safe_ident(handler_name, "e") + ") {")
                         else:
-                            self._emit_line("} catch (e) {")
+                            if handler_type != "":
+                                self._emit_line("} on " + handler_type + " catch (e) {")
+                            else:
+                                self._emit_line("} catch (e) {")
                         self.indent += 1
                         h_body = self._dict_list(hd.get("body"))
                         j = 0
@@ -1373,7 +1387,7 @@ class DartNativeEmitter:
                             j += 1
                         self.indent -= 1
                     i += 1
-            else:
+            elif len(self._dict_list(stmt.get("finalbody"))) == 0:
                 self._emit_line("} catch (e) {")
                 self.indent += 1
                 self._emit_line("// handler")
@@ -1523,16 +1537,31 @@ class DartNativeEmitter:
         base_any = stmt.get("base")
         base_name_raw = _safe_ident(base_any, "") if isinstance(base_any, str) else ""
         base_name = self.relative_import_name_aliases.get(base_name_raw, base_name_raw) if base_name_raw != "" else ""
+        meta_any = stmt.get("meta")
+        meta = meta_any if isinstance(meta_any, dict) else {}
+        is_trait = isinstance(meta.get("trait_v1"), dict)
+        implements_traits: list[str] = []
+        implements_meta = meta.get("implements_v1")
+        if isinstance(implements_meta, dict):
+            traits_any = implements_meta.get("traits")
+            if isinstance(traits_any, list):
+                for trait_any in traits_any:
+                    if isinstance(trait_any, str) and trait_any != "":
+                        implements_traits.append(_safe_ident(trait_any, "Trait"))
         is_dataclass = bool(stmt.get("dataclass"))
         # Enum base classes are Python-specific markers; skip extends in Dart
         _ENUM_BASE_CLASSES = {"Enum_", "IntEnum", "IntFlag", "IntEnum_", "IntFlag_"}
         if base_name in _ENUM_BASE_CLASSES:
             base_name = ""
+        class_head = ("abstract class " if is_trait else "class ") + cls_name
         if base_name != "":
-            self._emit_line("class " + cls_name + " extends " + base_name + " {")
-        else:
-            self._emit_line("class " + cls_name + " {")
+            class_head += " extends " + base_name
+        if not is_trait and len(implements_traits) > 0:
+            class_head += " implements " + ", ".join(implements_traits)
+        self._emit_line(class_head + " {")
         self.indent += 1
+        prev_trait = self.current_class_is_trait
+        self.current_class_is_trait = is_trait
         body = self._dict_list(stmt.get("body"))
         field_types = self._class_field_types.get(cls_name, {})
         # Collect fields for dataclass or from AnnAssign
@@ -1632,6 +1661,7 @@ class DartNativeEmitter:
         self.indent -= 1
         self._emit_line("}")
         self._emit_line("")
+        self.current_class_is_trait = prev_trait
 
     def _emit_class_method(self, cls_name: str, base_name: str, stmt: dict[str, Any]) -> None:
         method_name = _safe_ident(stmt.get("name"), "method")
@@ -1650,6 +1680,7 @@ class DartNativeEmitter:
             raw_args.append(arg if isinstance(arg, str) else arg_name)
         prev_class = self.current_class_name
         prev_base = self.current_class_base_name
+        prev_trait = self.current_class_is_trait
         self.current_class_name = cls_name
         self.current_class_base_name = base_name
         param_parts: list[str] = []
@@ -1659,21 +1690,33 @@ class DartNativeEmitter:
         params = ", ".join(param_parts)
         static_prefix = "static " if is_static else ""
         if method_name == "__init__":
-            self._emit_line(cls_name + "(" + params + ") {")
+            super_args, body_stmts = self._extract_super_init(stmt.get("body"))
+            header = cls_name + "(" + params + ")"
+            if super_args is not None:
+                header += " : super(" + ", ".join(super_args) + ")"
+            self._emit_line(header + " {")
             self.indent += 1
             self._push_function_context(stmt, args, arg_order[1:] if len(arg_order) > 0 else arg_order)
-            self._emit_block(stmt.get("body"))
+            self._emit_block(body_stmts)
             self._pop_function_context()
             self.indent -= 1
             self._emit_line("}")
             self._emit_line("")
             self.current_class_name = prev_class
             self.current_class_base_name = prev_base
+            self.current_class_is_trait = prev_trait
             return
         if method_name == "__str__":
             method_name = "toString"
         ret_type = self._dart_return_type(stmt)
         is_property = "property" in decorators
+        if self.current_class_is_trait and len(self._dict_list(stmt.get("body"))) == 0:
+            self._emit_line(ret_type + " " + method_name + "(" + params + ");")
+            self._emit_line("")
+            self.current_class_name = prev_class
+            self.current_class_base_name = prev_base
+            self.current_class_is_trait = prev_trait
+            return
         if is_property:
             # @property → Dart getter
             self._emit_line(ret_type + " get " + method_name + " {")
@@ -1686,6 +1729,7 @@ class DartNativeEmitter:
             self._emit_line("")
             self.current_class_name = prev_class
             self.current_class_base_name = prev_base
+            self.current_class_is_trait = prev_trait
             return
         self._emit_line(static_prefix + ret_type + " " + method_name + "(" + params + ") {")
         self.indent += 1
@@ -1697,6 +1741,36 @@ class DartNativeEmitter:
         self._emit_line("")
         self.current_class_name = prev_class
         self.current_class_base_name = prev_base
+        self.current_class_is_trait = prev_trait
+
+    def _extract_super_init(self, body_any: Any) -> tuple[list[str] | None, list[dict[str, Any]]]:
+        body = self._dict_list(body_any)
+        if len(body) == 0:
+            return None, body
+        first = body[0]
+        if first.get("kind") != "Expr":
+            return None, body
+        value_any = first.get("value")
+        if not isinstance(value_any, dict) or value_any.get("kind") != "Call":
+            return None, body
+        func_any = value_any.get("func")
+        if not isinstance(func_any, dict) or func_any.get("kind") != "Attribute":
+            return None, body
+        attr_name = func_any.get("attr") if isinstance(func_any.get("attr"), str) else ""
+        if attr_name != "__init__":
+            return None, body
+        owner_any = func_any.get("value")
+        if not isinstance(owner_any, dict) or owner_any.get("kind") != "Call":
+            return None, body
+        owner_func = owner_any.get("func")
+        if not isinstance(owner_func, dict) or owner_func.get("kind") != "Name":
+            return None, body
+        owner_name = owner_func.get("id") if isinstance(owner_func.get("id"), str) else ""
+        if owner_name not in {"super", "_super"}:
+            return None, body
+        args_any = value_any.get("args")
+        args = args_any if isinstance(args_any, list) else []
+        return [self._render_expr(arg) for arg in args], body[1:]
 
     def _for_needs_tmp_start(self, target_name: str, start_expr: str) -> bool:
         """Check if start expression references the target variable (shadowing risk)."""
@@ -1880,7 +1954,7 @@ class DartNativeEmitter:
             raise RuntimeError("lang=dart unsupported tuple assign target: empty")
         tmp_name = self._next_tmp_name("__pytraTuple")
         value_expr = self._render_expr(value_any)
-        self._emit_line("var " + tmp_name + " = " + value_expr + ";")
+        self._emit_line("var " + tmp_name + " = pytraTupleView(" + value_expr + ");")
         i = 0
         while i < len(elems):
             elem_any = elems[i]
@@ -2059,7 +2133,7 @@ class DartNativeEmitter:
             out: list[str] = []
             for e in elems:
                 out.append(self._render_expr(e))
-            return "{" + ", ".join(out) + "}"
+            return "pytraSetLiteral([" + ", ".join(out) + "])"
         if kind == "ListComp":
             return self._render_list_comp(ed)
         if kind == "SetComp":
@@ -2118,25 +2192,19 @@ class DartNativeEmitter:
             # Dict subscript: no negative index adjustment
             if owner_type.startswith("dict["):
                 return owner + "[" + index + "]"
-            # String/List index with potential negative index handling
-            idx_const = self._const_int_literal(index_node)
-            if isinstance(idx_const, int):
-                if owner_type == "str":
-                    if idx_const >= 0:
-                        return owner + "[" + str(idx_const) + "]"
-                    return owner + "[" + owner + ".length + " + str(idx_const) + "]"
-                if idx_const >= 0:
-                    return owner + "[" + str(idx_const) + "]"
-                return owner + "[" + owner + ".length + " + str(idx_const) + "]"
             # If index is clearly non-numeric (string key), use direct access
             index_type = self._lookup_expr_type(index_node)
             if index_type == "str":
                 return owner + "[" + index + "]"
-            return owner + "[(" + index + ") < 0 ? " + owner + ".length + (" + index + ") : (" + index + ")]"
+            return "pytraIndex(" + owner + ", " + index + ")"
         if kind == "Attribute":
             attr_raw = ed.get("attr") if isinstance(ed.get("attr"), str) else ""
             # type(x).__name__ → x.runtimeType.toString()
             owner_node = ed.get("value")
+            if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
+                owner_name = _safe_ident(owner_node.get("id"), "")
+                if owner_name == "env" and attr_raw == "target":
+                    return '"dart"'
             if attr_raw == "__name__" and isinstance(owner_node, dict) and owner_node.get("kind") == "Call":
                 fn = owner_node.get("func")
                 if isinstance(fn, dict) and fn.get("kind") == "Name" and fn.get("id") == "type":
@@ -2271,7 +2339,12 @@ class DartNativeEmitter:
             if raw_fn_name == "str" or raw_fn_name == "py_to_string":
                 if len(rendered_args) == 0:
                     return "''"
-                return "(" + rendered_args[0] + ").toString()"
+                arg0 = args[0] if len(args) > 0 else None
+                if isinstance(arg0, dict):
+                    arg_type = self._lookup_expr_type(arg0)
+                    if arg0.get("kind") == "Tuple" or arg_type.startswith("tuple["):
+                        return "pytraTupleStr(pytraTupleView(" + rendered_args[0] + "))"
+                return "pytraStr(" + rendered_args[0] + ")"
             if raw_fn_name == "len":
                 if len(rendered_args) == 0:
                     return "0"
@@ -2322,8 +2395,8 @@ class DartNativeEmitter:
                 return "List.generate(((" + rendered_args[1] + ") - (" + rendered_args[0] + ")) ~/ (" + rendered_args[2] + "), (i) => (" + rendered_args[0] + ") + i * (" + rendered_args[2] + "))"
             if raw_fn_name == "set" or raw_fn_name == "set_":
                 if len(rendered_args) == 0:
-                    return "<dynamic>{}"
-                return "Set<dynamic>.from(" + rendered_args[0] + ")"
+                    return "pytraNewSet()"
+                return "pytraSetFrom(" + rendered_args[0] + ")"
             if raw_fn_name == "list":
                 if len(rendered_args) == 0:
                     return "[]"
@@ -2562,16 +2635,29 @@ class DartNativeEmitter:
             + insert_stmt + " } return __out; })()"
         )
 
+    def _render_except_handler_type(self, type_any: Any) -> str:
+        if not isinstance(type_any, dict):
+            return ""
+        kind = type_any.get("kind")
+        if kind == "Name":
+            return _safe_ident(type_any.get("id"), "")
+        if kind == "Attribute":
+            return self._render_expr(type_any)
+        resolved = type_any.get("resolved_type")
+        if isinstance(resolved, str) and resolved != "":
+            return self._dart_type(resolved)
+        return ""
+
     def _render_set_comp(self, ed: dict[str, Any]) -> str:
         gens_any = ed.get("generators")
         gens = gens_any if isinstance(gens_any, list) else []
         if len(gens) == 0 or not isinstance(gens[0], dict):
-            return "<dynamic>{}"
+            return "pytraNewSet()"
         gen = gens[0]
         target_any = gen.get("target")
         iter_any = gen.get("iter")
         if not isinstance(target_any, dict) or not isinstance(iter_any, dict):
-            return "<dynamic>{}"
+            return "pytraNewSet()"
         td: dict[str, Any] = target_any
         elt = self._render_expr(ed.get("elt"))
         cond_expr = ""
@@ -2587,7 +2673,7 @@ class DartNativeEmitter:
         if cond_expr != "":
             insert_stmt = "if (" + cond_expr + ") { " + insert_stmt + " }"
         return (
-            "(() { var __out = <dynamic>{}; for (var " + loop_var + " in " + iter_expr + ") { "
+            "(() { var __out = pytraNewSet(); for (var " + loop_var + " in " + iter_expr + ") { "
             + insert_stmt + " } return __out; })()"
         )
 
