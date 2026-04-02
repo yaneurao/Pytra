@@ -43,6 +43,8 @@ from toolchain2.emit.cpp.runtime_bundle import emit_runtime_module_artifacts  # 
 from toolchain2.emit.go.emitter import emit_go_module  # type: ignore
 from toolchain2.emit.java.emitter import emit_java_module  # type: ignore
 from toolchain2.emit.java.types import java_module_class_name  # type: ignore
+from toolchain2.emit.scala.emitter import emit_scala_module  # type: ignore
+from toolchain2.emit.kotlin.emitter import emit_kotlin_module  # type: ignore
 from toolchain2.emit.rs.emitter import emit_rs_module  # type: ignore
 from toolchain2.emit.ts.emitter import emit_ts_module  # type: ignore
 from toolchain2.emit.dart.emitter import emit_dart_module  # type: ignore
@@ -218,6 +220,24 @@ def _transpile_in_memory(
                 out_name = java_module_class_name(m.module_id) + ".java"
                 emit_dir.joinpath(out_name).write_text(code, encoding="utf-8")
             _copy_java_runtime(emit_dir)
+        elif target == "scala":
+            for m in link_result.linked_modules:
+                code = emit_scala_module(m.east_doc)
+                if code.strip() == "":
+                    continue
+                emit_dir.joinpath(m.module_id.replace(".", "_") + ".scala").write_text(
+                    code, encoding="utf-8"
+                )
+            _copy_scala_runtime(emit_dir)
+        elif target == "kotlin":
+            for m in link_result.linked_modules:
+                code = emit_kotlin_module(m.east_doc)
+                if code.strip() == "":
+                    continue
+                emit_dir.joinpath(m.module_id.replace(".", "_") + ".kt").write_text(
+                    code, encoding="utf-8"
+                )
+            _copy_kotlin_runtime(emit_dir)
         elif target == "rs":
             for m in link_result.linked_modules:
                 code = emit_rs_module(m.east_doc)
@@ -332,6 +352,24 @@ def _copy_go_runtime(emit_dir: Path) -> None:
     if not go_runtime.exists():
         return
     for f in sorted(go_runtime.rglob("*.go")):
+        dest = emit_dir / f.name
+        shutil.copy2(f, dest)
+
+
+def _copy_scala_runtime(emit_dir: Path) -> None:
+    scala_runtime = ROOT / "src" / "runtime" / "scala"
+    if not scala_runtime.exists():
+        return
+    for f in sorted(scala_runtime.rglob("*.scala")):
+        dest = emit_dir / f.name
+        shutil.copy2(f, dest)
+
+
+def _copy_kotlin_runtime(emit_dir: Path) -> None:
+    kotlin_runtime = ROOT / "src" / "runtime" / "kotlin"
+    if not kotlin_runtime.exists():
+        return
+    for f in sorted(kotlin_runtime.rglob("*.kt")):
         dest = emit_dir / f.name
         shutil.copy2(f, dest)
 
@@ -608,6 +646,36 @@ def _run_target(
             return build
         return run_shell(
             "java -cp " + shlex.quote(str(emit_dir)) + " " + shlex.quote(entry_class),
+            cwd=work_dir,
+            env=env,
+            timeout_sec=timeout_sec,
+        )
+
+    if target == "scala":
+        scala_files = sorted(str(p) for p in emit_dir.rglob("*.scala"))
+        if len(scala_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .scala files found")
+        cmd = "scala-cli run --jvm 17 " + " ".join(shlex.quote(f) for f in scala_files)
+        return run_shell(cmd, cwd=work_dir, env=env, timeout_sec=timeout_sec)
+
+    if target == "kotlin":
+        kt_files = sorted(str(p) for p in emit_dir.rglob("*.kt"))
+        if len(kt_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .kt files found")
+        jar_path = emit_dir / (case_path.stem + "_kotlin.jar")
+        build = run_shell(
+            "kotlinc "
+            + " ".join(shlex.quote(f) for f in kt_files)
+            + " -include-runtime -d "
+            + shlex.quote(str(jar_path)),
+            cwd=work_dir,
+            env=env,
+            timeout_sec=timeout_sec,
+        )
+        if build.returncode != 0:
+            return build
+        return run_shell(
+            "java -jar " + shlex.quote(str(jar_path)),
             cwd=work_dir,
             env=env,
             timeout_sec=timeout_sec,
