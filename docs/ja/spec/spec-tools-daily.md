@@ -21,7 +21,7 @@
 - `tools/check/check_py2x_transpile.py`
   - 目的: `test/fixtures/` と `sample/py` を `pytra-cli.py --target <lang>` で一括変換し、失敗ケースを検出する。全言語統一の transpile チェッカー。
   - 主要オプション: `--target <lang>`（`cpp`, `rs`, `js`, `cs`, `go`, `java`, `ts`, `swift`, `kotlin`, `scala` 等）
-  - 補足: 旧言語別スクリプト（`check_py2cpp_transpile.py` 等 10 件）は廃止し `tools/unregistered/` に退避済み。
+  - 補足: 旧言語別スクリプト（`check_py2cpp_transpile.py` 等 10 件）は廃止・削除済み。
 - `tools/check/check_east3_golden.py`
   - 目的: EAST3 スナップショットテスト（`test/east3_fixtures/` の golden file と EAST3 出力の差分チェック）。`--check-runtime-east` で `src/runtime/east/` の `.east` ファイル鮮度チェック。`--update` で再生成。
 - `tools/check/verify_image_runtime_parity.py`

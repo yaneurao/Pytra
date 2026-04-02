@@ -265,7 +265,7 @@ EAST1 golden file から型解決情報（`resolved_type` / `runtime_module_id` 
 ### `run_local_ci.py`
 ローカル最小 CI（version gate / TODO 優先度ガード / runtime 層分離ガード / non-C++ emitter ガード / backend health gate / transpile 回帰 / unit test / selfhost build / diff）を一括実行する。
 60 以上のステップを固定順序で実行し、全体品質を一コマンドで検証できる。
-`tools/check/` / `tools/unregistered/` / `tools/unittest/` 各種を統合してオーケストレーションする。
+`tools/check/` / `tools/unittest/` 各種を統合してオーケストレーションする。
 
 ### `run_selfhost_parity.py`
 selfhost parity チェックを実行し、結果を `.parity-results/selfhost_<lang>.json` に記録する。
@@ -318,7 +318,6 @@ pytest で実行するテストファイル群。サブディレクトリ構成:
 
 ---
 
-## tools/unregistered/ — 旧ツール・実験的ツール
+## tools/unregistered/ — 削除済み（2026-04-02）
 
-CI 対象外。旧 selfhost パイプライン・実験的チェッカー・調査スクリプト等を格納。
-新しいスクリプトの置き場として使う場合は、正式採用時に適切なサブディレクトリへ昇格させること。
+旧ツール群は削除済み。新しいスクリプトは最初から `tools/check/`、`tools/gen/`、`tools/run/` 等の正規ディレクトリに配置すること。

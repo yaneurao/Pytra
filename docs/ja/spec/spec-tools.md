@@ -58,7 +58,7 @@
 
 ### selfhost
 
-旧 selfhost ツール群（`build_selfhost.py`, `prepare_selfhost_source.py`, `check_selfhost_*.py` 等）は `tools/unregistered/` に退避済み。
+旧 selfhost ツール群（`build_selfhost.py`, `prepare_selfhost_source.py`, `check_selfhost_*.py` 等）は削除済み（2026-04-02）。
 
 新パイプライン（`toolchain2/`）では selfhost は通常のビルドパイプライン（`pytra-cli2 -build --target=cpp`）で完結する設計とし、専用ツールを不要にする。詳細は `docs/ja/plans/plan-pipeline-redesign.md` を参照。
 

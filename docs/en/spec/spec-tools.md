@@ -25,7 +25,7 @@ Its goals are the following three:
 - `tools/check/check_py2x_transpile.py`
   - Purpose: batch-convert `test/fixtures/` and `sample/py` with `pytra-cli.py --target <lang>` and detect failing cases. This is the unified transpile checker across all languages.
   - Main options: `--target <lang>` (`cpp`, `rs`, `js`, `cs`, `go`, `java`, `ts`, `swift`, `kotlin`, `scala`, etc.)
-  - Notes: the former per-language scripts (`check_py2cpp_transpile.py` and the other ten variants) were retired and moved to `tools/unregistered/`.
+  - Notes: the former per-language scripts (`check_py2cpp_transpile.py` and the other ten variants) were retired and deleted.
 - `tools/check/check_yanesdk_py2cpp_smoke.py`
   - Purpose: verify that the Yanesdk canonical set (`1 library + 7 games`) still passes `pytra-cli.py --target cpp`.
 - `tools/check/check_microgpt_original_py2cpp_regression.py`
@@ -84,7 +84,7 @@ Its goals are the following three:
 
 ## 2. Selfhost Related
 
-The old selfhost tool set (`build_selfhost.py`, `prepare_selfhost_source.py`, `check_selfhost_*.py`, etc.) has already been moved to `tools/unregistered/`.
+The old selfhost tool set (`build_selfhost.py`, `prepare_selfhost_source.py`, `check_selfhost_*.py`, etc.) has been deleted (2026-04-02).
 
 In the new pipeline (`toolchain2/`), selfhost is designed to complete within the normal build pipeline (`pytra-cli2 -build --target=cpp`), making dedicated tools unnecessary. See `docs/ja/plans/plan-pipeline-redesign.md` for details.
 

@@ -16,7 +16,7 @@
 - **`tools/` 直下への新規 `.py` ファイル追加は禁止。** 必ず `tools/check/` / `tools/gen/` / `tools/run/` のいずれかに配置する。
 - **新規ファイルを追加・削除・移動した場合は `tools/README.md`（台帳）を必ず同時に更新する。** 台帳の更新なしにファイルを追加してはならない。
 - CI チェック `python3 tools/check/check_tools_ledger.py` が台帳との突合を行う。台帳に記載のないファイルがあれば FAIL になる。
-- 一時的・実験的なスクリプトは `tools/unregistered/` に置く（CI 対象外）。
+- `tools/unregistered/` は削除済み。一時的・実験的なスクリプトも最初から正規ディレクトリ（`tools/check/` / `tools/gen/` / `tools/run/`）に配置し、不要になったら削除する。
 
 ## 3. test/ 配置ルール
 
