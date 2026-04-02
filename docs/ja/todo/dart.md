@@ -10,6 +10,7 @@
 
 ## 運用ルール
 
+- **旧 toolchain1（`src/toolchain/emit/dart/`）は変更不可。** 新規開発・修正は全て `src/toolchain2/emit/dart/` で行う（[spec-emitter-guide.md](../spec/spec-emitter-guide.md) §1）。
 - 各タスクは `ID` と文脈ファイル（`docs/ja/plans/*.md`）を必須にする。
 - 優先度順（小さい P 番号から）に着手する。
 - 進捗メモとコミットメッセージは同一 `ID` を必ず含める。
@@ -30,8 +31,8 @@
 
 ### P1-DART-EMITTER: Dart emitter を toolchain2 に新規実装する
 
-1. [ ] [ID: P1-DART-EMITTER-S1] `src/toolchain2/emit/dart/` に Dart emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/dart/` と TS emitter を参考にする
-2. [ ] [ID: P1-DART-EMITTER-S2] `src/runtime/dart/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
+1. [x] [ID: P1-DART-EMITTER-S1] `src/toolchain2/emit/dart/` に Dart emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/dart/` と TS emitter を参考にする — 2026-04-02: toolchain2 側の `emit_dart_module()` 入口、Dart profile、parity 接続、smoke test を追加
+2. [x] [ID: P1-DART-EMITTER-S2] `src/runtime/dart/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義 — 2026-04-02: Dart mapping.json を追加し validation 通過
 3. [ ] [ID: P1-DART-EMITTER-S3] fixture 全件の Dart emit 成功を確認する
 4. [ ] [ID: P1-DART-EMITTER-S4] Dart runtime を toolchain2 の emit 出力と整合させる
 5. [ ] [ID: P1-DART-EMITTER-S5] fixture の Dart run parity を通す（`dart run`）
@@ -40,4 +41,4 @@
 
 ### P2-DART-LINT: emitter hardcode lint の Dart 違反を解消する
 
-1. [ ] [ID: P2-DART-LINT-S1] `check_emitter_hardcode_lint.py --lang dart` で全カテゴリ 0 件になることを確認する
+1. [x] [ID: P2-DART-LINT-S1] `check_emitter_hardcode_lint.py --lang dart` で全カテゴリ 0 件になることを確認する — 2026-04-02: 8/8 カテゴリ PASS

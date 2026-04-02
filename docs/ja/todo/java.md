@@ -11,6 +11,7 @@
 
 ## 運用ルール
 
+- **旧 toolchain1（`src/toolchain/emit/{java,scala,kotlin}/`）は変更不可。** 新規開発・修正は全て `src/toolchain2/emit/{java,scala,kotlin}/` で行う（[spec-emitter-guide.md](../spec/spec-emitter-guide.md) §1）。
 - 各タスクは `ID` と文脈ファイル（`docs/ja/plans/*.md`）を必須にする。
 - 優先度順（小さい P 番号から）に着手する。
 - 進捗メモとコミットメッセージは同一 `ID` を必ず含める。
