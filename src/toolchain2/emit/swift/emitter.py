@@ -980,16 +980,16 @@ def _render_compare_expr(expr: dict[str, Any]) -> str:
 
         symbol = _compare_op_symbol(op)
         if left_type == "str" or right_type == "str":
-            lhs = cur_left if left_type == "str" else _to_str_expr(cur_left)
-            rhs = right if right_type == "str" else _to_str_expr(right)
+            lhs = cur_left if _expr_emits_target_type(left_node, "String") else _to_str_expr(cur_left)
+            rhs = right if _expr_emits_target_type(comp_node, "String") else _to_str_expr(right)
             parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
         elif left_type in {"int", "int64", "uint8"} or right_type in {"int", "int64", "uint8"}:
-            lhs = cur_left if left_type in {"int", "int64", "uint8"} else _to_int_expr(cur_left)
-            rhs = right if right_type in {"int", "int64", "uint8"} else _to_int_expr(right)
+            lhs = cur_left if _expr_emits_target_type(left_node, "Int64") else _to_int_expr(cur_left)
+            rhs = right if _expr_emits_target_type(comp_node, "Int64") else _to_int_expr(right)
             parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
         elif left_type in {"float", "float64"} or right_type in {"float", "float64"}:
-            lhs = cur_left if left_type in {"float", "float64"} else _to_float_expr(cur_left)
-            rhs = right if right_type in {"float", "float64"} else _to_float_expr(right)
+            lhs = cur_left if _expr_emits_target_type(left_node, "Double") else _to_float_expr(cur_left)
+            rhs = right if _expr_emits_target_type(comp_node, "Double") else _to_float_expr(right)
             parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
         else:
             if op in {"Eq", "NotEq"}:
