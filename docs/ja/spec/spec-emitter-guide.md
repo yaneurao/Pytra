@@ -1273,7 +1273,7 @@ PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
 
 ### 3 つの parity 全てが必要
 
-emitter 開発時は **fixture, sample, stdlib の 3 つ全て** で parity check を実行すること。
+emitter 開発時は **fixture, sample, stdlib の 3 つ全て** で parity check を実行すること。`--east3-opt-level` は**省略してデフォルト（1）を使う**こと。明示的に指定する必要はない。
 
 ```bash
 # fixture — 言語機能の網羅テスト
@@ -1288,6 +1288,8 @@ PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
 PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
   --targets <lang> --case-root stdlib
 ```
+
+注: `--east3-opt-level` は将来 `--opt-level` に改名予定（P0-OPT-LEVEL-RENAME）。改名後もデフォルト値は変わらないので、**オプションを省略するのが正しい使い方**。
 
 **selfhost マトリクスの Python 行は、fixture + sample + stdlib の全てが PASS して初めて PASS になる。** 1 つでも FAIL があれば FAIL 表示。
 
