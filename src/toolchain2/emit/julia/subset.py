@@ -301,12 +301,14 @@ def _expr_supported(node: JsonVal) -> bool:
                 "clear",
                 "discard",
                 "endswith",
+                "extend",
                 "fabs",
                 "find",
                 "floor",
                 "get",
                 "index",
                 "isalnum",
+                "items",
                 "join",
                 "keys",
                 "lower",
@@ -615,12 +617,16 @@ class JuliaSubsetRenderer:
                     return "empty!(" + owner + ")"
                 if attr == "discard" and len(args) == 1:
                     return "delete!(" + owner + ", " + args[0] + ")"
+                if attr == "extend" and len(args) == 1:
+                    return "append!(" + owner + ", " + args[0] + ")"
                 if attr == "find" and len(args) == 1:
                     return "__pytra_str_find(" + owner + ", " + args[0] + ")"
                 if attr == "index" and len(args) == 1:
                     return "__pytra_str_find(" + owner + ", " + args[0] + ")"
                 if attr == "isalnum" and len(args) == 0:
                     return "__pytra_str_isalnum(" + owner + ")"
+                if attr == "items" and len(args) == 0:
+                    return "collect(pairs(" + owner + "))"
                 if attr == "lower" and len(args) == 0:
                     return "lowercase(" + owner + ")"
                 if attr == "lstrip" and len(args) == 0:

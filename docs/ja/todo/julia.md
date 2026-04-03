@@ -60,6 +60,7 @@
    - 2026-04-03: subset native renderer に `VarDecl` / `Set` / expression `range(...)` / `reversed(...)` と membership の `__pytra_contains` lowering を追加し、`enumerate_basic`, `reversed_enumerate`, `in_membership_iterable` を native path へ乗せた
    - 2026-04-03: subset native renderer に `set.add`, `dict.keys/values`, `bytearray[...] = ...` を追加し、`set_mutation_methods`, `dict_wrapper_methods`, `bytearray_basic` を native path へ乗せた
    - 2026-04-03: subset native renderer に `set.discard/remove` と builtin `set()` を追加し、`set_wrapper_methods` と `nested_types` を native path へ乗せた
+   - 2026-04-03: subset native renderer に `dict.items()` と `list.extend()` を追加し、`typed_container_access` を native path へ乗せた
 2. [x] [ID: P1-JULIA-EMITTER-S2] `src/runtime/julia/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
    - 2026-04-02: `src/runtime/julia/mapping.json` を追加し、toolchain2 Julia emitter bootstrap が参照する runtime call/type mapping を整備
 3. [x] [ID: P1-JULIA-EMITTER-S3] fixture 全件の Julia emit 成功を確認する

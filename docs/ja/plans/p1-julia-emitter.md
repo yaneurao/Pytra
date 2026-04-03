@@ -60,3 +60,4 @@
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `VarDecl` / `Set` / expression `range(...)` / `reversed(...)` と membership の `__pytra_contains` lowering を追加し、`enumerate_basic`, `reversed_enumerate`, `in_membership_iterable` も native path に寄せた。
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `set.add`, `dict.keys/values`, `bytearray[...] = ...` を追加し、`set_mutation_methods`, `dict_wrapper_methods`, `bytearray_basic` も native path に寄せた。
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `set.discard/remove` と builtin `set()` を追加し、`set_wrapper_methods` と `nested_types` も native path に寄せた。
+- 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `dict.items()` と `list.extend()` を追加し、`typed_container_access` も native path に寄せた。
