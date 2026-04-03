@@ -1259,6 +1259,42 @@ class JuliaSubsetRenderer:
             if sub_mod != "" and sub_mod != module_name and should_skip_module(sub_mod, self.mapping):
                 self._emit_module_namespace_binding(local_name, sub_mod)
 
+    def _emit_assign_stmt(self, node: dict[str, JsonVal]) -> None:
+        target = node.get("target")
+        if isinstance(target, dict) and _str(target, "kind") == "Attribute":
+            owner = self._render_expr(target.get("value"))
+            attr = _str(target, "attr")
+            self._emit(owner + "." + attr + " = " + self._render_expr(node.get("value")))
+            return
+        if isinstance(target, dict) and _str(target, "kind") == "Subscript":
+            owner_node = target.get("value")
+            owner = self._render_expr(owner_node)
+            index = self._render_expr(target.get("slice"))
+            index_expr = "__pytra_int(" + index + ")"
+            value = self._render_expr(node.get("value"))
+            self._emit(owner + "[__pytra_idx(" + index_expr + ", length(" + owner + "))] = " + value)
+            return
+        if isinstance(target, dict) and _str(target, "kind") in {"Tuple", "List"}:
+            self._emit_assign_target(target, self._render_expr(node.get("value")))
+            return
+        self._emit(_ident(_str(target, "id")) + " = " + self._render_expr(node.get("value")))
+
+    def _emit_augassign_stmt(self, node: dict[str, JsonVal]) -> None:
+        target_node = node.get("target")
+        op = _str(node, "op")
+        value = self._render_expr(node.get("value"))
+        if isinstance(target_node, dict) and _str(target_node, "kind") == "Attribute":
+            owner = self._render_expr(target_node.get("value"))
+            attr = _str(target_node, "attr")
+            lhs = owner + "." + attr
+            self._emit(lhs + " = (" + lhs + " " + _BINOP_TEXT[op] + " " + value + ")")
+            return
+        target = _ident(_str(target_node, "id"))
+        if op == "Add" and isinstance(target_node, dict) and _str(target_node, "resolved_type") == "str":
+            self._emit(target + " = (" + target + " * " + value + ")")
+            return
+        self._emit(target + " = (" + target + " " + _BINOP_TEXT[op] + " " + value + ")")
+
     def _emit_stmt(self, node: JsonVal) -> None:
         if not isinstance(node, dict):
             raise RuntimeError("julia subset: stmt must be dict")
@@ -1324,28 +1360,7 @@ class JuliaSubsetRenderer:
                 self._emit(target_name + " = " + self._render_expr(value))
             return
         if kind == "Assign":
-            target = node.get("target")
-            if isinstance(target, dict) and _str(target, "kind") == "Attribute":
-                owner = self._render_expr(target.get("value"))
-                attr = _str(target, "attr")
-                self._emit(owner + "." + attr + " = " + self._render_expr(node.get("value")))
-                return
-            if isinstance(target, dict) and _str(target, "kind") == "Subscript":
-                owner_node = target.get("value")
-                owner = self._render_expr(owner_node)
-                owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
-                index = self._render_expr(target.get("slice"))
-                index_expr = "__pytra_int(" + index + ")"
-                value = self._render_expr(node.get("value"))
-                if owner_type == "bytearray":
-                    self._emit(owner + "[__pytra_idx(" + index_expr + ", length(" + owner + "))] = " + value)
-                    return
-                self._emit(owner + "[__pytra_idx(" + index_expr + ", length(" + owner + "))] = " + value)
-                return
-            if isinstance(target, dict) and _str(target, "kind") in {"Tuple", "List"}:
-                self._emit_assign_target(target, self._render_expr(node.get("value")))
-                return
-            self._emit(_ident(_str(target, "id")) + " = " + self._render_expr(node.get("value")))
+            self._emit_assign_stmt(node)
             return
         if kind == "Swap":
             left = _ident(_str(node.get("left"), "id"))
@@ -1353,20 +1368,7 @@ class JuliaSubsetRenderer:
             self._emit(left + ", " + right + " = " + right + ", " + left)
             return
         if kind == "AugAssign":
-            target_node = node.get("target")
-            op = _str(node, "op")
-            value = self._render_expr(node.get("value"))
-            if isinstance(target_node, dict) and _str(target_node, "kind") == "Attribute":
-                owner = self._render_expr(target_node.get("value"))
-                attr = _str(target_node, "attr")
-                lhs = owner + "." + attr
-                self._emit(lhs + " = (" + lhs + " " + _BINOP_TEXT[op] + " " + value + ")")
-                return
-            target = _ident(_str(target_node, "id"))
-            if op == "Add" and isinstance(target_node, dict) and _str(target_node, "resolved_type") == "str":
-                self._emit(target + " = (" + target + " * " + value + ")")
-                return
-            self._emit(target + " = (" + target + " " + _BINOP_TEXT[op] + " " + value + ")")
+            self._emit_augassign_stmt(node)
             return
         if kind == "If":
             self._emit("if __pytra_truthy(" + self._render_expr(node.get("test")) + ")")
