@@ -22,6 +22,8 @@
 
 ### P10-LEGACY-TOOLCHAIN-REMOVAL: 旧 toolchain + pytra-cli.py を削除する
 
+文脈: [docs/ja/plans/p10-legacy-toolchain-removal.md](../plans/p10-legacy-toolchain-removal.md)
+
 全言語の toolchain2 emitter 実装（各言語の P1-*-EMITTER-S1）が完了した時点で、旧パイプラインを削除する。
 
 削除対象:
