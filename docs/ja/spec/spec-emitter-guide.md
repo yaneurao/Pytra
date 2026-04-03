@@ -1213,6 +1213,27 @@ Go / Rust は `implicit_promotions` が空なので全 cast を出力する。C+
 
 正式仕様: [spec-runtime-mapping.md §7](./spec-runtime-mapping.md)
 
+### 12.6 callable の型写像
+
+EAST3 の `callable` 型（`GenericType(base="callable", args=[引数型, 戻り値型])`）は各言語の関数型に写像する。
+
+| 言語 | callable の写像 | `callable \| None` の写像 |
+|---|---|---|
+| C++ | `std::function<R(P1, P2)>` | `std::optional<std::function<R(P1, P2)>>` |
+| Rust | `Box<dyn Fn(P1, P2) -> R>` | `Option<Box<dyn Fn(P1, P2) -> R>>` |
+| Go | `func(P1, P2) R` | `func(P1, P2) R`（nil で None 表現） |
+| Java | `Function<P, R>` 等 | `Function<P, R>`（null で None 表現） |
+| TS | `(p1: P1, p2: P2) => R` | `((p1: P1, p2: P2) => R) \| null` |
+| Zig | `fn(P1, P2) R` | `?fn(P1, P2) R` |
+| Swift | `(P1, P2) -> R` | `((P1, P2) -> R)?` |
+| Nim | `proc(p1: P1, p2: P2): R` | `Option[proc(p1: P1, p2: P2): R]` |
+
+#### `callable | None` の注意事項
+
+一部の言語では関数ポインタが non-null（`fn != null` が型エラー）。`callable | None` は EAST3 で `OptionalType(inner=callable)` として正規化されるので、emitter は `OptionalType` を見て Optional 型（`?fn`, `Option<...>` 等）に写像すること。
+
+**禁止**: callable を常に non-null 扱いにして `is None` を定数 `false` に落とすこと。`OptionalType` なら `is None` チェックは有効。
+
 ## 13. parity check の実施
 
 ### 初回セットアップ（git clone 直後）
