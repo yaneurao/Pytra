@@ -10,7 +10,6 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path as StdPath, PathBuf};
 use std::rc::Rc;
-use std::sync::Once;
 use std::{collections::BTreeMap, collections::BTreeSet, collections::HashMap, collections::HashSet, collections::VecDeque};
 
 pub trait IntoPyBoxAny {
@@ -336,6 +335,7 @@ impl PyStringify for PyAny {
     fn py_stringify(&self) -> String {
         match self {
             PyAny::Int(n) => n.to_string(),
+            PyAny::TypeId(n) => n.to_string(),
             PyAny::Float(f) => py_float_string(*f),
             PyAny::Bool(b) => if *b { "True".to_string() } else { "False".to_string() },
             PyAny::Str(s) => s.clone(),
@@ -427,6 +427,7 @@ impl PyBool for PyAny {
             PyAny::None => false,
             PyAny::Bool(v) => *v,
             PyAny::Int(v) => *v != 0,
+            PyAny::TypeId(v) => *v != 0,
             PyAny::Float(v) => *v != 0.0,
             PyAny::Str(v) => !v.is_empty(),
             PyAny::List(v) => !v.is_empty(),
@@ -880,6 +881,7 @@ pub fn py_len<T: PyLen>(value: &T) -> usize {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum PyAny {
     Int(i64),
+    TypeId(i64),
     Float(f64),
     Bool(bool),
     Str(String),
@@ -949,6 +951,7 @@ impl PyAnyToI64Arg for PyAny {
     fn py_any_to_i64_arg(&self) -> i64 {
         match self {
             PyAny::Int(n) => *n,
+            PyAny::TypeId(n) => *n,
             PyAny::Float(f) => *f as i64,
             PyAny::Bool(b) => {
                 if *b {
@@ -1045,6 +1048,7 @@ impl PyAnyToF64Arg for PyAny {
     fn py_any_to_f64_arg(&self) -> f64 {
         match self {
             PyAny::Int(n) => *n as f64,
+            PyAny::TypeId(n) => *n as f64,
             PyAny::Float(f) => *f,
             PyAny::Bool(b) => {
                 if *b {
@@ -1111,6 +1115,7 @@ impl PyAnyToBoolArg for PyAny {
     fn py_any_to_bool_arg(&self) -> bool {
         match self {
             PyAny::Int(n) => *n != 0,
+            PyAny::TypeId(n) => *n != 0,
             PyAny::Float(f) => *f != 0.0,
             PyAny::Bool(b) => *b,
             PyAny::Str(s) => !s.is_empty(),
@@ -1158,6 +1163,7 @@ impl PyAnyToStringArg for PyAny {
     fn py_any_to_string_arg(&self) -> String {
         match self {
             PyAny::Int(n) => n.to_string(),
+            PyAny::TypeId(n) => n.to_string(),
             PyAny::Float(f) => py_float_string(*f),
             PyAny::Bool(b) => b.to_string(),
             PyAny::Str(s) => s.clone(),
@@ -1198,258 +1204,41 @@ pub fn py_any_to_string<T: PyAnyToStringArg + ?Sized>(v: &T) -> String {
     v.py_any_to_string_arg()
 }
 
-pub const PYTRA_TID_NONE: i64 = 0;
-pub const PYTRA_TID_BOOL: i64 = 1;
-pub const PYTRA_TID_INT: i64 = 2;
-pub const PYTRA_TID_FLOAT: i64 = 3;
-pub const PYTRA_TID_STR: i64 = 4;
-pub const PYTRA_TID_LIST: i64 = 5;
-pub const PYTRA_TID_DICT: i64 = 6;
-pub const PYTRA_TID_SET: i64 = 7;
-pub const PYTRA_TID_OBJECT: i64 = 8;
-
-#[derive(Clone, Copy, Debug)]
-pub struct PyTypeInfo {
-    pub order: i64,
-    pub min: i64,
-    pub max: i64,
-}
-
-static PYTRA_TYPE_INFO_INIT: Once = Once::new();
-static mut PYTRA_TYPE_INFO_MAP: Option<BTreeMap<i64, PyTypeInfo>> = None;
-
-fn py_type_info_map_mut() -> &'static mut BTreeMap<i64, PyTypeInfo> {
-    PYTRA_TYPE_INFO_INIT.call_once(|| unsafe {
-        let mut map = BTreeMap::<i64, PyTypeInfo>::new();
-        map.insert(
-            PYTRA_TID_NONE,
-            PyTypeInfo {
-                order: PYTRA_TID_NONE,
-                min: PYTRA_TID_NONE,
-                max: PYTRA_TID_NONE,
-            },
-        );
-        map.insert(
-            PYTRA_TID_BOOL,
-            PyTypeInfo {
-                order: PYTRA_TID_BOOL,
-                min: PYTRA_TID_BOOL,
-                max: PYTRA_TID_BOOL,
-            },
-        );
-        map.insert(
-            PYTRA_TID_INT,
-            PyTypeInfo {
-                order: PYTRA_TID_INT,
-                min: PYTRA_TID_INT,
-                max: PYTRA_TID_INT,
-            },
-        );
-        map.insert(
-            PYTRA_TID_FLOAT,
-            PyTypeInfo {
-                order: PYTRA_TID_FLOAT,
-                min: PYTRA_TID_FLOAT,
-                max: PYTRA_TID_FLOAT,
-            },
-        );
-        map.insert(
-            PYTRA_TID_STR,
-            PyTypeInfo {
-                order: PYTRA_TID_STR,
-                min: PYTRA_TID_STR,
-                max: PYTRA_TID_STR,
-            },
-        );
-        map.insert(
-            PYTRA_TID_LIST,
-            PyTypeInfo {
-                order: PYTRA_TID_LIST,
-                min: PYTRA_TID_LIST,
-                max: PYTRA_TID_LIST,
-            },
-        );
-        map.insert(
-            PYTRA_TID_DICT,
-            PyTypeInfo {
-                order: PYTRA_TID_DICT,
-                min: PYTRA_TID_DICT,
-                max: PYTRA_TID_DICT,
-            },
-        );
-        map.insert(
-            PYTRA_TID_SET,
-            PyTypeInfo {
-                order: PYTRA_TID_SET,
-                min: PYTRA_TID_SET,
-                max: PYTRA_TID_SET,
-            },
-        );
-        map.insert(
-            PYTRA_TID_OBJECT,
-            PyTypeInfo {
-                order: PYTRA_TID_OBJECT,
-                min: PYTRA_TID_OBJECT,
-                max: PYTRA_TID_OBJECT,
-            },
-        );
-        PYTRA_TYPE_INFO_MAP = Some(map);
-    });
-    unsafe {
-        PYTRA_TYPE_INFO_MAP
-            .as_mut()
-            .expect("type info map must be initialized")
+pub fn py_builtin_type_id_pyany(value: &PyAny) -> i64 {
+    match value {
+        PyAny::None => 0,
+        PyAny::Bool(_) => 1,
+        PyAny::Int(_) => 2,
+        PyAny::Float(_) => 3,
+        PyAny::Str(_) => 4,
+        PyAny::List(_) => 5,
+        PyAny::Dict(_) => 6,
+        PyAny::Set(_) => 7,
+        PyAny::TypeId(tid) => *tid,
     }
 }
 
-fn py_type_info_map() -> &'static BTreeMap<i64, PyTypeInfo> {
-    let _ = py_type_info_map_mut();
-    unsafe {
-        PYTRA_TYPE_INFO_MAP
-            .as_ref()
-            .expect("type info map must be initialized")
-    }
-}
-
-pub fn py_register_type_info(type_id: i64, order: i64, min: i64, max: i64) {
-    py_type_info_map_mut().insert(type_id, PyTypeInfo { order, min, max });
-}
-
-pub fn py_type_info(type_id: i64) -> Option<PyTypeInfo> {
-    py_type_info_map().get(&type_id).copied()
-}
-
-pub trait PyRuntimeTypeId {
-    fn py_runtime_type_id(&self) -> i64;
-}
-
-impl PyRuntimeTypeId for bool {
-    fn py_runtime_type_id(&self) -> i64 {
-        PYTRA_TID_BOOL
-    }
-}
-impl PyRuntimeTypeId for i64 {
-    fn py_runtime_type_id(&self) -> i64 {
-        PYTRA_TID_INT
-    }
-}
-impl PyRuntimeTypeId for f64 {
-    fn py_runtime_type_id(&self) -> i64 {
-        PYTRA_TID_FLOAT
-    }
-}
-impl PyRuntimeTypeId for String {
-    fn py_runtime_type_id(&self) -> i64 {
-        PYTRA_TID_STR
-    }
-}
-impl<T> PyRuntimeTypeId for Vec<T> {
-    fn py_runtime_type_id(&self) -> i64 {
-        PYTRA_TID_LIST
-    }
-}
-impl<K: Ord, V> PyRuntimeTypeId for BTreeMap<K, V> {
-    fn py_runtime_type_id(&self) -> i64 {
-        PYTRA_TID_DICT
-    }
-}
-impl<T: Ord> PyRuntimeTypeId for BTreeSet<T> {
-    fn py_runtime_type_id(&self) -> i64 {
-        PYTRA_TID_SET
-    }
-}
-impl<T: PyRuntimeTypeId> PyRuntimeTypeId for Option<T> {
-    fn py_runtime_type_id(&self) -> i64 {
-        match self {
-            Some(v) => v.py_runtime_type_id(),
-            None => PYTRA_TID_NONE,
-        }
-    }
-}
-impl PyRuntimeTypeId for PyAny {
-    fn py_runtime_type_id(&self) -> i64 {
-        match self {
-            PyAny::Int(_) => PYTRA_TID_INT,
-            PyAny::Float(_) => PYTRA_TID_FLOAT,
-            PyAny::Bool(_) => PYTRA_TID_BOOL,
-            PyAny::Str(_) => PYTRA_TID_STR,
-            PyAny::List(_) => PYTRA_TID_LIST,
-            PyAny::Dict(_) => PYTRA_TID_DICT,
-            PyAny::Set(_) => PYTRA_TID_SET,
-            PyAny::None => PYTRA_TID_NONE,
-        }
-    }
-}
-
-impl<T: PyRuntimeTypeId> PyRuntimeTypeId for Box<T> {
-    fn py_runtime_type_id(&self) -> i64 {
-        (**self).py_runtime_type_id()
-    }
-}
-
-impl<T: PyRuntimeTypeId> PyRuntimeTypeId for Rc<RefCell<T>> {
-    fn py_runtime_type_id(&self) -> i64 {
-        self.borrow().py_runtime_type_id()
-    }
-}
-
-pub fn py_runtime_value_type_id<T: PyRuntimeTypeId>(value: &T) -> i64 {
-    value.py_runtime_type_id()
-}
-
-pub fn py_runtime_type_id<T: PyRuntimeTypeId>(value: &T) -> i64 {
-    py_runtime_value_type_id(value)
-}
-
-pub fn py_runtime_type_id_any(value: &Box<dyn std::any::Any>) -> i64 {
+pub fn py_builtin_type_id_any(value: &Box<dyn std::any::Any>) -> i64 {
     if let Some(v) = value.downcast_ref::<i64>() {
-        return py_runtime_type_id(v);
+        let _ = v;
+        return 2;
     }
     if let Some(v) = value.downcast_ref::<f64>() {
-        return py_runtime_type_id(v);
+        let _ = v;
+        return 3;
     }
     if let Some(v) = value.downcast_ref::<bool>() {
-        return py_runtime_type_id(v);
+        let _ = v;
+        return 1;
     }
     if let Some(v) = value.downcast_ref::<String>() {
-        return py_runtime_type_id(v);
+        let _ = v;
+        return 4;
     }
     if let Some(v) = value.downcast_ref::<PyAny>() {
-        return py_runtime_type_id(v);
+        return py_builtin_type_id_pyany(v);
     }
-    PYTRA_TID_NONE
-}
-
-pub fn py_runtime_type_id_is_subtype(actual_type_id: i64, expected_type_id: i64) -> bool {
-    let actual = match py_type_info(actual_type_id) {
-        Some(info) => info,
-        None => return false,
-    };
-    let expected = match py_type_info(expected_type_id) {
-        Some(info) => info,
-        None => return false,
-    };
-    expected.min <= actual.order && actual.order <= expected.max
-}
-
-pub fn py_is_subtype(actual_type_id: i64, expected_type_id: i64) -> bool {
-    py_runtime_type_id_is_subtype(actual_type_id, expected_type_id)
-}
-
-pub fn py_runtime_type_id_issubclass(actual_type_id: i64, expected_type_id: i64) -> bool {
-    py_runtime_type_id_is_subtype(actual_type_id, expected_type_id)
-}
-
-fn py_issubclass(actual_type_id: i64, expected_type_id: i64) -> bool {
-    py_runtime_type_id_issubclass(actual_type_id, expected_type_id)
-}
-
-pub fn py_runtime_value_isinstance<T: PyRuntimeTypeId>(value: &T, expected_type_id: i64) -> bool {
-    py_runtime_type_id_is_subtype(py_runtime_value_type_id(value), expected_type_id)
-}
-
-fn py_isinstance<T: PyRuntimeTypeId>(value: &T, expected_type_id: i64) -> bool {
-    py_runtime_value_isinstance(value, expected_type_id)
+    8
 }
 
 pub trait PySlice {

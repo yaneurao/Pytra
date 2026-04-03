@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-03-31
+最終更新: 2026-04-03
 
 ## 運用ルール
 
@@ -34,8 +34,10 @@
 
 Rust emitter が `instanceof` をネイティブ pattern match で処理するようになったら、runtime の `PYTRA_TID_*` 定数と type_id テーブルを削除する。
 
-1. [ ] [ID: P0-RS-TYPEID-CLN-S1] `src/runtime/rs/built_in/py_runtime.rs` から `PYTRA_TID_*` 定数と type_id テーブルを削除する
-2. [ ] [ID: P0-RS-TYPEID-CLN-S2] `pytra_isinstance` / `py_is_subtype` を削除し、emitter は `match` / `if let` を使う
+1. [x] [ID: P0-RS-TYPEID-CLN-S1] `src/runtime/rs/built_in/py_runtime.rs` から `PYTRA_TID_*` 定数と type_id テーブルを削除する
+   - 完了: Rust runtime の `PYTRA_TID_*` / `PyTypeInfo` / `py_register_type_info` / `PyRuntimeTypeId` を削除し、`PyAny::TypeId` + `py_builtin_type_id_pyany` / `py_builtin_type_id_any` に置換。CLI/package emit でも type-id table を必要時のみ生成するように変更した。
+2. [x] [ID: P0-RS-TYPEID-CLN-S2] `pytra_isinstance` / `py_is_subtype` を削除し、emitter は `match` / `if let` を使う
+   - 完了: Rust emitter の user-class `isinstance` を `PyAny::TypeId` と downcast ベースへ移行し、`py_is_subtype` / `py_runtime_type_id` / `py_register_type_info` 依存を emit しない形に整理。`trait_basic`, `trait_with_inheritance`, `isinstance_user_class`, `class_inherit_basic`, `object_container_access` の Rust parity `5/5 PASS` を確認。
 3. [ ] [ID: P0-RS-TYPEID-CLN-S3] fixture + sample + stdlib parity に回帰がないことを確認する
 
 ### P0-RS-OBJECT-CONTAINER: object_container_access fixture の Rust parity を通す

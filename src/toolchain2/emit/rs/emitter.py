@@ -585,33 +585,10 @@ def _collect_signature_type_params(
 
 
 def _doc_requires_runtime_type_ids(body: list[JsonVal], main_guard: list[JsonVal], class_names: set[str]) -> bool:
-    found = False
-
-    def walk(node: JsonVal) -> None:
-        nonlocal found
-        if found:
-            return
-        if isinstance(node, dict):
-            kind = _str(node, "kind")
-            if kind == "ObjTypeId":
-                found = True
-                return
-            if kind == "Box":
-                outer_rt = _str(node, "resolved_type")
-                inner = node.get("value")
-                inner_rt = _str(inner, "resolved_type") if isinstance(inner, dict) else ""
-                if outer_rt in ("object", "Any", "Obj", "JsonVal") and inner_rt in class_names:
-                    found = True
-                    return
-            for value in node.values():
-                walk(value)
-        elif isinstance(node, list):
-            for item in node:
-                walk(item)
-
-    walk(body)
-    walk(main_guard)
-    return found
+    del body
+    del main_guard
+    del class_names
+    return False
 
 
 def module_requires_runtime_type_ids(east3_doc: dict[str, JsonVal]) -> bool:
@@ -1446,10 +1423,17 @@ def _emit_isinstance(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             pyany_pattern = _ISINSTANCE_PYANY.get(expected_id, "")
             if pyany_pattern != "":
                 return "matches!(" + val_str + ", " + pyany_pattern + ")"
-            # User-defined class: encoded as PyAny::Int(type_id) — check via py_is_subtype
+            # User-defined class: encoded as PyAny::TypeId(dense_tid)
             if expected_id in ctx.class_names:
-                tid_const = _module_prefix(ctx).upper() + safe_rs_ident(expected_id).upper() + "_TID"
-                return "(if let PyAny::Int(__tid) = &" + val_str + " { py_is_subtype(*__tid, " + tid_const + ") } else { false })"
+                candidates = [
+                    class_name
+                    for class_name in sorted(ctx.class_names)
+                    if _inherits_from_class(ctx, class_name, expected_id)
+                ]
+                tids = [_class_type_id_expr(ctx, class_name) for class_name in candidates]
+                tids = [tid for tid in tids if tid != "8_i64"]
+                if tids:
+                    return "(if let PyAny::TypeId(__tid) = &" + val_str + " { matches!(*__tid, " + " | ".join(tids) + ") } else { false })"
             return "false"
         # For Box<dyn Any> (union types) — use downcast_ref
         ref_val = "&" + val_str if not val_str.startswith("&") else val_str
@@ -2064,8 +2048,8 @@ def _emit_box(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             if wrapped != rendered_inner:
                 return wrapped
             if inner_rt in ctx.class_names and inner_rt not in ctx.enum_bases:
-                # User class → encode runtime type ID in PyAny::Int for isinstance checks
-                return "PyAny::Int(" + rendered_inner + ".py_runtime_type_id())"
+                # User class → encode dense type ID directly for isinstance checks
+                return "PyAny::TypeId(" + _class_type_id_expr(ctx, inner_rt) + ")"
             # Fallback: for unknown/complex types, return as-is
             return rendered_inner
     rendered = _emit_expr(ctx, inner)
@@ -3328,21 +3312,20 @@ def _emit_expr(ctx: RsEmitContext, node: JsonVal) -> str:
     if kind == "JoinedStr":
         return _emit_fstring(ctx, node)
     if kind == "ObjTypeId":
-        # Get runtime type ID of an object — sequential TID space
+        # Get runtime type ID of an object.
         val = node.get("value")
         value_type = _str(val, "resolved_type") if isinstance(val, dict) else ""
         inner = _emit_expr(ctx, val)
-        # For PyAny typed values (object/Any/Obj), type ID is encoded as PyAny::Int(type_id)
+        # For PyAny typed values (object/Any/Obj), user classes are encoded as PyAny::TypeId.
         if value_type in ("object", "Any", "Obj"):
-            return "(if let PyAny::Int(__tid) = &" + inner + " { *__tid } else { py_runtime_type_id(&" + inner + ") })"
+            return "(if let PyAny::TypeId(__tid) = &" + inner + " { *__tid } else { py_builtin_type_id_pyany(&" + inner + ") })"
         # For Box<dyn Any> (unknown / union types), use downcast chain to recover TID
         if value_type in ("unknown",) or value_type == "" or _rs_type_for_context(ctx, value_type) == "Box<dyn std::any::Any>":
             user_cls = _sorted_user_classes_desc(ctx)
             if user_cls:
                 ref_inner = "&" + inner if not inner.startswith("&") else inner
                 return _emit_obj_type_id_downcast(ctx, ref_inner, user_cls)
-        ref_inner = "&" + inner if not inner.startswith("&") else inner
-        return "py_runtime_type_id(" + ref_inner + ")"
+        return _builtin_type_id_expr(value_type)
     if kind == "IsInstance":
         return _emit_isinstance(ctx, node)
     if kind == "Unbox":
@@ -5891,10 +5874,6 @@ def _emit_class_def(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     for trait_name in implements_traits:
         _emit_trait_impl_recursive(name, trait_name)
 
-    # Emit class runtime type IDs only when ObjTypeId / class→PyAny boxing is still present.
-    if name not in ctx.enum_bases and ctx.needs_runtime_type_ids:
-        _emit_class_runtime_type_id(ctx, name)
-
     # Emit PyStringify for user-defined classes (needed for str(instance))
     if name not in ctx.enum_bases:
         _emit_blank(ctx)
@@ -6078,6 +6057,33 @@ def _lookup_class_dense_tid(ctx: RsEmitContext, type_name: str) -> int | None:
     return None
 
 
+def _class_type_id_expr(ctx: RsEmitContext, type_name: str) -> str:
+    dense_tid = _lookup_class_dense_tid(ctx, type_name)
+    if isinstance(dense_tid, int):
+        return str(dense_tid) + "_i64"
+    return "8_i64"
+
+
+def _builtin_type_id_expr(type_name: str) -> str:
+    builtin: dict[str, str] = {
+        "None": "0_i64",
+        "bool": "1_i64",
+        "int": "2_i64",
+        "int64": "2_i64",
+        "float": "3_i64",
+        "float64": "3_i64",
+        "str": "4_i64",
+        "list": "5_i64",
+        "dict": "6_i64",
+        "set": "7_i64",
+        "object": "8_i64",
+        "Any": "8_i64",
+        "Obj": "8_i64",
+        "unknown": "8_i64",
+    }
+    return builtin.get(type_name, "8_i64")
+
+
 def _sorted_user_classes_desc(ctx: RsEmitContext) -> list[tuple[str, int]]:
     """Return user-defined class (fqcn, dense_tid) pairs sorted by dense_tid descending.
 
@@ -6100,10 +6106,10 @@ def _emit_obj_type_id_downcast(ctx: RsEmitContext, ref_expr: str, user_cls: list
 
     The Box<dyn Any> typically contains a Box<ClassName> (due to double-boxing at call sites),
     so we try downcast_ref::<Box<ClassName>> first, then bare ClassName as fallback.
-    Falls back to py_runtime_type_id for primitive types.
+    Falls back to builtin type tagging for primitive/object values.
     """
     if ctx.package_mode:
-        return "py_runtime_type_id(" + ref_expr + ")"
+        return "py_builtin_type_id_any(" + ref_expr + ")"
     parts: list[str] = []
     for fqcn, _dense in user_cls:
         simple_name = fqcn.rsplit(".", 1)[-1] if "." in fqcn else fqcn
@@ -6111,14 +6117,14 @@ def _emit_obj_type_id_downcast(ctx: RsEmitContext, ref_expr: str, user_cls: list
         rs_name = safe_rs_ident(simple_name)
         if ctx.package_mode and owner_module != "" and owner_module != ctx.module_id:
             rs_name = "crate::" + _module_id_to_rs_mod_name(owner_module) + "::" + rs_name
-        seq_const = _fqcn_to_tid_const_name(fqcn)
+        seq_const = str(ctx.class_type_ids.get(fqcn, 8)) + "_i64"
         # Try Box<ClassName> first (double-boxed case: Box<Box<ClassName>> as Box<dyn Any>)
         parts.append(
             "if (" + ref_expr + ").downcast_ref::<Box<" + rs_name + ">>().is_some() || "
             + "(" + ref_expr + ").downcast_ref::<" + rs_name + ">().is_some() "
             + "{ " + seq_const + " }"
         )
-    fallback = "py_runtime_type_id_any(" + ref_expr + ")"
+    fallback = "py_builtin_type_id_any(" + ref_expr + ")"
     if not parts:
         return fallback
     chain = " else ".join(parts) + " else { " + fallback + " }"
@@ -6210,18 +6216,6 @@ def _emit_parent_class_methods_impl(ctx: RsEmitContext, class_name: str, as_type
         _emit(ctx, body)
         ctx.indent_level -= 1
         _emit(ctx, "}")
-    ctx.indent_level -= 1
-    _emit(ctx, "}")
-
-
-def _emit_class_runtime_type_id(ctx: RsEmitContext, class_name: str) -> None:
-    """Emit `impl PyRuntimeTypeId for ClassName` using the module-scoped TID constant."""
-    rs_name = safe_rs_ident(class_name)
-    tid_const = _class_tid_const_name(ctx, class_name)
-    _emit_blank(ctx)
-    _emit(ctx, "impl PyRuntimeTypeId for " + rs_name + " {")
-    ctx.indent_level += 1
-    _emit(ctx, "fn py_runtime_type_id(&self) -> i64 { " + tid_const + " }")
     ctx.indent_level -= 1
     _emit(ctx, "}")
 
@@ -6526,12 +6520,6 @@ def _collect_uses(ctx: RsEmitContext, meta: dict[str, JsonVal]) -> list[str]:
     return lines
 
 
-def _fqcn_to_tid_const_name(fqcn: str) -> str:
-    """Mirror _fqcn_to_tid_const logic from pytra-cli2.py: FQCN → TID const name."""
-    flat = fqcn.replace(".", "_")
-    return safe_rs_ident(_camel_to_screaming_snake(flat) + "_TID")
-
-
 _PACKAGE_FACTORY_DEF_RE = re.compile(r"^(pub\s+)?fn\s+([A-Za-z_][A-Za-z0-9_]*)\(\)\s*->\s*(.+?)\s*\{\s*(.+)\s*\}$")
 
 
@@ -6578,87 +6566,6 @@ def _rewrite_package_module_factories(lines: list[str]) -> list[str]:
         out.append("    __module_value")
         out.append("}")
     return out
-
-
-def _emit_type_registrations(ctx: RsEmitContext) -> None:
-    """Emit py_register_type_info calls for user-defined classes at start of fn main().
-
-    Uses a pure sequential TID space. Each class C gets:
-        py_register_type_info(C_SEQ_TID, C_SEQ_TID, C_SEQ_TID, C_MAX_DESCENDANT_SEQ_TID)
-
-    This way py_is_subtype(child_seq, base_seq) checks:
-        base_seq <= child_seq <= base_max_seq  -- all in the same TID space.
-
-    The sequential TIDs are the values of the TID constants generated in
-    pytra_built_in_type_id_table.rs (e.g. CLASS_INHERIT_BASIC_BASE_TID = 19).
-    We refer to them by const name so Rust evaluates the correct values at compile time.
-
-    Dense TID ordering (type_id_resolved_v1 values >= 1000) is used as a proxy for
-    sequential ordering: higher dense TID → higher sequential TID.
-    """
-    if not ctx.class_type_ids:
-        return
-    # Collect user-defined classes (dense TID >= 1000)
-    user_classes: list[tuple[str, int]] = []  # (fqcn, dense_tid)
-    for fqcn, dense_tid in ctx.class_type_ids.items():
-        if fqcn.startswith("pytra."):
-            continue
-        if dense_tid < 1000:
-            continue
-        user_classes.append((fqcn, dense_tid))
-    if not user_classes:
-        return
-    # Sort by dense TID ascending (reflects sequential ordering)
-    user_classes.sort(key=lambda kv: kv[1])
-    dense_to_fqcn: dict[int, str] = {d: f for f, d in user_classes}
-
-    # Build children map: fqcn → list of child fqcns (using class_type_info_table's parent info)
-    # We use type_id_resolved_v1: if FQCN "mod.Child" has dense=1012 and "mod.Base" has dense=1011,
-    # and type_info_table says "mod.Base" entry=1011,exit=1013 covering 1012, then Child is under Base.
-    children_map: dict[str, list[str]] = {f: [] for f, _ in user_classes}
-    # Build parent → children from type_info_table_v1
-    # A class P is the direct parent of class C if P's type_id_table entry contains C's dense TID
-    # AND P's exit - P's entry is minimal (closest ancestor)
-    fqcn_set = set(f for f, _ in user_classes)
-    for fqcn, dense_tid in user_classes:
-        simple_name = fqcn.rsplit(".", 1)[-1] if "." in fqcn else fqcn
-        ti_c = ctx.class_type_info_table.get(fqcn) or ctx.class_type_info_table.get(simple_name)
-        if ti_c is None:
-            continue
-        # Find the closest parent: the ancestor with smallest (exit - entry) that still covers dense_tid
-        best_parent: str = ""
-        best_span = -1
-        for other_fqcn, other_dense in user_classes:
-            if other_fqcn == fqcn:
-                continue
-            other_simple = other_fqcn.rsplit(".", 1)[-1] if "." in other_fqcn else other_fqcn
-            ti_p = ctx.class_type_info_table.get(other_fqcn) or ctx.class_type_info_table.get(other_simple)
-            if ti_p is None:
-                continue
-            # Does other contain fqcn? entry <= dense_tid <= exit-1 AND other != fqcn
-            if ti_p["entry"] <= dense_tid <= ti_p["exit"] - 1 and ti_p["entry"] != dense_tid:
-                span = ti_p["exit"] - ti_p["entry"]
-                if best_parent == "" or span < best_span:
-                    best_parent = other_fqcn
-                    best_span = span
-        if best_parent != "" and best_parent in children_map:
-            children_map[best_parent].append(fqcn)
-
-    def _max_descendant_dense(fqcn: str) -> int:
-        """Return the max dense TID in the subtree rooted at fqcn."""
-        max_d = ctx.class_type_ids.get(fqcn, 0)
-        for child in children_map.get(fqcn, []):
-            max_d = max(max_d, _max_descendant_dense(child))
-        return max_d
-
-    for fqcn, dense_tid in user_classes:
-        seq_const = _fqcn_to_tid_const_name(fqcn)
-        max_dense = _max_descendant_dense(fqcn)
-        max_fqcn = dense_to_fqcn.get(max_dense, fqcn)
-        max_const = _fqcn_to_tid_const_name(max_fqcn)
-        # Register: id=seq_tid, order=seq_tid, min=seq_tid, max=max_descendant_seq_tid
-        # All values use sequential TID const names so Rust evaluates them correctly.
-        _emit(ctx, "py_register_type_info(" + seq_const + ", " + seq_const + ", " + seq_const + ", " + max_const + ");")
 
 
 def emit_rs_module(east3_doc: dict[str, JsonVal], *, package_mode: bool = False) -> str:
@@ -6770,8 +6677,6 @@ def emit_rs_module(east3_doc: dict[str, JsonVal], *, package_mode: bool = False)
     # Include runtime header
     if ctx.is_entry and not ctx.package_mode:
         lines.append("include!(\"py_runtime.rs\");")
-        if ctx.needs_runtime_type_ids:
-            lines.append("include!(\"pytra_built_in_type_id_table.rs\");")
         for dep_mod_id in _iter_linked_user_module_ids(meta, ctx.module_id):
             inc = "include!(\"" + dep_mod_id.replace(".", "_") + ".rs\");"
             if inc not in lines:
@@ -6807,8 +6712,6 @@ def emit_rs_module(east3_doc: dict[str, JsonVal], *, package_mode: bool = False)
         main_prefix = "pub " if ctx.package_mode else ""
         _emit(ctx, main_prefix + "fn main() {")
         ctx.indent_level += 1
-        if ctx.needs_runtime_type_ids:
-            _emit_type_registrations(ctx)
         if len(main_guard) > 0:
             prev_declared = set(ctx.declared_vars)
             ctx.declared_vars = set()
