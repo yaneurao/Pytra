@@ -528,3 +528,155 @@ function py_assert_stdout {
     }
     return $true
 }
+
+function __pytra_list_sort {
+    param([object]$list)
+    if ($list -eq $null) { return }
+    $arr = @($list)
+    [array]::Sort($arr)
+    $list.Clear()
+    foreach ($item in $arr) { [void]$list.Add($item) }
+}
+
+function __pytra_list_reverse {
+    param([object]$list)
+    if ($list -eq $null) { return }
+    $arr = @($list)
+    [array]::Reverse($arr)
+    $list.Clear()
+    foreach ($item in $arr) { [void]$list.Add($item) }
+}
+
+function __pytra_dict_pop {
+    param([object]$dict, [object]$key, [object]$default = $null)
+    if ($dict -eq $null) { return $default }
+    if ($dict.ContainsKey($key)) {
+        $val = $dict[$key]
+        $dict.Remove($key)
+        return $val
+    }
+    return $default
+}
+
+function __pytra_dict_setdefault {
+    param([object]$dict, [object]$key, [object]$default = $null)
+    if ($dict -eq $null) { return $default }
+    if (-not $dict.ContainsKey($key)) {
+        $dict[$key] = $default
+    }
+    return $dict[$key]
+}
+
+function __pytra_list_clear {
+    param([object]$list)
+    if ($list -eq $null) { return }
+    $list.Clear()
+}
+
+function __pytra_str_strip {
+    param([object]$s) return [string]$s.Trim()
+}
+
+function __pytra_str_rstrip {
+    param([object]$s) return [string]$s.TrimEnd()
+}
+
+function __pytra_str_lstrip {
+    param([object]$s) return [string]$s.TrimStart()
+}
+
+function __pytra_str_startswith {
+    param([object]$s, [object]$prefix) return [string]$s.StartsWith([string]$prefix)
+}
+
+function __pytra_str_endswith {
+    param([object]$s, [object]$suffix) return [string]$s.EndsWith([string]$suffix)
+}
+
+function __pytra_str_replace {
+    param([object]$s, [object]$old, [object]$new_) return [string]$s.Replace([string]$old, [string]$new_)
+}
+
+function __pytra_str_find {
+    param([object]$s, [object]$sub) return [string]$s.IndexOf([string]$sub)
+}
+
+function __pytra_str_split {
+    param([object]$s, [object]$sep = $null)
+    if ($sep -eq $null) { return [System.Collections.Generic.List[object]]($s.Split([char[]]@(' ',"`t","`n","`r"), [System.StringSplitOptions]::RemoveEmptyEntries)) }
+    $parts = [string]$s.Split([string]$sep)
+    $result = [System.Collections.Generic.List[object]]::new()
+    foreach ($p in $parts) { [void]$result.Add($p) }
+    return ,$result
+}
+
+function __pytra_str_join {
+    param([object]$sep, [object]$iterable)
+    $arr = @($iterable)
+    return [string]::Join([string]$sep, $arr)
+}
+
+function __pytra_str_upper {
+    param([object]$s) return [string]$s.ToUpper()
+}
+
+function __pytra_str_lower {
+    param([object]$s) return [string]$s.ToLower()
+}
+
+function __pytra_str_isdigit {
+    param([object]$s)
+    $str = [string]$s
+    if ($str.Length -eq 0) { return $false }
+    foreach ($c in $str.ToCharArray()) { if (-not [char]::IsDigit($c)) { return $false } }
+    return $true
+}
+
+function __pytra_str_isalnum {
+    param([object]$s)
+    $str = [string]$s
+    if ($str.Length -eq 0) { return $false }
+    foreach ($c in $str.ToCharArray()) { if (-not [char]::IsLetterOrDigit($c)) { return $false } }
+    return $true
+}
+
+function __pytra_int_from_str {
+    param([object]$s) return [int64]$s
+}
+
+function __pytra_list_extend {
+    param([object]$list, [object]$items)
+    if ($items -eq $null) { return }
+    foreach ($item in $items) { [void]$list.Add($item) }
+}
+
+function __pytra_list_index {
+    param([object]$list, [object]$value)
+    $arr = @($list)
+    return [array]::IndexOf($arr, $value)
+}
+
+function __pytra_dict_clear {
+    param([object]$dict)
+    if ($dict -eq $null) { return }
+    $dict.Clear()
+}
+
+function __pytra_set_clear {
+    param([object]$set_)
+    if ($set_ -eq $null) { return }
+    $set_.Clear()
+}
+
+function __pytra_set_discard {
+    param([object]$set_, [object]$value)
+    if ($set_ -eq $null) { return }
+    [void]$set_.Remove($value)
+}
+
+function __pytra_set_remove {
+    param([object]$set_, [object]$value)
+    if ($set_ -eq $null) { return }
+    if (-not $set_.ContainsKey($value)) { throw "KeyError: $value" }
+    [void]$set_.Remove($value)
+}

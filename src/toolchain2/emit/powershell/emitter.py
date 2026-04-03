@@ -587,6 +587,25 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
             if kw_val is not None:
                 rendered_args.append(_render_expr(ctx, kw_val))
 
+    # Check Call-level runtime_call first (covers Attribute method calls like list.clear)
+    call_runtime_call = _gs(expr, "runtime_call")
+    if call_runtime_call != "" and call_runtime_call not in ("__CAST__", "__THROW__"):
+        call_mapped = ctx.mapping.calls.get(call_runtime_call, "")
+        if call_mapped != "" and call_mapped not in ("__CAST__", "__THROW__", "__LIST_APPEND__", "__DICT_GET__", "__DICT_ITEMS__", "__DICT_KEYS__", "__DICT_VALUES__", "__SET_ADD__"):
+            # For Attribute calls (obj.method()), prepend the receiver as first arg
+            _rcall_args = list(rendered_args)
+            if isinstance(func, dict) and _gs(func, "kind") == "Attribute":
+                receiver_node = func.get("value")
+                if receiver_node is not None:
+                    _rcall_args = [_render_expr(ctx, receiver_node)] + _rcall_args
+            if call_mapped.startswith("[Math]::"):
+                if call_mapped.endswith("::PI") or call_mapped.endswith("::E"):
+                    return "(" + call_mapped + ")"
+                return "(" + call_mapped + "(" + ", ".join(_rcall_args) + "))"
+            if len(_rcall_args) == 0:
+                return "(" + call_mapped + ")"
+            return "(" + call_mapped + " " + " ".join(_rcall_args) + ")"
+
     if isinstance(func, dict):
         fk = _gs(func, "kind")
 

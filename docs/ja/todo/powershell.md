@@ -37,7 +37,8 @@
    - 完了: `src/runtime/powershell/mapping.json` 新規作成
 3. [x] [ID: P1-PS1-EMITTER-S3] fixture 全件の PowerShell emit 成功を確認する
    - 完了: test/fixture/east3/ 145件全件 emit エラーなし
-4. [ ] [ID: P1-PS1-EMITTER-S4] PowerShell runtime を toolchain2 の emit 出力と整合させる
+4. [x] [ID: P1-PS1-EMITTER-S4] PowerShell runtime を toolchain2 の emit 出力と整合させる
+   - 完了: runtime_call による Attribute メソッド dispatch を修正、py_runtime.ps1 に不足関数 (list_sort/reverse/clear, dict_pop/setdefault/clear, str_strip 等 25 件) を追加
 5. [ ] [ID: P1-PS1-EMITTER-S5] fixture の PowerShell run parity を通す（`pwsh -File`）
 6. [ ] [ID: P1-PS1-EMITTER-S6] stdlib の PowerShell parity を通す（`--case-root stdlib`）
 7. [ ] [ID: P1-PS1-EMITTER-S7] sample の PowerShell parity を通す（`--case-root sample`）
