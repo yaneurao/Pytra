@@ -490,7 +490,12 @@ def _stmt_supported(node: JsonVal) -> bool:
         return (exc is None or _expr_supported(exc)) and (cause is None or _expr_supported(cause))
     if kind == "AnnAssign":
         target = node.get("target")
-        return isinstance(target, dict) and _str(target, "kind") == "Name" and _expr_supported(node.get("value"))
+        if not isinstance(target, dict):
+            return False
+        if _str(target, "kind") != "Name":
+            return False
+        value = node.get("value")
+        return value is None or _expr_supported(value)
     if kind == "Assign":
         target = node.get("target")
         if not isinstance(target, dict):
@@ -498,6 +503,8 @@ def _stmt_supported(node: JsonVal) -> bool:
         target_kind = _str(target, "kind")
         if target_kind == "Name":
             return _expr_supported(node.get("value"))
+        if target_kind == "Attribute":
+            return _expr_supported(target.get("value")) and _expr_supported(node.get("value"))
         if target_kind == "Subscript":
             return _expr_supported(target.get("value")) and _expr_supported(target.get("slice")) and _expr_supported(node.get("value"))
         if target_kind in {"Tuple", "List"}:
@@ -1160,10 +1167,20 @@ class JuliaSubsetRenderer:
             self._emit(self._render_expr(value))
             return
         if kind == "AnnAssign":
-            self._emit(_ident(_str(node.get("target"), "id")) + " = " + self._render_expr(node.get("value")))
+            target_name = _ident(_str(node.get("target"), "id"))
+            value = node.get("value")
+            if value is None:
+                self._emit(target_name + " = nothing")
+            else:
+                self._emit(target_name + " = " + self._render_expr(value))
             return
         if kind == "Assign":
             target = node.get("target")
+            if isinstance(target, dict) and _str(target, "kind") == "Attribute":
+                owner = self._render_expr(target.get("value"))
+                attr = _str(target, "attr")
+                self._emit(owner + "." + attr + " = " + self._render_expr(node.get("value")))
+                return
             if isinstance(target, dict) and _str(target, "kind") == "Subscript":
                 owner_node = target.get("value")
                 owner = self._render_expr(owner_node)
@@ -1235,6 +1252,9 @@ class JuliaSubsetRenderer:
         if kind == "FunctionDef":
             name = _ident(_str(node, "name"))
             args = [_ident(arg) for arg in _list(node, "arg_order") if isinstance(arg, str)]
+            vararg_name = node.get("vararg_name")
+            if isinstance(vararg_name, str) and vararg_name != "":
+                args.append(_ident(vararg_name))
             self._emit("function " + name + "(" + ", ".join(args) + ")")
             self.indent_level += 1
             for stmt in _list(node, "body"):

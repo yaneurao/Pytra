@@ -76,3 +76,4 @@
 - 2026-04-04: [ID: P1-JULIA-EMITTER-S1] subset native renderer が `pytra.enum` import と空 enum class (`Enum`, `IntEnum`, `IntFlag`) を受けられるようになり、`enum_basic`, `intenum_basic`, `intflag_basic` も native path / parity PASS に寄せた。
 - 2026-04-04: [ID: P1-JULIA-EMITTER-S1] subset native renderer に tuple/list destructuring assign と nested/subscript target unpack を追加し、`tuple_unpack_variants` も native path / parity PASS に寄せた。
 - 2026-04-04: [ID: P1-JULIA-EMITTER-S1] subset native renderer に single-generator の `ListComp` / `SetComp` / `DictComp` と list concat (`vcat`) を追加し、`ok_list_concat_comp`, `comprehension_dict_set`, `comprehension_nested` も native path / parity PASS に寄せた。
+- 2026-04-04: [ID: P1-JULIA-EMITTER-S1] subset native renderer が linked 後の typed-vararg 形 (`arg_order` + `vararg_name`) を受けられるようになり、値なし `AnnAssign` と `Attribute` target の plain `Assign` も吸収して `ok_typed_varargs_representative` も native path / parity PASS に寄せた。

@@ -76,6 +76,7 @@
    - 2026-04-04: subset native renderer が `pytra.enum` import と空 enum class (`Enum`, `IntEnum`, `IntFlag`) を受けられるようになり、`enum_basic`, `intenum_basic`, `intflag_basic` を native path / parity PASS に寄せた
    - 2026-04-04: subset native renderer に tuple/list destructuring assign と nested/subscript target unpack を追加し、`tuple_unpack_variants` を native path / parity PASS に寄せた
    - 2026-04-04: subset native renderer に single-generator の `ListComp` / `SetComp` / `DictComp` と list concat (`vcat`) を追加し、`ok_list_concat_comp`, `comprehension_dict_set`, `comprehension_nested` を native path / parity PASS に寄せた
+   - 2026-04-04: subset native renderer が linked 後の typed-vararg 形 (`arg_order` + `vararg_name`) を受けられるようになり、値なし `AnnAssign` と `Attribute` target の plain `Assign` も吸収して `ok_typed_varargs_representative` を native path / parity PASS に寄せた
 2. [x] [ID: P1-JULIA-EMITTER-S2] `src/runtime/julia/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
    - 2026-04-02: `src/runtime/julia/mapping.json` を追加し、toolchain2 Julia emitter bootstrap が参照する runtime call/type mapping を整備
 3. [x] [ID: P1-JULIA-EMITTER-S3] fixture 全件の Julia emit 成功を確認する
