@@ -30,27 +30,6 @@
 1. [ ] [ID: P0-ISINS-DETID-CPP-S1] C++ emitter の `PYTRA_TID_*` → 型名の逆引きテーブルを削除し、`expected_type_name` を直接参照する
 2. [ ] [ID: P0-ISINS-DETID-CPP-S2] fixture + sample + stdlib の C++ parity に回帰がないことを確認する
 
-### P0-OPT-LEVEL-RENAME: `--east3-opt-level` を `--opt-level` に改名し最適化プリセットとして統合する
-
-文脈: [docs/ja/plans/p0-subscript-bounds-east-optimizer.md](../plans/p0-subscript-bounds-east-optimizer.md)
-
-`--east3-opt-level` は内部実装名がそのまま CLI に露出している。`--opt-level` に改名し、`--opt-level` が `negative_index_mode` / `bounds_check_mode` のデフォルトを決定する設計に統合する。emitter はオプションを知らず、EAST3 メタデータのみを参照する。
-
-| `--opt-level` | negative_index | bounds_check |
-|---|---|---|
-| `0` | `always` | `always` |
-| `1`（デフォルト） | `const_only` | `off` |
-| `2` | `off` | `off` |
-
-1. [x] [ID: P0-OPT-LEVEL-S1] `pytra-cli2.py` / `runtime_parity_check_fast.py` / optimizer の `--east3-opt-level` を `--opt-level` に改名する
-   - 完了メモ: `src/pytra-cli2.py`, `tools/check/runtime_parity_check.py`, `tools/check/runtime_parity_check_fast.py`, `tools/check/check_all_target_sample_parity.py`, `src/toolchain2/optimize/optimizer.py` で user-facing flag を `--opt-level` に統一した。`runtime_parity_check_fast --opt-level 1` の single-case parity と各スクリプトの `--help` / `py_compile` を確認済み。
-2. [x] [ID: P0-OPT-LEVEL-S2] `--opt-level` が `negative_index_mode` / `bounds_check_mode` のデフォルトを決定し、個別オプションで上書きできるようにする
-   - 完了メモ: `src/toolchain2/optimize/optimizer.py` の `resolve_negative_index_mode()` / `resolve_bounds_check_mode()` を `opt_level` aware にし、未指定時の default を `0 -> always/always`, `1 -> const_only/off`, `2 -> off/off` に変更した。`src/pytra-cli2.py` と `tools/check/runtime_parity_check_fast.py` から `opt_level` を引き回し、明示 `--negative-index-mode` / `--bounds-check-mode` は従来どおり個別 override として維持した。`runtime_parity_check_fast --opt-level 0/2` の summary で mode 決定を確認済み。
-3. [x] [ID: P0-OPT-LEVEL-S3] spec-options.md / spec-east3-optimizer.md / tutorial を更新する
-   - 完了メモ: 正本 `docs/ja/` の `spec-east3-optimizer.md`, `spec-tools-parity.md`, `tutorial/dev-operations.md` を `--opt-level` 表記へ更新し、`O0/O1/O2` と `negative_index_mode` / `bounds_check_mode` の既定対応も追記した。旧 `--east3-opt-level` 表記は plan / archive の履歴記述を除き、正本 spec/tutorial から除去済み。
-4. [x] [ID: P0-OPT-LEVEL-S4] fixture + sample + stdlib parity に回帰がないことを確認する
-   - 完了メモ: `runtime_parity_check_fast --case-root stdlib --targets cpp --opt-level 1` で `16/16 PASS`、`--case-root sample` で `18/18 PASS`、`--case-root fixture` で `144/144 PASS` を確認した。途中で見つかった `dict_mutation_methods`, `list_mutation_methods`, `none_optional`, `str_methods_extended` は C++ runtime / emitter を修正して解消済み。最終 summary は `targets=cpp opt_level=1 negative_index_mode=const_only bounds_check_mode=off` で回帰 0。
-
 ### P0-CPP-VARIANT: C++ を std::variant ベースに移行し object/box/unbox を廃止する
 
 文脈: [docs/ja/plans/plan-cpp-variant-migration.md](../plans/plan-cpp-variant-migration.md)
