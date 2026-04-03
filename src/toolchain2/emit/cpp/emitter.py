@@ -1694,25 +1694,36 @@ def _emit_compare(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 
 
 def _emit_range_call_contains_expr(ctx: CppEmitContext, range_node: JsonVal, needle_expr: str) -> str:
-    if not isinstance(range_node, dict) or _str(range_node, "kind") != "Call":
+    if not isinstance(range_node, dict):
         return ""
-    if _str(range_node, "runtime_call") != "py_range":
-        return ""
-    args = _list(range_node, "args")
-    if len(args) == 0 or len(args) > 3:
+    kind = _str(range_node, "kind")
+    if kind not in ("RangeExpr", "Call"):
         return ""
     start_expr = "int64(0)"
     stop_expr = ""
     step_expr = "int64(1)"
-    if len(args) == 1:
-        stop_expr = _emit_expr(ctx, args[0])
-    elif len(args) == 2:
-        start_expr = _emit_expr(ctx, args[0])
-        stop_expr = _emit_expr(ctx, args[1])
+    if kind == "RangeExpr":
+        start_node = range_node.get("start")
+        stop_node = range_node.get("stop")
+        step_node = range_node.get("step")
+        if not isinstance(stop_node, dict):
+            return ""
+        start_expr = _emit_expr(ctx, start_node) if isinstance(start_node, dict) else start_expr
+        stop_expr = _emit_expr(ctx, stop_node)
+        step_expr = _emit_expr(ctx, step_node) if isinstance(step_node, dict) else step_expr
     else:
-        start_expr = _emit_expr(ctx, args[0])
-        stop_expr = _emit_expr(ctx, args[1])
-        step_expr = _emit_expr(ctx, args[2])
+        args = _list(range_node, "args")
+        if len(args) == 0 or len(args) > 3:
+            return ""
+        if len(args) == 1:
+            stop_expr = _emit_expr(ctx, args[0])
+        elif len(args) == 2:
+            start_expr = _emit_expr(ctx, args[0])
+            stop_expr = _emit_expr(ctx, args[1])
+        else:
+            start_expr = _emit_expr(ctx, args[0])
+            stop_expr = _emit_expr(ctx, args[1])
+            step_expr = _emit_expr(ctx, args[2])
     if stop_expr == "":
         return ""
     pos_lane = (
