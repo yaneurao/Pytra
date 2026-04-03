@@ -68,6 +68,8 @@
    - 2026-04-04: subset native renderer に instance field `AugAssign` (`self.field += ...`) を追加し、`class_instance` を native path へ乗せた
    - 2026-04-04: bootstrap rewrite が class body の `AnnAssign` static attr も global へ lift するよう修正し、`class_member` を native path へ乗せた
    - 2026-04-04: subset native renderer が object parameter field update (`x.v += ...`) も扱えるようになり、`alias_arg` を native path へ乗せた
+   - 2026-04-04: subset native renderer に `IsInstance` の Julia type mapping (`PYTRA_TID_*`, `dict/list/tuple/set/str/int/float/bool`) を追加し、`union_basic`, `union_dict_items`, `isinstance_pod_exact`, `isinstance_tuple_check` を native path へ乗せた
+   - 2026-04-04: subset native renderer に type-only `ImportFrom(pytra.std.json)`、`str.isdigit()`、`Expr(Name("continue"|"break"))` の吸収を追加し、`union_return_errorcheck` と `isinstance_narrowing` も native path / parity PASS に寄せた
 2. [x] [ID: P1-JULIA-EMITTER-S2] `src/runtime/julia/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
    - 2026-04-02: `src/runtime/julia/mapping.json` を追加し、toolchain2 Julia emitter bootstrap が参照する runtime call/type mapping を整備
 3. [x] [ID: P1-JULIA-EMITTER-S3] fixture 全件の Julia emit 成功を確認する

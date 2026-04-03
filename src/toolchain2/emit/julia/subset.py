@@ -56,10 +56,36 @@ _EXCEPTION_TYPE_TEXT = {
     "TypeError": "PytraTypeError",
 }
 
+_ISINSTANCE_TYPE_TEXT = {
+    "PYTRA_TID_BOOL": "Bool",
+    "PYTRA_TID_DICT": "AbstractDict",
+    "PYTRA_TID_FLOAT": "AbstractFloat",
+    "PYTRA_TID_FLOAT64": "AbstractFloat",
+    "PYTRA_TID_INT": "Integer",
+    "PYTRA_TID_INT64": "Integer",
+    "PYTRA_TID_LIST": "AbstractVector",
+    "PYTRA_TID_SET": "AbstractSet",
+    "PYTRA_TID_STR": "AbstractString",
+    "PYTRA_TID_STRING": "AbstractString",
+    "PYTRA_TID_TUPLE": "Tuple",
+    "bool": "Bool",
+    "dict": "AbstractDict",
+    "float": "AbstractFloat",
+    "float64": "AbstractFloat",
+    "int": "Integer",
+    "int64": "Integer",
+    "list": "AbstractVector",
+    "set": "AbstractSet",
+    "str": "AbstractString",
+    "string": "AbstractString",
+    "tuple": "Tuple",
+}
+
 _IMPORTFROM_MODULES: dict[str, set[str] | None] = {
     "pytra.utils.assertions": {"py_assert_stdout", "py_assert_eq", "py_assert_all", "py_assert_true"},
     "pytra.utils.png": None,
     "pytra.std.collections": {"deque"},
+    "pytra.std.json": {"JsonVal"},
     "pytra.std.math": {"fabs", "floor", "sqrt"},
     "math": {"floor", "sqrt"},
     "time": {"perf_counter"},
@@ -251,6 +277,18 @@ def _import_supported(names: list[JsonVal]) -> bool:
     return all(isinstance(item, dict) and _str(item, "name") in allowed for item in names)
 
 
+def _isinstance_expected_name(node: dict[str, JsonVal]) -> str:
+    expected_any = node.get("expected_type_id")
+    if isinstance(expected_any, dict) and _str(expected_any, "kind") == "Name":
+        expected_id = expected_any.get("id")
+        if isinstance(expected_id, str) and expected_id != "":
+            return expected_id
+    expected_name = node.get("expected_type_name")
+    if isinstance(expected_name, str):
+        return expected_name
+    return ""
+
+
 def _expr_supported(node: JsonVal) -> bool:
     if not isinstance(node, dict):
         return False
@@ -293,6 +331,8 @@ def _expr_supported(node: JsonVal) -> bool:
         return _str(node, "op") in _UNARY_TEXT and _expr_supported(node.get("operand"))
     if kind == "IfExp":
         return _expr_supported(node.get("test")) and _expr_supported(node.get("body")) and _expr_supported(node.get("orelse"))
+    if kind == "IsInstance":
+        return _expr_supported(node.get("value")) and _isinstance_expected_name(node) != ""
     if kind == "Lambda":
         args = _list(node, "args")
         return all(isinstance(arg, dict) and isinstance(arg.get("arg"), str) for arg in args) and _expr_supported(node.get("body"))
@@ -326,6 +366,7 @@ def _expr_supported(node: JsonVal) -> bool:
                 "find",
                 "floor",
                 "get",
+                "isdigit",
                 "index",
                 "isalnum",
                 "items",
@@ -641,6 +682,15 @@ class JuliaSubsetRenderer:
                         args.append(name)
             body = self._render_expr(node.get("body"))
             return "((" + ", ".join(args) + ") -> " + body + ")"
+        if kind == "IsInstance":
+            value = self._render_expr(node.get("value"))
+            expected_name = _isinstance_expected_name(node)
+            mapped = _ISINSTANCE_TYPE_TEXT.get(expected_name)
+            if mapped is not None:
+                return "(isa(" + value + ", " + mapped + "))"
+            if expected_name in self.class_names or expected_name in self.exception_class_names:
+                return "(isa(" + value + ", " + expected_name + "))"
+            return "false"
         if kind == "Call":
             func_node = node.get("func")
             if isinstance(func_node, dict) and _str(func_node, "kind") == "Attribute":
@@ -665,6 +715,8 @@ class JuliaSubsetRenderer:
                     return "append!(" + owner + ", " + args[0] + ")"
                 if attr == "find" and len(args) == 1:
                     return "__pytra_str_find(" + owner + ", " + args[0] + ")"
+                if attr == "isdigit" and len(args) == 0:
+                    return "(!isempty(" + owner + ") && all(isdigit, collect(" + owner + ")))"
                 if attr == "index" and len(args) == 1:
                     return "__pytra_str_find(" + owner + ", " + args[0] + ")"
                 if attr == "isalnum" and len(args) == 0:
@@ -893,6 +945,8 @@ class JuliaSubsetRenderer:
                     if source_name == "deque":
                         self._emit(bound_name + " = __pytra_deque")
                 return
+            if module_name == "pytra.std.json":
+                return
             if module_name == "math":
                 self._emit('include(joinpath(@__DIR__, "std", "math_native.jl"))')
                 for item in names:
@@ -955,10 +1009,18 @@ class JuliaSubsetRenderer:
             return
         if kind == "Expr":
             value = node.get("value")
-            if isinstance(value, dict) and _str(value, "kind") == "Name" and _str(value, "id") == "raise":
-                self._emit("rethrow()")
-            else:
-                self._emit(self._render_expr(value))
+            if isinstance(value, dict) and _str(value, "kind") == "Name":
+                value_id = _str(value, "id")
+                if value_id == "raise":
+                    self._emit("rethrow()")
+                    return
+                if value_id == "continue":
+                    self._emit("continue")
+                    return
+                if value_id == "break":
+                    self._emit("break")
+                    return
+            self._emit(self._render_expr(value))
             return
         if kind == "AnnAssign":
             self._emit(_ident(_str(node.get("target"), "id")) + " = " + self._render_expr(node.get("value")))

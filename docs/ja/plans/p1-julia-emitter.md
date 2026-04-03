@@ -4,7 +4,7 @@
 
 # P1-JULIA-EMITTER
 
-最終更新: 2026-04-03
+最終更新: 2026-04-04
 
 ## 対象
 
@@ -68,3 +68,5 @@
 - 2026-04-04: [ID: P1-JULIA-EMITTER-S1] subset native renderer に instance field `AugAssign` (`self.field += ...`) を追加し、`class_instance` も native path に寄せた。
 - 2026-04-04: [ID: P1-JULIA-EMITTER-S1] bootstrap rewrite が class body の `AnnAssign` static attr も global へ lift するよう修正し、`class_member` も native path に寄せた。
 - 2026-04-04: [ID: P1-JULIA-EMITTER-S1] subset native renderer が object parameter field update (`x.v += ...`) も扱えるようになり、`alias_arg` も native path に寄せた。
+- 2026-04-04: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `IsInstance` の Julia type mapping を追加し、`union_basic`, `union_dict_items`, `isinstance_pod_exact`, `isinstance_tuple_check` を native path に寄せた。
+- 2026-04-04: [ID: P1-JULIA-EMITTER-S1] subset native renderer に type-only `ImportFrom(pytra.std.json)`、`str.isdigit()`、`Expr(Name("continue"|"break"))` の吸収を追加し、`union_return_errorcheck` と `isinstance_narrowing` も native path / parity PASS に寄せた。
