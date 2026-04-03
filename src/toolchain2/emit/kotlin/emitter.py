@@ -33,6 +33,7 @@ class KotlinRenderer(CommonRenderer):
         self.class_property_names: dict[str, set[str]] = {}
         self._tmp_counter = 0
         self._local_var_scopes: list[set[str]] = []
+        self._local_type_scopes: list[dict[str, str]] = []
 
     def _collect_class_fields(self, node: dict[str, JsonVal]) -> list[tuple[str, str]]:
         fields: list[tuple[str, str]] = []
@@ -119,6 +120,32 @@ class KotlinRenderer(CommonRenderer):
         if len(self._local_var_scopes) == 0:
             return
         self._local_var_scopes[-1].add(name)
+
+    def _record_local_type(self, name: str, resolved_type: str) -> None:
+        if len(self._local_type_scopes) == 0 or resolved_type == "":
+            return
+        self._local_type_scopes[-1][name] = resolved_type
+
+    def _lookup_local_type(self, name: str) -> str:
+        for scope in reversed(self._local_type_scopes):
+            if name in scope:
+                return scope[name]
+        return ""
+
+    def _callable_type(self, resolved_type: str) -> str:
+        if resolved_type in ("Callable", "callable") or resolved_type.startswith("callable[") or resolved_type.startswith("Callable["):
+            return resolved_type
+        if "|" not in resolved_type:
+            return ""
+        parts = [part.strip() for part in resolved_type.split("|")]
+        callable_parts = [
+            part for part in parts
+            if part in ("Callable", "callable") or part.startswith("callable[") or part.startswith("Callable[")
+        ]
+        none_parts = [part for part in parts if part in ("None", "none")]
+        if len(callable_parts) == 1 and len(callable_parts) + len(none_parts) == len(parts):
+            return callable_parts[0]
+        return ""
 
     def _emit_boolop_value_expr(self, values: list[JsonVal], is_and: bool) -> str:
         if len(values) == 0:
@@ -286,6 +313,12 @@ class KotlinRenderer(CommonRenderer):
         if kind == "AnnAssign":
             target = node.get("target")
             decl_type = self._str(node, "decl_type")
+            if decl_type == "":
+                decl_type = self._str(node, "resolved_type")
+            if decl_type == "" and isinstance(target, dict):
+                decl_type = self._str(target, "resolved_type")
+            if decl_type == "":
+                decl_type = "Any"
             value = self._emit_expr(node.get("value"))
             if isinstance(target, dict) and self._str(target, "kind") in ("Attribute", "Subscript"):
                 self._emit_store_target(target, value)
@@ -296,6 +329,7 @@ class KotlinRenderer(CommonRenderer):
             else:
                 self._emit("var " + target_name + ": " + self._render_type(decl_type) + " = " + value)
                 self._declare_local(target_name)
+            self._record_local_type(target_name, decl_type)
             return
         if kind == "TypeAlias":
             return
@@ -318,10 +352,13 @@ class KotlinRenderer(CommonRenderer):
             if decl_type == "":
                 decl_type = self._str(node, "decl_type")
             if decl_type == "":
+                decl_type = self._str(node, "resolved_type")
+            if decl_type == "":
                 decl_type = "Any"
             if not self._is_declared_local(name):
                 self._emit("var " + name + ": " + self._render_type(decl_type) + " = " + kotlin_zero_value(decl_type))
                 self._declare_local(name)
+            self._record_local_type(name, decl_type)
             return
         if kind == "ImportFrom":
             module_name = self._str(node, "module")
@@ -504,8 +541,14 @@ class KotlinRenderer(CommonRenderer):
             self._emit("fun " + name + "(" + ", ".join(params) + "): " + return_type + " {")
             self.state.indent_level += 1
         self._local_var_scopes.append(local_scope)
+        self._local_type_scopes.append({})
+        for arg in arg_order:
+            if isinstance(arg, str):
+                arg_type = arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"
+                self._record_local_type(_safe_kotlin_ident(arg), arg_type)
         for local_name, param_name in rebinding:
             self._emit("var " + local_name + " = " + param_name)
+            self._record_local_type(local_name, self._lookup_local_type(param_name))
         body = self._list(node, "body")
         if len(body) == 0:
             self._emit("Unit")
@@ -513,6 +556,7 @@ class KotlinRenderer(CommonRenderer):
             for stmt in body:
                 self._emit_stmt(stmt)
         self._local_var_scopes.pop()
+        self._local_type_scopes.pop()
         self.state.indent_level -= 1
         self._emit("}")
         if is_method and is_property:
@@ -708,6 +752,10 @@ class KotlinRenderer(CommonRenderer):
                 return self._quote_string(value)
         if kind == "Name":
             ident = self._str(node, "id")
+            resolved_type = self._str(node, "resolved_type")
+            if resolved_type in ("", "unknown"):
+                resolved_type = self._lookup_local_type(_safe_kotlin_ident(ident))
+            callable_type = self._callable_type(resolved_type)
             if ident == "self" and self.current_class_name is not None:
                 return "this"
             if ident in self.import_symbols:
@@ -726,7 +774,11 @@ class KotlinRenderer(CommonRenderer):
                     return "os_path"
                 return _safe_kotlin_ident(module_id.replace(".", "_"))
             if ident in self.local_function_aliases:
+                if callable_type != "":
+                    return "::" + _safe_kotlin_ident(self.local_function_aliases[ident])
                 return _safe_kotlin_ident(self.local_function_aliases[ident])
+            if ident in self.module_function_names and callable_type != "":
+                return "::" + _safe_kotlin_ident(ident)
             return _safe_kotlin_ident(ident)
         if kind == "Attribute":
             owner_node = node.get("value")
@@ -919,6 +971,12 @@ class KotlinRenderer(CommonRenderer):
                     return "time_native_" + _safe_kotlin_ident(runtime_symbol) + "(" + ", ".join(args) + ")"
             func = node.get("func")
             func_name = self._emit_expr(func)
+            func_is_named_function = False
+            func_resolved_type = self._str(func, "resolved_type") if isinstance(func, dict) else ""
+            local_callable_type = ""
+            if isinstance(func, dict) and self._str(func, "kind") == "Name" and func_resolved_type in ("", "unknown"):
+                local_callable_type = self._lookup_local_type(_safe_kotlin_ident(self._str(func, "id")))
+                func_resolved_type = local_callable_type
             if isinstance(func, dict) and self._str(func, "kind") == "Attribute":
                 owner_node = func.get("value")
                 attr = self._str(func, "attr")
@@ -1034,6 +1092,12 @@ class KotlinRenderer(CommonRenderer):
                         return owner_expr + ".remove(" + self._emit_expr(arg_nodes[0]) + ")"
             if isinstance(func, dict) and self._str(func, "kind") == "Name":
                 func_id = self._str(func, "id")
+                if func_id in self.local_function_aliases:
+                    func_name = _safe_kotlin_ident(self.local_function_aliases[func_id])
+                    func_is_named_function = True
+                elif func_id in self.module_function_names:
+                    func_name = _safe_kotlin_ident(func_id)
+                    func_is_named_function = True
                 mapped = self.mapping.calls.get(func_id)
                 if isinstance(mapped, str) and mapped != "":
                     func_name = mapped
@@ -1076,6 +1140,13 @@ class KotlinRenderer(CommonRenderer):
                 args.append(self._emit_expr(arg))
             if isinstance(func, dict) and self._str(func, "kind") == "Lambda":
                 return "(" + func_name + ")(" + ", ".join(args) + ")"
+            callable_type = self._callable_type(local_callable_type)
+            if not func_is_named_function and callable_type != "":
+                if len(args) == 0:
+                    invoke_type = "() -> Any?"
+                else:
+                    invoke_type = "(" + ", ".join("Any?" for _ in args) + ") -> Any?"
+                return "((" + func_name + ") as " + invoke_type + ")(" + ", ".join(args) + ")"
             call_expr = func_name + "(" + ", ".join(args) + ")"
             resolved_type = self._str(node, "resolved_type")
             if func_name in ("__pytra_bytes", "__pytra_bytearray", "__pytra_set_new", "__pytra_list_repeat") and resolved_type != "":

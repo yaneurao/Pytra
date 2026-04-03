@@ -30,6 +30,7 @@ class ScalaRenderer(CommonRenderer):
         self.module_class_names: set[str] = set()
         self.class_has_init: dict[str, bool] = {}
         self.local_decl_stack: list[set[str]] = []
+        self.local_type_stack: list[dict[str, str]] = []
         self._tmp_counter = 0
 
     def _collect_class_fields(self, node: dict[str, JsonVal]) -> list[tuple[str, str]]:
@@ -94,6 +95,32 @@ class ScalaRenderer(CommonRenderer):
             return False
         scope.add(target_name)
         return True
+
+    def _record_local_type(self, name: str, resolved_type: str) -> None:
+        if len(self.local_type_stack) == 0 or resolved_type == "":
+            return
+        self.local_type_stack[-1][name] = resolved_type
+
+    def _lookup_local_type(self, name: str) -> str:
+        for scope in reversed(self.local_type_stack):
+            if name in scope:
+                return scope[name]
+        return ""
+
+    def _callable_type(self, resolved_type: str) -> str:
+        if resolved_type in ("Callable", "callable") or resolved_type.startswith("callable[") or resolved_type.startswith("Callable["):
+            return resolved_type
+        if "|" not in resolved_type:
+            return ""
+        parts = [part.strip() for part in resolved_type.split("|")]
+        callable_parts = [
+            part for part in parts
+            if part in ("Callable", "callable") or part.startswith("callable[") or part.startswith("Callable[")
+        ]
+        none_parts = [part for part in parts if part in ("None", "none")]
+        if len(callable_parts) == 1 and len(callable_parts) + len(none_parts) == len(parts):
+            return callable_parts[0]
+        return ""
 
     def _emit_boolop_value_expr(self, values: list[JsonVal], is_and: bool) -> str:
         if len(values) == 0:
@@ -232,6 +259,12 @@ class ScalaRenderer(CommonRenderer):
         if kind == "AnnAssign":
             target = node.get("target")
             decl_type = self._str(node, "decl_type")
+            if decl_type == "":
+                decl_type = self._str(node, "resolved_type")
+            if decl_type == "" and isinstance(target, dict):
+                decl_type = self._str(target, "resolved_type")
+            if decl_type == "":
+                decl_type = "Any"
             value = self._emit_expr(node.get("value"))
             if isinstance(target, dict) and self._str(target, "kind") in ("Attribute", "Subscript"):
                 self._emit_store_target(target, value)
@@ -241,6 +274,7 @@ class ScalaRenderer(CommonRenderer):
                 self._emit("var " + target_name + ": " + scala_type(decl_type) + " = " + value)
             else:
                 self._emit(target_name + " = " + value)
+            self._record_local_type(target_name, decl_type)
             return
         if kind == "Assign":
             target = node.get("target")
@@ -260,9 +294,12 @@ class ScalaRenderer(CommonRenderer):
             if decl_type == "":
                 decl_type = self._str(node, "decl_type")
             if decl_type == "":
+                decl_type = self._str(node, "resolved_type")
+            if decl_type == "":
                 decl_type = "Any"
             if self._should_declare_name(name, True):
                 self._emit("var " + name + ": " + scala_type(decl_type) + " = " + scala_zero_value(decl_type))
+            self._record_local_type(name, decl_type)
             return
         if kind == "ImportFrom":
             module_name = self._str(node, "module")
@@ -403,6 +440,11 @@ class ScalaRenderer(CommonRenderer):
         self.state.indent_level += 1
         scope_names = {_safe_scala_ident(arg) for arg in arg_order if isinstance(arg, str)}
         self.local_decl_stack.append(scope_names)
+        self.local_type_stack.append({})
+        for arg in arg_order:
+            if isinstance(arg, str):
+                arg_type = arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"
+                self._record_local_type(_safe_scala_ident(arg), arg_type)
         body = self._list(node, "body")
         if len(body) == 0:
             self._emit("()")
@@ -410,6 +452,7 @@ class ScalaRenderer(CommonRenderer):
             for stmt in body:
                 self._emit_stmt(stmt)
         self.local_decl_stack.pop()
+        self.local_type_stack.pop()
         self.state.indent_level -= 1
         self._emit("}")
 
@@ -532,6 +575,10 @@ class ScalaRenderer(CommonRenderer):
                 return self._quote_string(value)
         if kind == "Name":
             ident = self._str(node, "id")
+            resolved_type = self._str(node, "resolved_type")
+            if resolved_type in ("", "unknown"):
+                resolved_type = self._lookup_local_type(_safe_scala_ident(ident))
+            callable_type = self._callable_type(resolved_type)
             if ident == "self" and self.current_class_name is not None:
                 return "this"
             if ident in self.import_symbols:
@@ -550,7 +597,11 @@ class ScalaRenderer(CommonRenderer):
                     return "os_path"
                 return _safe_scala_ident(module_id.replace(".", "_"))
             if ident in self.local_function_aliases:
+                if callable_type != "":
+                    return _safe_scala_ident(self.local_function_aliases[ident])
                 return _safe_scala_ident(self.local_function_aliases[ident])
+            if ident in self.module_function_names and callable_type != "":
+                return _safe_scala_ident(ident)
             return _safe_scala_ident(ident)
         if kind == "Attribute":
             owner_node = node.get("value")
@@ -674,6 +725,12 @@ class ScalaRenderer(CommonRenderer):
                     return "time_native." + _safe_scala_ident(runtime_symbol) + "(" + ", ".join(args) + ")"
             func = node.get("func")
             func_name = self._emit_expr(func)
+            func_is_named_function = False
+            func_resolved_type = self._str(func, "resolved_type") if isinstance(func, dict) else ""
+            local_callable_type = ""
+            if isinstance(func, dict) and self._str(func, "kind") == "Name" and func_resolved_type in ("", "unknown"):
+                local_callable_type = self._lookup_local_type(_safe_scala_ident(self._str(func, "id")))
+                func_resolved_type = local_callable_type
             if isinstance(func, dict) and self._str(func, "kind") == "Attribute":
                 owner_node = func.get("value")
                 attr = self._str(func, "attr")
@@ -756,6 +813,12 @@ class ScalaRenderer(CommonRenderer):
                         return "{ " + owner_expr + ".subtractOne(" + self._emit_expr(arg_nodes[0]) + "); () }"
             if isinstance(func, dict) and self._str(func, "kind") == "Name":
                 func_id = self._str(func, "id")
+                if func_id in self.local_function_aliases:
+                    func_name = _safe_scala_ident(self.local_function_aliases[func_id])
+                    func_is_named_function = True
+                elif func_id in self.module_function_names:
+                    func_name = _safe_scala_ident(func_id)
+                    func_is_named_function = True
                 call_result_type = self._str(node, "resolved_type")
                 mapped = self.mapping.calls.get(func_id)
                 if isinstance(mapped, str) and mapped != "":
@@ -779,6 +842,15 @@ class ScalaRenderer(CommonRenderer):
                 args.append(self._emit_expr(arg))
             if isinstance(func, dict) and self._str(func, "kind") == "Lambda":
                 return "(" + func_name + ")(" + ", ".join(args) + ")"
+            callable_type = self._callable_type(local_callable_type)
+            if not func_is_named_function and callable_type != "":
+                if len(args) == 0:
+                    invoke_type = "() => Any"
+                elif len(args) == 1:
+                    invoke_type = "Any => Any"
+                else:
+                    invoke_type = "(" + ", ".join("Any" for _ in args) + ") => Any"
+                return "(" + func_name + ").asInstanceOf[" + invoke_type + "](" + ", ".join(args) + ")"
             return func_name + "(" + ", ".join(args) + ")"
         if kind == "BinOp":
             left = self._emit_expr(node.get("left"))
