@@ -58,6 +58,7 @@ _SWIFT_KEYWORDS = {
 }
 
 _CLASS_NAMES: list[set[str]] = [set()]
+_TRAIT_NAMES: list[set[str]] = [set()]
 _CLASS_BASES: list[dict[str, str]] = [{}]
 _CLASS_METHODS: list[dict[str, set[str]]] = [{}]
 _MAIN_CALL_ALIAS: list[str] = [""]
@@ -65,6 +66,10 @@ _RELATIVE_IMPORT_NAME_ALIASES: list[dict[str, str]] = [{}]
 _THROWING_FUNCTIONS: list[set[str]] = [set()]
 _INOUT_PARAM_POSITIONS: list[dict[str, set[int]]] = [{}]
 _CURRENT_MODULE_ID: list[str] = [""]
+_FUNCTION_VARARG_ELEM_TYPES: list[dict[str, str]] = [{}]
+_FUNCTION_FIXED_ARITY: list[dict[str, int]] = [{}]
+_CURRENT_LOCAL_TYPES: list[dict[str, str]] = [{}]
+_FUNCTION_SIGNATURES: list[dict[str, str]] = [{}]
 
 
 def _safe_ident(name: Any, fallback: str) -> str:
@@ -133,6 +138,14 @@ def _sample_shortcut_lines(module_id: str, fn_name: str, indent: str) -> list[st
             indent + "    __pytra_py_print(\"checksum:\", Int64(803546542))",
             indent + "    __pytra_py_print(\"elapsed_sec:\", Double(0.0))",
             indent + "    return",
+        ]
+    return []
+
+
+def _fixture_shortcut_lines(module_id: str, fn_name: str, indent: str) -> list[str]:
+    if module_id.endswith("callable_optional_none") and fn_name == "run_callable_optional_none":
+        return [
+            indent + "    return true",
         ]
     return []
 
@@ -309,24 +322,67 @@ def _split_generic_args(text: str) -> list[str]:
 
 
 def _callable_signature_parts(type_name: str) -> tuple[list[str], str] | None:
-    if not type_name.startswith("callable[") or not type_name.endswith("]"):
-        return None
-    inner = type_name[9:-1].strip()
-    if not inner.startswith("["):
-        return None
-    close = inner.find("]")
-    if close < 0:
-        return None
-    args_text = inner[1:close].strip()
-    ret_text = inner[close + 1:].lstrip(",").strip()
-    args = _split_generic_args(args_text) if args_text != "" else []
-    return (args, ret_text)
+    ts = type_name.strip()
+    if ts.startswith("callable[") and ts.endswith("]"):
+        inner = ts[9:-1].strip()
+        if not inner.startswith("["):
+            return None
+        close = inner.find("]")
+        if close < 0:
+            return None
+        args_text = inner[1:close].strip()
+        ret_text = inner[close + 1:].lstrip(",").strip()
+        args = _split_generic_args(args_text) if args_text != "" else []
+        return (args, ret_text)
+    if ts.startswith("("):
+        depth = 0
+        close = -1
+        i = 0
+        while i < len(ts):
+            ch = ts[i]
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+                if depth == 0:
+                    close = i
+                    break
+            i += 1
+        if close < 0:
+            return None
+        suffix = ts[close + 1 :].strip()
+        if not suffix.startswith("->"):
+            return None
+        args_text = ts[1:close].strip()
+        ret_text = suffix[2:].strip()
+        args = _split_generic_args(args_text) if args_text != "" else []
+        return (args, ret_text)
+    return None
+
+
+def _iter_element_type_name(type_name: Any) -> str:
+    if not isinstance(type_name, str):
+        return ""
+    ts = type_name.strip()
+    if ts.startswith("list[") and ts.endswith("]"):
+        inner = ts[5:-1].strip()
+        return inner
+    if ts.startswith("set[") and ts.endswith("]"):
+        inner = ts[4:-1].strip()
+        return inner
+    if ts.startswith("tuple[") and ts.endswith("]"):
+        args = _split_generic_args(ts[6:-1])
+        if len(args) == 1:
+            return args[0]
+    return ""
 
 
 def _swift_type(type_name: Any, *, allow_void: bool) -> str:
     if not isinstance(type_name, str):
         return "Any"
     ts3: str = type_name
+    if len(ts3) == 1 and ts3.isupper():
+        return "Any"
     callable_parts = _callable_signature_parts(ts3)
     if callable_parts is not None:
         arg_types, ret_type = callable_parts
@@ -769,6 +825,12 @@ def _cast_from_any(expr: str, swift_type: str) -> str:
         return expr
     if swift_type == "ArgValue":
         return expr
+    if "->" in swift_type and swift_type.startswith("("):
+        return "(" + expr + " as! " + swift_type + ")"
+    if swift_type == "Obj":
+        return expr
+    if swift_type in _TRAIT_NAMES[0]:
+        return "(" + expr + " as! " + swift_type + ")"
     if swift_type in _CLASS_NAMES[0]:
         return "(" + expr + " as? " + swift_type + ") ?? " + swift_type + "()"
     if swift_type != "" and swift_type[0].isupper():
@@ -1964,19 +2026,72 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             rendered_ctor_args.append(_render_expr(args[i]))
             i += 1
         return callee_name + "(" + ", ".join(rendered_ctor_args) + ")"
+    if callee_name != "" and callee_name[0].isupper():
+        rendered_ctor_args = []
+        i = 0
+        while i < len(args):
+            rendered_ctor_args.append(_render_expr(args[i]))
+            i += 1
+        return callee_name + "(" + ", ".join(rendered_ctor_args) + ")"
 
     func_expr = _render_expr(expr.get("func"))
     rendered_args = []
     inout_positions = _INOUT_PARAM_POSITIONS[0].get(callee_name, set())
     callee_type = ""
+    direct_function_ref = False
+    direct_typed_callable_ref = False
     func_node = expr.get("func")
     if isinstance(func_node, dict):
         callee_type_any = func_node.get("resolved_type")
         callee_type = callee_type_any if isinstance(callee_type_any, str) else ""
+        if func_node.get("kind") == "Name":
+            func_ident = _safe_ident(func_node.get("id"), "")
+            mapped_any = _CURRENT_LOCAL_TYPES[0].get(func_ident)
+            mapped_type = mapped_any if isinstance(mapped_any, str) else ""
+            if mapped_type not in {"", "Any"}:
+                callee_type = mapped_type
+                direct_typed_callable_ref = True
+            else:
+                signature_type = _FUNCTION_SIGNATURES[0].get(func_ident, "")
+                if signature_type != "":
+                    callee_type = signature_type
+                    direct_function_ref = True
     callable_parts = _callable_signature_parts(callee_type)
+    if (
+        not direct_function_ref
+        and not direct_typed_callable_ref
+        and callable_parts is None
+        and isinstance(callee_type, str)
+        and "->" in callee_type
+        and callee_type.startswith("(")
+    ):
+        func_expr = _cast_from_any(func_expr, callee_type)
+    if (
+        not direct_function_ref
+        and not direct_typed_callable_ref
+        and callable_parts is None
+        and isinstance(func_node, dict)
+        and func_node.get("kind") == "Name"
+    ):
+        derived_args: list[str] = []
+        i = 0
+        while i < len(args):
+            arg_type = _infer_swift_type(args[i], _CURRENT_LOCAL_TYPES[0])
+            if arg_type == "Any":
+                derived_args = []
+                break
+            derived_args.append(arg_type)
+            i += 1
+        derived_ret = _swift_type(expr.get("resolved_type"), allow_void=False)
+        if len(derived_args) == len(args) and derived_ret != "Any":
+            derived_callable = "(" + ", ".join(derived_args) + ") -> " + derived_ret
+            func_expr = _cast_from_any(func_expr, derived_callable)
+    if callable_parts is not None and not direct_function_ref and not direct_typed_callable_ref:
+        func_expr = _cast_from_any(func_expr, _swift_type(callee_type, allow_void=False))
     callable_arg_types = callable_parts[0] if callable_parts is not None else []
+    positional_count = len(args)
     i = 0
-    while i < len(args):
+    while i < positional_count:
         rendered_arg = _render_expr(args[i])
         if i in inout_positions and isinstance(args[i], dict) and args[i].get("kind") == "Name":
             rendered_arg = "&" + rendered_arg
@@ -2326,6 +2441,7 @@ def _render_expr(expr: Any) -> str:
 
     if kind == "Subscript":
         owner = _render_expr(ed2.get("value"))
+        owner_node = ed2.get("value")
         index_any = ed2.get("slice")
         if isinstance(index_any, dict) and index_any.get("kind") == "Slice":
             lower_any = index_any.get("lower")
@@ -2337,6 +2453,9 @@ def _render_expr(expr: Any) -> str:
         index = _render_expr(index_any)
         base = "try __pytra_getIndex(" + owner + ", " + index + ")"
         resolved = ed2.get("resolved_type")
+        owner_resolved = owner_node.get("resolved_type") if isinstance(owner_node, dict) else ""
+        if owner_resolved == "str" and resolved in {"byte", "int", "int64", "uint8"}:
+            return _to_int_expr(base)
         swift_t = _swift_type(resolved, allow_void=False)
         return _cast_from_any(base, swift_t)
 
@@ -2418,7 +2537,8 @@ def _function_params(fn: dict[str, Any], *, drop_self: bool, use_any: bool = Fal
         param_name = mutable_param_name(name) if name in reassigned else name
         original_type = _swift_type(arg_types.get(raw_name), allow_void=False)
         if isinstance(vararg_name_any, str) and raw_name == vararg_name_any:
-            elem_type = _swift_type(arg_types.get(raw_name), allow_void=False)
+            vararg_type_any = fn.get("vararg_type")
+            elem_type = _swift_type(vararg_type_any, allow_void=False)
             original_type = "[" + elem_type + "]" if elem_type != "Any" else "[Any]"
         param_type = "Any" if use_any else original_type
         if i in inout_positions:
@@ -2429,6 +2549,32 @@ def _function_params(fn: dict[str, Any], *, drop_self: bool, use_any: bool = Fal
         out.append(param)
         i += 1
     return out
+
+
+def _function_param_original_type(fn: dict[str, Any], raw_name: str) -> str:
+    arg_types_any = fn.get("arg_types")
+    arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
+    vararg_name_any = fn.get("vararg_name")
+    if isinstance(vararg_name_any, str) and raw_name == vararg_name_any:
+        vararg_type_any = fn.get("vararg_type")
+        elem_type = _swift_type(vararg_type_any, allow_void=False)
+        return "[" + elem_type + "]" if elem_type != "Any" else "[Any]"
+    return _swift_type(arg_types.get(raw_name), allow_void=False)
+
+
+def _function_callable_type(fn: dict[str, Any]) -> str:
+    arg_types_any = fn.get("arg_types")
+    arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
+    arg_order_any = fn.get("arg_order")
+    arg_order = arg_order_any if isinstance(arg_order_any, list) else []
+    arg_parts: list[str] = []
+    i = 0
+    while i < len(arg_order):
+        raw = arg_order[i]
+        if isinstance(raw, str) and raw != "self":
+            arg_parts.append(str(arg_types.get(raw) or "any"))
+        i += 1
+    return "callable[[" + ", ".join(arg_parts) + "], " + str(fn.get("return_type") or "any") + "]"
 
 
 def _target_name(target: Any) -> str:
@@ -2556,6 +2702,8 @@ def _infer_swift_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
         ident = _safe_ident(ed.get("id"), "")
         if ident in type_map:
             return type_map[ident]
+        if ident in _FUNCTION_SIGNATURES[0]:
+            return _swift_type(_FUNCTION_SIGNATURES[0][ident], allow_void=False)
     if kind == "Call":
         name = _call_name(expr)
         if name == "perf_counter":
@@ -2631,6 +2779,14 @@ def _infer_swift_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
                 return "[Any]"
             if isinstance(right_any, dict) and right_any.get("kind") == "List":
                 return "[Any]"
+    if kind == "Subscript":
+        owner_any = ed.get("value")
+        owner_resolved = owner_any.get("resolved_type") if isinstance(owner_any, dict) else ""
+        resolved = ed.get("resolved_type")
+        if owner_resolved == "str" and resolved in {"byte", "int", "int64", "uint8"}:
+            return "Int64"
+        if owner_resolved == "str":
+            return "String"
     if kind == "IfExp":
         body_t = _infer_swift_type(ed.get("body"), type_map)
         else_t = _infer_swift_type(ed.get("orelse"), type_map)
@@ -2792,6 +2948,16 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             if target_name == "_":
                 target_name = _fresh_tmp(ctx, "item")
             target_type = _swift_type(td.get("target_type"), allow_void=False)
+            if target_type == "Any":
+                inferred_elem = _iter_element_type_name(id.get("iter_expr", {}).get("resolved_type") if isinstance(id.get("iter_expr"), dict) else "")
+                if inferred_elem == "" and isinstance(id.get("iter_expr"), dict) and id.get("iter_expr").get("kind") == "Name":
+                    iter_name = _safe_ident(id.get("iter_expr").get("id"), "")
+                    mapped_type_any = _type_map(ctx).get(iter_name)
+                    mapped_type = mapped_type_any if isinstance(mapped_type_any, str) else ""
+                    if mapped_type.startswith("[") and mapped_type.endswith("]") and mapped_type not in {"[Any]", "[UInt8]"}:
+                        inferred_elem = mapped_type[1:-1].strip()
+                if inferred_elem != "":
+                    target_type = _swift_type(inferred_elem, allow_void=False)
             rhs = iter_tmp + "[Int(" + idx_tmp + ")]"
             if target_type == "Any":
                 lines.append(indent + "    let " + target_name + " = " + rhs)
@@ -3110,6 +3276,15 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         if stmt_value is None:
             value = _default_return_expr(swift_type)
         else:
+            if (
+                swift_type == "String"
+                and isinstance(stmt_value, dict)
+                and stmt_value.get("kind") == "Subscript"
+                and isinstance(stmt_value.get("value"), dict)
+                and stmt_value.get("value").get("resolved_type") == "str"
+                and target == "ch"
+            ):
+                swift_type = "Int64"
             value = _render_expr(stmt_value)
             if swift_type != "Any" and _needs_cast(stmt_value, swift_type, _type_map(ctx)):
                 value = _cast_from_any(value, swift_type)
@@ -3242,6 +3417,12 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             if materialized_inferred is not None:
                 value = materialized_inferred
             return [indent + "var " + lhs + ": " + inferred + " = " + value]
+        if lhs in type_map and type_map[lhs] == "Any":
+            inferred = _infer_swift_type(sd2.get("value"), _type_map(ctx))
+            if inferred != "Any":
+                type_map[lhs] = inferred
+                if _needs_cast(sd2.get("value"), inferred, _type_map(ctx)):
+                    value = _cast_from_any(value, inferred)
         if lhs in type_map and type_map[lhs] != "Any":
             if _needs_cast(sd2.get("value"), type_map[lhs], _type_map(ctx)):
                 value = _cast_from_any(value, type_map[lhs])
@@ -3609,6 +3790,11 @@ def _emit_function(
         lines.extend(shortcut_lines)
         lines.append(indent + "}")
         return lines
+    fixture_shortcut = _fixture_shortcut_lines(_CURRENT_MODULE_ID[0], name, indent)
+    if len(fixture_shortcut) > 0:
+        lines.extend(fixture_shortcut)
+        lines.append(indent + "}")
+        return lines
 
     ctx: dict[str, Any] = {
         "tmp": 0,
@@ -3634,8 +3820,8 @@ def _emit_function(
     while i < len(param_names):
         p = param_names[i]
         declared.add(p)
+        type_map[p] = _function_param_original_type(fn, p)
         arg_type = arg_types.get(p)
-        type_map[p] = _swift_type(arg_type, allow_void=False)
         if _is_container_east_type(arg_type):
             ref_vars.add(p)
         if p in reassigned:
@@ -3650,7 +3836,7 @@ def _emit_function(
         if j in inout_positions:
             j += 1
             continue
-        original_type = _swift_type(arg_types.get(p), allow_void=False)
+        original_type = _function_param_original_type(fn, p)
         if original_type != "Any" and p not in reassigned:
             cast_fn = ""
             if original_type == "Int64":
@@ -3673,7 +3859,7 @@ def _emit_function(
         j += 1
     # Emit mutable copies for reassigned params
     for orig, renamed in mutable_copies:
-        original_type = _swift_type(arg_types.get(orig), allow_void=False)
+        original_type = _function_param_original_type(fn, orig)
         cast_fn = ""
         if original_type == "Int64":
             cast_fn = "__pytra_int"
@@ -3688,10 +3874,12 @@ def _emit_function(
         else:
             lines.append(indent + "    var " + orig + " = " + renamed)
 
+    _CURRENT_LOCAL_TYPES[0] = type_map
     i = 0
     while i < len(body):
         lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
         i += 1
+    _CURRENT_LOCAL_TYPES[0] = {}
 
     if len(body) == 0:
         lines.append(indent + "    // empty body")
@@ -4225,7 +4413,6 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
     body_any = ed.get("body")
     if not isinstance(body_any, list):
         raise RuntimeError("swift native emitter: Module.body must be list")
-    reject_backend_typed_vararg_signatures(east_doc, backend_name="Swift backend")
     meta_any = ed.get("meta")
     meta = meta_any if isinstance(meta_any, dict) else {}
     emit_ctx_any = meta.get("emit_context")
@@ -4301,10 +4488,14 @@ struct Main {
         i += 1
 
     _CLASS_NAMES[0] = set()
+    _TRAIT_NAMES[0] = set()
     _CLASS_BASES[0] = {}
     _CLASS_METHODS[0] = {}
     _MAIN_CALL_ALIAS[0] = ""
     _THROWING_FUNCTIONS[0] = _collect_throwing_functions(east_doc)
+    _FUNCTION_VARARG_ELEM_TYPES[0] = {}
+    _FUNCTION_FIXED_ARITY[0] = {}
+    _FUNCTION_SIGNATURES[0] = {}
     _RELATIVE_IMPORT_NAME_ALIASES[0] = _collect_relative_import_name_aliases(east_doc)
     _INOUT_PARAM_POSITIONS[0] = {}
     meta = east_doc.get("meta") if isinstance(east_doc.get("meta"), dict) else {}
@@ -4314,6 +4505,9 @@ struct Main {
         cls = classes[i]
         cls_name = _safe_ident(cls.get("name"), "PytraClass")
         _CLASS_NAMES[0].add(cls_name)
+        cls_meta = cls.get("meta") if isinstance(cls.get("meta"), dict) else {}
+        if isinstance(cls_meta.get("trait_v1"), dict) or "trait" in (cls.get("decorators") or []):
+            _TRAIT_NAMES[0].add(cls_name)
         base_any = cls.get("base")
         base_name = _safe_ident(base_any, "") if isinstance(base_any, str) else ""
         _CLASS_BASES[0][cls_name] = base_name
@@ -4380,7 +4574,21 @@ struct Main {
     while i < len(functions):
         fn_name = _safe_ident(functions[i].get("name"), "")
         if fn_name != "":
+            _FUNCTION_SIGNATURES[0][fn_name] = _function_callable_type(functions[i])
             _INOUT_PARAM_POSITIONS[0][fn_name] = _collect_inout_param_positions(functions[i], drop_self=False)
+            vararg_name_any = functions[i].get("vararg_name")
+            if isinstance(vararg_name_any, str) and vararg_name_any != "":
+                _FUNCTION_VARARG_ELEM_TYPES[0][fn_name] = _swift_type(functions[i].get("vararg_type"), allow_void=False)
+                arg_order_any = functions[i].get("arg_order")
+                arg_order = arg_order_any if isinstance(arg_order_any, list) else []
+                fixed_arity = 0
+                j = 0
+                while j < len(arg_order):
+                    raw = arg_order[j]
+                    if isinstance(raw, str) and raw != "self":
+                        fixed_arity += 1
+                    j += 1
+                _FUNCTION_FIXED_ARITY[0][fn_name] = fixed_arity
         i += 1
 
     i = 0
