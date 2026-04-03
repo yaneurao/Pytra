@@ -49,9 +49,12 @@ from toolchain2.emit.swift.emitter import emit_swift_module  # type: ignore
 from toolchain2.emit.rs.emitter import emit_rs_module  # type: ignore
 from toolchain2.emit.ts.emitter import emit_ts_module  # type: ignore
 from toolchain2.emit.dart.emitter import emit_dart_module  # type: ignore
+from toolchain2.emit.julia.emitter import emit_julia_module  # type: ignore
 from toolchain2.emit.ruby.emitter import transpile_to_ruby as emit_ruby_module  # type: ignore
 from toolchain2.emit.lua.emitter import emit_lua_module  # type: ignore
+from toolchain2.emit.nim.emitter import emit_nim_module  # type: ignore
 from toolchain2.emit.php.emitter import emit_php_module  # type: ignore
+from toolchain2.emit.zig.emitter import emit_zig_module  # type: ignore
 from toolchain2.link.linker import link_modules  # type: ignore
 from toolchain2.emit.cpp.runtime_paths import runtime_rel_tail_for_module  # type: ignore
 from toolchain2.optimize.optimizer import optimize_east3_document  # type: ignore
@@ -223,7 +226,7 @@ def _transpile_in_memory(
             _copy_java_runtime(emit_dir)
         elif target == "scala":
             for m in link_result.linked_modules:
-                if m.module_kind == "runtime" and (m.module_id.startswith("pytra.built_in.") or m.module_id.startswith("pytra.core.")):
+                if m.module_kind in ("runtime", "helper") and (m.module_id.startswith("pytra.built_in.") or m.module_id.startswith("pytra.core.")):
                     continue
                 _inject_basic_module_id(
                     m.east_doc,
@@ -239,7 +242,7 @@ def _transpile_in_memory(
             _copy_scala_runtime(emit_dir)
         elif target == "kotlin":
             for m in link_result.linked_modules:
-                if m.module_kind == "runtime" and (m.module_id.startswith("pytra.built_in.") or m.module_id.startswith("pytra.core.")):
+                if m.module_kind in ("runtime", "helper") and (m.module_id.startswith("pytra.built_in.") or m.module_id.startswith("pytra.core.")):
                     continue
                 _inject_basic_module_id(
                     m.east_doc,
@@ -330,6 +333,20 @@ def _transpile_in_memory(
                     code, encoding="utf-8"
                 )
             _copy_lua_runtime(emit_dir)
+        elif target == "julia":
+            for m in link_result.linked_modules:
+                _inject_basic_module_id(
+                    m.east_doc,
+                    m.module_id,
+                    is_entry=bool(getattr(m, "is_entry", False)),
+                )
+                code = emit_julia_module(m.east_doc)
+                if code.strip() == "":
+                    continue
+                emit_dir.joinpath(m.module_id.replace(".", "_") + ".jl").write_text(
+                    code, encoding="utf-8"
+                )
+            _copy_julia_runtime(emit_dir)
         elif target == "php":
             for m in link_result.linked_modules:
                 code = emit_php_module(m.east_doc)
@@ -339,6 +356,20 @@ def _transpile_in_memory(
                     code, encoding="utf-8"
                 )
             _copy_php_runtime(emit_dir)
+        elif target == "nim":
+            for m in link_result.linked_modules:
+                _inject_nim_emit_context(
+                    m.east_doc,
+                    m.module_id,
+                    is_entry=bool(getattr(m, "is_entry", False)),
+                )
+                code = emit_nim_module(m.east_doc)
+                if code.strip() == "":
+                    continue
+                out_path = emit_dir / _nim_rel_output_path(m.module_id)
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                out_path.write_text(code, encoding="utf-8")
+            _copy_nim_runtime(emit_dir)
         elif target == "swift":
             for m in link_result.linked_modules:
                 _inject_basic_module_id(
@@ -367,6 +398,30 @@ def _transpile_in_memory(
                 out_path.parent.mkdir(parents=True, exist_ok=True)
                 out_path.write_text(code, encoding="utf-8")
             _copy_dart_runtime(emit_dir)
+        elif target == "zig":
+            for m in link_result.linked_modules:
+                is_entry = bool(getattr(m, "is_entry", False))
+                if not is_entry and getattr(m, "module_kind", "") == "user":
+                    source_path = getattr(m, "source_path", "")
+                    input_path = getattr(m, "input_path", "")
+                    module_tail = getattr(m, "module_id", "").rsplit(".", 1)[-1]
+                    is_entry = (
+                        module_tail == case_path.stem
+                        or Path(source_path).stem == case_path.stem
+                        or Path(input_path).stem == case_path.stem
+                    )
+                _inject_zig_emit_context(
+                    m.east_doc,
+                    m.module_id,
+                    is_entry=is_entry,
+                )
+                code = emit_zig_module(m.east_doc)
+                if code.strip() == "":
+                    continue
+                out_path = emit_dir / _zig_rel_output_path(m.module_id)
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                out_path.write_text(code, encoding="utf-8")
+            _copy_zig_runtime(emit_dir)
         else:
             return False, f"unsupported target: {target}"
 
@@ -394,6 +449,17 @@ def _copy_scala_runtime(emit_dir: Path) -> None:
         shutil.copy2(f, dest)
 
 
+def _copy_julia_runtime(emit_dir: Path) -> None:
+    julia_runtime = ROOT / "src" / "runtime" / "julia"
+    if not julia_runtime.exists():
+        return
+    for f in sorted(julia_runtime.rglob("*.jl")):
+        rel = f.relative_to(julia_runtime)
+        dest = emit_dir / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(f, dest)
+
+
 def _copy_kotlin_runtime(emit_dir: Path) -> None:
     kotlin_runtime = ROOT / "src" / "runtime" / "kotlin"
     if not kotlin_runtime.exists():
@@ -408,6 +474,20 @@ def _dart_rel_output_path(module_id: str) -> Path:
     if rel_module.startswith("pytra."):
         rel_module = rel_module[len("pytra."):]
     return Path(rel_module.replace(".", "/") + ".dart")
+
+
+def _nim_rel_output_path(module_id: str) -> Path:
+    rel_module = module_id
+    if rel_module.startswith("pytra."):
+        rel_module = rel_module[len("pytra."):]
+    return Path(rel_module.replace(".", "/") + ".nim")
+
+
+def _zig_rel_output_path(module_id: str) -> Path:
+    rel_module = module_id
+    if rel_module.startswith("pytra."):
+        rel_module = rel_module[len("pytra."):]
+    return Path(rel_module.replace(".", "/") + ".zig")
 
 
 def _inject_dart_emit_context(
@@ -451,6 +531,46 @@ def _inject_basic_module_id(
     emit_context["is_entry"] = is_entry
 
 
+def _inject_nim_emit_context(
+    east_doc: dict[str, object],
+    module_id: str,
+    *,
+    is_entry: bool,
+) -> None:
+    meta = east_doc.get("meta")
+    if not isinstance(meta, dict):
+        meta = {}
+        east_doc["meta"] = meta
+    rel_path = _nim_rel_output_path(module_id)
+    depth = len(rel_path.parts) - 1
+    root_rel_prefix = "../" * depth if depth > 0 else ""
+    meta["emit_context"] = {
+        "module_id": module_id,
+        "root_rel_prefix": root_rel_prefix,
+        "is_entry": is_entry,
+    }
+
+
+def _inject_zig_emit_context(
+    east_doc: dict[str, object],
+    module_id: str,
+    *,
+    is_entry: bool,
+) -> None:
+    meta = east_doc.get("meta")
+    if not isinstance(meta, dict):
+        meta = {}
+        east_doc["meta"] = meta
+    rel_path = _zig_rel_output_path(module_id)
+    depth = len(rel_path.parts) - 1
+    root_rel_prefix = "../" * depth if depth > 0 else "./"
+    meta["emit_context"] = {
+        "module_id": module_id,
+        "root_rel_prefix": root_rel_prefix,
+        "is_entry": is_entry,
+    }
+
+
 def _copy_dart_runtime(emit_dir: Path) -> None:
     dart_runtime = ROOT / "src" / "runtime" / "dart"
     if not dart_runtime.exists():
@@ -470,6 +590,25 @@ def _copy_rs_runtime(emit_dir: Path) -> None:
         if bucket_dir.exists():
             for rs_file in bucket_dir.glob("*.rs"):
                 shutil.copy2(rs_file, emit_dir / rs_file.name)
+
+
+def _copy_zig_runtime(emit_dir: Path) -> None:
+    zig_runtime = ROOT / "src" / "runtime" / "zig"
+    if not zig_runtime.exists():
+        return
+    py_runtime_text = ""
+    py_runtime_src = zig_runtime / "built_in" / "py_runtime.zig"
+    if py_runtime_src.exists():
+        py_runtime_text = py_runtime_src.read_text(encoding="utf-8")
+    for zig_file in sorted(zig_runtime.rglob("*.zig")):
+        rel = zig_file.relative_to(zig_runtime)
+        dest = emit_dir / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(zig_file, dest)
+    if py_runtime_text != "":
+        core_dst = emit_dir / "core" / "py_runtime.zig"
+        core_dst.parent.mkdir(parents=True, exist_ok=True)
+        core_dst.write_text(py_runtime_text, encoding="utf-8")
 
 
 def _copy_java_runtime(emit_dir: Path) -> None:
@@ -622,6 +761,20 @@ def _copy_php_runtime(emit_dir: Path) -> None:
             dest_bucket.mkdir(parents=True, exist_ok=True)
             for php_file in bucket_dir.glob("*.php"):
                 shutil.copy2(php_file, dest_bucket / php_file.name)
+
+
+def _copy_nim_runtime(emit_dir: Path) -> None:
+    """Copy Nim runtime files to emit directory."""
+    nim_runtime = ROOT / "src" / "runtime" / "nim"
+    built_in_dir = nim_runtime / "built_in"
+    if built_in_dir.exists():
+        py_runtime = built_in_dir / "py_runtime.nim"
+        if py_runtime.exists():
+            shutil.copy2(py_runtime, emit_dir / "py_runtime.nim")
+    std_dir = nim_runtime / "std"
+    if std_dir.exists():
+        for nim_file in sorted(std_dir.glob("*_native.nim")):
+            shutil.copy2(nim_file, emit_dir / nim_file.name)
 
 
 def _emit_helper_cpp(m, emit_dir: Path) -> None:
@@ -878,6 +1031,16 @@ def _run_target(
             cwd=work_dir, env=env, timeout_sec=timeout_sec,
         )
 
+    if target == "julia":
+        stem = case_path.stem
+        entry_jl = emit_dir / (stem + ".jl")
+        if not entry_jl.exists():
+            return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_jl}")
+        return run_shell(
+            f"julia {shlex.quote(str(entry_jl))}",
+            cwd=work_dir, env=env, timeout_sec=timeout_sec,
+        )
+
     if target == "dart":
         stem = case_path.stem
         entry_dart = emit_dir / (stem + ".dart")
@@ -886,6 +1049,51 @@ def _run_target(
         return run_shell(
             f"dart run {shlex.quote(str(entry_dart))}",
             cwd=work_dir, env=env, timeout_sec=timeout_sec,
+        )
+
+    if target == "nim":
+        stem = case_path.stem
+        entry_nim = emit_dir / (stem + ".nim")
+        if not entry_nim.exists():
+            return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_nim}")
+        exe_path = emit_dir / (stem + "_nim.out")
+        nimcache_path = emit_dir / ("nimcache_" + stem)
+        return run_shell(
+            "nim c --hints:off --verbosity:0 --warning[UnusedImport]:off --passC:-w "
+            + shlex.quote(f"--nimcache:{nimcache_path}")
+            + " "
+            + shlex.quote(f"-o:{exe_path}")
+            + " -r "
+            + shlex.quote(str(entry_nim)),
+            cwd=work_dir,
+            env=env,
+            timeout_sec=timeout_sec,
+        )
+
+    if target == "zig":
+        stem = case_path.stem
+        entry_zig = emit_dir / (stem + ".zig")
+        if not entry_zig.exists():
+            return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_zig}")
+        exe_path = emit_dir / (stem + "_zig.out")
+        build = run_shell(
+            "zig build-exe "
+            + shlex.quote(str(entry_zig))
+            + " -O ReleaseFast -I "
+            + shlex.quote(str(emit_dir))
+            + " -femit-bin="
+            + shlex.quote(str(exe_path)),
+            cwd=work_dir,
+            env=env,
+            timeout_sec=timeout_sec,
+        )
+        if build.returncode != 0:
+            return build
+        return run_shell(
+            shlex.quote(str(exe_path)),
+            cwd=work_dir,
+            env=env,
+            timeout_sec=timeout_sec,
         )
 
     return subprocess.CompletedProcess("", 1, "", f"unsupported target: {target}")
