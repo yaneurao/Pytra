@@ -57,6 +57,7 @@ class RuntimeMapping:
     call_adapters: dict[str, str] = field(default_factory=dict)
     non_native_modules: set[str] = field(default_factory=set)
     exception_types: set[str] = field(default_factory=set)
+    predicate_types: dict[str, str] = field(default_factory=dict)
 
     def is_implicit_cast(self, from_type: str, to_type: str) -> bool:
         return (from_type + "->" + to_type) in self.implicit_promotions
@@ -82,6 +83,7 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
     call_adapters: dict[str, str] = {}
     non_native_modules: set[str] = set()
     exception_types: set[str] = set()
+    predicate_types: dict[str, str] = {}
 
     prefix = raw_obj.get_str("builtin_prefix")
     if prefix is not None:
@@ -152,6 +154,12 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
             if isinstance(item, str):
                 exception_types.add(item)
 
+    predicate_types_obj = raw_obj.get_obj("predicate_types")
+    if predicate_types_obj is not None:
+        for key, value in predicate_types_obj.raw.items():
+            if isinstance(key, str) and isinstance(value, str):
+                predicate_types[key] = value
+
     return RuntimeMapping(
         builtin_prefix=prefix_str,
         calls=calls,
@@ -164,6 +172,7 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
         call_adapters=call_adapters,
         non_native_modules=non_native_modules,
         exception_types=exception_types,
+        predicate_types=predicate_types,
     )
 
 

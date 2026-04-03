@@ -49,47 +49,6 @@ _UNARY_TEXT = {
     "Invert": "~",
 }
 
-_EXCEPTION_CTOR_TEXT = {
-    "Exception": "__pytra_exception",
-    "IndexError": "__pytra_index_error",
-    "ValueError": "__pytra_value_error",
-    "RuntimeError": "__pytra_runtime_error",
-    "TypeError": "__pytra_type_error",
-}
-
-_EXCEPTION_TYPE_TEXT = {
-    "Exception": "PytraException",
-    "IndexError": "BoundsError",
-    "ValueError": "PytraValueError",
-    "RuntimeError": "PytraRuntimeError",
-    "TypeError": "PytraTypeError",
-}
-
-_ISINSTANCE_TYPE_TEXT = {
-    "PYTRA_TID_BOOL": "Bool",
-    "PYTRA_TID_DICT": "AbstractDict",
-    "PYTRA_TID_FLOAT": "AbstractFloat",
-    "PYTRA_TID_FLOAT64": "AbstractFloat",
-    "PYTRA_TID_INT": "Integer",
-    "PYTRA_TID_INT64": "Integer",
-    "PYTRA_TID_LIST": "AbstractVector",
-    "PYTRA_TID_SET": "AbstractSet",
-    "PYTRA_TID_STR": "AbstractString",
-    "PYTRA_TID_STRING": "AbstractString",
-    "PYTRA_TID_TUPLE": "Tuple",
-    "bool": "Bool",
-    "dict": "AbstractDict",
-    "float": "AbstractFloat",
-    "float64": "AbstractFloat",
-    "int": "Integer",
-    "int64": "Integer",
-    "list": "AbstractVector",
-    "set": "AbstractSet",
-    "str": "AbstractString",
-    "string": "AbstractString",
-    "tuple": "Tuple",
-}
-
 _JULIA_RESERVED_NAMES = {
     "baremodule",
     "begin",
@@ -847,8 +806,10 @@ class JuliaSubsetRenderer:
         if kind == "IsInstance":
             value = self._render_expr(node.get("value"))
             expected_name = _isinstance_expected_name(node)
-            mapped = _ISINSTANCE_TYPE_TEXT.get(expected_name)
-            if mapped is not None:
+            mapped = self.mapping.predicate_types.get(expected_name, "")
+            if mapped == "":
+                mapped = self.mapping.types.get(expected_name, "")
+            if mapped != "":
                 return "(isa(" + value + ", " + mapped + "))"
             if expected_name in self.class_names or expected_name in self.exception_class_names:
                 return "(isa(" + value + ", " + expected_name + "))"
@@ -1002,10 +963,11 @@ class JuliaSubsetRenderer:
                 return "__pytra_bytes(" + args[0] + ")"
             if func == "reversed" and len(args) == 1:
                 return "reverse(" + args[0] + ")"
-            if func in _EXCEPTION_CTOR_TEXT:
+            mapped_ctor = self.mapping.calls.get(func, "")
+            if mapped_ctor != "":
                 if len(args) == 0:
-                    return _EXCEPTION_CTOR_TEXT[func] + "()"
-                return _EXCEPTION_CTOR_TEXT[func] + "(" + ", ".join(args) + ")"
+                    return mapped_ctor + "()"
+                return mapped_ctor + "(" + ", ".join(args) + ")"
             if func in self.exception_class_names:
                 return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
             if func in self.class_names:
@@ -1331,8 +1293,9 @@ class JuliaSubsetRenderer:
                     continue
                 type_node = handler.get("type")
                 type_name = self._render_expr(type_node) if isinstance(type_node, dict) else ""
-                if type_name in _EXCEPTION_TYPE_TEXT:
-                    type_name = _EXCEPTION_TYPE_TEXT[type_name]
+                mapped_type_name = self.mapping.predicate_types.get(type_name, "")
+                if mapped_type_name != "":
+                    type_name = mapped_type_name
                 cond = "true" if type_name == "" else err_name + " isa " + type_name
                 if index == 0:
                     self._emit("if " + cond)
