@@ -1036,6 +1036,8 @@ def _build_pipeline(
         return _emit_ts(linked_dir.joinpath("manifest.json"), output_dir, strip_types=(target == "js"))
     if target == "nim":
         return _emit_nim(linked_dir.joinpath("manifest.json"), output_dir)
+    if target == "powershell" or target == "ps1":
+        return _emit_target_subprocess("powershell", linked_dir.joinpath("manifest.json"), output_dir)
     return _emit_cpp(linked_dir.joinpath("manifest.json"), output_dir)
 
 

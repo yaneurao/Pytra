@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "language": "ps1",
+
+  "types": {
+    "int8": "",
+    "uint8": "",
+    "int16": "",
+    "uint16": "",
+    "int32": "",
+    "uint32": "",
+    "int64": "",
+    "uint64": "",
+    "float32": "",
+    "float64": "",
+    "bool": "",
+    "str": "",
+    "None": "",
+    "Any": "",
+    "Path": ""
+  },
+
+  "generic_types": {
+    "list": "",
+    "dict": "",
+    "set": "",
+    "tuple": "",
+    "optional": ""
+  },
+
+  "operators": {
+    "bin": {
+      "Add": "+",
+      "Sub": "-",
+      "Mult": "*",
+      "Div": "/",
+      "Mod": "%",
+      "FloorDiv": "__FLOORDIV__",
+      "Pow": "__POW__",
+      "BitAnd": "-band",
+      "BitOr": "-bor",
+      "BitXor": "-bxor",
+      "LShift": "-shl",
+      "RShift": "-shr"
+    },
+    "cmp": {
+      "Eq": "-eq",
+      "NotEq": "-ne",
+      "Lt": "-lt",
+      "LtE": "-le",
+      "Gt": "-gt",
+      "GtE": "-ge",
+      "Is": "-eq",
+      "IsNot": "-ne"
+    },
+    "bool": {
+      "And": "-and",
+      "Or": "-or"
+    },
+    "unary": {
+      "USub": "-",
+      "UAdd": "+",
+      "Not": "-not ",
+      "Invert": "-bnot "
+    },
+    "aug": {
+      "Add": "+=",
+      "Sub": "-=",
+      "Mult": "*=",
+      "Div": "/=",
+      "Mod": "%="
+    }
+  },
+
+  "syntax": {
+    "if": "if ({cond}) {",
+    "elif": "} elseif ({cond}) {",
+    "else": "} else {",
+    "while": "while ({cond}) {",
+    "block_close": "}",
+    "return": "return",
+    "break": "break",
+    "continue": "continue",
+    "comment_prefix": "#"
+  },
+
+  "lowering": {
+    "tuple_unpack_style": "individual_temps",
+    "container_covariance": false,
+    "closure_style": "closure_syntax",
+    "with_style": "try_finally",
+    "property_style": "field_access",
+    "swap_style": "temp_var",
+    "none_literal": "$null",
+    "bool_literals": ["$true", "$false"],
+    "self_keyword": "self",
+    "type_position": "none",
+    "condition_parens": true,
+    "block_braces": "braces",
+    "stmt_terminator": "",
+    "string_type_owned": true,
+    "exception_style": "native_throw"
+  }
+}

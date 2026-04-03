@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 from toolchain2.emit.common.cli_runner import run_emit_cli
-from toolchain2.emit.powershell.emitter import emit_ps
+from toolchain2.emit.powershell.emitter import emit_ps1_module
 
 
 def main() -> int:
     import sys
-    return run_emit_cli(emit_ps, sys.argv[1:], default_ext=".ps1")
+    return run_emit_cli(emit_ps1_module, sys.argv[1:], default_ext=".ps1")
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-02
+最終更新: 2026-04-03
 
 ## 運用ルール
 
@@ -31,9 +31,12 @@
 
 ### P1-PS1-EMITTER: PowerShell emitter を toolchain2 に新規実装する
 
-1. [ ] [ID: P1-PS1-EMITTER-S1] `src/toolchain2/emit/powershell/` に PowerShell emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/powershell/` と TS emitter を参考にする
-2. [ ] [ID: P1-PS1-EMITTER-S2] `src/runtime/powershell/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
-3. [ ] [ID: P1-PS1-EMITTER-S3] fixture 全件の PowerShell emit 成功を確認する
+1. [x] [ID: P1-PS1-EMITTER-S1] `src/toolchain2/emit/powershell/` に PowerShell emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/powershell/` と TS emitter を参考にする
+   - 完了: `emitter.py`, `types.py`, `__init__.py`, `cli.py` を新規作成。スタンドアロン関数ベース構成
+2. [x] [ID: P1-PS1-EMITTER-S2] `src/runtime/powershell/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
+   - 完了: `src/runtime/powershell/mapping.json` 新規作成
+3. [x] [ID: P1-PS1-EMITTER-S3] fixture 全件の PowerShell emit 成功を確認する
+   - 完了: test/fixture/east3/ 145件全件 emit エラーなし
 4. [ ] [ID: P1-PS1-EMITTER-S4] PowerShell runtime を toolchain2 の emit 出力と整合させる
 5. [ ] [ID: P1-PS1-EMITTER-S5] fixture の PowerShell run parity を通す（`pwsh -File`）
 6. [ ] [ID: P1-PS1-EMITTER-S6] stdlib の PowerShell parity を通す（`--case-root stdlib`）
@@ -41,4 +44,5 @@
 
 ### P2-PS1-LINT: emitter hardcode lint の PowerShell 違反を解消する
 
-1. [ ] [ID: P2-PS1-LINT-S1] `check_emitter_hardcode_lint.py --lang ps1` で全カテゴリ 0 件になることを確認する
+1. [x] [ID: P2-PS1-LINT-S1] `check_emitter_hardcode_lint.py --lang ps1` で全カテゴリ 0 件になることを確認する
+   - 完了: 全8カテゴリ 🟩 PASS (0 violations)

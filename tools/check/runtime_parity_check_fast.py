@@ -55,6 +55,7 @@ from toolchain2.emit.lua.emitter import emit_lua_module  # type: ignore
 from toolchain2.emit.nim.emitter import emit_nim_module  # type: ignore
 from toolchain2.emit.php.emitter import emit_php_module  # type: ignore
 from toolchain2.emit.zig.emitter import emit_zig_module  # type: ignore
+from toolchain2.emit.powershell.emitter import emit_ps1_module  # type: ignore
 from toolchain2.link.linker import link_modules  # type: ignore
 from toolchain2.emit.cpp.runtime_paths import runtime_rel_tail_for_module  # type: ignore
 from toolchain2.optimize.optimizer import optimize_east3_document  # type: ignore
@@ -335,7 +336,7 @@ def _transpile_in_memory(
             _copy_lua_runtime(emit_dir)
         elif target == "julia":
             for m in link_result.linked_modules:
-                _inject_basic_module_id(
+                _inject_julia_emit_context(
                     m.east_doc,
                     m.module_id,
                     is_entry=bool(getattr(m, "is_entry", False)),
@@ -343,9 +344,9 @@ def _transpile_in_memory(
                 code = emit_julia_module(m.east_doc)
                 if code.strip() == "":
                     continue
-                emit_dir.joinpath(m.module_id.replace(".", "_") + ".jl").write_text(
-                    code, encoding="utf-8"
-                )
+                out_path = emit_dir / _julia_rel_output_path(m.module_id)
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                out_path.write_text(code, encoding="utf-8")
             _copy_julia_runtime(emit_dir)
         elif target == "php":
             for m in link_result.linked_modules:
@@ -422,6 +423,15 @@ def _transpile_in_memory(
                 out_path.parent.mkdir(parents=True, exist_ok=True)
                 out_path.write_text(code, encoding="utf-8")
             _copy_zig_runtime(emit_dir)
+        elif target == "ps1":
+            for m in link_result.linked_modules:
+                code = emit_ps1_module(m.east_doc)
+                if code.strip() == "":
+                    continue
+                emit_dir.joinpath(m.module_id.replace(".", "_") + ".ps1").write_text(
+                    code, encoding="utf-8"
+                )
+            _copy_ps1_runtime(emit_dir)
         else:
             return False, f"unsupported target: {target}"
 
@@ -488,6 +498,13 @@ def _zig_rel_output_path(module_id: str) -> Path:
     if rel_module.startswith("pytra."):
         rel_module = rel_module[len("pytra."):]
     return Path(rel_module.replace(".", "/") + ".zig")
+
+
+def _julia_rel_output_path(module_id: str) -> Path:
+    rel_module = module_id
+    if rel_module.startswith("pytra."):
+        rel_module = rel_module[len("pytra."):]
+    return Path(rel_module.replace(".", "/") + ".jl")
 
 
 def _inject_dart_emit_context(
@@ -562,6 +579,26 @@ def _inject_zig_emit_context(
         meta = {}
         east_doc["meta"] = meta
     rel_path = _zig_rel_output_path(module_id)
+    depth = len(rel_path.parts) - 1
+    root_rel_prefix = "../" * depth if depth > 0 else "./"
+    meta["emit_context"] = {
+        "module_id": module_id,
+        "root_rel_prefix": root_rel_prefix,
+        "is_entry": is_entry,
+    }
+
+
+def _inject_julia_emit_context(
+    east_doc: dict[str, object],
+    module_id: str,
+    *,
+    is_entry: bool,
+) -> None:
+    meta = east_doc.get("meta")
+    if not isinstance(meta, dict):
+        meta = {}
+        east_doc["meta"] = meta
+    rel_path = _julia_rel_output_path(module_id)
     depth = len(rel_path.parts) - 1
     root_rel_prefix = "../" * depth if depth > 0 else "./"
     meta["emit_context"] = {
@@ -775,6 +812,18 @@ def _copy_nim_runtime(emit_dir: Path) -> None:
     if std_dir.exists():
         for nim_file in sorted(std_dir.glob("*_native.nim")):
             shutil.copy2(nim_file, emit_dir / nim_file.name)
+
+
+def _copy_ps1_runtime(emit_dir: Path) -> None:
+    """Copy PowerShell runtime files to emit directory."""
+    ps1_runtime = ROOT / "src" / "runtime" / "powershell"
+    for bucket in ("built_in", "std"):
+        bucket_dir = ps1_runtime / bucket
+        if bucket_dir.exists():
+            dest_bucket = emit_dir / bucket
+            dest_bucket.mkdir(parents=True, exist_ok=True)
+            for ps1_file in bucket_dir.glob("*.ps1"):
+                shutil.copy2(ps1_file, dest_bucket / ps1_file.name)
 
 
 def _emit_helper_cpp(m, emit_dir: Path) -> None:
@@ -1068,6 +1117,16 @@ def _run_target(
             cwd=work_dir,
             env=env,
             timeout_sec=timeout_sec,
+        )
+
+    if target == "ps1":
+        stem = case_path.stem
+        entry_ps1 = emit_dir / (stem + ".ps1")
+        if not entry_ps1.exists():
+            return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_ps1}")
+        return run_shell(
+            f"pwsh -NonInteractive -File {shlex.quote(str(entry_ps1))}",
+            cwd=work_dir, env=env, timeout_sec=timeout_sec,
         )
 
     if target == "zig":

@@ -26,7 +26,7 @@ ALL_LANGS_ORDERED: list[tuple[str, str]] = [
     ("cpp",    "cpp"),
     ("rs",     "rs"),
     ("cs",     "cs"),
-    ("ps1",    "ps1"),
+    ("ps1",    "powershell"),
     ("js",     "js"),
     ("ts",     "ts"),
     ("dart",   "dart"),
@@ -297,7 +297,7 @@ def _check_skip_pure_python(lang_key: str) -> list[tuple[str, str, Path, int, st
         "swift": "swift", "dart": "dart", "ruby": "ruby",
         "lua": "lua", "scala": "scala", "php": "php",
         "nim": "nim", "julia": "julia", "zig": "zig",
-        "ps1": "ps1", "js": "ts",
+        "ps1": "powershell", "js": "ts",
     }
     runtime_dir = lang_dir_map.get(lang_key, lang_key)
     mapping_path = ROOT / "src" / "runtime" / runtime_dir / "mapping.json"
