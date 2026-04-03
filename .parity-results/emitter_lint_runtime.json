@@ -1,0 +1,5577 @@
+{
+  "timestamp": "2026-04-03 20:17:55",
+  "hits": [
+    {
+      "lang": "cpp",
+      "cat": "rt:type_id",
+      "file": "src/runtime/cpp/core/py_runtime.h",
+      "lineno": 31,
+      "line": "bool py_tid_is_subtype(int64 actual_type_id, int64 expected_type_id);"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:type_id",
+      "file": "src/runtime/cpp/core/py_runtime.h",
+      "lineno": 32,
+      "line": "bool py_tid_issubclass(int64 actual_type_id, int64 expected_type_id);"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:type_id",
+      "file": "src/runtime/cpp/core/py_runtime.h",
+      "lineno": 33,
+      "line": "bool py_tid_isinstance(const object& value, int64 expected_type_id);"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:type_id",
+      "file": "src/runtime/cpp/core/py_runtime.h",
+      "lineno": 34,
+      "line": "int64 py_tid_register_class_type(int64 base_type_id);"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1201,
+      "line": "pub const PYTRA_TID_NONE: i64 = 0;"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1202,
+      "line": "pub const PYTRA_TID_BOOL: i64 = 1;"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1203,
+      "line": "pub const PYTRA_TID_INT: i64 = 2;"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1204,
+      "line": "pub const PYTRA_TID_FLOAT: i64 = 3;"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1205,
+      "line": "pub const PYTRA_TID_STR: i64 = 4;"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1206,
+      "line": "pub const PYTRA_TID_LIST: i64 = 5;"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1207,
+      "line": "pub const PYTRA_TID_DICT: i64 = 6;"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1208,
+      "line": "pub const PYTRA_TID_SET: i64 = 7;"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1209,
+      "line": "pub const PYTRA_TID_OBJECT: i64 = 8;"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1225,
+      "line": "PYTRA_TID_NONE,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1227,
+      "line": "order: PYTRA_TID_NONE,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1228,
+      "line": "min: PYTRA_TID_NONE,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1229,
+      "line": "max: PYTRA_TID_NONE,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1233,
+      "line": "PYTRA_TID_BOOL,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1235,
+      "line": "order: PYTRA_TID_BOOL,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1236,
+      "line": "min: PYTRA_TID_BOOL,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1237,
+      "line": "max: PYTRA_TID_BOOL,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1241,
+      "line": "PYTRA_TID_INT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1243,
+      "line": "order: PYTRA_TID_INT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1244,
+      "line": "min: PYTRA_TID_INT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1245,
+      "line": "max: PYTRA_TID_INT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1249,
+      "line": "PYTRA_TID_FLOAT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1251,
+      "line": "order: PYTRA_TID_FLOAT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1252,
+      "line": "min: PYTRA_TID_FLOAT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1253,
+      "line": "max: PYTRA_TID_FLOAT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1257,
+      "line": "PYTRA_TID_STR,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1259,
+      "line": "order: PYTRA_TID_STR,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1260,
+      "line": "min: PYTRA_TID_STR,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1261,
+      "line": "max: PYTRA_TID_STR,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1265,
+      "line": "PYTRA_TID_LIST,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1267,
+      "line": "order: PYTRA_TID_LIST,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1268,
+      "line": "min: PYTRA_TID_LIST,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1269,
+      "line": "max: PYTRA_TID_LIST,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1273,
+      "line": "PYTRA_TID_DICT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1275,
+      "line": "order: PYTRA_TID_DICT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1276,
+      "line": "min: PYTRA_TID_DICT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1277,
+      "line": "max: PYTRA_TID_DICT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1281,
+      "line": "PYTRA_TID_SET,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1283,
+      "line": "order: PYTRA_TID_SET,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1284,
+      "line": "min: PYTRA_TID_SET,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1285,
+      "line": "max: PYTRA_TID_SET,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1289,
+      "line": "PYTRA_TID_OBJECT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1291,
+      "line": "order: PYTRA_TID_OBJECT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1292,
+      "line": "min: PYTRA_TID_OBJECT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1293,
+      "line": "max: PYTRA_TID_OBJECT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1328,
+      "line": "PYTRA_TID_BOOL"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1333,
+      "line": "PYTRA_TID_INT"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1338,
+      "line": "PYTRA_TID_FLOAT"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1343,
+      "line": "PYTRA_TID_STR"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1348,
+      "line": "PYTRA_TID_LIST"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1353,
+      "line": "PYTRA_TID_DICT"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1358,
+      "line": "PYTRA_TID_SET"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1365,
+      "line": "None => PYTRA_TID_NONE,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1372,
+      "line": "PyAny::Int(_) => PYTRA_TID_INT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1373,
+      "line": "PyAny::Float(_) => PYTRA_TID_FLOAT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1374,
+      "line": "PyAny::Bool(_) => PYTRA_TID_BOOL,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1375,
+      "line": "PyAny::Str(_) => PYTRA_TID_STR,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1376,
+      "line": "PyAny::List(_) => PYTRA_TID_LIST,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1377,
+      "line": "PyAny::Dict(_) => PYTRA_TID_DICT,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1378,
+      "line": "PyAny::Set(_) => PYTRA_TID_SET,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1379,
+      "line": "PyAny::None => PYTRA_TID_NONE,"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:type_id",
+      "file": "src/runtime/rs/built_in/py_runtime.rs",
+      "lineno": 1420,
+      "line": "PYTRA_TID_NONE"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:type_id",
+      "file": "src/runtime/powershell/built_in/py_runtime.ps1",
+      "lineno": 505,
+      "line": "function __pytra_isinstance {"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:type_id",
+      "file": "src/runtime/powershell/built_in/py_runtime.ps1",
+      "lineno": 509,
+      "line": "if ($type_name -eq \"PYTRA_TID_BOOL\") { $type_name = \"bool\" }"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:type_id",
+      "file": "src/runtime/powershell/built_in/py_runtime.ps1",
+      "lineno": 510,
+      "line": "elseif ($type_name -eq \"PYTRA_TID_INT\") { $type_name = \"int\" }"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:type_id",
+      "file": "src/runtime/powershell/built_in/py_runtime.ps1",
+      "lineno": 511,
+      "line": "elseif ($type_name -eq \"PYTRA_TID_FLOAT\") { $type_name = \"float\" }"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:type_id",
+      "file": "src/runtime/powershell/built_in/py_runtime.ps1",
+      "lineno": 512,
+      "line": "elseif ($type_name -eq \"PYTRA_TID_STR\") { $type_name = \"str\" }"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:type_id",
+      "file": "src/runtime/powershell/built_in/py_runtime.ps1",
+      "lineno": 513,
+      "line": "elseif ($type_name -eq \"PYTRA_TID_LIST\") { $type_name = \"list\" }"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:type_id",
+      "file": "src/runtime/powershell/built_in/py_runtime.ps1",
+      "lineno": 514,
+      "line": "elseif ($type_name -eq \"PYTRA_TID_DICT\") { $type_name = \"dict\" }"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:type_id",
+      "file": "src/runtime/powershell/built_in/py_runtime.ps1",
+      "lineno": 515,
+      "line": "elseif ($type_name -eq \"PYTRA_TID_NONE\") { return ($obj -eq $null) }"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:type_id",
+      "file": "src/runtime/go/built_in/py_runtime.go",
+      "lineno": 248,
+      "line": "func pytra_isinstance(actualTypeId int64, tid int64) bool {"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:type_id",
+      "file": "src/runtime/go/built_in/py_runtime.go",
+      "lineno": 302,
+      "line": "func py_runtime_object_type_id(value any) int64 {"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:type_id",
+      "file": "src/runtime/lua/built_in/py_runtime.lua",
+      "lineno": 11,
+      "line": "PYTRA_TID_NONE = 0"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:type_id",
+      "file": "src/runtime/lua/built_in/py_runtime.lua",
+      "lineno": 12,
+      "line": "PYTRA_TID_BOOL = 1"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:type_id",
+      "file": "src/runtime/lua/built_in/py_runtime.lua",
+      "lineno": 13,
+      "line": "PYTRA_TID_INT = 2"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:type_id",
+      "file": "src/runtime/lua/built_in/py_runtime.lua",
+      "lineno": 14,
+      "line": "PYTRA_TID_FLOAT = 3"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:type_id",
+      "file": "src/runtime/lua/built_in/py_runtime.lua",
+      "lineno": 15,
+      "line": "PYTRA_TID_STR = 4"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:type_id",
+      "file": "src/runtime/lua/built_in/py_runtime.lua",
+      "lineno": 16,
+      "line": "PYTRA_TID_LIST = 5"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:type_id",
+      "file": "src/runtime/lua/built_in/py_runtime.lua",
+      "lineno": 17,
+      "line": "PYTRA_TID_DICT = 6"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:type_id",
+      "file": "src/runtime/lua/built_in/py_runtime.lua",
+      "lineno": 18,
+      "line": "PYTRA_TID_SET = 7"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:type_id",
+      "file": "src/runtime/lua/built_in/py_runtime.lua",
+      "lineno": 19,
+      "line": "PYTRA_TID_OBJECT = 8"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"ceil\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"cos\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"e\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"exp\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"fabs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"floor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log10\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.e\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.pi\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"open\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"path.abspath\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pi\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pow\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_dumps\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_dumps_jv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_float_from_str\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_floordiv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_len\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_loads\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_loads_arr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_loads_obj\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_write_text\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sin\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sqrt\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"std::runtime_error\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.index\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.rfind\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cpp",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cpp/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"SystemExit\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"cast\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"endswith\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"enumerate\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"index\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isalpha\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isdigit\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"items\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"lstrip\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.e\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.pi\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"max\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"min\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"perf_counter\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_bool\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_chr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_float_from_str\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_floordiv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_in\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_isalpha\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_isdigit\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_len\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_mod\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_ord\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_slice\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pytra_isinstance\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"replace\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"reversed\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"rstrip\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"startswith\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.rfind\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "cs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/cs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"strip\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"abs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"acos\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"asin\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"atan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"atan2\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bool\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"ceil\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"cos\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"exp\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"fabs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"float\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"floor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"hypot\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"int\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isfinite\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isinf\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isnan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log10\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log2\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"makedirs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.e\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.inf\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.nan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.pi\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.tau\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"open\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"perf_counter\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pow\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"print\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_bool\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_chr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_float_from_str\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_floordiv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_in\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_len\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_ord\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_slice\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_truthy\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pyopen\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"round\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sin\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sqrt\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.count\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.index\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.isspace\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.rfind\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sys.argv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sys.path\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "dart",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/dart/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"trunc\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_chr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_enumerate\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_float_from_str\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_floordiv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_len\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_ord\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_reversed\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sorted\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"std::runtime_error\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.count\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.index\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.isspace\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.rfind\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "go",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/go/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tuple_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"ArgumentParser\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"Path\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"ceil\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"deque\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"dumps\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"fabs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"floor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"json.loads_obj\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"loads\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"loads_arr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"loads_obj\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"makedirs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.e\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.pi\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"os.path.basename\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"os.path.dirname\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"os.path.exists\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"os.path.join\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"os.path.splitext\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"perf_counter\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_bool\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_chr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_float_from_str\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_floordiv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_len\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_ord\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_slice\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pytra_isinstance\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sqrt\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"std::runtime_error\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.rfind\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sub\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "java",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/java/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tuple_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"abs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"acos\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"asin\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"atan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"atan2\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bool\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"ceil\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"cos\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"exp\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"fabs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"float\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"floor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"hypot\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"int\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isfinite\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isinf\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isnan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log10\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log2\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"makedirs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.e\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.inf\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.nan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.pi\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.tau\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"max\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"min\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"open\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"perf_counter\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pow\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"print\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_bool\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_chr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_enumerate\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_float_from_str\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_floordiv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_in\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_isinstance\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_len\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_ord\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_reversed\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_slice\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_truthy\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pyopen\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"round\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sin\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sorted\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sqrt\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"std::runtime_error\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.count\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.index\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.isspace\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.rfind\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sys.argv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"trunc\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "julia",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/julia/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tuple_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "kotlin",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/kotlin/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "kotlin",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/kotlin/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "kotlin",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/kotlin/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "kotlin",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/kotlin/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "kotlin",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/kotlin/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"float\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "kotlin",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/kotlin/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"int\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "kotlin",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/kotlin/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "kotlin",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/kotlin/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"print\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "kotlin",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/kotlin/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_chr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "kotlin",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/kotlin/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_float_from_str\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "kotlin",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/kotlin/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_len\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "kotlin",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/kotlin/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_ord\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "kotlin",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/kotlin/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"range\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "kotlin",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/kotlin/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"set\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "kotlin",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/kotlin/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.rfind\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"ArgumentParser\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"Path\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"abs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"acos\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"asin\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"atan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"atan2\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"ceil\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"cos\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"deque\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"dict.update\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"dumps\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"exp\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"fabs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"float\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"floor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"hypot\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"int\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isfinite\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isinf\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isnan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list.insert\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list.remove\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"loads\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"loads_arr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log10\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log2\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"makedirs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.e\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.inf\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.nan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.pi\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.tau\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"max\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"min\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"module_ctor.math\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"open\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"perf_counter\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pow\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"print\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_bool\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_chr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_enumerate\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_float_from_str\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_floordiv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_in\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_isinstance\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_len\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_ord\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_reversed\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_slice\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_truthy\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pyopen\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pytra_isinstance\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"round\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"set_argv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"set_path\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sin\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sorted\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sqrt\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"std::runtime_error\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.count\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.index\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.isspace\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.rfind\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sub\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sys.argv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sys.path\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"trunc\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "lua",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/lua/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tuple_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"abs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"acos\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"asin\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"atan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"atan2\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"ceil\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"cos\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"dict.update\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"exp\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"fabs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"float\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"floor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"hypot\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"int\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isfinite\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isinf\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isnan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list.insert\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log10\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log2\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"makedirs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.e\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.inf\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.nan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.pi\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.tau\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"max\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"min\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"open\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"perf_counter\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pow\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"print\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_bool\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_chr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_enumerate\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_float_from_str\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_floordiv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_in\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_isinstance\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_len\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_ord\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_reversed\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_slice\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_truthy\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pyopen\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pytra_isinstance\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"round\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"set\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sin\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sorted\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sqrt\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"std::runtime_error\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.count\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.index\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.isspace\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.rfind\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"trunc\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tuple_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "php",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/php/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"type\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"acos\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"asin\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"atan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"atan2\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"ceil\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"cos\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"dict.update\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"dict_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"exp\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"fabs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"floor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"hypot\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isfinite\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isinf\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isnan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list.copy\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list.insert\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list.remove\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log10\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log2\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"makedirs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.e\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.inf\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.nan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.pi\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.tau\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"open\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"path.abspath\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"path.isdir\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"path.isfile\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"perf_counter\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pow\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_abs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_bool\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_chr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_dumps\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_enumerate\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_filter\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_float_from_str\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_floordiv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_in\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_isinstance\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_len\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_loads\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_map\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_ord\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_reversed\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_slice\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_sorted\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_sum\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_truthy\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_write_text\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_zip\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"round\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sin\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sqrt\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"std::runtime_error\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.count\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.format\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.index\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.isspace\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.rfind\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sys.argv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sys.maxsize\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sys.path\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sys.platform\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sys.stderr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sys.stdout\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"trunc\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ps1",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/powershell/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tuple_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"basename\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"ceil\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"cos\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"dirname\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"e\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"exists\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"exp\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"fabs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"floor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"getcwd\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"gif.save_gif\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"glob\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"join\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log10\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.e\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.pi\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"open\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"perf_counter\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pi\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pow\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_chr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_enumerate\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_float_from_str\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_floordiv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_len\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_open\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_ord\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_reversed\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pytra_isinstance\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sin\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sorted\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"splitext\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sqrt\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"std::runtime_error\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.count\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.index\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.isspace\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.rfind\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "rs",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/rs/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tuple_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"abs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"acos\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"asin\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"atan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"atan2\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"ceil\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"cos\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"exp\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"fabs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"float\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"floor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"hypot\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"int\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isfinite\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isinf\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isnan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log10\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log2\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"makedirs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.e\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.inf\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.nan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.pi\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.tau\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"max\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"min\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"open\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"os.getcwd\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"os.mkdir\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"os_path.abspath\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"os_path.basename\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"os_path.dirname\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"os_path.exists\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"os_path.join\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"os_path.splitext\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"perf_counter\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pow\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"print\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_bool\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_chr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_enumerate\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_float_from_str\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_floordiv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_in\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_len\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_ord\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_reversed\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_slice\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_truthy\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pyopen\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pytra_isinstance\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"round\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sin\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sorted\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sqrt\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"std::runtime_error\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.count\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.index\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.isspace\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.rfind\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sys.argv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sys.path\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"trunc\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tuple_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"type\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"write_stderr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ruby",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ruby/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"write_stdout\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "scala",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/scala/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "scala",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/scala/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "scala",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/scala/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "scala",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/scala/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "scala",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/scala/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "scala",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/scala/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"print\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "scala",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/scala/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_chr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "scala",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/scala/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_float_from_str\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "scala",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/scala/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_len\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "scala",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/scala/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_ord\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "scala",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/scala/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"range\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "scala",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/scala/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"set\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "scala",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/scala/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.rfind\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bool\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"float\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"floor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"int\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"perf_counter\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"print\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_bool\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_chr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_float_from_str\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_floordiv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_in\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_len\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_ord\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_slice\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_truthy\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sqrt\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "swift",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/swift/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.rfind\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"abs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"acos\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"asin\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"atan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"atan2\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bool\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"ceil\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"cos\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"exp\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"fabs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"float\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"floor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"hypot\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"int\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isalnum\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isalpha\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isdigit\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isfinite\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isinf\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"isnan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log10\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"log2\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"makedirs\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.e\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.inf\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.nan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.pi\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.tau\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"max\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"min\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"open\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"perf_counter\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pow\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"print\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_bool\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_chr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_enumerate\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_float_from_str\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_floordiv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_in\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_isinstance\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_len\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_ord\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_reversed\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_slice\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_truthy\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pyopen\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"round\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sin\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sorted\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sqrt\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"std::runtime_error\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.count\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.index\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.isspace\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.rfind\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sys.argv\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"sys.path\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tan\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"trunc\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "ts",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/ts/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tuple_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"basename\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytearray_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"bytes_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"dict_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"dirname\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"exists\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"getcwd\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"glob\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"join\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"list_ctor\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.e\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"math.pi\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"perf_counter\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_chr\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_float_from_str\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_len\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"py_ord\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"pytra_isinstance\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"str.rfind\"] not found in any EAST3 golden"
+    },
+    {
+      "lang": "zig",
+      "cat": "rt:call_coverage",
+      "file": "src/runtime/zig/mapping.json",
+      "lineno": 0,
+      "line": "calls[\"tuple_ctor\"] not found in any EAST3 golden"
+    }
+  ]
+}

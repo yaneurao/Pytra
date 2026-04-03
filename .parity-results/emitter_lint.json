@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-03 20:18:17",
+  "langs": {
+    "cpp": {
+      "violations": 35,
+      "pass_cats": 8,
+      "total_cats": 10
+    },
+    "rs": {
+      "violations": 112,
+      "pass_cats": 6,
+      "total_cats": 10
+    },
+    "cs": {
+      "violations": 35,
+      "pass_cats": 9,
+      "total_cats": 10
+    },
+    "ps1": {
+      "violations": 92,
+      "pass_cats": 7,
+      "total_cats": 10
+    },
+    "js": {
+      "violations": 67,
+      "pass_cats": 9,
+      "total_cats": 10
+    },
+    "ts": {
+      "violations": 67,
+      "pass_cats": 9,
+      "total_cats": 10
+    },
+    "dart": {
+      "violations": 56,
+      "pass_cats": 9,
+      "total_cats": 10
+    },
+    "go": {
+      "violations": 21,
+      "pass_cats": 7,
+      "total_cats": 10
+    },
+    "java": {
+      "violations": 38,
+      "pass_cats": 9,
+      "total_cats": 10
+    },
+    "scala": {
+      "violations": 13,
+      "pass_cats": 9,
+      "total_cats": 10
+    },
+    "kotlin": {
+      "violations": 15,
+      "pass_cats": 9,
+      "total_cats": 10
+    },
+    "swift": {
+      "violations": 31,
+      "pass_cats": 4,
+      "total_cats": 10
+    },
+    "ruby": {
+      "violations": 74,
+      "pass_cats": 9,
+      "total_cats": 10
+    },
+    "lua": {
+      "violations": 86,
+      "pass_cats": 8,
+      "total_cats": 10
+    },
+    "php": {
+      "violations": 66,
+      "pass_cats": 9,
+      "total_cats": 10
+    },
+    "nim": {
+      "violations": 0,
+      "pass_cats": 10,
+      "total_cats": 10
+    },
+    "julia": {
+      "violations": 63,
+      "pass_cats": 9,
+      "total_cats": 10
+    },
+    "zig": {
+      "violations": 21,
+      "pass_cats": 8,
+      "total_cats": 10
+    }
+  }
+}
