@@ -879,6 +879,33 @@ class JuliaSubsetRenderer:
             return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
         return ""
 
+    def _render_attribute_call_maybe(self, node: dict[str, JsonVal], func_node: JsonVal) -> str:
+        if not isinstance(func_node, dict) or _str(func_node, "kind") != "Attribute":
+            return ""
+        owner_node = func_node.get("value")
+        owner = self._render_expr(owner_node)
+        owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+        attr = _str(func_node, "attr")
+        owner_name = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
+        args = [self._render_expr(arg) for arg in _list(node, "args")]
+        keywords = [item for item in _list(node, "keywords") if isinstance(item, dict)]
+        return self._render_attribute_call(node, owner_node, owner, owner_type, owner_name, attr, args, keywords)
+
+    def _resolve_call_runtime_target(self, node: dict[str, JsonVal], func_node: JsonVal) -> tuple[str, str, str]:
+        runtime_call = _str(node, "resolved_runtime_call")
+        if runtime_call == "":
+            runtime_call = _str(node, "runtime_call")
+        adapter_kind = _str(node, "runtime_call_adapter_kind")
+        builtin_name = ""
+        if isinstance(func_node, dict) and _str(func_node, "kind") == "Name":
+            candidate_name = _str(func_node, "id")
+            if runtime_call != "" or candidate_name in self.mapping.calls:
+                builtin_name = candidate_name
+        use_mapped_runtime = self._resolve_subset_runtime_call(runtime_call, adapter_kind, builtin_name)
+        if isinstance(func_node, dict) and _str(func_node, "kind") == "Attribute":
+            use_mapped_runtime = ""
+        return runtime_call, builtin_name, use_mapped_runtime
+
     def _next_tmp(self, prefix: str) -> str:
         self.tmp_counter += 1
         return prefix + str(self.tmp_counter)
@@ -1069,31 +1096,12 @@ class JuliaSubsetRenderer:
             return "false"
         if kind == "Call":
             func_node = node.get("func")
-            if isinstance(func_node, dict) and _str(func_node, "kind") == "Attribute":
-                owner_node = func_node.get("value")
-                owner = self._render_expr(owner_node)
-                owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
-                attr = _str(func_node, "attr")
-                owner_name = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
-                args = [self._render_expr(arg) for arg in _list(node, "args")]
-                keywords = [item for item in _list(node, "keywords") if isinstance(item, dict)]
-                attr_call = self._render_attribute_call(node, owner_node, owner, owner_type, owner_name, attr, args, keywords)
-                if attr_call != "":
-                    return attr_call
+            attr_call = self._render_attribute_call_maybe(node, func_node)
+            if attr_call != "":
+                return attr_call
             func = self._render_expr(func_node)
             args = [self._render_expr(arg) for arg in _list(node, "args")]
-            runtime_call = _str(node, "resolved_runtime_call")
-            if runtime_call == "":
-                runtime_call = _str(node, "runtime_call")
-            adapter_kind = _str(node, "runtime_call_adapter_kind")
-            builtin_name = ""
-            if isinstance(func_node, dict) and _str(func_node, "kind") == "Name":
-                candidate_name = _str(func_node, "id")
-                if runtime_call != "" or candidate_name in self.mapping.calls:
-                    builtin_name = candidate_name
-            use_mapped_runtime = self._resolve_subset_runtime_call(runtime_call, adapter_kind, builtin_name)
-            if isinstance(func_node, dict) and _str(func_node, "kind") == "Attribute":
-                use_mapped_runtime = ""
+            runtime_call, builtin_name, use_mapped_runtime = self._resolve_call_runtime_target(node, func_node)
             result_type = _str(node, "resolved_type")
             name_call = self._render_name_call(func, args, runtime_call, builtin_name, result_type, use_mapped_runtime)
             if name_call != "":
