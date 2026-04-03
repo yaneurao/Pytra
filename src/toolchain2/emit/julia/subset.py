@@ -947,8 +947,6 @@ class JuliaSubsetRenderer:
                     return "__pytra_truthy(" + args[0] + ")"
                 if builtin_name == "str" or result_type in {"str", "string"}:
                     return "__pytra_str(" + args[0] + ")"
-            if runtime_call == "py_int_from_str" and len(args) == 1:
-                return "__pytra_int(" + args[0] + ")"
             if func == "int" and len(args) == 1:
                 if use_mapped_runtime != "" and use_mapped_runtime != "__CAST__":
                     return use_mapped_runtime + "(" + args[0] + ")"

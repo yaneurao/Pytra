@@ -22,7 +22,7 @@
     "min": "min",
     "py_max": "max",
     "py_min": "min",
-    "py_int_from_str": "parse",
+    "py_int_from_str": "__pytra_int",
     "py_float_from_str": "parse",
     "std::runtime_error": "__PANIC__",
     "bytearray_ctor": "__pytra_bytearray",
