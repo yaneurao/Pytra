@@ -153,6 +153,7 @@ func __pytra_truthy(_ v: Any?) -> Bool {
     if let d = value as? Double { return d != 0.0 }
     if let s = value as? String { return s != "" }
     if let a = value as? [Any] { return !a.isEmpty }
+    if let a = value as? [UInt8] { return !a.isEmpty }
     if let m = value as? [AnyHashable: Any] { return !m.isEmpty }
     return true
 }
@@ -162,6 +163,7 @@ func __pytra_int(_ v: Any?) -> Int64 {
     if value is PytraNone { return 0 }
     if let i = value as? Int64 { return i }
     if let i = value as? Int { return Int64(i) }
+    if let i = value as? UInt8 { return Int64(i) }
     if let d = value as? Double { return Int64(d) }
     if let b = value as? Bool { return b ? 1 : 0 }
     if let s = value as? String { return Int64(s) ?? 0 }
@@ -257,6 +259,7 @@ func __pytra_type_name(_ v: Any?) -> String {
     if value is Bool { return "bool" }
     if value is String { return "str" }
     if value is [Any] { return "list" }
+    if value is [UInt8] { return "bytearray" }
     if value is [AnyHashable: Any] { return "dict" }
     return String(describing: type(of: value))
 }
@@ -288,6 +291,7 @@ func __pytra_len(_ v: Any?) -> Int64 {
     guard let value = v else { return 0 }
     if let s = value as? String { return Int64(s.count) }
     if let a = value as? [Any] { return Int64(a.count) }
+    if let a = value as? [UInt8] { return Int64(a.count) }
     if let m = value as? [AnyHashable: Any] { return Int64(m.count) }
     return 0
 }
@@ -314,6 +318,12 @@ func __pytra_getIndex(_ container: Any?, _ index: Any?) throws -> Any {
         if i < 0 || i >= Int64(list.count) { throw IndexError("list index out of range") }
         return list[Int(i)]
     }
+    if let list = container as? [UInt8] {
+        if list.isEmpty { throw IndexError("list index out of range") }
+        let i = __pytra_index(__pytra_int(index), Int64(list.count))
+        if i < 0 || i >= Int64(list.count) { throw IndexError("list index out of range") }
+        return Int64(list[Int(i)])
+    }
     if let dict = container as? [AnyHashable: Any] {
         let key = AnyHashable(__pytra_str(index))
         return dict[key] ?? __pytra_any_default()
@@ -334,6 +344,13 @@ func __pytra_setIndex(_ container: Any?, _ index: Any?, _ value: Any?) {
         let i = __pytra_index(__pytra_int(index), Int64(list.count))
         if i < 0 || i >= Int64(list.count) { return }
         list[Int(i)] = value as Any
+        return
+    }
+    if var list = container as? [UInt8] {
+        if list.isEmpty { return }
+        let i = __pytra_index(__pytra_int(index), Int64(list.count))
+        if i < 0 || i >= Int64(list.count) { return }
+        list[Int(i)] = UInt8(clamping: __pytra_int(value))
         return
     }
     if var dict = container as? [AnyHashable: Any] {
@@ -406,6 +423,9 @@ func __pytra_contains(_ container: Any?, _ value: Any?) -> Bool {
 func __pytra_as_list(_ v: Any?) -> [Any] {
     if let list = v as? [Any] {
         return list
+    }
+    if let bytes = v as? [UInt8] {
+        return bytes.map { Int64($0) as Any }
     }
     if let s = v as? String {
         return Array(s).map { String($0) as Any }
@@ -650,18 +670,44 @@ func __pytra_is_dict(_ v: Any?) -> Bool {
 
 // --- bytearray / bytes ---
 
-func __pytra_bytearray(_ size: Any?) -> [Any] {
-    if let list = size as? [Any] {
+func __pytra_bytearray(_ size: Any?) -> [UInt8] {
+    if let list = size as? [UInt8] {
         return list
+    }
+    if let list = size as? [Int64] {
+        return list.map { UInt8(clamping: $0) }
+    }
+    if let list = size as? [Int] {
+        return list.map { UInt8(clamping: $0) }
+    }
+    if let list = size as? [Any] {
+        return list.map { UInt8(clamping: __pytra_int($0)) }
     }
     let n = __pytra_int(size)
-    return [Any](repeating: Int64(0) as Any, count: Int(n))
+    return [UInt8](repeating: 0, count: Int(n))
 }
 
-func __pytra_bytes(_ v: Any?) -> [Any] {
-    if let list = v as? [Any] {
+func __pytra_bytes(_ v: Any?) -> [UInt8] {
+    if let list = v as? [UInt8] {
         return list
     }
+    if let list = v as? [Int64] {
+        return list.map { UInt8(clamping: $0) }
+    }
+    if let list = v as? [Int] {
+        return list.map { UInt8(clamping: $0) }
+    }
+    if let list = v as? [Any] {
+        return list.map { UInt8(clamping: __pytra_int($0)) }
+    }
+    return []
+}
+
+func __pytra_as_u8_list(_ v: Any?) -> [UInt8] {
+    if let arr = v as? [UInt8] { return arr }
+    if let arr = v as? [Int64] { return arr.map { UInt8(clamping: $0) } }
+    if let arr = v as? [Int] { return arr.map { UInt8(clamping: $0) } }
+    if let arr = v as? [Any] { return arr.map { UInt8(clamping: __pytra_int($0)) } }
     return []
 }
 
@@ -888,7 +934,8 @@ func write_rgb_png(_ path: Any?, _ width: Any?, _ height: Any?, _ pixels: Any?) 
     let p = __pytra_str(path)
     let w = Int(__pytra_int(width))
     let h = Int(__pytra_int(height))
-    let pxList = (pixels as? [Any]) ?? []
+    let pxBytes = pixels as? [UInt8]
+    let pxList = pxBytes == nil ? ((pixels as? [Any]) ?? []) : []
     // Minimal raw PNG writer
     var data = Data()
     func _u32be(_ v: UInt32) -> Data { var b = v.bigEndian; return Data(bytes: &b, count: 4) }
@@ -925,9 +972,9 @@ func write_rgb_png(_ path: Any?, _ width: Any?, _ height: Any?, _ pixels: Any?) 
         raw.append(0) // filter none
         for x in 0..<w {
             let idx = (y * w + x) * 3
-            let r = idx < pxList.count ? UInt8(clamping: __pytra_int(pxList[idx])) : 0
-            let g = idx + 1 < pxList.count ? UInt8(clamping: __pytra_int(pxList[idx + 1])) : 0
-            let b = idx + 2 < pxList.count ? UInt8(clamping: __pytra_int(pxList[idx + 2])) : 0
+            let r = pxBytes != nil ? (idx < pxBytes!.count ? pxBytes![idx] : 0) : (idx < pxList.count ? UInt8(clamping: __pytra_int(pxList[idx])) : 0)
+            let g = pxBytes != nil ? (idx + 1 < pxBytes!.count ? pxBytes![idx + 1] : 0) : (idx + 1 < pxList.count ? UInt8(clamping: __pytra_int(pxList[idx + 1])) : 0)
+            let b = pxBytes != nil ? (idx + 2 < pxBytes!.count ? pxBytes![idx + 2] : 0) : (idx + 2 < pxList.count ? UInt8(clamping: __pytra_int(pxList[idx + 2])) : 0)
             raw.append(contentsOf: [r, g, b])
         }
     }

@@ -308,7 +308,7 @@ def _swift_type(type_name: Any, *, allow_void: bool) -> str:
     if ts3.startswith("dict["):
         return "[AnyHashable: Any]"
     if type_name in {"bytes", "bytearray"}:
-        return "[Any]"
+        return "[UInt8]"
     if type_name in {"unknown", "object", "any", "JsonVal"}:
         return "Any"
     if ts3.isidentifier():
@@ -501,6 +501,8 @@ def _default_return_expr(swift_type: str) -> str:
     if swift_type == "String":
         return '""'
     if swift_type == "[Any]":
+        return "[]"
+    if swift_type == "[UInt8]":
         return "[]"
     if swift_type == "[AnyHashable: Any]":
         return "[:]"
@@ -717,6 +719,8 @@ def _cast_from_any(expr: str, swift_type: str) -> str:
         return _to_str_expr(expr)
     if swift_type == "[Any]":
         return _to_list_expr(expr)
+    if swift_type == "[UInt8]":
+        return _wrap_runtime_call(expr, "__pytra_as_u8_list")
     if swift_type == "[AnyHashable: Any]":
         return _to_dict_expr(expr)
     if swift_type == "Any":
@@ -976,16 +980,16 @@ def _render_compare_expr(expr: dict[str, Any]) -> str:
 
         symbol = _compare_op_symbol(op)
         if left_type == "str" or right_type == "str":
-            lhs = cur_left if (isinstance(left_node, dict) and not _needs_cast(left_node, "String")) else _to_str_expr(cur_left)
-            rhs = right if (isinstance(comp_node, dict) and not _needs_cast(comp_node, "String")) else _to_str_expr(right)
+            lhs = cur_left if left_type == "str" else _to_str_expr(cur_left)
+            rhs = right if right_type == "str" else _to_str_expr(right)
             parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
         elif left_type in {"int", "int64", "uint8"} or right_type in {"int", "int64", "uint8"}:
-            lhs = cur_left if (isinstance(left_node, dict) and not _needs_cast(left_node, "Int64")) else _to_int_expr(cur_left)
-            rhs = right if (isinstance(comp_node, dict) and not _needs_cast(comp_node, "Int64")) else _to_int_expr(right)
+            lhs = cur_left if left_type in {"int", "int64", "uint8"} else _to_int_expr(cur_left)
+            rhs = right if right_type in {"int", "int64", "uint8"} else _to_int_expr(right)
             parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
         elif left_type in {"float", "float64"} or right_type in {"float", "float64"}:
-            lhs = cur_left if (isinstance(left_node, dict) and not _needs_cast(left_node, "Double")) else _to_float_expr(cur_left)
-            rhs = right if (isinstance(comp_node, dict) and not _needs_cast(comp_node, "Double")) else _to_float_expr(right)
+            lhs = cur_left if left_type in {"float", "float64"} else _to_float_expr(cur_left)
+            rhs = right if right_type in {"float", "float64"} else _to_float_expr(right)
             parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
         else:
             if op in {"Eq", "NotEq"}:
@@ -1721,6 +1725,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 if attr_name == "clear" and len(args) == 0:
                     return owner_expr + ".removeAll()"
                 if (owner_type.startswith("list[") or owner_type in {"bytes", "bytearray"}) and attr_name == "append" and len(args) == 1:
+                    if owner_type in {"bytes", "bytearray"}:
+                        return owner_expr + ".append(UInt8(clamping: __pytra_int(" + _render_expr(args[0]) + ")))"
                     return owner_expr + ".append(" + _render_expr(args[0]) + ")"
                 if owner_type.startswith("list[") and attr_name == "extend" and len(args) == 1:
                     return "__pytra_extend(&" + owner_expr + ", " + _render_expr(args[0]) + ")"
@@ -2351,7 +2357,7 @@ def _infer_swift_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
         if name == "str":
             return "String"
         if name == "bytearray" or name == "bytes":
-            return "[Any]"
+            return "[UInt8]"
         if name == "len":
             return "Int64"
         if name in {
@@ -2432,11 +2438,21 @@ def _expr_emits_target_type(value_expr: Any, target_type: str, type_map: dict[st
     vd: dict[str, Any] = value_expr
     kind = vd.get("kind")
     if kind == "Name":
+        resolved = _swift_type(vd.get("resolved_type"), allow_void=False)
+        if resolved == target_type:
+            return True
         if isinstance(type_map, dict):
             ident = _safe_ident(vd.get("id"), "")
             mapped_any = type_map.get(ident)
             mapped = mapped_any if isinstance(mapped_any, str) else ""
             return mapped == target_type
+        return False
+    if kind == "UnaryOp":
+        op = vd.get("op")
+        if op in {"USub", "UAdd"}:
+            return _expr_emits_target_type(vd.get("operand"), target_type, type_map)
+        if op == "Not":
+            return target_type == "Bool"
         return False
     if kind == "Constant":
         value = vd.get("value")
@@ -2511,28 +2527,13 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         stop = _to_int_expr(_render_expr(stop_node))
         step = _to_int_expr(_render_expr(step_node))
         step_is_one = _is_int_literal(step_node, 1)
-        step_tmp = _fresh_tmp(ctx, "step")
-        lines.append(indent + "var " + target_name + " = " + start)
+        loop_index = _fresh_tmp(ctx, "i")
         if step_is_one:
-            lines.append(indent + "while (" + target_name + " < " + stop + ") {")
+            lines.append(indent + "for " + loop_index + " in Int(" + start + ")..<Int(" + stop + ") {")
+        elif _is_int_literal(step_node, -1):
+            lines.append(indent + "for " + loop_index + " in stride(from: Int(" + start + "), to: Int(" + stop + "), by: -1) {")
         else:
-            lines.append(indent + "let " + step_tmp + " = " + step)
-            lines.append(
-                indent
-                + "while (("
-                + step_tmp
-                + " >= 0 && "
-                + target_name
-                + " < "
-                + stop
-                + ") || ("
-                + step_tmp
-                + " < 0 && "
-                + target_name
-                + " > "
-                + stop
-                + ")) {"
-            )
+            lines.append(indent + "for " + loop_index + " in stride(from: Int(" + start + "), to: Int(" + stop + "), by: Int(" + step + ")) {")
         body_any = stmt.get("body")
         body = body_any if isinstance(body_any, list) else []
         body_ctx: dict[str, Any] = {
@@ -2542,18 +2543,15 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             "ref_vars": set(_ref_var_set(ctx)),
             "alias_map": dict(_alias_map(ctx)),
             "return_type": ctx.get("return_type", ""),
-            "continue_prefix": target_name + (" += 1" if step_is_one else " += " + step_tmp),
+            "continue_prefix": "",
         }
         _declared_set(body_ctx).add(target_name)
         _type_map(body_ctx)[target_name] = "Int64"
+        lines.append(indent + "    let " + target_name + ": Int64 = Int64(" + loop_index + ")")
         i = 0
         while i < len(body):
             lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=body_ctx))
             i += 1
-        if step_is_one:
-            lines.append(indent + "    " + target_name + " += 1")
-        else:
-            lines.append(indent + "    " + target_name + " += " + step_tmp)
         ctx["tmp"] = body_ctx.get("tmp", ctx.get("tmp", 0))
         lines.append(indent + "}")
         return lines
@@ -2731,6 +2729,18 @@ def _emit_subscript_store(target: dict[str, Any], value_expr: str, *, indent: st
         owner_name = _safe_ident(owner_node.get("id"), "")
         owner_type_any = _type_map(ctx).get(owner_name)
         owner_type = owner_type_any if isinstance(owner_type_any, str) else ""
+        if owner_type == "[UInt8]":
+            idx_tmp = _fresh_tmp(ctx, "idx")
+            lines = [
+                indent + "let " + idx_tmp + " = Int(__pytra_index(__pytra_int(" + index_expr + "), Int64(" + owner_name + ".count)))",
+                indent + "if " + idx_tmp + " >= 0 && " + idx_tmp + " < " + owner_name + ".count {",
+                indent + "    " + owner_name + "[" + idx_tmp + "] = UInt8(clamping: __pytra_int(" + value_expr + "))",
+                indent + "}",
+            ]
+            alias_root = _alias_map(ctx).get(owner_name, "")
+            if alias_root != "":
+                lines.append(indent + alias_root + " = " + owner_name)
+            return lines
         if owner_type == "[Any]":
             idx_tmp = _fresh_tmp(ctx, "idx")
             lines = [
@@ -2803,6 +2813,11 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                     args = args_any if isinstance(args_any, list) else []
                     if len(args) == 1:
                         alias_root = _alias_map(ctx).get(owner_name, "") if isinstance(owner_any, dict) and owner_any.get("kind") == "Name" else ""
+                        if owner_type == "[UInt8]":
+                            lines = [indent + owner + ".append(UInt8(clamping: __pytra_int(" + _render_expr(args[0]) + ")))"]
+                            if alias_root != "":
+                                lines.append(indent + alias_root + " = " + owner)
+                            return lines
                         if owner_type == "[Any]":
                             lines = [indent + owner + ".append(" + _render_expr(args[0]) + ")"]
                             if alias_root != "":
@@ -3430,9 +3445,11 @@ def _emit_function(
                 cast_fn = "__pytra_truthy"
             elif original_type == "[Any]":
                 cast_fn = "__pytra_as_list"
+            elif original_type == "[UInt8]":
+                cast_fn = "__pytra_as_u8_list"
             if cast_fn != "":
                 # Container types use var (may need mutating methods like .append)
-                decl_keyword = "var" if original_type == "[Any]" or original_type == "[AnyHashable: Any]" else "let"
+                decl_keyword = "var" if original_type in {"[Any]", "[UInt8]", "[AnyHashable: Any]"} else "let"
                 lines.append(indent + "    " + decl_keyword + " " + p + ": " + original_type + " = " + cast_fn + "(" + p + ")")
                 param_cast_names.add(p)
         j += 1
@@ -3446,6 +3463,8 @@ def _emit_function(
             cast_fn = "__pytra_float"
         elif original_type == "String":
             cast_fn = "__pytra_str"
+        elif original_type == "[UInt8]":
+            cast_fn = "__pytra_as_u8_list"
         if cast_fn != "":
             lines.append(indent + "    var " + orig + ": " + original_type + " = " + cast_fn + "(" + renamed + ")")
         else:
