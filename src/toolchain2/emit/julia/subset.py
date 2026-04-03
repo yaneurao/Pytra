@@ -57,12 +57,45 @@ def _quote_string(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
 
 
+def _simple_class_supported(node: dict[str, JsonVal]) -> bool:
+    if _str(node, "base") != "":
+        return False
+    body = _list(node, "body")
+    if len(body) == 0:
+        return True
+    if len(body) == 1 and isinstance(body[0], dict) and _str(body[0], "kind") == "Pass":
+        return True
+    if len(body) != 1 or not isinstance(body[0], dict) or _str(body[0], "kind") != "FunctionDef":
+        return False
+    init_fn = body[0]
+    if _str(init_fn, "name") != "__init__":
+        return False
+    if [arg for arg in _list(init_fn, "arg_order") if isinstance(arg, str)] != ["self"]:
+        return False
+    for stmt in _list(init_fn, "body"):
+        if not isinstance(stmt, dict):
+            return False
+        if _str(stmt, "kind") not in {"AnnAssign", "Assign"}:
+            return False
+        target = stmt.get("target")
+        if not isinstance(target, dict) or _str(target, "kind") != "Attribute":
+            return False
+        owner = target.get("value")
+        if not isinstance(owner, dict) or _str(owner, "kind") != "Name" or _str(owner, "id") != "self":
+            return False
+        if not _expr_supported(stmt.get("value")):
+            return False
+    return True
+
+
 def _expr_supported(node: JsonVal) -> bool:
     if not isinstance(node, dict):
         return False
     kind = _str(node, "kind")
     if kind in {"Name", "Constant"}:
         return True
+    if kind == "Attribute":
+        return _expr_supported(node.get("value"))
     if kind == "List":
         return all(_expr_supported(item) for item in _list(node, "elements"))
     if kind == "Tuple":
@@ -186,7 +219,7 @@ def _stmt_supported(node: JsonVal) -> bool:
     if kind == "FunctionDef":
         return all(_stmt_supported(stmt) for stmt in _list(node, "body"))
     if kind == "ClassDef":
-        return len(_list(node, "body")) == 0
+        return _simple_class_supported(node)
     return False
 
 
@@ -202,6 +235,7 @@ class JuliaSubsetRenderer:
         self.indent_level = 0
         self.tmp_counter = 0
         self.function_names: set[str] = set()
+        self.class_names: set[str] = set()
 
     def _indent(self) -> str:
         return "    " * self.indent_level
@@ -225,6 +259,8 @@ class JuliaSubsetRenderer:
             if name == "main" and "__pytra_main" in self.function_names:
                 return "__pytra_main"
             return name
+        if kind == "Attribute":
+            return self._render_expr(node.get("value")) + "." + _str(node, "attr")
         if kind == "Constant":
             value = node.get("value")
             if value is None:
@@ -332,6 +368,8 @@ class JuliaSubsetRenderer:
                 return "__pytra_print(" + ", ".join(args) + ")"
             if func == "len" and len(args) == 1:
                 return "length(" + args[0] + ")"
+            if func in self.class_names:
+                return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
             return func + "(" + ", ".join(args) + ")"
         if kind in {"Box", "Unbox"}:
             return self._render_expr(node.get("value"))
@@ -456,8 +494,34 @@ class JuliaSubsetRenderer:
             self._emit("end")
             return
         if kind == "ClassDef":
+            self._emit_class(node)
             return
         raise RuntimeError("julia subset: unsupported stmt kind: " + kind)
+
+    def _emit_class(self, node: dict[str, JsonVal]) -> None:
+        class_name = _str(node, "name")
+        field_types = node.get("field_types")
+        field_names = list(field_types.keys()) if isinstance(field_types, dict) else []
+        self._emit("mutable struct " + class_name)
+        self.indent_level += 1
+        for field_name in field_names:
+            self._emit(field_name)
+        self.indent_level -= 1
+        self._emit("end")
+        self._emit_blank()
+        self._emit("function __pytra_new_" + class_name + "()")
+        self.indent_level += 1
+        ctor_args = ", ".join("nothing" for _ in field_names)
+        self._emit("self = " + class_name + "(" + ctor_args + ")")
+        body = _list(node, "body")
+        if len(body) == 1 and isinstance(body[0], dict) and _str(body[0], "kind") == "FunctionDef":
+            for stmt in _list(body[0], "body"):
+                target = stmt.get("target") if isinstance(stmt, dict) else None
+                if isinstance(target, dict):
+                    self._emit("self." + _str(target, "attr") + " = " + self._render_expr(stmt.get("value")))
+        self._emit("return self")
+        self.indent_level -= 1
+        self._emit("end")
 
     def render_module(self, east3_doc: dict[str, JsonVal]) -> str:
         self.lines = []
@@ -467,6 +531,11 @@ class JuliaSubsetRenderer:
             _str(stmt, "name")
             for stmt in _list(east3_doc, "body")
             if isinstance(stmt, dict) and _str(stmt, "kind") == "FunctionDef"
+        }
+        self.class_names = {
+            _str(stmt, "name")
+            for stmt in _list(east3_doc, "body")
+            if isinstance(stmt, dict) and _str(stmt, "kind") == "ClassDef"
         }
         self._emit('include(joinpath(@__DIR__, "built_in", "py_runtime.jl"))')
         self._emit_blank()

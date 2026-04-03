@@ -49,6 +49,8 @@
    - 2026-04-03: `tools/unittest/toolchain2/test_julia_emitter_bootstrap.py` は 44 tests PASS、`tools/unittest/emit/julia/test_py2julia_smoke.py` は 39 tests `OK (skipped=1)` を再確認
    - 2026-04-03: subset 判定を bootstrap rewrite 後に寄せ、空 `ClassDef` は no-op として扱うよう整理。`class_tuple_assign` と `nested_closure_def` も native path に乗るようになり、現時点の native coverage は `core` 20件、`control` 8件
    - 2026-04-03: `tools/unittest/toolchain2/test_julia_emitter_bootstrap.py` は 46 tests PASS、`tools/unittest/emit/julia/test_py2julia_smoke.py` は 39 tests `OK (skipped=1)` を再確認
+   - 2026-04-03: subset native renderer に最小 class support を追加し、empty class・simple `__init__`・class call・instance field access を native 化。`class_body_pass` と `obj_attr_space` を native path へ乗せ、現時点の native coverage は `core` 22件、`control` 8件
+   - 2026-04-03: `tools/unittest/toolchain2/test_julia_emitter_bootstrap.py` は 50 tests PASS、`tools/unittest/emit/julia/test_py2julia_smoke.py` は 39 tests `OK (skipped=1)` を再確認
 2. [x] [ID: P1-JULIA-EMITTER-S2] `src/runtime/julia/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
    - 2026-04-02: `src/runtime/julia/mapping.json` を追加し、toolchain2 Julia emitter bootstrap が参照する runtime call/type mapping を整備
 3. [x] [ID: P1-JULIA-EMITTER-S3] fixture 全件の Julia emit 成功を確認する

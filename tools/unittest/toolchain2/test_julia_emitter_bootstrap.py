@@ -298,6 +298,17 @@ class JuliaEmitterBootstrapTests(unittest.TestCase):
         rewritten = self.rewriter.rewrite_document(prepared)
         self.assertEqual(can_render_module_natively(rewritten), True)
 
+    def test_subset_accepts_class_body_pass_fixture(self) -> None:
+        doc = _load_east3_for_julia("class_body_pass")
+        _module_id, prepared = prepare_module_for_emit(doc)
+        self.assertEqual(can_render_module_natively(prepared), True)
+
+    def test_subset_accepts_rewritten_obj_attr_space_fixture(self) -> None:
+        doc = _load_east3_for_julia("obj_attr_space")
+        _module_id, prepared = prepare_module_for_emit(doc)
+        rewritten = self.rewriter.rewrite_document(prepared)
+        self.assertEqual(can_render_module_natively(rewritten), True)
+
     def test_renderer_uses_subset_for_range_fixture(self) -> None:
         source = self.renderer.render_module(_load_east3_for_julia("for_range"))
         self.assertIn("for i in 0:(n - 1)", source)
@@ -375,6 +386,21 @@ class JuliaEmitterBootstrapTests(unittest.TestCase):
         self.assertIn("__pytra_cls_Holder_X = (0,)", source)
         self.assertIn("__pytra_print((__pytra_cls_Holder_X[__pytra_idx(0, length(__pytra_cls_Holder_X))] == 0))", source)
         self.assertIn("__pytra_main()", source)
+
+    def test_renderer_uses_subset_for_class_body_pass_fixture(self) -> None:
+        source = self.renderer.render_module(_load_east3_for_julia("class_body_pass"))
+        self.assertIn("mutable struct Marker", source)
+        self.assertIn("function __pytra_new_Marker()", source)
+        self.assertIn("m = __pytra_new_Marker()", source)
+        self.assertIn("__pytra_print((m !== nothing))", source)
+
+    def test_renderer_uses_subset_for_rewritten_obj_attr_space_fixture(self) -> None:
+        source = self.renderer.render_module(_load_east3_for_julia("obj_attr_space"))
+        self.assertIn("mutable struct Obj", source)
+        self.assertIn("value", source)
+        self.assertIn("self.value = 7", source)
+        self.assertIn("o = __pytra_new_Obj()", source)
+        self.assertIn("__pytra_print((o.value == 7))", source)
 
     def test_emit_nested_closure_fixture_through_toolchain2_entrypoint(self) -> None:
         source = transpile_to_julia_native(_load_east3_for_julia("nested_closure_def"))
