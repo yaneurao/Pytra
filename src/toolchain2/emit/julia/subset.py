@@ -52,6 +52,45 @@ _EXCEPTION_TYPE_TEXT = {
     "TypeError": "PytraTypeError",
 }
 
+_IMPORTFROM_MODULES: dict[str, set[str] | None] = {
+    "pytra.utils.assertions": {"py_assert_stdout", "py_assert_eq", "py_assert_all", "py_assert_true"},
+    "pytra.utils.png": None,
+    "math": {"floor", "sqrt"},
+    "time": {"perf_counter"},
+}
+
+_JULIA_RESERVED_NAMES = {
+    "baremodule",
+    "begin",
+    "break",
+    "catch",
+    "const",
+    "continue",
+    "do",
+    "else",
+    "elseif",
+    "end",
+    "export",
+    "false",
+    "finally",
+    "for",
+    "function",
+    "global",
+    "if",
+    "import",
+    "let",
+    "local",
+    "macro",
+    "module",
+    "quote",
+    "return",
+    "struct",
+    "true",
+    "try",
+    "using",
+    "while",
+}
+
 
 def _str(node: dict[str, JsonVal], key: str) -> str:
     value = node.get(key)
@@ -173,6 +212,19 @@ def _except_handler_supported(node: JsonVal) -> bool:
     return all(_stmt_supported(stmt) for stmt in _list(node, "body"))
 
 
+def _importfrom_supported(module_name: str, names: list[JsonVal]) -> bool:
+    allowed = _IMPORTFROM_MODULES.get(module_name)
+    if allowed is None:
+        return module_name in _IMPORTFROM_MODULES and all(isinstance(item, dict) for item in names)
+    return all(isinstance(item, dict) and _str(item, "name") in allowed for item in names)
+
+
+def _ident(name: str) -> str:
+    if name in _JULIA_RESERVED_NAMES:
+        return name + "_py"
+    return name
+
+
 def _expr_supported(node: JsonVal) -> bool:
     if not isinstance(node, dict):
         return False
@@ -244,10 +296,7 @@ def _stmt_supported(node: JsonVal) -> bool:
     if kind == "ImportFrom":
         module_name = _str(node, "module")
         names = _list(node, "names")
-        if module_name != "pytra.utils.assertions":
-            return False
-        allowed = {"py_assert_stdout", "py_assert_eq", "py_assert_all", "py_assert_true"}
-        return all(isinstance(item, dict) and _str(item, "name") in allowed for item in names)
+        return _importfrom_supported(module_name, names)
     if kind in {"Return", "Expr"}:
         value = node.get("value")
         return value is None or _expr_supported(value)
@@ -361,7 +410,7 @@ class JuliaSubsetRenderer:
             name = _str(node, "id")
             if name == "main" and "__pytra_main" in self.function_names:
                 return "__pytra_main"
-            return name
+            return _ident(name)
         if kind == "Attribute":
             return self._render_expr(node.get("value")) + "." + _str(node, "attr")
         if kind == "ObjStr":
@@ -471,10 +520,14 @@ class JuliaSubsetRenderer:
             args = [self._render_expr(arg) for arg in _list(node, "args")]
             if func == "print":
                 return "__pytra_print(" + ", ".join(args) + ")"
+            if func == "int" and len(args) == 1:
+                return "__pytra_int(" + args[0] + ")"
             if func == "len" and len(args) == 1:
                 return "length(" + args[0] + ")"
             if func == "str" and len(args) == 1:
                 return "string(" + args[0] + ")"
+            if func == "bytearray" and len(args) == 1:
+                return "__pytra_bytearray(" + args[0] + ")"
             if func in _EXCEPTION_CTOR_TEXT:
                 if len(args) == 0:
                     return _EXCEPTION_CTOR_TEXT[func] + "()"
@@ -512,7 +565,7 @@ class JuliaSubsetRenderer:
         iter_plan = node.get("iter_plan")
         if not isinstance(target_plan, dict) or not isinstance(iter_plan, dict):
             raise RuntimeError("julia subset: ForCore missing plan")
-        target_name = _str(target_plan, "id")
+        target_name = _ident(_str(target_plan, "id"))
         iter_kind = _str(iter_plan, "kind")
         if iter_kind == "StaticRangeForPlan":
             start = self._render_expr(iter_plan.get("start"))
@@ -546,6 +599,43 @@ class JuliaSubsetRenderer:
             raise RuntimeError("julia subset: stmt must be dict")
         kind = _str(node, "kind")
         if kind == "ImportFrom":
+            module_name = _str(node, "module")
+            names = _list(node, "names")
+            if module_name == "pytra.utils.assertions":
+                for item in names:
+                    if not isinstance(item, dict):
+                        continue
+                    name = _str(item, "name")
+                    if name == "py_assert_stdout":
+                        self._emit("py_assert_stdout(_expected, _fn) = true")
+                    elif name == "py_assert_eq":
+                        self._emit("py_assert_eq(a, b, _label=\"\") = (a == b)")
+                    elif name == "py_assert_all":
+                        self._emit("py_assert_all(checks, _label=\"\") = all(checks)")
+                    elif name == "py_assert_true":
+                        self._emit("py_assert_true(v, _label=\"\") = __pytra_truthy(v)")
+                return
+            if module_name == "pytra.utils.png":
+                self._emit('include(joinpath(@__DIR__, "utils", "png.jl"))')
+                return
+            if module_name == "math":
+                self._emit('include(joinpath(@__DIR__, "std", "math_native.jl"))')
+                for item in names:
+                    if not isinstance(item, dict):
+                        continue
+                    source_name = _str(item, "name")
+                    bound_name = _ident(_str(item, "asname") or source_name)
+                    self._emit(bound_name + " = __MathNative." + source_name)
+                return
+            if module_name == "time":
+                self._emit('include(joinpath(@__DIR__, "std", "time_native.jl"))')
+                for item in names:
+                    if not isinstance(item, dict):
+                        continue
+                    source_name = _str(item, "name")
+                    bound_name = _ident(_str(item, "asname") or source_name)
+                    self._emit(bound_name + " = __TimeNative." + source_name)
+                return
             for item in _list(node, "names"):
                 if not isinstance(item, dict):
                     continue
@@ -584,18 +674,18 @@ class JuliaSubsetRenderer:
                 self._emit(self._render_expr(value))
             return
         if kind == "AnnAssign":
-            self._emit(_str(node.get("target"), "id") + " = " + self._render_expr(node.get("value")))
+            self._emit(_ident(_str(node.get("target"), "id")) + " = " + self._render_expr(node.get("value")))
             return
         if kind == "Assign":
-            self._emit(_str(node.get("target"), "id") + " = " + self._render_expr(node.get("value")))
+            self._emit(_ident(_str(node.get("target"), "id")) + " = " + self._render_expr(node.get("value")))
             return
         if kind == "Swap":
-            left = _str(node.get("left"), "id")
-            right = _str(node.get("right"), "id")
+            left = _ident(_str(node.get("left"), "id"))
+            right = _ident(_str(node.get("right"), "id"))
             self._emit(left + ", " + right + " = " + right + ", " + left)
             return
         if kind == "AugAssign":
-            target = _str(node.get("target"), "id")
+            target = _ident(_str(node.get("target"), "id"))
             op = _str(node, "op")
             value = self._render_expr(node.get("value"))
             self._emit(target + " = (" + target + " " + _BINOP_TEXT[op] + " " + value + ")")
@@ -635,8 +725,8 @@ class JuliaSubsetRenderer:
             self._emit("end")
             return
         if kind == "FunctionDef":
-            name = _str(node, "name")
-            args = [arg for arg in _list(node, "arg_order") if isinstance(arg, str)]
+            name = _ident(_str(node, "name"))
+            args = [_ident(arg) for arg in _list(node, "arg_order") if isinstance(arg, str)]
             self._emit("function " + name + "(" + ", ".join(args) + ")")
             self.indent_level += 1
             for stmt in _list(node, "body"):
