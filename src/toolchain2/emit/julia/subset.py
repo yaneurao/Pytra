@@ -300,6 +300,22 @@ def _import_supported(names: list[JsonVal]) -> bool:
     return all(isinstance(item, dict) and _str(item, "name") in allowed for item in names)
 
 
+def _comp_generator_supported(node: dict[str, JsonVal]) -> bool:
+    target = node.get("target")
+    if not isinstance(target, dict):
+        return False
+    target_kind = _str(target, "kind")
+    if target_kind == "Name":
+        pass
+    elif target_kind in {"Tuple", "List"}:
+        elements = _list(target, "elements")
+        if len(elements) == 0 or not all(isinstance(item, dict) and _str(item, "kind") == "Name" for item in elements):
+            return False
+    else:
+        return False
+    return _expr_supported(node.get("iter")) and all(_expr_supported(item) for item in _list(node, "ifs"))
+
+
 def _isinstance_expected_name(node: dict[str, JsonVal]) -> str:
     expected_any = node.get("expected_type_id")
     if isinstance(expected_any, dict) and _str(expected_any, "kind") == "Name":
@@ -339,6 +355,15 @@ def _expr_supported(node: JsonVal) -> bool:
         )
     if kind == "Set":
         return all(_expr_supported(item) for item in _list(node, "elements"))
+    if kind == "ListComp":
+        generators = _list(node, "generators")
+        return len(generators) == 1 and isinstance(generators[0], dict) and _expr_supported(node.get("elt")) and _comp_generator_supported(generators[0])
+    if kind == "SetComp":
+        generators = _list(node, "generators")
+        return len(generators) == 1 and isinstance(generators[0], dict) and _expr_supported(node.get("elt")) and _comp_generator_supported(generators[0])
+    if kind == "DictComp":
+        generators = _list(node, "generators")
+        return len(generators) == 1 and isinstance(generators[0], dict) and _expr_supported(node.get("key")) and _expr_supported(node.get("value")) and _comp_generator_supported(generators[0])
     if kind == "BinOp":
         return _str(node, "op") in _BINOP_TEXT and _expr_supported(node.get("left")) and _expr_supported(node.get("right"))
     if kind == "BoolOp":
@@ -635,6 +660,28 @@ class JuliaSubsetRenderer:
         if kind == "Set":
             elems = [self._render_expr(item) for item in _list(node, "elements")]
             return "Set([" + ", ".join(elems) + "])"
+        if kind == "ListComp":
+            generator = _list(node, "generators")[0]
+            assert isinstance(generator, dict)
+            elt = self._render_expr(node.get("elt"))
+            loop_var = self._render_comp_target(generator.get("target"))
+            iter_expr = self._render_comp_iter(generator.get("iter"))
+            return "[" + elt + " for " + loop_var + " in " + iter_expr + self._render_comp_if_suffix(generator) + "]"
+        if kind == "SetComp":
+            generator = _list(node, "generators")[0]
+            assert isinstance(generator, dict)
+            elt = self._render_expr(node.get("elt"))
+            loop_var = self._render_comp_target(generator.get("target"))
+            iter_expr = self._render_comp_iter(generator.get("iter"))
+            return "Set([" + elt + " for " + loop_var + " in " + iter_expr + self._render_comp_if_suffix(generator) + "])"
+        if kind == "DictComp":
+            generator = _list(node, "generators")[0]
+            assert isinstance(generator, dict)
+            key_expr = self._render_expr(node.get("key"))
+            value_expr = self._render_expr(node.get("value"))
+            loop_var = self._render_comp_target(generator.get("target"))
+            iter_expr = self._render_comp_iter(generator.get("iter"))
+            return "Dict(" + key_expr + " => " + value_expr + " for " + loop_var + " in " + iter_expr + self._render_comp_if_suffix(generator) + ")"
         if kind == "BinOp":
             op = _str(node, "op")
             left = self._render_expr(node.get("left"))
@@ -650,6 +697,8 @@ class JuliaSubsetRenderer:
                 rhs_resolved = _str(right_node, "resolved_type") if isinstance(right_node, dict) else ""
                 if lhs_resolved == "str" or rhs_resolved == "str":
                     return "(" + left + " * " + right + ")"
+                if lhs_resolved.startswith("list[") or rhs_resolved.startswith("list["):
+                    return "vcat(" + left + ", " + right + ")"
             if op == "Mult":
                 left_node = node.get("left")
                 right_node = node.get("right")
@@ -746,6 +795,8 @@ class JuliaSubsetRenderer:
                 if attr == "isdigit" and len(args) == 0:
                     return "__pytra_str_isdigit(" + owner + ")"
                 if attr == "index" and len(args) == 1:
+                    if owner_type.startswith("list["):
+                        return "(findfirst(==(" + args[0] + "), " + owner + ") - 1)"
                     return "__pytra_str_find(" + owner + ", " + args[0] + ")"
                 if attr == "isalnum" and len(args) == 0:
                     return "__pytra_str_isalnum(" + owner + ")"
@@ -935,6 +986,32 @@ class JuliaSubsetRenderer:
                 self._emit_assign_target(item, item_expr)
             return
         raise RuntimeError("julia subset: unsupported assign target kind: " + kind)
+
+    def _render_comp_target(self, target: dict[str, JsonVal]) -> str:
+        kind = _str(target, "kind")
+        if kind == "Name":
+            return _ident(_str(target, "id"))
+        if kind in {"Tuple", "List"}:
+            parts: list[str] = []
+            for item in _list(target, "elements"):
+                if isinstance(item, dict) and _str(item, "kind") == "Name":
+                    parts.append(_ident(_str(item, "id")))
+            if len(parts) == 0:
+                raise RuntimeError("julia subset: empty comprehension target")
+            return "(" + ", ".join(parts) + ")"
+        raise RuntimeError("julia subset: unsupported comprehension target kind: " + kind)
+
+    def _render_comp_iter(self, node: JsonVal) -> str:
+        iter_expr = self._render_expr(node)
+        if isinstance(node, dict) and _str(node, "resolved_type") == "str":
+            return "(__pytra_str(__pytra_ch) for __pytra_ch in " + iter_expr + ")"
+        return iter_expr
+
+    def _render_comp_if_suffix(self, generator: dict[str, JsonVal]) -> str:
+        conditions = [self._render_expr(item) for item in _list(generator, "ifs")]
+        if len(conditions) == 0:
+            return ""
+        return " if " + " && ".join(conditions)
 
     def _emit_stmt(self, node: JsonVal) -> None:
         if not isinstance(node, dict):
