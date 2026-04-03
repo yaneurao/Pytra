@@ -8,15 +8,38 @@ import std/sequtils
 import std/sets
 import std/algorithm
 
+let py_pi*: float64 = math.PI
+let py_e*: float64 = math.E
+
 # ---------------------------------------------------------------------------
 # Type aliases
 # ---------------------------------------------------------------------------
-type PyObj* = ref RootObj
+type PyObj* = ref object of RootObj
+type PyIntObj* = ref object of PyObj
+  value*: int64
+type PyStrObj* = ref object of PyObj
+  value*: string
+type PyBoolObj* = ref object of PyObj
+  value*: bool
+type PyFloatObj* = ref object of PyObj
+  value*: float64
 type PyPath* = string
 type PyFile* = File
 
 template py_instanceof*(v: typed, T: typedesc): bool =
-  when compiles(v of T):
+  when T is bool:
+    type(v) is bool
+  elif T is string:
+    type(v) is string
+  elif T is int64:
+    type(v) is int64 or type(v) is int
+  elif T is float64:
+    type(v) is float64 or type(v) is float
+  elif T is SomeInteger:
+    type(v) is T
+  elif T is SomeFloat:
+    type(v) is T
+  elif compiles(v of T):
     v of T
   elif compiles(v is T):
     v is T
@@ -29,11 +52,10 @@ template py_is_dict*(v: typed): bool =
   else:
     false
 
-template py_is_list*(v: typed): bool =
-  when v is seq:
-    true
-  else:
-    false
+proc py_is_list*(v: string): bool = false
+proc py_is_list*[T](v: seq[T]): bool = true
+proc py_is_list*[T; N: static[int]](v: array[N, T]): bool = true
+proc py_is_list*[T](v: T): bool = false
 
 template py_is_str*(v: typed): bool =
   when v is string:
@@ -81,12 +103,20 @@ proc close*(f: var PyFile) =
   system.close(f)
 
 proc py_to_string*(v: auto): string
+proc py_box*(v: PyObj): PyObj = v
+proc py_box*(v: typeof(nil)): PyObj = nil
+proc py_box*(v: string): PyObj = PyStrObj(value: v)
+proc py_box*(v: bool): PyObj = PyBoolObj(value: v)
+proc py_box*(v: SomeInteger): PyObj = PyIntObj(value: int64(v))
+proc py_box*(v: SomeFloat): PyObj = PyFloatObj(value: float64(v))
 
 # ---------------------------------------------------------------------------
 # Print
 # ---------------------------------------------------------------------------
 var py_capture_stdout_active = false
 var py_capture_stdout_lines: seq[string] = @[]
+var py_argv*: seq[string] = @[]
+var py_path*: seq[string] = @[]
 
 proc py_print*() =
   if py_capture_stdout_active:
@@ -113,8 +143,34 @@ proc py_perf_counter*(): float =
 proc py_int*(v: auto): int =
   when v is string:
     parseInt(v)
+  elif v is bool:
+    if v: 1 else: 0
+  elif compiles(py_to_string(v)):
+    let s = py_to_string(v)
+    if s == "True":
+      1
+    elif s == "False":
+      0
+    elif s.contains(".") or s.contains("e") or s.contains("E"):
+      int(parseFloat(s))
+    else:
+      parseInt(s)
   else:
     int(v)
+
+proc py_int*(v: PyObj): int =
+  if v.isNil:
+    0
+  elif v of PyIntObj:
+    int(PyIntObj(v).value)
+  elif v of PyBoolObj:
+    if PyBoolObj(v).value: 1 else: 0
+  elif v of PyFloatObj:
+    int(PyFloatObj(v).value)
+  elif v of PyStrObj:
+    parseInt(PyStrObj(v).value)
+  else:
+    0
 
 proc py_float*(v: auto): float =
   when v is string:
@@ -123,24 +179,97 @@ proc py_float*(v: auto): float =
     float(v)
 
 proc py_str*(v: auto): string =
-  when v is bool:
+  when v is PyObj:
+    py_to_string(v)
+  elif v is bool:
     if v: "True" else: "False"
   elif v is typeof(nil):
     "None"
   elif v is ref CatchableError:
     if v.isNil: "" else: v.msg
-  else:
+  elif compiles(py_to_string(v)):
+    py_to_string(v)
+  elif compiles($v):
     $v
+  elif compiles($v[]):
+    $v[]
+  else:
+    "<object>"
+
+proc py_str*(v: PyObj): string =
+  py_to_string(v)
+
+proc py_to_string*(v: PyObj): string =
+  if v.isNil:
+    "None"
+  elif v of PyStrObj:
+    PyStrObj(v).value
+  elif v of PyIntObj:
+    $PyIntObj(v).value
+  elif v of PyBoolObj:
+    if PyBoolObj(v).value: "True" else: "False"
+  elif v of PyFloatObj:
+    $PyFloatObj(v).value
+  else:
+    "PyObj"
+
+proc py_repr_item*(v: string): string = "'" & v & "'"
+proc py_repr_item*(v: auto): string = py_to_string(v)
+
+proc py_to_string*[T](v: seq[T]): string =
+  var parts: seq[string] = @[]
+  for item in v:
+    parts.add(py_repr_item(item))
+  "[" & parts.join(", ") & "]"
+
+proc py_str*[T](v: seq[T]): string = py_to_string(v)
+
+proc py_to_string*[K, V](v: Table[K, V]): string =
+  var parts: seq[string] = @[]
+  for key, value in v.pairs:
+    parts.add(py_repr_item(key) & ": " & py_repr_item(value))
+  "{" & parts.join(", ") & "}"
+
+proc py_str*[K, V](v: Table[K, V]): string = py_to_string(v)
+
+proc py_to_string*[T](v: HashSet[T]): string =
+  var parts: seq[string] = @[]
+  for item in v:
+    parts.add(py_repr_item(item))
+  "{" & parts.join(", ") & "}"
+
+proc py_str*[T](v: HashSet[T]): string = py_to_string(v)
+
+proc py_to_string*[A, B](v: (A, B)): string =
+  "(" & py_repr_item(v[0]) & ", " & py_repr_item(v[1]) & ")"
+
+proc py_str*[A, B](v: (A, B)): string = py_to_string(v)
+
+proc py_to_string*[A](v: (A,)): string =
+  "(" & py_repr_item(v[0]) & ",)"
+
+proc py_str*[A](v: (A,)): string = py_to_string(v)
 
 proc py_to_string*(v: auto): string =
-  when v is bool:
+  when v is PyObj:
+    py_to_string(v)
+  elif v is bool:
     if v: "True" else: "False"
   elif v is typeof(nil):
     "None"
   elif v is ref CatchableError:
     if v.isNil: "" else: v.msg
-  else:
+  elif compiles(v.pairs):
+    var parts: seq[string] = @[]
+    for key, value in v.pairs:
+      parts.add(py_repr_item(key) & ": " & py_repr_item(value))
+    "{" & parts.join(", ") & "}"
+  elif compiles($v):
     $v
+  elif compiles($v[]):
+    $v[]
+  else:
+    "<object>"
 
 proc py_bool*(v: auto): bool =
   when v is bool:
@@ -151,6 +280,20 @@ proc py_bool*(v: auto): bool =
     v.len > 0
   else:
     not v.isNil
+
+proc py_bool*(v: PyObj): bool =
+  if v.isNil:
+    false
+  elif v of PyBoolObj:
+    PyBoolObj(v).value
+  elif v of PyIntObj:
+    PyIntObj(v).value != 0
+  elif v of PyFloatObj:
+    PyFloatObj(v).value != 0.0
+  elif v of PyStrObj:
+    PyStrObj(v).value.len > 0
+  else:
+    true
 
 proc py_ord*(c: string): int =
   if c.len > 0: int(c[0]) else: 0
@@ -205,6 +348,19 @@ proc py_len*[T](v: seq[T]): int = v.len
 proc py_len*[K, V](v: Table[K, V]): int = v.len
 proc py_len*[T](v: HashSet[T]): int = v.len
 
+proc py_repeat*(s: string, n: SomeInteger): string =
+  if n <= 0:
+    return ""
+  result = repeat(s, int(n))
+
+proc py_repeat*[T](items: openArray[T], n: SomeInteger): seq[T] =
+  if n <= 0:
+    return @[]
+  result = @[]
+  for _ in 0..<int(n):
+    for item in items:
+      result.add(item)
+
 template py_truthy*(v: auto): bool =
   when v is bool:
     v
@@ -250,6 +406,13 @@ proc py_enumerate*[T](items: seq[T], start: int): seq[(int, T)] =
   for item in items:
     result_seq.add((i, item))
     i += 1
+  return result_seq
+
+proc py_zip*[A, B](a: seq[A], b: seq[B]): seq[(A, B)] =
+  var result_seq: seq[(A, B)] = @[]
+  let n = min(a.len, b.len)
+  for i in 0 ..< n:
+    result_seq.add((a[i], b[i]))
   return result_seq
 
 proc py_in*[T](item: T, items: seq[T]): bool = item in items
@@ -317,6 +480,37 @@ proc py_assert_eq*[T](a, b: T, msg: string = ""): bool =
     raise newException(AssertionDefect, detail & "assertion failed: " & $a & " != " & $b)
   return true
 
+proc py_assert_eq*[T](a: PyObj, b: T, msg: string = ""): bool =
+  if a.isNil:
+    let detail = if msg != "": msg & ": " else: ""
+    raise newException(AssertionDefect, detail & "assertion failed: None != " & $b)
+  when T is string:
+    if not (a of PyStrObj) or PyStrObj(a).value != b:
+      let detail = if msg != "": msg & ": " else: ""
+      raise newException(AssertionDefect, detail & "assertion failed: " & py_to_string(a) & " != " & b)
+  elif T is bool:
+    if not (a of PyBoolObj) or PyBoolObj(a).value != b:
+      let detail = if msg != "": msg & ": " else: ""
+      raise newException(AssertionDefect, detail & "assertion failed: " & py_to_string(a) & " != " & $b)
+  elif T is SomeInteger:
+    if not (a of PyIntObj) or PyIntObj(a).value != int64(b):
+      let detail = if msg != "": msg & ": " else: ""
+      raise newException(AssertionDefect, detail & "assertion failed: " & py_to_string(a) & " != " & $b)
+  elif T is SomeFloat:
+    if not (a of PyFloatObj) or PyFloatObj(a).value != float64(b):
+      let detail = if msg != "": msg & ": " else: ""
+      raise newException(AssertionDefect, detail & "assertion failed: " & py_to_string(a) & " != " & $b)
+  else:
+    let detail = if msg != "": msg & ": " else: ""
+    raise newException(AssertionDefect, detail & "unsupported PyObj comparison")
+  return true
+
+proc py_assert_eq*(a: PyObj, b: typeof(nil), msg: string = ""): bool =
+  if not a.isNil:
+    let detail = if msg != "": msg & ": " else: ""
+    raise newException(AssertionDefect, detail & "assertion failed: " & py_to_string(a) & " != None")
+  return true
+
 proc py_assert_stdout*(expected: seq[string], fn: proc()): bool =
   py_capture_stdout_active = true
   py_capture_stdout_lines = @[]
@@ -343,14 +537,112 @@ proc py_assert_all*(items: seq[bool], msg: string = ""): bool =
 # ---------------------------------------------------------------------------
 # Format helper
 # ---------------------------------------------------------------------------
+proc py_insert_commas(s: string): string =
+  var sign = ""
+  var digits = s
+  if digits.len > 0 and (digits[0] == '-' or digits[0] == '+'):
+    sign = $digits[0]
+    digits = digits[1 .. ^1]
+  var parts: seq[string] = @[]
+  var i = digits.len
+  while i > 3:
+    parts.insert(digits[i - 3 ..< i], 0)
+    i -= 3
+  if i > 0:
+    parts.insert(digits[0 ..< i], 0)
+  return sign & parts.join(",")
+
+proc py_pad_text(s: string, width: int, left_align: bool = false, fill: char = ' '): string =
+  if s.len >= width:
+    return s
+  let pad = repeat($fill, width - s.len)
+  if left_align:
+    return s & pad
+  return pad & s
+
+proc py_fmt*(v: string, spec: string): string =
+  var text = v
+  if spec.len == 0:
+    return text
+  let kind = spec[^1]
+  var body = if kind in {'s'}: spec[0 ..< spec.len - 1] else: spec
+  var left_align = false
+  if body.startsWith("<"):
+    left_align = true
+    body = body[1 .. ^1]
+  if body.len > 0:
+    let width = parseInt(body)
+    return py_pad_text(text, width, left_align = left_align)
+  return text
+
+proc py_fmt*(v: SomeInteger, spec: string): string =
+  if spec.len == 0:
+    return $v
+  let kind = spec[^1]
+  var body = spec[0 ..< spec.len - 1]
+  var show_sign = false
+  var zero_fill = false
+  var comma_group = false
+  if body.startsWith("+"):
+    show_sign = true
+    body = body[1 .. ^1]
+  if body.startsWith("0"):
+    zero_fill = true
+  if body.contains(","):
+    comma_group = true
+    body = body.replace(",", "")
+  let width = if body.len > 0: parseInt(body) else: 0
+  var text = ""
+  if kind == 'x' or kind == 'X':
+    text = toHex(uint64(v))
+    while text.len > 1 and text[0] == '0':
+      text = text[1 .. ^1]
+    if kind == 'x':
+      text = text.toLowerAscii()
+  else:
+    text = $v
+    if comma_group:
+      text = py_insert_commas(text)
+  if show_sign and v >= 0:
+    text = "+" & text
+  if width > 0:
+    let fill = if zero_fill and not comma_group: '0' else: ' '
+    if fill == '0' and text.len > 0 and (text[0] == '+' or text[0] == '-'):
+      let sign = text[0]
+      text = $sign & py_pad_text(text[1 .. ^1], width - 1, fill = fill)
+    else:
+      text = py_pad_text(text, width, fill = fill)
+  return text
+
+proc py_fmt*(v: SomeFloat, spec: string): string =
+  if spec.len == 0:
+    return $v
+  let kind = spec[^1]
+  var body = spec[0 ..< spec.len - 1]
+  var width = 0
+  var prec = -1
+  if "." in body:
+    let parts = body.split(".")
+    if parts[0].len > 0:
+      width = parseInt(parts[0])
+    if parts.len > 1 and parts[1].len > 0:
+      prec = parseInt(parts[1])
+  elif body.len > 0:
+    width = parseInt(body)
+  if prec < 0:
+    prec = 6
+  var value = float64(v)
+  var suffix = ""
+  if kind == '%':
+    value *= 100.0
+    suffix = "%"
+  let text = formatFloat(value, ffDecimal, prec) & suffix
+  if width > 0:
+    return py_pad_text(text, width)
+  return text
+
 proc py_fmt*(v: auto, spec: string): string =
-  # Simplified format - handle common cases
-  if spec.endsWith("f"):
-    let precision_str = spec[0 ..< spec.len - 1]
-    if precision_str.startsWith("."):
-      let prec = parseInt(precision_str[1 ..< precision_str.len])
-      return formatFloat(float(v), ffDecimal, prec)
-  return $v
+  py_to_string(v)
 
 # ---------------------------------------------------------------------------
 # Binary file I/O helpers
