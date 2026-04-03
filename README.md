@@ -137,11 +137,11 @@ Legend: ✅ = Good / 🔶 = Partial / ❌ = Unsupported or difficult
 
 ## Changelog
 
-> **2026-03-31** - C# emitter pre-selfhost complete (fixture 131/131 + sample 18/18 + stdlib 16/16). C++ variant migration plan with `std::variant` proof-of-concept (basic ops, recursive types, RC sharing). New spec-adt.md (union type per-language conversion, object fallback banned). EAST tuple unpack bugfix, Python → EAST node conversion table. 5 new fixtures (tuple_unpack_variants, callable_higher_order, in_membership_iterable, typed_container_access, object_container_access). Rust fixture 132/132 + sample 18/18 PASS, inheritance ref + super() resolution. Linker receiver_storage_hint. Parity changelog auto-recording.
+> **2026-04-03** - Unified emitter call structure (common `cli_runner.py`, 17 languages). `resolved_type: "object"` banned globally via EAST3 validator. IsInstance `PYTRA_TID_*` removed, `expected_type_name` migration. `--opt-level` rename. @extern class opaque type spec finalized. `builtin_name` removed. runtime_call coverage lint. All-skip now FAIL. `tools/unregistered/` deleted. Julia / Zig / PowerShell / Swift / Dart backend TODOs.
 
-> **2026-03-30** - Go fixture all PASS. TypeScript emitter S5-S7 complete (fixture 146/146, JS 147/147). C++ emitter P3-CR-CPP all complete. Automatic parity result accumulation + progress page generation. stdlib test separation. mapping.json types table. Emitter hardcode lint checker.
+> **2026-04-02** - C++ monostate → `optional<variant>`. Bounds check / negative index → EAST optimizer (mandelbrot 12.8s → 0.82s). png.py/gif.py extend optimization. Emitter guide §12.4-12.6 (Optional/union/callable mapping). Fixture rename (any_* → union_*/optional_none).
 
-> **2026-03-29** - Go fixture all PASS. New Rust and TypeScript emitters for toolchain2. C++ parity improvements (reserved word escaping, exception safety). Automatic parity result accumulation + progress page generation. TODO split into per-area files.
+> **2026-04-01** - Emitter lint runtime cache. Source-of-truth modification prohibition rule. EAST3 copy elision plan. C++ prefix_match lint fix.
 
 ## License
 
