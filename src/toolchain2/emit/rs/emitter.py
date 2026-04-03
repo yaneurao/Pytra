@@ -105,6 +105,7 @@ class RsEmitContext:
     class_type_ids: dict[str, int] = field(default_factory=dict)
     # Type info table from linked manifest type_info_table_v1: {name → {id, entry, exit}}
     class_type_info_table: dict[str, dict[str, int]] = field(default_factory=dict)
+    needs_runtime_type_ids: bool = False
     known_method_signatures: dict[tuple[str, str], dict[str, JsonVal]] = field(default_factory=dict)
     imported_symbol_storage_hints: dict[str, str] = field(default_factory=dict)
     imported_class_fields: dict[str, dict[str, str]] = field(default_factory=dict)
@@ -579,6 +580,36 @@ def _collect_signature_type_params(
     if return_type != "":
         visit(return_type)
     return params
+
+
+def _doc_requires_runtime_type_ids(body: list[JsonVal], main_guard: list[JsonVal], class_names: set[str]) -> bool:
+    found = False
+
+    def walk(node: JsonVal) -> None:
+        nonlocal found
+        if found:
+            return
+        if isinstance(node, dict):
+            kind = _str(node, "kind")
+            if kind == "ObjTypeId":
+                found = True
+                return
+            if kind == "Box":
+                outer_rt = _str(node, "resolved_type")
+                inner = node.get("value")
+                inner_rt = _str(inner, "resolved_type") if isinstance(inner, dict) else ""
+                if outer_rt in ("object", "Any", "Obj", "JsonVal") and inner_rt in class_names:
+                    found = True
+                    return
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    walk(body)
+    walk(main_guard)
+    return found
 
 
 def _rs_zero_value_for_context(ctx: RsEmitContext, resolved_type: str) -> str:
@@ -5837,9 +5868,8 @@ def _emit_class_def(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     for trait_name in implements_traits:
         _emit_trait_impl_recursive(name, trait_name)
 
-    # Emit PyRuntimeTypeId for user-defined classes (needed for isinstance checks)
-    # TID constant name: {MODULE_STEM_UPPER}_{CLASS_UPPER}_TID
-    if name not in ctx.enum_bases:
+    # Emit class runtime type IDs only when ObjTypeId / class→PyAny boxing is still present.
+    if name not in ctx.enum_bases and ctx.needs_runtime_type_ids:
         _emit_class_runtime_type_id(ctx, name)
 
     # Emit PyStringify for user-defined classes (needed for str(instance))
@@ -6705,6 +6735,7 @@ def emit_rs_module(east3_doc: dict[str, JsonVal], *, package_mode: bool = False)
 
     # Collect import alias modules
     ctx.import_alias_modules = build_import_alias_map(meta)
+    ctx.needs_runtime_type_ids = _doc_requires_runtime_type_ids(body, main_guard, ctx.class_names)
 
     # Start emitting
     lines: list[str] = ctx.lines
@@ -6716,7 +6747,8 @@ def emit_rs_module(east3_doc: dict[str, JsonVal], *, package_mode: bool = False)
     # Include runtime header
     if ctx.is_entry and not ctx.package_mode:
         lines.append("include!(\"py_runtime.rs\");")
-        lines.append("include!(\"pytra_built_in_type_id_table.rs\");")
+        if ctx.needs_runtime_type_ids:
+            lines.append("include!(\"pytra_built_in_type_id_table.rs\");")
         for dep_mod_id in _iter_linked_user_module_ids(meta, ctx.module_id):
             inc = "include!(\"" + dep_mod_id.replace(".", "_") + ".rs\");"
             if inc not in lines:
@@ -6752,8 +6784,8 @@ def emit_rs_module(east3_doc: dict[str, JsonVal], *, package_mode: bool = False)
         main_prefix = "pub " if ctx.package_mode else ""
         _emit(ctx, main_prefix + "fn main() {")
         ctx.indent_level += 1
-        # Register user-defined class type info for py_is_subtype to work
-        _emit_type_registrations(ctx)
+        if ctx.needs_runtime_type_ids:
+            _emit_type_registrations(ctx)
         if len(main_guard) > 0:
             prev_declared = set(ctx.declared_vars)
             ctx.declared_vars = set()
