@@ -246,7 +246,7 @@ func pytraTypeRangeMax(tid int64) int64 {
 }
 
 func pytra_isinstance(actualTypeId int64, tid int64) bool {
-	return pytraTypeRangeMin(tid) <= actualTypeId && actualTypeId <= pytraTypeRangeMax(tid)
+	return py_runtime_type_id_is_subtype(actualTypeId, tid)
 }
 
 func pytraNewBaseException(msg string) *PytraErrorCarrier {

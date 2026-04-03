@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from dataclasses import field
 
@@ -862,8 +863,42 @@ def _go_polymorphic_iface_name(ctx: EmitContext, type_name: str) -> str:
     return "__pytra_iface_" + _go_symbol_name(ctx, type_name)
 
 
+def _upper_snake(name: str) -> str:
+    if name == "":
+        return ""
+    s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
+    s2 = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1)
+    return s2.upper()
+
+
 def _is_polymorphic_class(ctx: EmitContext, type_name: str) -> bool:
     return type_name in ctx.class_bases.values() or type_name in ctx.trait_names
+
+
+def _ancestor_class_chain(ctx: EmitContext, type_name: str) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    cur_name = type_name.lstrip("*")
+    if "." in cur_name:
+        cur_name = cur_name.rsplit(".", 1)[-1]
+
+    def _lookup_base(name: str) -> str:
+        direct = ctx.class_bases.get(name, "")
+        if direct != "":
+            return direct
+        suffix = "." + name
+        for key, value in ctx.class_bases.items():
+            if key == name or key.endswith(suffix):
+                return value
+        return ""
+
+    cur = _lookup_base(cur_name)
+    while cur != "" and cur not in ("object", "ABC") and cur not in seen:
+        seen.add(cur)
+        cur_short = cur.rsplit(".", 1)[-1] if "." in cur else cur
+        out.append(cur_short)
+        cur = _lookup_base(cur)
+    return out
 
 
 def _is_trait_class(node: dict[str, JsonVal]) -> bool:
@@ -2059,6 +2094,23 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             fn_name = _str(func, "id")
             if fn_name == "":
                 fn_name = _str(func, "repr")
+            if fn_name == "pytra_isinstance" and len(args) == 2:
+                actual_node = args[0] if isinstance(args[0], dict) else None
+                expected_node = args[1] if isinstance(args[1], dict) else None
+                if (
+                    isinstance(actual_node, dict)
+                    and _str(actual_node, "kind") == "ObjTypeId"
+                    and isinstance(expected_node, dict)
+                    and _str(expected_node, "kind") == "Name"
+                ):
+                    expected_const = _str(expected_node, "id")
+                    for class_name in ctx.class_names:
+                        token = "_" + _upper_snake(class_name) + "_TID"
+                        if expected_const.endswith(token):
+                            actual_value_node = actual_node.get("value")
+                            marker_method = _go_class_marker_method_name(ctx, class_name)
+                            actual_value = _emit_expr(ctx, actual_value_node)
+                            return "func() bool { _, ok := any(" + actual_value + ").(interface{ " + marker_method + "() }); return ok }()"
             if fn_name in ("int", "float", "bool", "str", "ord", "chr"):
                 builtin_like = dict(node)
                 builtin_like["lowered_kind"] = "BuiltinCall"
@@ -3282,10 +3334,11 @@ def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     expected_trait_fqcn = _str(node, "expected_trait_fqcn")
     if expected_trait_fqcn != "":
         raise RuntimeError("go emitter unexpected trait isinstance after link: " + expected_trait_fqcn)
+    expected_name = _str(node, "expected_type_name")
     expected = node.get("expected_type_id")
-    expected_name = ""
     if isinstance(expected, dict):
-        expected_name = _str(expected, "id")
+        if expected_name == "":
+            expected_name = _str(expected, "id")
         if expected_name == "":
             expected_name = _str(expected, "repr")
     exact_pod_helpers: dict[str, str] = {
@@ -4707,6 +4760,8 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     _emit(ctx, "}")
     _emit_blank(ctx)
     _emit(ctx, "func (_ " + gn + ") " + _go_class_marker_method_name(ctx, name) + "() {}")
+    for ancestor_name in _ancestor_class_chain(ctx, name):
+        _emit(ctx, "func (_ " + gn + ") " + _go_class_marker_method_name(ctx, ancestor_name) + "() {}")
     if is_exception_class:
         _emit(ctx, "func (e *" + gn + ") pytraErrorBase() *PytraErrorCarrier { return &e.PytraErrorCarrier }")
     else:
