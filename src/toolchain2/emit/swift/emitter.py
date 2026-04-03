@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
+from pytra.std.pathlib import Path
+
+from toolchain2.emit.common.code_emitter import (
+    load_runtime_mapping,
+    should_skip_module,
+)
 from toolchain.emit.common.emitter.code_emitter import (
     build_import_alias_map,
     collect_reassigned_params,
@@ -70,6 +76,8 @@ _FUNCTION_VARARG_ELEM_TYPES: list[dict[str, str]] = [{}]
 _FUNCTION_FIXED_ARITY: list[dict[str, int]] = [{}]
 _CURRENT_LOCAL_TYPES: list[dict[str, str]] = [{}]
 _FUNCTION_SIGNATURES: list[dict[str, str]] = [{}]
+_SWIFT_RUNTIME_ROOT = Path(__file__).resolve().parents[3] / "runtime" / "swift"
+_SWIFT_RUNTIME_MAPPING = load_runtime_mapping(_SWIFT_RUNTIME_ROOT / "mapping.json")
 
 
 def _safe_ident(name: Any, fallback: str) -> str:
@@ -101,6 +109,37 @@ def _relative_import_module_path(module_id: str) -> str:
         if part != ""
     ]
     return ".".join(parts)
+
+
+def _canonical_module_parts(module_id: Any) -> list[str]:
+    if not isinstance(module_id, str) or module_id == "":
+        return []
+    canonical = canonical_runtime_module_id(module_id)
+    text = canonical if canonical != "" else module_id
+    return [part for part in text.split(".") if part != ""]
+
+
+def _module_group(module_id: Any) -> str:
+    parts = _canonical_module_parts(module_id)
+    if len(parts) >= 2 and parts[0] == "pytra":
+        return parts[1]
+    return ""
+
+
+def _module_stem(module_id: Any) -> str:
+    parts = _canonical_module_parts(module_id)
+    if len(parts) == 0:
+        return ""
+    return parts[-1]
+
+
+def _is_runtime_namespace_module(module_id: Any, group: str, stem: str = "") -> bool:
+    parts = _canonical_module_parts(module_id)
+    if len(parts) < 2 or parts[0] != "pytra" or parts[1] != group:
+        return False
+    if stem == "":
+        return True
+    return parts[-1] == stem
 
 
 def _sample_shortcut_lines(module_id: str, fn_name: str, indent: str) -> list[str]:
@@ -1157,13 +1196,28 @@ def _snake_to_pascal(name: str) -> str:
     return "".join(out)
 
 
-def _resolved_runtime_symbol(runtime_call: str, adapter_kind: str = "") -> str:
+def _resolved_runtime_symbol(
+    runtime_call: str,
+    adapter_kind: str = "",
+    *,
+    resolved_runtime_call: str = "",
+    runtime_symbol: str = "",
+) -> str:
     """Resolve runtime call to Swift function name.
 
     Uses runtime_call_adapter_kind (§1) when available,
     falls back to runtime_call string parsing.
     """
     name = runtime_call.strip()
+    mapped = ""
+    if resolved_runtime_call in _SWIFT_RUNTIME_MAPPING.calls:
+        mapped = _SWIFT_RUNTIME_MAPPING.calls[resolved_runtime_call]
+    elif runtime_call in _SWIFT_RUNTIME_MAPPING.calls:
+        mapped = _SWIFT_RUNTIME_MAPPING.calls[runtime_call]
+    elif runtime_symbol in _SWIFT_RUNTIME_MAPPING.calls:
+        mapped = _SWIFT_RUNTIME_MAPPING.calls[runtime_symbol]
+    if mapped != "":
+        return mapped.replace(".", "_")
     if name == "":
         return ""
     # §1: use runtime_call_adapter_kind when available
@@ -1201,6 +1255,14 @@ def _runtime_module_id(expr: dict[str, Any]) -> str:
     return canonical_runtime_module_id(runtime_module)
 
 
+def _runtime_module_group(expr: dict[str, Any]) -> str:
+    return _module_group(_runtime_module_id(expr))
+
+
+def _runtime_module_stem(expr: dict[str, Any]) -> str:
+    return _module_stem(_runtime_module_id(expr))
+
+
 def _runtime_symbol_name(expr: dict[str, Any]) -> str:
     runtime_symbol_any = expr.get("runtime_symbol")
     if isinstance(runtime_symbol_any, str):
@@ -1211,6 +1273,59 @@ def _runtime_symbol_name(expr: dict[str, Any]) -> str:
     if dot >= 0:
         return runtime_call[dot + 1 :].strip()
     return ""
+
+
+def _resolved_runtime_source(expr: dict[str, Any]) -> str:
+    resolved_source_any = expr.get("resolved_runtime_source")
+    return resolved_source_any if isinstance(resolved_source_any, str) else ""
+
+
+def _runtime_adapter_kind(expr: dict[str, Any]) -> str:
+    adapter_any = expr.get("runtime_call_adapter_kind")
+    return adapter_any if isinstance(adapter_any, str) else ""
+
+
+def _expr_semantic_tag(expr: dict[str, Any]) -> str:
+    semantic_tag_any = expr.get("semantic_tag")
+    return semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+
+
+def _is_direct_extern_module_attr(expr: dict[str, Any]) -> bool:
+    if _resolved_runtime_source(expr) != "module_attr":
+        return False
+    return _runtime_adapter_kind(expr) == "extern_delegate"
+
+
+def _is_argument_parser_method(expr: dict[str, Any], method_name: str) -> bool:
+    semantic_tag = _expr_semantic_tag(expr)
+    return semantic_tag == "stdlib.method." + method_name and _runtime_symbol_name(expr).endswith("." + method_name)
+
+
+def _is_perf_counter_call(expr: dict[str, Any]) -> bool:
+    return _expr_semantic_tag(expr) == "stdlib.fn.perf_counter"
+
+
+def _is_module_skip_target(module_id: str) -> bool:
+    group = _module_group(module_id)
+    if group in {"built_in", "utils"}:
+        return True
+    if should_skip_module(module_id, _SWIFT_RUNTIME_MAPPING):
+        return True
+    if group != "std":
+        return False
+    stem = _module_stem(module_id)
+    if stem == "":
+        return False
+    native_candidates = [
+        _SWIFT_RUNTIME_ROOT / "std" / ("pytra_std_" + stem + ".swift"),
+        _SWIFT_RUNTIME_ROOT / "std" / (stem + "_native.swift"),
+    ]
+    i = 0
+    while i < len(native_candidates):
+        if native_candidates[i].exists():
+            return False
+        i += 1
+    return True
 
 
 _SWIFT_MATH_RUNTIME_SYMBOLS = {
@@ -1282,13 +1397,14 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
             return "__pytra_type_name(" + _render_expr(call_args[0]) + ")"
     if isinstance(value_any, dict) and value_any.get("kind") == "Name":
         owner_module = value_any.get("runtime_module_id")
-        if owner_module == "pytra.std.env" and attr == "target":
+        if attr == "target" and _module_stem(owner_module) == "env" and _module_group(owner_module) == "std":
+            return "\"swift\""
+        if attr == "target" and _runtime_symbol_name(expr) == "target":
             return "\"swift\""
         owner_type = value_any.get("resolved_type")
         if owner_type == "type":
             return _safe_ident(value_any.get("id"), "Type") + "." + attr
-    semantic_tag_any = expr.get("semantic_tag")
-    semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+    semantic_tag = _expr_semantic_tag(expr)
     if semantic_tag == "stdlib.symbol.argv":
         return "__pytra_sys_argv"
     if semantic_tag == "stdlib.symbol.path":
@@ -1303,31 +1419,24 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
     resolved_runtime_any = expr.get("resolved_runtime_call")
     resolved_runtime = resolved_runtime_any if isinstance(resolved_runtime_any, str) else ""
     if resolved_runtime != "":
-        resolved_source_any = expr.get("resolved_runtime_source")
-        resolved_source = resolved_source_any if isinstance(resolved_source_any, str) else ""
-        if resolved_source == "module_attr":
-            runtime_module = _runtime_module_id(expr)
+        if _resolved_runtime_source(expr) == "module_attr":
             runtime_name = _runtime_symbol_name(expr)
-            if runtime_module in {"pytra.std.pathlib", "pytra.std.json", "pytra.std.argparse"}:
-                return _safe_ident(runtime_name if runtime_name != "" else attr, attr)
-            if runtime_module == "pytra.std.env" and runtime_name == "target":
+            if runtime_name == "target":
                 return "\"swift\""
-            adapter = expr.get("runtime_call_adapter_kind", "")
-            adapter = adapter if isinstance(adapter, str) else ""
-            runtime_symbol = _resolved_runtime_symbol(resolved_runtime, adapter)
+            if _is_direct_extern_module_attr(expr):
+                return _safe_ident(runtime_name if runtime_name != "" else attr, attr)
+            adapter = _runtime_adapter_kind(expr)
+            runtime_symbol = _resolved_runtime_symbol(
+                resolved_runtime,
+                adapter,
+                resolved_runtime_call=resolved_runtime,
+                runtime_symbol=runtime_name,
+            )
             if runtime_symbol != "":
                 if _is_math_constant(expr):
                     return runtime_symbol
                 return runtime_symbol
             return resolved_runtime
-    # math.pi / math.e → Swift constants
-    if isinstance(value_any, dict) and value_any.get("kind") == "Name":
-        owner_id = _safe_ident(value_any.get("id"), "")
-        if owner_id == "math":
-            if attr == "pi":
-                return "Double.pi"
-            if attr == "e":
-                return "M_E"
     value = _render_expr(value_any)
     return value + "." + attr
 
@@ -1500,6 +1609,13 @@ def _render_call_via_runtime_call(
 ) -> str:
     if runtime_call == "static_cast" and len(args) == 1:
         return _cast_from_any(_render_expr(args[0]), _swift_type(expr.get("resolved_type"), allow_void=False))
+    if semantic_tag == "core.print":
+        rendered_print_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_print_args.append(_render_expr(args[i]))
+            i += 1
+        return "__pytra_print(" + ", ".join(rendered_print_args) + ")"
     if runtime_call in {"index", "__pytra_index"} and len(args) == 2:
         arg0 = args[0]
         arg0_type = arg0.get("resolved_type") if isinstance(arg0, dict) else ""
@@ -1540,12 +1656,10 @@ def _render_call_via_runtime_call(
             rendered_assert_args.append(_render_expr(args[i]))
             i += 1
         return "__pytra_assert(" + ", ".join(rendered_assert_args) + ")"
-    runtime_module = _runtime_module_id(expr)
     runtime_name = _runtime_symbol_name(expr)
-    if runtime_module == "pytra.std.collections" and runtime_name == "deque":
+    if runtime_name == "deque" and _swift_type(expr.get("resolved_type"), allow_void=False) == "[Any]":
         return "[]"
-    adapter = expr.get("runtime_call_adapter_kind", "")
-    adapter = adapter if isinstance(adapter, str) else ""
+    adapter = _runtime_adapter_kind(expr)
     if runtime_source == "runtime_call":
         if adapter == "builtin":
             runtime_owner = expr.get("runtime_owner")
@@ -1593,7 +1707,12 @@ def _render_call_via_runtime_call(
                         "__pytra_dict_setdefault(&" + owner_expr + ", " + _render_expr(args[0]) + ", " + _render_expr(args[1]) + ")",
                         _swift_type(expr.get("resolved_type"), allow_void=False),
                     )
-            runtime_symbol = _resolved_runtime_symbol(runtime_call, adapter)
+            runtime_symbol = _resolved_runtime_symbol(
+                runtime_call,
+                adapter,
+                resolved_runtime_call=runtime_call,
+                runtime_symbol=runtime_name,
+            )
             if runtime_symbol == "":
                 return ""
             rendered_runtime_args: list[str] = []
@@ -1605,7 +1724,12 @@ def _render_call_via_runtime_call(
                 i += 1
             return runtime_symbol + "(" + ", ".join(rendered_runtime_args) + ")"
         if semantic_tag.startswith("stdlib.fn."):
-            runtime_symbol = _resolved_runtime_symbol(runtime_call, adapter)
+            runtime_symbol = _resolved_runtime_symbol(
+                runtime_call,
+                adapter,
+                resolved_runtime_call=runtime_call,
+                runtime_symbol=runtime_name,
+            )
             if runtime_symbol == "":
                 return ""
             rendered_runtime_args: list[str] = []
@@ -1615,21 +1739,12 @@ def _render_call_via_runtime_call(
                 i += 1
             return runtime_symbol + "(" + ", ".join(rendered_runtime_args) + ")"
         return ""
-    runtime_symbol = _resolved_runtime_symbol(runtime_call, adapter)
-    if runtime_module == "pytra.utils.png" and runtime_name == "write_rgb_png":
-        rendered_runtime_args: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered_runtime_args.append(_render_expr(args[i]))
-            i += 1
-        return "write_rgb_png(" + ", ".join(rendered_runtime_args) + ")"
-    if runtime_module == "pytra.std.os" and runtime_name == "makedirs":
-        rendered_runtime_args = []
-        i = 0
-        while i < len(args):
-            rendered_runtime_args.append(_render_expr(args[i]))
-            i += 1
-        return "__pytra_makedirs(" + ", ".join(rendered_runtime_args) + ")"
+    runtime_symbol = _resolved_runtime_symbol(
+        runtime_call,
+        adapter,
+        resolved_runtime_call=runtime_call,
+        runtime_symbol=runtime_name,
+    )
     if runtime_symbol == "":
         return ""
     if runtime_symbol in {"__pytra_extend", "__pytra_discard", "__pytra_remove", "__pytra_set_add"} and len(args) > 0:
@@ -1684,45 +1799,51 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if _MAIN_CALL_ALIAS[0] in _THROWING_FUNCTIONS[0]:
             return "try " + call_code
         return call_code
-    semantic_tag_any = expr.get("semantic_tag")
-    semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
+    semantic_tag = _expr_semantic_tag(expr)
     if semantic_tag == "stdlib.symbol.Path":
         if len(args) == 0:
             return "Path(\"\")"
         return "Path(" + _render_expr(args[0]) + ")"
-    runtime_module = _runtime_module_id(expr)
-    runtime_name = _runtime_symbol_name(expr)
-    if (
-        runtime_module in {"pytra.std.pathlib", "pytra.std.json", "pytra.std.argparse"}
-        and _is_direct_stdlib_module_call(expr)
-    ):
-        direct_name = runtime_name if runtime_name != "" else callee_name
-        if direct_name != "":
-            direct_callee = _safe_ident(direct_name, "fn")
-            if runtime_module == "pytra.std.json" and direct_name in {"dumps", "dumps_jv"}:
-                return _render_stdlib_keyword_call(
-                    expr,
-                    direct_callee,
-                    ["obj" if direct_name == "dumps" else "jv", "ensure_ascii", "indent", "separators"],
-                    {
-                        "ensure_ascii": "true",
-                        "indent": "__pytra_none()",
-                        "separators": "__pytra_none()",
-                    },
-                    force_try=True,
-                )
-            rendered_direct_args: list[str] = []
-            i = 0
-            while i < len(args):
-                rendered_direct_args.append(_render_expr(args[i]))
-                i += 1
-            call_code = direct_callee + "(" + ", ".join(rendered_direct_args) + ")"
-            if runtime_module == "pytra.std.json" and direct_name in {"loads", "loads_obj", "loads_arr", "dumps", "dumps_jv"}:
-                return "try " + call_code
-            if direct_callee in _THROWING_FUNCTIONS[0]:
-                return "try " + call_code
-            return call_code
+    if isinstance(fn_any, dict) and fn_any.get("kind") == "Attribute":
+        owner_any = fn_any.get("value")
+        owner_expr = _render_expr(owner_any)
+        if _is_argument_parser_method(expr, "add_argument"):
+            return _render_stdlib_keyword_call(
+                expr,
+                owner_expr + ".add_argument",
+                ["name0", "name1", "name2", "name3", "help", "action", "choices", "default"],
+                {
+                    "name1": "\"\"",
+                    "name2": "\"\"",
+                    "name3": "\"\"",
+                    "help": "\"\"",
+                    "action": "\"\"",
+                    "choices": "[]",
+                    "default": "__pytra_none()",
+                },
+            )
+        if _is_argument_parser_method(expr, "parse_args"):
+            return _render_stdlib_keyword_call(
+                expr,
+                owner_expr + ".parse_args",
+                ["argv"],
+                {"argv": "__pytra_none()"},
+            )
     runtime_call, runtime_source = _resolved_runtime_call(expr)
+    runtime_name = _runtime_symbol_name(expr)
+    if _is_direct_stdlib_module_call(expr) and runtime_name in {"dumps", "dumps_jv"}:
+        direct_callee = _safe_ident(runtime_name if runtime_name != "" else callee_name, "fn")
+        return _render_stdlib_keyword_call(
+            expr,
+            direct_callee,
+            ["obj" if runtime_name == "dumps" else "jv", "ensure_ascii", "indent", "separators"],
+            {
+                "ensure_ascii": "true",
+                "indent": "__pytra_none()",
+                "separators": "__pytra_none()",
+            },
+            force_try=True,
+        )
     if semantic_tag.startswith("stdlib.") and runtime_call == "":
         raise RuntimeError("swift native emitter: unresolved stdlib runtime call: " + semantic_tag)
     if runtime_call != "":
@@ -1734,6 +1855,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             expr,
         )
         if rendered_runtime != "":
+            if runtime_name in {"loads", "loads_obj", "loads_arr"}:
+                return "try " + rendered_runtime
+            if runtime_name in {"dumps", "dumps_jv"} and not rendered_runtime.startswith("try "):
+                return "try " + rendered_runtime
             return rendered_runtime
     if callee_name == "py_assert_true":
         rendered_assert_args: list[str] = []
@@ -1888,18 +2013,16 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 rendered_super_args.append(_render_expr(args[i]))
                 i += 1
             return "super.init(" + ", ".join(rendered_super_args) + ")"
-    if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
-        attr_name = _safe_ident(func_any.get("attr"), "")
-        owner_any = func_any.get("value")
+        if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
+            attr_name = _safe_ident(func_any.get("attr"), "")
+            owner_any = func_any.get("value")
         if attr_name == "__name__" and isinstance(owner_any, dict) and owner_any.get("kind") == "Call" and _call_name(owner_any) == "type":
             call_args_any = owner_any.get("args")
             call_args = call_args_any if isinstance(call_args_any, list) else []
             if len(call_args) == 1:
                 return "__pytra_type_name(" + _render_expr(call_args[0]) + ")"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
-            owner_id = owner_any.get("id", "")
-            # math module → Swift Foundation global functions
-            if owner_id == "math" and attr_name in _SWIFT_MATH_RUNTIME_SYMBOLS:
+            if _is_math_runtime(expr) and attr_name in _SWIFT_MATH_RUNTIME_SYMBOLS:
                 rendered_math_args: list[str] = []
                 i = 0
                 while i < len(args):
@@ -1908,18 +2031,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 if attr_name == "pi":
                     return "Double.pi"
                 if attr_name == "e":
-                    return "M_E"
+                    return "Foundation.exp(1.0)"
                 if attr_name == "fabs":
                     return "abs(" + ", ".join(rendered_math_args) + ")"
                 return attr_name + "(" + ", ".join(rendered_math_args) + ")"
-            # png/gif module → direct function calls
-            if owner_id == "png" or owner_id == "gif":
-                rendered_mod_args: list[str] = []
-                i = 0
-                while i < len(args):
-                    rendered_mod_args.append(_render_expr(args[i]))
-                    i += 1
-                return attr_name + "(" + ", ".join(rendered_mod_args) + ")"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Call" and _call_name(owner_any) == "super":
             rendered_super_args: list[str] = []
             i = 0
@@ -1990,7 +2105,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return "__pytra_keys(" + owner_expr + ")"
         if attr_name == "values" and len(args) == 0:
             return "__pytra_values(" + owner_expr + ")"
-        if owner_type == "ArgumentParser" and attr_name == "add_argument":
+        if _is_argument_parser_method(expr, "add_argument"):
             return _render_stdlib_keyword_call(
                 expr,
                 owner_expr + ".add_argument",
@@ -2005,7 +2120,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     "default": "__pytra_none()",
                 },
             )
-        if owner_type == "ArgumentParser" and attr_name == "parse_args":
+        if _is_argument_parser_method(expr, "parse_args"):
             return _render_stdlib_keyword_call(
                 expr,
                 owner_expr + ".parse_args",
@@ -2706,8 +2821,6 @@ def _infer_swift_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
             return _swift_type(_FUNCTION_SIGNATURES[0][ident], allow_void=False)
     if kind == "Call":
         name = _call_name(expr)
-        if name == "perf_counter":
-            return "Double"
         if name == "int":
             return "Int64"
         if name == "float":
@@ -2848,11 +2961,11 @@ def _expr_emits_target_type(value_expr: Any, target_type: str, type_map: dict[st
             return target_type == "Bool"
         if callee == "str":
             return target_type == "String"
-        if callee == "perf_counter":
-            return target_type == "Double"
         if callee == "len":
             return target_type == "Int64"
         resolved = _swift_type(vd.get("resolved_type"), allow_void=False)
+        if _is_perf_counter_call(vd):
+            return target_type == resolved
         func_any = vd.get("func")
         if isinstance(func_any, dict):
             fd: dict[str, Any] = func_any
@@ -3605,7 +3718,10 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                 handler_name = _safe_ident(handler_name_any, "err") if isinstance(handler_name_any, str) and handler_name_any != "" else "err"
                 handler_type_any = hd.get("type")
                 if isinstance(handler_type_any, dict) and handler_type_any.get("kind") == "Name":
-                    lines.append(indent + "} catch let " + handler_name + " as " + _safe_ident(handler_type_any.get("id"), "Exception") + " {")
+                    handler_type_name = _swift_type(handler_type_any.get("resolved_type"), allow_void=False)
+                    if handler_type_name == "Any":
+                        handler_type_name = _safe_ident(handler_type_any.get("id"), "Error")
+                    lines.append(indent + "} catch let " + handler_name + " as " + handler_type_name + " {")
                 else:
                     lines.append(indent + "} catch {")
                     lines.append(indent + "    let " + handler_name + " = error")
@@ -4679,14 +4795,7 @@ def emit_swift_module(east_doc: dict[str, Any]) -> str:
     emit_ctx = emit_ctx_any if isinstance(emit_ctx_any, dict) else {}
     module_id_any = emit_ctx.get("module_id")
     module_id = module_id_any if isinstance(module_id_any, str) else ""
-    if (
-        module_id.startswith("pytra.built_in.")
-        or module_id.startswith("pytra.utils.")
-        or module_id == "pytra.std.os"
-        or module_id == "pytra.std.env"
-        or module_id == "pytra.std.os_path"
-        or module_id == "pytra.std.collections"
-    ):
+    if _is_module_skip_target(module_id):
         return ""
     return transpile_to_swift_native(east_doc)
 
