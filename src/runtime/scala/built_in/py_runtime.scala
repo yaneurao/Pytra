@@ -77,6 +77,49 @@ def __pytra_perf_counter(): Double = {
     System.nanoTime().toDouble / 1_000_000_000.0
 }
 
+object env {
+    val target: String = "scala"
+}
+
+object os_path {
+    def join(a: Any, b: Any): String = __pytra_path_join(a, b)
+    def dirname(p: Any): String = __pytra_path_parent(p)
+    def basename(p: Any): String = __pytra_path_name(p)
+    def splitext(p: Any): mutable.ArrayBuffer[Any] = {
+        val path = __pytra_str(p)
+        val idx = path.lastIndexOf('.')
+        if (idx <= 0) mutable.ArrayBuffer[Any](path, "")
+        else mutable.ArrayBuffer[Any](path.substring(0, idx), path.substring(idx))
+    }
+    def abspath(p: Any): String = Paths.get(__pytra_str(p)).toAbsolutePath.normalize.toString
+    def exists(p: Any): Boolean = __pytra_path_exists(p)
+}
+
+object os {
+    val path = os_path
+
+    def getcwd(): String = Paths.get("").toAbsolutePath.normalize.toString
+
+    def mkdir(p: Any, exist_ok: Boolean = false): Unit = {
+        val pathValue = Paths.get(__pytra_str(p))
+        try {
+            Files.createDirectory(pathValue)
+        } catch {
+            case _: java.nio.file.FileAlreadyExistsException =>
+                if (!exist_ok) throw new RuntimeException("File exists: " + pathValue.toString)
+        }
+    }
+
+    def makedirs(p: Any, exist_ok: Boolean = false): Unit = {
+        val pathValue = Paths.get(__pytra_str(p))
+        if (exist_ok || !Files.exists(pathValue)) {
+            Files.createDirectories(pathValue)
+        } else {
+            throw new RuntimeException("File exists: " + pathValue.toString)
+        }
+    }
+}
+
 def __pytra_truthy(v: Any): Boolean = {
     if (v == null) return false
     v match {

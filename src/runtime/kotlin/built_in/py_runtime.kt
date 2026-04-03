@@ -1,6 +1,7 @@
 // Kotlin native runtime helpers for Pytra-generated code.
 import kotlin.math.*
 import java.io.File
+import java.io.FileOutputStream
 import java.nio.file.Paths
 
 class PyTuple(items: Collection<Any?> = emptyList()) : ArrayList<Any?>(items)
@@ -17,6 +18,78 @@ fun __pytra_assert(vararg args: Any?): String {
 
 fun __pytra_perf_counter(): Double {
     return System.nanoTime().toDouble() / 1_000_000_000.0
+}
+
+object env {
+    val target: String = "kotlin"
+}
+
+object os_path {
+    fun join(a: Any?, b: Any?): String = Paths.get(__pytra_str(a)).resolve(__pytra_str(b)).toString()
+    fun dirname(p: Any?): String = File(__pytra_str(p)).parent ?: ""
+    fun basename(p: Any?): String = File(__pytra_str(p)).name
+    fun splitext(p: Any?): MutableList<Any?> {
+        val path = __pytra_str(p)
+        val idx = path.lastIndexOf('.')
+        return if (idx <= 0) mutableListOf(path, "") else mutableListOf(path.substring(0, idx), path.substring(idx))
+    }
+    fun abspath(p: Any?): String = Paths.get(__pytra_str(p)).toAbsolutePath().normalize().toString()
+    fun exists(p: Any?): Boolean = File(__pytra_str(p)).exists()
+}
+
+object os {
+    val path = os_path
+
+    fun getcwd(): String = Paths.get("").toAbsolutePath().normalize().toString()
+
+    fun mkdir(p: Any?, exist_ok: Boolean = false) {
+        val dir = File(__pytra_str(p))
+        val ok = dir.mkdir()
+        if (!ok && !(exist_ok && dir.exists())) {
+            throw RuntimeException("File exists: ${dir.path}")
+        }
+    }
+
+    fun makedirs(p: Any?, exist_ok: Boolean = false) {
+        val dir = File(__pytra_str(p))
+        if (dir.exists()) {
+            if (!exist_ok) {
+                throw RuntimeException("File exists: ${dir.path}")
+            }
+            return
+        }
+        if (!dir.mkdirs() && !dir.exists()) {
+            throw RuntimeException("mkdirs failed: ${dir.path}")
+        }
+    }
+}
+
+class PyFile(private val path: String, private val mode: String) {
+    private val stream = FileOutputStream(path)
+
+    fun write(data: Any?) {
+        when (data) {
+            is MutableList<*> -> {
+                val bytes = ByteArray(data.size)
+                var i = 0
+                while (i < data.size) {
+                    bytes[i] = (__pytra_int(data[i]) and 0xFF).toByte()
+                    i += 1
+                }
+                stream.write(bytes)
+            }
+            is String -> stream.write(data.toByteArray(Charsets.UTF_8))
+            else -> stream.write(__pytra_str(data).toByteArray(Charsets.UTF_8))
+        }
+    }
+
+    fun close() {
+        stream.close()
+    }
+}
+
+fun open(path: Any?, mode: String = "r"): PyFile {
+    return PyFile(__pytra_str(path), mode)
 }
 
 fun __pytra_truthy(v: Any?): Boolean {

@@ -24,6 +24,7 @@ class KotlinRenderer(CommonRenderer):
         self.mapping = mapping
         self.current_class_name: str | None = None
         self.import_symbols: dict[str, str] = {}
+        self.import_modules: dict[str, str] = {}
         self.module_function_names: set[str] = set()
         self.local_function_aliases: dict[str, str] = {}
         self.module_class_names: set[str] = set()
@@ -163,23 +164,36 @@ class KotlinRenderer(CommonRenderer):
                     if isinstance(emit_context, dict):
                         module_id = self._str(emit_context, "module_id")
         self.import_symbols = {}
+        self.import_modules = {}
         if isinstance(meta, dict):
+            import_modules = meta.get("import_modules")
+            if isinstance(import_modules, dict):
+                for local_name, mod in import_modules.items():
+                    if isinstance(local_name, str) and isinstance(mod, str) and mod != "":
+                        self.import_modules[local_name] = mod
             import_symbols = meta.get("import_symbols")
             if isinstance(import_symbols, dict):
                 for local_name, spec in import_symbols.items():
                     if isinstance(local_name, str) and isinstance(spec, dict):
                         mod = self._str(spec, "module")
                         name = self._str(spec, "name")
-                        if mod != "" and name != "":
-                            if mod == "pytra.std.math":
-                                if name == "pi":
-                                    self.import_symbols[local_name] = "math_native_pi()"
-                                elif name == "e":
-                                    self.import_symbols[local_name] = "math_native_e()"
-                                else:
-                                    self.import_symbols[local_name] = "math_native_" + _safe_kotlin_ident(name)
-                                continue
-                            self.import_symbols[local_name] = _safe_kotlin_ident(mod.replace(".", "_")) + "." + _safe_kotlin_ident(name)
+                        if mod == "":
+                            continue
+                        if name == "":
+                            self.import_modules[local_name] = mod
+                            continue
+                        if mod in ("math", "pytra.std.math"):
+                            if name == "pi":
+                                self.import_symbols[local_name] = "math_native_pi()"
+                            elif name == "e":
+                                self.import_symbols[local_name] = "math_native_e()"
+                            else:
+                                self.import_symbols[local_name] = "math_native_" + _safe_kotlin_ident(name)
+                            continue
+                        if mod in ("time", "pytra.std.time") and name == "perf_counter":
+                            self.import_symbols[local_name] = "time_native_perf_counter"
+                            continue
+                        self.import_symbols[local_name] = _safe_kotlin_ident(mod.replace(".", "_")) + "." + _safe_kotlin_ident(name)
         self.module_function_names = {
             self._str(stmt, "name")
             for stmt in self._list(east3_doc, "body")
@@ -683,12 +697,39 @@ class KotlinRenderer(CommonRenderer):
                 return "this"
             if ident in self.import_symbols:
                 return self.import_symbols[ident]
+            if ident in self.import_modules:
+                module_id = self.import_modules[ident]
+                if module_id in ("math", "pytra.std.math"):
+                    return "math_native"
+                if module_id in ("time", "pytra.std.time"):
+                    return "time_native"
+                if module_id in ("env", "pytra.std.env"):
+                    return "env"
+                if module_id in ("os", "pytra.std.os"):
+                    return "os"
+                if module_id in ("os.path", "pytra.std.os_path"):
+                    return "os_path"
+                return _safe_kotlin_ident(module_id.replace(".", "_"))
             if ident in self.local_function_aliases:
                 return _safe_kotlin_ident(self.local_function_aliases[ident])
             return _safe_kotlin_ident(ident)
         if kind == "Attribute":
-            owner = self._emit_expr(node.get("value"))
             owner_node = node.get("value")
+            if isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Name":
+                owner_id = self._str(owner_node, "id")
+                module_id = self.import_modules.get(owner_id, "")
+                attr_name = _safe_kotlin_ident(self._str(node, "attr"))
+                if module_id in ("math", "pytra.std.math"):
+                    if attr_name == "pi":
+                        return "math_native_pi()"
+                    if attr_name == "e":
+                        return "math_native_e()"
+                    return "math_native_" + attr_name
+                if module_id in ("time", "pytra.std.time"):
+                    return "time_native_" + attr_name
+                if module_id == "pytra.std":
+                    return _safe_kotlin_ident((module_id + "." + self._str(node, "attr")).replace(".", "_"))
+            owner = self._emit_expr(owner_node)
             owner_type = self._str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
             attr = _safe_kotlin_ident(self._str(node, "attr"))
             if owner_type in self.class_property_names and attr in self.class_property_names.get(owner_type, set()):
@@ -846,6 +887,19 @@ class KotlinRenderer(CommonRenderer):
             expected = self._emit_expr(node.get("expected_type_id"))
             return "__pytra_is_subtype(" + actual + ", " + expected + ")"
         if kind == "Call":
+            runtime_module_id = self._str(node, "runtime_module_id")
+            runtime_symbol = self._str(node, "runtime_symbol")
+            runtime_adapter = self._str(node, "runtime_call_adapter_kind")
+            if runtime_adapter == "extern_delegate" and runtime_module_id != "" and runtime_symbol != "":
+                args = [self._emit_expr(arg) for arg in self._list(node, "args")]
+                if runtime_module_id == "pytra.std.math":
+                    if runtime_symbol == "pi":
+                        return "math_native_pi()"
+                    if runtime_symbol == "e":
+                        return "math_native_e()"
+                    return "math_native_" + _safe_kotlin_ident(runtime_symbol) + "(" + ", ".join(args) + ")"
+                if runtime_module_id == "pytra.std.time":
+                    return "time_native_" + _safe_kotlin_ident(runtime_symbol) + "(" + ", ".join(args) + ")"
             func = node.get("func")
             func_name = self._emit_expr(func)
             if isinstance(func, dict) and self._str(func, "kind") == "Attribute":
@@ -929,6 +983,8 @@ class KotlinRenderer(CommonRenderer):
                     if attr == "append" and len(arg_nodes) == 1:
                         return owner_expr + ".add(" + self._emit_expr(arg_nodes[0]) + ")"
                     if attr == "extend" and len(arg_nodes) == 1:
+                        if owner_type in ("bytes", "bytearray"):
+                            return owner_expr + ".addAll(__pytra_bytes(" + self._emit_expr(arg_nodes[0]) + "))"
                         elem_type = "Any?"
                         if owner_type.startswith("list[") and owner_type.endswith("]"):
                             elem_type = self._render_type(owner_type[5:-1])
@@ -972,6 +1028,9 @@ class KotlinRenderer(CommonRenderer):
                 if isinstance(arg, dict) and self._str(arg, "kind") == "Name":
                     arg_id = self._str(arg, "id")
                     resolved_type = self._str(arg, "resolved_type")
+                    if arg_id in self.local_function_aliases:
+                        args.append("::" + _safe_kotlin_ident(self.local_function_aliases[arg_id]))
+                        continue
                     if arg_id in self.module_function_names:
                         args.append("::" + _safe_kotlin_ident(arg_id))
                         continue

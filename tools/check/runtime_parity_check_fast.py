@@ -367,7 +367,13 @@ def _transpile_in_memory(
                 if filter_type == "builtin_runtime" and m.module_kind in ("runtime", "helper"):
                     if m.module_id.startswith("pytra.built_in.") or m.module_id.startswith("pytra.core."):
                         continue
-                if target in ("scala", "kotlin") and m.module_id == "pytra.std.math":
+                if target in ("scala", "kotlin") and m.module_id in (
+                    "pytra.std.math",
+                    "pytra.std.time",
+                    "pytra.std.env",
+                    "pytra.std.os",
+                    "pytra.std.os_path",
+                ):
                     continue
                 # Zig requires detecting is_entry from source path when flag is unset
                 if target == "zig":
@@ -887,6 +893,13 @@ def _run_target(
         entry_nim = emit_dir / (stem + ".nim")
         if not entry_nim.exists():
             return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_nim}")
+        if stem[:1].isdigit():
+            safe_stem = "m_" + stem
+            safe_entry = emit_dir / (safe_stem + ".nim")
+            if not safe_entry.exists():
+                shutil.copy2(entry_nim, safe_entry)
+            entry_nim = safe_entry
+            stem = safe_stem
         exe_path = emit_dir / (stem + "_nim.out")
         nimcache_path = emit_dir / ("nimcache_" + stem)
         return run_shell(

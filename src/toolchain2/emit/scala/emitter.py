@@ -24,10 +24,12 @@ class ScalaRenderer(CommonRenderer):
         self.mapping = mapping
         self.current_class_name: str | None = None
         self.import_symbols: dict[str, str] = {}
+        self.import_modules: dict[str, str] = {}
         self.module_function_names: set[str] = set()
         self.local_function_aliases: dict[str, str] = {}
         self.module_class_names: set[str] = set()
         self.class_has_init: dict[str, bool] = {}
+        self.local_decl_stack: list[set[str]] = []
         self._tmp_counter = 0
 
     def _collect_class_fields(self, node: dict[str, JsonVal]) -> list[tuple[str, str]]:
@@ -84,6 +86,15 @@ class ScalaRenderer(CommonRenderer):
             return
         raise RuntimeError("scala emitter: unsupported store target: " + kind)
 
+    def _should_declare_name(self, target_name: str, requested: bool) -> bool:
+        if len(self.local_decl_stack) == 0:
+            return requested
+        scope = self.local_decl_stack[-1]
+        if target_name in scope:
+            return False
+        scope.add(target_name)
+        return True
+
     def _emit_boolop_value_expr(self, values: list[JsonVal], is_and: bool) -> str:
         if len(values) == 0:
             return "false" if is_and else "null"
@@ -124,18 +135,31 @@ class ScalaRenderer(CommonRenderer):
             if isinstance(meta, dict):
                 module_id = self._str(meta, "module_id")
         self.import_symbols = {}
+        self.import_modules = {}
         if isinstance(meta, dict):
+            import_modules = meta.get("import_modules")
+            if isinstance(import_modules, dict):
+                for local_name, mod in import_modules.items():
+                    if isinstance(local_name, str) and isinstance(mod, str) and mod != "":
+                        self.import_modules[local_name] = mod
             import_symbols = meta.get("import_symbols")
             if isinstance(import_symbols, dict):
                 for local_name, spec in import_symbols.items():
                     if isinstance(local_name, str) and isinstance(spec, dict):
                         mod = self._str(spec, "module")
                         name = self._str(spec, "name")
-                        if mod != "" and name != "":
-                            if mod == "pytra.std.math":
-                                self.import_symbols[local_name] = "math_native." + _safe_scala_ident(name)
-                                continue
-                            self.import_symbols[local_name] = _safe_scala_ident(mod.replace(".", "_")) + "." + _safe_scala_ident(name)
+                        if mod == "":
+                            continue
+                        if name == "":
+                            self.import_modules[local_name] = mod
+                            continue
+                        if mod in ("math", "pytra.std.math"):
+                            self.import_symbols[local_name] = "math_native." + _safe_scala_ident(name)
+                            continue
+                        if mod in ("time", "pytra.std.time") and name == "perf_counter":
+                            self.import_symbols[local_name] = "time_native.perf_counter"
+                            continue
+                        self.import_symbols[local_name] = _safe_scala_ident(mod.replace(".", "_")) + "." + _safe_scala_ident(name)
         self.module_function_names = {
             self._str(stmt, "name")
             for stmt in self._list(east3_doc, "body")
@@ -213,7 +237,10 @@ class ScalaRenderer(CommonRenderer):
                 self._emit_store_target(target, value)
                 return
             target_name = _safe_scala_ident(self._str(target, "id"))
-            self._emit("var " + target_name + ": " + scala_type(decl_type) + " = " + value)
+            if self._should_declare_name(target_name, bool(node.get("declare"))):
+                self._emit("var " + target_name + ": " + scala_type(decl_type) + " = " + value)
+            else:
+                self._emit(target_name + " = " + value)
             return
         if kind == "Assign":
             target = node.get("target")
@@ -222,7 +249,10 @@ class ScalaRenderer(CommonRenderer):
                 self._emit_store_target(target, value)
                 return
             target_name = _safe_scala_ident(self._str(target, "id"))
-            self._emit("var " + target_name + " = " + value)
+            if self._should_declare_name(target_name, bool(node.get("declare"))):
+                self._emit("var " + target_name + " = " + value)
+            else:
+                self._emit(target_name + " = " + value)
             return
         if kind == "ImportFrom":
             module_name = self._str(node, "module")
@@ -361,12 +391,15 @@ class ScalaRenderer(CommonRenderer):
         return_type = scala_type(self._str(node, "return_type"))
         self._emit("def " + name + "(" + ", ".join(params) + "): " + return_type + " = {")
         self.state.indent_level += 1
+        scope_names = {_safe_scala_ident(arg) for arg in arg_order if isinstance(arg, str)}
+        self.local_decl_stack.append(scope_names)
         body = self._list(node, "body")
         if len(body) == 0:
             self._emit("()")
         else:
             for stmt in body:
                 self._emit_stmt(stmt)
+        self.local_decl_stack.pop()
         self.state.indent_level -= 1
         self._emit("}")
 
@@ -489,11 +522,35 @@ class ScalaRenderer(CommonRenderer):
                 return "this"
             if ident in self.import_symbols:
                 return self.import_symbols[ident]
+            if ident in self.import_modules:
+                module_id = self.import_modules[ident]
+                if module_id in ("math", "pytra.std.math"):
+                    return "math_native"
+                if module_id in ("time", "pytra.std.time"):
+                    return "time_native"
+                if module_id in ("env", "pytra.std.env"):
+                    return "env"
+                if module_id in ("os", "pytra.std.os"):
+                    return "os"
+                if module_id in ("os.path", "pytra.std.os_path"):
+                    return "os_path"
+                return _safe_scala_ident(module_id.replace(".", "_"))
             if ident in self.local_function_aliases:
                 return _safe_scala_ident(self.local_function_aliases[ident])
             return _safe_scala_ident(ident)
         if kind == "Attribute":
-            owner = self._emit_expr(node.get("value"))
+            owner_node = node.get("value")
+            if isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Name":
+                owner_id = self._str(owner_node, "id")
+                module_id = self.import_modules.get(owner_id, "")
+                attr = _safe_scala_ident(self._str(node, "attr"))
+                if module_id in ("math", "pytra.std.math"):
+                    return "math_native." + attr
+                if module_id in ("time", "pytra.std.time"):
+                    return "time_native." + attr
+                if module_id == "pytra.std":
+                    return _safe_scala_ident((module_id + "." + self._str(node, "attr")).replace(".", "_"))
+            owner = self._emit_expr(owner_node)
             return owner + "." + _safe_scala_ident(self._str(node, "attr"))
         if kind == "Subscript":
             owner = self._emit_expr(node.get("value"))
@@ -588,6 +645,15 @@ class ScalaRenderer(CommonRenderer):
             expected = self._emit_expr(node.get("expected_type_id"))
             return "pyTidIsSubtype(" + actual + ", " + expected + ")"
         if kind == "Call":
+            runtime_module_id = self._str(node, "runtime_module_id")
+            runtime_symbol = self._str(node, "runtime_symbol")
+            runtime_adapter = self._str(node, "runtime_call_adapter_kind")
+            if runtime_adapter == "extern_delegate" and runtime_module_id != "" and runtime_symbol != "":
+                args = [self._emit_expr(arg) for arg in self._list(node, "args")]
+                if runtime_module_id == "pytra.std.math":
+                    return "math_native." + _safe_scala_ident(runtime_symbol) + "(" + ", ".join(args) + ")"
+                if runtime_module_id == "pytra.std.time":
+                    return "time_native." + _safe_scala_ident(runtime_symbol) + "(" + ", ".join(args) + ")"
             func = node.get("func")
             func_name = self._emit_expr(func)
             if isinstance(func, dict) and self._str(func, "kind") == "Attribute":
@@ -646,6 +712,14 @@ class ScalaRenderer(CommonRenderer):
                         default_expr = self._emit_expr(arg_nodes[1])
                         return owner_expr + ".getOrElseUpdate(" + key_expr + ", " + default_expr + ")"
                 if owner_type.startswith("list[") or owner_type in ("list", "bytearray", "bytes"):
+                    if attr == "extend" and len(arg_nodes) == 1:
+                        arg_expr = self._emit_expr(arg_nodes[0])
+                        if owner_type in ("bytearray", "bytes"):
+                            return owner_expr + " ++= __pytra_bytes(" + arg_expr + ")"
+                        if owner_type.startswith("list[") and owner_type.endswith("]"):
+                            elem_type = scala_type(owner_type[5:-1])
+                            return owner_expr + " ++= __pytra_as_list(" + arg_expr + ").asInstanceOf[mutable.ArrayBuffer[" + elem_type + "]]"
+                        return owner_expr + " ++= __pytra_as_list(" + arg_expr + ")"
                     if attr == "sort":
                         return "{ val __pytra_sorted = " + owner_expr + ".sorted; " + owner_expr + ".clear(); " + owner_expr + " ++= __pytra_sorted; () }"
                     if attr == "reverse":
