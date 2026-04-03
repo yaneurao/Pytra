@@ -802,6 +802,76 @@ class JuliaSubsetRenderer:
             return owner + ".makedirs(" + args[0] + ", " + self._render_expr(keywords[0].get("value")) + ")"
         return self._render_class_dispatch_call(owner, owner_type, owner_name, attr, args, keywords)
 
+    def _render_name_call(
+        self,
+        func: str,
+        args: list[str],
+        runtime_call: str,
+        builtin_name: str,
+        result_type: str,
+        use_mapped_runtime: str,
+    ) -> str:
+        if runtime_call == "static_cast":
+            cast_expr = self._render_static_cast_call(builtin_name, result_type, args)
+            if cast_expr != "":
+                return cast_expr
+        if func == "int" and len(args) == 1:
+            if use_mapped_runtime != "" and use_mapped_runtime != "__CAST__":
+                return use_mapped_runtime + "(" + args[0] + ")"
+            return "__pytra_int(" + args[0] + ")"
+        if func == "len" and len(args) == 1:
+            return "length(" + args[0] + ")"
+        if func == "range":
+            if len(args) == 1:
+                return "0:(" + args[0] + " - 1)"
+            if len(args) == 2:
+                return args[0] + ":(" + args[1] + " - 1)"
+            if len(args) == 3:
+                step = args[2]
+                if step == "1":
+                    return args[0] + ":(" + args[1] + " - 1)"
+                if step.startswith("-"):
+                    return args[0] + ":" + step + ":(" + args[1] + " + 1)"
+                return (
+                    args[0]
+                    + ":"
+                    + step
+                    + ":(("
+                    + step
+                    + ") > 0 ? ("
+                    + args[1]
+                    + " - 1) : ("
+                    + args[1]
+                    + " + 1))"
+                )
+        if func == "str" and len(args) == 1:
+            if use_mapped_runtime != "":
+                return use_mapped_runtime + "(" + args[0] + ")"
+            return "__pytra_str(" + args[0] + ")"
+        if func == "bool" and len(args) == 1:
+            if use_mapped_runtime != "":
+                return use_mapped_runtime + "(" + args[0] + ")"
+            return "__pytra_truthy(" + args[0] + ")"
+        if func == "set" and len(args) == 0:
+            return "Set()"
+        if func == "bytearray" and len(args) == 1:
+            if use_mapped_runtime != "":
+                return use_mapped_runtime + "(" + args[0] + ")"
+            return "__pytra_bytearray(" + args[0] + ")"
+        if func == "bytes":
+            if len(args) == 0:
+                return "UInt8[]"
+            if use_mapped_runtime != "":
+                return use_mapped_runtime + "(" + args[0] + ")"
+            return "__pytra_bytes(" + args[0] + ")"
+        if func == "reversed" and len(args) == 1:
+            return "reverse(" + args[0] + ")"
+        if use_mapped_runtime != "":
+            if len(args) == 0:
+                return use_mapped_runtime + "()"
+            return use_mapped_runtime + "(" + ", ".join(args) + ")"
+        return ""
+
     def _next_tmp(self, prefix: str) -> str:
         self.tmp_counter += 1
         return prefix + str(self.tmp_counter)
@@ -1018,65 +1088,9 @@ class JuliaSubsetRenderer:
             if isinstance(func_node, dict) and _str(func_node, "kind") == "Attribute":
                 use_mapped_runtime = ""
             result_type = _str(node, "resolved_type")
-            if runtime_call == "static_cast":
-                cast_expr = self._render_static_cast_call(builtin_name, result_type, args)
-                if cast_expr != "":
-                    return cast_expr
-            if func == "int" and len(args) == 1:
-                if use_mapped_runtime != "" and use_mapped_runtime != "__CAST__":
-                    return use_mapped_runtime + "(" + args[0] + ")"
-                return "__pytra_int(" + args[0] + ")"
-            if func == "len" and len(args) == 1:
-                return "length(" + args[0] + ")"
-            if func == "range":
-                if len(args) == 1:
-                    return "0:(" + args[0] + " - 1)"
-                if len(args) == 2:
-                    return args[0] + ":(" + args[1] + " - 1)"
-                if len(args) == 3:
-                    step = args[2]
-                    if step == "1":
-                        return args[0] + ":(" + args[1] + " - 1)"
-                    if step.startswith("-"):
-                        return args[0] + ":" + step + ":(" + args[1] + " + 1)"
-                    return (
-                        args[0]
-                        + ":"
-                        + step
-                        + ":(("
-                        + step
-                        + ") > 0 ? ("
-                        + args[1]
-                        + " - 1) : ("
-                        + args[1]
-                        + " + 1))"
-                    )
-            if func == "str" and len(args) == 1:
-                if use_mapped_runtime != "":
-                    return use_mapped_runtime + "(" + args[0] + ")"
-                return "__pytra_str(" + args[0] + ")"
-            if func == "bool" and len(args) == 1:
-                if use_mapped_runtime != "":
-                    return use_mapped_runtime + "(" + args[0] + ")"
-                return "__pytra_truthy(" + args[0] + ")"
-            if func == "set" and len(args) == 0:
-                return "Set()"
-            if func == "bytearray" and len(args) == 1:
-                if use_mapped_runtime != "":
-                    return use_mapped_runtime + "(" + args[0] + ")"
-                return "__pytra_bytearray(" + args[0] + ")"
-            if func == "bytes":
-                if len(args) == 0:
-                    return "UInt8[]"
-                if use_mapped_runtime != "":
-                    return use_mapped_runtime + "(" + args[0] + ")"
-                return "__pytra_bytes(" + args[0] + ")"
-            if func == "reversed" and len(args) == 1:
-                return "reverse(" + args[0] + ")"
-            if use_mapped_runtime != "":
-                if len(args) == 0:
-                    return use_mapped_runtime + "()"
-                return use_mapped_runtime + "(" + ", ".join(args) + ")"
+            name_call = self._render_name_call(func, args, runtime_call, builtin_name, result_type, use_mapped_runtime)
+            if name_call != "":
+                return name_call
             if func in self.exception_class_names:
                 return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
             if func in self.class_names:
