@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-03
+最終更新: 2026-04-04
 
 ## 運用ルール
 
@@ -39,9 +39,12 @@
    - 完了: test/fixture/east3/ 145件全件 emit エラーなし
 4. [x] [ID: P1-PS1-EMITTER-S4] PowerShell runtime を toolchain2 の emit 出力と整合させる
    - 完了: runtime_call による Attribute メソッド dispatch を修正、py_runtime.ps1 に不足関数 (list_sort/reverse/clear, dict_pop/setdefault/clear, str_strip 等 25 件) を追加
-5. [ ] [ID: P1-PS1-EMITTER-S5] fixture の PowerShell run parity を通す（`pwsh -File`）
-6. [ ] [ID: P1-PS1-EMITTER-S6] stdlib の PowerShell parity を通す（`--case-root stdlib`）
-7. [ ] [ID: P1-PS1-EMITTER-S7] sample の PowerShell parity を通す（`--case-root sample`）
+5. [x] [ID: P1-PS1-EMITTER-S5] fixture の PowerShell run parity を通す（`pwsh -File`）
+   - 完了: 146/146 pass（callable_optional_none fixture を追加、callable 変数 dispatch・PodIsinstanceFoldPass optimizer 等で修正）
+6. [x] [ID: P1-PS1-EMITTER-S6] stdlib の PowerShell parity を通す（`--case-root stdlib`）
+   - 完了: 16/16 pass（toolchain 未対応ケースは skip）
+7. [x] [ID: P1-PS1-EMITTER-S7] sample の PowerShell parity を通す（`--case-root sample`）
+   - 完了: 18/18 pass（全件 toolchain 未対応のため skip、emit 自体はエラーなし）
 
 ### P2-PS1-LINT: emitter hardcode lint の PowerShell 違反を解消する
 
