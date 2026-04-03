@@ -2,6 +2,7 @@
   "builtin_prefix": "__pytra_",
   "calls": {
     "env.target": "\"julia\"",
+    "deque": "__pytra_deque",
     "print": "__pytra_print",
     "py_print": "__pytra_print",
     "len": "__pytra_len",
@@ -90,7 +91,8 @@
     "open": "__pytra_open",
     "pyopen": "__pytra_open",
     "makedirs": "__pytra_makedirs",
-    "perf_counter": "perf_counter",
+    "perf_counter": "__TimeNative.perf_counter",
+    "time.perf_counter": "__TimeNative.perf_counter",
     "py_floordiv": "__pytra_floordiv",
     "py_range": "__pytra_range",
     "py_bool": "__pytra_truthy",
@@ -100,10 +102,10 @@
     "py_truthy": "__pytra_truthy",
     "py_in": "__pytra_contains",
     "py_isinstance": "pytra_isinstance",
-    "py_assert_stdout": "__pytra_assert_stdout",
-    "py_assert_true": "__pytra_assert_true",
-    "py_assert_eq": "__pytra_assert_eq",
-    "py_assert_all": "__pytra_assert_all",
+    "py_assert_stdout": "py_assert_stdout",
+    "py_assert_true": "py_assert_true",
+    "py_assert_eq": "py_assert_eq",
+    "py_assert_all": "py_assert_all",
     "dict.clear": "__pytra_clear",
     "dict.pop": "__pytra_pop",
     "dict.setdefault": "__pytra_setdefault",
@@ -112,6 +114,21 @@
     "list.reverse": "__pytra_reverse",
     "list.sort": "__pytra_sort",
     "set.clear": "__pytra_clear"
+  },
+  "module_native_files": {
+    "math": "std/math_native.jl",
+    "time": "std/time_native.jl",
+    "pytra.std.os": "std/os_native.jl|std/os_path_native.jl",
+    "pytra.std.os_path": "std/os_path_native.jl",
+    "pytra.utils.png": "utils/png.jl",
+    "pytra.std.collections": "built_in/py_runtime.jl",
+    "pytra.utils.assertions": "built_in/py_runtime.jl"
+  },
+  "module_namespace_exprs": {
+    "math": "(ceil=__MathNative.ceil, cos=__MathNative.cos, e=__MathNative.e, exp=__MathNative.exp, fabs=__MathNative.fabs, floor=__MathNative.floor, log=__MathNative.log, log10=__MathNative.log10, pi=__MathNative.pi, pow=__MathNative.pow, sin=__MathNative.sin, sqrt=__MathNative.sqrt, tan=__MathNative.tan)",
+    "pytra.std.env": "(target=\"julia\",)",
+    "pytra.std.os": "(getcwd=__OsNative.getcwd, makedirs=__OsNative.makedirs, mkdir=__OsNative.mkdir, path=(join=__OsPathNative.join, splitext=__OsPathNative.splitext, basename=__OsPathNative.basename, dirname=__OsPathNative.dirname, exists=__OsPathNative.exists))",
+    "pytra.utils.png": "(_adler32=_adler32, _chunk=_chunk, _crc32=_crc32, _png_append_list=_png_append_list, _png_u16le=_png_u16le, _png_u32be=_png_u32be, _zlib_deflate_store=_zlib_deflate_store, write_rgb_png=write_rgb_png)"
   },
   "types": {
     "int8": "Int8",
@@ -170,6 +187,7 @@
     "pytra.typing",
     "pytra.std",
     "pytra.std.glob",
+    "pytra.std.collections",
     "pytra.std.math",
     "pytra.std.os",
     "pytra.std.os_path",
@@ -177,6 +195,7 @@
     "pytra.std.time",
     "pytra.core.",
     "pytra.utils.assertions",
+    "pytra.utils.png",
     "pytra.enum"
   ],
   "skip_modules_exact": [

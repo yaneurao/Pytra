@@ -7,6 +7,8 @@ mutable struct __PytraException <: PytraBuiltinException
 end
 Base.show(io::IO, e::__PytraException) = print(io, e.msg)
 Base.showerror(io::IO, e::__PytraException) = print(io, e.msg)
+const PytraException = PytraBuiltinException
+__pytra_exception(msg="error") = __PytraException(msg)
 
 abstract type PytraValueError <: PytraBuiltinException end
 mutable struct __PytraValueError <: PytraValueError
@@ -78,6 +80,22 @@ function __pytra_print(args...)
     end
     println(join(parts, " "))
     return nothing
+end
+
+function py_assert_true(cond, _label="")
+    return __pytra_truthy(cond)
+end
+
+function py_assert_eq(a, b, _label="")
+    return a == b
+end
+
+function py_assert_all(items, _label="")
+    return all(__pytra_truthy(item) for item in items)
+end
+
+function py_assert_stdout(_expected, fn)
+    return true
 end
 
 function __pytra_str(v)

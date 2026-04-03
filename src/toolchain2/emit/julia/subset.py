@@ -9,6 +9,11 @@ from __future__ import annotations
 
 from pytra.std.json import JsonVal
 
+from toolchain2.emit.common.code_emitter import RuntimeMapping
+from toolchain2.emit.common.code_emitter import build_import_alias_map
+from toolchain2.emit.common.code_emitter import build_runtime_import_map
+from toolchain2.emit.common.code_emitter import should_skip_module
+
 
 _BINOP_TEXT = {
     "Add": "+",
@@ -83,17 +88,6 @@ _ISINSTANCE_TYPE_TEXT = {
     "str": "AbstractString",
     "string": "AbstractString",
     "tuple": "Tuple",
-}
-
-_IMPORTFROM_MODULES: dict[str, set[str] | None] = {
-    "pytra.enum": {"Enum", "IntEnum", "IntFlag"},
-    "pytra.utils.assertions": {"py_assert_stdout", "py_assert_eq", "py_assert_all", "py_assert_true"},
-    "pytra.utils.png": None,
-    "pytra.std.collections": {"deque"},
-    "pytra.std.json": {"JsonVal"},
-    "pytra.std.math": {"fabs", "floor", "sqrt"},
-    "math": {"floor", "sqrt"},
-    "time": {"perf_counter"},
 }
 
 _JULIA_RESERVED_NAMES = {
@@ -258,10 +252,8 @@ def _except_handler_supported(node: JsonVal) -> bool:
 
 
 def _importfrom_supported(module_name: str, names: list[JsonVal]) -> bool:
-    allowed = _IMPORTFROM_MODULES.get(module_name)
-    if allowed is None:
-        return module_name in _IMPORTFROM_MODULES and all(isinstance(item, dict) for item in names)
-    return all(isinstance(item, dict) and _str(item, "name") in allowed for item in names)
+    _ = module_name
+    return all(isinstance(item, dict) and _str(item, "name") != "" for item in names)
 
 
 def _assign_target_supported(node: JsonVal) -> bool:
@@ -285,8 +277,7 @@ def _ident(name: str) -> str:
 
 
 def _import_supported(names: list[JsonVal]) -> bool:
-    allowed = {"math", "pytra.std.env", "pytra.std.os", "pytra.utils.png"}
-    return all(isinstance(item, dict) and _str(item, "name") in allowed for item in names)
+    return all(isinstance(item, dict) and _str(item, "name") != "" for item in names)
 
 
 def _comp_generator_supported(node: dict[str, JsonVal]) -> bool:
@@ -580,10 +571,12 @@ def can_render_module_natively(east3_doc: dict[str, JsonVal]) -> bool:
 
 
 class JuliaSubsetRenderer:
-    def __init__(self) -> None:
+    def __init__(self, mapping: RuntimeMapping | None = None, meta: dict[str, JsonVal] | None = None) -> None:
         self.lines: list[str] = []
         self.indent_level = 0
         self.tmp_counter = 0
+        self.mapping = mapping if mapping is not None else RuntimeMapping()
+        self.meta = meta if isinstance(meta, dict) else {}
         self.function_names: set[str] = set()
         self.class_names: set[str] = set()
         self.exception_class_names: set[str] = set()
@@ -595,6 +588,9 @@ class JuliaSubsetRenderer:
         self.class_property_names: dict[str, set[str]] = {}
         self.class_static_method_names: dict[str, set[str]] = {}
         self.current_class_name: str = ""
+        self.import_alias_modules: dict[str, str] = build_import_alias_map(self.meta)
+        self.runtime_imports: dict[str, str] = build_runtime_import_map(self.meta, self.mapping)
+        self.emitted_native_files: set[str] = set()
 
     def _base_name(self, class_name: str) -> str:
         return self.class_base_names.get(class_name, "")
@@ -642,6 +638,34 @@ class JuliaSubsetRenderer:
 
     def _emit_blank(self) -> None:
         self.lines.append("")
+
+    def _emit_native_module_include(self, module_id: str) -> None:
+        native_rel = self.mapping.module_native_files.get(module_id, "")
+        if native_rel == "":
+            return
+        for native_item in native_rel.split("|"):
+            native_file = native_item.strip()
+            if native_file == "" or native_file in self.emitted_native_files:
+                continue
+            self.emitted_native_files.add(native_file)
+            parts = [part for part in native_file.split("/") if part != ""]
+            if len(parts) == 0:
+                continue
+            join_parts = ', '.join(_quote_string(part) for part in parts)
+            self._emit("include(joinpath(@__DIR__, " + join_parts + "))")
+
+    def _emit_runtime_binding(self, local_name: str, resolved_name: str) -> None:
+        local_ident = _ident(local_name)
+        if local_ident == resolved_name:
+            return
+        self._emit(local_ident + " = " + resolved_name)
+
+    def _emit_module_namespace_binding(self, local_name: str, module_id: str) -> None:
+        self._emit_native_module_include(module_id)
+        expr = self.mapping.module_namespace_exprs.get(module_id, "")
+        if expr == "":
+            return
+        self._emit(_ident(local_name) + " = " + expr)
 
     def _next_tmp(self, prefix: str) -> str:
         self.tmp_counter += 1
@@ -1113,106 +1137,26 @@ class JuliaSubsetRenderer:
                     continue
                 source_name = _str(item, "name")
                 bound_name = _ident(_str(item, "asname") or source_name)
-                if source_name == "math":
-                    self._emit('include(joinpath(@__DIR__, "std", "math_native.jl"))')
-                    self._emit(
-                        bound_name
-                        + " = (ceil=__MathNative.ceil, cos=__MathNative.cos, e=__MathNative.e, exp=__MathNative.exp, "
-                        + "fabs=__MathNative.fabs, floor=__MathNative.floor, log=__MathNative.log, log10=__MathNative.log10, "
-                        + "pi=__MathNative.pi, pow=__MathNative.pow, sin=__MathNative.sin, sqrt=__MathNative.sqrt, tan=__MathNative.tan)"
-                    )
-                elif source_name == "pytra.std.env":
-                    self._emit(bound_name + ' = (target="julia",)')
-                elif source_name == "pytra.std.os":
-                    self._emit('include(joinpath(@__DIR__, "std", "os_native.jl"))')
-                    self._emit('include(joinpath(@__DIR__, "std", "os_path_native.jl"))')
-                    self._emit(
-                        bound_name
-                        + " = (getcwd=__OsNative.getcwd, makedirs=__OsNative.makedirs, mkdir=__OsNative.mkdir, "
-                        + "path=(join=__OsPathNative.join, splitext=__OsPathNative.splitext, "
-                        + "basename=__OsPathNative.basename, dirname=__OsPathNative.dirname, exists=__OsPathNative.exists))"
-                    )
-                elif source_name == "pytra.utils.png":
-                    self._emit('include(joinpath(@__DIR__, "utils", "png.jl"))')
-                    self._emit(
-                        bound_name
-                        + " = (_adler32=_adler32, _chunk=_chunk, _crc32=_crc32, _png_append_list=_png_append_list, "
-                        + "_png_u16le=_png_u16le, _png_u32be=_png_u32be, _zlib_deflate_store=_zlib_deflate_store, "
-                        + "write_rgb_png=write_rgb_png)"
-                    )
+                if should_skip_module(source_name, self.mapping):
+                    self._emit_module_namespace_binding(bound_name, source_name)
             return
         if kind == "ImportFrom":
             module_name = _str(node, "module")
             names = _list(node, "names")
-            if module_name == "pytra.utils.assertions":
-                for item in names:
-                    if not isinstance(item, dict):
-                        continue
-                    name = _str(item, "name")
-                    if name == "py_assert_stdout":
-                        self._emit("py_assert_stdout(_expected, _fn) = true")
-                    elif name == "py_assert_eq":
-                        self._emit("py_assert_eq(a, b, _label=\"\") = (a == b)")
-                    elif name == "py_assert_all":
-                        self._emit("py_assert_all(checks, _label=\"\") = all(checks)")
-                    elif name == "py_assert_true":
-                        self._emit("py_assert_true(v, _label=\"\") = __pytra_truthy(v)")
-                return
-            if module_name == "pytra.utils.png":
-                self._emit('include(joinpath(@__DIR__, "utils", "png.jl"))')
-                return
-            if module_name == "pytra.std.collections":
-                for item in names:
-                    if not isinstance(item, dict):
-                        continue
-                    source_name = _str(item, "name")
-                    bound_name = _ident(_str(item, "asname") or source_name)
-                    if source_name == "deque":
-                        self._emit(bound_name + " = __pytra_deque")
-                return
-            if module_name == "pytra.enum":
-                return
-            if module_name == "pytra.std.json":
-                return
-            if module_name == "math":
-                self._emit('include(joinpath(@__DIR__, "std", "math_native.jl"))')
-                for item in names:
-                    if not isinstance(item, dict):
-                        continue
-                    source_name = _str(item, "name")
-                    bound_name = _ident(_str(item, "asname") or source_name)
-                    self._emit(bound_name + " = __MathNative." + source_name)
-                return
-            if module_name == "pytra.std.math":
-                self._emit('include(joinpath(@__DIR__, "std", "math_native.jl"))')
-                for item in names:
-                    if not isinstance(item, dict):
-                        continue
-                    source_name = _str(item, "name")
-                    bound_name = _ident(_str(item, "asname") or source_name)
-                    self._emit(bound_name + " = __MathNative." + source_name)
-                return
-            if module_name == "time":
-                self._emit('include(joinpath(@__DIR__, "std", "time_native.jl"))')
-                for item in names:
-                    if not isinstance(item, dict):
-                        continue
-                    source_name = _str(item, "name")
-                    bound_name = _ident(_str(item, "asname") or source_name)
-                    self._emit(bound_name + " = __TimeNative." + source_name)
-                return
-            for item in _list(node, "names"):
+            if should_skip_module(module_name, self.mapping):
+                self._emit_native_module_include(module_name)
+            for item in names:
                 if not isinstance(item, dict):
                     continue
-                name = _str(item, "name")
-                if name == "py_assert_stdout":
-                    self._emit("py_assert_stdout(_expected, _fn) = true")
-                elif name == "py_assert_eq":
-                    self._emit("py_assert_eq(a, b, _label=\"\") = (a == b)")
-                elif name == "py_assert_all":
-                    self._emit("py_assert_all(checks, _label=\"\") = all(checks)")
-                elif name == "py_assert_true":
-                    self._emit("py_assert_true(v, _label=\"\") = __pytra_truthy(v)")
+                source_name = _str(item, "name")
+                local_name = _str(item, "asname") or source_name
+                resolved_name = self.runtime_imports.get(local_name, "")
+                if resolved_name != "":
+                    self._emit_runtime_binding(local_name, resolved_name)
+                    continue
+                sub_mod = self.import_alias_modules.get(local_name, "")
+                if sub_mod != "" and sub_mod != module_name and should_skip_module(sub_mod, self.mapping):
+                    self._emit_module_namespace_binding(local_name, sub_mod)
             return
         if kind == "Pass":
             self._emit("nothing")
@@ -1236,6 +1180,8 @@ class JuliaSubsetRenderer:
             return
         if kind == "Expr":
             value = node.get("value")
+            if isinstance(value, dict) and _str(value, "kind") == "Constant" and isinstance(value.get("value"), str):
+                return
             if isinstance(value, dict) and _str(value, "kind") == "Name":
                 value_id = _str(value, "id")
                 if value_id == "raise":
@@ -1543,6 +1489,11 @@ class JuliaSubsetRenderer:
         self.lines = []
         self.indent_level = 0
         self.tmp_counter = 0
+        meta = east3_doc.get("meta")
+        self.meta = meta if isinstance(meta, dict) else {}
+        self.import_alias_modules = build_import_alias_map(self.meta)
+        self.runtime_imports = build_runtime_import_map(self.meta, self.mapping)
+        self.emitted_native_files = set()
         self.function_names = {
             _str(stmt, "name")
             for stmt in _list(east3_doc, "body")
@@ -1603,6 +1554,7 @@ class JuliaSubsetRenderer:
             if isinstance(stmt, dict) and _str(stmt, "kind") == "ClassDef" and _exception_class_supported(stmt)
         }
         self._emit('include(joinpath(@__DIR__, "built_in", "py_runtime.jl"))')
+        self.emitted_native_files.add("built_in/py_runtime.jl")
         self._emit_blank()
         for stmt in _list(east3_doc, "body"):
             self._emit_stmt(stmt)

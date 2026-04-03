@@ -53,6 +53,7 @@ class RuntimeMapping:
     skip_module_exact: set[str] = field(default_factory=set)
     implicit_promotions: set[str] = field(default_factory=set)
     module_native_files: dict[str, str] = field(default_factory=dict)
+    module_namespace_exprs: dict[str, str] = field(default_factory=dict)
     call_adapters: dict[str, str] = field(default_factory=dict)
     non_native_modules: set[str] = field(default_factory=set)
     exception_types: set[str] = field(default_factory=set)
@@ -77,6 +78,7 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
     skip_exact: set[str] = set()
     implicit_promotions: set[str] = set()
     module_native_files: dict[str, str] = {}
+    module_namespace_exprs: dict[str, str] = {}
     call_adapters: dict[str, str] = {}
     non_native_modules: set[str] = set()
     exception_types: set[str] = set()
@@ -126,6 +128,12 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
             if isinstance(key, str) and isinstance(value, str):
                 module_native_files[key] = value
 
+    module_namespace_exprs_obj = raw_obj.get_obj("module_namespace_exprs")
+    if module_namespace_exprs_obj is not None:
+        for key, value in module_namespace_exprs_obj.raw.items():
+            if isinstance(key, str) and isinstance(value, str):
+                module_namespace_exprs[key] = value
+
     call_adapters_obj = raw_obj.get_obj("call_adapters")
     if call_adapters_obj is not None:
         for key, value in call_adapters_obj.raw.items():
@@ -152,6 +160,7 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
         skip_module_exact=skip_exact,
         implicit_promotions=implicit_promotions,
         module_native_files=module_native_files,
+        module_namespace_exprs=module_namespace_exprs,
         call_adapters=call_adapters,
         non_native_modules=non_native_modules,
         exception_types=exception_types,

@@ -51,7 +51,9 @@ class JuliaRenderer(CommonRenderer):
             return ""
         rewritten_doc = self._rewrite_legacy_compatible_doc(prepared)
         if can_render_module_natively(rewritten_doc):
-            return JuliaSubsetRenderer().render_module(rewritten_doc)
+            meta = rewritten_doc.get("meta")
+            subset_meta = meta if isinstance(meta, dict) else {}
+            return JuliaSubsetRenderer(self.mapping, subset_meta).render_module(rewritten_doc)
         legacy_doc = rewritten_doc
         return self.legacy_bridge.emit_module(legacy_doc)
 
