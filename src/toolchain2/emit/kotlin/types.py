@@ -87,7 +87,7 @@ def kotlin_type(resolved_type: str) -> str:
         return "MutableMap<Any?, Any?>"
     if resolved_type in ("None", "none"):
         return "Unit"
-    if resolved_type in ("Any", "object", "unknown", "JsonVal", "Obj"):
+    if resolved_type in ("Any", "object", "unknown", "JsonVal"):
         return "Any?"
     if resolved_type == "Path":
         return "java.nio.file.Path"

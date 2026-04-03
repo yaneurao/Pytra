@@ -624,7 +624,7 @@ class KotlinRenderer(CommonRenderer):
             else:
                 resolved_target_type = self._str(target_node, "resolved_type")
                 iter_expr_node = iter_plan.get("iter_expr") if isinstance(iter_plan, dict) else node.get("iter")
-                if resolved_target_type in ("", "unknown", "Any", "object", "Obj") and isinstance(iter_expr_node, dict) and self._str(iter_expr_node, "kind") == "Call":
+                if resolved_target_type in ("", "unknown", "Any", "object") and isinstance(iter_expr_node, dict) and self._str(iter_expr_node, "kind") == "Call":
                     func_node = iter_expr_node.get("func")
                     if isinstance(func_node, dict) and self._str(func_node, "kind") == "Attribute":
                         attr = self._str(func_node, "attr")
@@ -637,7 +637,7 @@ class KotlinRenderer(CommonRenderer):
                                     resolved_target_type = parts[0]
                                 elif attr == "values":
                                     resolved_target_type = parts[1]
-                if resolved_target_type not in ("", "unknown", "Any", "object", "Obj"):
+                if resolved_target_type not in ("", "unknown", "Any", "object"):
                     loop_var = self._next_tmp("__iterItem")
                     prelude.append("val " + target_name + " = (" + loop_var + " as " + self._render_type(resolved_target_type) + ")")
         self._emit("for (" + loop_var + " in " + iter_expr + ") {")
@@ -709,7 +709,7 @@ class KotlinRenderer(CommonRenderer):
             if owner_type.startswith("list[") or owner_type.startswith("tuple[") or owner_type in ("list", "tuple", "bytes", "bytearray"):
                 expr = owner + "[__pytra_index(__pytra_int(" + index + "), " + owner + ".size.toLong()).toInt()]"
                 resolved = self._str(node, "resolved_type")
-                if resolved not in ("", "unknown", "Any", "object", "Obj"):
+                if resolved not in ("", "unknown", "Any", "object"):
                     return "(" + expr + " as " + self._render_type(resolved) + ")"
                 return expr
             return owner + "[(" + index + ").toInt()]"
