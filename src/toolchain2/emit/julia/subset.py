@@ -639,6 +639,29 @@ class JuliaSubsetRenderer:
             return ""
         return mapped_runtime
 
+    def _render_mapped_method_call(
+        self,
+        node: dict[str, JsonVal],
+        owner: str,
+        args: list[str],
+    ) -> str:
+        runtime_call = _str(node, "resolved_runtime_call")
+        if runtime_call == "":
+            runtime_call = _str(node, "runtime_call")
+        mapped = self.mapping.calls.get(runtime_call, "")
+        if mapped == "":
+            return ""
+        if runtime_call in {
+            "str.find",
+            "str.isdigit",
+            "str.isalnum",
+            "str.lower",
+            "str.upper",
+            "write_rgb_png",
+        }:
+            return mapped + "(" + ", ".join([owner] + args) + ")"
+        return ""
+
     def _next_tmp(self, prefix: str) -> str:
         self.tmp_counter += 1
         return prefix + str(self.tmp_counter)
@@ -855,6 +878,9 @@ class JuliaSubsetRenderer:
                             pieces.append("nothing")
                             return "(begin " + "; ".join(pieces) + "; end)"
                         return self._method_impl_name(base_name, attr) + "(self" + (", " if len(args) > 0 else "") + ", ".join(args) + ")"
+                mapped_method = self._render_mapped_method_call(node, owner, args)
+                if mapped_method != "":
+                    return mapped_method
                 if attr == "append" and len(args) == 1:
                     return "push!(" + owner + ", " + args[0] + ")"
                 if attr == "add" and len(args) == 1:
@@ -867,20 +893,12 @@ class JuliaSubsetRenderer:
                     return "delete!(" + owner + ", " + args[0] + ")"
                 if attr == "extend" and len(args) == 1:
                     return "append!(" + owner + ", " + args[0] + ")"
-                if attr == "find" and len(args) == 1:
-                    return "__pytra_str_find(" + owner + ", " + args[0] + ")"
-                if attr == "isdigit" and len(args) == 0:
-                    return "__pytra_str_isdigit(" + owner + ")"
                 if attr == "index" and len(args) == 1:
                     if owner_type.startswith("list["):
                         return "(findfirst(==(" + args[0] + "), " + owner + ") - 1)"
                     return "__pytra_str_find(" + owner + ", " + args[0] + ")"
-                if attr == "isalnum" and len(args) == 0:
-                    return "__pytra_str_isalnum(" + owner + ")"
                 if attr == "items" and len(args) == 0:
                     return "collect(pairs(" + owner + "))"
-                if attr == "lower" and len(args) == 0:
-                    return "lowercase(" + owner + ")"
                 if attr == "lstrip" and len(args) == 0:
                     return "lstrip(" + owner + ")"
                 if attr == "makedirs" and len(args) == 1 and len(keywords) == 1 and keywords[0].get("arg") == "exist_ok":
@@ -911,8 +929,6 @@ class JuliaSubsetRenderer:
                     return "strip(" + owner + ")"
                 if attr == "rstrip" and len(args) == 0:
                     return "rstrip(" + owner + ")"
-                if attr == "upper" and len(args) == 0:
-                    return "uppercase(" + owner + ")"
                 if attr == "startswith" and len(args) == 1:
                     return "startswith(" + owner + ", " + args[0] + ")"
                 if attr == "endswith" and len(args) == 1:
@@ -923,8 +939,6 @@ class JuliaSubsetRenderer:
                     return "delete!(" + owner + ", " + args[0] + ")"
                 if attr == "values" and len(args) == 0:
                     return "collect(values(" + owner + "))"
-                if attr == "write_rgb_png" and len(args) == 4 and len(keywords) == 0:
-                    return owner + ".write_rgb_png(" + ", ".join(args) + ")"
                 if attr in self.class_static_method_names.get(owner_name, set()) and len(keywords) == 0:
                     return _ident(attr) + "(" + ", ".join(args) + ")"
                 if attr in self.class_method_names.get(owner_type, set()) and len(keywords) == 0:
@@ -943,6 +957,8 @@ class JuliaSubsetRenderer:
                 if runtime_call != "" or candidate_name in self.mapping.calls:
                     builtin_name = candidate_name
             use_mapped_runtime = self._resolve_subset_runtime_call(runtime_call, adapter_kind, builtin_name)
+            if isinstance(func_node, dict) and _str(func_node, "kind") == "Attribute":
+                use_mapped_runtime = ""
             result_type = _str(node, "resolved_type")
             if runtime_call == "static_cast" and len(args) == 1:
                 if builtin_name == "int" or result_type in {"int", "int64"}:
