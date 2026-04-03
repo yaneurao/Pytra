@@ -46,6 +46,7 @@ _UNARY_TEXT = {
 
 _EXCEPTION_CTOR_TEXT = {
     "Exception": "__pytra_exception",
+    "IndexError": "__pytra_index_error",
     "ValueError": "__pytra_value_error",
     "RuntimeError": "__pytra_runtime_error",
     "TypeError": "__pytra_type_error",
@@ -53,6 +54,7 @@ _EXCEPTION_CTOR_TEXT = {
 
 _EXCEPTION_TYPE_TEXT = {
     "Exception": "PytraException",
+    "IndexError": "BoundsError",
     "ValueError": "PytraValueError",
     "RuntimeError": "PytraRuntimeError",
     "TypeError": "PytraTypeError",
@@ -152,8 +154,6 @@ def _simple_class_supported(node: dict[str, JsonVal]) -> bool:
         return len(body) == 0 or (
             len(body) == 1 and isinstance(body[0], dict) and _str(body[0], "kind") == "Pass"
         )
-    if base != "":
-        return False
     body = _list(node, "body")
     if len(body) == 0:
         return True
@@ -178,19 +178,8 @@ def _simple_class_supported(node: dict[str, JsonVal]) -> bool:
             return False
         name = _str(stmt, "name")
         if name == "__init__":
-            for inner in _list(stmt, "body"):
-                if not isinstance(inner, dict):
-                    return False
-                if _str(inner, "kind") not in {"AnnAssign", "Assign"}:
-                    return False
-                target = inner.get("target")
-                if not isinstance(target, dict) or _str(target, "kind") != "Attribute":
-                    return False
-                owner = target.get("value")
-                if not isinstance(owner, dict) or _str(owner, "kind") != "Name" or _str(owner, "id") != "self":
-                    return False
-                if not _expr_supported(inner.get("value")):
-                    return False
+            if not all(_stmt_supported(inner) for inner in _list(stmt, "body")):
+                return False
             continue
         if not all(_stmt_supported(inner) for inner in _list(stmt, "body")):
             return False
@@ -492,10 +481,18 @@ def _stmt_supported(node: JsonVal) -> bool:
         target = node.get("target")
         if not isinstance(target, dict):
             return False
-        if _str(target, "kind") != "Name":
-            return False
+        target_kind = _str(target, "kind")
+        if target_kind == "Name":
+            value = node.get("value")
+            return value is None or _expr_supported(value)
+        if target_kind == "Attribute":
+            owner = target.get("value")
+            if not isinstance(owner, dict) or _str(owner, "kind") != "Name":
+                return False
+            value = node.get("value")
+            return value is None or _expr_supported(value)
         value = node.get("value")
-        return value is None or _expr_supported(value)
+        return False
     if kind == "Assign":
         target = node.get("target")
         if not isinstance(target, dict):
@@ -590,9 +587,52 @@ class JuliaSubsetRenderer:
         self.function_names: set[str] = set()
         self.class_names: set[str] = set()
         self.exception_class_names: set[str] = set()
+        self.class_base_names: dict[str, str] = {}
+        self.class_subclasses: dict[str, set[str]] = {}
+        self.class_direct_field_names: dict[str, list[str]] = {}
+        self.class_all_field_names: dict[str, list[str]] = {}
         self.class_method_names: dict[str, set[str]] = {}
         self.class_property_names: dict[str, set[str]] = {}
         self.class_static_method_names: dict[str, set[str]] = {}
+        self.current_class_name: str = ""
+
+    def _base_name(self, class_name: str) -> str:
+        return self.class_base_names.get(class_name, "")
+
+    def _has_subclasses(self, class_name: str) -> bool:
+        return len(self.class_subclasses.get(class_name, set())) > 0
+
+    def _uses_abstract_backing(self, class_name: str) -> bool:
+        return self._base_name(class_name) != "" or self._has_subclasses(class_name)
+
+    def _class_impl_name(self, class_name: str) -> str:
+        if self._uses_abstract_backing(class_name):
+            return "__pytra_cls_" + class_name
+        return class_name
+
+    def _method_impl_name(self, class_name: str, method_name: str) -> str:
+        return "__pytra_method_" + class_name + "_" + method_name
+
+    def _collect_field_names(self, class_name: str, visiting: set[str] | None = None) -> list[str]:
+        if class_name in self.class_all_field_names:
+            return list(self.class_all_field_names[class_name])
+        if visiting is None:
+            visiting = set()
+        if class_name in visiting:
+            return []
+        visiting = set(visiting)
+        visiting.add(class_name)
+        out: list[str] = []
+        base_name = self._base_name(class_name)
+        if base_name != "":
+            for field_name in self._collect_field_names(base_name, visiting):
+                if field_name not in out:
+                    out.append(field_name)
+        for field_name in self.class_direct_field_names.get(class_name, []):
+            if field_name not in out:
+                out.append(field_name)
+        self.class_all_field_names[class_name] = list(out)
+        return out
 
     def _indent(self) -> str:
         return "    " * self.indent_level
@@ -618,6 +658,17 @@ class JuliaSubsetRenderer:
             return _ident(name)
         if kind == "Attribute":
             owner_node = node.get("value")
+            if (
+                isinstance(owner_node, dict)
+                and _str(owner_node, "kind") == "Call"
+                and isinstance(owner_node.get("func"), dict)
+                and _str(owner_node.get("func"), "kind") == "Name"
+                and _str(owner_node.get("func"), "id") == "type"
+                and _str(node, "attr") == "__name__"
+            ):
+                args = _list(owner_node, "args")
+                if len(args) >= 1:
+                    return "string(nameof(typeof(" + self._render_expr(args[0]) + ")))"
             owner = self._render_expr(owner_node)
             owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
             attr = _str(node, "attr")
@@ -629,6 +680,9 @@ class JuliaSubsetRenderer:
                 return _ident(attr) + "(" + owner + ")"
             return owner + "." + attr
         if kind == "FormattedValue":
+            format_spec = node.get("format_spec")
+            if isinstance(format_spec, str) and format_spec != "":
+                return "__pytra_format(" + self._render_expr(node.get("value")) + ", " + _quote_string(format_spec) + ")"
             return "string(" + self._render_expr(node.get("value")) + ")"
         if kind == "JoinedStr":
             values = _list(node, "values")
@@ -785,6 +839,24 @@ class JuliaSubsetRenderer:
                 owner_name = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
                 args = [self._render_expr(arg) for arg in _list(node, "args")]
                 keywords = [item for item in _list(node, "keywords") if isinstance(item, dict)]
+                if (
+                    isinstance(owner_node, dict)
+                    and _str(owner_node, "kind") == "Call"
+                    and isinstance(owner_node.get("func"), dict)
+                    and _str(owner_node.get("func"), "kind") == "Name"
+                    and _str(owner_node.get("func"), "id") == "super"
+                ):
+                    base_name = self._base_name(owner_type)
+                    if base_name == "" and self.current_class_name != "":
+                        base_name = self._base_name(self.current_class_name)
+                    if base_name != "":
+                        if attr == "__init__":
+                            pieces = ["__pytra_base = __pytra_new_" + base_name + "(" + ", ".join(args) + ")"]
+                            for field_name in self._collect_field_names(base_name):
+                                pieces.append("self." + field_name + " = __pytra_base." + field_name)
+                            pieces.append("nothing")
+                            return "(begin " + "; ".join(pieces) + "; end)"
+                        return self._method_impl_name(base_name, attr) + "(self" + (", " if len(args) > 0 else "") + ", ".join(args) + ")"
                 if attr == "append" and len(args) == 1:
                     return "push!(" + owner + ", " + args[0] + ")"
                 if attr == "add" and len(args) == 1:
@@ -823,6 +895,8 @@ class JuliaSubsetRenderer:
                     return "popfirst!(" + owner + ")"
                 if attr == "get" and len(args) == 2:
                     return "get(" + owner + ", " + args[0] + ", " + args[1] + ")"
+                if attr == "get" and len(args) == 1:
+                    return "get(" + owner + ", " + args[0] + ", nothing)"
                 if attr == "pop" and len(args) == 1:
                     return "pop!(" + owner + ", " + args[0] + ")"
                 if attr == "pop" and len(args) == 0:
@@ -898,6 +972,10 @@ class JuliaSubsetRenderer:
                 return "Set()"
             if func == "bytearray" and len(args) == 1:
                 return "__pytra_bytearray(" + args[0] + ")"
+            if func == "bytes":
+                if len(args) == 0:
+                    return "UInt8[]"
+                return "__pytra_bytes(" + args[0] + ")"
             if func == "reversed" and len(args) == 1:
                 return "reverse(" + args[0] + ")"
             if func in _EXCEPTION_CTOR_TEXT:
@@ -930,8 +1008,8 @@ class JuliaSubsetRenderer:
             if owner_type.startswith("dict["):
                 return owner + "[" + index + "]"
             if owner_type == "str":
-                return "string(" + owner + "[__pytra_idx(" + index + ", length(" + owner + "))])"
-            return owner + "[__pytra_idx(" + index + ", length(" + owner + "))]"
+                return "string(" + owner + "[__pytra_idx(__pytra_int(" + index + "), length(" + owner + "))])"
+            return owner + "[__pytra_idx(__pytra_int(" + index + "), length(" + owner + "))]"
         raise RuntimeError("julia subset: unsupported expr kind: " + kind)
 
     def _render_for_header(self, node: dict[str, JsonVal]) -> str:
@@ -965,7 +1043,11 @@ class JuliaSubsetRenderer:
                 + " + 1))"
             )
         if iter_kind == "RuntimeIterForPlan":
-            return "for " + target_name + " in " + self._render_expr(iter_plan.get("iter_expr"))
+            iter_expr_node = iter_plan.get("iter_expr")
+            iter_expr = self._render_expr(iter_expr_node)
+            if isinstance(iter_expr_node, dict) and _str(iter_expr_node, "resolved_type") == "str":
+                iter_expr = "(__pytra_str(__pytra_ch) for __pytra_ch in " + iter_expr + ")"
+            return "for " + target_name + " in " + iter_expr
         raise RuntimeError("julia subset: unsupported ForCore plan: " + iter_kind)
 
     def _emit_assign_target(self, target: dict[str, JsonVal], value_expr: str) -> None:
@@ -978,10 +1060,11 @@ class JuliaSubsetRenderer:
             owner = self._render_expr(owner_node)
             owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
             index = self._render_expr(target.get("slice"))
+            index_expr = "__pytra_int(" + index + ")"
             if owner_type == "bytearray":
-                self._emit(owner + "[__pytra_idx(" + index + ", length(" + owner + "))] = " + value_expr)
+                self._emit(owner + "[__pytra_idx(" + index_expr + ", length(" + owner + "))] = " + value_expr)
                 return
-            self._emit(owner + "[" + index + "] = " + value_expr)
+            self._emit(owner + "[__pytra_idx(" + index_expr + ", length(" + owner + "))] = " + value_expr)
             return
         if kind in {"Tuple", "List"}:
             seq_tmp = self._next_tmp("__pytra_unpack_")
@@ -1167,8 +1250,17 @@ class JuliaSubsetRenderer:
             self._emit(self._render_expr(value))
             return
         if kind == "AnnAssign":
-            target_name = _ident(_str(node.get("target"), "id"))
+            target = node.get("target")
             value = node.get("value")
+            if isinstance(target, dict) and _str(target, "kind") == "Attribute":
+                owner = self._render_expr(target.get("value"))
+                attr = _str(target, "attr")
+                if value is None:
+                    self._emit(owner + "." + attr + " = nothing")
+                else:
+                    self._emit(owner + "." + attr + " = " + self._render_expr(value))
+                return
+            target_name = _ident(_str(target, "id"))
             if value is None:
                 self._emit(target_name + " = nothing")
             else:
@@ -1186,11 +1278,12 @@ class JuliaSubsetRenderer:
                 owner = self._render_expr(owner_node)
                 owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
                 index = self._render_expr(target.get("slice"))
+                index_expr = "__pytra_int(" + index + ")"
                 value = self._render_expr(node.get("value"))
                 if owner_type == "bytearray":
-                    self._emit(owner + "[__pytra_idx(" + index + ", length(" + owner + "))] = " + value)
+                    self._emit(owner + "[__pytra_idx(" + index_expr + ", length(" + owner + "))] = " + value)
                     return
-                self._emit(owner + "[" + index + "] = " + value)
+                self._emit(owner + "[__pytra_idx(" + index_expr + ", length(" + owner + "))] = " + value)
                 return
             if isinstance(target, dict) and _str(target, "kind") in {"Tuple", "List"}:
                 self._emit_assign_target(target, self._render_expr(node.get("value")))
@@ -1213,6 +1306,9 @@ class JuliaSubsetRenderer:
                 self._emit(lhs + " = (" + lhs + " " + _BINOP_TEXT[op] + " " + value + ")")
                 return
             target = _ident(_str(target_node, "id"))
+            if op == "Add" and isinstance(target_node, dict) and _str(target_node, "resolved_type") == "str":
+                self._emit(target + " = (" + target + " * " + value + ")")
+                return
             self._emit(target + " = (" + target + " " + _BINOP_TEXT[op] + " " + value + ")")
             return
         if kind == "If":
@@ -1319,9 +1415,21 @@ class JuliaSubsetRenderer:
 
     def _emit_class(self, node: dict[str, JsonVal]) -> None:
         class_name = _str(node, "name")
-        field_types = node.get("field_types")
-        field_names = list(field_types.keys()) if isinstance(field_types, dict) else []
-        self._emit("mutable struct " + class_name)
+        base_name = _str(node, "base")
+        if base_name in {"Enum", "IntEnum", "IntFlag"}:
+            return
+        field_names = self._collect_field_names(class_name)
+        impl_name = self._class_impl_name(class_name)
+        if self._uses_abstract_backing(class_name):
+            if base_name != "":
+                self._emit("abstract type " + class_name + " <: " + base_name + " end")
+            else:
+                self._emit("abstract type " + class_name + " end")
+            self._emit("mutable struct " + impl_name + " <: " + class_name)
+        elif base_name != "":
+            self._emit("mutable struct " + class_name + " <: " + base_name)
+        else:
+            self._emit("mutable struct " + class_name)
         self.indent_level += 1
         for field_name in field_names:
             self._emit(field_name)
@@ -1339,12 +1447,13 @@ class JuliaSubsetRenderer:
         self._emit("function __pytra_new_" + class_name + "(" + ", ".join(ctor_args) + ")")
         self.indent_level += 1
         ctor_init_args = ", ".join("nothing" for _ in field_names)
-        self._emit("self = " + class_name + "(" + ctor_init_args + ")")
+        self._emit("self = " + impl_name + "(" + ctor_init_args + ")")
         if init_fn is not None:
+            prev_class_name = self.current_class_name
+            self.current_class_name = class_name
             for stmt in _list(init_fn, "body"):
-                target = stmt.get("target") if isinstance(stmt, dict) else None
-                if isinstance(target, dict):
-                    self._emit("self." + _str(target, "attr") + " = " + self._render_expr(stmt.get("value")))
+                self._emit_stmt(stmt)
+            self.current_class_name = prev_class_name
         self._emit("return self")
         self.indent_level -= 1
         self._emit("end")
@@ -1353,6 +1462,8 @@ class JuliaSubsetRenderer:
                 continue
             self._emit_blank()
             fn_name = _ident(_str(stmt, "name"))
+            impl_fn_name = self._method_impl_name(class_name, fn_name)
+            decorators = [value for value in _list(stmt, "decorators") if isinstance(value, str)]
             args = []
             for arg in _list(stmt, "arg_order"):
                 if isinstance(arg, str):
@@ -1360,12 +1471,25 @@ class JuliaSubsetRenderer:
                         args.append("self::" + class_name)
                     else:
                         args.append(_ident(arg))
-            self._emit("function " + fn_name + "(" + ", ".join(args) + ")")
+            if "staticmethod" in decorators:
+                self._emit("function " + fn_name + "(" + ", ".join(arg for arg in args if not arg.startswith("self::")) + ")")
+            else:
+                self._emit("function " + impl_fn_name + "(" + ", ".join(args) + ")")
             self.indent_level += 1
+            prev_class_name = self.current_class_name
+            self.current_class_name = class_name
             for inner in _list(stmt, "body"):
                 self._emit_stmt(inner)
+            self.current_class_name = prev_class_name
             self.indent_level -= 1
             self._emit("end")
+            if "staticmethod" not in decorators:
+                self._emit("function " + fn_name + "(" + ", ".join(args) + ")")
+                self.indent_level += 1
+                call_args = [_ident(arg) for arg in _list(stmt, "arg_order") if isinstance(arg, str)]
+                self._emit("return " + impl_fn_name + "(" + ", ".join(call_args) + ")")
+                self.indent_level -= 1
+                self._emit("end")
 
     def _emit_exception_class(self, node: dict[str, JsonVal]) -> None:
         class_name = _str(node, "name")
@@ -1429,13 +1553,24 @@ class JuliaSubsetRenderer:
             for stmt in _list(east3_doc, "body")
             if isinstance(stmt, dict) and _str(stmt, "kind") == "ClassDef"
         }
+        self.class_base_names = {}
+        self.class_subclasses = {}
+        self.class_direct_field_names = {}
+        self.class_all_field_names = {}
         self.class_method_names = {}
         self.class_property_names = {}
         self.class_static_method_names = {}
+        self.current_class_name = ""
         for stmt in _list(east3_doc, "body"):
             if not isinstance(stmt, dict) or _str(stmt, "kind") != "ClassDef":
                 continue
             class_name = _str(stmt, "name")
+            base_name = _str(stmt, "base")
+            self.class_base_names[class_name] = base_name
+            if base_name != "":
+                self.class_subclasses.setdefault(base_name, set()).add(class_name)
+            field_types = stmt.get("field_types")
+            self.class_direct_field_names[class_name] = list(field_types.keys()) if isinstance(field_types, dict) else []
             methods: set[str] = set()
             properties: set[str] = set()
             static_methods: set[str] = set()
@@ -1452,8 +1587,15 @@ class JuliaSubsetRenderer:
                     properties.add(name)
                 else:
                     methods.add(name)
-            self.class_method_names[class_name] = methods
-            self.class_property_names[class_name] = properties
+            inherited_methods = set(methods)
+            inherited_properties = set(properties)
+            walk_base = base_name
+            while walk_base != "":
+                inherited_methods |= self.class_method_names.get(walk_base, set())
+                inherited_properties |= self.class_property_names.get(walk_base, set())
+                walk_base = self.class_base_names.get(walk_base, "")
+            self.class_method_names[class_name] = inherited_methods
+            self.class_property_names[class_name] = inherited_properties
             self.class_static_method_names[class_name] = static_methods
         self.exception_class_names = {
             _str(stmt, "name")
