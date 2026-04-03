@@ -171,6 +171,14 @@ class KotlinRenderer(CommonRenderer):
                         mod = self._str(spec, "module")
                         name = self._str(spec, "name")
                         if mod != "" and name != "":
+                            if mod == "pytra.std.math":
+                                if name == "pi":
+                                    self.import_symbols[local_name] = "math_native_pi()"
+                                elif name == "e":
+                                    self.import_symbols[local_name] = "math_native_e()"
+                                else:
+                                    self.import_symbols[local_name] = "math_native_" + _safe_kotlin_ident(name)
+                                continue
                             self.import_symbols[local_name] = _safe_kotlin_ident(mod.replace(".", "_")) + "." + _safe_kotlin_ident(name)
         self.module_function_names = {
             self._str(stmt, "name")

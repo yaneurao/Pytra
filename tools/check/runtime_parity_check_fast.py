@@ -367,6 +367,8 @@ def _transpile_in_memory(
                 if filter_type == "builtin_runtime" and m.module_kind in ("runtime", "helper"):
                     if m.module_id.startswith("pytra.built_in.") or m.module_id.startswith("pytra.core."):
                         continue
+                if target in ("scala", "kotlin") and m.module_id == "pytra.std.math":
+                    continue
                 # Zig requires detecting is_entry from source path when flag is unset
                 if target == "zig":
                     is_entry = bool(getattr(m, "is_entry", False))

@@ -127,6 +127,9 @@ class ScalaRenderer(CommonRenderer):
                         mod = self._str(spec, "module")
                         name = self._str(spec, "name")
                         if mod != "" and name != "":
+                            if mod == "pytra.std.math":
+                                self.import_symbols[local_name] = "math_native." + _safe_scala_ident(name)
+                                continue
                             self.import_symbols[local_name] = _safe_scala_ident(mod.replace(".", "_")) + "." + _safe_scala_ident(name)
         self.module_function_names = {
             self._str(stmt, "name")
@@ -683,6 +686,16 @@ class ScalaRenderer(CommonRenderer):
             left_type = self._str(node.get("left"), "resolved_type") if isinstance(node.get("left"), dict) else ""
             if op == "Mult" and (left_type.startswith("list[") or left_type == "list"):
                 return "__pytra_list_repeat(" + left + ", " + right + ").asInstanceOf[" + scala_type(self._str(node, "resolved_type")) + "]"
+            if op == "BitAnd":
+                return "((" + left + ") & (" + right + "))"
+            if op == "BitOr":
+                return "((" + left + ") | (" + right + "))"
+            if op == "BitXor":
+                return "((" + left + ") ^ (" + right + "))"
+            if op == "LShift":
+                return "((" + left + ") << (" + right + ").toInt)"
+            if op == "RShift":
+                return "((" + left + ") >> (" + right + ").toInt)"
             op_text = {"Add": "+", "Sub": "-", "Mult": "*", "Div": "/", "Mod": "%"}.get(op, op)
             return left + " " + op_text + " " + right
         if kind == "Compare":
@@ -714,6 +727,8 @@ class ScalaRenderer(CommonRenderer):
                 return "!" + operand
             if op == "USub":
                 return "-" + operand
+            if op == "Invert":
+                return "~(" + operand + ")"
         raise RuntimeError("scala emitter: unsupported expr kind: " + kind)
 
 
