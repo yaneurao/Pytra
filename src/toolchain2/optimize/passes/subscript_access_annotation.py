@@ -44,9 +44,7 @@ def _is_range_runtime_call(expr: JsonVal) -> bool:
         return False
     if _stripped(expr.get("runtime_call")) == "py_range":
         return True
-    if _stripped(expr.get("lowered_kind")) != "BuiltinCall":
-        return False
-    return _stripped(expr.get("builtin_name")) == "range"
+    return False
 
 
 def _name_target_ids(target_plan: JsonVal) -> list[str]:

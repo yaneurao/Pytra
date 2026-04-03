@@ -61,9 +61,7 @@ def _is_enumerate_runtime_call(iter_expr: dict[str, JsonVal]) -> bool:
     runtime_call = normalize_type_name(iter_expr.get("runtime_call"))
     if runtime_call == "py_enumerate":
         return True
-    if normalize_type_name(iter_expr.get("lowered_kind")) != "BuiltinCall":
-        return False
-    return normalize_type_name(iter_expr.get("builtin_name")) == "enumerate"
+    return False
 
 
 class TypedEnumerateNormalizationPass(East3OptimizerPass):

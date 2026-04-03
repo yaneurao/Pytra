@@ -349,7 +349,7 @@ def build_runtime_import_map(
 
 def resolve_runtime_call(
     runtime_call: str,
-    builtin_name: str,
+    builtin_name: str,  # used only as legacy fallback when runtime_call == ""
     adapter_kind: str,
     mapping: RuntimeMapping,
 ) -> str:
@@ -358,29 +358,33 @@ def resolve_runtime_call(
     if runtime_call in mapping.calls:
         return mapping.calls[runtime_call]
 
-    # 2. builtin_name match
-    if builtin_name != "" and builtin_name in mapping.calls:
-        return mapping.calls[builtin_name]
-
-    # 3. Builtin → prefix
+    # 2. Builtin → prefix (no-dot runtime_call only)
     if adapter_kind == "builtin":
-        if builtin_name != "":
-            return mapping.builtin_prefix + builtin_name
         if runtime_call != "" and "." not in runtime_call:
+            # Avoid double-prefix: if runtime_call already starts with builtin_prefix, return as-is
+            if mapping.builtin_prefix != "" and runtime_call.startswith(mapping.builtin_prefix):
+                return runtime_call
             return mapping.builtin_prefix + runtime_call
         return ""
 
-    # 4. Extern delegate → bare name (no prefix)
+    # 3. Extern delegate → bare name (no prefix)
     if adapter_kind == "extern_delegate":
-        return builtin_name if builtin_name != "" else runtime_call
+        return runtime_call
 
-    # 5. Fallback
+    # 4. Legacy fallback: runtime_call is absent but builtin_name is set (pre-S4 nodes).
+    #    Used transitionally until all EAST3 nodes carry runtime_call (P0-BN-REMOVE-S4).
+    if runtime_call == "" and builtin_name != "" and "." not in builtin_name:
+        if builtin_name in mapping.calls:
+            return mapping.calls[builtin_name]
+        return mapping.builtin_prefix + builtin_name
+
+    # 5. General fallback
     if runtime_call != "":
         if "." in runtime_call:
             return ""
+        if mapping.builtin_prefix != "" and runtime_call.startswith(mapping.builtin_prefix):
+            return runtime_call
         return mapping.builtin_prefix + runtime_call
-    if builtin_name != "":
-        return mapping.builtin_prefix + builtin_name
     return ""
 
 

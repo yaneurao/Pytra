@@ -618,7 +618,7 @@ def _resolve_runtime_call_name(ctx: EmitContext, node: dict[str, JsonVal], func:
     if runtime_call == "" and isinstance(func, dict):
         runtime_call = _str(func, "runtime_call")
     name = resolve_runtime_call(runtime_call, builtin_name, adapter_kind, ctx.mapping)
-    if name == "":
+    if name == "" and "." not in runtime_call:
         name = runtime_call
     return name
 

@@ -14,9 +14,7 @@ def _is_range_runtime_call(expr: dict[str, JsonVal]) -> bool:
     runtime_call = expr.get("runtime_call")
     if runtime_call == "py_range":
         return True
-    if expr.get("lowered_kind") != "BuiltinCall":
-        return False
-    return expr.get("builtin_name") == "range"
+    return False
 
 
 def _is_constant_int_expr(expr: JsonVal) -> bool:
