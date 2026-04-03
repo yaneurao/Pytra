@@ -1067,9 +1067,9 @@ def _maybe_run_emitter_lint() -> None:
         return
     try:
         subprocess.run(
-            ["python3", str(lint_script)],
+            ["python3", str(lint_script), "--include-runtime"],
             cwd=str(ROOT),
-            timeout=60,
+            timeout=120,
             capture_output=True,
         )
     except Exception:
