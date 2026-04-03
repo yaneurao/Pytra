@@ -108,6 +108,22 @@ _EMIT_LANG_CONFIG: dict[str, tuple[str, bool, str | None, str | None]] = {
 }
 
 
+def _resolve_julia_runtime_bin() -> str:
+    env_bin = os.environ.get("PYTRA_JULIA_BIN", "").strip()
+    if env_bin != "":
+        return env_bin
+    direct_candidates = [
+        Path("/home/node/.julia/juliaup/julia-1.12.5+0.x64.linux.gnu/bin/julia"),
+        Path.home() / ".julia" / "juliaup" / "julia-1.12.5+0.x64.linux.gnu" / "bin" / "julia",
+        Path("/usr/local/bin/julia"),
+    ]
+    for candidate in direct_candidates:
+        if candidate.exists() and candidate.is_file():
+            return str(candidate)
+    found = shutil.which("julia")
+    return found or "julia"
+
+
 def _lang_rel_output_path(module_id: str, ext: str) -> Path:
     """Compute hierarchical output path (pytra.x.y → x/y.ext)."""
     rel = module_id[len("pytra."):] if module_id.startswith("pytra.") else module_id
@@ -848,8 +864,9 @@ def _run_target(
         entry_jl = emit_dir / (stem + ".jl")
         if not entry_jl.exists():
             return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_jl}")
+        julia_bin = _resolve_julia_runtime_bin()
         return run_shell(
-            f"julia {shlex.quote(str(entry_jl))}",
+            f"{shlex.quote(julia_bin)} {shlex.quote(str(entry_jl))}",
             cwd=work_dir, env=env, timeout_sec=timeout_sec,
         )
 

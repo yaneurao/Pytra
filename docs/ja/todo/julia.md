@@ -50,6 +50,7 @@
    - 2026-04-03: subset native renderer に `Try` / `Raise` を追加し、`try_raise`, `finally`, `exception_bare_reraise`, `exception_finally_order`, `exception_propagation_raise_from`, `exception_propagation_two_frames` を native path へ乗せた。残る control 側の legacy 依存は `exception_user_defined_multi_handler` のみ
    - 2026-04-03: subset native renderer に custom exception class の最小 support を追加し、`exception_user_defined_multi_handler` も native path へ乗せた。現時点の native coverage は `core` 22件、`control` 16件
    - 2026-04-03: Julia の emitter 検証は emitter guide に従い `runtime_parity_check_fast.py` と smoke parity を正本とし、専用 bootstrap unit test は持たない方針へ戻した
+   - 2026-04-03: `runtime_parity_check_fast.py` の Julia 実行経路は `juliaup` launcher ではなく実体バイナリを優先するよう修正し、subset native renderer 側でも `str(...)` と negative-step `range(...)` を吸収して `fixture/control` parity 16/16 を再確認
 2. [x] [ID: P1-JULIA-EMITTER-S2] `src/runtime/julia/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
    - 2026-04-02: `src/runtime/julia/mapping.json` を追加し、toolchain2 Julia emitter bootstrap が参照する runtime call/type mapping を整備
 3. [x] [ID: P1-JULIA-EMITTER-S3] fixture 全件の Julia emit 成功を確認する

@@ -38,6 +38,20 @@ _UNARY_TEXT = {
     "Not": "!",
 }
 
+_EXCEPTION_CTOR_TEXT = {
+    "Exception": "__pytra_exception",
+    "ValueError": "__pytra_value_error",
+    "RuntimeError": "__pytra_runtime_error",
+    "TypeError": "__pytra_type_error",
+}
+
+_EXCEPTION_TYPE_TEXT = {
+    "Exception": "PytraException",
+    "ValueError": "PytraValueError",
+    "RuntimeError": "PytraRuntimeError",
+    "TypeError": "PytraTypeError",
+}
+
 
 def _str(node: dict[str, JsonVal], key: str) -> str:
     value = node.get(key)
@@ -459,10 +473,12 @@ class JuliaSubsetRenderer:
                 return "__pytra_print(" + ", ".join(args) + ")"
             if func == "len" and len(args) == 1:
                 return "length(" + args[0] + ")"
-            if func == "TypeError":
+            if func == "str" and len(args) == 1:
+                return "string(" + args[0] + ")"
+            if func in _EXCEPTION_CTOR_TEXT:
                 if len(args) == 0:
-                    return "__pytra_type_error()"
-                return "__pytra_type_error(" + ", ".join(args) + ")"
+                    return _EXCEPTION_CTOR_TEXT[func] + "()"
+                return _EXCEPTION_CTOR_TEXT[func] + "(" + ", ".join(args) + ")"
             if func in self.exception_class_names:
                 return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
             if func in self.class_names:
@@ -504,7 +520,23 @@ class JuliaSubsetRenderer:
             step = self._render_expr(iter_plan.get("step"))
             if step == "1":
                 return "for " + target_name + " in " + start + ":(" + stop + " - 1)"
-            return "for " + target_name + " in " + start + ":" + step + ":(" + stop + " - 1)"
+            if step.startswith("-"):
+                return "for " + target_name + " in " + start + ":" + step + ":(" + stop + " + 1)"
+            return (
+                "for "
+                + target_name
+                + " in "
+                + start
+                + ":"
+                + step
+                + ":(("
+                + step
+                + ") > 0 ? ("
+                + stop
+                + " - 1) : ("
+                + stop
+                + " + 1))"
+            )
         if iter_kind == "RuntimeIterForPlan":
             return "for " + target_name + " in " + self._render_expr(iter_plan.get("iter_expr"))
         raise RuntimeError("julia subset: unsupported ForCore plan: " + iter_kind)
@@ -545,7 +577,11 @@ class JuliaSubsetRenderer:
                 self._emit("return " + self._render_expr(value))
             return
         if kind == "Expr":
-            self._emit(self._render_expr(node.get("value")))
+            value = node.get("value")
+            if isinstance(value, dict) and _str(value, "kind") == "Name" and _str(value, "id") == "raise":
+                self._emit("rethrow()")
+            else:
+                self._emit(self._render_expr(value))
             return
         if kind == "AnnAssign":
             self._emit(_str(node.get("target"), "id") + " = " + self._render_expr(node.get("value")))
@@ -633,8 +669,8 @@ class JuliaSubsetRenderer:
                     continue
                 type_node = handler.get("type")
                 type_name = self._render_expr(type_node) if isinstance(type_node, dict) else ""
-                if type_name == "TypeError":
-                    type_name = "PytraTypeError"
+                if type_name in _EXCEPTION_TYPE_TEXT:
+                    type_name = _EXCEPTION_TYPE_TEXT[type_name]
                 cond = "true" if type_name == "" else err_name + " isa " + type_name
                 if index == 0:
                     self._emit("if " + cond)

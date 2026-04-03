@@ -50,3 +50,4 @@
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `Try` / `Raise` を追加し、標準例外と finally を使う control fixture 群を native path に移した。
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に custom exception class の最小 support を追加し、fixture/control は native path で全件処理できる段階まで寄せた。
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] emitter の検証は guide に従い parity check 正本へ戻し、専用 bootstrap unit test は持たない方針に修正した。
+- 2026-04-03: [ID: P1-JULIA-EMITTER-S1] parity runner の Julia 実行は実体バイナリ優先へ寄せ、subset native renderer でも `str(...)` と negative-step `range(...)` を吸収して control parity 16/16 を維持した。
