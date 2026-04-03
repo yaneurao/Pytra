@@ -42,6 +42,8 @@ SELFHOST_LANGS = PARITY_LANGS
 _LANG_SHORT: dict[str, str] = {
     "powershell": "ps1",
 }
+# Reverse map: short name → canonical PARITY_LANGS name
+_LANG_SHORT_REV: dict[str, str] = {v: k for k, v in _LANG_SHORT.items()}
 
 
 def _col_name(lang: str) -> str:
@@ -154,17 +156,19 @@ def _load_lint_results() -> dict[str, dict[str, int | None] | None]:
         langs = doc.get("langs", {})
         result: dict[str, dict[str, int | None] | None] = {}
         for k, v in langs.items():
+            # Normalize short name to canonical name (e.g. ps1 → powershell)
+            canonical = _LANG_SHORT_REV.get(k, k)
             if v is None:
-                result[k] = None
+                result[canonical] = None
             elif isinstance(v, dict):
-                result[k] = {
+                result[canonical] = {
                     "violations": v.get("violations"),
                     "pass_cats": v.get("pass_cats"),
                     "total_cats": v.get("total_cats"),
                 }
             else:
                 # 旧フォーマット（int）後方互換
-                result[k] = {"violations": int(v), "pass_cats": None, "total_cats": None}
+                result[canonical] = {"violations": int(v), "pass_cats": None, "total_cats": None}
         return result
     except Exception:
         return {}
