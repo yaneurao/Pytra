@@ -1332,6 +1332,14 @@ def check_case(
             print(f"- {m}", flush=True)
         return 1
 
+    # All targets skipped (toolchain missing) → not a PASS
+    if records is not None:
+        ok_count = sum(1 for r in records if r.case_stem == case_stem and r.category == "ok")
+        skip_count = sum(1 for r in records if r.case_stem == case_stem and r.category == "toolchain_missing")
+        if ok_count == 0 and skip_count > 0:
+            print(f"[FAIL] {case_stem} (all targets skipped — missing toolchain)", flush=True)
+            return 1
+
     print(f"[PASS] {case_stem}", flush=True)
     return 0
 
