@@ -21,17 +21,6 @@
 
 ## 未完了タスク
 
-### P0-ISINS-DETID-CPP: C++ emitter の PYTRA_TID_* 逆引きを削除し型名ベースに移行する
-
-文脈: [docs/ja/plans/p0-isins-detid-cpp.md](../plans/p0-isins-detid-cpp.md)
-
-前提: infra の P0-ISINSTANCE-DETID (S1-S3) が完了し、EAST3 の `IsInstance` ノードが `expected_type_name` を持つようになった後に着手。
-
-1. [x] [ID: P0-ISINS-DETID-CPP-S1] C++ emitter の `PYTRA_TID_*` → 型名の逆引きテーブルを削除し、`expected_type_name` を直接参照する
-   - 完了メモ: `src/toolchain2/emit/cpp/emitter.py` の `IsInstance` は `expected_type_name` を優先参照し、fallback しても plain type name だけを見るように変更した。`_normalize_expected_type_name` と `PYTRA_TID_*` 逆引きテーブルは削除し、残る型名正規化は `int -> int64`, `float -> float64` だけに縮小した。targeted unittest 4 本と `isinstance_narrowing`, `isinstance_pod_exact`, `isinstance_tuple_check`, `isinstance_user_class` の C++ parity `4/4 PASS` を確認済み。
-2. [x] [ID: P0-ISINS-DETID-CPP-S2] fixture + sample + stdlib の C++ parity に回帰がないことを確認する
-   - 完了メモ: stale な `src/runtime/east/` cache を `PYTHONPATH=src python3 tools/check/check_east3_golden.py --check-runtime-east --update` で再生成し、`std/json` / `utils/assertions` の `expected_type_name` 欠落を解消した。その後 `runtime_parity_check_fast --case-root stdlib/sample/fixture --targets cpp --opt-level 1` を fresh cache で再実行し、`stdlib 16/16 PASS`, `sample 18/18 PASS` を確認した。`fixture` は `144/145 PASS` だが残る 1 件 `extern_opaque_basic` は `python_failed` で C++ target failure ではない。追加で `re_extended` の `str.rfind` unmapped runtime call を `src/runtime/cpp/mapping.json` に追記して `PASS` を確認した。C++ parity regression は 0 件。
-
 ### P0-CPP-VARIANT: C++ を std::variant ベースに移行し object/box/unbox を廃止する
 
 文脈: [docs/ja/plans/plan-cpp-variant-migration.md](../plans/plan-cpp-variant-migration.md)
