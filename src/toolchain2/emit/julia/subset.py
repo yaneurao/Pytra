@@ -1232,36 +1232,42 @@ class JuliaSubsetRenderer:
             return ""
         return " if " + " && ".join(conditions)
 
+    def _emit_import_stmt(self, node: dict[str, JsonVal]) -> None:
+        for item in _list(node, "names"):
+            if not isinstance(item, dict):
+                continue
+            source_name = _str(item, "name")
+            bound_name = _ident(_str(item, "asname") or source_name)
+            if should_skip_module(source_name, self.mapping):
+                self._emit_module_namespace_binding(bound_name, source_name)
+
+    def _emit_import_from_stmt(self, node: dict[str, JsonVal]) -> None:
+        module_name = _str(node, "module")
+        names = _list(node, "names")
+        if should_skip_module(module_name, self.mapping):
+            self._emit_native_module_include(module_name)
+        for item in names:
+            if not isinstance(item, dict):
+                continue
+            source_name = _str(item, "name")
+            local_name = _str(item, "asname") or source_name
+            resolved_name = self.runtime_imports.get(local_name, "")
+            if resolved_name != "":
+                self._emit_runtime_binding(local_name, resolved_name)
+                continue
+            sub_mod = self.import_alias_modules.get(local_name, "")
+            if sub_mod != "" and sub_mod != module_name and should_skip_module(sub_mod, self.mapping):
+                self._emit_module_namespace_binding(local_name, sub_mod)
+
     def _emit_stmt(self, node: JsonVal) -> None:
         if not isinstance(node, dict):
             raise RuntimeError("julia subset: stmt must be dict")
         kind = _str(node, "kind")
         if kind == "Import":
-            for item in _list(node, "names"):
-                if not isinstance(item, dict):
-                    continue
-                source_name = _str(item, "name")
-                bound_name = _ident(_str(item, "asname") or source_name)
-                if should_skip_module(source_name, self.mapping):
-                    self._emit_module_namespace_binding(bound_name, source_name)
+            self._emit_import_stmt(node)
             return
         if kind == "ImportFrom":
-            module_name = _str(node, "module")
-            names = _list(node, "names")
-            if should_skip_module(module_name, self.mapping):
-                self._emit_native_module_include(module_name)
-            for item in names:
-                if not isinstance(item, dict):
-                    continue
-                source_name = _str(item, "name")
-                local_name = _str(item, "asname") or source_name
-                resolved_name = self.runtime_imports.get(local_name, "")
-                if resolved_name != "":
-                    self._emit_runtime_binding(local_name, resolved_name)
-                    continue
-                sub_mod = self.import_alias_modules.get(local_name, "")
-                if sub_mod != "" and sub_mod != module_name and should_skip_module(sub_mod, self.mapping):
-                    self._emit_module_namespace_binding(local_name, sub_mod)
+            self._emit_import_from_stmt(node)
             return
         if kind == "Pass":
             self._emit("nothing")
