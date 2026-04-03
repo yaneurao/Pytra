@@ -638,6 +638,37 @@ def __pytra_is_str(v: Any): Boolean = v.isInstanceOf[String]
 
 def __pytra_is_list(v: Any): Boolean = v.isInstanceOf[scala.collection.Seq[?]]
 
+def __pytra_is_instance(v: Any, expected: String): Boolean = {
+    def hasTypeName(cls: Class[?], name: String): Boolean = {
+        var cur: Class[?] | Null = cls
+        while (cur != null) {
+            val curCls = cur.asInstanceOf[Class[?]]
+            if (curCls.getSimpleName == name) return true
+            for (iface <- curCls.getInterfaces) {
+                if (hasTypeName(iface, name)) return true
+            }
+            cur = curCls.getSuperclass
+        }
+        false
+    }
+    expected match {
+        case "None" | "none" => v == null
+        case "bool" => v.isInstanceOf[Boolean]
+        case "int" | "int8" | "int16" | "int32" | "int64" | "uint8" | "uint16" | "uint32" | "uint64" =>
+            v.isInstanceOf[Long] || v.isInstanceOf[Int]
+        case "float" | "float32" | "float64" =>
+            v.isInstanceOf[Double] || v.isInstanceOf[Float]
+        case "str" => v.isInstanceOf[String]
+        case "list" | "tuple" | "bytes" | "bytearray" => v.isInstanceOf[scala.collection.Seq[?]]
+        case "set" => v.isInstanceOf[scala.collection.Set[?]]
+        case "dict" => v.isInstanceOf[scala.collection.Map[?, ?]]
+        case "Path" => v.isInstanceOf[java.nio.file.Path]
+        case _ => v != null && hasTypeName(v.getClass, expected)
+    }
+}
+
+def __pytra_is_subtype(actual: Any, expected: Any): Boolean = __pytra_str(actual) == __pytra_str(expected)
+
 def pyMathSqrt(v: Any): Double = scala.math.sqrt(__pytra_float(v))
 def pyMathSin(v: Any): Double = scala.math.sin(__pytra_float(v))
 def pyMathCos(v: Any): Double = scala.math.cos(__pytra_float(v))

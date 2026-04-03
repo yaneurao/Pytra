@@ -550,6 +550,17 @@ fun __pytra_type_name(v: Any?): String {
 }
 
 fun __pytra_is_instance(v: Any?, expected: String): Boolean {
+    fun hasTypeName(cls: Class<*>?, name: String): Boolean {
+        var cur = cls
+        while (cur != null) {
+            if (cur.simpleName == name) return true
+            for (iface in cur.interfaces) {
+                if (hasTypeName(iface, name)) return true
+            }
+            cur = cur.superclass
+        }
+        return false
+    }
     return when (expected) {
         "None", "none" -> v == null
         "bool" -> v is Boolean
@@ -560,7 +571,7 @@ fun __pytra_is_instance(v: Any?, expected: String): Boolean {
         "set" -> v is Set<*>
         "dict" -> v is Map<*, *>
         "Path" -> v is java.nio.file.Path
-        else -> v != null && v.javaClass.simpleName == expected
+        else -> v != null && hasTypeName(v.javaClass, expected)
     }
 }
 

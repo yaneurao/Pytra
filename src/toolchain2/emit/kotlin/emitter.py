@@ -28,9 +28,11 @@ class KotlinRenderer(CommonRenderer):
         self.module_function_names: set[str] = set()
         self.local_function_aliases: dict[str, str] = {}
         self.module_class_names: set[str] = set()
+        self.subclassed_class_names: set[str] = set()
         self.enum_like_classes: set[str] = set()
         self.class_has_init: dict[str, bool] = {}
         self.class_property_names: dict[str, set[str]] = {}
+        self.current_class_base: str | None = None
         self._tmp_counter = 0
         self._local_var_scopes: list[set[str]] = []
         self._local_type_scopes: list[dict[str, str]] = []
@@ -230,6 +232,11 @@ class KotlinRenderer(CommonRenderer):
             self._str(stmt, "name")
             for stmt in self._list(east3_doc, "body")
             if isinstance(stmt, dict) and self._str(stmt, "kind") == "ClassDef"
+        }
+        self.subclassed_class_names = {
+            self._str(stmt, "base")
+            for stmt in self._list(east3_doc, "body")
+            if isinstance(stmt, dict) and self._str(stmt, "kind") == "ClassDef" and self._str(stmt, "base") != ""
         }
         self.enum_like_classes = {
             self._str(stmt, "name")
@@ -532,13 +539,19 @@ class KotlinRenderer(CommonRenderer):
                     return_type_name = "Any"
                     break
         return_type = self._render_type(return_type_name)
+        method_prefix = ""
+        if is_method and name != "__init__":
+            if self.current_class_base not in (None, "", "None", "object", "Obj"):
+                method_prefix = "override "
+            elif self.current_class_name in self.subclassed_class_names:
+                method_prefix = "open "
         if is_method and is_property:
-            self._emit("val " + name + ": " + return_type)
+            self._emit(method_prefix + "val " + name + ": " + return_type)
             self.state.indent_level += 1
             self._emit("get() {")
             self.state.indent_level += 1
         else:
-            self._emit("fun " + name + "(" + ", ".join(params) + "): " + return_type + " {")
+            self._emit(method_prefix + "fun " + name + "(" + ", ".join(params) + "): " + return_type + " {")
             self.state.indent_level += 1
         self._local_var_scopes.append(local_scope)
         self._local_type_scopes.append({})
@@ -606,10 +619,15 @@ class KotlinRenderer(CommonRenderer):
             self._emit("}")
             return
         prev_class_name = self.current_class_name
+        prev_class_base = self.current_class_base
         self.current_class_name = class_name
+        self.current_class_base = base_name
         instance_fields = self._collect_class_fields(node)
         class_fields: list[tuple[str, str, str]] = []
-        self._emit("class " + class_name + " {")
+        class_head = ("open class " if class_name in self.subclassed_class_names else "class ") + class_name
+        if base_name not in ("", "None", "object", "Obj", "Enum", "IntEnum", "IntFlag"):
+            class_head += " : " + _safe_kotlin_ident(base_name) + "()"
+        self._emit(class_head + " {")
         self.state.indent_level += 1
         seen_instance_fields: set[str] = set()
         for field_name, decl_type in instance_fields:
@@ -653,6 +671,7 @@ class KotlinRenderer(CommonRenderer):
         self.state.indent_level -= 1
         self._emit("}")
         self.current_class_name = prev_class_name
+        self.current_class_base = prev_class_base
 
     def _for_target_name(self, node: JsonVal) -> str:
         if not isinstance(node, dict):

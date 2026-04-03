@@ -28,6 +28,7 @@ class ScalaRenderer(CommonRenderer):
         self.module_function_names: set[str] = set()
         self.local_function_aliases: dict[str, str] = {}
         self.module_class_names: set[str] = set()
+        self.current_class_base: str | None = None
         self.class_has_init: dict[str, bool] = {}
         self.local_decl_stack: list[set[str]] = []
         self.local_type_stack: list[dict[str, str]] = []
@@ -436,7 +437,10 @@ class ScalaRenderer(CommonRenderer):
                 continue
             params.append(_safe_scala_ident(arg) + ": " + scala_type(arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"))
         return_type = scala_type(self._str(node, "return_type"))
-        self._emit("def " + name + "(" + ", ".join(params) + "): " + return_type + " = {")
+        method_prefix = ""
+        if is_method and name != "__init__" and self.current_class_base not in (None, "", "None", "object", "Obj"):
+            method_prefix = "override "
+        self._emit(method_prefix + "def " + name + "(" + ", ".join(params) + "): " + return_type + " = {")
         self.state.indent_level += 1
         scope_names = {_safe_scala_ident(arg) for arg in arg_order if isinstance(arg, str)}
         self.local_decl_stack.append(scope_names)
@@ -458,11 +462,17 @@ class ScalaRenderer(CommonRenderer):
 
     def _emit_class_def(self, node: dict[str, JsonVal]) -> None:
         class_name = _safe_scala_ident(self._str(node, "name"))
+        base_name = self._str(node, "base")
         prev_class_name = self.current_class_name
+        prev_class_base = self.current_class_base
         self.current_class_name = class_name
+        self.current_class_base = base_name
         instance_fields = self._collect_class_fields(node)
         static_fields: list[tuple[str, str, str]] = []
-        self._emit("class " + class_name + " {")
+        class_head = "class " + class_name
+        if base_name not in ("", "None", "object", "Obj", "Enum", "IntEnum", "IntFlag"):
+            class_head += " extends " + _safe_scala_ident(base_name)
+        self._emit(class_head + " {")
         self.state.indent_level += 1
         seen_instance_fields: set[str] = set()
         for field_name, decl_type in instance_fields:
@@ -506,6 +516,7 @@ class ScalaRenderer(CommonRenderer):
             self.state.indent_level -= 1
             self._emit("}")
         self.current_class_name = prev_class_name
+        self.current_class_base = prev_class_base
 
     def _for_target_name(self, node: JsonVal) -> str:
         if not isinstance(node, dict):
@@ -704,8 +715,8 @@ class ScalaRenderer(CommonRenderer):
             return "(if (__pytra_truthy(" + test + ")) " + body + " else " + orelse + ")"
         if kind == "IsInstance":
             value = self._emit_expr(node.get("value"))
-            expected = self._emit_expr(node.get("expected_type_id"))
-            return "pytraIsInstance(" + value + ", " + expected + ")"
+            expected = self._quote_string(self._str(node, "expected_type_name"))
+            return "__pytra_is_instance(" + value + ", " + expected + ")"
         if kind == "ObjTypeId":
             value = self._emit_expr(node.get("value"))
             return "pyTidRuntimeTypeId(" + value + ")"
