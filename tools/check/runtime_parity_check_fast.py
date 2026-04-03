@@ -88,7 +88,7 @@ from toolchain.misc.pytra_cli_profiles import get_target_profile, list_parity_ta
 # filter_type: None | "builtin_runtime" | "all_runtime"
 _EMIT_LANG_CONFIG: dict[str, tuple[str, bool, str | None, str | None]] = {
     "go":     (".go",    False, None,      None),
-    "rs":     (".rs",    False, None,      None),
+    "rs":     (".rs",    False, "basic",   None),
     "cs":     (".cs",    False, None,      None),
     "ts":     (".ts",    False, None,      None),
     "ruby":   (".rb",    False, None,      None),

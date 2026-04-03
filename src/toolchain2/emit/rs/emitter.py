@@ -173,9 +173,24 @@ def _iter_import_runtime_ids(meta: dict[str, JsonVal]) -> list[tuple[str, str]]:
         if not isinstance(binding, dict):
             continue
         resolved_kind = binding.get("resolved_binding_kind")
+        if not isinstance(resolved_kind, str) or resolved_kind == "":
+            binding_kind = binding.get("binding_kind")
+            resolved_kind = binding_kind if isinstance(binding_kind, str) else ""
         runtime_module_id = binding.get("runtime_module_id")
         module_id = binding.get("module_id")
         mod_id = runtime_module_id if isinstance(runtime_module_id, str) and runtime_module_id != "" else module_id
+        local_name = binding.get("local_name")
+        imported_name = binding.get("imported_name")
+        if (
+            isinstance(mod_id, str)
+            and mod_id in ("json", "pytra.std.json")
+            and resolved_kind == "symbol"
+            and (
+                local_name == "JsonVal"
+                or imported_name == "JsonVal"
+            )
+        ):
+            continue
         if (
             not isinstance(resolved_kind, str)
             or not isinstance(mod_id, str)
@@ -229,6 +244,8 @@ def _build_import_class_fields(meta: dict[str, JsonVal]) -> dict[str, dict[str, 
 
 
 def _call_signature(node: dict[str, JsonVal], fallback: dict[str, JsonVal] | None = None) -> dict[str, JsonVal] | None:
+    if isinstance(fallback, dict) and fallback:
+        return fallback
     sig = _dict(node, "function_signature_v1")
     if sig:
         return sig
@@ -567,6 +584,7 @@ def _collect_signature_type_params(
     excluded.update(ctx.trait_names)
     excluded.update(ctx.ref_classes)
     excluded.update(ctx.enum_bases)
+    excluded.update(ctx.imported_symbol_storage_hints.keys())
 
     def visit(type_name: str) -> None:
         for match in re.finditer(r"\b[A-Z][A-Za-z0-9_]*\b", type_name):
@@ -738,6 +756,14 @@ def _lookup_method_sig(ctx: RsEmitContext, owner_type: str, method: str) -> dict
         fallback = sig
     if fallback is not None:
         return fallback
+    return None
+
+
+def _lookup_known_method_sig(ctx: RsEmitContext, owner_type: str, method: str) -> dict[str, JsonVal] | None:
+    for candidate in _type_lookup_candidates(owner_type):
+        known = ctx.known_method_signatures.get((candidate, method))
+        if isinstance(known, dict):
+            return known
     return None
 
 
@@ -1985,6 +2011,7 @@ def _emit_ifexp(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
 def _emit_lambda(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     arg_order = _list(node, "arg_order")
     arg_types = _dict(node, "arg_types")
+    return_type = _str(node, "return_type")
     body = node.get("body")
     params: list[str] = []
     for arg in arg_order:
@@ -2190,9 +2217,20 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             if arg_type in ("int", "int64", "int32", "int16", "int8", "uint64", "uint32", "uint16", "uint8"):
                 return "PyList::<i64>::from_vec(vec![0_i64; (" + inner + ") as usize])"
             if arg_type.startswith("list[") or arg_type in ("list", "bytes", "bytearray"):
-                return inner  # already a PyList<i64>
+                return "PyList::<i64>::from_vec(" + inner + ".iter_snapshot())"
             return inner
         return "PyList::<i64>::new()"
+
+    if func_name == "int" and len(args) == 1:
+        arg0 = _emit_call_arg(ctx, args[0])
+        if not arg0.startswith("&"):
+            arg0 = "&(" + arg0 + ")"
+        return "py_int(" + arg0 + ")"
+    if func_name == "float" and len(args) == 1:
+        arg0 = _emit_call_arg(ctx, args[0])
+        if not arg0.startswith("&"):
+            arg0 = "&(" + arg0 + ")"
+        return "py_float(" + arg0 + ")"
 
     # zip(a, b) → produce PyList of tuples; rendered as list of (a[i], b[i]) pairs
     if func_name == "zip" and len(args) == 2:
@@ -2231,6 +2269,18 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             rendered = rendered + ".0_f64"
         rendered_args.append(rendered)
     local_sig = ctx.function_signatures.get(func_name)
+    if not isinstance(local_sig, dict):
+        for original_name, renamed_name in ctx.original_name_map.items():
+            if renamed_name == func_name:
+                candidate = ctx.function_signatures.get(original_name)
+                if isinstance(candidate, dict):
+                    local_sig = candidate
+                    break
+    if not isinstance(local_sig, dict):
+        for known_name, candidate in ctx.function_signatures.items():
+            if isinstance(candidate, dict) and _rs_symbol_name(ctx, known_name) == func_name:
+                local_sig = candidate
+                break
     call_sig = _call_signature(node, local_sig if isinstance(local_sig, dict) else None)
     if isinstance(call_sig, dict):
         rendered_args = _build_sig_call_args(ctx, args, rendered_args, keywords, call_sig, skip_self=False)
@@ -2272,6 +2322,26 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
                     continue
             adjusted_args.append(rendered_args[index] if index < len(rendered_args) else _emit_call_arg(ctx, arg))
         rendered_args = adjusted_args
+    helper_name = func_name
+    if helper_name.endswith("_jv_obj_require") or helper_name.endswith("jv_obj_require"):
+        if len(rendered_args) >= 1 and rendered_args[0].startswith("PyAny::Dict("):
+            rendered_args[0] = "py_any_as_hashmap(" + rendered_args[0] + ")"
+    if helper_name.endswith("_dump_json_list") or helper_name.endswith("dump_json_list"):
+        if len(rendered_args) >= 1 and rendered_args[0].startswith("PyAny::List("):
+            rendered_args[0] = "py_any_as_list(" + rendered_args[0] + ")"
+    if helper_name.endswith("_dump_json_dict") or helper_name.endswith("dump_json_dict"):
+        if len(rendered_args) >= 1 and rendered_args[0].startswith("PyAny::Dict("):
+            rendered_args[0] = "py_any_as_hashmap(" + rendered_args[0] + ")"
+    if helper_name.endswith("_json_indent_value") or helper_name.endswith("json_indent_value"):
+        if len(rendered_args) >= 1 and rendered_args[0].startswith("Some(") and rendered_args[0].endswith(")"):
+            inner_arg = rendered_args[0][5:-1]
+            if ".clone()" in inner_arg or '.expect("unbox")' in inner_arg:
+                rendered_args[0] = inner_arg
+    if helper_name.endswith("_dump_json_value") or helper_name.endswith("dump_json_value"):
+        if len(rendered_args) >= 3 and rendered_args[2].startswith("Some(") and rendered_args[2].endswith(")"):
+            inner_arg = rendered_args[2][5:-1]
+            if ".clone()" in inner_arg or '.expect("unbox")' in inner_arg:
+                rendered_args[2] = inner_arg
     call_target = _rs_symbol_name(ctx, func_name)
     extra_capture_args = ctx.nested_capture_args.get(call_target, [])
     if extra_capture_args:
@@ -2669,7 +2739,11 @@ def _emit_method_call(
 
     obj_str = _emit_expr(ctx, obj)
     raw_obj_str = _emit_attr_receiver_raw(ctx, obj)
-    method_sig = _dict(call_node, "method_signature_v1")
+    method_sig = _lookup_known_method_sig(ctx, obj_actual_type, method)
+    if method_sig is None:
+        method_sig = _lookup_known_method_sig(ctx, obj_type, method)
+    if method_sig is None:
+        method_sig = _dict(call_node, "method_signature_v1")
     if not method_sig:
         method_sig = _lookup_method_sig(ctx, obj_actual_type, method)
     if method_sig is None:
@@ -2888,6 +2962,8 @@ def _emit_method_call(
         if method in ("pop", "remove"):
             if len(rendered_args) >= 1:
                 return obj_str + ".remove(&" + rendered_args[0] + ").unwrap_or_default()"
+        if method == "setdefault" and len(rendered_args) >= 2:
+            return "py_setdefault(&mut " + obj_str + ", " + rendered_args[0] + ", " + rendered_args[1] + ")"
         if method == "update":
             return "{ for (k, v) in " + rendered_args[0] + ".iter() { " + obj_str + ".insert(k.clone(), v.clone()); } }"
         if method == "clear":
@@ -2968,6 +3044,12 @@ def _coerce_call_arg_to_expected(
     *,
     prefer_into_py_box_any: bool = False,
 ) -> str:
+    def _strip_unbox_expect(expr: str) -> str:
+        suffix = '.expect("unbox")'
+        if expr.endswith(suffix):
+            return expr[:-len(suffix)]
+        return expr
+
     if expected_type == "" or not isinstance(arg_node, dict):
         return arg_code
     actual_type = _actual_type_in_context(ctx, arg_node)
@@ -2994,6 +3076,9 @@ def _coerce_call_arg_to_expected(
         if (not is_simple_optional) and all(part in ("None", "bool", "int64", "float64", "str") or part.startswith("list[") or part.startswith("dict[") for part in union_parts):
             expected_rs = "PyAny"
     if expected_rs == "PyAny":
+        is_none_literal = _str(effective_node, "kind") == "Constant" and effective_node.get("value") is None
+        if is_none_literal or arg_code == "None":
+            return "PyAny::None"
         if arg_code.startswith("PyAny::"):
             return arg_code
         if actual_rs == "PyAny":
@@ -3003,6 +3088,10 @@ def _coerce_call_arg_to_expected(
         if actual_rs.startswith("PyList<"):
             return "PyAny::List(" + arg_code + ".iter_snapshot().into_iter().collect())"
         return _expr_to_pyany(arg_code, actual_type)
+    if expected_rs.startswith("HashMap<") and arg_code.startswith("PyAny::Dict("):
+        return "py_any_as_hashmap(" + arg_code + ")"
+    if expected_rs.startswith("PyList<") and arg_code.startswith("PyAny::List("):
+        return "py_any_as_list(" + arg_code + ")"
     if actual_rs == "PyAny":
         if expected_rs == "String":
             return "py_str(&(" + arg_code + "))"
@@ -3016,9 +3105,13 @@ def _coerce_call_arg_to_expected(
             return _apply_cast("py_int(&(" + arg_code + "))", expected_type)
         if expected_rs in ("f64", "f32"):
             return _apply_cast("py_float(&(" + arg_code + "))", expected_type)
+    if expected_rs.startswith("Option<") and arg_code.endswith('.expect("unbox")'):
+        return "Some(" + _strip_unbox_expect(arg_code) + ")"
     if expected_rs.startswith("Option<") and not actual_rs.startswith("Option<"):
         is_none = _str(arg_node, "kind") == "Constant" and arg_node.get("value") is None
-        return "None" if is_none else "Some(" + arg_code + ")"
+        if is_none:
+            return "None"
+        return "Some(" + _strip_unbox_expect(arg_code) + ")"
     if expected_rs == "Box<dyn std::any::Any>" and actual_rs != "Box<dyn std::any::Any>" and not arg_code.startswith("Box::new("):
         if prefer_into_py_box_any:
             if isinstance(arg_node, dict) and _str(arg_node, "kind") == "Name":
@@ -3030,6 +3123,20 @@ def _coerce_call_arg_to_expected(
             if actual_rs == "" or not _rs_is_copy_type(actual_rs):
                 boxed = arg_code + ".clone()"
         return "Box::new(" + boxed + ") as Box<dyn std::any::Any>"
+    return arg_code
+
+
+def _normalize_rendered_arg_for_expected_rs(arg_code: str, expected_rs: str) -> str:
+    if expected_rs == "":
+        return arg_code
+    if expected_rs.startswith("HashMap<") and arg_code.startswith("PyAny::Dict("):
+        return "py_any_as_hashmap(" + arg_code + ")"
+    if expected_rs.startswith("PyList<") and arg_code.startswith("PyAny::List("):
+        return "py_any_as_list(" + arg_code + ")"
+    if expected_rs.startswith("Option<") and arg_code.endswith('.expect("unbox")'):
+        return "Some(" + arg_code[: -len('.expect("unbox")')] + ")"
+    if not expected_rs.startswith("Option<") and arg_code.startswith("Some(") and arg_code.endswith(")"):
+        return arg_code[5:-1]
     return arg_code
 
 
@@ -3103,15 +3210,18 @@ def _build_sig_call_args(
             continue
         expected_type = _str(arg_types, param_name)
         out.append(
-            _coerce_call_arg_to_expected(
-                ctx,
-                arg_node,
-                arg_code,
-                expected_type,
-                prefer_into_py_box_any=(
-                    force_into_py_box_any
-                    and _rs_type_for_context(ctx, expected_type) == "Box<dyn std::any::Any>"
-                ) or _sig_param_uses_into_py_box_any(ctx, sig, param_name, skip_self=skip_self),
+            _normalize_rendered_arg_for_expected_rs(
+                _coerce_call_arg_to_expected(
+                    ctx,
+                    arg_node,
+                    arg_code,
+                    expected_type,
+                    prefer_into_py_box_any=(
+                        force_into_py_box_any
+                        and _rs_type_for_context(ctx, expected_type) == "Box<dyn std::any::Any>"
+                    ) or _sig_param_uses_into_py_box_any(ctx, sig, param_name, skip_self=skip_self),
+                ),
+                _rs_type_for_context(ctx, expected_type),
             )
         )
     if vararg_name != "":
@@ -3224,11 +3334,27 @@ def _emit_constructor_call(
         init_arg_order = [p for p in _list(init_method, "arg_order") if isinstance(p, str) and p != "self"]
         init_arg_types = _dict(init_method, "arg_types")
         normalized_args: list[str] = []
+        class_fields = ctx.class_fields.get(class_name, {})
         for index, rendered_arg in enumerate(rendered_args):
             if index < len(init_arg_order):
-                expected_type = _str(init_arg_types, init_arg_order[index])
+                param_name = init_arg_order[index]
+                expected_type = _str(init_arg_types, param_name)
+                field_type = class_fields.get(param_name, "")
+                if field_type != "":
+                    expected_type = field_type
                 if _rs_type_for_context(ctx, expected_type) == "Box<dyn std::any::Any>":
                     normalized_args.append(_strip_box_any(rendered_arg))
+                    continue
+                if index < len(args):
+                    normalized_args.append(_normalize_rendered_arg_for_expected_rs(
+                        _coerce_call_arg_to_expected(
+                            ctx,
+                            args[index],
+                            rendered_arg,
+                            expected_type,
+                        ),
+                        _rs_type_for_context(ctx, expected_type),
+                    ))
                     continue
             normalized_args.append(rendered_arg)
         rendered_args = normalized_args
@@ -3238,7 +3364,21 @@ def _emit_constructor_call(
         defaults = ctx.class_field_defaults.get(class_name, {})
         field_list = list(fields.keys())
         if len(field_list) > 0:
-            full_args2: list[str] = list(rendered_args)
+            full_args2: list[str] = []
+            for i, rendered_arg in enumerate(rendered_args):
+                if i < len(field_list) and i < len(args):
+                    field_type = fields.get(field_list[i], "")
+                    if field_type != "":
+                        rendered_arg = _normalize_rendered_arg_for_expected_rs(
+                            _coerce_call_arg_to_expected(
+                                ctx,
+                                args[i],
+                                rendered_arg,
+                                field_type,
+                            ),
+                            _rs_type_for_context(ctx, field_type),
+                        )
+                full_args2.append(rendered_arg)
             for i, field_name in enumerate(field_list):
                 if i < len(full_args2):
                     continue
@@ -3758,7 +3898,12 @@ def _emit_ann_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                     if target_type == "":
                         target_type = _str(target, "resolved_type") or _str(target, "decl_type")
                     target_rs = _rs_type_for_context(ctx, target_type) if target_type != "" else ""
-                    if rhs_rs.startswith("Option<") and (target_rs == "" or not target_rs.startswith("Option<")):
+                    if (
+                        rhs_rs.startswith("Option<")
+                        and (target_rs == "" or not target_rs.startswith("Option<"))
+                        and ".unwrap_or_default()" not in rhs
+                        and '.expect("' not in rhs
+                    ):
                         rhs = rhs + '.expect("init field")'
                     elif rhs_rs != "" and not _rs_is_copy_type(rhs_rs):
                         rhs = rhs + ".clone()"
@@ -3938,7 +4083,12 @@ def _emit_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                     if target_type == "":
                         target_type = _str(target, "resolved_type") or _str(target, "decl_type")
                     target_rs = _rs_type_for_context(ctx, target_type) if target_type != "" else ""
-                    if rhs_rs.startswith("Option<") and (target_rs == "" or not target_rs.startswith("Option<")):
+                    if (
+                        rhs_rs.startswith("Option<")
+                        and (target_rs == "" or not target_rs.startswith("Option<"))
+                        and ".unwrap_or_default()" not in rhs
+                        and '.expect("' not in rhs
+                    ):
                         rhs = rhs + '.expect("init field")'
                     elif rhs_rs != "" and not _rs_is_copy_type(rhs_rs):
                         rhs = rhs + ".clone()"
@@ -4028,7 +4178,7 @@ def _emit_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         # User class Box<T> also needs .clone() to avoid move
         if isinstance(value, dict) and value.get("kind") == "Name":
             val_type = _str(value, "resolved_type")
-            if val_type.startswith("list[") or val_type == "list":
+            if val_type.startswith("list[") or val_type == "list" or val_type in ("bytes", "bytearray"):
                 rhs = rhs + ".clone()"
             elif val_type in ctx.class_names:
                 rhs = rhs + ".clone()"
@@ -6371,7 +6521,7 @@ _ARGPARSE_ADD_ARGUMENT_SIG: dict[str, JsonVal] = {
         "help": "str",
         "action": "str",
         "choices": "list[str]",
-        "default": "str | bool | None",
+        "default": "object",
     },
     "arg_defaults": {
         "name1": {"kind": "Constant", "value": "", "resolved_type": "str"},
@@ -6684,19 +6834,28 @@ def emit_rs_module(east3_doc: dict[str, JsonVal], *, package_mode: bool = False)
         for resolved_kind, mod_id in _iter_import_runtime_ids(meta):
             if mod_id == "" or mod_id == ctx.module_id:
                 continue
+            canonical_mod_id = mod_id
+            if not canonical_mod_id.startswith("pytra."):
+                std_candidate = "pytra.std." + canonical_mod_id
+                if (
+                    std_candidate in ctx.mapping.module_native_files
+                    or should_skip_module(std_candidate, ctx.mapping)
+                    or _has_python_module_file(std_candidate)
+                ):
+                    canonical_mod_id = std_candidate
             rs_file = ""
-            if should_skip_module(mod_id, ctx.mapping):
-                rs_file = ctx.mapping.module_native_files.get(mod_id, "")
+            if should_skip_module(canonical_mod_id, ctx.mapping):
+                rs_file = ctx.mapping.module_native_files.get(canonical_mod_id, "")
                 if rs_file == "":
                     for prefix, native_file in ctx.mapping.module_native_files.items():
-                        if mod_id.startswith(prefix):
+                        if canonical_mod_id.startswith(prefix):
                             rs_file = native_file
                             break
-            elif mod_id.startswith("pytra.") or resolved_kind == "module" or mod_id.startswith("pytra.utils."):
-                if mod_id in ("pytra.utils.assertions", "pytra.typing"):
+            elif canonical_mod_id.startswith("pytra.") or resolved_kind == "module" or canonical_mod_id.startswith("pytra.utils."):
+                if canonical_mod_id in ("pytra.utils.assertions", "pytra.typing"):
                     rs_file = ""
                 else:
-                    rs_file = mod_id.replace(".", "_") + ".rs"
+                    rs_file = canonical_mod_id.replace(".", "_") + ".rs"
             if rs_file != "":
                 inc = "include!(\"" + rs_file + "\");"
                 if inc not in lines:

@@ -658,6 +658,15 @@ pub fn py_set<T: Eq + Hash + Clone>(items: &PyList<T>) -> HashSet<T> {
 
 /// Python `list(iterable)` constructor.
 pub fn py_list<T: Clone>(items: &PyList<T>) -> PyList<T> { items.clone() }
+
+pub fn py_setdefault<K, V>(items: &mut HashMap<K, V>, key: K, default: V) -> V
+where
+    K: Eq + Hash + Clone,
+    V: Clone,
+{
+    items.entry(key).or_insert(default).clone()
+}
+
 pub fn py_str_repeat(s: &str, count: i64) -> String {
     if count <= 0 {
         return String::new();
@@ -890,6 +899,15 @@ pub enum PyAny {
     Set(Vec<PyAny>),
     #[default]
     None,
+}
+
+impl PyAny {
+    pub fn get(&self, key: &String) -> Option<&PyAny> {
+        match self {
+            PyAny::Dict(d) => d.get(key),
+            _ => None,
+        }
+    }
 }
 
 impl PartialEq<String> for PyAny {

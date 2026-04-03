@@ -43,8 +43,8 @@ from toolchain2.resolve.py.resolver import resolve_file
 
 
 def _repo_root() -> Path:
-    """Return repository root anchored to current working directory."""
-    return Path(".").resolve()
+    """Return repository root anchored to this file location."""
+    return Path(__file__).resolve().parents[1]
 
 
 def _unsupported_target_attr(module_name: str, attr_name: str) -> None:
