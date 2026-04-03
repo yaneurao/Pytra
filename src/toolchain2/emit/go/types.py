@@ -138,7 +138,7 @@ def go_type(resolved_type: str) -> str:
 
     # tuple[A, B, ...] — box as []any in Go
     if resolved_type.startswith("tuple[") and resolved_type.endswith("]"):
-        return "[]any"
+        return "PyTuple"
 
     # Optional[T] / T | None → *T (pointer for nilability)
     if resolved_type.endswith(" | None") or resolved_type.endswith("|None"):

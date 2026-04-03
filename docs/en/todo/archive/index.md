@@ -1,70 +1,46 @@
-# TODO History
-
 <a href="../../../ja/todo/archive/index.md">
-  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+  <img alt="日本語で読む" src="https://img.shields.io/badge/docs-%E6%97%A5%E6%9C%AC%E8%AA%9E-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-23
+# TODO (History)
 
-## Operation Policy
+Last updated: 2026-04-02
 
-- `docs/ja/todo/archive/index.md` keeps only the index.
-- The body of completed history is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
-- Completed plans are moved to `docs/ja/plans/archive/`, and this index links to them.
-- Under `docs/`, `docs/ja/` is the source of truth and translations are synchronized from it.
+## Operating Approach
+
+- `docs/en/todo/archive/index.md` holds only the index.
+- Completed history content is stored in `docs/en/todo/archive/YYYYMMDD.md` files organized by date.
+- Completed plans are moved to `docs/ja/plans/archive/` and linked from this index.
+- `docs/ja/` is the authoritative source; translations in `docs/` are kept in sync with it.
 
 ## Completed Plan Archive
 
-- [2026-03-25 / P0 fully completed + P1-EMIT-GO/GO-RUNTIME/GO-MIGRATE completed](20260325.md)
-- [2026-03-24 / Bulk archive of all TODOs due to pipeline redesign kickoff](20260324.md)
-- [2026-03-23 / P0-28 to P0-31, P2-BUILD-OUTPUT-STRUCTURE, P5-SWIFT, P6-ZIG-OBJ-CONTAINERS](20260323.md)
-- [2026-03-21 / P0-CPP-GENERATED-RUNTIME-PIPELINE-01](20260321.md)
-- [2026-03-21 / P0-UNION-ARG-ESCAPE-01/02/03](20260321.md)
-- [2026-03-21 / P0-ESCAPE-TO-STORAGE-HINT-01](20260321.md)
-- [2026-03-21 / P0-LEGACY-API-CLEANUP-01](20260321.md)
-- [2026-03-21 / P0-RUNTIME-EAST-IN-LINK-PIPELINE-01](20260321.md)
-- [2026-03-21 / P0-OBJECT-IS-TAGGED-VALUE-01](20260321.md)
-- [2026-03-21 / P0-PY-RUNTIME-H-DECOMPOSITION-01](20260321.md)
-- [2026-03-21 / P0-SELF-CONTAINED-CPP-OUTPUT-01](20260321.md)
-- [2026-03-21 / P0-TAGGED-UNION-OBJECT-BOX-01](20260321.md)
-- [2026-03-21 / P0-LINKER-RESOLVED-INCLUDES-01](20260321.md)
-- [2026-03-21 / P1-PIPELINE-STAGE-SEPARATION-01](20260321.md)
-- [2026-03-21 / P4-VARARG-EAST3-LOWERING-01](20260321.md)
-- [2026-03-21 / P0-GPP-COMPILE-HEADERS-01](20260321.md)
-- [2026-03-21 / P0-19 block-scope variable hoisting](20260321b.md)
-- [2026-03-21 / P0-20 disable loop-invariant hoisting](20260321b.md)
-- [2026-03-21 / P0-11 PowerShell emitter parity](20260321b.md)
-- [2026-03-21 / P0-12 CLI C++ options forwarding](20260321b.md)
-- [2026-03-21 / P0-13 CLI path migration](20260321b.md)
-- [2026-03-21 / P0-15 emitter output assertions](20260321b.md)
-- [2026-03-21 / P0-16 runtime include paths](20260321b.md)
-- [2026-03-21 / P0-17 emitter legacy API cleanup](20260321b.md)
-- [2026-03-21 / P1 Julia native backend](20260321b.md)
-- [2026-03-21 / P2 remove noncpp_runtime_call](20260321b.md)
-- [2026-03-21 / P2 make link-output manifest mandatory](20260321b.md)
-- [2026-03-21 / P2 linker submodule import](20260321b.md)
-- [2026-03-21 / P2 emitter reserved-word avoidance](20260321b.md)
-- [2026-03-21 / P4 Dart native backend](20260321b.md)
-- [2026-03-21 / P7 Zig native backend](20260321b.md)
-- [2026-03-21 / P1-BACKEND-REGISTRY-DECOUPLING-01](20260321.md)
-- [2026-03-21 / P1-EMIT-DIRECT-CALL-01/02](20260321.md)
+- [2026-04-03 / infra (ITER-OPS, RTCALL-COV, PARITY-STREAM, BN-REMOVE S1-S3) all completed](20260403.md)
+- [2026-04-02 / C++ (TYPE-ID-CLEANUP, OBJECT-CONTAINER, SUB-BOUNDS, OPT-VARIANT, CMN-BOXUNBOX) + PHP (EMITTER, LINT) + Dart (EMITTER, LINT) all completed](20260402.md)
+- [2026-04-01 / Java (TYPE-ID-CLEANUP, NEW-FIXTURES, LINT-V2) + C# (TYPE-ID-CLEANUP) all completed](20260401.md)
+- [2026-03-31 / C++ many + Rust many + C# (EMITTER, LINT) + infra (TUPLE-UNPACK, CHANGELOG) all completed](20260331.md)
+- [2026-03-30 / infra (BACKEND-PROGRESS, MAPPING-VALIDATE, REORG, etc.) + Go (SPLITEXT, ARGPARSE, TYPE-MAPPING, CONTAINER-WRAPPER, COMMON-RENDERER, etc.) all completed](20260330.md)
+- [2026-03-29 / P0-CPP-INCLUDE-PATH-FIX + P0-GO-PATHLIB-FIX + P1-INCLUDE-RUNTIME-MIGRATION + P0-FAST-PARITY-CPP-BUILD all completed](20260329.md)
+- [2026-03-28 / P1-EMIT-CPP + P3-TRAIT + P0-EXCEPTION-GO + P0-EXCEPTION-CPP + P2-LOWERING-PROFILE-GO + P0-TYPE-ID-TABLE + P2-SELFHOST + P0-RUNTIME-DECORATOR all completed](20260328.md)
+- [2026-03-27 / P1-CLOSURE-DEF + P2-LINK-INPUT-COMPLETENESS + P1-ISINSTANCE-NARROWING + P1-ISINSTANCE-POD + P1-PARSER-STDLIB-JSON + P1-IFEXP-OPTIONAL all completed](20260327.md)
+- [2026-03-26 / P1-EMIT-GO-PARITY all completed + P1-SPEC-CONFORM2 phase 2+3 all completed](20260326.md)
+- [2026-03-25 / All P0 completed + P1-EMIT-GO/GO-RUNTIME/GO-MIGRATE completed](20260325.md)
+- [2026-03-24 / All TODO bulk-archived on pipeline redesign kickoff](20260324.md)
+- [2026-03-23 / P0-28–P0-31, P2-BUILD-OUTPUT-STRUCTURE, P5-SWIFT, P6-ZIG-OBJ-CONTAINERS](20260323.md)
+- [2026-03-21 / Pipeline separation, object unification, selfhost, and 30 other items](20260321.md)
 - [2026-03-22 / P0-21 integer promotion](20260322.md)
-- [2026-03-22 / P0-23 builtin-type method return types](20260322.md)
+- [2026-03-22 / P0-23 built-in type method return types](20260322.md)
 - [2026-03-22 / P0-24 Callable type tracking](20260322.md)
 - [2026-03-22 / P0-25 generator lowering](20260322.md)
-- [2026-03-22 / P0-26 `str` subscript type](20260322.md)
-- [2026-03-22 / P0-27 `__truediv__` lowering](20260322.md)
+- [2026-03-22 / P0-26 str subscript type](20260322.md)
+- [2026-03-22 / P0-27 __truediv__ lowering](20260322.md)
 - [2026-03-22 / P1 integer promotion narrowing](20260322.md)
 - [2026-03-22 / P2 emit_all_modules root_rel_prefix](20260322.md)
 - [2026-03-22 / P2 mutable param rename](20260322.md)
 - [2026-03-22 / P4 integer promotion operand cast](20260322.md)
 - [2026-03-22 / P5 C# multi-module emit parity](20260322.md)
-- [2026-03-22 / P7 default-argument expansion](20260322.md)
+- [2026-03-22 / P7 default argument expansion](20260322.md)
 - [2026-03-22 / P7 module constant type resolution](20260322.md)
-- [2026-03-21 / P1-CPP-STATICMETHOD-EMIT-01](20260321.md)
-- [2026-03-21 / P1-CPP-PATH-RC-TYPE-01](20260321.md)
-- [2026-03-21 / P7-SELFHOST-NATIVE-COMPILER-ELIM-01](20260321.md)
-- [2026-03-21 / P7-SELFHOST-MULTIMOD-TRANSPILE-01](20260321.md)
 
 - [2026-03-19 / P2-COMPILE-LINK-PIPELINE-01](20260319.md)
 - [2026-03-19 / P6-DEQUE-NATIVE-MAPPING-01](20260319.md)
@@ -258,23 +234,32 @@ Last updated: 2026-03-23
 - [2026-02-23 / TG-DOCS-SYNC](../plans/archive/20260223-tg-docs-sync.md)
 - [2026-02-23 / TG-P0-BOXING](../plans/archive/20260223-tg-p0-boxing.md)
 - [2026-02-23 / TG-P2-MICROGPT-COMPAT](../plans/archive/20260223-tg-p2-microgpt-compat.md)
+- [2026-02-23 / TG-P3-SPEC-DRAFTS](../plans/archive/20260223-tg-p3-spec-drafts.md)
 
+## On-hold / Deferred Plan Archive
 
-## Deferred / Shelved Plan Archive
+- [2026-03-18 / P6-CPP-UNKNOWN-TYPE-OBJECT-FALLBACK-01](../plans/p6-cpp-unknown-type-object-fallback.md) (requires type inference improvements as a prerequisite)
+- [2026-03-18 / P6-CPP-BRANCH-MERGE-OBJECT-FALLBACK-01](../plans/p6-cpp-branch-merge-object-fallback.md) (requires type inference improvements as a prerequisite)
+- [2026-03-18 / P6-CPP-FOR-LOOP-TYPE-OBJECT-FALLBACK-01](../plans/p6-cpp-for-loop-type-object-fallback.md) (requires type inference improvements as a prerequisite)
+- [2026-03-18 / P6-CPP-GLOBAL-VAR-TYPE-OBJECT-FALLBACK-01](../plans/p6-cpp-global-var-type-object-fallback.md) (requires type inference improvements as a prerequisite)
+- [2026-03-06 / P4-MULTILANG-SH-01](../plans/archive/20260306-p4-multilang-selfhost-full-rollout.md) (to be reintroduced after ABI is established)
 
-- [2026-03-06 / P4-MULTILANG-SH-01](../plans/archive/20260306-p4-multilang-selfhost-full-rollout.md) (requeue after the ABI boundary is fixed)
+## Links by Date
 
-## Date Links
+- [2026-03-21](20260321.md) (30+ sections)
+
+- [2026-03-19](20260319.md) (3 sections)
 
 - [2026-03-18](20260318.md) (1 section)
 
 - [2026-03-14](20260314.md) (7 sections)
+
 - [2026-03-13](20260313.md) (21 sections)
 
 - [2026-03-12](20260312.md) (28 sections)
 - [2026-03-11](20260311.md) (25 sections)
-- [2026-03-09](20260309.md) (2 sections)
-- [2026-03-08](20260308.md) (8 sections)
+- [2026-03-09](20260309.md) (29 sections)
+- [2026-03-08](20260308.md) (31 sections)
 - [2026-03-07](20260307.md) (6 sections)
 - [2026-03-06](20260306.md) (12 sections)
 - [2026-03-05](20260305.md) (7 sections)

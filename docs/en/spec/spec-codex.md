@@ -1,8 +1,10 @@
 <a href="../../ja/spec/spec-codex.md">
-  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+  <img alt="日本語で読む" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
 </a>
 
-# Codex Operation Specification for Pytra
+# Operations Specification for Codex (Pytra) — Former Name
+
+> **This file uses the former name. The canonical document has moved to [spec-agent.md](./spec-agent.md).**
 
 This document defines the operational rules Codex must follow while working on this repository.
 

@@ -1,8 +1,8 @@
-# Python Compatibility Guide
-
 <a href="../../ja/spec/spec-python-compat.md">
-  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+  <img alt="日本語で読む" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
 </a>
+
+# Python Compatibility Guide
 
 This page is a guide for **users who know Python**, showing side-by-side comparisons of "how Python behaves / how Pytra behaves".
 For normative details on input constraints, see the [User Specification](./spec-user.md).
@@ -91,7 +91,7 @@ Legend for the tables below:
 | `uint64`, `uint32`, `uint16`, `uint8` | ❌ | ✅ Pytra-specific unsigned fixed-width integer types |
 | `float` | 64-bit floating point | ✅ Works as `float64` |
 | `float32` | ❌ | ✅ Pytra-specific 32-bit floating point type. Available via `from pytra.types import float32` |
-| `bool` | Works | ✅ Works |
+| `bool` | Works | ✅ Works (but see `bool`/`int` incompatibility below) |
 | `str` | Works | ✅ Supports slicing, for-each, f-strings, etc. |
 | `list[T]` | Works | ✅ Works |
 | `dict[K, V]` | Works | ✅ Works |
@@ -100,6 +100,24 @@ Legend for the tables below:
 | `bytes` / `bytearray` | Works | ✅ Supports basic operations |
 | `None` | Works | ✅ Works |
 | `Any` | Works | ✅ Supports basic usage |
+
+### `bool` is not a subtype of `int` (Python incompatibility)
+
+In Python, `bool` is historically a subclass of `int`, so `isinstance(True, int)` returns `True`. Pytra does **not** adopt this relationship.
+
+| isinstance | Python | Pytra |
+|---|---|---|
+| `isinstance(True, bool)` | `True` | `True` |
+| `isinstance(True, int)` | `True` | **`False`** |
+| `isinstance(Color.RED, Color)` | `True` | `True` |
+| `isinstance(Color.RED, IntEnum)` | `True` | `True` |
+| `isinstance(Color.RED, int)` | `True` | **`False`** |
+
+Rationale:
+- Python's `bool` being a subclass of `int` is a historical artifact from when `bool` was added in Python 2.3, and is widely recognized as a language design mistake.
+- Pytra assumes static typing based on type annotations, so using `bool` as `int` in arithmetic is not expected.
+- `IntEnum` / `IntFlag` values can be used as `int`, but there is little practical need for `isinstance` to return `int`.
+- This incompatibility greatly simplifies type checking implementation across all target languages.
 
 ---
 

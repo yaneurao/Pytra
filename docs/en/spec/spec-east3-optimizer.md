@@ -1,6 +1,4 @@
-<a href="../../ja/spec/spec-east3-optimizer.md">
-  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
-</a>
+<a href="../../ja/spec/spec-east3-optimizer.md"><img alt="日本語で読む" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square"></a>
 
 # EAST3 Optimizer Specification
 
@@ -107,6 +105,7 @@ Execution contract:
 | `UnusedLoopVarElisionPass` | `O1` | Implemented | Replace unused `NameTarget` with `_` | Not applied if the variable is referenced in the loop body, `orelse`, later code, or via dynamic name resolution |
 | `LoopInvariantHoistLitePass` | `O2` | Implemented | Hoist invariant assignments at the start of a non-empty `StaticRangeForPlan` into the preheader | Requires proof of non-empty loop, no side effects, and no reassignment |
 | `StrengthReductionFloatLoopPass` | `O2` | Implemented | Convert float `x / C` to `x * (1/C)` | Only when `C` is a finite, non-zero constant whose absolute value is a power of two |
+| `SubscriptAccessAnnotationPass` | `O1` | Not implemented (P0-SUB-BOUNDS) | Attach `Subscript.meta.subscript_access_v1` to fix the negative-index and bounds-check policy | Annotate only in forms that let the backend select a helper fail-closed without re-inferring |
 | `RedundantWrapperCtorPass` | - | Candidate, not implemented | Remove redundant cases such as `bytes(bytes_expr)` | Temporary value only and no alias risk |
 | `DeadTempCleanupPass` | - | Candidate, not implemented | Remove unused temporaries | No references and no side effects |
 
@@ -116,6 +115,56 @@ Notes:
 - `O0` disables all passes, `O1` runs the `O1` passes in the table, and `O2` runs `O1 + O2`.
 - `NonEscapeInterproceduralPass` and `ContainerValueLocalHintPass`, formerly `CppListValueLocalHintPass` and generalized and renamed on 2026-03-23, are no longer part of the default local `EAST3` pass list as of 2026-03-07. They are treated instead as whole-program and global-annotation passes on the `LinkedProgramOptimizer` side.
 - `LifetimeAnalysisPass` remains a local-only pass and does not move into the linked-program stage.
+
+### 8.5 `SubscriptAccessAnnotationPass` contract (`subscript_access_v1`)
+
+Purpose:
+
+- The optimizer fixes the negative-index normalization requirement and bounds-check requirement for `Subscript` accesses as canonical metadata.
+- This allows the backend to select a helper based solely on metadata without re-inferring loop context or constant patterns.
+
+Input:
+
+- An expression node with `kind == "Subscript"`.
+- May receive `negative-index-mode` and `bounds-check-mode` via `PassContext.debug_flags` or optimizer options.
+
+Output:
+
+- `Subscript.meta.subscript_access_v1`
+
+```json
+{
+  "schema_version": "subscript_access_v1",
+  "negative_index": "normalize | skip",
+  "bounds_check": "full | off",
+  "reason": "string"
+}
+```
+
+v1 judgment rules:
+
+- Subscript access using a `ForRange` loop variable:
+  - `negative_index = "skip"`
+  - `bounds_check = "off"`
+  - `reason = "for_range_index"`
+- Non-negative constant literal index:
+  - `negative_index = "skip"`
+  - `bounds_check` follows the option default
+  - `reason = "non_negative_constant"`
+- Negative literal index:
+  - `negative_index = "normalize"`
+  - `bounds_check = "full"`
+  - `reason = "negative_literal"`
+- All other cases:
+  - `negative_index` / `bounds_check` follow the optimizer option
+  - `reason = "mode_default"`
+
+Fail-closed rules:
+
+- When none of loop-induction origin, non-negative guarantee, or negative literal can be proven statically, the annotation must not be weaker than the option default.
+- Negative literals may still be out of range after normalization, so v1 fails closed to `bounds_check = "full"`.
+- If `subscript_access_v1` cannot be generated or is malformed, the backend must choose the full-check helper rather than direct indexing.
+- Even when `subscript_access_v1` is present, the backend must not override it by inspecting the surrounding AST.
 
 ### 8.1 Responsibility boundary for optimizing `for ... in range(...)`
 
@@ -214,7 +263,10 @@ Recommended file placement:
 
 Recommended options:
 
-- `--east3-opt-level {0,1,2}`, default `1`
+- `--opt-level {0,1,2}`, default `1`
+  - `0`: `negative_index_mode=always`, `bounds_check_mode=always`
+  - `1`: `negative_index_mode=const_only`, `bounds_check_mode=off`
+  - `2`: `negative_index_mode=off`, `bounds_check_mode=off`
 - `--east3-opt-pass +PASS,-PASS`, per-pass on/off
 - `--dump-east3-before-opt <path>`
 - `--dump-east3-after-opt <path>`
@@ -241,22 +293,22 @@ python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
 
 ```bash
 python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
-  --east3-opt-level 2 \
+  --opt-level 2 \
   --east3-opt-pass -RangeForCanonicalizationPass,-UnusedLoopVarElisionPass
 ```
 
-3. Compare compatibility among `O0`, `O1`, and `O2` using the same procedure through `runtime_parity_check.py --east3-opt-level`.
+3. Compare compatibility among `O0`, `O1`, and `O2` using the same procedure through `runtime_parity_check.py --opt-level`.
 
 ```bash
 python tools/check/runtime_parity_check.py --case-root sample \
   --targets cpp,rs,cs,js,ts --ignore-unstable-stdout \
-  --east3-opt-level 0 --summary-json work/logs/east3_opt_parity_o0.json
+  --opt-level 0 --summary-json work/logs/east3_opt_parity_o0.json
 python tools/check/runtime_parity_check.py --case-root sample \
   --targets cpp,rs,cs,js,ts --ignore-unstable-stdout \
-  --east3-opt-level 1 --summary-json work/logs/east3_opt_parity_o1.json
+  --opt-level 1 --summary-json work/logs/east3_opt_parity_o1.json
 python tools/check/runtime_parity_check.py --case-root sample \
   --targets cpp,rs,cs,js,ts --ignore-unstable-stdout \
-  --east3-opt-level 2 --summary-json work/logs/east3_opt_parity_o2.json
+  --opt-level 2 --summary-json work/logs/east3_opt_parity_o2.json
 ```
 
 ## 11. Test contract

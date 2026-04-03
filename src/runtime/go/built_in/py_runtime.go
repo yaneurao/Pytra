@@ -43,8 +43,10 @@ func PyListFromSlice[T any](items []T) *PyList[T] {
 	return &PyList[T]{items: out}
 }
 
-func py_tuple_any(values ...any) []any {
-	return values
+type PyTuple []any
+
+func py_tuple_any(values ...any) PyTuple {
+	return PyTuple(values)
 }
 
 func py_tuple_key(value any) string {
@@ -124,7 +126,7 @@ func (p *PyList[T]) __str__() string {
 	if p == nil {
 		return "[]"
 	}
-	return py_format_sequence(p.items)
+	return py_format_sequence_repr(p.items)
 }
 
 type PyDict[K comparable, V any] struct {
@@ -133,6 +135,12 @@ type PyDict[K comparable, V any] struct {
 
 func (*PyDict[K, V]) __pytra_is_dict() {}
 func (d *PyDict[K, V]) pyDictItemsAny() any { return d.items }
+func (d *PyDict[K, V]) __str__() string {
+	if d == nil {
+		return "{}"
+	}
+	return py_format_mapping_repr(d.items)
+}
 
 func NewPyDict[K comparable, V any]() *PyDict[K, V] {
 	return &PyDict[K, V]{items: map[K]V{}}
@@ -176,6 +184,12 @@ type PySet[T comparable] struct {
 }
 
 func (*PySet[T]) __pytra_is_set() {}
+func (s *PySet[T]) __str__() string {
+	if s == nil {
+		return "set()"
+	}
+	return py_format_set_repr(s.items)
+}
 
 func NewPySet[T comparable]() *PySet[T] {
 	return &PySet[T]{items: map[T]struct{}{}}
@@ -230,6 +244,123 @@ func py_format_sequence(v any) string {
 	return "[" + strings.Join(parts, ", ") + "]"
 }
 
+func py_format_sequence_repr(v any) string {
+	rv := goreflect.ValueOf(v)
+	if !rv.IsValid() {
+		return "[]"
+	}
+	if rv.Kind() != goreflect.Slice && rv.Kind() != goreflect.Array {
+		return gofmt.Sprint(v)
+	}
+	if rv.Kind() == goreflect.Slice && rv.Type().Elem().Kind() == goreflect.Uint8 {
+		return gofmt.Sprint(v)
+	}
+	parts := make([]string, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		parts[i] = py_repr(rv.Index(i).Interface())
+	}
+	return "[" + strings.Join(parts, ", ") + "]"
+}
+
+func py_format_tuple_repr(v any) string {
+	rv := goreflect.ValueOf(v)
+	if !rv.IsValid() {
+		return "()"
+	}
+	if rv.Kind() != goreflect.Slice && rv.Kind() != goreflect.Array {
+		return gofmt.Sprint(v)
+	}
+	parts := make([]string, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		parts[i] = py_repr(rv.Index(i).Interface())
+	}
+	if len(parts) == 1 {
+		return "(" + parts[0] + ",)"
+	}
+	return "(" + strings.Join(parts, ", ") + ")"
+}
+
+func py_format_mapping_repr(v any) string {
+	rv := py_unwrap_dict_value(v)
+	if !rv.IsValid() || rv.Kind() != goreflect.Map {
+		return "{}"
+	}
+	keys := rv.MapKeys()
+	sort.Slice(keys, func(i, j int) bool {
+		return py_str(keys[i].Interface()) < py_str(keys[j].Interface())
+	})
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		value := rv.MapIndex(key)
+		parts = append(parts, py_repr(key.Interface())+": "+py_repr(value.Interface()))
+	}
+	return "{" + strings.Join(parts, ", ") + "}"
+}
+
+func py_format_set_repr(v any) string {
+	rv := goreflect.ValueOf(v)
+	if !rv.IsValid() || rv.Kind() != goreflect.Map {
+		return "set()"
+	}
+	keys := rv.MapKeys()
+	if len(keys) == 0 {
+		return "set()"
+	}
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		parts = append(parts, py_repr(key.Interface()))
+	}
+	sort.Strings(parts)
+	return "{" + strings.Join(parts, ", ") + "}"
+}
+
+func py_repr(v any) string {
+	if v == nil {
+		return "None"
+	}
+	switch t := v.(type) {
+	case string:
+		return "'" + strings.ReplaceAll(t, "'", "\\'") + "'"
+	case PyTuple:
+		return py_format_tuple_repr([]any(t))
+	case []any:
+		return py_format_sequence_repr(t)
+	case bool:
+		return py_str(t)
+	case float32, float64:
+		return py_str(t)
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		return py_str(t)
+	}
+	if s, ok := v.(interface{ __str__() string }); ok {
+		return s.__str__()
+	}
+	rv := goreflect.ValueOf(v)
+	for rv.IsValid() && (rv.Kind() == goreflect.Interface || rv.Kind() == goreflect.Pointer) {
+		if rv.IsNil() {
+			return "None"
+		}
+		if s, ok := rv.Interface().(interface{ __str__() string }); ok {
+			return s.__str__()
+		}
+		rv = rv.Elem()
+		v = rv.Interface()
+	}
+	if !rv.IsValid() {
+		return "None"
+	}
+	if rv.Kind() == goreflect.Slice || rv.Kind() == goreflect.Array {
+		return py_format_sequence_repr(v)
+	}
+	if rv.Kind() == goreflect.Map {
+		if rv.Type().Elem().Kind() == goreflect.Struct {
+			return py_format_set_repr(v)
+		}
+		return py_format_mapping_repr(v)
+	}
+	return py_str(v)
+}
+
 func py_type_name(v any) string {
 	if v == nil {
 		return "NoneType"
@@ -282,6 +413,8 @@ func py_str(v any) string {
 		v = rv.Interface()
 	}
 	switch t := v.(type) {
+	case PyTuple:
+		return py_format_tuple_repr([]any(t))
 	case bool:
 		if t {
 			return "True"
@@ -294,6 +427,12 @@ func py_str(v any) string {
 	}
 	if rv.Kind() == goreflect.Slice || rv.Kind() == goreflect.Array {
 		return py_format_sequence(v)
+	}
+	if rv.Kind() == goreflect.Map {
+		if rv.Type().Elem().Kind() == goreflect.Struct {
+			return py_format_set_repr(v)
+		}
+		return py_format_mapping_repr(v)
 	}
 	return gofmt.Sprint(v)
 }
@@ -376,8 +515,14 @@ func pytraEnsureRecoveredError(value any) *PytraErrorCarrier {
 	case interface{ pytraErrorBase() *PytraErrorCarrier }:
 		return t.pytraErrorBase()
 	case error:
+		if strings.Contains(t.Error(), "index out of range") || strings.Contains(t.Error(), "slice bounds out of range") {
+			return pytraNewIndexError(t.Error())
+		}
 		return pytraNewRuntimeError(t.Error())
 	case string:
+		if strings.Contains(t, "index out of range") || strings.Contains(t, "slice bounds out of range") {
+			return pytraNewIndexError(t)
+		}
 		return pytraNewRuntimeError(t)
 	default:
 		return pytraNewRuntimeError(py_str(t))

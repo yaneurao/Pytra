@@ -1,28 +1,27 @@
-<a href="../../ja/plans/p0-callable-type-tracking.md"><img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square"></a>
+<a href="../../ja/plans/p0-callable-type-tracking.md">
+  <img alt="日本語で読む" src="https://img.shields.io/badge/docs-%E6%97%A5%E6%9C%AC%E8%AA%9E-2563EB?style=flat-square">
+</a>
 
-> [!WARNING]
-> This file is synchronized from `docs/ja/plans/p0-callable-type-tracking.md` and still requires manual English translation.
+# P0: Callable type tracking
 
-> Source of truth: `docs/ja/plans/p0-callable-type-tracking.md`
+Last updated: 2026-03-22
 
-# P0: Callable 型の追跡
+Related TODO:
+- `ID: P0-CALLABLE-TYPE-TRACKING` in `docs/ja/todo/index.md`
 
-最終更新: 2026-03-22
+## Background
 
-関連 TODO:
-- `docs/ja/todo/index.md` の `ID: P0-CALLABLE-TYPE-TRACKING`
+When a function argument has a `Callable` type, the `resolved_type` in EAST3 becomes `unknown`, and the emitter cannot distinguish between a function reference and a regular variable. In PowerShell such arguments must be passed as scriptblocks, and other languages also differ in how they handle function pointers / lambdas.
 
-## 背景
+If the EAST1 parser recognizes `Callable` type annotations and sets `resolved_type` to `callable[..., RetType]`, emitters can generate the appropriate code.
 
-関数引数が `Callable` 型の場合、EAST3 の `resolved_type` が `unknown` になり、emitter が関数参照と通常変数を区別できない。PowerShell では scriptblock として渡す必要があり、他の言語でも関数ポインタ/ラムダの扱いが変わる。
+## Subtasks
 
-EAST1 パーサーが `Callable` 型注釈を認識し、`resolved_type` に `callable[..., RetType]` を設定すれば、emitter が適切なコードを生成できる。
+- [ ] [ID: P0-CALLABLE-TYPE-TRACKING-01] Reflect `Callable` type annotations in `resolved_type` in the EAST1 parser
+- [ ] [ID: P0-CALLABLE-TYPE-TRACKING-02] Add unit tests
 
-## 子タスク
+## Decision Log
 
-- [ ] [ID: P0-CALLABLE-TYPE-TRACKING-01] EAST1 パーサーで `Callable` 型注釈を `resolved_type` に反映する
-- [ ] [ID: P0-CALLABLE-TYPE-TRACKING-02] ユニットテストを追加する
-
-## 決定ログ
-
-- 2026-03-22: PS 担当が Callable 引数の型追跡不足を報告。全 backend 共通の改善として起票。
+- 2026-03-22: The PS team reported insufficient type tracking for Callable arguments. Filed as a cross-backend improvement.
+- 2026-04-02: Because the remaining item in C++ `P0-CPP-VARIANT-S7` was reduced to only bare `Callable` in `type_ignore_from_import`, this plan is referenced as a blocker for the variant/object migration.
+- 2026-04-02: The resolver's call-site refine was fixed to account for the `main -> __pytra_main` rename and treat the zero-arg `callable[[],None]` signature as a concrete type. This causes `Callable` in `type_ignore_from_import` to lower to `::std::function<void()>` in C++, unblocking `P0-CPP-VARIANT-S7`.

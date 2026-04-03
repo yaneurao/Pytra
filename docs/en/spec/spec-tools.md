@@ -1,11 +1,11 @@
 <a href="../../ja/spec/spec-tools.md">
-  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
+  <img alt="日本語で読む" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">
 </a>
 
-# `tools/` Script Index
+# `tools/` Script Reference
 
-`tools/` is the collection of helper scripts that automates Pytra development operations.
-Its goals are the following three:
+`tools/` is a collection of helper scripts for automating Pytra development operations.
+Its three purposes are:
 
 - make regression checks repeatable in a short cycle
 - standardize selfhost investigation, comparison, and build flows

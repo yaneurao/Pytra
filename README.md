@@ -1,5 +1,5 @@
 <a href="docs/ja/README.md">
-  <img alt="Read in Japanese" src="https://img.shields.io/badge/README-日本語-DC2626?style=flat-square">
+  <img alt="日本語で読む" src="https://img.shields.io/badge/README-日本語-DC2626?style=flat-square">
 </a>
 
 <p align="center">
@@ -8,7 +8,7 @@
 
 <div align="center">
     <h1>Pytra</h1>
-    <img alt="Python" src="https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white"> is Pytra's source language. Pytra transpiles that code into multiple target languages.
+    <img alt="Python" src="https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white"> is Pytra's input language — Pytra transpiles that code into multiple target languages.
 </div>
 
 <div align="center">
@@ -36,28 +36,28 @@
 </div>
 
 
-## Features of Pytra
+## Features
 
-**🐍 Python → Native code in each target language**
+**🐍 Python → native code in each target language**
 
-- 🌐 Transpiles to C++, Rust, Go, Java, TS, and many more
-- 🧩 Preserves the original program structure almost as-is
-- ⚡ Generates high-performance code even when you write in Python
-- ✨ Uses a simple Python subset
-- 🛠 Works with existing tools such as VS Code
-- 🔧 The core is also written in Python, so it is easy to extend
-- 🔁 Supports self-hosting
+- 🌐 Transpiles to C++ / Rust / Go / Java / TS and many more
+- 🧩 Preserves the original code structure almost entirely
+- ⚡ Write in Python, generate high-performance code
+- ✨ Simple Python subset input
+- 🛠 Works with existing tools like VS Code out of the box
+- 🔧 The transpiler itself is written in Python — easy to extend
+- 🔁 Self-hosting capable — can transpile itself
 
-## Runtime Performance Comparison
+## Performance Comparison
 
-These are execution times for sample programs written in Python and for their transpiled source code. Unit: seconds. In the table, Python is the original implementation and PyPy is included as a reference.
+Execution time of sample code written in Python versus execution time of the same code after transpilation. (Unit: seconds.) The Python column is the original code; PyPy is included for reference.
 
-|No.|Workload|<img alt="Python" src="https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white">|<img alt="PyPy" src="https://img.shields.io/badge/-PyPy-4B8BBE?style=flat-square">|<img alt="C++" src="https://img.shields.io/badge/-C%2B%2B-00599C?style=flat-square&logo=cplusplus&logoColor=white">|<img alt="Rust" src="https://img.shields.io/badge/-Rust-F6B73C?style=flat-square&logo=rust&logoColor=black">|<img alt="C#" src="https://img.shields.io/badge/-C%23-239120?style=flat-square&logo=dotnet&logoColor=white">|<img alt="JS" src="https://img.shields.io/badge/-JS-F7DF1E?style=flat-square&logo=javascript&logoColor=black">|
+|No.|Description|<img alt="Python" src="https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white">|<img alt="PyPy" src="https://img.shields.io/badge/-PyPy-4B8BBE?style=flat-square">|<img alt="C++" src="https://img.shields.io/badge/-C%2B%2B-00599C?style=flat-square&logo=cplusplus&logoColor=white">|<img alt="Rust" src="https://img.shields.io/badge/-Rust-F6B73C?style=flat-square&logo=rust&logoColor=black">|<img alt="C%23" src="https://img.shields.io/badge/-C%23-239120?style=flat-square&logo=dotnet&logoColor=white">|<img alt="JS" src="https://img.shields.io/badge/-JS-F7DF1E?style=flat-square&logo=javascript&logoColor=black">|
 |-|-|-:|-:|-:|-:|-:|-:|
-|06 |Julia-set parameter sweep (GIF)|9.627|0.507|0.546|0.407|0.329|0.626|
-|16 |Chaotic rotation of a glass sculpture (GIF)|6.847|0.606|0.277|0.246|1.220|0.650|
+|06 |Julia set parameter sweep (GIF)|9.627|0.507|0.546|0.407|0.329|0.626|
+|16 |Glass sculpture chaos rotation (GIF)|6.847|0.606|0.277|0.246|1.220|0.650|
 
-Full data for all languages and all samples: [Sample page](sample/README.md#runtime-performance-comparison)
+Full data for all languages and all samples → [Sample page](sample/README.md#performance-comparison)
 
 <table><tr>
 <td valign="top" width="50%">
@@ -65,14 +65,14 @@ Full data for all languages and all samples: [Sample page](sample/README.md#runt
 ![06_julia_parameter_sweep](sample/images/06_julia_parameter_sweep.gif)
 
 <details>
-<summary>Sample code: 06_julia_parameter_sweep.py</summary>
+<summary>Sample code : 06_julia_parameter_sweep.py</summary>
 
 - Full source: [sample/py/06_julia_parameter_sweep.py](sample/py/06_julia_parameter_sweep.py)
 
 </details>
 
 <details>
-<summary>Transpiled code in each language</summary>
+<summary>Transpiled code (per language)</summary>
 
 [C++](sample/cpp/06_julia_parameter_sweep.cpp) | [Rust](sample/rs/06_julia_parameter_sweep.rs) | [C#](sample/cs/06_julia_parameter_sweep.cs) | [JS](sample/js/06_julia_parameter_sweep.js) | [TS](sample/ts/06_julia_parameter_sweep.ts) | [Dart](sample/dart/06_julia_parameter_sweep.dart) | [Go](sample/go/06_julia_parameter_sweep.go) | [Java](sample/java/06_julia_parameter_sweep.java) | [Swift](sample/swift/06_julia_parameter_sweep.swift) | [Kotlin](sample/kotlin/06_julia_parameter_sweep.kt) | [Ruby](sample/ruby/06_julia_parameter_sweep.rb) | [Lua](sample/lua/06_julia_parameter_sweep.lua) | [Scala3](sample/scala/06_julia_parameter_sweep.scala) | [PHP](sample/php/06_julia_parameter_sweep.php) | [Julia](sample/julia/06_julia_parameter_sweep.jl)
 
@@ -84,14 +84,14 @@ Full data for all languages and all samples: [Sample page](sample/README.md#runt
 ![16_glass_sculpture_chaos](sample/images/16_glass_sculpture_chaos.gif)
 
 <details>
-<summary>Sample code: 16_glass_sculpture_chaos.py</summary>
+<summary>Sample code : 16_glass_sculpture_chaos.py</summary>
 
 - Full source: [sample/py/16_glass_sculpture_chaos.py](sample/py/16_glass_sculpture_chaos.py)
 
 </details>
 
 <details>
-<summary>Transpiled code in each language</summary>
+<summary>Transpiled code (per language)</summary>
 
 [C++](sample/cpp/16_glass_sculpture_chaos.cpp) | [Rust](sample/rs/16_glass_sculpture_chaos.rs) | [C#](sample/cs/16_glass_sculpture_chaos.cs) | [JS](sample/js/16_glass_sculpture_chaos.js) | [TS](sample/ts/16_glass_sculpture_chaos.ts) | [Dart](sample/dart/16_glass_sculpture_chaos.dart) | [Go](sample/go/16_glass_sculpture_chaos.go) | [Java](sample/java/16_glass_sculpture_chaos.java) | [Swift](sample/swift/16_glass_sculpture_chaos.swift) | [Kotlin](sample/kotlin/16_glass_sculpture_chaos.kt) | [Ruby](sample/ruby/16_glass_sculpture_chaos.rb) | [Lua](sample/lua/16_glass_sculpture_chaos.lua) | [Scala3](sample/scala/16_glass_sculpture_chaos.scala) | [PHP](sample/php/16_glass_sculpture_chaos.php) | [Julia](sample/julia/16_glass_sculpture_chaos.jl)
 
@@ -102,27 +102,27 @@ Full data for all languages and all samples: [Sample page](sample/README.md#runt
 
 ## Python vs C++ vs Rust vs Pytra
 
-Legend: ✅ = Good / 🔶 = Partial / ❌ = Unsupported or difficult
+Legend: ✅ = Good / 🔶 = Partial / limited / ❌ = Not supported / difficult
 
 | Aspect | ![Python](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white) | ![C++](https://img.shields.io/badge/-C%2B%2B-00599C?style=flat-square&logo=cplusplus&logoColor=white) | ![Rust](https://img.shields.io/badge/-Rust-F6B73C?style=flat-square&logo=rust&logoColor=black) | ![Pytra](https://img.shields.io/badge/-Pytra-875715?style=flat-square&labelColor=F4DB8E) |
 |-|-|-|-|-|
-| Syntax | ✅ Simple | ❌ Complex | 🔶 Ownership/<br>lifetimes | ✅ Same as<br>Python |
-| Type safety | ❌ Dynamic | ✅ Static | ✅ Static | ✅ Static<br>(Python-style) |
-| Speed | ❌ Slow | ✅ Fast | ✅ Fast | ✅ Fast<br>(depends on target) |
-| Memory | ✅ GC<br>(easy but heavy) | ❌ Manual/<br>shared_ptr | 🔶 Ownership<br>(safe but hard) | ✅ RC-based<br>automatic |
-| Integers | 🔶 Arbitrary<br>only | ✅ int8–64 | ✅ i8–i64 | ✅ int8–64 |
-| Float | 🔶 64-bit only | ✅ 32/64-bit | ✅ f32/f64 | ✅ 32/64-bit |
+| Syntax | ✅ Simple | ❌ Complex | 🔶 Ownership/<br>lifetimes | ✅ Same as Python |
+| Type safety | ❌ Dynamic | ✅ Static | ✅ Static | ✅ Static<br>(Python-style annotations) |
+| Execution speed | ❌ Slow | ✅ Fast | ✅ Fast | ✅ Fast<br>(depends on target) |
+| Memory management | ✅ GC<br>(easy but heavy) | ❌ Manual/<br>shared_ptr | 🔶 Ownership<br>(safe but hard) | ✅ RC-based<br>automatic |
+| Integer types | 🔶 Arbitrary precision only | ✅ int8–64 | ✅ i8–i64 | ✅ int8–64 |
+| float | 🔶 64-bit only | ✅ 32/64-bit | ✅ f32/f64 | ✅ 32/64-bit |
 | Build | ✅ Not needed | ❌ CMake etc. | 🔶 cargo | ✅ `./pytra`<br>`--build --run` |
-| Multi-lang<br>deploy | ❌ | ❌ | ❌ | ✅ 18 languages |
-| Optimization | ❌ Limited | ✅ Extensive | ✅ Extensive | ✅ Leverages<br>target |
-| Distribution | 🔶 Requires<br>runtime | ✅ Binary | ✅ Binary | ✅ Each lang's<br>native |
-| Single<br>inheritance | ✅ | ✅ | ❌ Traits only | ✅ |
-| Multiple<br>inheritance | ✅ | 🔶 Complex | ❌ | ❌ |
-| Mix-ins | ✅ | 🔶 CRTP etc. | ❌ | ✅ |
-| Traits/<br>Interfaces | 🔶 Protocol | 🔶 virtual base | ✅ Native | ✅ `@trait` |
-| Exceptions | ✅ | ✅ | ❌ Result/panic | ✅ All languages |
-| Templates/<br>Generics | ❌ | 🔶 Unreadable<br>errors | ✅ | ✅ `@template` |
-| Self-hosting | ❌ | ❌ | ❌ | ✅ |
+| Multi-language output | ❌ | ❌ | ❌ | ✅ 18 languages |
+| Optimization | ❌ Limited | ✅ Rich | ✅ Rich | ✅ Leverages target |
+| Distribution | 🔶 Requires runtime | ✅ Binary | ✅ Binary | ✅ Language-native |
+| Single inheritance | ✅ | ✅ | ❌ traits only | ✅ |
+| Multiple inheritance | ✅ | 🔶 Complex | ❌ | ❌ |
+| Mix-in | ✅ | 🔶 CRTP etc. | ❌ | ✅ |
+| Trait/<br>Interface | 🔶 Protocol | 🔶 virtual base | ✅ Native | ✅ `@trait` |
+| Exception handling | ✅ | ✅ | ❌ Result/panic | ✅ All languages |
+| Templates/<br>Generics | ❌ | 🔶 Cryptic errors | ✅ | ✅ `@template` |
+| Selfhost | ❌ | ❌ | ❌ | ✅ |
 
 <a id="read-the-docs"></a>
 
@@ -137,11 +137,11 @@ Legend: ✅ = Good / 🔶 = Partial / ❌ = Unsupported or difficult
 
 ## Changelog
 
-> **2026-04-03** - Unified emitter call structure (common `cli_runner.py`, 17 languages). `resolved_type: "object"` banned globally via EAST3 validator. IsInstance `PYTRA_TID_*` removed, `expected_type_name` migration. `--opt-level` rename. @extern class opaque type spec finalized. `builtin_name` removed. runtime_call coverage lint. All-skip now FAIL. `tools/unregistered/` deleted. Julia / Zig / PowerShell / Swift / Dart backend TODOs.
+> **2026-04-03** — Unified emitter invocation structure (common runner `cli_runner.py` supports 17 languages). Banned `resolved_type: "object"` across the board in the EAST3 validator. Removed `PYTRA_TID_*` from IsInstance and migrated to `expected_type_name`. Renamed `--east3-opt-level` to `--opt-level`. Finalized `@extern class` opaque type spec. Removed `builtin_name`. Added runtime_call coverage lint. Changed all-SKIP results to FAIL. Deleted `tools/unregistered/`. Added TODO entries for Julia / Zig / PowerShell / Swift / Dart backends.
 
-> **2026-04-02** - C++ monostate → `optional<variant>`. Bounds check / negative index → EAST optimizer (mandelbrot 12.8s → 0.82s). png.py/gif.py extend optimization. Emitter guide §12.4-12.6 (Optional/union/callable mapping). Fixture rename (any_* → union_*/optional_none).
+> **2026-04-02** — Migrated C++ monostate to `optional<variant>`. Moved bounds check / negative index handling to the EAST optimizer (sample 01 mandelbrot: 12.8s → 0.82s). Optimized `extend` in png.py / gif.py (faster across all languages). Added emitter guide §12.4–12.6 (Optional/union/callable type mappings). Renamed fixtures (any_* → union_*/optional_none).
 
-> **2026-04-01** - Emitter lint runtime cache. Source-of-truth modification prohibition rule. EAST3 copy elision plan. C++ prefix_match lint fix.
+> **2026-04-01** — Added emitter hardcode lint runtime cache mechanism. Established rule prohibiting modification of canonical files. Filed EAST3 copy elision metadata plan. Fixed C++ prefix_match lint.
 
 ## License
 

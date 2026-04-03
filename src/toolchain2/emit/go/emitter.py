@@ -660,6 +660,11 @@ def _is_wrapper_container_expr(ctx: EmitContext, node: JsonVal, rendered: str) -
         return False
     kind = _str(node, "kind")
     if kind == "Call":
+        func_node = node.get("func")
+        if isinstance(func_node, dict) and _str(func_node, "kind") == "Name":
+            fn_name = _str(func_node, "id")
+            if _is_container_resolved_type(ctx.function_return_types.get(fn_name, "")):
+                return True
         return (
             rendered.startswith("NewPyList[")
             or rendered.startswith("PyListFromSlice[")
@@ -974,6 +979,15 @@ def _go_signature_type(ctx: EmitContext, resolved_type: str) -> str:
 def _go_type_with_ctx(ctx: EmitContext, resolved_type: str) -> str:
     if resolved_type == "" or resolved_type == "unknown":
         return "any"
+    if (
+        len(resolved_type) == 1
+        and resolved_type[:1].isupper()
+        and resolved_type not in ctx.class_names
+        and resolved_type not in ctx.trait_names
+        and resolved_type not in ctx.enum_bases
+        and resolved_type not in ctx.union_type_aliases
+    ):
+        return "any"
 
     if (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) and resolved_type.endswith("]"):
         params, ret = _parse_callable_signature(resolved_type)
@@ -1003,7 +1017,7 @@ def _go_type_with_ctx(ctx: EmitContext, resolved_type: str) -> str:
         return "map[" + _go_type_with_ctx(ctx, inner3) + "]struct{}"
 
     if resolved_type.startswith("tuple[") and resolved_type.endswith("]"):
-        return "[]any"
+        return "PyTuple"
 
     if resolved_type in ctx.enum_bases:
         return _go_symbol_name(ctx, resolved_type)
@@ -1427,8 +1441,22 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 def _effective_resolved_type(ctx: EmitContext, node: JsonVal) -> str:
     if not isinstance(node, dict):
         return ""
+    kind = _str(node, "kind")
+    if kind in ("Box", "Unbox"):
+        inner = node.get("value")
+        if isinstance(inner, dict):
+            inner_rt = _effective_resolved_type(ctx, inner)
+            if inner_rt not in ("", "unknown"):
+                return inner_rt
     resolved_type = _str(node, "resolved_type")
-    if _str(node, "kind") == "Name":
+    if kind == "Call":
+        func = node.get("func")
+        if isinstance(func, dict) and _str(func, "kind") == "Name" and _str(func, "id") == "open":
+            return "PyFile"
+        runtime_symbol = _str(node, "runtime_symbol")
+        if runtime_symbol == "py_open" or _str(node, "resolved_runtime_call") == "py_open" or _str(node, "runtime_call") == "py_open":
+            return "PyFile"
+    if kind == "Name":
         name = _safe_go_ident(_str(node, "id"))
         scope_type = ctx.var_types.get(name, "")
         if scope_type not in ("", "unknown"):
@@ -2165,6 +2193,16 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     )
             if attr == "items" and (owner_rt.startswith("dict[") or owner_rt.startswith("map[") or owner_rt in ("Node", "dict[str,Any]")):
                 return "py_items(" + owner + ")"
+            owner_scope_type = ""
+            if isinstance(owner_node, dict) and _str(owner_node, "kind") == "Name":
+                owner_scope_type = ctx.var_types.get(_safe_go_ident(_str(owner_node, "id")), "")
+            if attr in ("read", "write", "close"):
+                owner_file = owner
+                if owner_rt in ("", "unknown", "Any", "object", "Obj") and owner_scope_type in ("", "unknown", "Any", "object", "Obj"):
+                    owner_file = owner + ".(*PyFile)"
+                if attr == "close":
+                    return owner_file + ".close()"
+                return owner_file + "." + attr + "(" + ", ".join(arg_strs) + ")"
             if attr == "update" and owner_rt == "set[str]" and len(arg_strs) >= 1:
                 return "py_set_update_str(" + owner + ", " + arg_strs[0] + ")"
             owner_effective_rt = _effective_resolved_type(ctx, owner_node) if isinstance(owner_node, dict) else owner_rt
@@ -3389,7 +3427,7 @@ def _emit_set_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 def _emit_tuple_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     elements = _list(node, "elements")
     parts = [_emit_expr(ctx, e) for e in elements]
-    return "[]any{" + ", ".join(parts) + "}"
+    return "py_tuple_any(" + ", ".join(parts) + ")"
 
 
 def _emit_covariant_copy(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -4029,7 +4067,7 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 if decl_type == "" or decl_type == "unknown":
                     decl_type = _str(target_node, "resolved_type")
                 if decl_type == "" or decl_type == "unknown":
-                    decl_type = _str(value, "resolved_type") if isinstance(value, dict) else decl_type
+                    decl_type = _effective_resolved_type(ctx, value) if isinstance(value, dict) else decl_type
                 if (
                     (decl_type == "" or decl_type == "unknown")
                     and isinstance(value, dict)
