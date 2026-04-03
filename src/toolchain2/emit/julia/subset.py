@@ -627,6 +627,18 @@ class JuliaSubsetRenderer:
             return
         self._emit(_ident(local_name) + " = " + expr)
 
+    def _resolve_subset_runtime_call(self, runtime_call: str, adapter_kind: str, builtin_name: str) -> str:
+        mapped_runtime = resolve_runtime_call(runtime_call, builtin_name, adapter_kind, self.mapping)
+        if mapped_runtime == "":
+            return ""
+        if runtime_call not in self.mapping.calls and builtin_name not in self.mapping.calls:
+            return ""
+        if "." in runtime_call and runtime_call not in self.mapping.calls:
+            if builtin_name in self.mapping.calls:
+                return self.mapping.calls[builtin_name]
+            return ""
+        return mapped_runtime
+
     def _next_tmp(self, prefix: str) -> str:
         self.tmp_counter += 1
         return prefix + str(self.tmp_counter)
@@ -930,15 +942,7 @@ class JuliaSubsetRenderer:
                 candidate_name = _str(func_node, "id")
                 if runtime_call != "" or candidate_name in self.mapping.calls:
                     builtin_name = candidate_name
-            mapped_runtime = resolve_runtime_call(runtime_call, builtin_name, adapter_kind, self.mapping)
-            use_mapped_runtime = mapped_runtime
-            if use_mapped_runtime != "" and runtime_call not in self.mapping.calls and builtin_name not in self.mapping.calls:
-                use_mapped_runtime = ""
-            if use_mapped_runtime != "" and "." in runtime_call and runtime_call not in self.mapping.calls:
-                if builtin_name in self.mapping.calls:
-                    use_mapped_runtime = self.mapping.calls[builtin_name]
-                else:
-                    use_mapped_runtime = ""
+            use_mapped_runtime = self._resolve_subset_runtime_call(runtime_call, adapter_kind, builtin_name)
             result_type = _str(node, "resolved_type")
             if runtime_call == "static_cast" and len(args) == 1:
                 if builtin_name == "int" or result_type in {"int", "int64"}:
