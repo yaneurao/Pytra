@@ -751,6 +751,23 @@ class JuliaSubsetRenderer:
             return _ident(attr) + "(" + ", ".join(call_args) + ")"
         return ""
 
+    def _render_string_base_call(self, owner: str, attr: str, args: list[str]) -> str:
+        if attr == "lstrip" and len(args) == 0:
+            return "lstrip(" + owner + ")"
+        if attr == "split" and len(args) == 1:
+            return "split(" + owner + ", " + args[0] + ")"
+        if attr == "strip" and len(args) == 0:
+            return "strip(" + owner + ")"
+        if attr == "rstrip" and len(args) == 0:
+            return "rstrip(" + owner + ")"
+        if attr == "startswith" and len(args) == 1:
+            return "startswith(" + owner + ", " + args[0] + ")"
+        if attr == "endswith" and len(args) == 1:
+            return "endswith(" + owner + ", " + args[0] + ")"
+        if attr == "replace" and len(args) == 2:
+            return "replace(" + owner + ", " + args[0] + " => " + args[1] + ")"
+        return ""
+
     def _next_tmp(self, prefix: str) -> str:
         self.tmp_counter += 1
         return prefix + str(self.tmp_counter)
@@ -965,22 +982,11 @@ class JuliaSubsetRenderer:
                 collection_method = self._render_collection_method_call(owner, owner_type, attr, args)
                 if collection_method != "":
                     return collection_method
-                if attr == "lstrip" and len(args) == 0:
-                    return "lstrip(" + owner + ")"
+                string_method = self._render_string_base_call(owner, attr, args)
+                if string_method != "":
+                    return string_method
                 if attr == "makedirs" and len(args) == 1 and len(keywords) == 1 and keywords[0].get("arg") == "exist_ok":
                     return owner + ".makedirs(" + args[0] + ", " + self._render_expr(keywords[0].get("value")) + ")"
-                if attr == "split" and len(args) == 1:
-                    return "split(" + owner + ", " + args[0] + ")"
-                if attr == "strip" and len(args) == 0:
-                    return "strip(" + owner + ")"
-                if attr == "rstrip" and len(args) == 0:
-                    return "rstrip(" + owner + ")"
-                if attr == "startswith" and len(args) == 1:
-                    return "startswith(" + owner + ", " + args[0] + ")"
-                if attr == "endswith" and len(args) == 1:
-                    return "endswith(" + owner + ", " + args[0] + ")"
-                if attr == "replace" and len(args) == 2:
-                    return "replace(" + owner + ", " + args[0] + " => " + args[1] + ")"
                 class_call = self._render_class_dispatch_call(owner, owner_type, owner_name, attr, args, keywords)
                 if class_call != "":
                     return class_call
