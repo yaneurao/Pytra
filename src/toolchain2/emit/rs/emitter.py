@@ -559,6 +559,10 @@ def _resolve_import_module_ctor(ctx: RsEmitContext, module_name: str) -> str:
     return ctx.mapping.calls.get("__import__." + module_name, "")
 
 
+def _is_callable_resolved_type(type_name: str) -> bool:
+    return type_name in ("Callable", "callable") or type_name.startswith("callable[") or type_name.startswith("Callable[")
+
+
 def _collect_signature_type_params(
     ctx: RsEmitContext,
     arg_types: dict[str, JsonVal],
@@ -711,6 +715,17 @@ def _coerce_assignment_rhs(
     source_type = _actual_type_in_context(ctx, value_node)
     target_rs = _rs_type_for_context(ctx, target_type)
     source_rs = _rs_type_for_context(ctx, source_type) if source_type != "" else ""
+    if target_rs.startswith("Box<dyn Fn") and not rhs.startswith("Box::new("):
+        if _is_callable_resolved_type(source_type):
+            rhs = "Box::new(" + rhs + ")"
+    if target_rs.startswith("Option<Box<dyn Fn") and not source_rs.startswith("Option<"):
+        is_none = _str(value_node, "kind") == "Constant" and value_node.get("value") is None
+        if is_none:
+            return "None"
+        callable_rhs = rhs
+        if not callable_rhs.startswith("Box::new(") and _is_callable_resolved_type(source_type):
+            callable_rhs = "Box::new(" + callable_rhs + ")"
+        return "Some(" + callable_rhs + ")"
     if source_rs.startswith("Option<") and not target_rs.startswith("Option<"):
         if target_rs.startswith("HashMap<") or target_rs.startswith("HashSet<") or target_rs.startswith("PyList<") or target_rs.startswith("VecDeque<"):
             return rhs + ".unwrap_or_default()"
@@ -2426,6 +2441,11 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             if ".clone()" in inner_arg or '.expect("unbox")' in inner_arg:
                 rendered_args[2] = inner_arg
     call_target = _rs_symbol_name(ctx, func_name)
+    if isinstance(func, dict):
+        func_actual_type = _actual_type_in_context(ctx, func)
+        func_actual_rs = _rs_type_for_context(ctx, func_actual_type) if func_actual_type != "" else ""
+        if func_actual_rs.startswith("Option<Box<dyn Fn"):
+            call_target = _emit_expr(ctx, func) + '.as_ref().expect("callable guard")'
     extra_capture_args = ctx.nested_capture_args.get(call_target, [])
     if extra_capture_args:
         rendered_args.extend(_rs_var_name(ctx, name) for name in extra_capture_args)

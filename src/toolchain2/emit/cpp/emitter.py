@@ -1927,6 +1927,8 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             runtime_call = _str(node, "runtime_call")
             resolved_runtime_call = _str(node, "resolved_runtime_call")
             func_runtime_module_id = _str(func, "runtime_module_id")
+            func_storage_type = _expr_storage_type(ctx, func)
+            func_resolved_type = _effective_resolved_type(func)
             if fn == "cast" and len(args) >= 2:
                 return _emit_cast_expr(ctx, args[0], args[1])
             if fn in ("bytearray", "bytes"):
@@ -1970,10 +1972,17 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             # Qualify module-level calls with :: so class method names can't shadow them.
             # Only skip :: for local variables (closures/lambdas) visible in scope.
             safe_fn = _safe_cpp_ident(fn)
+            if _type_uses_callable(_optional_inner_type(_expanded_union_type(func_storage_type))):
+                return "(*(" + _emit_name_storage(func) + "))(" + ", ".join(call_arg_strs) + ")"
             if _is_local_visible(ctx, fn):
                 return safe_fn + "(" + ", ".join(call_arg_strs) + ")"
             return "::" + safe_fn + "(" + ", ".join(call_arg_strs) + ")"
-    return _emit_expr(ctx, func) + "(" + ", ".join(call_arg_strs) + ")"
+    func_expr = _emit_expr(ctx, func)
+    func_storage_type = _expr_storage_type(ctx, func)
+    func_resolved_type = _effective_resolved_type(func)
+    if _type_uses_callable(_optional_inner_type(_expanded_union_type(func_storage_type))):
+        return "(*(" + func_expr + "))(" + ", ".join(call_arg_strs) + ")"
+    return func_expr + "(" + ", ".join(call_arg_strs) + ")"
 
 
 def _emit_argparse_add_argument_args(
