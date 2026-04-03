@@ -26,6 +26,19 @@ def _copy_kotlin_runtime_files(output_dir: Path) -> int:
     return copied
 
 
+def _inject_kotlin_emit_context(east_doc: dict[str, JsonVal], module_id: str, *, is_entry: bool) -> None:
+    meta = east_doc.get("meta")
+    if not isinstance(meta, dict):
+        meta = {}
+        east_doc["meta"] = meta
+    emit_context = meta.get("emit_context")
+    if not isinstance(emit_context, dict):
+        emit_context = {}
+        meta["emit_context"] = emit_context
+    emit_context["module_id"] = module_id
+    emit_context["is_entry"] = is_entry
+
+
 def emit_kotlin_from_manifest(manifest_path: Path, output_dir: Path) -> int:
     manifest_doc = json.loads_obj(manifest_path.read_text(encoding="utf-8"))
     if manifest_doc is None:
@@ -43,7 +56,10 @@ def emit_kotlin_from_manifest(manifest_path: Path, output_dir: Path) -> int:
             continue
         module_id = item_obj.get_str("module_id")
         rel_output = item_obj.get_str("output")
+        is_entry = item_obj.get_bool("is_entry")
         if module_id is None or module_id == "" or rel_output is None or rel_output == "":
+            continue
+        if module_id.startswith("pytra.built_in.") or module_id.startswith("pytra.core."):
             continue
         east_path = manifest_path.parent.joinpath(rel_output)
         if not east_path.exists():
@@ -53,6 +69,7 @@ def emit_kotlin_from_manifest(manifest_path: Path, output_dir: Path) -> int:
         if east_doc_obj is None:
             print("error: invalid east3 document: " + str(east_path))
             return 1
+        _inject_kotlin_emit_context(east_doc_obj.raw, module_id, is_entry=(is_entry is True))
         code = emit_kotlin_module(east_doc_obj.raw)
         if code.strip() == "":
             continue

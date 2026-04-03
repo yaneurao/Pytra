@@ -46,6 +46,8 @@ def _safe_kotlin_ident(name: str) -> str:
 
 
 def kotlin_type(resolved_type: str) -> str:
+    if resolved_type in ("pytra.std.json.JsonVal", "pytra_std_json.JsonVal"):
+        return "Any?"
     if (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) and resolved_type.endswith("]"):
         prefix_len = len("Callable[") if resolved_type.startswith("Callable[") else len("callable[")
         inner = resolved_type[prefix_len:-1]
@@ -73,9 +75,17 @@ def kotlin_type(resolved_type: str) -> str:
         return "String"
     if resolved_type in ("bytes", "bytearray"):
         return "MutableList<Long>"
+    if resolved_type == "list":
+        return "MutableList<Any?>"
+    if resolved_type == "tuple":
+        return "MutableList<Any?>"
+    if resolved_type == "set":
+        return "MutableSet<Any?>"
+    if resolved_type == "dict":
+        return "MutableMap<Any?, Any?>"
     if resolved_type in ("None", "none"):
         return "Unit"
-    if resolved_type in ("Any", "object", "unknown", "JsonVal"):
+    if resolved_type in ("Any", "object", "unknown", "JsonVal", "Obj"):
         return "Any?"
     if resolved_type == "Path":
         return "java.nio.file.Path"

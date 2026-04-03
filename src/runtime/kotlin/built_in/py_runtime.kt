@@ -292,6 +292,16 @@ fun __pytra_set_new(v: Any? = null): MutableSet<Any?> {
     return linkedSetOf()
 }
 
+fun __pytra_dict_items(v: Any?): MutableList<Any?> {
+    val out = mutableListOf<Any?>()
+    if (v is Map<*, *>) {
+        for ((k, value) in v) {
+            out.add(mutableListOf(k, value))
+        }
+    }
+    return out
+}
+
 fun __pytra_as_list(v: Any?): MutableList<Any?> {
     if (v is MutableList<*>) {
         @Suppress("UNCHECKED_CAST")
@@ -390,6 +400,37 @@ fun __pytra_is_str(v: Any?): Boolean {
 
 fun __pytra_is_list(v: Any?): Boolean {
     return v is List<*>
+}
+
+fun __pytra_type_name(v: Any?): String {
+    if (v == null) return "None"
+    if (v is Boolean) return "bool"
+    if (v is Long || v is Int) return "int"
+    if (v is Double || v is Float) return "float"
+    if (v is String) return "str"
+    if (v is MutableMap<*, *> || v is Map<*, *>) return "dict"
+    if (v is MutableSet<*> || v is Set<*>) return "set"
+    if (v is MutableList<*> || v is List<*>) return "list"
+    return v.javaClass.simpleName
+}
+
+fun __pytra_is_instance(v: Any?, expected: String): Boolean {
+    return when (expected) {
+        "None", "none" -> v == null
+        "bool" -> v is Boolean
+        "int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64" -> (v is Long) || (v is Int)
+        "float", "float32", "float64" -> (v is Double) || (v is Float)
+        "str" -> v is String
+        "list", "tuple", "bytes", "bytearray" -> v is List<*>
+        "set" -> v is Set<*>
+        "dict" -> v is Map<*, *>
+        "Path" -> v is java.nio.file.Path
+        else -> v != null && v.javaClass.simpleName == expected
+    }
+}
+
+fun __pytra_is_subtype(actual: Any?, expected: Any?): Boolean {
+    return __pytra_str(actual) == __pytra_str(expected)
 }
 
 // --- json ---
