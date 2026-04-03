@@ -562,6 +562,10 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
         value_node2 = expr.get("value")
         type_name = _gs(expr, "expected_type_name")
         if type_name != "":
+            _POD_TYPES = {"int8","int16","int32","int64","uint8","uint16","uint32","uint64","float32","float64","bool","str","bytes"}
+            _val_rtype = _gs(value_node2, "resolved_type") if isinstance(value_node2, dict) else ""
+            if _val_rtype in _POD_TYPES and type_name in _POD_TYPES:
+                return "$true" if _val_rtype == type_name else "$false"
             return "(__pytra_isinstance " + _render_expr(ctx, value_node2) + ' "' + type_name + '")'
         return "$true"
 
