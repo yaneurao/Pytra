@@ -232,6 +232,10 @@ def _needs_array_group(type_expr: str) -> bool:
     return ("|" in type_expr) or ("=>" in type_expr) or ("&" in type_expr)
 
 
+def _needs_union_group(type_expr: str) -> bool:
+    return "=>" in type_expr
+
+
 def ts_array_type(elem_type: str) -> str:
     elem = elem_type.strip()
     if _needs_array_group(elem):
@@ -298,13 +302,22 @@ def ts_type(resolved_type: str, *, for_return: bool = False) -> str:
     # Optional: T | None → T | null
     if resolved_type.endswith(" | None") or resolved_type.endswith("|None"):
         inner = resolved_type[:-7] if resolved_type.endswith(" | None") else resolved_type[:-5]
-        return ts_type(inner) + " | null"
+        inner_ts = ts_type(inner)
+        if _needs_union_group(inner_ts):
+            inner_ts = "(" + inner_ts + ")"
+        return inner_ts + " | null"
 
     # Union type (A | B, A|B) → A | B
     if "|" in resolved_type:
         parts = [part.strip() for part in resolved_type.split("|") if part.strip() != ""]
         if len(parts) > 1:
-            return " | ".join(ts_type(p) for p in parts)
+            rendered_parts: list[str] = []
+            for part in parts:
+                rendered = ts_type(part)
+                if _needs_union_group(rendered):
+                    rendered = "(" + rendered + ")"
+                rendered_parts.append(rendered)
+            return " | ".join(rendered_parts)
 
     # User class → ClassName
     return _safe_ts_ident(resolved_type)
