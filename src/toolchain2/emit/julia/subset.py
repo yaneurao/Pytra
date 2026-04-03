@@ -1295,6 +1295,40 @@ class JuliaSubsetRenderer:
             return
         self._emit(target + " = (" + target + " " + _BINOP_TEXT[op] + " " + value + ")")
 
+    def _emit_expr_stmt(self, node: dict[str, JsonVal]) -> None:
+        value = node.get("value")
+        if isinstance(value, dict) and _str(value, "kind") == "Constant" and isinstance(value.get("value"), str):
+            return
+        if isinstance(value, dict) and _str(value, "kind") == "Name":
+            value_id = _str(value, "id")
+            if value_id == "raise":
+                self._emit("rethrow()")
+                return
+            if value_id == "continue":
+                self._emit("continue")
+                return
+            if value_id == "break":
+                self._emit("break")
+                return
+        self._emit(self._render_expr(value))
+
+    def _emit_annassign_stmt(self, node: dict[str, JsonVal]) -> None:
+        target = node.get("target")
+        value = node.get("value")
+        if isinstance(target, dict) and _str(target, "kind") == "Attribute":
+            owner = self._render_expr(target.get("value"))
+            attr = _str(target, "attr")
+            if value is None:
+                self._emit(owner + "." + attr + " = nothing")
+            else:
+                self._emit(owner + "." + attr + " = " + self._render_expr(value))
+            return
+        target_name = _ident(_str(target, "id"))
+        if value is None:
+            self._emit(target_name + " = nothing")
+        else:
+            self._emit(target_name + " = " + self._render_expr(value))
+
     def _emit_stmt(self, node: JsonVal) -> None:
         if not isinstance(node, dict):
             raise RuntimeError("julia subset: stmt must be dict")
@@ -1326,38 +1360,10 @@ class JuliaSubsetRenderer:
                 self._emit("return " + self._render_expr(value))
             return
         if kind == "Expr":
-            value = node.get("value")
-            if isinstance(value, dict) and _str(value, "kind") == "Constant" and isinstance(value.get("value"), str):
-                return
-            if isinstance(value, dict) and _str(value, "kind") == "Name":
-                value_id = _str(value, "id")
-                if value_id == "raise":
-                    self._emit("rethrow()")
-                    return
-                if value_id == "continue":
-                    self._emit("continue")
-                    return
-                if value_id == "break":
-                    self._emit("break")
-                    return
-            self._emit(self._render_expr(value))
+            self._emit_expr_stmt(node)
             return
         if kind == "AnnAssign":
-            target = node.get("target")
-            value = node.get("value")
-            if isinstance(target, dict) and _str(target, "kind") == "Attribute":
-                owner = self._render_expr(target.get("value"))
-                attr = _str(target, "attr")
-                if value is None:
-                    self._emit(owner + "." + attr + " = nothing")
-                else:
-                    self._emit(owner + "." + attr + " = " + self._render_expr(value))
-                return
-            target_name = _ident(_str(target, "id"))
-            if value is None:
-                self._emit(target_name + " = nothing")
-            else:
-                self._emit(target_name + " = " + self._render_expr(value))
+            self._emit_annassign_stmt(node)
             return
         if kind == "Assign":
             self._emit_assign_stmt(node)
