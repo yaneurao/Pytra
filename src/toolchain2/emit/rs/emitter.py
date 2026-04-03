@@ -519,6 +519,68 @@ def _rs_type_for_context(ctx: RsEmitContext, resolved_type: str) -> str:
     return rs_signature_type(resolved_type, ctx.class_names, ctx.trait_names)
 
 
+def _collect_signature_type_params(
+    ctx: RsEmitContext,
+    arg_types: dict[str, JsonVal],
+    return_type: str,
+) -> list[str]:
+    params: list[str] = []
+    seen: set[str] = set()
+    excluded = {
+        "None",
+        "NoneType",
+        "Any",
+        "PyAny",
+        "Self",
+        "Optional",
+        "Callable",
+        "Box",
+        "Rc",
+        "RefCell",
+        "HashMap",
+        "HashSet",
+        "VecDeque",
+        "PyList",
+        "String",
+        "bool",
+        "bytes",
+        "bytearray",
+        "str",
+        "int",
+        "int64",
+        "float",
+        "float64",
+        "complex",
+        "list",
+        "dict",
+        "set",
+        "tuple",
+        "deque",
+        "object",
+        "type",
+        "unknown",
+    }
+    excluded.update(ctx.class_names)
+    excluded.update(ctx.trait_names)
+    excluded.update(ctx.ref_classes)
+    excluded.update(ctx.enum_bases)
+
+    def visit(type_name: str) -> None:
+        for match in re.finditer(r"\b[A-Z][A-Za-z0-9_]*\b", type_name):
+            name = match.group(0)
+            if name in excluded or name in seen:
+                continue
+            seen.add(name)
+            params.append(name)
+
+    for value in arg_types.values():
+        if isinstance(value, str):
+            visit(value)
+    if return_type != "":
+        visit(return_type)
+    return params
+
+
 def _rs_zero_value_for_context(ctx: RsEmitContext, resolved_type: str) -> str:
     rt = _rs_type_for_context(ctx, resolved_type)
     if rt in ("i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64", "usize", "isize"):
@@ -555,6 +617,19 @@ def _coerce_assignment_rhs(
 ) -> str:
     if not isinstance(value_node, dict) or target_type == "":
         return rhs
+    value_kind = _str(value_node, "kind")
+    if value_kind == "List" and target_type.startswith("list["):
+        target_inner = target_type[5:-1].strip()
+        if _rs_type_for_context(ctx, target_inner) == "PyAny":
+            target_node = dict(value_node)
+            target_node["resolved_type"] = target_type
+            return _emit_list_literal(ctx, target_node)
+    if value_kind == "Dict" and target_type.startswith("dict["):
+        target_parts = _split_generic_args(target_type[5:-1])
+        if len(target_parts) == 2 and _rs_type_for_context(ctx, target_parts[1].strip()) == "PyAny":
+            target_node = dict(value_node)
+            target_node["resolved_type"] = target_type
+            return _emit_dict_literal(ctx, target_node)
     if _str(value_node, "kind") == "Unbox":
         lane = value_node.get("bridge_lane_v1")
         lane_value = lane.get("value") if isinstance(lane, dict) else None
@@ -574,6 +649,32 @@ def _coerce_assignment_rhs(
     if target_rs.startswith("Option<") and not source_rs.startswith("Option<"):
         is_none = _str(value_node, "kind") == "Constant" and value_node.get("value") is None
         return "None" if is_none or rhs == "None" else "Some(" + rhs + ")"
+    if target_type.startswith("list[") and source_type.startswith("list["):
+        target_inner = target_type[5:-1].strip()
+        source_inner = source_type[5:-1].strip()
+        if _rs_type_for_context(ctx, target_inner) == "PyAny" and _rs_type_for_context(ctx, source_inner) != "PyAny":
+            boxed_elem = _expr_to_pyany("__v", source_inner)
+            return (
+                "PyList::<PyAny>::from_vec("
+                + rhs
+                + ".iter_snapshot().into_iter().map(|__v| "
+                + boxed_elem
+                + ").collect())"
+            )
+    if target_type.startswith("dict[") and source_type.startswith("dict["):
+        target_parts = _split_generic_args(target_type[5:-1])
+        source_parts = _split_generic_args(source_type[5:-1])
+        if len(target_parts) == 2 and len(source_parts) == 2:
+            target_value = target_parts[1].strip()
+            source_value = source_parts[1].strip()
+            if _rs_type_for_context(ctx, target_value) == "PyAny" and _rs_type_for_context(ctx, source_value) != "PyAny":
+                boxed_value = _expr_to_pyany("__v", source_value)
+                return (
+                    rhs
+                    + ".into_iter().map(|(__k, __v)| (__k, "
+                    + boxed_value
+                    + ")).collect::<HashMap<_, _>>()"
+                )
     if target_rs == "PyAny" and source_rs != "PyAny":
         return _expr_to_pyany(rhs, source_type)
     return rhs
@@ -1642,8 +1743,8 @@ def _emit_dict_literal(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         inner = resolved_type[5:-1]
         parts = _split_generic_args(inner)
         if len(parts) == 2:
-            k_type = rs_type(parts[0])
-            v_type = rs_type(parts[1])
+            k_type = _rs_type_for_context(ctx, parts[0])
+            v_type = _rs_type_for_context(ctx, parts[1])
     if len(keys) == 0:
         return "HashMap::<" + k_type + ", " + v_type + ">::new()"
     need_box_v = v_type == "Box<dyn std::any::Any>"
@@ -1831,6 +1932,8 @@ def _emit_lambda(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             else:
                 params.append(safe_rs_ident(arg))
     params_str = ", ".join(params)
+    type_params = _collect_signature_type_params(ctx, arg_types, return_type)
+    generic_suffix = "<" + ", ".join(type_params) + ">" if type_params else ""
     body_str = _emit_expr(ctx, body)
     return "|" + params_str + "| " + body_str
 
@@ -2671,6 +2774,8 @@ def _emit_method_call(
             # Check if actual variable is dynamic (JsonVal/PyAny) — EAST3 may have narrowed the type
             # but the Rust variable is actually PyAny, needing py_any_as_hashmap conversion
             _actual_rt = (ctx.var_types.get(obj_id, "") or obj_type) if obj_id else obj_type
+            _call_result_type = _str(call_node, "resolved_type")
+            _call_result_is_pyany = _rs_type_for_context(ctx, _call_result_type) == "PyAny" or "|" in _call_result_type
             _is_dynamic_var = _actual_rt in ("JsonVal", "Any", "object", "Obj")
             if not _is_dynamic_var:
                 _is_dynamic_var = "JsonVal" in _actual_rt and "dict[" not in _actual_rt.split("|")[0].strip()[:10]
@@ -2680,7 +2785,7 @@ def _emit_method_call(
                 _key = rendered_args[0] if rendered_args else '""'
                 _default = rendered_args[1] if len(rendered_args) >= 2 else "PyAny::None"
                 if len(args) >= 2 and isinstance(args[1], dict):
-                    _default = _coerce_call_arg_to_expected(ctx, args[1], _default, "PyAny")
+                    _default = _expr_to_pyany(_default, _str(args[1], "resolved_type"))
                 _unwrap = "clone().unwrap_or(PyAny::None)" if "|" in _actual_rt else "clone()"
                 return "py_any_as_hashmap(" + obj_str + "." + _unwrap + ").get(&" + _key + ").cloned().unwrap_or(" + _default + ")"
             if len(rendered_args) >= 2:
@@ -2689,11 +2794,13 @@ def _emit_method_call(
                 if obj_type.startswith("dict[") and obj_type.endswith("]"):
                     _inner = obj_type[5:-1]
                     _parts = _split_generic_args(_inner)
-                    value_is_pyany = len(_parts) == 2 and _rs_type_for_context(ctx, _parts[1]) == "PyAny"
+                    value_is_pyany = len(_parts) == 2 and (
+                        _rs_type_for_context(ctx, _parts[1]) == "PyAny" or "|" in _parts[1]
+                    )
                 elif inferred_obj_rs.startswith("HashMap<") or inferred_obj_rs.startswith("BTreeMap<"):
                     value_is_pyany = inferred_obj_rs.endswith(", PyAny>") or ", PyAny," in inferred_obj_rs
-                if value_is_pyany and len(args) >= 2 and isinstance(args[1], dict):
-                    default_expr = _coerce_call_arg_to_expected(ctx, args[1], default_expr, "PyAny")
+                if (value_is_pyany or _call_result_is_pyany) and len(args) >= 2 and isinstance(args[1], dict):
+                    default_expr = _expr_to_pyany(default_expr, _str(args[1], "resolved_type"))
                 return obj_str + ".get(&" + rendered_args[0] + ").cloned().unwrap_or(" + default_expr + ")"
             elif len(rendered_args) == 1:
                 # For dict[K, PyAny] return PyAny::None as default instead of Option<PyAny>
@@ -2701,10 +2808,12 @@ def _emit_method_call(
                 if obj_type.startswith("dict[") and obj_type.endswith("]"):
                     _inner = obj_type[5:-1]
                     _parts = _split_generic_args(_inner)
-                    value_is_pyany = len(_parts) == 2 and rs_type(_parts[1]) == "PyAny"
+                    value_is_pyany = len(_parts) == 2 and (
+                        _rs_type_for_context(ctx, _parts[1]) == "PyAny" or "|" in _parts[1]
+                    )
                 elif inferred_obj_rs.startswith("HashMap<") or inferred_obj_rs.startswith("BTreeMap<"):
                     value_is_pyany = inferred_obj_rs.endswith(", PyAny>") or ", PyAny," in inferred_obj_rs
-                if value_is_pyany:
+                if value_is_pyany or _call_result_is_pyany:
                     return obj_str + ".get(&" + rendered_args[0] + ").cloned().unwrap_or(PyAny::None)"
                 return obj_str + ".get(&" + rendered_args[0] + ").cloned()"
         if method == "keys":
@@ -3628,6 +3737,8 @@ def _emit_ann_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             # New declaration
             ctx.declared_vars.add(target_name)
             ctx.var_types[target_name] = resolved_type
+            if rt != "" and rt != "()":
+                ctx.var_rust_types[target_name] = rt
             storage_hint = _str(target, "resolved_storage_hint")
             if storage_hint == "" and isinstance(value, dict):
                 storage_hint = _str(value, "resolved_storage_hint")
@@ -3675,7 +3786,9 @@ def _emit_ann_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                 rhs = _coerce_assignment_rhs(ctx, rhs, value, resolved_type)
                 inferred_rhs_rt = _infer_node_rust_type(ctx, value)
                 emitted_rhs_rt = _infer_emitted_rust_type(rhs)
-                if emitted_rhs_rt == "PyAny":
+                if rt != "" and rt != "()":
+                    inferred_rhs_rt = rt
+                elif emitted_rhs_rt == "PyAny":
                     inferred_rhs_rt = emitted_rhs_rt
                 elif inferred_rhs_rt == "":
                     inferred_rhs_rt = emitted_rhs_rt
@@ -4984,6 +5097,8 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
             params.append(safe_rs_ident(vararg_name) + ": PyList<" + elem_type + ">")
 
     params_str = ", ".join(params)
+    type_params = _collect_signature_type_params(ctx, arg_types, return_type)
+    generic_suffix = "<" + ", ".join(type_params) + ">" if type_params else ""
 
     # Return type
     if return_type == "" or return_type == "None" or return_type == "none":
@@ -5063,7 +5178,7 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
             all_params_str = ", ".join(all_params)
             ctx.current_nested_fn = ""
             ctx.nested_capture_args[fn_name] = capture_names
-            _emit(ctx, "fn " + fn_name + "(" + all_params_str + ")" + ret_str + " {")
+            _emit(ctx, "fn " + fn_name + generic_suffix + "(" + all_params_str + ")" + ret_str + " {")
         else:
             for capture_name in capture_names:
                 capture_type = _str(capture_types, capture_name)
@@ -5077,7 +5192,7 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
             _emit(ctx, "let " + fn_name + " = |" + ", ".join(params + extra_params) + "|" + ret_str + " {")
     else:
         ctx.current_nested_fn = ""
-        _emit(ctx, fn_prefix + "fn " + fn_name + "(" + params_str + ")" + ret_str + " {")
+        _emit(ctx, fn_prefix + "fn " + fn_name + generic_suffix + "(" + params_str + ")" + ret_str + " {")
     ctx.indent_level += 1
     prev_module_level = ctx.at_module_level
     ctx.at_module_level = False
@@ -6067,12 +6182,14 @@ def _emit_trait_definition(ctx: RsEmitContext, name: str, body: list[JsonVal]) -
                     rs_arg_type = _rs_type_for_context(ctx, arg_type) if arg_type != "" else "Box<dyn std::any::Any>"
                 params.append(safe_rs_ident(arg) + ": " + rs_arg_type)
             params_str = ", ".join(params)
+            type_params = _collect_signature_type_params(ctx, arg_types, return_type)
+            generic_suffix = "<" + ", ".join(type_params) + ">" if type_params else ""
             if return_type in ("", "None", "none"):
                 ret_str = ""
             else:
                 rt = _rs_type_for_context(ctx, return_type)
                 ret_str = "" if rt == "()" else " -> " + rt
-            _emit(ctx, "fn " + safe_rs_ident(fn_name) + "(" + params_str + ")" + ret_str + ";")
+            _emit(ctx, "fn " + safe_rs_ident(fn_name) + generic_suffix + "(" + params_str + ")" + ret_str + ";")
     ctx.indent_level -= 1
     _emit(ctx, "}")
     ctx.current_class = prev_class
@@ -6130,6 +6247,8 @@ def _emit_trait_impl_method(ctx: RsEmitContext, node: dict, owner: str, self_ref
         params.append(safe_rs_ident(arg) + ": " + rs_arg_type)
 
     params_str = ", ".join(params)
+    type_params = _collect_signature_type_params(ctx, arg_types, return_type)
+    generic_suffix = "<" + ", ".join(type_params) + ">" if type_params else ""
     if return_type in ("", "None", "none"):
         ret_str = ""
     else:
@@ -6137,7 +6256,7 @@ def _emit_trait_impl_method(ctx: RsEmitContext, node: dict, owner: str, self_ref
         ret_str = "" if rt == "()" else " -> " + rt
 
     fn_name = safe_rs_ident(name)
-    _emit(ctx, "fn " + fn_name + "(" + params_str + ")" + ret_str + " {")
+    _emit(ctx, "fn " + fn_name + generic_suffix + "(" + params_str + ")" + ret_str + " {")
     ctx.indent_level += 1
 
     prev_return_type = ctx.current_return_type

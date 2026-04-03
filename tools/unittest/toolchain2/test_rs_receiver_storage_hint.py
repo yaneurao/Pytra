@@ -87,6 +87,49 @@ class RsReceiverStorageHintTests(unittest.TestCase):
         self.assertIn("child.borrow().name()", emitted)
         self.assertIn("child.borrow_mut().write_text(", emitted)
 
+    def test_emitter_adds_generic_params_to_function_signature(self) -> None:
+        doc = _module_doc(
+            [
+                {
+                    "kind": "FunctionDef",
+                    "name": "identity",
+                    "arg_order": ["value"],
+                    "arg_types": {"value": "T"},
+                    "return_type": "T",
+                    "body": [{"kind": "Return", "value": {"kind": "Name", "id": "value", "resolved_type": "T"}}],
+                }
+            ]
+        )
+
+        emitted = emit_rs_module(doc)
+        self.assertIn("fn identity<T>(mut value: Box<T>) -> Box<T> {", emitted)
+
+    def test_emitter_adds_generic_params_to_trait_methods(self) -> None:
+        doc = _module_doc(
+            [
+                {
+                    "kind": "ClassDef",
+                    "name": "Decorator",
+                    "decorators": ["trait"],
+                    "body": [
+                        {
+                            "kind": "FunctionDef",
+                            "name": "__call__",
+                            "arg_order": ["self", "cls"],
+                            "arg_types": {"self": "Decorator", "cls": "T"},
+                            "return_type": "T",
+                            "body": [],
+                            "mutates_self": False,
+                        }
+                    ],
+                }
+            ]
+        )
+
+        emitted = emit_rs_module(doc)
+        self.assertIn("pub trait Decorator {", emitted)
+        self.assertIn("fn __call__<T>(&self, cls: Box<T>) -> Box<T>;", emitted)
+
 
 if __name__ == "__main__":
     unittest.main()
