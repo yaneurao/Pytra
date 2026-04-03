@@ -2068,6 +2068,19 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
     if isinstance(func, dict):
         func_kind = _str(func, "kind")
+        expected_type_name = _str(node, "expected_type_name")
+        if expected_type_name != "" and len(args) == 2:
+            actual_node = args[0] if isinstance(args[0], dict) else None
+            expected_node = args[1] if isinstance(args[1], dict) else None
+            if (
+                isinstance(actual_node, dict)
+                and _str(actual_node, "kind") == "ObjTypeId"
+                and isinstance(expected_node, dict)
+                and _str(expected_node, "kind") == "Name"
+            ):
+                actual_value = _emit_expr(ctx, actual_node.get("value"))
+                marker_method = _go_class_marker_method_name(ctx, expected_type_name)
+                return "func() bool { _, ok := any(" + actual_value + ").(interface{ " + marker_method + "() }); return ok }()"
         if func_kind == "Attribute":
             owner_node = func.get("value")
             owner = _emit_expr(ctx, owner_node)
@@ -2251,23 +2264,6 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             fn_name = _str(func, "id")
             if fn_name == "":
                 fn_name = _str(func, "repr")
-            if fn_name == "pytra_isinstance" and len(args) == 2:
-                actual_node = args[0] if isinstance(args[0], dict) else None
-                expected_node = args[1] if isinstance(args[1], dict) else None
-                if (
-                    isinstance(actual_node, dict)
-                    and _str(actual_node, "kind") == "ObjTypeId"
-                    and isinstance(expected_node, dict)
-                    and _str(expected_node, "kind") == "Name"
-                ):
-                    expected_const = _str(expected_node, "id")
-                    for class_name in ctx.class_names:
-                        token = "_" + _upper_snake(class_name) + "_TID"
-                        if expected_const.endswith(token):
-                            actual_value_node = actual_node.get("value")
-                            marker_method = _go_class_marker_method_name(ctx, class_name)
-                            actual_value = _emit_expr(ctx, actual_value_node)
-                            return "func() bool { _, ok := any(" + actual_value + ").(interface{ " + marker_method + "() }); return ok }()"
             if fn_name in ("int", "float", "bool", "str", "ord", "chr"):
                 builtin_like = dict(node)
                 builtin_like["lowered_kind"] = "BuiltinCall"

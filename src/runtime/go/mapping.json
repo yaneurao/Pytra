@@ -154,8 +154,6 @@
     "pytra.std.math",
     "pytra.std.os",
     "pytra.std.os_path",
-    "pytra.std.pathlib",
-    "pytra.std.random",
     "pytra.std.sys",
     "pytra.std.time",
     "pytra.core."

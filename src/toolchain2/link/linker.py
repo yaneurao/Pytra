@@ -1479,6 +1479,7 @@ def _rewrite_type_id_isinstance(
         new_node: dict[str, JsonVal] = {
             "kind": "Call",
             "resolved_type": "bool",
+            "expected_type_name": target_fqcn,
             "func": _make_name("pytra_isinstance", "callable"),
             "args": [
                 {"kind": "ObjTypeId", "value": _copy_json(value_node), "resolved_type": "int64"},
