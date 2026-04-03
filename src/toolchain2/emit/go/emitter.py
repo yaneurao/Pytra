@@ -660,6 +660,12 @@ def _is_wrapper_container_expr(ctx: EmitContext, node: JsonVal, rendered: str) -
         return False
     kind = _str(node, "kind")
     if kind == "Call":
+        if (
+            rendered.startswith("func() []")
+            or rendered.startswith("func() map[")
+            or rendered.startswith("func() PyTuple")
+        ):
+            return False
         if _is_container_resolved_type(_str(node, "resolved_type")):
             return True
         func_node = node.get("func")
