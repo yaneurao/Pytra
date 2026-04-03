@@ -32,6 +32,7 @@ _LOCAL_TOOL_FALLBACKS: dict[str, tuple[Path, ...]] = {
     "go": (ROOT / "work" / "tmp" / "go-toolchain" / "bin" / "go",),
     "rustc": (Path("/usr/local/cargo/bin/rustc"),),
     "cargo": (Path("/usr/local/cargo/bin/cargo"),),
+    "pwsh": (Path("/tmp/pwsh/pwsh"),),
 }
 
 # Backend-declared unsupported fixtures are tracked explicitly.
