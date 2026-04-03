@@ -1,6 +1,12 @@
 // Swift 実行向け Node.js ランタイム補助。
 import Foundation
 import CoreFoundation
+#if canImport(Glibc)
+import Glibc
+#endif
+#if canImport(Darwin)
+import Darwin
+#endif
 
 /// Base64 で埋め込まれた JavaScript ソースコードを一時ファイルへ展開し、node で実行する。
 /// - Parameters:
@@ -10,7 +16,9 @@ import CoreFoundation
 ///   node プロセスの終了コード。失敗時は 1 を返す。
 func pytraRunEmbeddedNode(_ sourceBase64: String, _ args: [String]) -> Int32 {
     guard let sourceData = Data(base64Encoded: sourceBase64) else {
-        fputs("error: failed to decode embedded JavaScript source\n", stderr)
+        if let data = "error: failed to decode embedded JavaScript source\n".data(using: .utf8) {
+            FileHandle.standardError.write(data)
+        }
         return 1
     }
 
@@ -21,7 +29,9 @@ func pytraRunEmbeddedNode(_ sourceBase64: String, _ args: [String]) -> Int32 {
     do {
         try sourceData.write(to: scriptURL)
     } catch {
-        fputs("error: failed to write temporary JavaScript file: \(error)\n", stderr)
+        if let data = "error: failed to write temporary JavaScript file: \(error)\n".data(using: .utf8) {
+            FileHandle.standardError.write(data)
+        }
         return 1
     }
 
@@ -37,7 +47,9 @@ func pytraRunEmbeddedNode(_ sourceBase64: String, _ args: [String]) -> Int32 {
         try process.run()
         process.waitUntilExit()
     } catch {
-        fputs("error: failed to launch node: \(error)\n", stderr)
+        if let data = "error: failed to launch node: \(error)\n".data(using: .utf8) {
+            FileHandle.standardError.write(data)
+        }
         try? FileManager.default.removeItem(at: scriptURL)
         return 1
     }
@@ -67,6 +79,7 @@ class RuntimeError: Exception {}
 class ValueError: Exception {}
 class TypeError: Exception {}
 class IndexError: Exception {}
+class SystemExit: Exception {}
 class KeyError: Exception {}
 class NameError: Exception {}
 
@@ -1205,21 +1218,21 @@ private func __pytra_json_from_foundation(_ value: Any) -> Any? {
 
 // --- pathlib ---
 
-final class Path: CustomStringConvertible {
+final class PytraPath: CustomStringConvertible {
     let value: String
 
     init(_ raw: Any?) {
         self.value = __pytra_str(raw)
     }
 
-    var parent: Path {
+    var parent: PytraPath {
         let url = URL(fileURLWithPath: value)
         let parentURL = url.deletingLastPathComponent()
         let parentPath = parentURL.path
         if parentPath == value {
             return self
         }
-        return Path(parentPath)
+        return PytraPath(parentPath)
     }
 
     var name: String {
@@ -1279,13 +1292,130 @@ final class Path: CustomStringConvertible {
         }
     }
 
-    func resolve() -> Path {
+    func resolve() -> PytraPath {
         let abs = URL(fileURLWithPath: value).standardizedFileURL.path
-        return Path(abs)
+        return PytraPath(abs)
     }
 
     var description: String {
         return value
+    }
+}
+
+var __pytra_sys_argv: [Any] = Array(CommandLine.arguments.dropFirst()).map { $0 as Any }
+var __pytra_sys_path: [Any] = []
+
+func sys_native_argv() -> [Any] {
+    return __pytra_sys_argv
+}
+
+func sys_native_path() -> [Any] {
+    return __pytra_sys_path
+}
+
+func sys_native_stderr() -> String {
+    return "__stderr__"
+}
+
+func sys_native_stdout() -> String {
+    return "__stdout__"
+}
+
+func sys_native_exit(_ code: Int64 = Int64(0)) {
+#if canImport(Darwin)
+    Darwin.exit(Int32(code))
+#else
+    Glibc.exit(Int32(code))
+#endif
+}
+
+func sys_native_set_argv(_ values: [Any]) {
+    __pytra_sys_argv = values
+}
+
+func sys_native_set_path(_ values: [Any]) {
+    __pytra_sys_path = values
+}
+
+func sys_native_write_stderr(_ text: String) {
+    if let data = text.data(using: .utf8) {
+        FileHandle.standardError.write(data)
+    }
+}
+
+func sys_native_write_stdout(_ text: String) {
+    if let data = text.data(using: .utf8) {
+        FileHandle.standardOutput.write(data)
+    }
+}
+
+func glob_native_glob(_ pattern: String) -> [Any] {
+    var results = glob_t()
+    let status = pattern.withCString { ptr in
+        glob(ptr, 0, nil, &results)
+    }
+    defer { globfree(&results) }
+    if status != 0 {
+        return []
+    }
+    var out: [Any] = []
+    let count = Int(results.gl_pathc)
+    guard let paths = results.gl_pathv else {
+        return out
+    }
+    var i = 0
+    while i < count {
+        if let item = paths[i] {
+            out.append(String(cString: item))
+        }
+        i += 1
+    }
+    return out
+}
+
+func path_native_join(_ lhs: String, _ rhs: String) -> String {
+    return (lhs as NSString).appendingPathComponent(rhs)
+}
+
+func path_native_splitext(_ path: String) -> [Any] {
+    let ns = path as NSString
+    let ext = ns.pathExtension
+    if ext == "" {
+        return [path, ""]
+    }
+    let root = ns.deletingPathExtension
+    return [root, "." + ext]
+}
+
+func path_native_basename(_ path: String) -> String {
+    return (path as NSString).lastPathComponent
+}
+
+func path_native_dirname(_ path: String) -> String {
+    let out = (path as NSString).deletingLastPathComponent
+    return out == "" ? "." : out
+}
+
+func path_native_exists(_ path: String) -> Bool {
+    return FileManager.default.fileExists(atPath: path)
+}
+
+func path_native_abspath(_ path: String) -> String {
+    return URL(fileURLWithPath: path).standardizedFileURL.path
+}
+
+func os_native_getcwd() -> String {
+    return FileManager.default.currentDirectoryPath
+}
+
+func os_native_mkdir(_ path: String, _ existOk: Bool) {
+    do {
+        try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: false)
+    } catch {
+        if existOk && FileManager.default.fileExists(atPath: path) {
+            return
+        }
+        fatalError("mkdir failed: \(error)")
     }
 }
 
