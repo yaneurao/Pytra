@@ -296,6 +296,9 @@ class ZigNativeEmitter:
         self._class_base: dict[str, str] = {}
         self._class_methods: dict[str, set[str]] = {}
         self._class_properties: dict[str, set[str]] = {}
+        self._class_init_defaults: dict[str, list[Any]] = {}
+        self._class_method_defaults: dict[str, dict[str, list[Any]]] = {}
+        self._class_method_arg_order: dict[str, dict[str, list[str]]] = {}
         self._static_fields: dict[str, list[tuple[str, str, str]]] = {}  # cls -> [(field, type, default)]
         self._vtable_root: dict[str, str] = {}  # cls -> vtable root class
         self._vtable_methods: dict[str, list[str]] = {}  # root cls -> [method names]
@@ -977,10 +980,22 @@ class ZigNativeEmitter:
                     self._class_base[name] = _safe_ident(base_any.strip(), "")
                 methods: set[str] = set()
                 properties: set[str] = set()
+                method_defaults: dict[str, list[Any]] = {}
+                method_arg_order: dict[str, list[str]] = {}
                 cls_body = self._dict_list(stmt.get("body"))
                 for sub in cls_body:
                     if sub.get("kind") in {"FunctionDef", "ClosureDef"}:
                         m_name = sub.get("name")
+                        if isinstance(m_name, str):
+                            arg_order_any = sub.get("arg_order")
+                            arg_order = [str(a) for a in arg_order_any] if isinstance(arg_order_any, list) else []
+                            method_arg_order[m_name] = arg_order
+                            defaults_any = sub.get("arg_defaults")
+                            if isinstance(defaults_any, dict):
+                                defaults_list: list[Any] = []
+                                for arg_name in arg_order[1:]:
+                                    defaults_list.append(defaults_any.get(arg_name))
+                                method_defaults[m_name] = defaults_list
                         if isinstance(m_name, str) and m_name != "__init__":
                             methods.add(m_name)
                             decorators = sub.get("decorators")
@@ -988,6 +1003,10 @@ class ZigNativeEmitter:
                                 properties.add(m_name)
                 self._class_methods[name] = methods
                 self._class_properties[name] = properties
+                self._class_method_defaults[name] = method_defaults
+                self._class_method_arg_order[name] = method_arg_order
+                if "__init__" in method_defaults:
+                    self._class_init_defaults[name] = method_defaults["__init__"]
                 if bool(stmt.get("dataclass")):
                     self._dataclass_names.add(name)
                     fields: list[str] = []
@@ -1186,12 +1205,19 @@ class ZigNativeEmitter:
             module_id = binding.get("module_id", "")
             if not isinstance(module_id, str) or module_id == "":
                 continue
+            export_name = binding.get("export_name", "")
+            local_name = binding.get("local_name", "")
             # Skip pytra.built_in (provided by py_runtime.zig)
             if module_id.startswith("pytra.built_in"):
                 continue
+            if module_id in {"pytra.types", "typing", "typing.cast"} or module_id.startswith("pytra.types."):
+                if not (module_id == "typing" and binding.get("export_name") != "cast"):
+                    continue
+            if module_id == "typing" and binding.get("export_name") == "cast":
+                continue
+            if "typing" in module_id and (export_name == "cast" or local_name == "cast"):
+                continue
             binding_kind = binding.get("binding_kind", "")
-            export_name = binding.get("export_name", "")
-            local_name = binding.get("local_name", "")
             if module_id == "pytra.std.json":
                 continue
             if isinstance(export_name, str) and export_name in _DECORATORS:
@@ -3017,6 +3043,8 @@ class ZigNativeEmitter:
                         if sf_name == attr:
                             return "Module_" + owner + "_" + attr
             obj = self._render_expr(val_node)
+            if isinstance(val_node, dict) and val_node.get("kind") in {"Subscript", "Call", "Compare", "BoolOp", "BinOp", "IfExp", "IsInstance"}:
+                obj = "(" + obj + ")"
             val_type = self._lookup_expr_type(val_node) if isinstance(val_node, dict) else ""
             norm_val_type = self._normalize_type(val_type)
             is_self_receiver = (
@@ -3737,6 +3765,16 @@ class ZigNativeEmitter:
                     return "pytra.empty_list()"
                 if fname == "set":
                     return "pytra.empty_list()"
+                if fname == "list":
+                    if len(arg_strs) == 0:
+                        return "pytra.empty_list()"
+                    if len(args) > 0:
+                        arg_t = self._lookup_expr_type(args[0])
+                        if arg_t.startswith("list[") or arg_t in {"bytearray", "bytes"} or self._zig_type(arg_t) == "pytra.Obj":
+                            return arg_strs[0]
+                        if arg_t == "str":
+                            return "pytra.str_chars(" + arg_strs[0] + ")"
+                    return arg_strs[0]
                 if fname == "sum":
                     if len(arg_strs) > 0 and len(args) > 0:
                         arg_t = self._lookup_expr_type(args[0])
@@ -3876,6 +3914,15 @@ class ZigNativeEmitter:
                     # Imported class: use Type.init(args)
                     return "pytra.make_object(" + fname + ", " + fname + ".init(" + ", ".join(arg_strs) + "))"
                 if is_local_class:
+                    if fname in self._classes_with_init:
+                        defaults = self._class_init_defaults.get(fname, [])
+                        filled_args = list(arg_strs)
+                        for default_node in defaults[len(filled_args):]:
+                            default_expr = self._render_default_arg_value(default_node)
+                            if default_expr == "":
+                                continue
+                            filled_args.append(default_expr)
+                        arg_strs = filled_args
                     if self._has_vtable(fname):
                         vt_inst = "&" + fname + "_vt"
                         drop_arg = fname + "_drop_wrap" if fname in self._classes_with_del else "null"
@@ -3902,6 +3949,7 @@ class ZigNativeEmitter:
             if fkind == "Attribute":
                 obj_node_for_attr = func_any.get("value")
                 attr = _safe_ident(func_any.get("attr"), "method")
+                runtime_symbol = node.get("runtime_symbol")
                 # super().method() → BaseClass.method(undefined)
                 if isinstance(obj_node_for_attr, dict) and obj_node_for_attr.get("kind") == "Call":
                     super_func = obj_node_for_attr.get("func")
@@ -3914,6 +3962,41 @@ class ZigNativeEmitter:
                                 return "self._base = " + base + ".init(" + ", ".join(arg_strs) + ")"
                             return "self._base." + attr + "(" + ", ".join(arg_strs) + ")"
                 obj = self._render_expr(obj_node_for_attr)
+                if runtime_symbol == "ArgumentParser.add_argument":
+                    filled = ["\"\"", "\"\"", "\"\"", "\"\"", "\"\"", "\"\"", "pytra.empty_list()", "pytra.union_new_none()"]
+                    i = 0
+                    while i < len(arg_strs) and i < 4:
+                        filled[i] = arg_strs[i]
+                        i += 1
+                    keywords_any = node.get("keywords")
+                    keywords = keywords_any if isinstance(keywords_any, list) else []
+                    for kw in keywords:
+                        if not isinstance(kw, dict):
+                            continue
+                        kw_arg = kw.get("arg")
+                        kw_val = kw.get("value")
+                        if not isinstance(kw_arg, str) or not isinstance(kw_val, dict):
+                            continue
+                        rendered_kw = self._render_expr(kw_val)
+                        if kw_arg == "action":
+                            filled[4] = rendered_kw
+                        elif kw_arg == "dest":
+                            filled[5] = rendered_kw
+                        elif kw_arg == "choices":
+                            filled[6] = rendered_kw
+                        elif kw_arg == "default":
+                            filled[7] = "pytra.union_wrap(" + rendered_kw + ")"
+                    return obj + ".add_argument(" + ", ".join(filled) + ")"
+                obj_type = self._lookup_expr_type(obj_node_for_attr)
+                if obj_type in self._class_method_defaults and attr in self._class_method_defaults[obj_type]:
+                    defaults = self._class_method_defaults[obj_type].get(attr, [])
+                    filled_args = list(arg_strs)
+                    for default_node in defaults[len(filled_args):]:
+                        default_expr = self._render_default_arg_value(default_node)
+                        if default_expr == "":
+                            continue
+                        filled_args.append(default_expr)
+                    arg_strs = filled_args
                 # math.* → サブモジュール内は math_native.*、メインモジュールはそのまま
                 if isinstance(obj_node_for_attr, dict) and obj_node_for_attr.get("kind") == "Name" and str(obj_node_for_attr.get("id")) == "math":
                     if attr in {"sin", "cos", "tan", "asin", "acos", "atan", "exp", "log", "log2", "log10", "sqrt", "fabs", "floor", "ceil", "round", "fmod", "hypot", "atan2", "pow", "log_"}:
@@ -4191,6 +4274,15 @@ class ZigNativeEmitter:
                 out[i] = "pytra.union_wrap(" + out[i] + ")"
             i += 1
         return out
+
+    def _render_default_arg_value(self, value: Any) -> str:
+        if isinstance(value, dict):
+            return self._render_expr(value)
+        if value is None:
+            return ""
+        if isinstance(value, str):
+            return value
+        return ""
 
     def _render_dict(self, node: dict[str, Any]) -> str:
         entries_any = node.get("entries")
