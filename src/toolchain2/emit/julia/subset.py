@@ -12,6 +12,7 @@ from pytra.std.json import JsonVal
 from toolchain2.emit.common.code_emitter import RuntimeMapping
 from toolchain2.emit.common.code_emitter import build_import_alias_map
 from toolchain2.emit.common.code_emitter import build_runtime_import_map
+from toolchain2.emit.common.code_emitter import resolve_runtime_call
 from toolchain2.emit.common.code_emitter import should_skip_module
 
 
@@ -920,9 +921,37 @@ class JuliaSubsetRenderer:
                     return _ident(attr) + "(" + ", ".join(call_args) + ")"
             func = self._render_expr(func_node)
             args = [self._render_expr(arg) for arg in _list(node, "args")]
-            if func == "print":
-                return "__pytra_print(" + ", ".join(args) + ")"
+            runtime_call = _str(node, "resolved_runtime_call")
+            if runtime_call == "":
+                runtime_call = _str(node, "runtime_call")
+            adapter_kind = _str(node, "runtime_call_adapter_kind")
+            builtin_name = ""
+            if isinstance(func_node, dict) and _str(func_node, "kind") == "Name":
+                candidate_name = _str(func_node, "id")
+                if runtime_call != "" or candidate_name in self.mapping.calls:
+                    builtin_name = candidate_name
+            mapped_runtime = resolve_runtime_call(runtime_call, builtin_name, adapter_kind, self.mapping)
+            use_mapped_runtime = mapped_runtime
+            if use_mapped_runtime != "" and runtime_call not in self.mapping.calls and builtin_name not in self.mapping.calls:
+                use_mapped_runtime = ""
+            if use_mapped_runtime != "" and "." in runtime_call and runtime_call not in self.mapping.calls:
+                if builtin_name in self.mapping.calls:
+                    use_mapped_runtime = self.mapping.calls[builtin_name]
+                else:
+                    use_mapped_runtime = ""
+            result_type = _str(node, "resolved_type")
+            if runtime_call == "static_cast" and len(args) == 1:
+                if builtin_name == "int" or result_type in {"int", "int64"}:
+                    return "__pytra_int(" + args[0] + ")"
+                if builtin_name == "bool" or result_type == "bool":
+                    return "__pytra_truthy(" + args[0] + ")"
+                if builtin_name == "str" or result_type in {"str", "string"}:
+                    return "__pytra_str(" + args[0] + ")"
+            if runtime_call == "py_int_from_str" and len(args) == 1:
+                return "__pytra_int(" + args[0] + ")"
             if func == "int" and len(args) == 1:
+                if use_mapped_runtime != "" and use_mapped_runtime != "__CAST__":
+                    return use_mapped_runtime + "(" + args[0] + ")"
                 return "__pytra_int(" + args[0] + ")"
             if func == "len" and len(args) == 1:
                 return "length(" + args[0] + ")"
@@ -950,24 +979,31 @@ class JuliaSubsetRenderer:
                         + " + 1))"
                     )
             if func == "str" and len(args) == 1:
+                if use_mapped_runtime != "":
+                    return use_mapped_runtime + "(" + args[0] + ")"
                 return "__pytra_str(" + args[0] + ")"
             if func == "bool" and len(args) == 1:
+                if use_mapped_runtime != "":
+                    return use_mapped_runtime + "(" + args[0] + ")"
                 return "__pytra_truthy(" + args[0] + ")"
             if func == "set" and len(args) == 0:
                 return "Set()"
             if func == "bytearray" and len(args) == 1:
+                if use_mapped_runtime != "":
+                    return use_mapped_runtime + "(" + args[0] + ")"
                 return "__pytra_bytearray(" + args[0] + ")"
             if func == "bytes":
                 if len(args) == 0:
                     return "UInt8[]"
+                if use_mapped_runtime != "":
+                    return use_mapped_runtime + "(" + args[0] + ")"
                 return "__pytra_bytes(" + args[0] + ")"
             if func == "reversed" and len(args) == 1:
                 return "reverse(" + args[0] + ")"
-            mapped_ctor = self.mapping.calls.get(func, "")
-            if mapped_ctor != "":
+            if use_mapped_runtime != "":
                 if len(args) == 0:
-                    return mapped_ctor + "()"
-                return mapped_ctor + "(" + ", ".join(args) + ")"
+                    return use_mapped_runtime + "()"
+                return use_mapped_runtime + "(" + ", ".join(args) + ")"
             if func in self.exception_class_names:
                 return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
             if func in self.class_names:

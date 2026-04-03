@@ -13,7 +13,7 @@
     "len": "__pytra_len",
     "py_len": "__pytra_len",
     "str": "string",
-    "py_to_string": "__pytra_to_string",
+    "py_to_string": "__pytra_str",
     "static_cast": "__CAST__",
     "int": "Int64",
     "float": "Float64",
