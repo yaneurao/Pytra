@@ -237,11 +237,56 @@ elif adapter == "builtin":
     call_name = "__pytra_" + bare_name
 ```
 
-## 2. emitter の呼び出し
+## 2. emitter の呼び出し構造
 
-emitter は `pytra-cli2.py` の `-emit` / `-build` コマンドから呼ばれる。**`pytra-cli2.py` が各言語の emitter を直接 import してはならない。** emitter の選択は `--target` 引数に基づいてレジストリ経由で行う。
+### 2.1 CLI エントリポイント
 
-各言語の emitter は `src/toolchain2/emit/<lang>/emitter.py` に `emit_<lang>_module()` 関数を定義する。
+`pytra-cli2.py` の `-emit` / `-build` コマンドは、各言語の emitter を **subprocess** で呼び出す。直接 import しない。
+
+```
+pytra-cli2.py -build --target cpp input.py
+  → parse → resolve → compile → optimize → link → manifest.json
+  → subprocess: python3 -m toolchain2.emit.cpp.cli manifest.json -o out/
+```
+
+これにより `pytra-cli2.py` は使わない言語の emitter をロードしない（起動速度の維持）。
+
+### 2.2 各言語の cli.py
+
+各言語は `src/toolchain2/emit/<lang>/cli.py` を提供する。中身は共通ランナーに emit 関数を渡すだけ:
+
+```python
+from toolchain2.emit.common.cli_runner import run_emit_cli
+from toolchain2.emit.<lang>.emitter import emit_<lang>_module
+
+if __name__ == "__main__":
+    import sys
+    raise SystemExit(run_emit_cli(emit_<lang>_module, sys.argv[1:]))
+```
+
+manifest 読み、モジュールループ、引数解析は `run_emit_cli`（共通ランナー）が行う。各言語は emit 関数だけ提供する。
+
+### 2.3 emit 関数のインターフェース
+
+各言語の emitter は以下のシグネチャを満たす:
+
+```python
+def emit_<lang>_module(east_doc: dict[str, JsonVal]) -> str:
+    """EAST3 ドキュメントからターゲット言語のコードを生成して返す。"""
+    ...
+```
+
+C++ のように `module_kind` で処理を分ける必要がある言語は、`east_doc` 内の `meta` から `module_kind` を読んで内部で分岐する。cli.py や共通ランナーは `module_kind` を知らない。
+
+### 2.4 runtime_parity_check_fast.py からの呼び出し
+
+`tools/check/runtime_parity_check_fast.py` は `tools/` 配下（selfhost 対象外）なので、`emit_<lang>_module` を直接 import してよい。ただし共通の emit ループ（`run_emit_cli` 相当）を使い、言語固有のロジックを parity check に書かないこと。
+
+### 2.5 禁止事項
+
+- `pytra-cli2.py` が各言語の emitter を直接 import すること（subprocess で cli.py を呼ぶ）
+- cli.py に manifest 読みやモジュールループを独自実装すること（共通ランナーを使う）
+- 共通ランナーが `module_kind` を分岐すること（各言語の emit 関数の内部責務）
 
 ## 3. import パスの解決
 
