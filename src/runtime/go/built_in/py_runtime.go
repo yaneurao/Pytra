@@ -40,6 +40,13 @@ func py_tuple_any(values ...any) []any {
 	return values
 }
 
+func py_extend[T any](dst *PyList[T], src *PyList[T]) {
+	if dst == nil || src == nil {
+		return
+	}
+	dst.items = append(dst.items, src.items...)
+}
+
 func (p *PyList[T]) pyListLen() int {
 	if p == nil {
 		return 0

@@ -63,6 +63,7 @@ class EmitContext:
     enum_bases: dict[str, str] = field(default_factory=dict)
     enum_members: dict[str, dict[str, dict[str, JsonVal]]] = field(default_factory=dict)
     function_signatures: dict[str, tuple[list[str], dict[str, str], dict[str, JsonVal]]] = field(default_factory=dict)
+    function_return_types: dict[str, str] = field(default_factory=dict)
     method_signatures: dict[str, dict[str, dict[str, JsonVal]]] = field(default_factory=dict)
     class_init_signatures: dict[str, dict[str, JsonVal]] = field(default_factory=dict)
     list_alias_vars: set[str] = field(default_factory=set)
@@ -4038,13 +4039,31 @@ def _emit_multi_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 ctx.var_types[name] = resolved_type
     if len(lhs_parts) == 0:
         return
-    # tuple[...] returns []any in Go (not a Go multi-return); use temp var + subscript.
-    # Only multi_return[...] uses Go multi-return syntax.
-    is_tuple_call = False
+    # tuple-returning function calls use Go multi-return syntax directly.
+    is_tuple_call = (
+        isinstance(value_node, dict)
+        and _str(value_node, "kind") == "Call"
+        and len(targets) > 1
+        and not value_type.startswith("multi_return[")
+        and not _is_container_resolved_type(value_type)
+    )
+    if isinstance(value_node, dict) and _str(value_node, "kind") == "Call":
+        func_node = value_node.get("func")
+        if isinstance(func_node, dict) and _str(func_node, "kind") == "Name":
+            fn_name = _str(func_node, "id")
+            if fn_name == "main":
+                fn_name = "__pytra_main"
+            if ctx.function_return_types.get(fn_name, "").startswith("tuple["):
+                is_tuple_call = True
     if not value_type.startswith("multi_return[") and not is_tuple_call:
         tmp_name = _next_temp(ctx, "multi")
-        _emit(ctx, tmp_name + " := " + _emit_expr(ctx, value_node))
-        if value_type != "":
+        tmp_expr = _emit_expr(ctx, value_node)
+        _emit(ctx, tmp_name + " := " + tmp_expr)
+        if value_type != "" and not (
+            value_type.startswith("list[")
+            and isinstance(value_node, dict)
+            and not _is_wrapper_container_expr(ctx, value_node, tmp_expr)
+        ):
             ctx.var_types[tmp_name] = value_type
         for idx, target in enumerate(targets):
             if not isinstance(target, dict):
@@ -4439,6 +4458,8 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         inferred = _scan_body_for_return_type(body)
         if inferred not in ("", "None", "NoneType"):
             return_type = inferred
+    if name != "":
+        ctx.function_return_types[name] = return_type
     go_ret = _go_signature_type(ctx, return_type)
     mutated_return = mutated_arg_name != "" and return_type == "None"
     is_staticmethod = False
@@ -5840,6 +5861,7 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
                     _dict(stmt, "arg_types"),
                     _vd,
                 )
+                ctx.function_return_types[fn_name] = _str(stmt, "return_type")
         if isinstance(stmt, dict) and _str(stmt, "kind") == "ClassDef":
             class_name = _str(stmt, "name")
             ctx.class_names.add(class_name)
