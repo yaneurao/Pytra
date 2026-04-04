@@ -135,6 +135,16 @@ def _ctor_arg_order(node: dict[str, JsonVal]) -> list[str]:
     return _function_arg_order(init_fn)[1:]
 
 
+def _class_member_bucket(node: dict[str, JsonVal]) -> str:
+    if _is_init_function(node):
+        return "init"
+    if _is_static_method(node):
+        return "static"
+    if _is_property_method(node):
+        return "property"
+    return "method"
+
+
 def _is_init_name(name: str) -> bool:
     return name == "__init__"
 
@@ -1713,11 +1723,12 @@ class JuliaSubsetRenderer:
             if not isinstance(item, dict) or _str(item, "kind") != "FunctionDef":
                 continue
             name = _str(item, "name")
-            if _is_init_function(item):
+            bucket = _class_member_bucket(item)
+            if bucket == "init":
                 continue
-            if _is_static_method(item):
+            if bucket == "static":
                 static_methods.add(name)
-            elif _is_property_method(item):
+            elif bucket == "property":
                 properties.add(name)
             else:
                 methods.add(name)
