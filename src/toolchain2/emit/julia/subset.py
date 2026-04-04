@@ -121,6 +121,14 @@ def _is_property_method(node: dict[str, JsonVal]) -> bool:
     return "property" in _function_decorators(node)
 
 
+def _is_init_name(name: str) -> bool:
+    return name == "__init__"
+
+
+def _is_enum_base_name(base_name: str) -> bool:
+    return base_name in {"Enum", "IntEnum", "IntFlag"}
+
+
 def _simple_class_supported(node: dict[str, JsonVal]) -> bool:
     body = _list(node, "body")
     if len(body) == 0:
@@ -531,6 +539,12 @@ class JuliaSubsetRenderer:
     def _method_impl_name(self, class_name: str, method_name: str) -> str:
         return "__pytra_method_" + class_name + "_" + method_name
 
+    def _resolve_exception_base_type(self, base_name: str) -> str:
+        base_type = self.mapping.predicate_types.get(base_name, "")
+        if base_type == "" and base_name in self.exception_class_names:
+            return base_name
+        return base_type
+
     def _collect_field_names(self, class_name: str, visiting: set[str] | None = None) -> list[str]:
         if class_name in self.class_all_field_names:
             return list(self.class_all_field_names[class_name])
@@ -780,7 +794,7 @@ class JuliaSubsetRenderer:
             base_name = self._base_name(self.current_class_name)
         if base_name == "":
             return ""
-        if attr == "__init__":
+        if _is_init_name(attr):
             pieces = ["__pytra_base = __pytra_new_" + base_name + "(" + ", ".join(args) + ")"]
             for field_name in self._collect_field_names(base_name):
                 pieces.append("self." + field_name + " = __pytra_base." + field_name)
@@ -1603,7 +1617,7 @@ class JuliaSubsetRenderer:
     def _emit_class(self, node: dict[str, JsonVal]) -> None:
         class_name = _str(node, "name")
         base_name = _str(node, "base")
-        if base_name in {"Enum", "IntEnum", "IntFlag"}:
+        if _is_enum_base_name(base_name):
             return
         field_names = self._collect_field_names(class_name)
         impl_name = self._class_impl_name(class_name)
@@ -1644,9 +1658,7 @@ class JuliaSubsetRenderer:
     def _emit_exception_class(self, node: dict[str, JsonVal]) -> None:
         class_name = _str(node, "name")
         base_name = _str(node, "base")
-        base_type = self.mapping.predicate_types.get(base_name, "")
-        if base_type == "" and base_name in self.exception_class_names:
-            base_type = base_name
+        base_type = self._resolve_exception_base_type(base_name)
         if base_type == "":
             raise ValueError("unsupported Julia exception base: " + base_name)
         field_types = node.get("field_types")
