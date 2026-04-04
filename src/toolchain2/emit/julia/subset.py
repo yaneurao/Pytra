@@ -129,6 +129,18 @@ def _is_enum_base_name(base_name: str) -> bool:
     return base_name in {"Enum", "IntEnum", "IntFlag"}
 
 
+def _exception_ctor_message_expr(node: dict[str, JsonVal]) -> JsonVal | None:
+    if _str(node, "kind") != "Expr":
+        return None
+    value = node.get("value")
+    if not isinstance(value, dict) or _str(value, "kind") != "Call":
+        return None
+    args = _list(value, "args")
+    if len(args) != 1:
+        return None
+    return args[0]
+
+
 def _simple_class_supported(node: dict[str, JsonVal]) -> bool:
     body = _list(node, "body")
     if len(body) == 0:
@@ -1644,12 +1656,9 @@ class JuliaSubsetRenderer:
         for stmt in _list(init_fn, "body"):
             if not isinstance(stmt, dict):
                 continue
-            if _str(stmt, "kind") == "Expr":
-                value = stmt.get("value")
-                if isinstance(value, dict):
-                    call_args = [self._render_expr(arg) for arg in _list(value, "args")]
-                    if len(call_args) == 1:
-                        self._emit("self.__pytra_message = string(" + call_args[0] + ")")
+            message_expr = _exception_ctor_message_expr(stmt)
+            if message_expr is not None:
+                self._emit("self.__pytra_message = string(" + self._render_expr(message_expr) + ")")
                 continue
             target = stmt.get("target")
             if isinstance(target, dict):
