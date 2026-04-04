@@ -141,8 +141,8 @@ def _simple_class_supported(node: dict[str, JsonVal]) -> bool:
 
 
 def _exception_class_supported(node: dict[str, JsonVal]) -> bool:
-    base = _str(node, "base")
-    if base not in {"Exception", "ValueError", "TypeError", "RuntimeError"}:
+    base_name = _str(node, "base")
+    if base_name == "":
         return False
     body = _list(node, "body")
     init_fn: dict[str, JsonVal] | None = None
@@ -530,6 +530,16 @@ def _stmt_supported(node: JsonVal) -> bool:
 def can_render_module_natively(east3_doc: dict[str, JsonVal]) -> bool:
     body = _list(east3_doc, "body")
     main_guard_body = _list(east3_doc, "main_guard_body")
+    exception_base_names = {
+        _str(stmt, "base")
+        for stmt in body
+        if isinstance(stmt, dict) and _str(stmt, "kind") == "ClassDef" and _exception_class_supported(stmt)
+    }
+    for stmt in body:
+        if not isinstance(stmt, dict) or _str(stmt, "kind") != "ClassDef":
+            continue
+        if _str(stmt, "name") in exception_base_names and _str(stmt, "base") == "":
+            return False
     return all(_stmt_supported(stmt) for stmt in body) and all(_stmt_supported(stmt) for stmt in main_guard_body)
 
 
@@ -1704,6 +1714,8 @@ class JuliaSubsetRenderer:
         class_name = _str(node, "name")
         base_name = _str(node, "base")
         base_type = self.mapping.predicate_types.get(base_name, "")
+        if base_type == "" and base_name in self.exception_class_names:
+            base_type = base_name
         if base_type == "":
             raise ValueError("unsupported Julia exception base: " + base_name)
         field_types = node.get("field_types")
