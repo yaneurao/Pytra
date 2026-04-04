@@ -662,49 +662,60 @@ class JuliaSubsetRenderer:
             return mapped + "(" + ", ".join([owner] + args) + ")"
         return ""
 
-    def _render_collection_method_call(self, owner: str, owner_type: str, attr: str, args: list[str]) -> str:
-        if attr == "append" and len(args) == 1:
-            return "push!(" + owner + ", " + args[0] + ")"
-        if attr == "add" and len(args) == 1:
-            return "push!(" + owner + ", " + args[0] + ")"
-        if attr == "appendleft" and len(args) == 1:
-            return "pushfirst!(" + owner + ", " + args[0] + ")"
-        if attr == "clear" and len(args) == 0:
+    def _render_collection_method_call_0(self, owner: str, attr: str) -> str:
+        if attr == "clear":
             return "empty!(" + owner + ")"
-        if attr == "discard" and len(args) == 1:
-            return "delete!(" + owner + ", " + args[0] + ")"
-        if attr == "extend" and len(args) == 1:
-            return "append!(" + owner + ", " + args[0] + ")"
-        if attr == "index" and len(args) == 1:
-            if owner_type.startswith("list["):
-                return "(findfirst(==(" + args[0] + "), " + owner + ") - 1)"
-            return "__pytra_str_find(" + owner + ", " + args[0] + ")"
-        if attr == "items" and len(args) == 0:
+        if attr == "items":
             return "collect(pairs(" + owner + "))"
-        if attr == "sort" and len(args) == 0:
+        if attr == "sort":
             return "sort!(" + owner + ")"
-        if attr == "reverse" and len(args) == 0:
+        if attr == "reverse":
             return "reverse!(" + owner + ")"
-        if attr == "popleft" and len(args) == 0:
+        if attr == "popleft":
             return "popfirst!(" + owner + ")"
-        if attr == "get" and len(args) == 2:
-            return "get(" + owner + ", " + args[0] + ", " + args[1] + ")"
-        if attr == "get" and len(args) == 1:
-            return "get(" + owner + ", " + args[0] + ", nothing)"
-        if attr == "pop" and len(args) == 1:
-            return "pop!(" + owner + ", " + args[0] + ")"
-        if attr == "pop" and len(args) == 0:
+        if attr == "pop":
             return "pop!(" + owner + ")"
-        if attr == "setdefault" and len(args) == 2:
-            return "get!(" + owner + ", " + args[0] + ", " + args[1] + ")"
-        if attr == "join" and len(args) == 1:
-            return "join(" + args[0] + ", " + owner + ")"
-        if attr == "keys" and len(args) == 0:
+        if attr == "keys":
             return "collect(keys(" + owner + "))"
-        if attr == "remove" and len(args) == 1:
-            return "delete!(" + owner + ", " + args[0] + ")"
-        if attr == "values" and len(args) == 0:
+        if attr == "values":
             return "collect(values(" + owner + "))"
+        return ""
+
+    def _render_collection_method_call_1(self, owner: str, owner_type: str, attr: str, arg: str) -> str:
+        if attr in {"append", "add"}:
+            return "push!(" + owner + ", " + arg + ")"
+        if attr == "appendleft":
+            return "pushfirst!(" + owner + ", " + arg + ")"
+        if attr in {"discard", "remove"}:
+            return "delete!(" + owner + ", " + arg + ")"
+        if attr == "extend":
+            return "append!(" + owner + ", " + arg + ")"
+        if attr == "index":
+            if owner_type.startswith("list["):
+                return "(findfirst(==(" + arg + "), " + owner + ") - 1)"
+            return "__pytra_str_find(" + owner + ", " + arg + ")"
+        if attr == "get":
+            return "get(" + owner + ", " + arg + ", nothing)"
+        if attr == "pop":
+            return "pop!(" + owner + ", " + arg + ")"
+        if attr == "join":
+            return "join(" + arg + ", " + owner + ")"
+        return ""
+
+    def _render_collection_method_call_2(self, owner: str, attr: str, args: list[str]) -> str:
+        if attr == "get":
+            return "get(" + owner + ", " + args[0] + ", " + args[1] + ")"
+        if attr == "setdefault":
+            return "get!(" + owner + ", " + args[0] + ", " + args[1] + ")"
+        return ""
+
+    def _render_collection_method_call(self, owner: str, owner_type: str, attr: str, args: list[str]) -> str:
+        if len(args) == 0:
+            return self._render_collection_method_call_0(owner, attr)
+        if len(args) == 1:
+            return self._render_collection_method_call_1(owner, owner_type, attr, args[0])
+        if len(args) == 2:
+            return self._render_collection_method_call_2(owner, attr, args)
         return ""
 
     def _render_static_cast_call(self, builtin_name: str, result_type: str, args: list[str]) -> str:
