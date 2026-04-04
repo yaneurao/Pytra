@@ -152,18 +152,6 @@ def _exception_class_supported(node: dict[str, JsonVal]) -> bool:
             value = stmt.get("value")
             if not isinstance(value, dict) or _str(value, "kind") != "Call":
                 return False
-            func = value.get("func")
-            if not isinstance(func, dict) or _str(func, "kind") != "Attribute" or _str(func, "attr") != "__init__":
-                return False
-            owner = func.get("value")
-            if not (
-                isinstance(owner, dict)
-                and _str(owner, "kind") == "Call"
-                and isinstance(owner.get("func"), dict)
-                and _str(owner.get("func"), "kind") == "Name"
-                and _str(owner.get("func"), "id") == "super"
-            ):
-                return False
             if not all(_expr_supported(arg) for arg in _list(value, "args")):
                 return False
             continue
