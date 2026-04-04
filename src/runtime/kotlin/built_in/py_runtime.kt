@@ -6,6 +6,19 @@ import java.nio.file.Paths
 
 class PyTuple(items: Collection<Any?> = emptyList()) : ArrayList<Any?>(items)
 
+open class Exception : RuntimeException() {
+    var __pytra_message: String = ""
+    open fun __init__(msg: Any?) {
+        __pytra_message = __pytra_str(msg)
+    }
+    override val message: String
+        get() = __pytra_message
+    override fun toString(): String = __pytra_message
+}
+
+open class ValueError : Exception()
+open class TypeError : Exception()
+
 fun __pytra_noop(vararg args: Any?) { }
 
 fun __pytra_any_default(): Any? {

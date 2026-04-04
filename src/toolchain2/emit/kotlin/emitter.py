@@ -38,6 +38,13 @@ class KotlinRenderer(CommonRenderer):
         self._local_var_scopes: list[set[str]] = []
         self._local_type_scopes: list[dict[str, str]] = []
 
+    def _exception_class_name(self, name: str) -> str:
+        if name == "":
+            return "Throwable"
+        if name in self.module_class_names or name.endswith("Error") or name.endswith("Exception"):
+            return _safe_kotlin_ident(name)
+        return _safe_kotlin_ident(name)
+
     def _collect_class_fields(self, node: dict[str, JsonVal]) -> list[tuple[str, str]]:
         fields: list[tuple[str, str]] = []
         field_types = node.get("field_types")
@@ -462,14 +469,17 @@ class KotlinRenderer(CommonRenderer):
             return
         if kind == "Raise":
             exc = node.get("exc")
+            if exc is None:
+                self._emit("throw __pytra_active_exc")
+                return
             if isinstance(exc, dict) and self._str(exc, "kind") == "Call":
                 func = exc.get("func")
                 if isinstance(func, dict):
                     func_kind = self._str(func, "kind")
-                    if func_kind == "Name" and self._str(func, "id").endswith("Error"):
+                    if func_kind == "Name" and (self._str(func, "id").endswith("Error") or self._str(func, "id").endswith("Exception")):
                         self._emit("throw " + self._emit_expr(exc))
                         return
-                    if func_kind == "Attribute" and self._str(func, "attr").endswith("Error"):
+                    if func_kind == "Attribute" and (self._str(func, "attr").endswith("Error") or self._str(func, "attr").endswith("Exception")):
                         self._emit("throw " + self._emit_expr(exc))
                         return
             message = self._emit_expr(exc) if isinstance(exc, dict) else "\"raise\""
@@ -496,11 +506,16 @@ class KotlinRenderer(CommonRenderer):
                         continue
                     raw_exc_name = "__pytraErr" + str(idx)
                     bound_name = _safe_kotlin_ident(self._str(handler, "name"))
-                    catch_kw = "} catch (" + raw_exc_name + ": Throwable) {" if idx == 0 else "catch (" + raw_exc_name + ": Throwable) {"
+                    type_node = handler.get("type")
+                    catch_type = "Throwable"
+                    if isinstance(type_node, dict):
+                        catch_type = self._exception_class_name(self._str(type_node, "id"))
+                    catch_kw = "} catch (" + raw_exc_name + ": " + catch_type + ") {"
                     self._emit(catch_kw)
                     self.state.indent_level += 1
+                    self._emit("val __pytra_active_exc = " + raw_exc_name)
                     if bound_name != "":
-                        self._emit("val " + bound_name + " = (" + raw_exc_name + ".message ?: " + raw_exc_name + ".toString())")
+                        self._emit("val " + bound_name + " = " + raw_exc_name)
                     for stmt in self._list(handler, "body"):
                         self._emit_stmt(stmt)
                     self.state.indent_level -= 1
@@ -1174,9 +1189,11 @@ class KotlinRenderer(CommonRenderer):
                     arg_nodes = self._list(node, "args")
                     arg_expr = self._emit_expr(arg_nodes[0]) if len(arg_nodes) > 0 else "null"
                     return "__pytra_truthy(" + arg_expr + ")"
-                if func_id.endswith("Error"):
-                    first_arg = self._emit_expr(self._list(node, "args")[0]) if len(self._list(node, "args")) > 0 else "\"error\""
-                    return "RuntimeException(" + first_arg + ".toString())"
+                if func_id.endswith("Error") or func_id.endswith("Exception"):
+                    ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
+                    class_name = _safe_kotlin_ident(func_id)
+                    tmp_name = "__pytraObj"
+                    return "run { val " + tmp_name + " = " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
                 if func_id in self.import_symbols:
                     import_path = self.import_symbols[func_id]
                     if import_path.startswith("pytra_built_in_error.") and func_id.endswith("Error"):
@@ -1189,9 +1206,11 @@ class KotlinRenderer(CommonRenderer):
                     if self.class_has_init.get(func_id, True):
                         return "run { val " + tmp_name + " = " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
                     return class_name + "(" + ", ".join(ctor_args) + ")"
-            if func_name.startswith("pytra_built_in_error.") and func_name.endswith("Error"):
-                first_arg = self._emit_expr(self._list(node, "args")[0]) if len(self._list(node, "args")) > 0 else "\"error\""
-                return "RuntimeException(" + first_arg + ".toString())"
+            if func_name.startswith("pytra_built_in_error.") and (func_name.endswith("Error") or func_name.endswith("Exception")):
+                bare_name = _safe_kotlin_ident(func_name.split(".")[-1])
+                ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
+                tmp_name = "__pytraObj"
+                return "run { val " + tmp_name + " = " + bare_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
             args: list[str] = []
             for arg in self._list(node, "args"):
                 if isinstance(arg, dict) and self._str(arg, "kind") == "Name":

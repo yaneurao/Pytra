@@ -9,6 +9,18 @@ trait PytraEnumLike {
     def value: Long
 }
 
+class Exception extends RuntimeException {
+    var __pytra_message: String = ""
+    def __init__(msg: Any): Unit = {
+        __pytra_message = __pytra_str(msg)
+    }
+    override def getMessage(): String = __pytra_message
+    override def toString: String = __pytra_message
+}
+
+class ValueError extends Exception
+class TypeError extends Exception
+
 def __pytra_noop(args: Any*): Unit = { }
 
 // Implicit conversion: Any → Double for arithmetic in dynamically-typed contexts.

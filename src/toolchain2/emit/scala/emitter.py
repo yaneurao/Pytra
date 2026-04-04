@@ -35,6 +35,13 @@ class ScalaRenderer(CommonRenderer):
         self.local_type_stack: list[dict[str, str]] = []
         self._tmp_counter = 0
 
+    def _exception_class_name(self, name: str) -> str:
+        if name == "":
+            return "Throwable"
+        if name in self.module_class_names or name.endswith("Error") or name.endswith("Exception"):
+            return _safe_scala_ident(name)
+        return _safe_scala_ident(name)
+
     def _collect_class_fields(self, node: dict[str, JsonVal]) -> list[tuple[str, str]]:
         fields: list[tuple[str, str]] = []
         field_types = node.get("field_types")
@@ -387,8 +394,24 @@ class ScalaRenderer(CommonRenderer):
             return
         if kind == "Raise":
             exc = node.get("exc")
+            if exc is None:
+                self._emit("throw __pytra_active_exc")
+                return
+            if isinstance(exc, dict):
+                exc_type = self._str(exc, "resolved_type")
+                if exc_type.endswith("Error") or exc_type.endswith("Exception"):
+                    self._emit("throw " + self._emit_expr(exc))
+                    return
             message = "\"raise\""
             if isinstance(exc, dict) and self._str(exc, "kind") == "Call":
+                func = exc.get("func")
+                if isinstance(func, dict):
+                    if self._str(func, "kind") == "Name" and (self._str(func, "id").endswith("Error") or self._str(func, "id").endswith("Exception")):
+                        self._emit("throw " + self._emit_expr(exc))
+                        return
+                    if self._str(func, "kind") == "Attribute" and (self._str(func, "attr").endswith("Error") or self._str(func, "attr").endswith("Exception")):
+                        self._emit("throw " + self._emit_expr(exc))
+                        return
                 args = self._list(exc, "args")
                 if len(args) >= 1 and isinstance(args[0], dict):
                     message = self._emit_expr(args[0])
@@ -410,18 +433,27 @@ class ScalaRenderer(CommonRenderer):
             else:
                 self._emit("} catch {")
                 self.state.indent_level += 1
-                self._emit("case _ : Throwable =>")
-                self.state.indent_level += 1
                 for handler in handlers:
-                    if isinstance(handler, dict):
-                        for stmt in self._list(handler, "body"):
-                            if isinstance(stmt, dict) and self._str(stmt, "kind") == "Assign":
-                                target = stmt.get("target")
-                                if isinstance(target, dict) and self._str(target, "kind") in ("Name", "Attribute"):
-                                    self._emit_store_target(target, self._emit_expr(stmt.get("value")))
-                                    continue
-                            self._emit_stmt(stmt)
-                self.state.indent_level -= 2
+                    if not isinstance(handler, dict):
+                        continue
+                    type_node = handler.get("type")
+                    catch_type = "Throwable"
+                    if isinstance(type_node, dict):
+                        catch_type = self._exception_class_name(self._str(type_node, "id"))
+                    bound_name = _safe_scala_ident(self._str(handler, "name"))
+                    raw_name = bound_name if bound_name != "" else "__pytraErr"
+                    self._emit("case " + raw_name + ": " + catch_type + " =>")
+                    self.state.indent_level += 1
+                    self._emit("val __pytra_active_exc = " + raw_name)
+                    for stmt in self._list(handler, "body"):
+                        if isinstance(stmt, dict) and self._str(stmt, "kind") == "Assign":
+                            target = stmt.get("target")
+                            if isinstance(target, dict) and self._str(target, "kind") in ("Name", "Attribute"):
+                                self._emit_store_target(target, self._emit_expr(stmt.get("value")))
+                                continue
+                        self._emit_stmt(stmt)
+                    self.state.indent_level -= 1
+                self.state.indent_level -= 1
                 self._emit("} finally {")
             self.state.indent_level += 1
             for stmt in self._list(node, "finalbody"):
@@ -888,6 +920,11 @@ class ScalaRenderer(CommonRenderer):
                     if self.class_has_init.get(func_id, True):
                         return "{ val " + tmp_name + " = new " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
                     return "new " + class_name + "(" + ", ".join(ctor_args) + ")"
+                elif func_id.endswith("Error") or func_id.endswith("Exception"):
+                    ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
+                    class_name = _safe_scala_ident(func_id)
+                    tmp_name = "__pytra_obj"
+                    return "{ val " + tmp_name + " = new " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
             args: list[str] = []
             for arg in self._list(node, "args"):
                 if isinstance(arg, dict) and self._str(arg, "kind") == "Name":
