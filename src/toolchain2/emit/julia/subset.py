@@ -141,8 +141,9 @@ def _exception_class_supported(node: dict[str, JsonVal]) -> bool:
     if init_fn is None:
         return False
     args = [arg for arg in _list(init_fn, "arg_order") if isinstance(arg, str)]
-    if len(args) < 2 or args[0] != "self":
+    if len(args) < 2:
         return False
+    instance_arg = args[0]
     for stmt in _list(init_fn, "body"):
         if not isinstance(stmt, dict):
             return False
@@ -172,7 +173,7 @@ def _exception_class_supported(node: dict[str, JsonVal]) -> bool:
         if not isinstance(target, dict) or _str(target, "kind") != "Attribute":
             return False
         owner = target.get("value")
-        if not isinstance(owner, dict) or _str(owner, "kind") != "Name" or _str(owner, "id") != "self":
+        if not isinstance(owner, dict) or _str(owner, "kind") != "Name" or _str(owner, "id") != instance_arg:
             return False
         if not _expr_supported(stmt.get("value")):
             return False
@@ -1657,7 +1658,8 @@ class JuliaSubsetRenderer:
         init_fn = next(
             stmt for stmt in _list(node, "body") if isinstance(stmt, dict) and _str(stmt, "kind") == "FunctionDef" and _str(stmt, "name") == "__init__"
         )
-        args = [arg for arg in _list(init_fn, "arg_order") if isinstance(arg, str) and arg != "self"]
+        init_args = [arg for arg in _list(init_fn, "arg_order") if isinstance(arg, str)]
+        args = init_args[1:] if len(init_args) > 0 else []
         self._emit("function __pytra_new_" + class_name + "(" + ", ".join(args) + ")")
         self.indent_level += 1
         ctor_args = ['""'] + ["nothing" for _ in field_names]
