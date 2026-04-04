@@ -1310,6 +1310,8 @@ class KotlinRenderer(CommonRenderer):
                     return "run { val " + tmp_name + " = " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
                 if func_id in self.import_symbols:
                     import_path = self.import_symbols[func_id]
+                    func_name = import_path
+                    func_is_named_function = True
                     if import_path.startswith("pytra_built_in_error.") and func_id.endswith("Error"):
                         first_arg = self._emit_expr(self._list(node, "args")[0]) if len(self._list(node, "args")) > 0 else "\"error\""
                         return "RuntimeException(" + first_arg + ".toString())"
@@ -1379,7 +1381,11 @@ class KotlinRenderer(CommonRenderer):
                     invoke_type = "() -> Any?"
                 else:
                     invoke_type = "(" + ", ".join("Any?" for _ in args) + ") -> Any?"
-                return "((" + func_name + ") as " + invoke_type + ")(" + ", ".join(args) + ")"
+                invoke_expr = "((" + func_name + ") as " + invoke_type + ")(" + ", ".join(args) + ")"
+                resolved_type = self._str(node, "resolved_type")
+                if resolved_type not in ("", "unknown", "Any", "object", "JsonVal"):
+                    return "(" + invoke_expr + " as " + self._render_type(resolved_type) + ")"
+                return invoke_expr
             call_expr = func_name + "(" + ", ".join(args) + ")"
             resolved_type = self._str(node, "resolved_type")
             if func_name in ("__pytra_bytes", "__pytra_bytearray", "__pytra_set_new", "__pytra_list_repeat") and resolved_type != "":

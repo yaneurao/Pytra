@@ -544,6 +544,8 @@ class ScalaRenderer(CommonRenderer):
         arg_type_map = arg_types if isinstance(arg_types, dict) else {}
         arg_usage = node.get("arg_usage")
         arg_usage_map = arg_usage if isinstance(arg_usage, dict) else {}
+        vararg_name = self._str(node, "vararg_name")
+        vararg_type = self._str(node, "vararg_type")
         decorators = self._list(node, "decorators")
         is_property = any(isinstance(d, str) and d == "property" for d in decorators)
         params: list[str] = []
@@ -559,6 +561,9 @@ class ScalaRenderer(CommonRenderer):
                 param_name = safe_arg + "__in"
                 rebinding.append((safe_arg, param_name))
             params.append(param_name + ": " + scala_type(arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"))
+        if vararg_name != "":
+            safe_vararg = _safe_scala_ident(vararg_name)
+            params.append(safe_vararg + ": " + scala_type(vararg_type if vararg_type != "" else "Any") + "*")
         return_type = scala_type(self._str(node, "return_type"))
         method_prefix = ""
         base_methods = self.class_method_names.get(self.current_class_base or "", set())
@@ -577,6 +582,8 @@ class ScalaRenderer(CommonRenderer):
             if isinstance(arg, str):
                 arg_type = arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"
                 self._record_local_type(_safe_scala_ident(arg), arg_type)
+        if vararg_name != "":
+            self._record_local_type(_safe_scala_ident(vararg_name), "list[" + (vararg_type if vararg_type != "" else "Any") + "]")
         for local_name, param_name in rebinding:
             self._emit("var " + local_name + " = " + param_name)
             self._record_local_type(local_name, self._lookup_local_type(param_name))
@@ -735,7 +742,7 @@ class ScalaRenderer(CommonRenderer):
             stop = self._emit_expr(iter_plan.get("stop"))
             step_node = iter_plan.get("step")
             step = self._emit_expr(step_node) if isinstance(step_node, dict) else "1L"
-            idx_name = "_idx_" + target_name
+            idx_name = self._next_tmp("_idx_")
             descending = self._str(iter_plan, "range_mode") == "descending" or step.strip().startswith("-")
             cmp_op = ">" if descending else "<"
             update = idx_name + " = " + idx_name + " + (" + step + ")"
@@ -771,7 +778,8 @@ class ScalaRenderer(CommonRenderer):
                     resolved_target_type = iter_type[4:-1]
             if resolved_target_type not in ("", "unknown", "Any", "object"):
                 loop_var = self._next_tmp("__iter_tmp_")
-                prelude.append("val " + target_name + " = " + loop_var + ".asInstanceOf[" + scala_type(resolved_target_type) + "]")
+                if loop_var != target_name:
+                    prelude.append("val " + target_name + " = " + loop_var + ".asInstanceOf[" + scala_type(resolved_target_type) + "]")
             self._record_local_type(target_name, resolved_target_type if resolved_target_type != "" else "Any")
         self._emit("for (" + loop_var + " <- " + iter_expr + ") {")
         self.state.indent_level += 1
@@ -1048,15 +1056,14 @@ class ScalaRenderer(CommonRenderer):
                     if attr == "isdigit" and len(arg_nodes) == 0:
                         return "__pytra_isdigit(" + owner_expr + ")"
                 if (owner_type.startswith("dict[") or owner_type == "dict") and attr == "get" and len(arg_nodes) == 1:
-                    result_type = self._str(node, "resolved_type")
                     expr = "__pytra_as_dict(" + owner_expr + ").getOrElse(" + self._emit_expr(arg_nodes[0]) + ", null)"
-                    if result_type not in ("", "unknown", "Any", "object", "JsonVal"):
-                        return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
                     return expr
                 if (owner_type.startswith("dict[") or owner_type == "dict") and attr == "get" and len(arg_nodes) == 2:
                     result_type = self._str(node, "resolved_type")
                     expr = "__pytra_as_dict(" + owner_expr + ").getOrElse(" + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
-                    if result_type not in ("", "unknown", "Any", "object", "JsonVal"):
+                    default_node = arg_nodes[1]
+                    default_is_none = isinstance(default_node, dict) and self._str(default_node, "kind") == "Constant" and default_node.get("value") is None
+                    if not default_is_none and result_type not in ("", "unknown", "Any", "object", "JsonVal"):
                         return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
                     return expr
                 if owner_type.startswith("dict[") or owner_type == "dict":
@@ -1092,7 +1099,11 @@ class ScalaRenderer(CommonRenderer):
                     if attr == "setdefault" and len(arg_nodes) >= 2:
                         key_expr = self._emit_expr(arg_nodes[0])
                         default_expr = self._emit_expr(arg_nodes[1])
-                        return "__pytra_as_dict(" + owner_expr + ").getOrElseUpdate(" + key_expr + ", " + default_expr + ")"
+                        result_type = self._str(node, "resolved_type")
+                        expr = "__pytra_as_dict(" + owner_expr + ").getOrElseUpdate(" + key_expr + ", " + default_expr + ")"
+                        if result_type not in ("", "unknown", "Any", "object", "JsonVal"):
+                            return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
+                        return expr
                 if owner_type.startswith("list[") or owner_type in ("list", "bytearray", "bytes"):
                     if attr == "index" and len(arg_nodes) >= 1:
                         return owner_expr + ".indexOf(" + self._emit_expr(arg_nodes[0]) + ").toLong"
@@ -1151,8 +1162,16 @@ class ScalaRenderer(CommonRenderer):
                 ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
                 tmp_name = "__pytra_obj"
                 return "{ val " + tmp_name + " = new " + bare_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
+            raw_args = self._list(node, "args")
+            if isinstance(func, dict) and self._str(func, "kind") == "Name":
+                func_id = self._str(func, "id")
+                vararg_info = self.module_function_varargs.get(func_id)
+                if vararg_info is not None and len(raw_args) >= vararg_info[0] + 1:
+                    last_arg = raw_args[-1]
+                    if isinstance(last_arg, dict) and self._str(last_arg, "kind") == "List":
+                        raw_args = raw_args[:-1] + self._list(last_arg, "elements")
             args: list[str] = []
-            for arg in self._list(node, "args"):
+            for arg in raw_args:
                 if isinstance(arg, dict) and self._str(arg, "kind") == "Name":
                     arg_id = self._str(arg, "id")
                     if arg_id in self.module_function_names:
