@@ -75,7 +75,7 @@ def scala_type(resolved_type: str) -> str:
         return "String"
     if resolved_type in ("None", "none"):
         return "Unit"
-    if resolved_type in ("Any", "object", "unknown", "JsonVal"):
+    if resolved_type in ("Any", "Obj", "object", "unknown", "JsonVal"):
         return "Any"
     if resolved_type == "Path":
         return "java.nio.file.Path"

@@ -28,6 +28,7 @@ class ScalaRenderer(CommonRenderer):
         self.module_function_names: set[str] = set()
         self.local_function_aliases: dict[str, str] = {}
         self.module_class_names: set[str] = set()
+        self.class_property_names: dict[str, set[str]] = {}
         self.class_method_names: dict[str, set[str]] = {}
         self.current_class_base: str | None = None
         self.class_has_init: dict[str, bool] = {}
@@ -207,6 +208,7 @@ class ScalaRenderer(CommonRenderer):
             if isinstance(stmt, dict) and self._str(stmt, "kind") == "ClassDef"
         }
         self.class_has_init = {}
+        self.class_property_names = {}
         self.class_method_names = {}
         for stmt in self._list(east3_doc, "body"):
             if not isinstance(stmt, dict) or self._str(stmt, "kind") != "ClassDef":
@@ -218,11 +220,17 @@ class ScalaRenderer(CommonRenderer):
                 and self._str(item, "name") == "__init__"
                 for item in self._list(stmt, "body")
             )
-            self.class_method_names[class_name] = {
-                self._str(item, "name")
-                for item in self._list(stmt, "body")
-                if isinstance(item, dict) and self._str(item, "kind") in ("FunctionDef", "ClosureDef")
-            }
+            methods: set[str] = set()
+            props: set[str] = set()
+            for item in self._list(stmt, "body"):
+                if not isinstance(item, dict) or self._str(item, "kind") not in ("FunctionDef", "ClosureDef"):
+                    continue
+                methods.add(self._str(item, "name"))
+                for dec in self._list(item, "decorators"):
+                    if isinstance(dec, str) and dec == "property":
+                        props.add(self._str(item, "name"))
+            self.class_method_names[class_name] = methods
+            self.class_property_names[class_name] = props
         self.local_function_aliases = {}
         self._tmp_counter = 0
         for emitted_name in self.module_function_names:
@@ -322,6 +330,9 @@ class ScalaRenderer(CommonRenderer):
             return
         if kind == "Import":
             self._emit("// import")
+            return
+        if kind == "TypeAlias":
+            self._emit("// type alias")
             return
         if kind == "FunctionDef":
             self._emit_function_def(node)
@@ -468,6 +479,8 @@ class ScalaRenderer(CommonRenderer):
         arg_order = self._list(node, "arg_order")
         arg_types = node.get("arg_types")
         arg_type_map = arg_types if isinstance(arg_types, dict) else {}
+        decorators = self._list(node, "decorators")
+        is_property = any(isinstance(d, str) and d == "property" for d in decorators)
         params: list[str] = []
         for arg in arg_order:
             if not isinstance(arg, str):
@@ -480,7 +493,11 @@ class ScalaRenderer(CommonRenderer):
         base_methods = self.class_method_names.get(self.current_class_base or "", set())
         if is_method and self.current_class_base not in (None, "", "None", "object", "Obj") and name in base_methods:
             method_prefix = "override "
-        self._emit(method_prefix + "def " + name + "(" + ", ".join(params) + "): " + return_type + " = {")
+        sig = method_prefix + "def " + name
+        if not (is_method and is_property):
+            sig += "(" + ", ".join(params) + ")"
+        sig += ": " + return_type + " = {"
+        self._emit(sig)
         self.state.indent_level += 1
         scope_names = {_safe_scala_ident(arg) for arg in arg_order if isinstance(arg, str)}
         self.local_decl_stack.append(scope_names)
@@ -704,7 +721,11 @@ class ScalaRenderer(CommonRenderer):
                 if module_id == "pytra.std":
                     return _safe_scala_ident((module_id + "." + self._str(node, "attr")).replace(".", "_"))
             owner = self._emit_expr(owner_node)
-            return owner + "." + _safe_scala_ident(self._str(node, "attr"))
+            owner_type = self._str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+            attr = _safe_scala_ident(self._str(node, "attr"))
+            if owner_type in self.class_property_names and attr in self.class_property_names.get(owner_type, set()):
+                return owner + "." + attr
+            return owner + "." + attr
         if kind == "Subscript":
             owner_node = node.get("value")
             owner = self._emit_expr(owner_node)
@@ -717,7 +738,7 @@ class ScalaRenderer(CommonRenderer):
                 upper = self._emit_expr(upper_node) if isinstance(upper_node, dict) else "__pytra_len(" + owner + ")"
                 if owner_type in ("str", "string"):
                     return "__pytra_slice(" + owner + ", " + lower + ", " + upper + ").asInstanceOf[String]"
-                return "__pytra_slice(" + owner + ", " + lower + ", " + upper + ")"
+                return "__pytra_slice(" + owner + ", " + lower + ", " + upper + ").asInstanceOf[" + scala_type(self._str(node, "resolved_type")) + "]"
             index = self._emit_expr(slice_node)
             result_type = scala_type(self._str(node, "resolved_type"))
             return "__pytra_get_index(" + owner + ", " + index + ").asInstanceOf[" + result_type + "]"
@@ -782,7 +803,27 @@ class ScalaRenderer(CommonRenderer):
                 "__RESULT__(" + key_code + ") = " + value_code,
             )
         if kind == "Unbox" or kind == "Box":
-            return self._emit_expr(node.get("value"))
+            value_code = self._emit_expr(node.get("value"))
+            target = self._str(node, "target")
+            resolved_type = self._str(node, "resolved_type")
+            if target == "str":
+                return "__pytra_str(" + value_code + ")"
+            if target == "bool":
+                return "__pytra_truthy(" + value_code + ")"
+            if target in ("int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"):
+                return "__pytra_int(" + value_code + ")"
+            if target in ("float", "float32", "float64"):
+                return "__pytra_float(" + value_code + ")"
+            cast_type = scala_type(resolved_type if resolved_type != "" else target)
+            if target.startswith("dict[") or target == "dict":
+                return "__pytra_as_dict(" + value_code + ").asInstanceOf[" + cast_type + "]"
+            if target.startswith("list[") or target in ("list", "tuple", "bytes", "bytearray"):
+                return "__pytra_as_list(" + value_code + ").asInstanceOf[" + cast_type + "]"
+            if target.startswith("set[") or target == "set":
+                return "__pytra_set_new(" + value_code + ").asInstanceOf[" + cast_type + "]"
+            if cast_type not in ("", "Any"):
+                return value_code + ".asInstanceOf[" + cast_type + "]"
+            return value_code
         if kind == "BoolOp":
             return self._emit_boolop_value_expr(self._list(node, "values"), self._str(node, "op") == "And")
         if kind == "IfExp":
@@ -855,6 +896,8 @@ class ScalaRenderer(CommonRenderer):
                         return "__pytra_find(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
                     if attr == "isalnum" and len(arg_nodes) == 0:
                         return "__pytra_isalnum(" + owner_expr + ")"
+                    if attr == "isdigit" and len(arg_nodes) == 0:
+                        return "__pytra_isdigit(" + owner_expr + ")"
                 if owner_type.startswith("dict[") and attr == "get" and len(arg_nodes) == 2:
                     return owner_expr + ".getOrElse(" + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
                 if owner_type.startswith("dict["):
