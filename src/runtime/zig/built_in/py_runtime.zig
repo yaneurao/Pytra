@@ -850,7 +850,10 @@ pub fn as_list_any(value: anytype) Obj {
     if (T == *UnionVal) {
         return union_as_list(value);
     }
-    return value;
+    if (T == Obj) {
+        return value;
+    }
+    unreachable;
 }
 
 pub fn as_dict_any(value: anytype) UnionDict {
@@ -858,7 +861,10 @@ pub fn as_dict_any(value: anytype) UnionDict {
     if (T == *UnionVal) {
         return union_as_dict(value);
     }
-    return value;
+    if (T == UnionDict) {
+        return value;
+    }
+    unreachable;
 }
 
 pub fn union_is_list(value: *UnionVal) bool {

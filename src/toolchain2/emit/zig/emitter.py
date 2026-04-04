@@ -2368,6 +2368,9 @@ class ZigNativeEmitter:
                     elif iter_type in {"bytearray", "bytes"}:
                         elem = "u8"
                     iter_expr = "pytra.list_items(" + iter_expr + ", " + elem + ")"
+                elif iter_type.startswith("dict["):
+                    val_zig, _key_is_str, _stringify_values = self._dict_storage_spec(iter_type)
+                    iter_expr = "pytra.list_items(pytra.dict_keys(" + val_zig + ", " + iter_expr + "), []const u8)"
                 elif iter_type == "str":
                     iter_expr = "pytra.list_items(pytra.str_chars(" + iter_expr + "), []const u8)"
                 capture_name = target_name
@@ -2407,6 +2410,9 @@ class ZigNativeEmitter:
             elif iter_type in {"bytearray", "bytes"}:
                 elem = "u8"
             iter_expr = "pytra.list_items(" + iter_expr + ", " + elem + ")"
+        elif iter_type.startswith("dict["):
+            val_zig, _key_is_str, _stringify_values = self._dict_storage_spec(iter_type)
+            iter_expr = "pytra.list_items(pytra.dict_keys(" + val_zig + ", " + iter_expr + "), []const u8)"
         elif iter_type == "str":
             iter_expr = "pytra.list_items(pytra.str_chars(" + iter_expr + "), []const u8)"
         capture_name = target_name
