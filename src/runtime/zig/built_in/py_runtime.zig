@@ -867,6 +867,37 @@ pub fn as_dict_any(value: anytype) UnionDict {
     unreachable;
 }
 
+pub fn _jv_as_str_any(value: anytype) ?[]const u8 {
+    const T = @TypeOf(value);
+    if (T == []const u8) return value;
+    if (T == ?[]const u8) return value;
+    if (T == *UnionVal) {
+        return if (value.* == .str_) value.str_ else null;
+    }
+    return null;
+}
+
+pub fn _jv_as_float_any(value: anytype) ?f64 {
+    const T = @TypeOf(value);
+    switch (@typeInfo(T)) {
+        .float, .comptime_float => return @as(f64, value),
+        .int, .comptime_int => return @as(f64, @floatFromInt(value)),
+        .optional => {
+            if (value) |v| return _jv_as_float_any(v);
+            return null;
+        },
+        else => {},
+    }
+    if (T == []const u8) return str_to_float(value);
+    if (T == *UnionVal) {
+        return switch (value.*) {
+            .none => null,
+            else => union_to_float(value),
+        };
+    }
+    return null;
+}
+
 pub fn union_is_list(value: *UnionVal) bool {
     return value.* == .list_;
 }
@@ -902,7 +933,7 @@ pub fn union_to_float(value: *UnionVal) f64 {
         .int_ => |v| @as(f64, @floatFromInt(v)),
         .float_ => |v| v,
         .bool_ => |v| if (v) 1.0 else 0.0,
-        .str_ => |_| 0.0,
+        .str_ => |v| str_to_float(v),
         else => 0.0,
     };
 }
@@ -1259,6 +1290,29 @@ pub fn str_to_int(s: []const u8) i64 {
         result = result * 10 + @as(i64, c - '0');
     }
     return if (neg) -result else result;
+}
+
+pub fn str_to_float(s: []const u8) f64 {
+    return std.fmt.parseFloat(f64, s) catch 0.0;
+}
+
+pub fn str_repeat(s: []const u8, n: i64) []const u8 {
+    if (n <= 0 or s.len == 0) return "";
+    const alloc = std.heap.page_allocator;
+    const count: usize = @intCast(n);
+    var total: usize = 0;
+    var i: usize = 0;
+    while (i < count) : (i += 1) {
+        total += s.len;
+    }
+    var buf = alloc.alloc(u8, total) catch unreachable;
+    var pos: usize = 0;
+    i = 0;
+    while (i < count) : (i += 1) {
+        @memcpy(buf[pos .. pos + s.len], s);
+        pos += s.len;
+    }
+    return buf;
 }
 
 /// HashMap get with default value.

@@ -1459,9 +1459,17 @@ class ZigNativeEmitter:
                 ret_type = self._return_type_stack[-1] if len(self._return_type_stack) > 0 else ""
                 orig_val = val
                 value_node = stmt.get("value")
+                value_type = self._lookup_expr_type(value_node) if isinstance(value_node, dict) else ""
+                stripped_value = self._strip_optional_type(value_type) if value_type != "" else ""
+                if isinstance(value_node, dict) and value_node.get("kind") == "Name":
+                    name_type = self._current_type_map().get(_safe_ident(value_node.get("id"), "value"), "")
+                    stripped_name = self._strip_optional_type(name_type)
+                    if stripped_name != "" and self._zig_type(stripped_name) == ret_type:
+                        val = val + ".?"
+                if stripped_value != "" and self._zig_type(stripped_value) == ret_type:
+                    val = val + ".?"
                 val = self._coerce_value_to_zig_type(ret_type, value_node, val)
                 if self._is_union_storage_zig(ret_type) and val == orig_val and isinstance(value_node, dict):
-                    value_type = self._lookup_expr_type(value_node)
                     value_zig = self._zig_type(value_type) if value_type != "" else self._infer_value_zig_type(value_node)
                     if value_zig != "" and not self._is_union_storage_zig(value_zig):
                         val = "pytra.union_wrap(" + val + ")"
@@ -2031,6 +2039,13 @@ class ZigNativeEmitter:
         if not isinstance(raw_any, str):
             raw_any = arg_types.get(arg_name)
         py_type = raw_any.strip() if isinstance(raw_any, str) else ""
+        if py_type.find("|") != -1:
+            parts = [self._normalize_type(p.strip()) for p in py_type.split("|")]
+            non_none = [part for part in parts if part != "None"]
+            if len(non_none) == 1 and len(non_none) != len(parts):
+                if self._is_callable_type(non_none[0]):
+                    return self._zig_callable_type(non_none[0], optional=True)
+                return "?" + self._zig_type(non_none[0])
         if py_type.find("|") != -1:
             parts = [self._normalize_type(p.strip()) for p in py_type.split("|")]
             for part in parts:
@@ -3132,6 +3147,10 @@ class ZigNativeEmitter:
                     )
             # list * int → list replication (ブロック式)
             if op == "Mult":
+                if left_type == "str" and right_type in _INT_TYPES:
+                    return "pytra.str_repeat(" + left + ", @as(i64, @intCast(" + right + ")))"
+                if right_type == "str" and left_type in _INT_TYPES:
+                    return "pytra.str_repeat(" + right + ", @as(i64, @intCast(" + left + ")))"
                 if left_type.startswith("list[") or left_type in {"bytearray", "bytes"}:
                     elem_type = "i64"
                     if left_type.startswith("list[") and left_type.endswith("]"):
@@ -3227,6 +3246,7 @@ class ZigNativeEmitter:
             target_type = self._normalize_type(ed.get("target"))
             source_type = self._lookup_expr_type(value_node) if isinstance(value_node, dict) else ""
             value_expr = self._render_expr(value_node)
+            source_zig = self._zig_type(source_type) if source_type != "" else ""
             if source_type != "" and self._strip_optional_type(source_type) == target_type:
                 return value_expr + ".?"
             if self._is_union_storage_zig(self._zig_type(source_type)):
@@ -3242,6 +3262,10 @@ class ZigNativeEmitter:
                     return "pytra.union_to_float(" + value_expr + ")"
                 if target_type == "bool":
                     return "pytra.union_to_bool(" + value_expr + ")"
+            if target_type == "str" and source_zig == "anytype":
+                return "pytra._jv_as_str_any(" + value_expr + ").?"
+            if target_type in {"float64", "float32"} and source_zig == "anytype":
+                return "pytra._jv_as_float_any(" + value_expr + ").?"
             return value_expr
         if kind == "Box":
             return self._render_expr(ed.get("value"))
@@ -3939,6 +3963,13 @@ class ZigNativeEmitter:
                     return "0"
                 if fname == "float":
                     if len(arg_strs) > 0:
+                        arg_t = self._lookup_expr_type(args[0]) if len(args) > 0 else ""
+                        if arg_t == "":
+                            arg_t = self._get_expr_type(args[0]) if len(args) > 0 else ""
+                        if arg_t == "str":
+                            return "pytra.str_to_float(" + arg_strs[0] + ")"
+                        if self._is_union_storage_zig(self._zig_type(arg_t)):
+                            return "pytra.union_to_float(" + arg_strs[0] + ")"
                         return "@as(f64, " + arg_strs[0] + ")"
                     return "0.0"
                 if fname == "str":
@@ -4005,7 +4036,24 @@ class ZigNativeEmitter:
                 # perf_counter は @extern 委譲経由 (time モジュール) で提供
                 # import されていれば perf_counter() としてアクセス可能
                 if fname == "cast":
-                    # cast(T, value) is a Python type narrowing hint; just return the value
+                    # cast(T, value) is a Python type narrowing hint.
+                    if len(args) >= 2 and isinstance(args[0], dict) and isinstance(args[1], dict):
+                        type_name = ""
+                        type_arg = args[0]
+                        if type_arg.get("kind") == "Name":
+                            type_name = self._normalize_type(_safe_ident(type_arg.get("id"), ""))
+                        value_type = self._lookup_expr_type(args[1])
+                        stripped_value = self._strip_optional_type(value_type) if value_type != "" else ""
+                        value_type = self._lookup_expr_type(args[1])
+                        value_zig = self._zig_type(value_type) if value_type != "" else ""
+                        if type_name != "" and stripped_value != "" and self._normalize_type(type_name) == stripped_value:
+                            return arg_strs[1] + ".?"
+                        if type_name == "str" and (value_zig == "anytype" or self._is_union_storage_zig(value_zig)):
+                            return "pytra._jv_as_str_any(" + arg_strs[1] + ").?"
+                        if type_name in {"float", "float64", "float32"} and (value_zig == "anytype" or self._is_union_storage_zig(value_zig)):
+                            return "pytra._jv_as_float_any(" + arg_strs[1] + ").?"
+                        if type_name in {"int", "int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64"} and self._is_union_storage_zig(value_zig):
+                            return "pytra.union_to_int(" + arg_strs[1] + ")"
                     if len(arg_strs) >= 2:
                         return arg_strs[1]
                     return arg_strs[0] if len(arg_strs) == 1 else "null"
@@ -4599,8 +4647,18 @@ class ZigNativeEmitter:
         if value_type == "":
             value_type = self._get_expr_type(value_node)
         value_zig = self._zig_type(value_type) if value_type != "" else ""
+        if target_zig.startswith("?"):
+            inner_target = target_zig[1:]
+            if inner_target == "[]const u8" and value_zig == "anytype":
+                return "pytra._jv_as_str_any(" + rendered + ")"
+            if inner_target == "f64" and value_zig == "anytype":
+                return "pytra._jv_as_float_any(" + rendered + ")"
         if value_zig.startswith("?") and value_zig[1:] == target_zig:
             return rendered + ".?"
+        if value_type != "":
+            stripped_value = self._strip_optional_type(value_type)
+            if stripped_value != value_type and self._zig_type(stripped_value) == target_zig:
+                return rendered + ".?"
         if self._is_union_storage_zig(target_zig) and value_zig != "" and not self._is_union_storage_zig(value_zig):
             return "pytra.union_wrap(" + rendered + ")"
         if self._is_union_storage_zig(target_zig) and value_zig == "" and value_node.get("kind") in {"Call", "Dict", "List", "Constant", "Name"}:
