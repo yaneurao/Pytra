@@ -933,6 +933,12 @@ class KotlinRenderer(CommonRenderer):
             return _safe_kotlin_ident(ident)
         if kind == "Attribute":
             owner_node = node.get("value")
+            if isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Call":
+                func = owner_node.get("func")
+                if isinstance(func, dict) and self._str(func, "kind") == "Name" and self._str(func, "id") == "type" and self._str(node, "attr") == "__name__":
+                    args = self._list(owner_node, "args")
+                    arg_expr = self._emit_expr(args[0]) if len(args) > 0 else "null"
+                    return "__pytra_type_name(" + arg_expr + ")"
             if isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Call" and self._str(owner_node, "special_form") == "super":
                 return "super." + _safe_kotlin_ident(self._str(node, "attr"))
             if isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Name":

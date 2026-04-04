@@ -30,6 +30,7 @@ class ScalaRenderer(CommonRenderer):
         self.module_class_names: set[str] = set()
         self.class_property_names: dict[str, set[str]] = {}
         self.class_method_names: dict[str, set[str]] = {}
+        self.enum_like_classes: set[str] = set()
         self.current_class_base: str | None = None
         self.class_has_init: dict[str, bool] = {}
         self.local_decl_stack: list[set[str]] = []
@@ -222,6 +223,11 @@ class ScalaRenderer(CommonRenderer):
             for stmt in self._list(east3_doc, "body")
             if isinstance(stmt, dict) and self._str(stmt, "kind") == "ClassDef"
         }
+        self.enum_like_classes = {
+            self._str(stmt, "name")
+            for stmt in self._list(east3_doc, "body")
+            if isinstance(stmt, dict) and self._str(stmt, "kind") == "ClassDef" and self._str(stmt, "base") in ("IntEnum", "IntFlag")
+        }
         self.class_has_init = {}
         self.class_property_names = {}
         self.class_method_names = {}
@@ -303,6 +309,8 @@ class ScalaRenderer(CommonRenderer):
                 decl_type = self._str(target, "resolved_type")
             if decl_type == "":
                 decl_type = "Any"
+            if decl_type in self.enum_like_classes:
+                decl_type = "int64"
             value = self._emit_expr(node.get("value"))
             if isinstance(target, dict) and self._str(target, "kind") in ("Attribute", "Subscript"):
                 self._emit_store_target(target, value)
@@ -335,6 +343,8 @@ class ScalaRenderer(CommonRenderer):
                 decl_type = self._str(node, "resolved_type")
             if decl_type == "":
                 decl_type = "Any"
+            if decl_type in self.enum_like_classes:
+                decl_type = "int64"
             if self._should_declare_name(name, True):
                 self._emit("var " + name + ": " + scala_type(decl_type) + " = " + scala_zero_value(decl_type))
             self._record_local_type(name, decl_type)
@@ -754,6 +764,12 @@ class ScalaRenderer(CommonRenderer):
             return _safe_scala_ident(ident)
         if kind == "Attribute":
             owner_node = node.get("value")
+            if isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Call":
+                func = owner_node.get("func")
+                if isinstance(func, dict) and self._str(func, "kind") == "Name" and self._str(func, "id") == "type" and self._str(node, "attr") == "__name__":
+                    args = self._list(owner_node, "args")
+                    arg_expr = self._emit_expr(args[0]) if len(args) > 0 else "null"
+                    return "__pytra_type_name(" + arg_expr + ")"
             if isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Call" and self._str(owner_node, "special_form") == "super":
                 return "super." + _safe_scala_ident(self._str(node, "attr"))
             if isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Name":
@@ -944,6 +960,8 @@ class ScalaRenderer(CommonRenderer):
                         return "__pytra_isalnum(" + owner_expr + ")"
                     if attr == "isdigit" and len(arg_nodes) == 0:
                         return "__pytra_isdigit(" + owner_expr + ")"
+                if owner_type.startswith("dict[") and attr == "get" and len(arg_nodes) == 1:
+                    return owner_expr + ".getOrElse(" + self._emit_expr(arg_nodes[0]) + ", null)"
                 if owner_type.startswith("dict[") and attr == "get" and len(arg_nodes) == 2:
                     return owner_expr + ".getOrElse(" + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
                 if owner_type.startswith("dict["):
