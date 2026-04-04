@@ -11,7 +11,14 @@ from pathlib import Path
 
 from pytra.std.json import JsonVal
 
-from toolchain2.emit.common.code_emitter import RuntimeMapping, load_runtime_mapping
+from toolchain2.emit.common.code_emitter import (
+    RuntimeMapping,
+    build_import_alias_map,
+    build_runtime_import_map,
+    load_runtime_mapping,
+    resolve_runtime_symbol_name,
+    should_skip_module,
+)
 from toolchain2.emit.common.common_renderer import CommonRenderer
 from toolchain2.emit.scala.types import _safe_scala_ident
 from toolchain2.emit.scala.types import scala_type
@@ -25,6 +32,8 @@ class ScalaRenderer(CommonRenderer):
         self.current_class_name: str | None = None
         self.import_symbols: dict[str, str] = {}
         self.import_modules: dict[str, str] = {}
+        self.import_alias_modules: dict[str, str] = {}
+        self.runtime_imports: dict[str, str] = {}
         self.module_function_names: set[str] = set()
         self.module_function_varargs: dict[str, tuple[int, str]] = {}
         self.local_function_aliases: dict[str, str] = {}
@@ -149,6 +158,48 @@ class ScalaRenderer(CommonRenderer):
             return callable_parts[0]
         return ""
 
+    def _emit_call_parts(self, args: list[JsonVal]) -> list[str]:
+        parts: list[str] = []
+        for arg in args:
+            if isinstance(arg, dict) and self._str(arg, "kind") == "Name":
+                arg_id = self._str(arg, "id")
+                if arg_id in self.module_function_names:
+                    parts.append(_safe_scala_ident(arg_id) + " _")
+                    continue
+            parts.append(self._emit_expr(arg))
+        return parts
+
+    def _emit_keyword_parts(self, keywords: list[JsonVal]) -> list[str]:
+        parts: list[str] = []
+        for keyword in keywords:
+            if not isinstance(keyword, dict):
+                continue
+            name = self._str(keyword, "arg")
+            value = keyword.get("value")
+            if name == "" or not isinstance(value, dict):
+                continue
+            parts.append(_safe_scala_ident(name) + " = " + self._emit_expr(value))
+        return parts
+
+    def _emit_argparse_add_argument_parts(self, args: list[JsonVal], keywords: list[JsonVal]) -> list[str]:
+        parts = self._emit_call_parts(args)
+        kw_map: dict[str, str] = {}
+        for keyword in keywords:
+            if not isinstance(keyword, dict):
+                continue
+            name = self._str(keyword, "arg")
+            value = keyword.get("value")
+            if name == "" or not isinstance(value, dict):
+                continue
+            kw_map[name] = self._emit_expr(value)
+        while len(parts) < 4:
+            parts.append("null")
+        parts.append(kw_map.get("action", "\"\""))
+        parts.append(kw_map.get("choices", "null"))
+        parts.append(kw_map.get("default", "null"))
+        parts.append(kw_map.get("help_text", "\"\""))
+        return parts
+
     def _emit_boolop_value_expr(self, values: list[JsonVal], is_and: bool) -> str:
         if len(values) == 0:
             return "false" if is_and else "null"
@@ -206,6 +257,8 @@ class ScalaRenderer(CommonRenderer):
                 module_id = self._str(meta, "module_id")
         self.import_symbols = {}
         self.import_modules = {}
+        self.import_alias_modules = build_import_alias_map(meta if isinstance(meta, dict) else {})
+        self.runtime_imports = build_runtime_import_map(meta if isinstance(meta, dict) else {}, self.mapping)
         if isinstance(meta, dict):
             import_modules = meta.get("import_modules")
             if isinstance(import_modules, dict):
@@ -223,6 +276,13 @@ class ScalaRenderer(CommonRenderer):
                         if name == "":
                             self.import_modules[local_name] = mod
                             continue
+                        if should_skip_module(mod, self.mapping) or should_skip_module(mod + "." + name, self.mapping):
+                            resolved = self.mapping.calls.get(mod + "." + name, "")
+                            if not isinstance(resolved, str) or resolved == "":
+                                resolved = resolve_runtime_symbol_name(name, self.mapping)
+                            if isinstance(resolved, str) and resolved != "":
+                                self.runtime_imports[local_name] = resolved
+                                continue
                         if mod in ("math", "pytra.std.math"):
                             self.import_symbols[local_name] = "math_native." + _safe_scala_ident(name)
                             continue
@@ -340,7 +400,8 @@ class ScalaRenderer(CommonRenderer):
                 decl_type = "Any"
             if decl_type in self.enum_like_classes:
                 decl_type = "int64"
-            value = self._emit_expr(node.get("value"))
+            value_node = node.get("value")
+            value = self._emit_expr(value_node) if isinstance(value_node, dict) else scala_zero_value(decl_type)
             if isinstance(target, dict) and self._str(target, "kind") in ("Attribute", "Subscript"):
                 self._emit_store_target(target, value)
                 return
@@ -814,13 +875,15 @@ class ScalaRenderer(CommonRenderer):
             callable_type = self._callable_type(resolved_type)
             if ident == "self" and self.current_class_name is not None:
                 return "this"
+            if ident in self.runtime_imports:
+                return self.runtime_imports[ident]
             if ident in self.import_symbols:
                 import_path = self.import_symbols[ident]
                 if import_path.startswith("pytra_built_in_error.") and (ident.endswith("Error") or ident.endswith("Exception")):
                     return _safe_scala_ident(import_path.split(".")[-1])
                 return import_path
-            if ident in self.import_modules:
-                module_id = self.import_modules[ident]
+            if ident in self.import_alias_modules:
+                module_id = self.import_alias_modules[ident]
                 if module_id in ("math", "pytra.std.math"):
                     return "math_native"
                 if module_id in ("time", "pytra.std.time"):
@@ -851,7 +914,7 @@ class ScalaRenderer(CommonRenderer):
                 return "super." + _safe_scala_ident(self._str(node, "attr"))
             if isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Name":
                 owner_id = self._str(owner_node, "id")
-                module_id = self.import_modules.get(owner_id, "")
+                module_id = self.import_alias_modules.get(owner_id, "")
                 attr = _safe_scala_ident(self._str(node, "attr"))
                 if module_id in ("pytra.built_in.error", "pytra_built_in_error") and (attr.endswith("Error") or attr.endswith("Exception")):
                     return attr
@@ -859,7 +922,19 @@ class ScalaRenderer(CommonRenderer):
                     return "math_native." + attr
                 if module_id in ("time", "pytra.std.time"):
                     return "time_native." + attr
-                if module_id == "pytra.std":
+                qualified = self._str(node, "repr")
+                if qualified != "" and qualified in self.mapping.calls:
+                    return self.mapping.calls[qualified]
+                if module_id != "" and should_skip_module(module_id, self.mapping):
+                    resolved = resolve_runtime_symbol_name(
+                        self._str(node, "attr"),
+                        self.mapping,
+                        resolved_runtime_call=self._str(node, "resolved_runtime_call"),
+                        runtime_call=self._str(node, "runtime_call"),
+                    )
+                    if resolved != "":
+                        return resolved
+                if module_id != "":
                     return _safe_scala_ident((module_id + "." + self._str(node, "attr")).replace(".", "_"))
             owner = self._emit_expr(owner_node)
             owner_type = self._str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
@@ -990,7 +1065,7 @@ class ScalaRenderer(CommonRenderer):
             runtime_symbol = self._str(node, "runtime_symbol")
             runtime_adapter = self._str(node, "runtime_call_adapter_kind")
             if runtime_adapter == "extern_delegate" and runtime_module_id != "" and runtime_symbol != "":
-                args = [self._emit_expr(arg) for arg in self._list(node, "args")]
+                args = self._emit_call_parts(self._list(node, "args")) + self._emit_keyword_parts(self._list(node, "keywords"))
                 if runtime_module_id == "pytra.std.math":
                     return "math_native." + _safe_scala_ident(runtime_symbol) + "(" + ", ".join(args) + ")"
                 if runtime_module_id == "pytra.std.time":
@@ -1009,6 +1084,27 @@ class ScalaRenderer(CommonRenderer):
                 owner_expr = self._emit_expr(owner_node)
                 owner_type = self._str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
                 arg_nodes = self._list(node, "args")
+                if isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Name":
+                    owner_id = self._str(owner_node, "id")
+                    module_id = self.import_alias_modules.get(owner_id, "")
+                    qualified = self._str(func, "repr")
+                    keyword_nodes = self._list(node, "keywords")
+                    if attr == "add_argument" and (self._str(node, "semantic_tag") == "stdlib.method.add_argument" or len(keyword_nodes) > 0):
+                        call_parts = self._emit_argparse_add_argument_parts(arg_nodes, keyword_nodes)
+                        return owner_expr + "." + _safe_scala_ident(attr) + "(" + ", ".join(call_parts) + ")"
+                    if qualified != "" and qualified in self.mapping.calls:
+                        call_parts = self._emit_call_parts(arg_nodes) + self._emit_keyword_parts(keyword_nodes)
+                        return self.mapping.calls[qualified] + "(" + ", ".join(call_parts) + ")"
+                    if module_id != "" and should_skip_module(module_id, self.mapping):
+                        resolved = resolve_runtime_symbol_name(
+                            attr,
+                            self.mapping,
+                            resolved_runtime_call=self._str(node, "resolved_runtime_call"),
+                            runtime_call=self._str(node, "runtime_call"),
+                        )
+                        if resolved != "":
+                            call_parts = self._emit_call_parts(arg_nodes) + self._emit_keyword_parts(keyword_nodes)
+                            return resolved + "(" + ", ".join(call_parts) + ")"
                 if owner_expr == "pytra_built_in_error" and attr.endswith("Error"):
                     first_arg = self._emit_expr(arg_nodes[0]) if len(arg_nodes) > 0 else "\"error\""
                     return "{ val __pytra_obj = new " + _safe_scala_ident(attr) + "(); __pytra_obj.__init__(" + first_arg + "); __pytra_obj }"
@@ -1141,6 +1237,8 @@ class ScalaRenderer(CommonRenderer):
                     if func_id == "set":
                         return mapped + "(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ").asInstanceOf[" + scala_type(self._str(node, "resolved_type")) + "]"
                     func_name = mapped
+                elif func_id in self.runtime_imports:
+                    func_name = self.runtime_imports[func_id]
                 elif func_id == "sum":
                     return "__pytra_sum(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ").asInstanceOf[" + scala_type(self._str(node, "resolved_type")) + "]"
                 elif func_id == "zip":
@@ -1171,13 +1269,8 @@ class ScalaRenderer(CommonRenderer):
                     if isinstance(last_arg, dict) and self._str(last_arg, "kind") == "List":
                         raw_args = raw_args[:-1] + self._list(last_arg, "elements")
             args: list[str] = []
-            for arg in raw_args:
-                if isinstance(arg, dict) and self._str(arg, "kind") == "Name":
-                    arg_id = self._str(arg, "id")
-                    if arg_id in self.module_function_names:
-                        args.append(_safe_scala_ident(arg_id) + " _")
-                        continue
-                args.append(self._emit_expr(arg))
+            args = self._emit_call_parts(raw_args)
+            args.extend(self._emit_keyword_parts(self._list(node, "keywords")))
             if isinstance(func, dict) and self._str(func, "kind") == "Lambda":
                 return "(" + func_name + ")(" + ", ".join(args) + ")"
             callable_type = self._callable_type(local_callable_type)
@@ -1212,6 +1305,8 @@ class ScalaRenderer(CommonRenderer):
                 return "((" + left + ") << (" + right + ").toInt)"
             if op == "RShift":
                 return "((" + left + ") >> (" + right + ").toInt)"
+            if op == "FloorDiv":
+                return "scala.math.floor((" + left + ").toDouble / (" + right + ").toDouble).toLong"
             op_text = {"Add": "+", "Sub": "-", "Mult": "*", "Div": "/", "Mod": "%"}.get(op, op)
             return left + " " + op_text + " " + right
         if kind == "Compare":
@@ -1269,7 +1364,17 @@ class ScalaRenderer(CommonRenderer):
 
 def emit_scala_module(east3_doc: dict[str, JsonVal]) -> str:
     mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "scala" / "mapping.json"
-    renderer = ScalaRenderer(load_runtime_mapping(mapping_path))
+    mapping = load_runtime_mapping(mapping_path)
+    module_id = ""
+    if isinstance(east3_doc, dict):
+        module_id = east3_doc.get("module_id") if isinstance(east3_doc.get("module_id"), str) else ""
+        if module_id == "":
+            meta = east3_doc.get("meta")
+            if isinstance(meta, dict):
+                module_id = meta.get("module_id") if isinstance(meta.get("module_id"), str) else ""
+    if should_skip_module(module_id, mapping):
+        return ""
+    renderer = ScalaRenderer(mapping)
     return renderer.render_module(east3_doc)
 
 

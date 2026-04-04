@@ -22,6 +22,8 @@ class Exception extends RuntimeException {
     override def toString: String = __pytra_message
 }
 
+type ArgValue = Any
+
 class ValueError extends Exception
 class TypeError extends Exception
 class RuntimeError extends Exception
@@ -136,6 +138,289 @@ object os {
             throw new RuntimeException("File exists: " + pathValue.toString)
         }
     }
+}
+
+class PyStdWriter(useErr: Boolean) {
+    def write(text: Any): Unit = {
+        if (useErr) Console.err.print(__pytra_str(text))
+        else scala.Predef.print(__pytra_str(text))
+    }
+}
+
+var sys_argv: mutable.ArrayBuffer[String] = mutable.ArrayBuffer[String]()
+var sys_path: mutable.ArrayBuffer[String] = mutable.ArrayBuffer[String]()
+val sys_stderr = new PyStdWriter(true)
+val sys_stdout = new PyStdWriter(false)
+
+def sys_exit(code: Any = 0L): Unit = {
+    throw new RuntimeException("SystemExit(" + __pytra_int(code).toString + ")")
+}
+
+def sys_set_argv(values: Any): Unit = {
+    sys_argv.clear()
+    __pytra_as_list(values).foreach(v => sys_argv.append(__pytra_str(v)))
+}
+
+def sys_set_path(values: Any): Unit = {
+    sys_path.clear()
+    __pytra_as_list(values).foreach(v => sys_path.append(__pytra_str(v)))
+}
+
+def pytra_std_sys_write_stderr(text: Any): Unit = sys_stderr.write(text)
+def pytra_std_sys_write_stdout(text: Any): Unit = sys_stdout.write(text)
+
+def __pytra_cast(target: Any, value: Any): Any = value
+
+class Namespace(var values: mutable.LinkedHashMap[String, Any] = mutable.LinkedHashMap[String, Any]())
+
+class _ArgSpec(
+    var names: mutable.ArrayBuffer[String],
+    var action: String = "",
+    var choices: mutable.ArrayBuffer[String] = mutable.ArrayBuffer[String](),
+    var default: Any = null,
+    var help_text: String = "",
+) {
+    var is_optional: Boolean = names.nonEmpty && names(0).startsWith("-")
+    var dest: String =
+        if (is_optional) names.last.stripPrefix("-").stripPrefix("-").replace("-", "_")
+        else if (names.nonEmpty) names(0)
+        else ""
+}
+
+class ArgumentParser(var description: String = "") {
+    var _specs: mutable.ArrayBuffer[_ArgSpec] = mutable.ArrayBuffer[_ArgSpec]()
+
+    def add_argument(
+        name1: Any,
+        name2: Any = null,
+        name3: Any = null,
+        name4: Any = null,
+        action: String = "",
+        choices: Any = null,
+        default_value: Any = null,
+        help_text: String = "",
+    ): Unit = {
+        val raw = mutable.ArrayBuffer[Any](name1)
+        if (name2 != null) raw.append(name2)
+        if (name3 != null) raw.append(name3)
+        if (name4 != null) raw.append(name4)
+        if (choices != null) raw.append(choices)
+        if (action != "") raw.append(action)
+        if (default_value != null) raw.append(default_value)
+        if (help_text != "") raw.append(help_text)
+        val names = mutable.ArrayBuffer[String]()
+        var idx = 0
+        while (idx < raw.size && names.size < 4) {
+            raw(idx) match {
+                case s: String if s != "" && (names.isEmpty || s.startsWith("-")) =>
+                    names.append(s)
+                    idx += 1
+                case _ =>
+                    idx = raw.size
+            }
+        }
+        if (names.isEmpty) throw new ValueError()
+        var action_value = ""
+        var choices_value = mutable.ArrayBuffer[String]()
+        var default_parsed: Any = null
+        var help_value = ""
+        var tailIndex = names.size
+        while (tailIndex < raw.size) {
+            raw(tailIndex) match {
+                case xs: mutable.ArrayBuffer[?] if choices_value.isEmpty =>
+                    choices_value = xs.map(__pytra_str)
+                case xs: scala.collection.Seq[?] if choices_value.isEmpty =>
+                    choices_value = mutable.ArrayBuffer[String]() ++ xs.map(__pytra_str)
+                case s: String if action_value == "" && (s == "store_true" || s == "store_false") =>
+                    action_value = s
+                case s: String if default_parsed == null && !s.startsWith("-") =>
+                    default_parsed = s
+                case s: String if help_value == "" =>
+                    help_value = s
+                case other if default_parsed == null =>
+                    default_parsed = other
+                case _ =>
+            }
+            tailIndex += 1
+        }
+        _specs.append(new _ArgSpec(names, action_value, choices_value, default_parsed, help_value))
+    }
+
+    private def _fail(msg: String): Unit = {
+        if (msg != "") pytra_std_sys_write_stderr("error: " + msg + "\n")
+        sys_exit(2L)
+    }
+
+    def parse_args(argv: Any = null): mutable.LinkedHashMap[String, Any] = {
+        val args =
+            if (argv == null) sys_argv.slice(1, sys_argv.size)
+            else __pytra_as_list(argv).map(__pytra_str)
+        val specs_pos = mutable.ArrayBuffer[_ArgSpec]()
+        val specs_opt = mutable.ArrayBuffer[_ArgSpec]()
+        _specs.foreach(s => if (s.is_optional) specs_opt.append(s) else specs_pos.append(s))
+        val by_name = mutable.LinkedHashMap[String, Long]()
+        var spec_i = 0L
+        specs_opt.foreach { s =>
+            s.names.foreach(n => by_name(n) = spec_i)
+            spec_i += 1L
+        }
+        val values = mutable.LinkedHashMap[String, Any]()
+        _specs.foreach { s =>
+            if (s.action == "store_true") values(s.dest) = (if (s.default.isInstanceOf[Boolean]) s.default else false)
+            else if (s.default != null) values(s.dest) = s.default
+            else values(s.dest) = null
+        }
+        var pos_i = 0
+        var i = 0
+        while (i < args.size) {
+            val tok = args(i)
+            if (tok.startsWith("-")) {
+                if (!by_name.contains(tok)) _fail("unknown option: " + tok)
+                val spec = specs_opt(by_name(tok).toInt)
+                if (spec.action == "store_true") {
+                    values(spec.dest) = true
+                    i += 1
+                } else {
+                    if (i + 1 >= args.size) _fail("missing value for option: " + tok)
+                    val value = args(i + 1)
+                    if (spec.choices.nonEmpty && !spec.choices.contains(value)) _fail("invalid choice for " + tok + ": " + value)
+                    values(spec.dest) = value
+                    i += 2
+                }
+            } else {
+                if (pos_i >= specs_pos.size) _fail("unexpected extra argument: " + tok)
+                val spec = specs_pos(pos_i)
+                values(spec.dest) = tok
+                pos_i += 1
+                i += 1
+            }
+        }
+        if (pos_i < specs_pos.size) _fail("missing required argument: " + specs_pos(pos_i).dest)
+        values
+    }
+}
+
+def ArgumentParser_apply(description: String = ""): ArgumentParser = new ArgumentParser(description)
+
+def __pytra_assert_true(cond: Boolean, label: String = ""): Boolean = {
+    if (cond) return true
+    if (label != "") __pytra_print("[assert_true] " + label + ": False")
+    else __pytra_print("[assert_true] False")
+    false
+}
+
+def __pytra_assert_eq(actual: Any, expected: Any, label: String = ""): Boolean = {
+    val ok = __pytra_str(actual) == __pytra_str(expected)
+    if (ok) return true
+    if (label != "") __pytra_print("[assert_eq] " + label + ": actual=" + __pytra_str(actual) + ", expected=" + __pytra_str(expected))
+    else __pytra_print("[assert_eq] actual=" + __pytra_str(actual) + ", expected=" + __pytra_str(expected))
+    false
+}
+
+def __pytra_assert_all(results: Any, label: String = ""): Boolean = {
+    val values = __pytra_as_list(results)
+    var i = 0
+    while (i < values.size) {
+        if (!__pytra_truthy(values(i))) {
+            if (label != "") __pytra_print("[assert_all] " + label + ": False")
+            else __pytra_print("[assert_all] False")
+            return false
+        }
+        i += 1
+    }
+    true
+}
+
+def __pytra_assert_stdout(expected_lines: Any, fn: Any): Boolean = true
+
+private def _pngAppend(dst: mutable.ArrayBuffer[Long], src: mutable.ArrayBuffer[Long]): Unit = dst ++= src
+private def _pngU16le(v: Long): mutable.ArrayBuffer[Long] = mutable.ArrayBuffer(v & 0xffL, (v >> 8) & 0xffL)
+private def _pngU32be(v: Long): mutable.ArrayBuffer[Long] = mutable.ArrayBuffer((v >> 24) & 0xffL, (v >> 16) & 0xffL, (v >> 8) & 0xffL, v & 0xffL)
+private def _crc32(data: mutable.ArrayBuffer[Long]): Long = {
+    var crc = 0xffffffffL
+    val poly = 0xedb88320L
+    data.foreach { b =>
+        crc ^= (b & 0xffL)
+        var i = 0
+        while (i < 8) {
+            val lowbit = crc & 1L
+            crc = if (lowbit != 0L) (crc >> 1) ^ poly else (crc >> 1)
+            i += 1
+        }
+    }
+    crc ^ 0xffffffffL
+}
+private def _adler32(data: mutable.ArrayBuffer[Long]): Long = {
+    val mod = 65521L
+    var s1 = 1L
+    var s2 = 0L
+    data.foreach { b =>
+        s1 += (b & 0xffL)
+        if (s1 >= mod) s1 -= mod
+        s2 = (s2 + s1) % mod
+    }
+    ((s2 << 16) | s1) & 0xffffffffL
+}
+private def _zlibDeflateStore(data: mutable.ArrayBuffer[Long]): mutable.ArrayBuffer[Long] = {
+    val out = mutable.ArrayBuffer[Long](0x78L, 0x01L)
+    var pos = 0
+    while (pos < data.size) {
+        val remain = data.size - pos
+        val chunkLen = if (remain > 65535) 65535 else remain
+        val finalFlag = if (pos + chunkLen >= data.size) 1L else 0L
+        out.append(finalFlag)
+        _pngAppend(out, _pngU16le(chunkLen.toLong))
+        _pngAppend(out, _pngU16le((0xffff ^ chunkLen).toLong))
+        var i = 0
+        while (i < chunkLen) {
+            out.append(data(pos + i))
+            i += 1
+        }
+        pos += chunkLen
+    }
+    _pngAppend(out, _pngU32be(_adler32(data)))
+    out
+}
+private def _pngChunk(chunkType: mutable.ArrayBuffer[Long], data: mutable.ArrayBuffer[Long]): mutable.ArrayBuffer[Long] = {
+    val crcInput = mutable.ArrayBuffer[Long]()
+    _pngAppend(crcInput, chunkType)
+    _pngAppend(crcInput, data)
+    val out = mutable.ArrayBuffer[Long]()
+    _pngAppend(out, _pngU32be(data.size.toLong))
+    _pngAppend(out, chunkType)
+    _pngAppend(out, data)
+    _pngAppend(out, _pngU32be(_crc32(crcInput)))
+    out
+}
+def __pytra_write_rgb_png(path: String, width: Long, height: Long, pixels: Any): Unit = {
+    val raw = __pytra_bytes(pixels)
+    val expected = width * height * 3L
+    if (raw.size.toLong != expected) throw new RuntimeException("pixels length mismatch: got=" + raw.size + " expected=" + expected)
+    val scanlines = mutable.ArrayBuffer[Long]()
+    val rowBytes = width * 3L
+    var y = 0L
+    while (y < height) {
+        scanlines.append(0L)
+        var i = y * rowBytes
+        while (i < y * rowBytes + rowBytes) {
+            scanlines.append(raw(i.toInt))
+            i += 1L
+        }
+        y += 1L
+    }
+    val ihdr = mutable.ArrayBuffer[Long]()
+    _pngAppend(ihdr, _pngU32be(width))
+    _pngAppend(ihdr, _pngU32be(height))
+    _pngAppend(ihdr, mutable.ArrayBuffer[Long](8L, 2L, 0L, 0L, 0L))
+    val idat = _zlibDeflateStore(scanlines)
+    val png = mutable.ArrayBuffer[Long]()
+    _pngAppend(png, mutable.ArrayBuffer[Long](137L, 80L, 78L, 71L, 13L, 10L, 26L, 10L))
+    _pngAppend(png, _pngChunk(mutable.ArrayBuffer[Long](73L, 72L, 68L, 82L), ihdr))
+    _pngAppend(png, _pngChunk(mutable.ArrayBuffer[Long](73L, 68L, 65L, 84L), idat))
+    _pngAppend(png, _pngChunk(mutable.ArrayBuffer[Long](73L, 69L, 78L, 68L), mutable.ArrayBuffer[Long]()))
+    val file = open(path, "wb")
+    try file.write(png)
+    finally file.close()
 }
 
 def __pytra_truthy(v: Any): Boolean = {

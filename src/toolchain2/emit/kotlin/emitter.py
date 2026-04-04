@@ -10,7 +10,14 @@ from pathlib import Path
 
 from pytra.std.json import JsonVal
 
-from toolchain2.emit.common.code_emitter import RuntimeMapping, load_runtime_mapping
+from toolchain2.emit.common.code_emitter import (
+    RuntimeMapping,
+    build_import_alias_map,
+    build_runtime_import_map,
+    load_runtime_mapping,
+    resolve_runtime_symbol_name,
+    should_skip_module,
+)
 from toolchain2.emit.common.common_renderer import CommonRenderer
 from toolchain2.emit.kotlin.types import _safe_kotlin_ident
 from toolchain2.emit.kotlin.types import _split_generic_args
@@ -25,6 +32,8 @@ class KotlinRenderer(CommonRenderer):
         self.current_class_name: str | None = None
         self.import_symbols: dict[str, str] = {}
         self.import_modules: dict[str, str] = {}
+        self.import_alias_modules: dict[str, str] = {}
+        self.runtime_imports: dict[str, str] = {}
         self.module_function_names: set[str] = set()
         self.module_function_varargs: dict[str, tuple[int, str]] = {}
         self.local_function_aliases: dict[str, str] = {}
@@ -114,6 +123,8 @@ class KotlinRenderer(CommonRenderer):
             return "Any?"
         if resolved_type in self.enum_like_classes:
             return "Long"
+        if resolved_type in self.runtime_imports:
+            return self.runtime_imports[resolved_type]
         if resolved_type in self.import_symbols:
             import_path = self.import_symbols[resolved_type]
             if import_path.endswith(".JsonVal"):
@@ -182,6 +193,55 @@ class KotlinRenderer(CommonRenderer):
             return callable_parts[0]
         return ""
 
+    def _emit_call_parts(self, args: list[JsonVal]) -> list[str]:
+        parts: list[str] = []
+        for arg in args:
+            if isinstance(arg, dict) and self._str(arg, "kind") == "Name":
+                arg_id = self._str(arg, "id")
+                resolved_type = self._str(arg, "resolved_type")
+                if arg_id in self.local_function_aliases:
+                    parts.append("::" + _safe_kotlin_ident(self.local_function_aliases[arg_id]))
+                    continue
+                if arg_id in self.module_function_names:
+                    parts.append("::" + _safe_kotlin_ident(arg_id))
+                    continue
+                if resolved_type.startswith("callable[") or resolved_type.startswith("Callable["):
+                    parts.append(_safe_kotlin_ident(arg_id))
+                    continue
+            parts.append(self._emit_expr(arg))
+        return parts
+
+    def _emit_keyword_parts(self, keywords: list[JsonVal]) -> list[str]:
+        parts: list[str] = []
+        for keyword in keywords:
+            if not isinstance(keyword, dict):
+                continue
+            name = self._str(keyword, "arg")
+            value = keyword.get("value")
+            if name == "" or not isinstance(value, dict):
+                continue
+            parts.append(_safe_kotlin_ident(name) + " = " + self._emit_expr(value))
+        return parts
+
+    def _emit_argparse_add_argument_parts(self, args: list[JsonVal], keywords: list[JsonVal]) -> list[str]:
+        parts = self._emit_call_parts(args)
+        kw_map: dict[str, str] = {}
+        for keyword in keywords:
+            if not isinstance(keyword, dict):
+                continue
+            name = self._str(keyword, "arg")
+            value = keyword.get("value")
+            if name == "" or not isinstance(value, dict):
+                continue
+            kw_map[name] = self._emit_expr(value)
+        while len(parts) < 4:
+            parts.append("null")
+        parts.append(kw_map.get("action", "\"\""))
+        parts.append(kw_map.get("choices", "null"))
+        parts.append(kw_map.get("default", "null"))
+        parts.append(kw_map.get("help_text", "\"\""))
+        return parts
+
     def _emit_boolop_value_expr(self, values: list[JsonVal], is_and: bool) -> str:
         if len(values) == 0:
             return "false" if is_and else "null"
@@ -243,6 +303,8 @@ class KotlinRenderer(CommonRenderer):
                         module_id = self._str(emit_context, "module_id")
         self.import_symbols = {}
         self.import_modules = {}
+        self.import_alias_modules = build_import_alias_map(meta if isinstance(meta, dict) else {})
+        self.runtime_imports = build_runtime_import_map(meta if isinstance(meta, dict) else {}, self.mapping)
         if isinstance(meta, dict):
             import_modules = meta.get("import_modules")
             if isinstance(import_modules, dict):
@@ -260,6 +322,13 @@ class KotlinRenderer(CommonRenderer):
                         if name == "":
                             self.import_modules[local_name] = mod
                             continue
+                        if should_skip_module(mod, self.mapping) or should_skip_module(mod + "." + name, self.mapping):
+                            resolved = self.mapping.calls.get(mod + "." + name, "")
+                            if not isinstance(resolved, str) or resolved == "":
+                                resolved = resolve_runtime_symbol_name(name, self.mapping)
+                            if isinstance(resolved, str) and resolved != "":
+                                self.runtime_imports[local_name] = resolved
+                                continue
                         if mod in ("math", "pytra.std.math"):
                             if name == "pi":
                                 self.import_symbols[local_name] = "math_native_pi()"
@@ -388,7 +457,8 @@ class KotlinRenderer(CommonRenderer):
                 decl_type = self._str(target, "resolved_type")
             if decl_type == "":
                 decl_type = "Any"
-            value = self._emit_expr(node.get("value"))
+            value_node = node.get("value")
+            value = self._emit_expr(value_node) if isinstance(value_node, dict) else kotlin_zero_value(decl_type)
             if isinstance(target, dict) and self._str(target, "kind") in ("Attribute", "Subscript"):
                 self._emit_store_target(target, value)
                 return
@@ -941,10 +1011,12 @@ class KotlinRenderer(CommonRenderer):
             callable_type = self._callable_type(resolved_type)
             if ident == "self" and self.current_class_name is not None:
                 return "this"
+            if ident in self.runtime_imports:
+                return self.runtime_imports[ident]
             if ident in self.import_symbols:
                 return self.import_symbols[ident]
-            if ident in self.import_modules:
-                module_id = self.import_modules[ident]
+            if ident in self.import_alias_modules:
+                module_id = self.import_alias_modules[ident]
                 if module_id in ("math", "pytra.std.math"):
                     return "math_native"
                 if module_id in ("time", "pytra.std.time"):
@@ -975,7 +1047,7 @@ class KotlinRenderer(CommonRenderer):
                 return "super." + _safe_kotlin_ident(self._str(node, "attr"))
             if isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Name":
                 owner_id = self._str(owner_node, "id")
-                module_id = self.import_modules.get(owner_id, "")
+                module_id = self.import_alias_modules.get(owner_id, "")
                 attr_name = _safe_kotlin_ident(self._str(node, "attr"))
                 if module_id in ("math", "pytra.std.math"):
                     if attr_name == "pi":
@@ -985,7 +1057,19 @@ class KotlinRenderer(CommonRenderer):
                     return "math_native_" + attr_name
                 if module_id in ("time", "pytra.std.time"):
                     return "time_native_" + attr_name
-                if module_id == "pytra.std":
+                qualified = self._str(node, "repr")
+                if qualified != "" and qualified in self.mapping.calls:
+                    return self.mapping.calls[qualified]
+                if module_id != "" and should_skip_module(module_id, self.mapping):
+                    resolved = resolve_runtime_symbol_name(
+                        self._str(node, "attr"),
+                        self.mapping,
+                        resolved_runtime_call=self._str(node, "resolved_runtime_call"),
+                        runtime_call=self._str(node, "runtime_call"),
+                    )
+                    if resolved != "":
+                        return resolved
+                if module_id != "":
                     return _safe_kotlin_ident((module_id + "." + self._str(node, "attr")).replace(".", "_"))
             owner = self._emit_expr(owner_node)
             owner_type = self._str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
@@ -1151,7 +1235,7 @@ class KotlinRenderer(CommonRenderer):
             runtime_symbol = self._str(node, "runtime_symbol")
             runtime_adapter = self._str(node, "runtime_call_adapter_kind")
             if runtime_adapter == "extern_delegate" and runtime_module_id != "" and runtime_symbol != "":
-                args = [self._emit_expr(arg) for arg in self._list(node, "args")]
+                args = self._emit_call_parts(self._list(node, "args")) + self._emit_keyword_parts(self._list(node, "keywords"))
                 if runtime_module_id == "pytra.std.math":
                     if runtime_symbol == "pi":
                         return "math_native_pi()"
@@ -1174,6 +1258,27 @@ class KotlinRenderer(CommonRenderer):
                 owner_expr = self._emit_expr(owner_node)
                 owner_type = self._str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
                 arg_nodes = self._list(node, "args")
+                if isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Name":
+                    owner_id = self._str(owner_node, "id")
+                    module_id = self.import_alias_modules.get(owner_id, "")
+                    qualified = self._str(func, "repr")
+                    keyword_nodes = self._list(node, "keywords")
+                    if attr == "add_argument" and (self._str(node, "semantic_tag") == "stdlib.method.add_argument" or len(keyword_nodes) > 0):
+                        call_parts = self._emit_argparse_add_argument_parts(arg_nodes, keyword_nodes)
+                        return owner_expr + "." + _safe_kotlin_ident(attr) + "(" + ", ".join(call_parts) + ")"
+                    if qualified != "" and qualified in self.mapping.calls:
+                        call_parts = self._emit_call_parts(arg_nodes) + self._emit_keyword_parts(keyword_nodes)
+                        return self.mapping.calls[qualified] + "(" + ", ".join(call_parts) + ")"
+                    if module_id != "" and should_skip_module(module_id, self.mapping):
+                        resolved = resolve_runtime_symbol_name(
+                            attr,
+                            self.mapping,
+                            resolved_runtime_call=self._str(node, "resolved_runtime_call"),
+                            runtime_call=self._str(node, "runtime_call"),
+                        )
+                        if resolved != "":
+                            call_parts = self._emit_call_parts(arg_nodes) + self._emit_keyword_parts(keyword_nodes)
+                            return resolved + "(" + ", ".join(call_parts) + ")"
                 dynamic_dict_owner = owner_type in ("JsonVal", "Any", "object", "unknown", "pytra.std.json.JsonVal", "pytra_std_json.JsonVal")
                 if owner_expr == "pytra_built_in_error" and attr.endswith("Error"):
                     first_arg = self._emit_expr(arg_nodes[0]) if len(arg_nodes) > 0 else "\"error\""
@@ -1295,6 +1400,9 @@ class KotlinRenderer(CommonRenderer):
                 if isinstance(mapped, str) and mapped != "":
                     func_name = mapped
                     func_is_named_function = True
+                elif func_id in self.runtime_imports:
+                    func_name = self.runtime_imports[func_id]
+                    func_is_named_function = True
                 elif func_id == "sum":
                     return "(__pytra_sum(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ") as " + self._render_type(self._str(node, "resolved_type")) + ")"
                 elif func_id == "zip":
@@ -1335,21 +1443,8 @@ class KotlinRenderer(CommonRenderer):
                     last_arg = raw_args[-1]
                     if isinstance(last_arg, dict) and self._str(last_arg, "kind") == "List":
                         raw_args = raw_args[:-1] + self._list(last_arg, "elements")
-            args: list[str] = []
-            for arg in raw_args:
-                if isinstance(arg, dict) and self._str(arg, "kind") == "Name":
-                    arg_id = self._str(arg, "id")
-                    resolved_type = self._str(arg, "resolved_type")
-                    if arg_id in self.local_function_aliases:
-                        args.append("::" + _safe_kotlin_ident(self.local_function_aliases[arg_id]))
-                        continue
-                    if arg_id in self.module_function_names:
-                        args.append("::" + _safe_kotlin_ident(arg_id))
-                        continue
-                    if resolved_type.startswith("callable[") or resolved_type.startswith("Callable["):
-                        args.append(_safe_kotlin_ident(arg_id))
-                        continue
-                args.append(self._emit_expr(arg))
+            args: list[str] = self._emit_call_parts(raw_args)
+            args.extend(self._emit_keyword_parts(self._list(node, "keywords")))
             if isinstance(func, dict) and self._str(func, "kind") == "Lambda":
                 return "(" + func_name + ")(" + ", ".join(args) + ")"
             if isinstance(func, dict) and self._str(func, "kind") == "Attribute":
@@ -1476,7 +1571,17 @@ class KotlinRenderer(CommonRenderer):
 
 def emit_kotlin_module(east3_doc: dict[str, JsonVal]) -> str:
     mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "kotlin" / "mapping.json"
-    renderer = KotlinRenderer(load_runtime_mapping(mapping_path))
+    mapping = load_runtime_mapping(mapping_path)
+    module_id = ""
+    if isinstance(east3_doc, dict):
+        module_id = east3_doc.get("module_id") if isinstance(east3_doc.get("module_id"), str) else ""
+        if module_id == "":
+            meta = east3_doc.get("meta")
+            if isinstance(meta, dict):
+                module_id = meta.get("module_id") if isinstance(meta.get("module_id"), str) else ""
+    if should_skip_module(module_id, mapping):
+        return ""
+    renderer = KotlinRenderer(mapping)
     return renderer.render_module(east3_doc)
 
 

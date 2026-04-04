@@ -6,6 +6,8 @@ import java.nio.file.Paths
 
 class PyTuple(items: Collection<Any?> = emptyList()) : ArrayList<Any?>(items)
 
+typealias ArgValue = Any?
+
 open class Exception : RuntimeException() {
     var __pytra_message: String = ""
     open fun __init__(msg: Any?) {
@@ -76,6 +78,274 @@ object os {
         if (!dir.mkdirs() && !dir.exists()) {
             throw RuntimeException("mkdirs failed: ${dir.path}")
         }
+    }
+}
+
+class PyStdWriter(private val useErr: Boolean) {
+    fun write(text: Any?) {
+        if (useErr) System.err.print(__pytra_str(text))
+        else kotlin.io.print(__pytra_str(text))
+    }
+}
+
+var sys_argv: MutableList<String> = mutableListOf()
+var sys_path: MutableList<String> = mutableListOf()
+val sys_stderr = PyStdWriter(true)
+val sys_stdout = PyStdWriter(false)
+
+fun sys_exit(code: Any? = 0L) {
+    throw RuntimeException("SystemExit(" + __pytra_int(code).toString() + ")")
+}
+
+fun sys_set_argv(values: Any?) {
+    sys_argv.clear()
+    for (v in __pytra_as_list(values)) sys_argv.add(__pytra_str(v))
+}
+
+fun sys_set_path(values: Any?) {
+    sys_path.clear()
+    for (v in __pytra_as_list(values)) sys_path.add(__pytra_str(v))
+}
+
+fun pytra_std_sys_write_stderr(text: Any?) { sys_stderr.write(text) }
+fun pytra_std_sys_write_stdout(text: Any?) { sys_stdout.write(text) }
+
+fun __pytra_cast(target: Any?, value: Any?): Any? = value
+
+class Namespace(var values: MutableMap<String, Any?> = linkedMapOf())
+
+class _ArgSpec(
+    var names: MutableList<String>,
+    var action: String = "",
+    var choices: MutableList<String> = mutableListOf(),
+    var default: Any? = null,
+    var help_text: String = "",
+) {
+    var is_optional: Boolean = names.isNotEmpty() && names[0].startsWith("-")
+    var dest: String = if (is_optional) names.last().trimStart('-').replace("-", "_") else if (names.isNotEmpty()) names[0] else ""
+}
+
+class ArgumentParser(var description: String = "") {
+    var _specs: MutableList<_ArgSpec> = mutableListOf()
+
+    fun add_argument(
+        name1: Any?,
+        name2: Any? = null,
+        name3: Any? = null,
+        name4: Any? = null,
+        action: String = "",
+        choices: Any? = null,
+        default: Any? = null,
+        help_text: String = "",
+    ) {
+        val raw = mutableListOf<Any?>(name1)
+        if (name2 != null) raw.add(name2)
+        if (name3 != null) raw.add(name3)
+        if (name4 != null) raw.add(name4)
+        if (choices != null) raw.add(choices)
+        if (action != "") raw.add(action)
+        if (default != null) raw.add(default)
+        if (help_text != "") raw.add(help_text)
+        val names = mutableListOf<String>()
+        var idx = 0
+        while (idx < raw.size && names.size < 4) {
+            val value = raw[idx]
+            if (value is String && value != "" && (names.isEmpty() || value.startsWith("-"))) {
+                names.add(value)
+                idx += 1
+            } else {
+                idx = raw.size
+            }
+        }
+        if (names.isEmpty()) throw ValueError()
+        var action = ""
+        var choices: MutableList<String> = mutableListOf()
+        var default: Any? = null
+        var help = ""
+        var tailIndex = names.size
+        while (tailIndex < raw.size) {
+            when (val value = raw[tailIndex]) {
+                is MutableList<*> -> if (choices.isEmpty()) choices = value.map { __pytra_str(it) }.toMutableList()
+                is List<*> -> if (choices.isEmpty()) choices = value.map { __pytra_str(it) }.toMutableList()
+                is String -> when {
+                    action == "" && (value == "store_true" || value == "store_false") -> action = value
+                    default == null && !value.startsWith("-") -> default = value
+                    help == "" -> help = value
+                }
+                else -> if (default == null) default = value
+            }
+            tailIndex += 1
+        }
+        _specs.add(_ArgSpec(names, action, choices, default, help))
+    }
+
+    private fun _fail(msg: String) {
+        if (msg != "") pytra_std_sys_write_stderr("error: $msg\n")
+        sys_exit(2L)
+    }
+
+    fun parse_args(argv: Any? = null): MutableMap<String, Any?> {
+        val args: MutableList<String> =
+            if (argv == null) sys_argv.drop(1).toMutableList()
+            else __pytra_as_list(argv).map { __pytra_str(it) }.toMutableList()
+        val specsPos = mutableListOf<_ArgSpec>()
+        val specsOpt = mutableListOf<_ArgSpec>()
+        for (s in _specs) {
+            if (s.is_optional) specsOpt.add(s) else specsPos.add(s)
+        }
+        val byName = linkedMapOf<String, Long>()
+        var specI = 0L
+        for (s in specsOpt) {
+            for (n in s.names) byName[n] = specI
+            specI += 1L
+        }
+        val values = linkedMapOf<String, Any?>()
+        for (s in _specs) {
+            values[s.dest] = if (s.action == "store_true") {
+                if (s.default is Boolean) s.default else false
+            } else if (s.default != null) s.default else null
+        }
+        var posI = 0
+        var i = 0
+        while (i < args.size) {
+            val tok = args[i]
+            if (tok.startsWith("-")) {
+                if (!byName.containsKey(tok)) _fail("unknown option: $tok")
+                val spec = specsOpt[byName[tok]!!.toInt()]
+                if (spec.action == "store_true") {
+                    values[spec.dest] = true
+                    i += 1
+                } else {
+                    if (i + 1 >= args.size) _fail("missing value for option: $tok")
+                    val value = args[i + 1]
+                    if (spec.choices.isNotEmpty() && !spec.choices.contains(value)) _fail("invalid choice for $tok: $value")
+                    values[spec.dest] = value
+                    i += 2
+                }
+            } else {
+                if (posI >= specsPos.size) _fail("unexpected extra argument: $tok")
+                val spec = specsPos[posI]
+                values[spec.dest] = tok
+                posI += 1
+                i += 1
+            }
+        }
+        if (posI < specsPos.size) _fail("missing required argument: ${specsPos[posI].dest}")
+        return values
+    }
+}
+
+fun __pytra_assert_true(cond: Boolean, label: String = ""): Boolean {
+    if (cond) return true
+    if (label != "") __pytra_print("[assert_true] $label: False")
+    else __pytra_print("[assert_true] False")
+    return false
+}
+
+fun __pytra_assert_eq(actual: Any?, expected: Any?, label: String = ""): Boolean {
+    val ok = __pytra_str(actual) == __pytra_str(expected)
+    if (ok) return true
+    if (label != "") __pytra_print("[assert_eq] $label: actual=${__pytra_str(actual)}, expected=${__pytra_str(expected)}")
+    else __pytra_print("[assert_eq] actual=${__pytra_str(actual)}, expected=${__pytra_str(expected)}")
+    return false
+}
+
+fun __pytra_assert_all(results: Any?, label: String = ""): Boolean {
+    for (v in __pytra_as_list(results)) {
+        if (!__pytra_truthy(v)) {
+            if (label != "") __pytra_print("[assert_all] $label: False")
+            else __pytra_print("[assert_all] False")
+            return false
+        }
+    }
+    return true
+}
+
+fun __pytra_assert_stdout(expected_lines: Any?, fn: Any?): Boolean = true
+
+private fun _pngAppend(dst: MutableList<Long>, src: List<Long>) { dst.addAll(src) }
+private fun _pngU16le(v: Long): MutableList<Long> = mutableListOf(v and 0xffL, (v shr 8) and 0xffL)
+private fun _pngU32be(v: Long): MutableList<Long> = mutableListOf((v shr 24) and 0xffL, (v shr 16) and 0xffL, (v shr 8) and 0xffL, v and 0xffL)
+private fun _crc32(data: List<Long>): Long {
+    var crc = 0xffffffffL
+    val poly = 0xedb88320L
+    for (b in data) {
+        crc = crc xor (b and 0xffL)
+        repeat(8) {
+            crc = if ((crc and 1L) != 0L) (crc shr 1) xor poly else (crc shr 1)
+        }
+    }
+    return crc xor 0xffffffffL
+}
+private fun _adler32(data: List<Long>): Long {
+    val mod = 65521L
+    var s1 = 1L
+    var s2 = 0L
+    for (b in data) {
+        s1 += (b and 0xffL)
+        if (s1 >= mod) s1 -= mod
+        s2 = (s2 + s1) % mod
+    }
+    return ((s2 shl 16) or s1) and 0xffffffffL
+}
+private fun _zlibDeflateStore(data: List<Long>): MutableList<Long> {
+    val out = mutableListOf<Long>(0x78L, 0x01L)
+    var pos = 0
+    while (pos < data.size) {
+        val remain = data.size - pos
+        val chunkLen = if (remain > 65535) 65535 else remain
+        val finalFlag = if (pos + chunkLen >= data.size) 1L else 0L
+        out.add(finalFlag)
+        _pngAppend(out, _pngU16le(chunkLen.toLong()))
+        _pngAppend(out, _pngU16le((0xffff xor chunkLen).toLong()))
+        repeat(chunkLen) { i -> out.add(data[pos + i]) }
+        pos += chunkLen
+    }
+    _pngAppend(out, _pngU32be(_adler32(data)))
+    return out
+}
+private fun _pngChunk(chunkType: List<Long>, data: MutableList<Long>): MutableList<Long> {
+    val crcInput = mutableListOf<Long>()
+    _pngAppend(crcInput, chunkType)
+    _pngAppend(crcInput, data)
+    val out = mutableListOf<Long>()
+    _pngAppend(out, _pngU32be(data.size.toLong()))
+    _pngAppend(out, chunkType)
+    _pngAppend(out, data)
+    _pngAppend(out, _pngU32be(_crc32(crcInput)))
+    return out
+}
+fun __pytra_write_rgb_png(path: String, width: Long, height: Long, pixels: Any?) {
+    val raw = __pytra_bytes(pixels)
+    val expected = width * height * 3L
+    if (raw.size.toLong() != expected) throw RuntimeException("pixels length mismatch: got=${raw.size} expected=$expected")
+    val scanlines = mutableListOf<Long>()
+    val rowBytes = width * 3L
+    var y = 0L
+    while (y < height) {
+        scanlines.add(0L)
+        var i = y * rowBytes
+        while (i < y * rowBytes + rowBytes) {
+            scanlines.add(raw[i.toInt()])
+            i += 1L
+        }
+        y += 1L
+    }
+    val ihdr = mutableListOf<Long>()
+    _pngAppend(ihdr, _pngU32be(width))
+    _pngAppend(ihdr, _pngU32be(height))
+    _pngAppend(ihdr, listOf(8L, 2L, 0L, 0L, 0L))
+    val idat = _zlibDeflateStore(scanlines)
+    val png = mutableListOf<Long>()
+    _pngAppend(png, listOf(137L, 80L, 78L, 71L, 13L, 10L, 26L, 10L))
+    _pngAppend(png, _pngChunk(listOf(73L, 72L, 68L, 82L), ihdr))
+    _pngAppend(png, _pngChunk(listOf(73L, 68L, 65L, 84L), idat))
+    _pngAppend(png, _pngChunk(listOf(73L, 69L, 78L, 68L), mutableListOf()))
+    val file = open(path, "wb")
+    try {
+        file.write(png)
+    } finally {
+        file.close()
     }
 }
 
