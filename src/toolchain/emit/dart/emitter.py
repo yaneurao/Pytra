@@ -2,22 +2,145 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
-from toolchain.emit.common.emitter.code_emitter import (
+from toolchain.emit.common.code_emitter import (
     build_import_alias_map,
+    load_runtime_mapping,
+    RuntimeMapping,
+)
+from toolchain.emit.swift.emitter import (
     reject_backend_homogeneous_tuple_ellipsis_type_exprs,
 )
-from toolchain.emit.common.code_emitter import (
-    RuntimeMapping,
-    load_runtime_mapping,
-)
 
-from toolchain_.frontends.runtime_symbol_index import (
-    canonical_runtime_module_id,
-    resolve_import_binding_doc,
-)
+
+_RUNTIME_SYMBOL_INDEX_PATH = Path(__file__).resolve().parents[4] / "tools" / "runtime_symbol_index.json"
+_RUNTIME_SYMBOL_INDEX_CACHE: dict[str, Any] | None = None
+
+
+def _load_runtime_symbol_index() -> dict[str, Any]:
+    global _RUNTIME_SYMBOL_INDEX_CACHE
+    if _RUNTIME_SYMBOL_INDEX_CACHE is not None:
+        return _RUNTIME_SYMBOL_INDEX_CACHE
+    if not _RUNTIME_SYMBOL_INDEX_PATH.exists():
+        _RUNTIME_SYMBOL_INDEX_CACHE = {}
+        return _RUNTIME_SYMBOL_INDEX_CACHE
+    try:
+        raw = json.loads(_RUNTIME_SYMBOL_INDEX_PATH.read_text(encoding="utf-8"))
+        _RUNTIME_SYMBOL_INDEX_CACHE = raw if isinstance(raw, dict) else {}
+    except Exception:
+        _RUNTIME_SYMBOL_INDEX_CACHE = {}
+    return _RUNTIME_SYMBOL_INDEX_CACHE
+
+
+def _runtime_module_doc(module_id: str) -> dict[str, Any]:
+    modules = _load_runtime_symbol_index().get("modules")
+    if not isinstance(modules, dict):
+        return {}
+    doc = modules.get(module_id)
+    return doc if isinstance(doc, dict) else {}
+
+
+def runtime_module_exists(module_id: str) -> bool:
+    return len(_runtime_module_doc(module_id)) > 0
+
+
+def canonical_runtime_module_id(module_id: str) -> str:
+    mod = module_id.strip()
+    if mod.startswith("pytra.") or mod.startswith("toolchain."):
+        return mod
+    if "." not in mod and mod != "":
+        candidate = "pytra.std." + mod
+        if runtime_module_exists(candidate):
+            return candidate
+    return mod
+
+
+def lookup_runtime_module_symbols(module_id: str) -> dict[str, Any]:
+    symbols = _runtime_module_doc(module_id).get("symbols")
+    return symbols if isinstance(symbols, dict) else {}
+
+
+def lookup_runtime_module_group(module_id: str) -> str:
+    group = _runtime_module_doc(module_id).get("runtime_group")
+    return group if isinstance(group, str) else ""
+
+
+def resolve_import_binding_runtime_module(module_id: str, export_name: str, binding_kind: str) -> str:
+    mod = canonical_runtime_module_id(module_id.strip())
+    if mod == "":
+        return ""
+    if not runtime_module_exists(mod) and "." not in mod:
+        candidate = "pytra.std." + mod
+        if runtime_module_exists(candidate):
+            mod = candidate
+    if binding_kind in {"module", "implicit_builtin"}:
+        return mod if runtime_module_exists(mod) else ""
+    if binding_kind != "symbol":
+        return ""
+    child_module = mod + "." + export_name.strip() if export_name.strip() != "" else ""
+    if child_module != "" and runtime_module_exists(child_module):
+        return child_module
+    symbols = lookup_runtime_module_symbols(mod)
+    if export_name in symbols:
+        return mod
+    return ""
+
+
+def resolve_import_binding_doc(module_id: str, export_name: str, binding_kind: str) -> dict[str, Any]:
+    source_module_id = module_id.strip()
+    source_export_name = export_name.strip()
+    source_binding_kind = binding_kind.strip()
+    runtime_module_id = resolve_import_binding_runtime_module(
+        source_module_id,
+        source_export_name,
+        source_binding_kind,
+    )
+    if runtime_module_id == "":
+        return {}
+    out: dict[str, Any] = {
+        "source_module_id": source_module_id,
+        "source_export_name": source_export_name,
+        "source_binding_kind": source_binding_kind,
+        "runtime_module_id": runtime_module_id,
+        "runtime_group": lookup_runtime_module_group(runtime_module_id),
+    }
+    if source_binding_kind == "module":
+        out["resolved_binding_kind"] = "module"
+        return out
+    child_module = canonical_runtime_module_id(source_module_id)
+    if not runtime_module_exists(child_module) and "." not in child_module:
+        normalized = "pytra.std." + child_module
+        if runtime_module_exists(normalized):
+            child_module = normalized
+    if child_module != "" and runtime_module_id != child_module:
+        out["resolved_binding_kind"] = "module"
+        return out
+    symbol_doc = lookup_runtime_module_symbols(runtime_module_id).get(source_export_name)
+    if not isinstance(symbol_doc, dict):
+        return out
+    out["resolved_binding_kind"] = "symbol"
+    out["runtime_symbol"] = source_export_name
+    kind = symbol_doc.get("kind")
+    if isinstance(kind, str) and kind != "":
+        out["runtime_symbol_kind"] = kind
+    dispatch = symbol_doc.get("dispatch")
+    if isinstance(dispatch, str) and dispatch != "":
+        out["runtime_symbol_dispatch"] = dispatch
+    semantic_tag = symbol_doc.get("semantic_tag")
+    if isinstance(semantic_tag, str) and semantic_tag != "":
+        out["runtime_semantic_tag"] = semantic_tag
+    adapter_kind = symbol_doc.get("call_adapter_kind")
+    if isinstance(adapter_kind, str) and adapter_kind != "":
+        out["runtime_call_adapter_kind"] = adapter_kind
+    extern_doc = symbol_doc.get("extern_v1")
+    if isinstance(extern_doc, dict):
+        extern_kind = extern_doc.get("kind")
+        if isinstance(extern_kind, str) and extern_kind != "":
+            out["runtime_extern_kind"] = extern_kind
+    return out
 
 
 _DART_KEYWORDS = {
@@ -2670,8 +2793,10 @@ class DartNativeEmitter:
                     return owner + ".indexOf(" + rendered_args[0] + ")"
                 if attr == "rfind" and len(rendered_args) >= 1:
                     return owner + ".lastIndexOf(" + rendered_args[0] + ")"
+                if attr == "count" and len(rendered_args) >= 1:
+                    return "pytraStrCount(" + owner + ", " + rendered_args[0] + ")"
                 if attr == "index" and len(rendered_args) >= 1:
-                    return owner + ".indexOf(" + rendered_args[0] + ")"
+                    return "pytraStrIndex(" + owner + ", " + rendered_args[0] + ")"
                 if attr == "replace" and len(rendered_args) >= 2:
                     return owner + ".replaceAll(" + rendered_args[0] + ", " + rendered_args[1] + ")"
                 if attr == "split":

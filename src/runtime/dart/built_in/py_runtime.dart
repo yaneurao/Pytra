@@ -6,6 +6,7 @@
 
 import 'dart:core';
 import 'dart:core' as core;
+import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 
@@ -113,6 +114,71 @@ List<dynamic> pytraTupleView(dynamic v) {
 
 void pytraPrint(List<dynamic> args) {
   print(args.map(pytraPrintRepr).join(' '));
+}
+
+bool py_assert_true(dynamic cond, [String label = ""]) {
+  final ok = pytraTruthy(cond);
+  if (ok) return true;
+  if (label.isNotEmpty) {
+    pytraPrint(["[assert_true] $label: False"]);
+  } else {
+    pytraPrint(["[assert_true] False"]);
+  }
+  return false;
+}
+
+bool py_assert_eq(dynamic actual, dynamic expected, [String label = ""]) {
+  final ok = pytraStr(actual) == pytraStr(expected);
+  if (ok) return true;
+  final message = label.isNotEmpty
+      ? "[assert_eq] $label: actual=${pytraStr(actual)}, expected=${pytraStr(expected)}"
+      : "[assert_eq] actual=${pytraStr(actual)}, expected=${pytraStr(expected)}";
+  pytraPrint([message]);
+  return false;
+}
+
+bool py_assert_all(dynamic items, [String label = ""]) {
+  if (items is Iterable) {
+    for (final item in items) {
+      if (!pytraTruthy(item)) {
+        if (label.isNotEmpty) {
+          pytraPrint(["[assert_all] $label: False"]);
+        } else {
+          pytraPrint(["[assert_all] False"]);
+        }
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+bool py_assert_stdout(List<dynamic> expected, void Function() fn) {
+  final lines = <String>[];
+  runZoned(
+    fn,
+    zoneSpecification: ZoneSpecification(
+      print: (_, __, ___, String line) {
+        lines.add(line);
+      },
+    ),
+  );
+  final expectedLines = expected.map((item) => pytraStr(item)).toList();
+  if (lines.length != expectedLines.length) {
+    pytraPrint([
+      "[assert_stdout] FAIL expected=$expectedLines actual=$lines",
+    ]);
+    return false;
+  }
+  for (var i = 0; i < lines.length; i++) {
+    if (lines[i] != expectedLines[i]) {
+      pytraPrint([
+        "[assert_stdout] FAIL expected=$expectedLines actual=$lines",
+      ]);
+      return false;
+    }
+  }
+  return true;
 }
 
 // --- Python or/and value-select semantics ---
@@ -275,6 +341,26 @@ bool pytraStrIsalnum(String s) {
     if (!((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122))) return false;
   }
   return true;
+}
+
+int pytraStrCount(String s, String needle) {
+  if (needle.isEmpty) return s.length + 1;
+  var count = 0;
+  var start = 0;
+  while (true) {
+    final pos = s.indexOf(needle, start);
+    if (pos < 0) return count;
+    count += 1;
+    start = pos + needle.length;
+  }
+}
+
+int pytraStrIndex(String s, String needle) {
+  final pos = s.indexOf(needle);
+  if (pos < 0) {
+    throw ValueError("substring not found");
+  }
+  return pos;
 }
 
 // --- isinstance helper ---

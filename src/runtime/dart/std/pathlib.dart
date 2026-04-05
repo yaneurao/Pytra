@@ -48,8 +48,25 @@ class Path {
     }
   }
 
-  Path joinpath(String first, [List<dynamic> rest = const []]) {
+  Path joinpath(
+    String first, [
+    dynamic second = null,
+    dynamic third = null,
+    dynamic fourth = null,
+    dynamic fifth = null,
+  ]) {
     Path result = Path('$_value/$first');
+    final rest = <dynamic>[];
+    for (final value in [second, third, fourth, fifth]) {
+      if (value == null) {
+        continue;
+      }
+      if (value is Iterable && value is! String) {
+        rest.addAll(value);
+      } else {
+        rest.add(value);
+      }
+    }
     for (var part in rest) {
       String s = (part is Path) ? part._value : part.toString();
       result = Path('${result._value}/$s');

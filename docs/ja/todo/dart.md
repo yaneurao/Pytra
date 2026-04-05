@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-02
+最終更新: 2026-04-05
 
 ## 運用ルール
 
@@ -37,7 +37,9 @@
 
 依存箇所: `from toolchain_.frontends.runtime_symbol_index import canonical_runtime_module_id, resolve_import_binding_doc`
 
-1. [ ] [ID: P0-DART-LEGACY-S1] `runtime_symbol_index` の必要な機能を toolchain 側に移行するか、emitter 内で EAST3 メタデータから直接取得するように修正する
-2. [ ] [ID: P0-DART-LEGACY-S2] `toolchain_` への import がゼロになることを確認する
+1. [x] [ID: P0-DART-LEGACY-S1] `runtime_symbol_index` の必要な機能を toolchain 側に移行するか、emitter 内で EAST3 メタデータから直接取得するように修正する
+   完了メモ: `src/toolchain/emit/dart/emitter.py` に runtime symbol index の参照ロジックを内包し、`toolchain_` 依存を除去。fixture 151/151 と stdlib 16/16 の parity を確認。
+2. [x] [ID: P0-DART-LEGACY-S2] `toolchain_` への import がゼロになることを確認する
+   完了メモ: `rg -n "toolchain_" src/toolchain/emit/dart -g '*.py'` が 0 件。
 
 - なし。次の Dart タスクは新規起票待ち。
