@@ -25,6 +25,14 @@
     "deque.clear": "empty!",
     "deque.pop": "__LIST_POP__",
     "deque.popleft": "__DEQUE_POPLEFT__",
+    "ArgumentParser.add_argument": "add_argument",
+    "ArgumentParser.parse_args": "parse_args",
+    "JsonValue.as_str": "as_str",
+    "Path.exists": "exists",
+    "Path.joinpath": "joinpath",
+    "Path.mkdir": "mkdir",
+    "Path.read_text": "read_text",
+    "Path.write_text": "write_text",
     "list.append": "__LIST_APPEND__",
     "list.pop": "__LIST_POP__",
     "list.clear": "__LIST_CLEAR__",
@@ -76,6 +84,7 @@
     "py_assert_true": "py_assert_true",
     "py_assert_eq": "py_assert_eq",
     "py_assert_all": "py_assert_all",
+    "pytra.std.re.sub": "__pytra_re_sub",
     "dict.clear": "empty!",
     "dict.pop": "__DICT_POP__",
     "dict.setdefault": "__DICT_SETDEFAULT__",
@@ -86,8 +95,16 @@
     "set.clear": "empty!"
   },
   "module_native_files": {
+    "json": "std/json.jl",
     "math": "std/math_native.jl",
+    "pathlib": "std/pathlib.jl",
+    "pytra.std.json": "std/json.jl",
+    "pytra.std.pathlib": "std/pathlib.jl",
+    "pytra.std.sys": "std/sys.jl",
+    "re": "built_in/py_runtime.jl",
+    "sys": "std/sys.jl",
     "time": "std/time_native.jl",
+    "pytra.std.argparse": "std/argparse.jl",
     "pytra.std.glob": "std/glob_native.jl",
     "pytra.std.os": "std/os_native.jl|std/os_path_native.jl",
     "pytra.std.os_path": "std/os_path_native.jl",
@@ -96,10 +113,13 @@
     "pytra.utils.assertions": "built_in/py_runtime.jl"
   },
   "module_namespace_exprs": {
+    "json": "(dumps=dumps, loads=loads, loads_arr=loads_arr)",
     "math": "(ceil=__MathNative.ceil, cos=__MathNative.cos, e=__MathNative.e, exp=__MathNative.exp, fabs=__MathNative.fabs, floor=__MathNative.floor, log=__MathNative.log, log10=__MathNative.log10, pi=__MathNative.pi, pow=__MathNative.pow, sin=__MathNative.sin, sqrt=__MathNative.sqrt, tan=__MathNative.tan)",
     "pytra.std.env": "(target=\"julia\",)",
     "pytra.std.glob": "(glob=__GlobNative.glob,)",
+    "pytra.std.json": "(dumps=dumps, loads=loads, loads_arr=loads_arr)",
     "pytra.std.os": "(getcwd=__OsNative.getcwd, makedirs=__OsNative.makedirs, mkdir=__OsNative.mkdir, path=(join=__OsPathNative.join, splitext=__OsPathNative.splitext, basename=__OsPathNative.basename, dirname=__OsPathNative.dirname, exists=__OsPathNative.exists, abspath=__OsPathNative.abspath))",
+    "pytra.std.pathlib": "(Path=Path,)",
     "pytra.utils.png": "(_adler32=_adler32, _chunk=_chunk, _crc32=_crc32, _png_append_list=_png_append_list, _png_u16le=_png_u16le, _png_u32be=_png_u32be, _zlib_deflate_store=_zlib_deflate_store, write_rgb_png=write_rgb_png)"
   },
   "types": {

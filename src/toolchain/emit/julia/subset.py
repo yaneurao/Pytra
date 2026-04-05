@@ -103,6 +103,20 @@ def _quote_string(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
 
 
+def _render_keyword_suffix(render_value: Callable[[JsonVal], str], keywords: list[dict[str, JsonVal]]) -> str:
+    if len(keywords) == 0:
+        return ""
+    parts: list[str] = []
+    for item in keywords:
+        arg = item.get("arg")
+        if not isinstance(arg, str) or arg == "":
+            continue
+        parts.append(arg + "=" + render_value(item.get("value")))
+    if len(parts) == 0:
+        return ""
+    return "; " + ", ".join(parts)
+
+
 def _function_arg_order(node: dict[str, JsonVal]) -> list[str]:
     return [arg for arg in _list(node, "arg_order") if isinstance(arg, str)]
 
@@ -135,6 +149,22 @@ def _ctor_arg_order(node: dict[str, JsonVal]) -> list[str]:
     if init_fn is None:
         return []
     return _function_arg_order(init_fn)[1:]
+
+
+def _dataclass_ctor_fields(node: dict[str, JsonVal]) -> list[tuple[str, JsonVal | None]]:
+    fields: list[tuple[str, JsonVal | None]] = []
+    for stmt in _list(node, "body"):
+        if not isinstance(stmt, dict) or _str(stmt, "kind") != "AnnAssign":
+            continue
+        target = stmt.get("target")
+        if not isinstance(target, dict) or _str(target, "kind") != "Name":
+            continue
+        name = _str(target, "id")
+        if name == "":
+            continue
+        value = stmt.get("value")
+        fields.append((name, value if isinstance(value, dict) else None))
+    return fields
 
 
 def _class_member_bucket(node: dict[str, JsonVal]) -> str:
@@ -698,6 +728,7 @@ class JuliaSubsetRenderer:
         keywords: list[dict[str, JsonVal]] | None = None,
     ) -> str:
         kw_items = keywords if isinstance(keywords, list) else []
+        kw_suffix = _render_keyword_suffix(self._render_expr, kw_items)
         if mapped == "":
             return ""
         if mapped == "__CAST__":
@@ -718,9 +749,10 @@ class JuliaSubsetRenderer:
         range_expr = self._render_range_runtime_call(mapped, args)
         if range_expr != "":
             return range_expr
+        rendered_args = ", ".join(args)
         if len(args) == 0:
-            return mapped + "()"
-        return mapped + "(" + ", ".join(args) + ")"
+            return mapped + "(" + kw_suffix + ")"
+        return mapped + "(" + rendered_args + kw_suffix + ")"
 
     def _render_scalar_runtime_call(self, mapped: str, args: list[str]) -> str:
         if mapped == "__INT__" and len(args) == 1:
@@ -848,11 +880,18 @@ class JuliaSubsetRenderer:
             return ""
         owner_node = node.get("func")
         source_type = ""
+        keywords = [item for item in _list(node, "keywords") if isinstance(item, dict)]
         if isinstance(owner_node, dict) and _str(owner_node, "kind") == "Attribute":
             value_node = owner_node.get("value")
             if isinstance(value_node, dict):
                 source_type = _str(value_node, "resolved_type")
-        return self._render_mapped_runtime_call(mapped, [owner] + args, _str(node, "resolved_type"), source_type=source_type)
+        return self._render_mapped_runtime_call(
+            mapped,
+            [owner] + args,
+            _str(node, "resolved_type"),
+            source_type=source_type,
+            keywords=keywords,
+        )
 
     def _render_static_cast_call(self, builtin_name: str, result_type: str, args: list[str], source_type: str) -> str:
         if len(args) != 1:
@@ -1653,6 +1692,21 @@ class JuliaSubsetRenderer:
 
     def _emit_class_ctor(self, node: dict[str, JsonVal], class_name: str, impl_name: str, field_names: list[str]) -> None:
         init_fn = _find_init_function(node)
+        if init_fn is None and node.get("dataclass") is True:
+            dataclass_fields = _dataclass_ctor_fields(node)
+            ctor_args: list[str] = []
+            for field_name, default_value in dataclass_fields:
+                if default_value is None:
+                    ctor_args.append(_ident(field_name))
+                else:
+                    ctor_args.append(_ident(field_name) + "=" + self._render_expr(default_value))
+            self._emit_new_ctor_header(class_name, ctor_args)
+            ctor_init_args = ", ".join("nothing" for _ in field_names)
+            self._emit("self = " + impl_name + "(" + ctor_init_args + ")")
+            for field_name, _default_value in dataclass_fields:
+                self._emit("self." + field_name + " = " + _ident(field_name))
+            self._emit_ctor_return_self()
+            return
         ctor_args = [_ident(arg) for arg in _ctor_arg_order(node)]
         self._emit_new_ctor_header(class_name, ctor_args)
         ctor_init_args = ", ".join("nothing" for _ in field_names)

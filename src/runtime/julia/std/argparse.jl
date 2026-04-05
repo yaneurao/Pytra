@@ -12,6 +12,11 @@ function add_argument(parser, args...)
     return nothing
 end
 
+function add_argument(parser, args...; action=nothing, choices=nothing, default=nothing)
+    push!(parser.specs, (collect(args), (action=action, choices=choices, default=default)))
+    return nothing
+end
+
 function parse_args(parser, argv)
     out = Dict{Any,Any}()
     positional = Any[]

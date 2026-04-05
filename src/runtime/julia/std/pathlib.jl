@@ -52,6 +52,10 @@ function mkdir(self::Path, parents=false, exist_ok=false)
     return __OsNative.mkdir(self._value, exist_ok)
 end
 
+function mkdir(self::Path; parents=false, exist_ok=false)
+    return mkdir(self, parents, exist_ok)
+end
+
 function write_text(self::Path, text)
     open(self._value, "w") do io
         write(io, string(text))

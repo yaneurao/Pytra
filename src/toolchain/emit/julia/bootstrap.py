@@ -146,6 +146,7 @@ class JuliaBootstrapRewriter:
 
     def _rewrite_class_def(self, node: dict[str, JsonVal]) -> list[JsonVal]:
         class_name = node.get("name")
+        is_dataclass = node.get("dataclass") is True
         body_any = node.get("body")
         body = body_any if isinstance(body_any, list) else []
         kept_body: list[JsonVal] = []
@@ -156,6 +157,9 @@ class JuliaBootstrapRewriter:
                 continue
             stmt_kind = stmt_any.get("kind")
             if stmt_kind not in {"Assign", "AnnAssign"}:
+                kept_body.append(self._rewrite_node(stmt_any))
+                continue
+            if is_dataclass and stmt_kind == "AnnAssign":
                 kept_body.append(self._rewrite_node(stmt_any))
                 continue
             target_any = stmt_any.get("target")

@@ -205,6 +205,10 @@ function __pytra_truthy(v)
     return true
 end
 
+function sorted(v)
+    return sort(collect(v))
+end
+
 function __pytra_contains(container, value)
     if isa(container, AbstractDict)
         return haskey(container, value)

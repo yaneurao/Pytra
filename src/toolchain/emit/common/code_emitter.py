@@ -351,12 +351,18 @@ def build_runtime_import_map(
                 # Use explicit mapping.calls entry (highest priority)
                 mapped = mapping.calls[symbol_name]
                 resolved_symbol = mapped if isinstance(mapped, str) and mapped != "" else symbol_name
-            elif symbol_name.startswith(mapping.builtin_prefix):
-                # Has prefix → resolve (may strip prefix)
-                resolved_symbol = resolve_runtime_symbol_name(symbol_name, mapping, module_id=module_id)
             else:
-                # Same name in py_runtime (e.g. deque, Path, etc.)
-                resolved_symbol = symbol_name
+                resolved_symbol = resolve_runtime_symbol_name(symbol_name, mapping, module_id=module_id)
+                if (
+                    resolved_symbol == mapping.builtin_prefix + symbol_name
+                    and symbol_name not in mapping.calls
+                    and (module_id + "." + symbol_name) not in mapping.calls
+                    and not symbol_name.startswith(mapping.builtin_prefix)
+                ):
+                    resolved_symbol = symbol_name
+                if resolved_symbol == "":
+                    # Same name in py_runtime/native file (e.g. deque, Path, etc.)
+                    resolved_symbol = symbol_name
         else:
             resolved_symbol = symbol_name
         runtime_imports[local_name] = resolved_symbol
