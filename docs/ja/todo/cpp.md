@@ -48,13 +48,18 @@
 
 `emitter.py` と `header_gen.py` に `"append"`, `"clear"`, `"discard"` 等の Python メソッド名をリストで持っている箇所がある（lint `runtime_symbol` 違反 5 件）。container の mutable/immutable 判定に使用。
 
-emitter が `runtime_call == "list.append"` のような文字列で判定するのも同じ違反。EAST3 の resolve/compile 段で `Call.meta.mutates_receiver: true` を付与し、emitter はそのフラグだけを見るべき。
+emitter が `runtime_call == "list.append"` のような文字列で判定するのも同じ emitter guide 違反。
 
-前提: EAST3 に `mutates_receiver` メタデータを追加する（infra 担当の EAST 変更）
+**正しい解決方法**: `src/pytra/built_in/containers.py` にコンテナのメソッドシグネチャが `@extern class` + `mut[T]` 注釈で定義済み。resolve がこの定義を読んで `borrow_kind: "mutable_ref"` と `meta.mutates_receiver: true` を EAST3 に付与する。emitter はメソッド名を一切知らず、`mutates_receiver` フラグだけを見る。
 
-1. [ ] [ID: P0-CPP-RTSYM-S1] EAST3 の Call ノードに `meta.mutates_receiver` を追加する spec を定義する（infra 担当に依頼）
-2. [ ] [ID: P0-CPP-RTSYM-S2] C++ emitter の mutable メソッド名リストを `meta.mutates_receiver` ベースの判定に置き換える
-3. [ ] [ID: P0-CPP-RTSYM-S3] `check_emitter_hardcode_lint.py --lang cpp --category runtime_symbol` が 0 件になることを確認する
+前提:
+1. infra 担当が resolve を修正し、`containers.py` の `mut[T]` 注釈から `mutates_receiver` を導出するようにする
+2. spec-east.md に `Call.meta.mutates_receiver` スキーマを定義する
+
+1. [ ] [ID: P0-CPP-RTSYM-S1] spec-east.md に `Call.meta.mutates_receiver` を定義し、`containers.py` の `mut[T]` から resolve が導出する仕組みを spec 化する（infra 担当に依頼）
+2. [ ] [ID: P0-CPP-RTSYM-S2] infra 担当: resolve が `src/pytra/built_in/containers.py` を読み、`mut[T]` 注釈付きメソッドの Call に `meta.mutates_receiver: true` を付与する
+3. [ ] [ID: P0-CPP-RTSYM-S3] C++ emitter の mutable メソッド名リストを `meta.mutates_receiver` ベースの判定に置き換える
+4. [ ] [ID: P0-CPP-RTSYM-S4] `check_emitter_hardcode_lint.py --lang cpp --category runtime_symbol` が 0 件になることを確認する
 
 ### P20-CPP-SELFHOST: C++ emitter で toolchain2 を C++ に変換し g++ build を通す
 
