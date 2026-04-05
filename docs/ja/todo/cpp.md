@@ -49,6 +49,8 @@
 
 ### P0-CPP-RUNTIME-SYMBOL: C++ emitter のメソッド名ハードコードを解消する
 
+文脈: [docs/ja/plans/p0-cpp-runtime-symbol.md](../plans/p0-cpp-runtime-symbol.md)
+
 `emitter.py` と `header_gen.py` に `"append"`, `"clear"`, `"discard"` 等の Python メソッド名をリストで持っている箇所がある（lint `runtime_symbol` 違反 5 件）。container の mutable/immutable 判定に使用。
 
 emitter が `runtime_call == "list.append"` のような文字列で判定するのも同じ emitter guide 違反。
