@@ -993,6 +993,16 @@ class JuliaSubsetRenderer:
             return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
         if (func in self.mapping.predicate_types and func.endswith("Error")) or func in {"BaseException", "Exception"}:
             return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
+        if func == "bytearray":
+            if len(args) == 0:
+                return "__pytra_bytearray()"
+            if len(args) == 1:
+                return "__pytra_bytearray(" + args[0] + ")"
+        if func == "bytes":
+            if len(args) == 0:
+                return "__pytra_bytes()"
+            if len(args) == 1:
+                return "__pytra_bytes(" + args[0] + ")"
         return ""
 
     def _render_attribute_call_maybe(self, node: dict[str, JsonVal], func_node: JsonVal) -> str:
