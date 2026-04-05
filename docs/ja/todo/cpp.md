@@ -48,10 +48,12 @@
 
 `emitter.py` と `header_gen.py` に `"append"`, `"clear"`, `"discard"` 等の Python メソッド名をリストで持っている箇所がある（lint `runtime_symbol` 違反 5 件）。container の mutable/immutable 判定に使用。
 
-EAST3 の `semantic_tag` や `runtime_call`（例: `list.append`, `set.add`）で判定すべき。または EAST3 に `mutates_container` フラグを追加して emitter はそれを見るだけにする。
+emitter が `runtime_call == "list.append"` のような文字列で判定するのも同じ違反。EAST3 の resolve/compile 段で `Call.meta.mutates_receiver: true` を付与し、emitter はそのフラグだけを見るべき。
 
-1. [ ] [ID: P0-CPP-RTSYM-S1] `emitter.py` の mutable メソッド名リストを EAST3 の `semantic_tag` / `runtime_call` ベースの判定に置き換える
-2. [ ] [ID: P0-CPP-RTSYM-S2] `header_gen.py` の同様のリストを同じ方式に置き換える
+前提: EAST3 に `mutates_receiver` メタデータを追加する（infra 担当の EAST 変更）
+
+1. [ ] [ID: P0-CPP-RTSYM-S1] EAST3 の Call ノードに `meta.mutates_receiver` を追加する spec を定義する（infra 担当に依頼）
+2. [ ] [ID: P0-CPP-RTSYM-S2] C++ emitter の mutable メソッド名リストを `meta.mutates_receiver` ベースの判定に置き換える
 3. [ ] [ID: P0-CPP-RTSYM-S3] `check_emitter_hardcode_lint.py --lang cpp --category runtime_symbol` が 0 件になることを確認する
 
 ### P20-CPP-SELFHOST: C++ emitter で toolchain2 を C++ に変換し g++ build を通す
