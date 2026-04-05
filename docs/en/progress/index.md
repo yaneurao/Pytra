@@ -22,6 +22,9 @@ An overview of Pytra's development status. Links to test results, tasks, changel
 [Overall summary](./backend-progress-summary.md)
 — Overview of fixture / sample / stdlib / selfhost / emitter lint for all languages in one page.
 
+[Parity changelog](./changelog.md)
+— Auto-recorded log of when PASS counts increase or decrease. Use this to catch regressions immediately.
+
 Details:
 - [fixture](./backend-progress-fixture.md) — language feature unit tests
 - [sample](./backend-progress-sample.md) — real applications ([samples list](../tutorial/samples.md))

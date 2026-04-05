@@ -1,11 +1,11 @@
-<a href="../../en/progress/emitter-hardcode-lint.md">
+<a href="../../en/progress-preview/emitter-hardcode-lint.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
 # emitter ハードコード違反マトリクス
 
 > 機械生成ファイル。`python3 tools/check/check_emitter_hardcode_lint.py` で更新する。
-> 生成日時: 2026-03-31T05:00:13
+> 生成日時: 2026-04-04 20:17:19
 > [関連リンク](./index.md)
 
 emitter が EAST3 の情報を使わず、モジュール名・runtime 関数名・クラス名等を文字列で直書きしている箇所を grep で検出したマトリクス。
@@ -19,134 +19,981 @@ emitter が EAST3 の情報を使わず、モジュール名・runtime 関数名
 
 > **js** は独自 emitter を持たず **ts** emitter を共用するため、js 列は ts と同一の結果を表示する。
 
-| カテゴリ | cpp | rs | cs | ps1 | js | ts | dart | go | java | swift | kotlin | ruby | lua | scala | php | nim | julia | zig |
+| カテゴリ | cpp | rs | cs | ps1 | js | ts | dart | go | java | scala | kotlin | swift | ruby | lua | php | nim | julia | zig |
 |--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| module name | 🟩 | 🟩 | 🟩 | ⬜ | 🟥 | 🟥 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ |
-| runtime symbol | 🟥 | 🟩 | 🟩 | ⬜ | 🟥 | 🟥 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ |
-| target const | 🟩 | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ |
-| prefix match | 🟩 | 🟩 | 🟥 | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | 🟩 | 🟥 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ |
-| class name | 🟥 | 🟩 | 🟥 | ⬜ | 🟥 | 🟥 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | 🟥 | 🟥 | ⬜ | 🟥 | 🟥 | ⬜ | ⬜ |
-| Python syntax | 🟩 | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | 🟥 | 🟩 | ⬜ | 🟩 | 🟥 | ⬜ | ⬜ |
-| type_id | 🟥 | 🟩 | 🟥 | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ |
-| **🟩 PASS** | 4 | 7 | 4 | — | 4 | 4 | — | 7 | 7 | — | — | 5 | 5 | — | 6 | 5 | — | — |
-| **🟥 FAIL** | 3 | — | 3 | — | 3 | 3 | — | — | — | — | — | 2 | 2 | — | 1 | 2 | — | — |
-| **⬜ 未実装** | — | — | — | 7 | — | — | 7 | — | — | 7 | 7 | — | — | 7 | — | — | 7 | 7 |
+| module name | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟥 | 🟥 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟥 |
+| runtime symbol | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟥 | 🟥 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟥 | 🟥 |
+| target const | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 |
+| prefix match | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 |
+| class name | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟥 | 🟥 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟥 | 🟥 |
+| Python syntax | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 |
+| type_id | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 |
+| skip pure py | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟥 | 🟥 |
+| rt: type_id | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟩 | 🟥 | 🟩 | 🟩 | 🟩 | 🟩 |
+| rt: call_cov | 🟥 | 🟥 | 🟥 | 🟥 | 🟥 | 🟥 | 🟥 | 🟥 | 🟥 | 🟥 | 🟥 | 🟥 | 🟥 | 🟥 | 🟥 | 🟩 | 🟥 | 🟥 |
+| **🟩 PASS** | 9 | 9 | 9 | 9 | 9 | 9 | 9 | 9 | 9 | 6 | 6 | 9 | 9 | 8 | 9 | 10 | 6 | 5 |
+| **🟥 FAIL** | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 4 | 4 | 1 | 1 | 2 | 1 | — | 4 | 5 |
+| **⬜ 未実装** | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — | — |
 
 ## 詳細
 
-### class_name / cpp (3)
+### class_name / julia (1)
 
 ```
-src/toolchain2/emit/cpp/emitter.py:73: "BaseException", "Exception", "ValueError", "TypeError", "IndexError",
-src/toolchain2/emit/cpp/emitter.py:1307: if attr == "add_argument" and owner_type == "ArgumentParser":
-src/toolchain2/emit/cpp/emitter.py:2665: if bn in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError") or rc == "s
+src/toolchain2/emit/julia/subset.py:145: if base not in {"Exception", "ValueError", "TypeError", "RuntimeError"}:
 ```
 
-### class_name / cs (7)
+### class_name / kotlin (5)
 
 ```
-src/toolchain2/emit/cs/emitter.py:263: if resolved_type == "Path" and resolved_type in ctx.import_alias_modules:
-src/toolchain2/emit/cs/emitter.py:573: if owner_type == "Path" and attr_name in ("parent", "parents", "name", "suffix", "stem"):
-src/toolchain2/emit/cs/emitter.py:718: if func_name in ("Exception", "BaseException", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError", "Nam
-src/toolchain2/emit/cs/emitter.py:807: if attr_name == "Path":
-src/toolchain2/emit/cs/emitter.py:831: if func_name == "Path" and func_name in ctx.import_alias_modules:
-src/toolchain2/emit/cs/emitter.py:1234: type_name = "Exception"
-src/toolchain2/emit/cs/emitter.py:1590: if ctx.current_class_name == "Path" and _str(node, "name") == "joinpath":
+src/toolchain2/emit/kotlin/emitter.py:47: if name in self.module_class_names or name.endswith("Error") or name.endswith("Exception"):
+src/toolchain2/emit/kotlin/emitter.py:529: if func_kind == "Name" and (self._str(func, "id").endswith("Error") or self._str(func, "id").endswith("Exception")):
+src/toolchain2/emit/kotlin/emitter.py:532: if func_kind == "Attribute" and (self._str(func, "attr").endswith("Error") or self._str(func, "attr").endswith("Exceptio
+src/toolchain2/emit/kotlin/emitter.py:1306: if func_id.endswith("Error") or func_id.endswith("Exception"):
+src/toolchain2/emit/kotlin/emitter.py:1325: if func_name.startswith("pytra_built_in_error.") and (func_name.endswith("Error") or func_name.endswith("Exception")):
 ```
 
-### class_name / lua (5)
+### class_name / scala (8)
 
 ```
-src/toolchain2/emit/lua/emitter.py:145: "Exception", "BaseException", "RuntimeError", "ValueError",
-src/toolchain2/emit/lua/emitter.py:273: if owner_rt == "Path":
-src/toolchain2/emit/lua/emitter.py:466: if owner_rt == "Path":
-src/toolchain2/emit/lua/emitter.py:588: if op == "Div" and (left_rt == "Path" or right_rt == "Path"):
-src/toolchain2/emit/lua/emitter.py:1339: if base_name != "" and base_name not in ("object", "Exception", "BaseException"):
+src/toolchain2/emit/scala/emitter.py:44: if name in self.module_class_names or name.endswith("Error") or name.endswith("Exception"):
+src/toolchain2/emit/scala/emitter.py:476: if exc_type.endswith("Error") or exc_type.endswith("Exception"):
+src/toolchain2/emit/scala/emitter.py:483: if self._str(func, "kind") == "Name" and (self._str(func, "id").endswith("Error") or self._str(func, "id").endswith("Exc
+src/toolchain2/emit/scala/emitter.py:486: if self._str(func, "kind") == "Attribute" and (self._str(func, "attr").endswith("Error") or self._str(func, "attr").ends
+src/toolchain2/emit/scala/emitter.py:812: if import_path.startswith("pytra_built_in_error.") and (ident.endswith("Error") or ident.endswith("Exception")):
+src/toolchain2/emit/scala/emitter.py:849: if module_id in ("pytra.built_in.error", "pytra_built_in_error") and (attr.endswith("Error") or attr.endswith("Exception
+src/toolchain2/emit/scala/emitter.py:1149: elif func_id.endswith("Error") or func_id.endswith("Exception"):
+src/toolchain2/emit/scala/emitter.py:1154: if func_name.startswith("pytra_built_in_error.") and (func_name.endswith("Error") or func_name.endswith("Exception")):
 ```
 
-### class_name / nim (1)
+### class_name / zig (2)
 
 ```
-src/toolchain2/emit/nim/emitter.py:154: "Exception", "BaseException", "RuntimeError", "ValueError",
+src/toolchain2/emit/zig/emitter.py:1358: "pytra.std.pathlib": {"Path"},
+src/toolchain2/emit/zig/emitter.py:1359: "pytra.std.argparse": {"ArgumentParser", "Namespace"},
 ```
 
-### class_name / php (2)
+### module_name / kotlin (8)
 
 ```
-src/toolchain2/emit/php/emitter.py:143: "Exception", "BaseException", "RuntimeError", "ValueError",
-src/toolchain2/emit/php/emitter.py:1178: if exc_rt in ("Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError"):
+src/toolchain2/emit/kotlin/emitter.py:263: if mod in ("math", "pytra.std.math"):
+src/toolchain2/emit/kotlin/emitter.py:271: if mod in ("time", "pytra.std.time") and name == "perf_counter":
+src/toolchain2/emit/kotlin/emitter.py:948: if module_id in ("math", "pytra.std.math"):
+src/toolchain2/emit/kotlin/emitter.py:950: if module_id in ("time", "pytra.std.time"):
+src/toolchain2/emit/kotlin/emitter.py:954: if module_id in ("os", "pytra.std.os"):
+src/toolchain2/emit/kotlin/emitter.py:955: return "os"
+src/toolchain2/emit/kotlin/emitter.py:980: if module_id in ("math", "pytra.std.math"):
+src/toolchain2/emit/kotlin/emitter.py:986: if module_id in ("time", "pytra.std.time"):
 ```
 
-### class_name / ruby (1)
+### module_name / scala (8)
 
 ```
-src/toolchain2/emit/ruby/emitter.py:131: "Exception", "RuntimeError", "ValueError", "TypeError",
+src/toolchain2/emit/scala/emitter.py:226: if mod in ("math", "pytra.std.math"):
+src/toolchain2/emit/scala/emitter.py:229: if mod in ("time", "pytra.std.time") and name == "perf_counter":
+src/toolchain2/emit/scala/emitter.py:817: if module_id in ("math", "pytra.std.math"):
+src/toolchain2/emit/scala/emitter.py:819: if module_id in ("time", "pytra.std.time"):
+src/toolchain2/emit/scala/emitter.py:823: if module_id in ("os", "pytra.std.os"):
+src/toolchain2/emit/scala/emitter.py:824: return "os"
+src/toolchain2/emit/scala/emitter.py:851: if module_id in ("math", "pytra.std.math"):
+src/toolchain2/emit/scala/emitter.py:853: if module_id in ("time", "pytra.std.time"):
 ```
 
-### class_name / ts (4)
+### module_name / zig (7)
 
 ```
-src/toolchain2/emit/ts/emitter.py:109: "Path", "PyPath", "py_math_tau",
-src/toolchain2/emit/ts/emitter.py:112: "ArgumentParser",
-src/toolchain2/emit/ts/emitter.py:232: "Exception", "BaseException", "RuntimeError", "ValueError",
-src/toolchain2/emit/ts/emitter.py:1987: _BUILTIN_EXC_MAP["Exception"] = "Error"
+src/toolchain2/emit/zig/emitter.py:45: "mem", "fmt", "debug", "heap", "io", "os", "fs",
+src/toolchain2/emit/zig/emitter.py:237: return tag == "math"
+src/toolchain2/emit/zig/emitter.py:1392: if module_id == "math":
+src/toolchain2/emit/zig/emitter.py:1395: elif module_id == "time":
+src/toolchain2/emit/zig/emitter.py:4341: if isinstance(obj_node_for_attr, dict) and obj_node_for_attr.get("kind") == "Name" and str(obj_node_for_attr.get("id")) 
+src/toolchain2/emit/zig/emitter.py:5540: if isinstance(obj_node, dict) and obj_node.get("kind") == "Name" and str(obj_node.get("id")) == "json":
+src/toolchain2/emit/zig/emitter.py:5556: if isinstance(obj_node, dict) and obj_node.get("kind") == "Name" and str(obj_node.get("id")) == "math":
 ```
 
-### module_name / ts (1)
+### python_syntax / common (1)
 
 ```
-src/toolchain2/emit/ts/emitter.py:116: "sys", "pyset_argv", "pyset_path",
+src/toolchain2/emit/common/cli_runner.py:8: if __name__ == "__main__":
 ```
 
-### prefix_match / cs (3)
+### rt:call_coverage / cpp (31)
 
 ```
-src/toolchain2/emit/cs/emitter.py:140: module_id[len("pytra.std."):] if module_id.startswith("pytra.std.") else "",
-src/toolchain2/emit/cs/emitter.py:141: module_id[len("pytra.built_in."):] if module_id.startswith("pytra.built_in.") else "",
-src/toolchain2/emit/cs/emitter.py:163: if module_id.startswith("pytra.std."):
+src/runtime/cpp/mapping.json:0: calls["bytearray_ctor"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["bytes_ctor"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["ceil"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["cos"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["e"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["exp"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["fabs"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["floor"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["log"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["log10"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["math.e"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["math.pi"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["open"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["path.abspath"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["pi"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["pow"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["py_dumps"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["py_dumps_jv"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["py_float_from_str"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["py_floordiv"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["py_len"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["py_loads"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["py_loads_arr"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["py_loads_obj"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["py_write_text"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["sin"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["sqrt"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["std::runtime_error"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["str.index"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["str.rfind"] not found in any EAST3 golden
+src/runtime/cpp/mapping.json:0: calls["tan"] not found in any EAST3 golden
 ```
 
-### prefix_match / lua (2)
+### rt:call_coverage / cs (35)
 
 ```
-src/toolchain2/emit/lua/emitter.py:1645: if module_id.startswith("pytra.built_in."):
-src/toolchain2/emit/lua/emitter.py:1730: if isinstance(module_id, str) and module_id.startswith("pytra.built_in."):
+src/runtime/cs/mapping.json:0: calls["SystemExit"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["bytearray_ctor"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["bytes_ctor"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["cast"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["endswith"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["enumerate"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["index"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["isalpha"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["isdigit"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["items"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["list_ctor"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["lstrip"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["math.e"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["math.pi"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["max"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["min"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["perf_counter"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["py_bool"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["py_chr"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["py_float_from_str"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["py_floordiv"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["py_in"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["py_isalpha"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["py_isdigit"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["py_len"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["py_mod"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["py_ord"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["py_slice"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["pytra_isinstance"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["replace"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["reversed"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["rstrip"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["startswith"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["str.rfind"] not found in any EAST3 golden
+src/runtime/cs/mapping.json:0: calls["strip"] not found in any EAST3 golden
 ```
 
-### python_syntax / nim (1)
+### rt:call_coverage / dart (56)
 
 ```
-src/toolchain2/emit/nim/emitter.py:891: if attr == "__init__" and isinstance(owner_node, dict) and _str(owner_node, "repr") == "super()":
+src/runtime/dart/mapping.json:0: calls["abs"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["acos"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["asin"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["atan"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["atan2"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["bool"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["bytearray"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["bytearray_ctor"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["bytes"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["bytes_ctor"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["ceil"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["cos"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["exp"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["fabs"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["float"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["floor"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["hypot"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["int"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["isfinite"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["isinf"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["isnan"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["list_ctor"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["log"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["log10"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["log2"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["makedirs"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["math.e"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["math.inf"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["math.nan"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["math.pi"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["math.tau"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["open"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["perf_counter"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["pow"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["print"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["py_bool"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["py_chr"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["py_float_from_str"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["py_floordiv"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["py_in"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["py_len"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["py_ord"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["py_slice"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["py_truthy"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["pyopen"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["round"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["sin"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["sqrt"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["str.count"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["str.index"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["str.isspace"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["str.rfind"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["sys.argv"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["sys.path"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["tan"] not found in any EAST3 golden
+src/runtime/dart/mapping.json:0: calls["trunc"] not found in any EAST3 golden
 ```
 
-### python_syntax / ruby (2)
+### rt:call_coverage / go (33)
 
 ```
-src/toolchain2/emit/ruby/emitter.py:757: if isinstance(owner_node, dict) and _str(owner_node, "repr") == "super()":
-src/toolchain2/emit/ruby/emitter.py:1644: _emit(ctx, "super()")
+src/runtime/go/mapping.json:0: calls["atan2"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["bytearray_ctor"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["bytes_ctor"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["ceil"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["cos"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["exp"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["fabs"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["floor"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["list_ctor"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["log"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["log10"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["math.atan2"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["pow"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["py_chr"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["py_enumerate"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["py_float_from_str"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["py_floordiv"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["py_len"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["py_ord"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["py_reversed"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["randint"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["random"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["seed"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["sin"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["sorted"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["sqrt"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["std::runtime_error"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["str.count"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["str.index"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["str.isspace"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["str.rfind"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["tan"] not found in any EAST3 golden
+src/runtime/go/mapping.json:0: calls["tuple_ctor"] not found in any EAST3 golden
 ```
 
-### runtime_symbol / cpp (1)
+### rt:call_coverage / java (38)
 
 ```
-src/toolchain2/emit/cpp/emitter.py:1532: if rc in ("py_print", "py_len") and len(arg_strs) >= 1:
+src/runtime/java/mapping.json:0: calls["ArgumentParser"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["Path"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["bytearray"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["bytearray_ctor"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["bytes"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["bytes_ctor"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["ceil"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["deque"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["dumps"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["fabs"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["floor"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["json.loads_obj"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["list_ctor"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["loads"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["loads_arr"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["loads_obj"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["makedirs"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["math.e"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["math.pi"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["os.path.basename"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["os.path.dirname"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["os.path.exists"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["os.path.join"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["os.path.splitext"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["perf_counter"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["py_bool"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["py_chr"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["py_float_from_str"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["py_floordiv"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["py_len"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["py_ord"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["py_slice"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["pytra_isinstance"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["sqrt"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["std::runtime_error"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["str.rfind"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["sub"] not found in any EAST3 golden
+src/runtime/java/mapping.json:0: calls["tuple_ctor"] not found in any EAST3 golden
 ```
 
-### runtime_symbol / ts (1)
+### rt:call_coverage / julia (73)
 
 ```
-src/toolchain2/emit/ts/emitter.py:115: "perf_counter",
+src/runtime/julia/mapping.json:0: calls["Exception"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["IndexError"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["RuntimeError"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["TypeError"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["ValueError"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["abs"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["acos"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["asin"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["atan"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["atan2"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["bool"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["bytearray"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["bytearray.append"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["bytearray.clear"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["bytearray.pop"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["bytearray_ctor"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["bytes"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["bytes_ctor"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["ceil"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["cos"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["deque"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["exp"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["fabs"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["float"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["floor"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["hypot"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["int"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["isfinite"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["isinf"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["isnan"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["list_ctor"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["log"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["log10"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["log2"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["makedirs"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["math.e"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["math.inf"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["math.nan"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["math.pi"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["math.tau"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["max"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["min"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["open"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["perf_counter"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["pow"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["print"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["py_bool"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["py_chr"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["py_enumerate"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["py_float_from_str"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["py_floordiv"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["py_in"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["py_isinstance"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["py_len"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["py_ord"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["py_reversed"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["py_slice"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["py_truthy"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["pyopen"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["round"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["set"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["sin"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["sorted"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["sqrt"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["std::runtime_error"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["str.count"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["str.index"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["str.isspace"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["str.rfind"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["sys.argv"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["tan"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["trunc"] not found in any EAST3 golden
+src/runtime/julia/mapping.json:0: calls["tuple_ctor"] not found in any EAST3 golden
 ```
 
-### type_id / cpp (1)
+### rt:call_coverage / kotlin (17)
 
 ```
-src/toolchain2/emit/cpp/emitter.py:2084: if tid == "" and expected_name.startswith("PYTRA_TID_"):
+src/runtime/kotlin/mapping.json:0: calls["bool"] not found in any EAST3 golden
+src/runtime/kotlin/mapping.json:0: calls["bytearray"] not found in any EAST3 golden
+src/runtime/kotlin/mapping.json:0: calls["bytearray_ctor"] not found in any EAST3 golden
+src/runtime/kotlin/mapping.json:0: calls["bytes"] not found in any EAST3 golden
+src/runtime/kotlin/mapping.json:0: calls["bytes_ctor"] not found in any EAST3 golden
+src/runtime/kotlin/mapping.json:0: calls["float"] not found in any EAST3 golden
+src/runtime/kotlin/mapping.json:0: calls["int"] not found in any EAST3 golden
+src/runtime/kotlin/mapping.json:0: calls["list_ctor"] not found in any EAST3 golden
+src/runtime/kotlin/mapping.json:0: calls["open"] not found in any EAST3 golden
+src/runtime/kotlin/mapping.json:0: calls["print"] not found in any EAST3 golden
+src/runtime/kotlin/mapping.json:0: calls["py_chr"] not found in any EAST3 golden
+src/runtime/kotlin/mapping.json:0: calls["py_float_from_str"] not found in any EAST3 golden
+src/runtime/kotlin/mapping.json:0: calls["py_len"] not found in any EAST3 golden
+src/runtime/kotlin/mapping.json:0: calls["py_ord"] not found in any EAST3 golden
+src/runtime/kotlin/mapping.json:0: calls["range"] not found in any EAST3 golden
+src/runtime/kotlin/mapping.json:0: calls["set"] not found in any EAST3 golden
+src/runtime/kotlin/mapping.json:0: calls["str.rfind"] not found in any EAST3 golden
 ```
 
-### type_id / cs (2)
+### rt:call_coverage / lua (77)
 
 ```
-src/toolchain2/emit/cs/emitter.py:328: if type_name.startswith("PYTRA_TID_"):
-src/toolchain2/emit/cs/emitter.py:373: if ident.startswith("PYTRA_TID_"):
+src/runtime/lua/mapping.json:0: calls["ArgumentParser"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["Path"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["abs"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["acos"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["asin"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["atan"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["atan2"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["bytearray"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["bytearray_ctor"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["bytes"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["bytes_ctor"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["ceil"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["cos"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["deque"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["dict.update"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["dumps"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["exp"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["fabs"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["float"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["floor"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["hypot"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["int"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["isfinite"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["isinf"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["isnan"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["list.insert"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["list.remove"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["list_ctor"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["loads"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["loads_arr"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["log"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["log10"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["log2"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["makedirs"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["math.e"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["math.inf"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["math.nan"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["math.pi"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["math.tau"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["max"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["min"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["module_ctor.math"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["open"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["perf_counter"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["pow"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["print"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["py_bool"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["py_chr"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["py_enumerate"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["py_float_from_str"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["py_floordiv"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["py_in"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["py_isinstance"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["py_len"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["py_ord"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["py_reversed"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["py_slice"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["py_truthy"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["pyopen"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["pytra_isinstance"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["round"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["set_argv"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["set_path"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["sin"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["sorted"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["sqrt"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["std::runtime_error"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["str.count"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["str.index"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["str.isspace"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["str.rfind"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["sub"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["sys.argv"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["sys.path"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["tan"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["trunc"] not found in any EAST3 golden
+src/runtime/lua/mapping.json:0: calls["tuple_ctor"] not found in any EAST3 golden
+```
+
+### rt:call_coverage / php (66)
+
+```
+src/runtime/php/mapping.json:0: calls["abs"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["acos"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["asin"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["atan"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["atan2"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["bytearray"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["bytearray_ctor"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["bytes"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["bytes_ctor"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["ceil"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["cos"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["dict.update"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["exp"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["fabs"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["float"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["floor"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["hypot"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["int"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["isfinite"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["isinf"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["isnan"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["list.insert"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["list_ctor"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["log"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["log10"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["log2"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["makedirs"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["math.e"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["math.inf"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["math.nan"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["math.pi"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["math.tau"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["max"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["min"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["open"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["perf_counter"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["pow"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["print"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["py_bool"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["py_chr"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["py_enumerate"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["py_float_from_str"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["py_floordiv"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["py_in"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["py_isinstance"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["py_len"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["py_ord"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["py_reversed"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["py_slice"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["py_truthy"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["pyopen"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["pytra_isinstance"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["round"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["set"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["sin"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["sorted"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["sqrt"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["std::runtime_error"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["str.count"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["str.index"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["str.isspace"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["str.rfind"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["tan"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["trunc"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["tuple_ctor"] not found in any EAST3 golden
+src/runtime/php/mapping.json:0: calls["type"] not found in any EAST3 golden
+```
+
+### rt:call_coverage / ps1 (80)
+
+```
+src/runtime/powershell/mapping.json:0: calls["acos"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["asin"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["atan"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["atan2"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["bytearray_ctor"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["bytes_ctor"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["ceil"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["cos"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["dict.update"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["dict_ctor"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["exp"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["fabs"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["floor"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["gif.grayscale_palette"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["gif.save_gif"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["hypot"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["isfinite"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["isinf"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["isnan"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["list.copy"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["list.insert"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["list.remove"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["list_ctor"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["log"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["log10"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["log2"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["makedirs"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["math.e"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["math.inf"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["math.nan"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["math.pi"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["math.tau"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["open"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["path.abspath"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["path.isdir"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["path.isfile"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["perf_counter"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["pow"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_abs"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_bool"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_chr"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_dumps"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_enumerate"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_filter"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_float_from_str"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_floordiv"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_in"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_isinstance"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_len"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_loads"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_map"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_ord"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_reversed"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_slice"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_sorted"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_sum"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_truthy"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_write_text"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["py_zip"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["re.findall"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["re.match"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["re.search"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["round"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["sin"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["sqrt"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["std::runtime_error"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["str.count"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["str.format"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["str.index"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["str.isspace"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["str.rfind"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["sys.argv"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["sys.maxsize"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["sys.path"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["sys.platform"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["sys.stderr"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["sys.stdout"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["tan"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["trunc"] not found in any EAST3 golden
+src/runtime/powershell/mapping.json:0: calls["tuple_ctor"] not found in any EAST3 golden
+```
+
+### rt:call_coverage / rs (47)
+
+```
+src/runtime/rs/mapping.json:0: calls["__import__.os"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["__import__.subprocess"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["basename"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["bytearray_ctor"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["bytes_ctor"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["ceil"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["cos"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["dirname"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["e"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["exists"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["exp"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["fabs"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["floor"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["getcwd"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["gif.save_gif"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["glob"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["join"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["list_ctor"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["log"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["log10"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["math.e"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["math.pi"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["open"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["perf_counter"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["pi"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["pow"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["py_chr"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["py_enumerate"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["py_float_from_str"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["py_floordiv"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["py_len"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["py_open"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["py_ord"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["py_reversed"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["pytra.std.os.environ"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["pytra_isinstance"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["sin"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["sorted"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["splitext"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["sqrt"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["std::runtime_error"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["str.count"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["str.index"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["str.isspace"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["str.rfind"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["tan"] not found in any EAST3 golden
+src/runtime/rs/mapping.json:0: calls["tuple_ctor"] not found in any EAST3 golden
+```
+
+### rt:call_coverage / ruby (74)
+
+```
+src/runtime/ruby/mapping.json:0: calls["abs"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["acos"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["asin"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["atan"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["atan2"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["bytearray"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["bytearray_ctor"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["bytes"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["bytes_ctor"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["ceil"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["cos"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["exp"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["fabs"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["float"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["floor"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["hypot"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["int"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["isfinite"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["isinf"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["isnan"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["list_ctor"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["log"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["log10"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["log2"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["makedirs"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["math.e"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["math.inf"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["math.nan"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["math.pi"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["math.tau"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["max"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["min"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["open"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["os.getcwd"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["os.mkdir"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["os_path.abspath"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["os_path.basename"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["os_path.dirname"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["os_path.exists"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["os_path.join"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["os_path.splitext"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["perf_counter"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["pow"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["print"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["py_bool"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["py_chr"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["py_enumerate"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["py_float_from_str"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["py_floordiv"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["py_in"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["py_len"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["py_ord"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["py_reversed"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["py_slice"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["py_truthy"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["pyopen"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["pytra_isinstance"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["round"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["sin"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["sorted"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["sqrt"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["std::runtime_error"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["str.count"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["str.index"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["str.isspace"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["str.rfind"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["sys.argv"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["sys.path"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["tan"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["trunc"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["tuple_ctor"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["type"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["write_stderr"] not found in any EAST3 golden
+src/runtime/ruby/mapping.json:0: calls["write_stdout"] not found in any EAST3 golden
+```
+
+### rt:call_coverage / scala (17)
+
+```
+src/runtime/scala/mapping.json:0: calls["bool"] not found in any EAST3 golden
+src/runtime/scala/mapping.json:0: calls["bytearray"] not found in any EAST3 golden
+src/runtime/scala/mapping.json:0: calls["bytearray_ctor"] not found in any EAST3 golden
+src/runtime/scala/mapping.json:0: calls["bytes"] not found in any EAST3 golden
+src/runtime/scala/mapping.json:0: calls["bytes_ctor"] not found in any EAST3 golden
+src/runtime/scala/mapping.json:0: calls["float"] not found in any EAST3 golden
+src/runtime/scala/mapping.json:0: calls["int"] not found in any EAST3 golden
+src/runtime/scala/mapping.json:0: calls["list_ctor"] not found in any EAST3 golden
+src/runtime/scala/mapping.json:0: calls["open"] not found in any EAST3 golden
+src/runtime/scala/mapping.json:0: calls["print"] not found in any EAST3 golden
+src/runtime/scala/mapping.json:0: calls["py_chr"] not found in any EAST3 golden
+src/runtime/scala/mapping.json:0: calls["py_float_from_str"] not found in any EAST3 golden
+src/runtime/scala/mapping.json:0: calls["py_len"] not found in any EAST3 golden
+src/runtime/scala/mapping.json:0: calls["py_ord"] not found in any EAST3 golden
+src/runtime/scala/mapping.json:0: calls["range"] not found in any EAST3 golden
+src/runtime/scala/mapping.json:0: calls["set"] not found in any EAST3 golden
+src/runtime/scala/mapping.json:0: calls["str.rfind"] not found in any EAST3 golden
+```
+
+### rt:call_coverage / swift (20)
+
+```
+src/runtime/swift/mapping.json:0: calls["bool"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["bytearray"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["bytes"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["float"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["floor"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["int"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["list_ctor"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["perf_counter"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["print"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["py_bool"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["py_chr"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["py_float_from_str"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["py_floordiv"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["py_in"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["py_len"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["py_ord"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["py_slice"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["py_truthy"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["sqrt"] not found in any EAST3 golden
+src/runtime/swift/mapping.json:0: calls["str.rfind"] not found in any EAST3 golden
+```
+
+### rt:call_coverage / ts (67)
+
+```
+src/runtime/ts/mapping.json:0: calls["abs"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["acos"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["asin"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["atan"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["atan2"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["bool"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["bytearray"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["bytearray_ctor"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["bytes"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["bytes_ctor"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["ceil"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["cos"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["exp"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["fabs"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["float"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["floor"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["hypot"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["int"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["isalnum"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["isalpha"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["isdigit"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["isfinite"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["isinf"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["isnan"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["list_ctor"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["log"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["log10"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["log2"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["makedirs"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["math.e"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["math.inf"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["math.nan"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["math.pi"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["math.tau"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["max"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["min"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["open"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["perf_counter"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["pow"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["print"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["py_bool"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["py_chr"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["py_enumerate"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["py_float_from_str"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["py_floordiv"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["py_in"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["py_isinstance"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["py_len"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["py_ord"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["py_reversed"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["py_slice"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["py_truthy"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["pyopen"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["round"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["sin"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["sorted"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["sqrt"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["std::runtime_error"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["str.count"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["str.index"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["str.isspace"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["str.rfind"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["sys.argv"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["sys.path"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["tan"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["trunc"] not found in any EAST3 golden
+src/runtime/ts/mapping.json:0: calls["tuple_ctor"] not found in any EAST3 golden
+```
+
+### rt:call_coverage / zig (20)
+
+```
+src/runtime/zig/mapping.json:0: calls["basename"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["bytearray_ctor"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["bytes_ctor"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["dict_ctor"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["dirname"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["exists"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["getcwd"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["glob"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["join"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["list_ctor"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["math.e"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["math.pi"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["perf_counter"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["py_chr"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["py_float_from_str"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["py_len"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["py_ord"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["pytra_isinstance"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["str.rfind"] not found in any EAST3 golden
+src/runtime/zig/mapping.json:0: calls["tuple_ctor"] not found in any EAST3 golden
+```
+
+### rt:type_id / lua (9)
+
+```
+src/runtime/lua/built_in/py_runtime.lua:11: PYTRA_TID_NONE = 0
+src/runtime/lua/built_in/py_runtime.lua:12: PYTRA_TID_BOOL = 1
+src/runtime/lua/built_in/py_runtime.lua:13: PYTRA_TID_INT = 2
+src/runtime/lua/built_in/py_runtime.lua:14: PYTRA_TID_FLOAT = 3
+src/runtime/lua/built_in/py_runtime.lua:15: PYTRA_TID_STR = 4
+src/runtime/lua/built_in/py_runtime.lua:16: PYTRA_TID_LIST = 5
+src/runtime/lua/built_in/py_runtime.lua:17: PYTRA_TID_DICT = 6
+src/runtime/lua/built_in/py_runtime.lua:18: PYTRA_TID_SET = 7
+src/runtime/lua/built_in/py_runtime.lua:19: PYTRA_TID_OBJECT = 8
+```
+
+### runtime_symbol / julia (1)
+
+```
+src/toolchain2/emit/julia/subset.py:322: "write_rgb_png",
+```
+
+### runtime_symbol / kotlin (1)
+
+```
+src/toolchain2/emit/kotlin/emitter.py:271: if mod in ("time", "pytra.std.time") and name == "perf_counter":
+```
+
+### runtime_symbol / scala (1)
+
+```
+src/toolchain2/emit/scala/emitter.py:229: if mod in ("time", "pytra.std.time") and name == "perf_counter":
+```
+
+### runtime_symbol / zig (1)
+
+```
+src/toolchain2/emit/zig/emitter.py:241: return runtime_symbol == "perf_counter" or runtime_symbol == "perf_counter_ns"
+```
+
+### skip_pure_python / julia (1)
+
+```
+src/runtime/julia/mapping.json:0: skip_modules contains "pytra.std.collections" but pytra.std.collections is pure Python (no @extern)
+```
+
+### skip_pure_python / zig (1)
+
+```
+src/runtime/zig/mapping.json:0: skip_modules contains "pytra.std.pathlib" but pytra.std.pathlib is pure Python (no @extern)
 ```
