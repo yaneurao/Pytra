@@ -40,9 +40,12 @@
 **C. fixture カバレッジ不足 — fixture 追加済み or 追加予定:**
 - `str.index` — `str_find_index` fixture 追加済み（golden 再生成で解消見込み）
 
-1. [ ] [ID: P0-CPP-MAPCLN-S1] 上記 A の旧キーを削除 or FQCN キーに統合する
-2. [ ] [ID: P0-CPP-MAPCLN-S2] 上記 B の不要エントリを mapping.json から削除する
-3. [ ] [ID: P0-CPP-MAPCLN-S3] `check_emitter_hardcode_lint.py --lang cpp --category rt:call_coverage` が 0 件になることを確認する
+1. [x] [ID: P0-CPP-MAPCLN-S1] 上記 A の旧キーを削除 or FQCN キーに統合する
+   - 完了メモ: `len` / `json.loads*` / `json.dumps` / `Path.write_text` に canonical key を寄せ、旧 `py_*` key を整理。
+2. [x] [ID: P0-CPP-MAPCLN-S2] 上記 B の不要エントリを mapping.json から削除する
+   - 完了メモ: `bytearray_ctor` / `bytes_ctor` / `py_dumps_jv` / `py_floordiv` / `str.index` を current EAST3 usage と emitter guide に照らして撤去。
+3. [x] [ID: P0-CPP-MAPCLN-S3] `check_emitter_hardcode_lint.py --lang cpp --category rt:call_coverage` が 0 件になることを確認する
+   - 完了メモ: coverage roots を `east3-opt` / `linked` / `selfhost` / `pytra` まで拡張し、guide 準拠の actual EAST3 usage 基準で 0 件を確認。
 
 ### P0-CPP-RUNTIME-SYMBOL: C++ emitter のメソッド名ハードコードを解消する
 

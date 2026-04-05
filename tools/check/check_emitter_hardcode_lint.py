@@ -202,8 +202,16 @@ _RUNTIME_EXTENSIONS: dict[str, list[str]] = {
 
 _EAST3_ROOTS_FOR_COVERAGE = [
     ROOT / "test" / "fixture" / "east3",
+    ROOT / "test" / "fixture" / "east3-opt",
     ROOT / "test" / "sample" / "east3",
+    ROOT / "test" / "sample" / "east3-opt",
     ROOT / "test" / "stdlib" / "east3",
+    ROOT / "test" / "stdlib" / "east3-opt",
+    ROOT / "test" / "stdlib" / "linked",
+    ROOT / "test" / "selfhost" / "east3",
+    ROOT / "test" / "selfhost" / "east3-opt",
+    ROOT / "test" / "pytra" / "east3",
+    ROOT / "test" / "pytra" / "east3-opt",
 ]
 
 _GOLDEN_CALLS_CACHE: set[str] | None = None

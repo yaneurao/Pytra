@@ -26,8 +26,16 @@ ROOT = Path(__file__).resolve().parents[2]
 
 EAST3_ROOTS = [
     ROOT / "test" / "fixture" / "east3",
+    ROOT / "test" / "fixture" / "east3-opt",
     ROOT / "test" / "sample" / "east3",
+    ROOT / "test" / "sample" / "east3-opt",
     ROOT / "test" / "stdlib" / "east3",
+    ROOT / "test" / "stdlib" / "east3-opt",
+    ROOT / "test" / "stdlib" / "linked",
+    ROOT / "test" / "selfhost" / "east3",
+    ROOT / "test" / "selfhost" / "east3-opt",
+    ROOT / "test" / "pytra" / "east3",
+    ROOT / "test" / "pytra" / "east3-opt",
 ]
 
 RUNTIME_DIR = ROOT / "src" / "runtime"
@@ -75,7 +83,12 @@ def collect_runtime_calls_from_goldens() -> dict[str, set[str]]:
             for key in ("runtime_call", "resolved_runtime_call"):
                 val = node.get(key)
                 if isinstance(val, str) and val:
+                    results.add(val)
                     results.add(_normalize_call_key(val))
+            mod_id = node.get("runtime_module_id")
+            sym = node.get("runtime_symbol")
+            if isinstance(mod_id, str) and mod_id and isinstance(sym, str) and sym:
+                results.add(mod_id + "." + sym)
             for v in node.values():
                 _walk(v, results)
         elif isinstance(node, list):
@@ -88,7 +101,7 @@ def collect_runtime_calls_from_goldens() -> dict[str, set[str]]:
             continue
         # key = "fixture", "sample", "stdlib" (parent directory name)
         key = root.parent.name
-        calls: set[str] = set()
+        calls = result.get(key, set())
         for path in root.rglob("*.east3"):
             try:
                 doc = json.loads(path.read_text(encoding="utf-8"))
