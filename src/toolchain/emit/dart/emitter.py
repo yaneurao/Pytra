@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import Any
+
+from pytra.std import json
+from pytra.std.pathlib import Path
 
 from toolchain.emit.common.code_emitter import (
     build_import_alias_map,
     load_runtime_mapping,
     RuntimeMapping,
+    should_skip_module,
 )
 from toolchain.emit.swift.emitter import (
     reject_backend_homogeneous_tuple_ellipsis_type_exprs,
@@ -28,7 +30,8 @@ def _load_runtime_symbol_index() -> dict[str, Any]:
         _RUNTIME_SYMBOL_INDEX_CACHE = {}
         return _RUNTIME_SYMBOL_INDEX_CACHE
     try:
-        raw = json.loads(_RUNTIME_SYMBOL_INDEX_PATH.read_text(encoding="utf-8"))
+        raw_obj = json.loads_obj(_RUNTIME_SYMBOL_INDEX_PATH.read_text())
+        raw = raw_obj.raw if raw_obj is not None else {}
         _RUNTIME_SYMBOL_INDEX_CACHE = raw if isinstance(raw, dict) else {}
     except Exception:
         _RUNTIME_SYMBOL_INDEX_CACHE = {}
@@ -47,14 +50,36 @@ def runtime_module_exists(module_id: str) -> bool:
     return len(_runtime_module_doc(module_id)) > 0
 
 
+def _find_runtime_modules_by_leaf(module_id: str) -> list[str]:
+    mod = module_id.strip()
+    if mod == "":
+        return []
+    modules = _load_runtime_symbol_index().get("modules")
+    if not isinstance(modules, dict):
+        return []
+    matches: list[str] = []
+    for candidate_any in modules.keys():
+        if not isinstance(candidate_any, str):
+            continue
+        candidate = candidate_any.strip()
+        if candidate == "":
+            continue
+        parts = candidate.split(".")
+        if len(parts) > 0 and parts[-1] == mod:
+            matches.append(candidate)
+    return matches
+
+
 def canonical_runtime_module_id(module_id: str) -> str:
     mod = module_id.strip()
-    if mod.startswith("pytra.") or mod.startswith("toolchain."):
+    if mod == "":
+        return ""
+    if runtime_module_exists(mod):
         return mod
-    if "." not in mod and mod != "":
-        candidate = "pytra.std." + mod
-        if runtime_module_exists(candidate):
-            return candidate
+    if "." not in mod:
+        matches = _find_runtime_modules_by_leaf(mod)
+        if len(matches) == 1:
+            return matches[0]
     return mod
 
 
@@ -72,10 +97,6 @@ def resolve_import_binding_runtime_module(module_id: str, export_name: str, bind
     mod = canonical_runtime_module_id(module_id.strip())
     if mod == "":
         return ""
-    if not runtime_module_exists(mod) and "." not in mod:
-        candidate = "pytra.std." + mod
-        if runtime_module_exists(candidate):
-            mod = candidate
     if binding_kind in {"module", "implicit_builtin"}:
         return mod if runtime_module_exists(mod) else ""
     if binding_kind != "symbol":
@@ -111,10 +132,6 @@ def resolve_import_binding_doc(module_id: str, export_name: str, binding_kind: s
         out["resolved_binding_kind"] = "module"
         return out
     child_module = canonical_runtime_module_id(source_module_id)
-    if not runtime_module_exists(child_module) and "." not in child_module:
-        normalized = "pytra.std." + child_module
-        if runtime_module_exists(normalized):
-            child_module = normalized
     if child_module != "" and runtime_module_id != child_module:
         out["resolved_binding_kind"] = "module"
         return out
@@ -1357,13 +1374,11 @@ class DartNativeEmitter:
             runtime_module_id = node.get("runtime_module_id") if isinstance(node, dict) and isinstance(node.get("runtime_module_id"), str) else ""
             if runtime_module_id != "":
                 runtime_mod_canon = canonical_runtime_module_id(runtime_module_id)
-                runtime_parts = runtime_mod_canon.split(".")
                 if (
                     runtime_mod_canon != ""
                     and runtime_mod_canon not in imported_module_paths
-                    and len(runtime_parts) >= 3
-                    and runtime_parts[0] == "pytra"
-                    and runtime_parts[1] in {"std", "utils"}
+                    and runtime_module_exists(runtime_mod_canon)
+                    and not should_skip_module(runtime_mod_canon, self._mapping)
                 ):
                     runtime_alias = self._next_module_alias(runtime_mod_canon.split(".")[-1])
                     runtime_path = _module_id_to_import_path(runtime_mod_canon, ".dart", rt_prefix)
