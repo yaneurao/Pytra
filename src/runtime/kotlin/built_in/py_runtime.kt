@@ -2,6 +2,7 @@
 import kotlin.math.*
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.file.Files
 import java.nio.file.Paths
 
 class PyTuple(items: Collection<Any?> = emptyList()) : ArrayList<Any?>(items)
@@ -366,6 +367,120 @@ fun __pytra_write_rgb_png(path: String, width: Long, height: Long, pixels: Any?)
     } finally {
         file.close()
     }
+}
+
+private fun __pytra_gif_append(dst: MutableList<Long>, src: List<*>) {
+    for (value in src) dst.add(__pytra_int(value) and 0xffL)
+}
+
+private fun __pytra_gif_u16le(value: Long): MutableList<Long> = mutableListOf(value and 0xffL, (value shr 8) and 0xffL)
+
+private fun __pytra_lzw_encode(data: List<*>, minCodeSize: Long): MutableList<Long> {
+    if (data.isEmpty()) return mutableListOf()
+    val clearCode = 1L shl minCodeSize.toInt()
+    val endCode = clearCode + 1L
+    var codeSize = minCodeSize + 1L
+    val out = mutableListOf<Long>()
+    var bitBuffer = clearCode
+    var bitCount = codeSize
+    while (bitCount >= 8L) {
+        out.add(bitBuffer and 0xffL)
+        bitBuffer = bitBuffer shr 8
+        bitCount -= 8L
+    }
+    codeSize = minCodeSize + 1L
+    var index = 0
+    while (index < data.size) {
+        val value = __pytra_int(data[index])
+        bitBuffer = bitBuffer or (value shl bitCount.toInt())
+        bitCount += codeSize
+        while (bitCount >= 8L) {
+            out.add(bitBuffer and 0xffL)
+            bitBuffer = bitBuffer shr 8
+            bitCount -= 8L
+        }
+        bitBuffer = bitBuffer or (clearCode shl bitCount.toInt())
+        bitCount += codeSize
+        while (bitCount >= 8L) {
+            out.add(bitBuffer and 0xffL)
+            bitBuffer = bitBuffer shr 8
+            bitCount -= 8L
+        }
+        codeSize = minCodeSize + 1L
+        index += 1
+    }
+    bitBuffer = bitBuffer or (endCode shl bitCount.toInt())
+    bitCount += codeSize
+    while (bitCount >= 8L) {
+        out.add(bitBuffer and 0xffL)
+        bitBuffer = bitBuffer shr 8
+        bitCount -= 8L
+    }
+    if (bitCount > 0L) out.add(bitBuffer and 0xffL)
+    return out
+}
+
+fun __pytra_grayscale_palette(): MutableList<Long> {
+    val out = mutableListOf<Long>()
+    var i = 0L
+    while (i < 256L) {
+        out.add(i)
+        out.add(i)
+        out.add(i)
+        i += 1L
+    }
+    return out
+}
+
+fun __pytra_save_gif(path: String, width: Long, height: Long, frames: Any?, palette: Any?, delayCs: Long = 4L, loop: Long = 0L) {
+    val paletteList = __pytra_as_list(palette)
+    if (paletteList.size != 256 * 3) throw RuntimeException("palette must be 256*3 bytes")
+    val frameSize = width * height
+    val out = mutableListOf<Long>()
+    __pytra_gif_append(out, listOf(71L, 73L, 70L, 56L, 57L, 97L))
+    __pytra_gif_append(out, __pytra_gif_u16le(width))
+    __pytra_gif_append(out, __pytra_gif_u16le(height))
+    __pytra_gif_append(out, listOf(0xF7L, 0L, 0L))
+    __pytra_gif_append(out, paletteList)
+    __pytra_gif_append(out, listOf(0x21L, 0xFFL, 0x0BL, 78L, 69L, 84L, 83L, 67L, 65L, 80L, 69L, 50L, 46L, 48L, 0x03L, 0x01L))
+    __pytra_gif_append(out, __pytra_gif_u16le(loop))
+    out.add(0L)
+    val frameList = __pytra_as_list(frames)
+    var frameIndex = 0
+    while (frameIndex < frameList.size) {
+        val frame = __pytra_as_list(frameList[frameIndex])
+        if (frame.size.toLong() != frameSize) throw RuntimeException("frame size mismatch")
+        __pytra_gif_append(out, listOf(0x21L, 0xF9L, 0x04L, 0x00L))
+        __pytra_gif_append(out, __pytra_gif_u16le(delayCs))
+        __pytra_gif_append(out, listOf(0x00L, 0x00L))
+        out.add(0x2CL)
+        __pytra_gif_append(out, __pytra_gif_u16le(0L))
+        __pytra_gif_append(out, __pytra_gif_u16le(0L))
+        __pytra_gif_append(out, __pytra_gif_u16le(width))
+        __pytra_gif_append(out, __pytra_gif_u16le(height))
+        out.add(0L)
+        out.add(8L)
+        val compressed = __pytra_lzw_encode(frame, 8L)
+        var pos = 0
+        while (pos < compressed.size) {
+            val remain = compressed.size - pos
+            val chunkLen = if (remain > 255) 255 else remain
+            out.add(chunkLen.toLong())
+            var i = 0
+            while (i < chunkLen) {
+                out.add(compressed[pos + i])
+                i += 1
+            }
+            pos += chunkLen
+        }
+        out.add(0L)
+        frameIndex += 1
+    }
+    out.add(0x3BL)
+    val outPath = Paths.get(path)
+    val parent = outPath.parent
+    if (parent != null) Files.createDirectories(parent)
+    Files.write(outPath, out.map { (it and 0xffL).toByte() }.toByteArray())
 }
 
 class PyFile(private val path: String, private val mode: String) {
