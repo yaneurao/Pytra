@@ -29,6 +29,14 @@
 
 ## 未完了タスク
 
+### P0-RUBY-NEW-FIXTURE-PARITY: 新規追加 fixture / stdlib の parity 確認
+
+今セッション（2026-04-01〜05）で追加・更新した fixture と stdlib の parity を確認する。
+
+対象: `bytes_copy_semantics`, `negative_index_comprehensive`, `negative_index_out_of_range`, `callable_optional_none`, `str_find_index`, `eo_extern_opaque_basic`(emit-only), `math_extended`(stdlib), `os_glob_extended`(stdlib)
+
+1. [ ] [ID: P0-RUBY-NEWFIX-S1] 上記 fixture/stdlib の parity を確認する（対象 fixture のみ実行）
+
 ### P20-RUBY-SELFHOST: Ruby emitter で toolchain2 を Ruby に変換し実行できるようにする
 
 1. [ ] [ID: P20-RUBY-SELFHOST-S0] selfhost 対象コードの型注釈補完（他言語と共通）
