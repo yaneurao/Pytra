@@ -364,6 +364,29 @@ def _node_mutates_self_fields(node: JsonVal) -> bool:
                         call_owner = node.get("runtime_owner")
                         if isinstance(call_owner, dict) and _str(call_owner, "borrow_kind") == "mutable_ref":
                             return True
+                        runtime_call = _str(node, "runtime_call")
+                        if runtime_call in {
+                            "list.append",
+                            "list.extend",
+                            "list.insert",
+                            "list.pop",
+                            "list.clear",
+                            "list.reverse",
+                            "list.sort",
+                            "dict.pop",
+                            "dict.setdefault",
+                            "dict.update",
+                            "dict.clear",
+                            "set.add",
+                            "set.discard",
+                            "set.remove",
+                            "set.clear",
+                            "bytearray.append",
+                            "bytearray.extend",
+                            "bytearray.pop",
+                            "bytearray.clear",
+                        }:
+                            return True
         for value in node.values():
             if _node_mutates_self_fields(value):
                 return True

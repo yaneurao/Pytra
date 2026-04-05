@@ -290,6 +290,18 @@ static inline void py_list_sort_mut(Object<list<T>>& values) {
     py_list_sort_mut(*values);
 }
 
+template <class T>
+static inline list<T> py_sorted(const list<T>& values) {
+    list<T> out = values;
+    ::std::sort(out.begin(), out.end());
+    return out;
+}
+
+template <class T>
+static inline list<T> py_sorted(const Object<list<T>>& values) {
+    return py_sorted(*values);
+}
+
 // py_list_at_ref for object (= Object<void>): downcast to list<object> and index.
 static inline object py_list_at_ref(const object& values, int64 idx) {
     auto typed = values.as<list<object>>();

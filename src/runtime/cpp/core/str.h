@@ -362,4 +362,8 @@ static inline bool py_isalnum(const str& ch) {
     return ch.isalnum();
 }
 
+static inline bool py_isspace(const str& ch) {
+    return ch.isspace();
+}
+
 #endif  // PYTRA_BUILT_IN_STR_H

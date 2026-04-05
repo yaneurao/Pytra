@@ -4172,7 +4172,9 @@ def _function_self_mutates(node: dict[str, JsonVal]) -> bool:
     if _bool(node, "mutates_self"):
         return True
     arg_usage = _dict(node, "arg_usage")
-    return arg_usage.get("self") == "reassigned"
+    if arg_usage.get("self") == "reassigned":
+        return True
+    return _node_mutates_self_fields(_list(node, "body"))
 
 
 def _collect_function_mutable_param_indexes(node: JsonVal, out: dict[str, set[int]]) -> None:
@@ -4357,6 +4359,29 @@ def _node_mutates_self_fields(node: JsonVal) -> bool:
                     if isinstance(base, dict) and _str(base, "kind") == "Name" and _str(base, "id") == "self":
                         call_owner = node.get("runtime_owner")
                         if isinstance(call_owner, dict) and _str(call_owner, "borrow_kind") == "mutable_ref":
+                            return True
+                        runtime_call = _str(node, "runtime_call")
+                        if runtime_call in {
+                            "list.append",
+                            "list.extend",
+                            "list.insert",
+                            "list.pop",
+                            "list.clear",
+                            "list.reverse",
+                            "list.sort",
+                            "dict.pop",
+                            "dict.setdefault",
+                            "dict.update",
+                            "dict.clear",
+                            "set.add",
+                            "set.discard",
+                            "set.remove",
+                            "set.clear",
+                            "bytearray.append",
+                            "bytearray.extend",
+                            "bytearray.pop",
+                            "bytearray.clear",
+                        }:
                             return True
         for value in node.values():
             if _node_mutates_self_fields(value):
