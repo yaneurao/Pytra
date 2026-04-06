@@ -47,10 +47,21 @@ class ScalaRenderer(CommonRenderer):
         self.local_type_stack: list[dict[str, str]] = []
         self._tmp_counter = 0
 
+    def _mapping_call(self, key: str) -> str:
+        mapped = self.mapping.calls.get(key)
+        return mapped if isinstance(mapped, str) else ""
+
+    def _module_namespace_expr(self, module_id: str) -> str:
+        expr = self.mapping.module_namespace_exprs.get(module_id, "")
+        return expr if isinstance(expr, str) else ""
+
+    def _is_exception_name(self, name: str) -> bool:
+        return name in self.mapping.exception_types or name in self.module_class_names
+
     def _exception_class_name(self, name: str) -> str:
         if name == "":
             return "Throwable"
-        if name in self.module_class_names or name.endswith("Error") or name.endswith("Exception"):
+        if self._is_exception_name(name):
             return _safe_scala_ident(name)
         return _safe_scala_ident(name)
 
@@ -331,11 +342,9 @@ class ScalaRenderer(CommonRenderer):
                             if isinstance(resolved, str) and resolved != "":
                                 self.runtime_imports[local_name] = resolved
                                 continue
-                        if mod in ("math", "pytra.std.math"):
-                            self.import_symbols[local_name] = "math_native." + _safe_scala_ident(name)
-                            continue
-                        if mod in ("time", "pytra.std.time") and name == "perf_counter":
-                            self.import_symbols[local_name] = "time_native.perf_counter"
+                        namespace_expr = self._module_namespace_expr(mod)
+                        if namespace_expr != "":
+                            self.import_symbols[local_name] = namespace_expr + "." + _safe_scala_ident(name)
                             continue
                         self.import_symbols[local_name] = _safe_scala_ident(mod.replace(".", "_")) + "." + _safe_scala_ident(name)
         self.module_function_names = {
@@ -586,17 +595,17 @@ class ScalaRenderer(CommonRenderer):
                 return
             if isinstance(exc, dict):
                 exc_type = self._str(exc, "resolved_type")
-                if exc_type.endswith("Error") or exc_type.endswith("Exception"):
+                if self._is_exception_name(exc_type):
                     self._emit("throw " + self._emit_expr(exc))
                     return
             message = "\"raise\""
             if isinstance(exc, dict) and self._str(exc, "kind") == "Call":
                 func = exc.get("func")
                 if isinstance(func, dict):
-                    if self._str(func, "kind") == "Name" and (self._str(func, "id").endswith("Error") or self._str(func, "id").endswith("Exception")):
+                    if self._str(func, "kind") == "Name" and self._is_exception_name(self._str(func, "id")):
                         self._emit("throw " + self._emit_expr(exc))
                         return
-                    if self._str(func, "kind") == "Attribute" and (self._str(func, "attr").endswith("Error") or self._str(func, "attr").endswith("Exception")):
+                    if self._str(func, "kind") == "Attribute" and self._is_exception_name(self._str(func, "attr")):
                         self._emit("throw " + self._emit_expr(exc))
                         return
                 args = self._list(exc, "args")
@@ -981,21 +990,15 @@ class ScalaRenderer(CommonRenderer):
                 return self.runtime_imports[ident]
             if ident in self.import_symbols:
                 import_path = self.import_symbols[ident]
-                if import_path.startswith("pytra_built_in_error.") and (ident.endswith("Error") or ident.endswith("Exception")):
-                    return _safe_scala_ident(import_path.split(".")[-1])
+                import_leaf = import_path.rsplit(".", 1)[-1]
+                if self._is_exception_name(import_leaf):
+                    return _safe_scala_ident(import_leaf)
                 return import_path
             if ident in self.import_alias_modules:
                 module_id = self.import_alias_modules[ident]
-                if module_id in ("math", "pytra.std.math"):
-                    return "math_native"
-                if module_id in ("time", "pytra.std.time"):
-                    return "time_native"
-                if module_id in ("env", "pytra.std.env"):
-                    return "env"
-                if module_id in ("os", "pytra.std.os"):
-                    return "os"
-                if module_id in ("os.path", "pytra.std.os_path"):
-                    return "os_path"
+                namespace_expr = self._module_namespace_expr(module_id)
+                if namespace_expr != "":
+                    return namespace_expr
                 return _safe_scala_ident(module_id.replace(".", "_"))
             if ident in self.local_function_aliases:
                 if callable_type != "":
@@ -1018,12 +1021,11 @@ class ScalaRenderer(CommonRenderer):
                 owner_id = self._str(owner_node, "id")
                 module_id = self.import_alias_modules.get(owner_id, "")
                 attr = _safe_scala_ident(self._str(node, "attr"))
-                if module_id in ("pytra.built_in.error", "pytra_built_in_error") and (attr.endswith("Error") or attr.endswith("Exception")):
+                if self._module_namespace_expr(module_id) != "" and self._is_exception_name(attr):
                     return attr
-                if module_id in ("math", "pytra.std.math"):
-                    return "math_native." + attr
-                if module_id in ("time", "pytra.std.time"):
-                    return "time_native." + attr
+                namespace_expr = self._module_namespace_expr(module_id)
+                if namespace_expr != "":
+                    return namespace_expr + "." + attr
                 qualified = self._str(node, "repr")
                 if qualified != "" and qualified in self.mapping.calls:
                     return self.mapping.calls[qualified]
@@ -1209,60 +1211,70 @@ class ScalaRenderer(CommonRenderer):
                         if resolved != "":
                             call_parts = self._emit_call_parts(arg_nodes) + self._emit_keyword_parts(keyword_nodes)
                             return resolved + "(" + ", ".join(call_parts) + ")"
-                if owner_expr == "pytra_built_in_error" and attr.endswith("Error"):
-                    first_arg = self._emit_expr(arg_nodes[0]) if len(arg_nodes) > 0 else "\"error\""
-                    return "{ val __pytra_obj = new " + _safe_scala_ident(attr) + "(); __pytra_obj.__init__(" + first_arg + "); __pytra_obj }"
+                resolved_method = resolve_runtime_symbol_name(
+                    attr,
+                    self.mapping,
+                    module_id=self._str(node, "runtime_module_id"),
+                    resolved_runtime_call=self._str(node, "resolved_runtime_call"),
+                    runtime_call=self._str(node, "runtime_call"),
+                )
+                if self._is_exception_name(attr) and isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Name":
+                    owner_id = self._str(owner_node, "id")
+                    owner_module_id = self.import_alias_modules.get(owner_id, "")
+                    if self._module_namespace_expr(owner_module_id) != "":
+                        first_arg = self._emit_expr(arg_nodes[0]) if len(arg_nodes) > 0 else "\"error\""
+                        return "{ val __pytra_obj = new " + _safe_scala_ident(attr) + "(); __pytra_obj.__init__(" + first_arg + "); __pytra_obj }"
                 dynamic_dict_owner = owner_type in ("JsonVal", "Any", "object", "unknown", "pytra.std.json.JsonVal", "pytra_std_json.JsonVal")
-                if dynamic_dict_owner and attr == "get" and len(arg_nodes) == 1:
+                if dynamic_dict_owner and resolved_method == self._mapping_call("dict.get") and len(arg_nodes) == 1:
                     return "__pytra_as_dict(" + owner_expr + ").get(" + self._emit_expr(arg_nodes[0]) + ")"
-                if dynamic_dict_owner and attr == "get" and len(arg_nodes) == 2:
+                if dynamic_dict_owner and resolved_method == self._mapping_call("dict.get") and len(arg_nodes) == 2:
                     return "__pytra_as_dict(" + owner_expr + ").getOrElse(" + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
-                if dynamic_dict_owner and attr == "items" and len(arg_nodes) == 0:
+                if dynamic_dict_owner and resolved_method == self._mapping_call("dict.items") and len(arg_nodes) == 0:
                     return "__pytra_dict_items(__pytra_as_dict(" + owner_expr + "))"
-                if dynamic_dict_owner and attr == "keys" and len(arg_nodes) == 0:
+                if dynamic_dict_owner and resolved_method == self._mapping_call("dict.keys") and len(arg_nodes) == 0:
                     return "__pytra_dict_keys(__pytra_as_dict(" + owner_expr + "))"
-                if dynamic_dict_owner and attr == "values" and len(arg_nodes) == 0:
+                if dynamic_dict_owner and resolved_method == self._mapping_call("dict.values") and len(arg_nodes) == 0:
                     return "__pytra_dict_values(__pytra_as_dict(" + owner_expr + "))"
                 if owner_type in ("str", "string"):
-                    if attr == "join" and len(arg_nodes) == 1:
+                    if resolved_method == self._mapping_call("str.join") and len(arg_nodes) == 1:
                         return "__pytra_join(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
-                    if attr == "isalpha" and len(arg_nodes) == 0:
+                    if resolved_method == self._mapping_call("str.isalpha") and len(arg_nodes) == 0:
                         return "__pytra_isalpha(" + owner_expr + ")"
-                    if attr == "split":
+                    if resolved_method == self._mapping_call("str.split"):
                         sep = self._emit_expr(arg_nodes[0]) if len(arg_nodes) >= 1 else "null"
                         return "__pytra_split(" + owner_expr + ", " + sep + ").asInstanceOf[" + scala_type(self._str(node, "resolved_type")) + "]"
-                    if attr == "strip":
+                    if resolved_method == self._mapping_call("str.strip"):
                         return "__pytra_strip(" + owner_expr + ")"
-                    if attr == "lstrip":
+                    if resolved_method == self._mapping_call("str.lstrip"):
                         return "__pytra_lstrip(" + owner_expr + ")"
-                    if attr == "rstrip":
+                    if resolved_method == self._mapping_call("str.rstrip"):
                         return "__pytra_rstrip(" + owner_expr + ")"
-                    if attr == "replace" and len(arg_nodes) >= 2:
+                    if resolved_method == self._mapping_call("str.replace") and len(arg_nodes) >= 2:
                         return "__pytra_replace(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
-                    if attr == "startswith" and len(arg_nodes) >= 1:
+                    if resolved_method == self._mapping_call("str.startswith") and len(arg_nodes) >= 1:
                         return "__pytra_startswith(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
-                    if attr == "endswith" and len(arg_nodes) >= 1:
+                    if resolved_method == self._mapping_call("str.endswith") and len(arg_nodes) >= 1:
                         return "__pytra_endswith(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
-                    if attr == "upper":
+                    if resolved_method == self._mapping_call("str.upper"):
                         return "__pytra_upper(" + owner_expr + ")"
-                    if attr == "lower":
+                    if resolved_method == self._mapping_call("str.lower"):
                         return "__pytra_lower(" + owner_expr + ")"
-                    if attr == "find" and len(arg_nodes) >= 1:
+                    if resolved_method == self._mapping_call("str.find") and len(arg_nodes) >= 1:
                         return "__pytra_find(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
-                    if attr == "count" and len(arg_nodes) >= 1:
+                    if resolved_method == self._mapping_call("str.count") and len(arg_nodes) >= 1:
                         return "__pytra_count_substr(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
-                    if attr == "index" and len(arg_nodes) >= 1:
+                    if resolved_method == self._mapping_call("str.index") and len(arg_nodes) >= 1:
                         return "__pytra_str_index(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
-                    if attr == "rfind" and len(arg_nodes) >= 1:
+                    if resolved_method == self._mapping_call("str.rfind") and len(arg_nodes) >= 1:
                         return "__pytra_rfind(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
-                    if attr == "isalnum" and len(arg_nodes) == 0:
+                    if resolved_method == self._mapping_call("str.isalnum") and len(arg_nodes) == 0:
                         return "__pytra_isalnum(" + owner_expr + ")"
-                    if attr == "isdigit" and len(arg_nodes) == 0:
+                    if resolved_method == self._mapping_call("str.isdigit") and len(arg_nodes) == 0:
                         return "__pytra_isdigit(" + owner_expr + ")"
-                if (owner_type.startswith("dict[") or owner_type == "dict") and attr == "get" and len(arg_nodes) == 1:
+                if (owner_type.startswith("dict[") or owner_type == "dict") and resolved_method == self._mapping_call("dict.get") and len(arg_nodes) == 1:
                     expr = "__pytra_as_dict(" + owner_expr + ").getOrElse(" + self._emit_expr(arg_nodes[0]) + ", null)"
                     return expr
-                if (owner_type.startswith("dict[") or owner_type == "dict") and attr == "get" and len(arg_nodes) == 2:
+                if (owner_type.startswith("dict[") or owner_type == "dict") and resolved_method == self._mapping_call("dict.get") and len(arg_nodes) == 2:
                     result_type = self._str(node, "resolved_type")
                     expr = "__pytra_as_dict(" + owner_expr + ").getOrElse(" + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
                     default_node = arg_nodes[1]
@@ -1271,25 +1283,25 @@ class ScalaRenderer(CommonRenderer):
                         return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
                     return expr
                 if owner_type.startswith("dict[") or owner_type == "dict":
-                    if attr == "keys":
+                    if resolved_method == self._mapping_call("dict.keys"):
                         result_type = self._str(node, "resolved_type")
                         expr = "__pytra_dict_keys(__pytra_as_dict(" + owner_expr + "))"
                         if result_type not in ("", "unknown", "Any", "object", "JsonVal"):
                             return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
                         return expr
-                    if attr == "values":
+                    if resolved_method == self._mapping_call("dict.values"):
                         result_type = self._str(node, "resolved_type")
                         expr = "__pytra_dict_values(__pytra_as_dict(" + owner_expr + "))"
                         if result_type not in ("", "unknown", "Any", "object", "JsonVal"):
                             return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
                         return expr
-                    if attr == "items":
+                    if resolved_method == self._mapping_call("dict.items"):
                         result_type = self._str(node, "resolved_type")
                         expr = "__pytra_dict_items(__pytra_as_dict(" + owner_expr + "))"
                         if result_type not in ("", "unknown", "Any", "object", "JsonVal"):
                             return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
                         return expr
-                    if attr == "pop" and len(arg_nodes) >= 1:
+                    if resolved_method == self._mapping_call("dict.pop") and len(arg_nodes) >= 1:
                         key_expr = self._emit_expr(arg_nodes[0])
                         value_type = "Any"
                         owner_rt = owner_type
@@ -1300,7 +1312,7 @@ class ScalaRenderer(CommonRenderer):
                                 value_type = scala_type(parts[1])
                         dict_expr = "__pytra_as_dict(" + owner_expr + ")"
                         return "{ val __pytra_pop_key = " + key_expr + "; val __pytra_pop_val = " + dict_expr + "(__pytra_pop_key); " + dict_expr + ".remove(__pytra_pop_key); __pytra_pop_val.asInstanceOf[" + value_type + "] }"
-                    if attr == "setdefault" and len(arg_nodes) >= 2:
+                    if resolved_method == self._mapping_call("dict.setdefault") and len(arg_nodes) >= 2:
                         key_expr = self._emit_expr(arg_nodes[0])
                         default_expr = self._emit_expr(arg_nodes[1])
                         result_type = self._str(node, "resolved_type")
@@ -1309,9 +1321,9 @@ class ScalaRenderer(CommonRenderer):
                             return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
                         return expr
                 if owner_type.startswith("list[") or owner_type in ("list", "bytearray", "bytes"):
-                    if attr == "index" and len(arg_nodes) >= 1:
+                    if resolved_method == self._mapping_call("list.index") and len(arg_nodes) >= 1:
                         return owner_expr + ".indexOf(" + self._emit_expr(arg_nodes[0]) + ").toLong"
-                    if attr == "extend" and len(arg_nodes) == 1:
+                    if resolved_method == self._mapping_call("list.extend") and len(arg_nodes) == 1:
                         arg_expr = self._emit_expr(arg_nodes[0])
                         if owner_type in ("bytearray", "bytes"):
                             return owner_expr + " ++= __pytra_bytes(" + arg_expr + ")"
@@ -1319,17 +1331,17 @@ class ScalaRenderer(CommonRenderer):
                             elem_type = scala_type(owner_type[5:-1])
                             return owner_expr + " ++= __pytra_as_list(" + arg_expr + ").asInstanceOf[mutable.ArrayBuffer[" + elem_type + "]]"
                         return owner_expr + " ++= __pytra_as_list(" + arg_expr + ")"
-                    if attr == "sort":
+                    if resolved_method == self._mapping_call("list.sort"):
                         return "{ val __pytra_sorted = " + owner_expr + ".sorted; " + owner_expr + ".clear(); " + owner_expr + " ++= __pytra_sorted; () }"
-                    if attr == "reverse":
+                    if resolved_method == self._mapping_call("list.reverse"):
                         return "{ val __pytra_reversed = " + owner_expr + ".reverse; " + owner_expr + ".clear(); " + owner_expr + " ++= __pytra_reversed; () }"
-                    if attr == "pop":
+                    if resolved_method == self._mapping_call("list.pop"):
                         if len(arg_nodes) == 0:
                             return "{ val __pytra_idx = " + owner_expr + ".size - 1; val __pytra_val = " + owner_expr + "(__pytra_idx); " + owner_expr + ".remove(__pytra_idx); __pytra_val }"
                         idx_expr = self._emit_expr(arg_nodes[0])
                         return "{ val __pytra_idx = __pytra_index(__pytra_int(" + idx_expr + "), " + owner_expr + ".size.toLong).toInt; val __pytra_val = " + owner_expr + "(__pytra_idx); " + owner_expr + ".remove(__pytra_idx); __pytra_val }"
                 if owner_type.startswith("set[") or owner_type == "set":
-                    if attr == "discard" and len(arg_nodes) >= 1:
+                    if resolved_method in (self._mapping_call("set.discard"), self._mapping_call("set.remove")) and len(arg_nodes) >= 1:
                         return "{ " + owner_expr + ".subtractOne(" + self._emit_expr(arg_nodes[0]) + "); () }"
             if isinstance(func, dict) and self._str(func, "kind") == "Name":
                 func_id = self._str(func, "id")
@@ -1376,13 +1388,14 @@ class ScalaRenderer(CommonRenderer):
                     if self.class_has_init.get(func_id, True):
                         return "{ val " + tmp_name + " = new " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
                     return "new " + class_name + "(" + ", ".join(ctor_args) + ")"
-                if func_id.endswith("Error") or func_id.endswith("Exception"):
+                if self._is_exception_name(func_id):
                     ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
                     class_name = _safe_scala_ident(func_id)
                     tmp_name = "__pytra_obj"
                     return "{ val " + tmp_name + " = new " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
-            if func_name.startswith("pytra_built_in_error.") and (func_name.endswith("Error") or func_name.endswith("Exception")):
-                bare_name = _safe_scala_ident(func_name.split(".")[-1])
+            func_leaf = func_name.rsplit(".", 1)[-1]
+            if self._is_exception_name(func_leaf):
+                bare_name = _safe_scala_ident(func_leaf)
                 ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
                 tmp_name = "__pytra_obj"
                 return "{ val " + tmp_name + " = new " + bare_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"

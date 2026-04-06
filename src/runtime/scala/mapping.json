@@ -61,6 +61,7 @@
     "set.remove": "__pytra_remove",
     "set_ctor": "__pytra_set_new",
     "str.endswith": "__pytra_endswith",
+    "str.count": "__pytra_count_substr",
     "str.find": "__pytra_find",
     "str.isalnum": "__pytra_isalnum",
     "str.isalpha": "__pytra_isalpha",
@@ -69,6 +70,7 @@
     "str.lower": "__pytra_lower",
     "str.lstrip": "__pytra_lstrip",
     "str.replace": "__pytra_replace",
+    "str.index": "__pytra_str_index",
     "str.rfind": "__pytra_rfind",
     "str.rstrip": "__pytra_rstrip",
     "str.split": "__pytra_split",
@@ -91,6 +93,28 @@
     "JsonArr": "JsonArr",
     "JsonObj": "JsonObj"
   },
+  "module_namespace_exprs": {
+    "env": "env",
+    "math": "math_native",
+    "os": "os",
+    "os.path": "os_path",
+    "pytra.built_in.error": "pytra_built_in_error",
+    "pytra.std.env": "env",
+    "pytra.std.math": "math_native",
+    "pytra.std.os": "os",
+    "pytra.std.os_path": "os_path",
+    "pytra.std.time": "time_native",
+    "time": "time_native"
+  },
+  "exception_types": [
+    "BaseException",
+    "Exception",
+    "IndexError",
+    "KeyError",
+    "RuntimeError",
+    "TypeError",
+    "ValueError"
+  ],
   "implicit_promotions": [],
   "skip_modules": [
     "pytra.built_in.",

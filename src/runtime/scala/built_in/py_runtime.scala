@@ -202,6 +202,24 @@ def __pytra_makedirs(path: Any, exist_ok: Any = false): Unit = os.makedirs(path,
 def __pytra_floor(v: Any): Double = scala.math.floor(__pytra_float(v))
 def __pytra_Path(raw: Any): Path = Path(raw)
 def __pytra_glob(pattern: Any): mutable.ArrayBuffer[String] = glob.glob(pattern)
+def __pytra_deque[T](): T = {
+    val cls = Class.forName("pytra_std_collections$deque")
+    val obj = cls.getDeclaredConstructor().newInstance()
+    val initOpt = cls.getMethods.find(_.getName == "__init__")
+    initOpt.foreach(_.invoke(obj))
+    obj.asInstanceOf[T]
+}
+def __pytra_sorted[T](values: mutable.ArrayBuffer[T]): mutable.ArrayBuffer[T] = {
+    val out = values.clone()
+    out.sortInPlaceWith((left, right) => {
+        if (left.isInstanceOf[String] || right.isInstanceOf[String]) {
+            __pytra_str(left) < __pytra_str(right)
+        } else {
+            __pytra_float(left) < __pytra_float(right)
+        }
+    })
+    out
+}
 
 def __pytra_cast(target: Any, value: Any): Any = value
 
