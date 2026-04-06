@@ -918,6 +918,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if func_kind == "Name":
             fn_id = _str(func, "id")
             semantic_tag = _str(node, "semantic_tag")
+            call_rt = _str(node, "resolved_type")
+            func_rt = _str(func, "resolved_type")
 
             if fn_id in ("__init__", "py__init__") and len(args) >= 1:
                 first_arg = args[0]
@@ -947,6 +949,14 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     return "pyBytearray()"
                 return "pyBytearray(" + all_arg_strs[0] + ")"
             if semantic_tag == "core.bytes_ctor":
+                if len(all_arg_strs) == 0:
+                    return "pyBytes()"
+                return "pyBytes(" + all_arg_strs[0] + ")"
+            if func_rt == "type" and call_rt == "bytearray":
+                if len(all_arg_strs) == 0:
+                    return "pyBytearray()"
+                return "pyBytearray(" + all_arg_strs[0] + ")"
+            if func_rt == "type" and call_rt == "bytes":
                 if len(all_arg_strs) == 0:
                     return "pyBytes()"
                 return "pyBytes(" + all_arg_strs[0] + ")"
