@@ -527,6 +527,14 @@ def _emit_container_method_call(ctx: EmitContext, owner_node: JsonVal, attr: str
     if owner_type == "str":
         if attr == "upper":
             return owner_access + ".toUpperCase()"
+        if attr == "count" and len(arg_strs) >= 1:
+            return "PyRuntime.__pytra_count_substr(" + owner_access + ", " + arg_strs[0] + ")"
+        if attr == "find" and len(arg_strs) >= 1:
+            return "PyRuntime.__pytra_find(" + owner_access + ", " + arg_strs[0] + ")"
+        if attr == "rfind" and len(arg_strs) >= 1:
+            return "PyRuntime.__pytra_rfind(" + owner_access + ", " + arg_strs[0] + ")"
+        if attr == "index" and len(arg_strs) >= 1:
+            return "PyRuntime.__pytra_str_index(" + owner_access + ", " + arg_strs[0] + ")"
     if _is_dict_type(owner_type) or _is_dynamic_type(owner_type):
         if attr == "get":
             if _is_dynamic_type(owner_type):
@@ -1013,7 +1021,10 @@ def _emit_expr_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return "PyRuntime.pyToString(" + _emit_expr(ctx, node.get("value")) + ")"
         return "PyRuntime.pyFormat(" + _emit_expr(ctx, node.get("value")) + ", " + _emit_constant({"value": format_spec}) + ")"
     if kind == "Unbox":
-        return _emit_cast_expr(ctx, _str(node, "resolved_type"), _emit_expr(ctx, node.get("value")))
+        target_type = _str(node, "resolved_type")
+        if "|" in target_type:
+            return _emit_expr(ctx, node.get("value"))
+        return _emit_cast_expr(ctx, target_type, _emit_expr(ctx, node.get("value")))
     if kind == "Box":
         return _emit_expr(ctx, node.get("value"))
     if kind == "Slice":
@@ -1207,7 +1218,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             owner_node = func.get("value")
             attr = _str(func, "attr")
             owner = _emit_expr(ctx, owner_node)
-            special = _emit_container_method_call(ctx, owner_node, attr, arg_strs, node)
+            call_arg_strs = list(arg_strs)
+            if len(call_arg_strs) > 0 and call_arg_strs[0] == owner:
+                call_arg_strs = call_arg_strs[1:]
+            special = _emit_container_method_call(ctx, owner_node, attr, call_arg_strs, node)
             if special != "":
                 return special
             is_module_owner, owner_key, owner_module_id = _module_owner_info(ctx, owner_node)
@@ -1235,9 +1249,9 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 runtime_call = _str(node, "runtime_call")
             fn_name = _runtime_call_name(ctx, node, func)
             if runtime_call != "" or fn_name in ctx.mapping.calls.values():
-                method_args = [owner] + arg_strs
+                method_args = [owner] + call_arg_strs
                 if is_module_owner:
-                    method_args = list(arg_strs)
+                    method_args = list(call_arg_strs)
                 owner_type = _node_type(ctx, owner_node)
                 if not is_module_owner and _is_dynamic_type(owner_type) and fn_name in (
                     "PyRuntime.pyStrJoin",
@@ -1254,7 +1268,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     return placeholder
                 if fn_name != "":
                     return fn_name + "(" + ", ".join(method_args) + ")"
-            return _emit_attribute(ctx, func) + "(" + ", ".join(arg_strs) + ")"
+            return _emit_attribute(ctx, func) + "(" + ", ".join(call_arg_strs) + ")"
         if func_kind == "Name":
             fn_id = _str(func, "id")
             vararg_type = ctx.function_varargs.get(fn_id, "")
@@ -1421,6 +1435,31 @@ def _emit_name_assignment(ctx: EmitContext, name: str, target_type: str, value_c
         _emit(ctx, jt + " " + safe_name + " = " + value_code + ";")
         return
     _emit(ctx, safe_name + " = " + value_code + ";")
+
+
+def _with_hoisted_names(node: dict[str, JsonVal]) -> list[tuple[str, str]]:
+    out: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for stmt in _list(node, "body"):
+        if not isinstance(stmt, dict):
+            continue
+        kind = _str(stmt, "kind")
+        target = stmt.get("target")
+        if not isinstance(target, dict) or _str(target, "kind") not in ("Name", "NameTarget"):
+            continue
+        name = _str(target, "id")
+        if name == "" or name in seen:
+            continue
+        decl_type = ""
+        if kind == "AnnAssign":
+            decl_type = _str(stmt, "decl_type") or _str(stmt, "annotation") or _str(target, "resolved_type")
+        elif kind == "Assign" and _bool(stmt, "declare"):
+            decl_type = _str(stmt, "decl_type") or _str(target, "resolved_type")
+        if decl_type == "":
+            continue
+        seen.add(name)
+        out.append((name, decl_type))
+    return out
 
 
 def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
@@ -2047,6 +2086,42 @@ def _emit_stmt(ctx: EmitContext, node: JsonVal) -> None:
         return
     if kind == "Continue":
         _emit(ctx, "continue;")
+        return
+    if kind == "With":
+        context_expr = node.get("context_expr")
+        context_type = _str(context_expr, "resolved_type") if isinstance(context_expr, dict) else "PyFile"
+        if context_type == "":
+            context_type = "PyFile"
+        if context_type in ("TextIOWrapper", "BufferedReader", "BufferedWriter", "IOBase", "PyFile"):
+            java_context_type = "PyRuntime.PyFile"
+        else:
+            java_context_type = _java_type_in_ctx(ctx, context_type)
+        comp_name = "_pytra_with_ctx_" + str(len(ctx.lines))
+        entered_name = "_pytra_with_value_" + str(len(ctx.lines))
+        _emit(ctx, java_context_type + " " + comp_name + " = " + _emit_expr(ctx, context_expr) + ";")
+        var_name = _str(node, "var_name")
+        if var_name != "":
+            safe_var = _java_symbol_name(ctx, var_name)
+            if safe_var in ctx.var_types:
+                _emit(ctx, safe_var + " = " + comp_name + ".__enter__();")
+            else:
+                ctx.var_types[safe_var] = context_type
+                _emit(ctx, java_context_type + " " + safe_var + " = " + comp_name + ".__enter__();")
+        else:
+            _emit(ctx, java_context_type + " " + entered_name + " = " + comp_name + ".__enter__();")
+        for hoisted_name, hoisted_type in _with_hoisted_names(node):
+            if _java_symbol_name(ctx, hoisted_name) not in ctx.var_types:
+                _emit_name_assignment(ctx, hoisted_name, hoisted_type, java_zero_value(hoisted_type), annotated=True)
+        _emit(ctx, "try {")
+        ctx.indent_level += 1
+        for stmt in _list(node, "body"):
+            _emit_stmt(ctx, stmt)
+        ctx.indent_level -= 1
+        _emit(ctx, "} finally {")
+        ctx.indent_level += 1
+        _emit(ctx, comp_name + ".__exit__(null, null, null);")
+        ctx.indent_level -= 1
+        _emit(ctx, "}")
         return
     raise RuntimeError("unsupported_stmt_kind_java: " + kind)
 

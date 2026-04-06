@@ -28,6 +28,7 @@ class ValueError extends Exception
 class TypeError extends Exception
 class RuntimeError extends Exception
 class IndexError extends Exception
+class KeyError extends Exception
 
 def __pytra_noop(args: Any*): Unit = { }
 
@@ -800,6 +801,16 @@ def __pytra_split(v: Any, sep: Any): mutable.ArrayBuffer[Any] = {
 def __pytra_upper(v: Any): String = __pytra_str(v).toUpperCase
 def __pytra_lower(v: Any): String = __pytra_str(v).toLowerCase
 def __pytra_find(v: Any, sub: Any): Long = __pytra_str(v).indexOf(__pytra_str(sub)).toLong
+def __pytra_rfind(v: Any, sub: Any): Long = __pytra_str(v).lastIndexOf(__pytra_str(sub)).toLong
+def __pytra_str_index(v: Any, sub: Any): Long = {
+    val found = __pytra_find(v, sub)
+    if (found < 0L) {
+        val err = new ValueError()
+        err.__init__("substring not found")
+        throw err
+    }
+    found
+}
 def __pytra_isalnum(v: Any): Boolean = {
     val s = __pytra_str(v)
     if (s.isEmpty) return false
@@ -1558,11 +1569,18 @@ object time {
 
 // Python built-in `open(path, mode)` shim.
 class PyFile(path: String, mode: String) {
-    private val stream: java.io.OutputStream = {
-        if (mode.contains("b")) new java.io.FileOutputStream(path)
+    private val isBinary = mode.contains("b")
+    private val stream: java.io.OutputStream | Null = {
+        if (mode.contains("r")) null
+        else if (isBinary) new java.io.FileOutputStream(path)
         else new java.io.FileOutputStream(path)
     }
+    def read(): String = {
+        val bytes = java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(path))
+        new String(bytes, "UTF-8")
+    }
     def write(data: Any): Unit = {
+        val out = stream.nn
         data match {
             case buf: mutable.ArrayBuffer[_] =>
                 val bytes = new Array[Byte](buf.length)
@@ -1571,12 +1589,14 @@ class PyFile(path: String, mode: String) {
                     bytes(i) = (buf(i).asInstanceOf[Long] & 0xFF).toByte
                     i += 1
                 }
-                stream.write(bytes)
-            case s: String => stream.write(s.getBytes("UTF-8"))
-            case _ => stream.write(__pytra_str(data).getBytes("UTF-8"))
+                out.write(bytes)
+            case s: String => out.write(s.getBytes("UTF-8"))
+            case _ => out.write(__pytra_str(data).getBytes("UTF-8"))
         }
     }
-    def close(): Unit = stream.close()
+    def __enter__(): PyFile = this
+    def __exit__(excType: Any, excVal: Any, excTb: Any): Unit = close()
+    def close(): Unit = if (stream != null) stream.nn.close()
 }
 
 def open(path: Any, mode: String = "r"): PyFile = {

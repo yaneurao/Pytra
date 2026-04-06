@@ -169,6 +169,54 @@ class ScalaRenderer(CommonRenderer):
             parts.append(self._emit_expr(arg))
         return parts
 
+    def _with_hoisted_names(self, node: dict[str, JsonVal]) -> list[tuple[str, str]]:
+        out: list[tuple[str, str]] = []
+        seen: set[str] = set()
+        for stmt in self._list(node, "body"):
+            if not isinstance(stmt, dict):
+                continue
+            kind = self._str(stmt, "kind")
+            target = stmt.get("target")
+            if not isinstance(target, dict) or self._str(target, "kind") not in ("Name", "NameTarget"):
+                continue
+            name = self._str(target, "id")
+            if name == "" or name in seen:
+                continue
+            decl_type = ""
+            if kind == "AnnAssign":
+                decl_type = self._str(stmt, "decl_type") or self._str(stmt, "annotation") or self._str(target, "resolved_type")
+            elif kind == "Assign" and bool(stmt.get("declare")):
+                decl_type = self._str(stmt, "decl_type") or self._str(target, "resolved_type")
+            if decl_type == "":
+                continue
+            seen.add(name)
+            out.append((name, decl_type))
+        return out
+
+    def _try_hoisted_names(self, node: dict[str, JsonVal]) -> list[tuple[str, str]]:
+        out: list[tuple[str, str]] = []
+        seen: set[str] = set()
+        for stmt in self._list(node, "body"):
+            if not isinstance(stmt, dict):
+                continue
+            kind = self._str(stmt, "kind")
+            target = stmt.get("target")
+            if not isinstance(target, dict) or self._str(target, "kind") not in ("Name", "NameTarget"):
+                continue
+            name = self._str(target, "id")
+            if name == "" or name in seen:
+                continue
+            decl_type = ""
+            if kind == "AnnAssign":
+                decl_type = self._str(stmt, "decl_type") or self._str(stmt, "annotation") or self._str(target, "resolved_type")
+            elif kind == "Assign" and bool(stmt.get("declare")):
+                decl_type = self._str(stmt, "decl_type") or self._str(target, "resolved_type")
+            if decl_type == "":
+                continue
+            seen.add(name)
+            out.append((name, decl_type))
+        return out
+
     def _emit_keyword_parts(self, keywords: list[JsonVal]) -> list[str]:
         parts: list[str] = []
         for keyword in keywords:
@@ -557,6 +605,14 @@ class ScalaRenderer(CommonRenderer):
             self._emit("throw new RuntimeException(String.valueOf(" + message + "))")
             return
         if kind == "Try":
+            for hoisted_name, hoisted_type in self._try_hoisted_names(node):
+                safe_name = _safe_scala_ident(hoisted_name)
+                if len(self.local_decl_stack) > 0 and safe_name in self.local_decl_stack[-1]:
+                    continue
+                if len(self.local_decl_stack) > 0:
+                    self.local_decl_stack[-1].add(safe_name)
+                self._emit("var " + safe_name + ": " + scala_type(hoisted_type) + " = " + scala_zero_value(hoisted_type))
+                self._record_local_type(safe_name, hoisted_type)
             self._emit("try {")
             self.state.indent_level += 1
             for stmt in self._list(node, "body"):
@@ -593,6 +649,40 @@ class ScalaRenderer(CommonRenderer):
             self.state.indent_level += 1
             for stmt in self._list(node, "finalbody"):
                 self._emit_stmt(stmt)
+            self.state.indent_level -= 1
+            self._emit("}")
+            return
+        if kind == "With":
+            context_expr = node.get("context_expr")
+            context_type = self._str(context_expr, "resolved_type") or "Any"
+            scala_ctx_type = scala_type(context_type)
+            comp_name = self._next_tmp("__pytra_with_ctx_")
+            entered_name = self._next_tmp("__pytra_with_value_")
+            self._emit("val " + comp_name + ": " + scala_ctx_type + " = " + self._emit_expr(context_expr))
+            var_name = self._str(node, "var_name")
+            if var_name != "":
+                safe_name = _safe_scala_ident(var_name)
+                if self._should_declare_name(safe_name, True):
+                    self._emit("var " + safe_name + ": " + scala_ctx_type + " = " + comp_name + ".__enter__()")
+                else:
+                    self._emit(safe_name + " = " + comp_name + ".__enter__()")
+                self._record_local_type(safe_name, context_type)
+            else:
+                self._emit("val " + entered_name + ": " + scala_ctx_type + " = " + comp_name + ".__enter__()")
+            for hoisted_name, hoisted_type in self._with_hoisted_names(node):
+                safe_name = _safe_scala_ident(hoisted_name)
+                if len(self.local_decl_stack) > 0:
+                    self.local_decl_stack[-1].add(safe_name)
+                self._emit("var " + safe_name + ": " + scala_type(hoisted_type) + " = " + scala_zero_value(hoisted_type))
+                self._record_local_type(safe_name, hoisted_type)
+            self._emit("try {")
+            self.state.indent_level += 1
+            for stmt in self._list(node, "body"):
+                self._emit_stmt(stmt)
+            self.state.indent_level -= 1
+            self._emit("} finally {")
+            self.state.indent_level += 1
+            self._emit(comp_name + ".__exit__(null, null, null)")
             self.state.indent_level -= 1
             self._emit("}")
             return
@@ -1150,7 +1240,9 @@ class ScalaRenderer(CommonRenderer):
                     if attr == "count" and len(arg_nodes) >= 1:
                         return "__pytra_count_substr(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
                     if attr == "index" and len(arg_nodes) >= 1:
-                        return "__pytra_find(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
+                        return "__pytra_str_index(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
+                    if attr == "rfind" and len(arg_nodes) >= 1:
+                        return "__pytra_rfind(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
                     if attr == "isalnum" and len(arg_nodes) == 0:
                         return "__pytra_isalnum(" + owner_expr + ")"
                     if attr == "isdigit" and len(arg_nodes) == 0:

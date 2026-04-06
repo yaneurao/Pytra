@@ -822,6 +822,40 @@ final class PyRuntime {
         return value.toUpperCase();
     }
 
+    static long __pytra_find(Object value, Object sub) {
+        return pyToString(value).indexOf(pyToString(sub));
+    }
+
+    static long __pytra_rfind(Object value, Object sub) {
+        return pyToString(value).lastIndexOf(pyToString(sub));
+    }
+
+    static long __pytra_count_substr(Object value, Object sub) {
+        String s = pyToString(value);
+        String needle = pyToString(sub);
+        if (needle.isEmpty()) {
+            return s.length() + 1L;
+        }
+        long count = 0L;
+        int index = 0;
+        while (true) {
+            int found = s.indexOf(needle, index);
+            if (found < 0) {
+                return count;
+            }
+            count += 1L;
+            index = found + needle.length();
+        }
+    }
+
+    static long __pytra_str_index(Object value, Object sub) {
+        long found = __pytra_find(value, sub);
+        if (found < 0L) {
+            throw new RuntimeException("substring not found");
+        }
+        return found;
+    }
+
     static ArrayList<Object> pyDictKeys(Object value) {
         if (value instanceof Map<?, ?>) {
             Map<?, ?> map = (Map<?, ?>) value;
@@ -1355,6 +1389,15 @@ final class PyRuntime {
             }
         }
 
+        PyFile __enter__() {
+            return this;
+        }
+
+        Object __exit__(Object excType, Object excVal, Object excTb) {
+            close();
+            return null;
+        }
+
         void close() {
         }
     }
@@ -1365,6 +1408,14 @@ final class PyRuntime {
 
     static PyFile open(String path, String mode, String encoding) {
         return new PyFile(path, mode, encoding);
+    }
+
+    static PyFile __pytra_open(String path, String mode) {
+        return open(path, mode);
+    }
+
+    static PyFile __pytra_open(String path, String mode, String encoding) {
+        return open(path, mode, encoding);
     }
 
     static long __pytra_int(Object value) {

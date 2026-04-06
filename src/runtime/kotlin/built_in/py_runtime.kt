@@ -23,6 +23,7 @@ open class ValueError : Exception()
 open class TypeError : Exception()
 open class RuntimeError : Exception()
 open class IndexError : Exception()
+open class KeyError : Exception()
 
 fun __pytra_noop(vararg args: Any?) { }
 
@@ -484,9 +485,14 @@ fun __pytra_save_gif(path: String, width: Long, height: Long, frames: Any?, pale
 }
 
 class PyFile(private val path: String, private val mode: String) {
-    private val stream = FileOutputStream(path)
+    private val stream = if (mode.contains("r")) null else FileOutputStream(path)
+
+    fun read(): String {
+        return Files.readString(Paths.get(path))
+    }
 
     fun write(data: Any?) {
+        val out = stream ?: throw RuntimeException("file not opened for writing")
         when (data) {
             is MutableList<*> -> {
                 val bytes = ByteArray(data.size)
@@ -495,15 +501,21 @@ class PyFile(private val path: String, private val mode: String) {
                     bytes[i] = (__pytra_int(data[i]) and 0xFF).toByte()
                     i += 1
                 }
-                stream.write(bytes)
+                out.write(bytes)
             }
-            is String -> stream.write(data.toByteArray(Charsets.UTF_8))
-            else -> stream.write(__pytra_str(data).toByteArray(Charsets.UTF_8))
+            is String -> out.write(data.toByteArray(Charsets.UTF_8))
+            else -> out.write(__pytra_str(data).toByteArray(Charsets.UTF_8))
         }
     }
 
+    fun __enter__(): PyFile = this
+
+    fun __exit__(excType: Any?, excVal: Any?, excTb: Any?) {
+        close()
+    }
+
     fun close() {
-        stream.close()
+        stream?.close()
     }
 }
 
