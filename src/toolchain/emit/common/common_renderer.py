@@ -19,6 +19,7 @@ from toolchain.emit.common.profile_loader import load_profile_doc
 class CommonRendererState:
     indent_level: int = 0
     lines: list[str] = field(default_factory=list)
+    tmp_counter: int = 0
 
 
 class CommonRenderer:
@@ -272,6 +273,10 @@ class CommonRenderer:
             text = text + term
         self._emit(text)
 
+    def _next_tmp(self, prefix: str) -> str:
+        self.state.tmp_counter += 1
+        return prefix + "_" + str(self.state.tmp_counter)
+
     # ------------------------------------------------------------------
     # overridable hooks
     # ------------------------------------------------------------------
@@ -351,6 +356,146 @@ class CommonRenderer:
             self.state.indent_level -= 1
             self._emit(self._syntax_text("block_close", "}"))
         self.emit_try_teardown(node)
+
+    def _collect_with_hoisted_names(self, body: list[JsonVal]) -> list[dict[str, JsonVal]]:
+        out: list[dict[str, JsonVal]] = []
+        seen: set[str] = set()
+
+        def add_name(name: str, resolved_type: str) -> None:
+            if name == "" or name in seen:
+                return
+            seen.add(name)
+            out.append(
+                {
+                    "kind": "AnnAssign",
+                    "target": {"kind": "Name", "id": name, "resolved_type": resolved_type},
+                    "decl_type": resolved_type,
+                    "value": None,
+                    "declare": True,
+                }
+            )
+
+        def walk(stmts: list[JsonVal]) -> None:
+            for raw_stmt in stmts:
+                if not isinstance(raw_stmt, dict):
+                    continue
+                kind = self._str(raw_stmt, "kind")
+                if kind == "AnnAssign":
+                    target = raw_stmt.get("target")
+                    if isinstance(target, dict) and self._str(target, "kind") == "Name":
+                        add_name(self._str(target, "id"), self._str(raw_stmt, "decl_type"))
+                elif kind == "Assign":
+                    target = raw_stmt.get("target")
+                    if not isinstance(target, dict):
+                        targets = self._list(raw_stmt, "targets")
+                        if len(targets) > 0 and isinstance(targets[0], dict):
+                            target = targets[0]
+                    if isinstance(target, dict) and self._str(target, "kind") == "Name":
+                        add_name(self._str(target, "id"), self._str(raw_stmt, "decl_type"))
+                elif kind in ("If", "While", "Try", "With", "ForCore"):
+                    walk(self._list(raw_stmt, "body"))
+                    walk(self._list(raw_stmt, "orelse"))
+                    walk(self._list(raw_stmt, "finalbody"))
+                    for handler in self._list(raw_stmt, "handlers"):
+                        if isinstance(handler, dict):
+                            walk(self._list(handler, "body"))
+
+        walk(body)
+        return out
+
+    def emit_with_stmt(self, node: dict[str, JsonVal]) -> None:
+        body = self._list(node, "body")
+        for hoisted in self._collect_with_hoisted_names(body):
+            self.emit_assign_stmt(hoisted)
+        ctx_name = self._next_tmp("__with_ctx")
+        enter_name = self._str(node, "var_name")
+        if enter_name == "":
+            enter_name = self._next_tmp("__with_value")
+        context_expr = node.get("context_expr")
+        context_type = self._str(context_expr, "resolved_type") if isinstance(context_expr, dict) else ""
+        context_kind = self._str(context_expr, "kind") if isinstance(context_expr, dict) else ""
+        enter_type = self._str(node, "with_enter_type")
+        ctx_assign = {
+            "kind": "Assign",
+            "target": {"kind": "Name", "id": ctx_name, "resolved_type": context_type},
+            "value": context_expr,
+            "declare": True,
+            "decl_type": context_type,
+        }
+        if context_kind in ("Name", "Attribute", "Subscript"):
+            ctx_assign["bind_ref"] = True
+        self.emit_assign_stmt(ctx_assign)
+        enter_call = {
+            "kind": "Call",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": ctx_name, "resolved_type": context_type},
+                "attr": "__enter__",
+                "resolved_type": "callable",
+            },
+            "args": [],
+            "keywords": [],
+            "resolved_type": enter_type,
+        }
+        if self._str(node, "with_enter_runtime_call") != "":
+            enter_call["runtime_call"] = self._str(node, "with_enter_runtime_call")
+            enter_call["resolved_runtime_call"] = self._str(node, "with_enter_runtime_call")
+            enter_call["runtime_symbol"] = self._str(node, "with_enter_runtime_symbol")
+            enter_call["runtime_module_id"] = self._str(node, "with_enter_runtime_module_id")
+            enter_call["semantic_tag"] = self._str(node, "with_enter_semantic_tag")
+        if context_type != "" and enter_type != "" and context_type == enter_type:
+            self.emit_expr_stmt({"kind": "Expr", "value": enter_call})
+        else:
+            enter_assign = {
+                "kind": "Assign",
+                "target": {"kind": "Name", "id": enter_name, "resolved_type": enter_type},
+                "value": enter_call,
+                "declare": True,
+                "decl_type": enter_type,
+            }
+            self.emit_assign_stmt(enter_assign)
+        exit_call = {
+            "kind": "Call",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": ctx_name, "resolved_type": context_type},
+                "attr": "__exit__",
+                "resolved_type": "callable",
+            },
+            "args": [
+                {"kind": "Constant", "value": None, "resolved_type": "None"},
+                {"kind": "Constant", "value": None, "resolved_type": "None"},
+                {"kind": "Constant", "value": None, "resolved_type": "None"},
+            ],
+            "keywords": [],
+            "resolved_type": "None",
+        }
+        if self._str(node, "with_exit_runtime_call") != "":
+            exit_call["runtime_call"] = self._str(node, "with_exit_runtime_call")
+            exit_call["resolved_runtime_call"] = self._str(node, "with_exit_runtime_call")
+            exit_call["runtime_symbol"] = self._str(node, "with_exit_runtime_symbol")
+            exit_call["runtime_module_id"] = self._str(node, "with_exit_runtime_module_id")
+            exit_call["semantic_tag"] = self._str(node, "with_exit_semantic_tag")
+        try_body = body
+        if context_type != "" and enter_type != "" and context_type == enter_type:
+            try_body = [
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": enter_name, "resolved_type": enter_type},
+                    "value": {"kind": "Name", "id": ctx_name, "resolved_type": context_type},
+                    "declare": True,
+                    "decl_type": enter_type,
+                    "bind_ref": True,
+                }
+            ] + body
+        try_node = {
+            "kind": "Try",
+            "body": try_body,
+            "handlers": [],
+            "orelse": [],
+            "finalbody": [{"kind": "Expr", "value": exit_call}],
+        }
+        self.emit_try_stmt(try_node)
 
     def emit_pass_stmt(self, node: dict[str, JsonVal]) -> None:
         self._emit("// pass")
@@ -539,5 +684,8 @@ class CommonRenderer:
             self.emit_body(self._list(node, "body"))
             self.state.indent_level -= 1
             self._emit(self._syntax_text("block_close", "}"))
+            return
+        if kind == "With":
+            self.emit_with_stmt(node)
             return
         self.emit_stmt_extension(node)

@@ -2480,7 +2480,20 @@ def _resolve_builtin_call(
         return "bytes"
     if name == "open":
         _resolve_call_args(expr, ctx)
-        expr["resolved_type"] = "PyFile"
+        resolved_open_type = "IOBase"
+        args = expr.get("args")
+        if isinstance(args, list) and len(args) >= 2:
+            mode_node = args[1]
+            if isinstance(mode_node, dict) and mode_node.get("kind") == "Constant":
+                mode_value = mode_node.get("value")
+                if isinstance(mode_value, str):
+                    if mode_value == "rb":
+                        resolved_open_type = "BufferedReader"
+                    elif mode_value == "wb" or mode_value == "ab":
+                        resolved_open_type = "BufferedWriter"
+                    elif mode_value in {"r", "w", "a"}:
+                        resolved_open_type = "TextIOWrapper"
+        expr["resolved_type"] = resolved_open_type
         func["resolved_type"] = "callable"
         expr["lowered_kind"] = "BuiltinCall"
         expr["runtime_call"] = "open"
@@ -2489,7 +2502,7 @@ def _resolve_builtin_call(
         expr["runtime_call_adapter_kind"] = "builtin"
         expr["semantic_tag"] = "core.open"
         ctx.used_builtin_modules.add("pytra.core.py_runtime")
-        return "PyFile"
+        return resolved_open_type
 
     sig: FuncSig | None = ctx.registry.lookup_function(name)
     ret: str = "unknown"
@@ -2706,18 +2719,6 @@ def _resolve_method_call(
             hinted_arg_types = _substitute_arg_types(method_sig.arg_types, receiver_type, container_cls)
         _apply_call_arg_hints(expr, method_sig.arg_names[1:], hinted_arg_types, ctx)
         return _resolve_container_method_call(expr, func, receiver_type, owner_base, attr, method_sig, ctx)
-
-    if owner_base == "PyFile":
-        pyfile_method_returns: dict[str, str] = {
-            "read": "str",
-            "write": "int64",
-            "close": "None",
-        }
-        pyfile_ret = pyfile_method_returns.get(attr, "")
-        if pyfile_ret != "":
-            expr["resolved_type"] = pyfile_ret
-            func["resolved_type"] = "callable"
-            return pyfile_ret
 
     cls, msig = _lookup_method_sig(owner_base, attr, ctx)
     if cls is not None and msig is not None and "property" not in msig.decorators:
@@ -4514,12 +4515,35 @@ def _resolve_with(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     context_type: str = "unknown"
     if isinstance(context_expr, dict):
         context_type = _resolve_expr(context_expr, ctx)
+    owner_base = extract_base_type(context_type)
+    enter_type = context_type
+    enter_cls, enter_sig = _lookup_method_sig(owner_base, "__enter__", ctx)
+    if enter_cls is not None and enter_sig is not None:
+        enter_type = _ctx_normalize_type(_substitute_type_params(enter_sig.return_type, context_type, enter_cls), ctx)
+        stmt["with_enter_type"] = enter_type
+        if enter_sig.extern_v2 is not None:
+            if enter_sig.extern_v2.symbol != "":
+                stmt["with_enter_runtime_call"] = enter_sig.extern_v2.symbol
+                stmt["with_enter_runtime_symbol"] = enter_sig.extern_v2.symbol
+            if enter_sig.extern_v2.module != "":
+                stmt["with_enter_runtime_module_id"] = enter_sig.extern_v2.module
+            if enter_sig.extern_v2.tag != "":
+                stmt["with_enter_semantic_tag"] = enter_sig.extern_v2.tag
+    exit_cls, exit_sig = _lookup_method_sig(owner_base, "__exit__", ctx)
+    if exit_cls is not None and exit_sig is not None and exit_sig.extern_v2 is not None:
+        if exit_sig.extern_v2.symbol != "":
+            stmt["with_exit_runtime_call"] = exit_sig.extern_v2.symbol
+            stmt["with_exit_runtime_symbol"] = exit_sig.extern_v2.symbol
+        if exit_sig.extern_v2.module != "":
+            stmt["with_exit_runtime_module_id"] = exit_sig.extern_v2.module
+        if exit_sig.extern_v2.tag != "":
+            stmt["with_exit_semantic_tag"] = exit_sig.extern_v2.tag
 
     saved_scope: Scope = ctx.scope
     body_scope: Scope = saved_scope.child()
     var_name_val = stmt.get("var_name")
     if isinstance(var_name_val, str) and var_name_val != "":
-        body_scope.define(var_name_val, context_type)
+        body_scope.define(var_name_val, enter_type)
     ctx.scope = body_scope
 
     items = stmt.get("items")

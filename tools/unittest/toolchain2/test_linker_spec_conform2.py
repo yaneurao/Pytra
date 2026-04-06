@@ -1506,8 +1506,8 @@ def has_key(env: dict[str, int], name: str) -> bool:
             self.assertTrue(Path(source_path).exists())
             header_text = Path(header_path).read_text(encoding="utf-8")
             self.assertIn(
-                "bool py_assert_eq(const ::std::optional<::std::variant<int64, str, bool, Object<list<int64>>>>& actual, "
-                "const ::std::optional<::std::variant<int64, str, bool, Object<list<int64>>>>& expected, const str& label = str(\"\"));",
+                "bool py_assert_eq(const ::std::optional<::std::variant<int64, str, bool, Object<list<int64>>, Object<list<str>>>>& actual, "
+                "const ::std::optional<::std::variant<int64, str, bool, Object<list<int64>>, Object<list<str>>>>& expected, const str& label = str(\"\"));",
                 header_text,
             )
             self.assertIn(
@@ -5555,7 +5555,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         cpp_code = emit_cpp_module(doc)
 
-        self.assertIn("py_variant_narrow<::std::optional<::std::variant<int64, str, bool, Object<list<int64>>>>>(a)", cpp_code)
+        self.assertIn("py_variant_narrow<::std::optional<::std::variant<int64, str, bool, Object<list<int64>>, Object<list<str>>>>>(a)", cpp_code)
         self.assertNotIn("(*(a))", cpp_code)
 
     def test_cpp_emitter_passes_named_callable_without_object_lambda_bridge(self) -> None:

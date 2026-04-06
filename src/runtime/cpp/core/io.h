@@ -32,6 +32,8 @@ public:
     PyFile& operator=(PyFile&& other) noexcept;
 
     bool is_open() const;
+    PyFile& __enter__();
+    void __exit__(const object& exc_type, const object& exc_val, const object& exc_tb);
     void close();
 
     int64 write(const ::std::string& text);

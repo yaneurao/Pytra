@@ -77,6 +77,14 @@ class Toolchain2SpecConformTests(unittest.TestCase):
         self.assertEqual(str_index.return_type, "int64")
         self.assertFalse(str_index.self_is_mutable)
 
+    def test_builtin_registry_loads_io_context_manager_classes_from_source(self) -> None:
+        registry = _load_registry()
+        self.assertIn("IOBase", registry.classes)
+        self.assertIn("TextIOWrapper", registry.classes)
+        self.assertEqual(registry.classes["TextIOWrapper"].bases, ["IOBase"])
+        self.assertEqual(registry.classes["BufferedReader"].methods["read"].return_type, "bytes")
+        self.assertEqual(registry.classes["IOBase"].methods["__exit__"].return_type, "None")
+
     def test_resolve_marks_mutating_container_calls_with_receiver_metadata(self) -> None:
         east1 = parse_python_source(
             """
@@ -100,6 +108,33 @@ def f(xs: list[int], d: dict[str, int]) -> None:
         self.assertEqual(append_call.get("func", {}).get("value", {}).get("borrow_kind"), "mutable_ref")
         self.assertIsNone(get_call.get("meta", {}).get("mutates_receiver"))
         self.assertEqual(get_call.get("runtime_owner", {}).get("borrow_kind"), "readonly_ref")
+
+    def test_resolve_with_uses_enter_return_type_and_open_mode_type(self) -> None:
+        east1 = parse_python_source(
+            """
+class TrackingContext:
+    def __enter__(self) -> "TrackingContext":
+        return self
+
+    def __exit__(self, exc_type: object, exc_val: object, exc_tb: object) -> None:
+        pass
+
+def f() -> None:
+    with open("x.txt", "r") as f:
+        y = f.read()
+    ctx = TrackingContext()
+    with ctx as c:
+        pass
+""",
+            "<mem>",
+        ).to_jv()
+        resolve_east1_to_east2(east1, registry=_load_registry())
+        nodes = _walk(east1)
+        open_call = next(node for node in nodes if node.get("kind") == "Call" and node.get("runtime_call") == "open")
+        with_nodes = [node for node in nodes if node.get("kind") == "With"]
+        self.assertEqual(open_call.get("resolved_type"), "TextIOWrapper")
+        self.assertEqual(with_nodes[0].get("with_enter_type"), "TextIOWrapper")
+        self.assertEqual(with_nodes[1].get("with_enter_type"), "TrackingContext")
 
     def test_optimizer_mode_normalizers_accept_defaults_and_reject_invalid(self) -> None:
         self.assertEqual(resolve_negative_index_mode(""), "const_only")

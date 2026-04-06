@@ -11,8 +11,8 @@ def py_assert_true(cond: bool, label: str = "") -> bool:
 
 
 def py_assert_eq(
-    actual: int | str | bool | None | list[int],
-    expected: int | str | bool | None | list[int],
+    actual: int | str | bool | None | list[int] | list[str],
+    expected: int | str | bool | None | list[int] | list[str],
     label: str = "",
 ) -> bool:
     ok: bool = str(actual) == str(expected)

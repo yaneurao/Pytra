@@ -183,7 +183,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
 
     def emit_stmt(self, node: JsonVal) -> None:
         kind = self._str(node, "kind")
-        if kind in ("Expr", "Return", "Assign", "AnnAssign", "Pass", "comment", "blank", "If", "While", "Raise", "Try"):
+        if kind in ("Expr", "Return", "Assign", "AnnAssign", "Pass", "comment", "blank", "If", "While", "Raise", "Try", "With"):
             super().emit_stmt(node)
             self.ctx.indent_level = self.state.indent_level
             return
@@ -293,7 +293,6 @@ class _CppStmtCommonRenderer(CommonRenderer):
         elif kind == "VarDecl": _emit_var_decl(self.ctx, node)
         elif kind == "TupleUnpack": _emit_tuple_unpack(self.ctx, node)
         elif kind == "Swap": _emit_swap(self.ctx, node)
-        elif kind == "With": _emit_with(self.ctx, node)
         else: _emit_fail(self.ctx, "unsupported_stmt_kind", kind)
         self.state.indent_level = self.ctx.indent_level
 
@@ -1021,6 +1020,13 @@ def _is_top_level_union_type(type_name: str) -> bool:
     return len(_split_top_level_union_type(type_name)) > 1
 
 
+def _union_effectively_single_type(type_name: str, expected: str) -> bool:
+    if not _is_top_level_union_type(type_name):
+        return False
+    lanes = [lane for lane in _split_top_level_union_type(type_name) if lane not in ("None", "none")]
+    return len(lanes) > 0 and all(lane == expected for lane in lanes)
+
+
 def _has_variant_storage(type_name: str) -> bool:
     if type_name in ("", "unknown"):
         return False
@@ -1640,6 +1646,14 @@ def _emit_compare(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 parts.append("py_is_none(" + right + ")")
             elif comp_is_none:
                 parts.append("py_is_none(" + prev + ")")
+            elif prev_type in ctx.class_names and comp_type in ctx.class_names:
+                parts.append(
+                    "([&]() -> bool { auto&& __pytra_left = "
+                    + prev
+                    + "; auto&& __pytra_right = "
+                    + right
+                    + "; return &__pytra_left == &__pytra_right; }())"
+                )
             else:
                 parts.append(
                     renderer._render_infix_expr(prev_node, prev, comp, right, op_str, "==")
@@ -1651,6 +1665,14 @@ def _emit_compare(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 parts.append("!py_is_none(" + right + ")")
             elif comp_is_none:
                 parts.append("!py_is_none(" + prev + ")")
+            elif prev_type in ctx.class_names and comp_type in ctx.class_names:
+                parts.append(
+                    "([&]() -> bool { auto&& __pytra_left = "
+                    + prev
+                    + "; auto&& __pytra_right = "
+                    + right
+                    + "; return &__pytra_left != &__pytra_right; }())"
+                )
             else:
                 parts.append(
                     renderer._render_infix_expr(prev_node, prev, comp, right, op_str, "!=")
@@ -2177,11 +2199,11 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             storage_type = _expanded_union_type(_expr_storage_type(ctx, args[0]))
             if _optional_inner_type(storage_type) == "str":
                 return "str(py_to_string((*(" + arg_strs[0] + "))))"
-            if _is_top_level_union_type(storage_type):
+            if _union_effectively_single_type(storage_type, "str"):
                 lane = _select_union_lane(storage_type, "str")
                 if lane != "":
                     return _emit_union_get_expr(arg_strs[0], storage_type, "str")
-            if _is_top_level_union_type(arg_type):
+            if _union_effectively_single_type(arg_type, "str"):
                 lane = _select_union_lane(arg_type, "str")
                 if lane != "":
                     return _emit_union_get_expr(arg_strs[0], arg_type, "str")
@@ -2257,6 +2279,12 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         return _wrap_container_result_if_needed(node, resolved + "(" + ", ".join(call_arg_strs) + ")")
     if rc != "":
         if "." in rc:
+            if isinstance(func, dict) and _str(func, "kind") == "Attribute":
+                owner = _emit_expr(ctx, func.get("value"))
+                attr = _str(func, "attr")
+                owner_node = func.get("value")
+                member_sep = "->" if _uses_ref_container_storage(ctx, owner_node) else "."
+                return owner + member_sep + _safe_cpp_ident(attr) + "(" + ", ".join(arg_strs) + ")"
             _emit_fail(ctx, "unmapped_runtime_call", rc)
         return ctx.mapping.builtin_prefix + rc + "(" + ", ".join(call_arg_strs) + ")"
     _emit_fail(ctx, "unknown_builtin", repr(node))
@@ -3373,7 +3401,10 @@ def _emit_assign(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
                 _emit(ctx, "auto " + name + " = " + val_code + ";")
             else:
                 ct = _decl_cpp_type(ctx, dt, name)
-                _emit(ctx, ct + " " + name + " = " + val_code + ";")
+                if _bool(node, "bind_ref"):
+                    _emit(ctx, ct + "& " + name + " = " + val_code + ";")
+                else:
+                    _emit(ctx, ct + " " + name + " = " + val_code + ";")
         if _bool(node, "unused") and _bool(node, "declare"):
             _emit(ctx, "(void)" + name + ";")
     elif tk == "Attribute":

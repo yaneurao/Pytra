@@ -67,6 +67,17 @@ bool PyFile::is_open() const {
     return ifs_.is_open() || ofs_.is_open();
 }
 
+PyFile& PyFile::__enter__() {
+    return *this;
+}
+
+void PyFile::__exit__(const object& exc_type, const object& exc_val, const object& exc_tb) {
+    (void)exc_type;
+    (void)exc_val;
+    (void)exc_tb;
+    close();
+}
+
 void PyFile::close() {
     if (ifs_.is_open()) {
         ifs_.close();

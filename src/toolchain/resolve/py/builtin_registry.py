@@ -344,9 +344,135 @@ def _overlay_container_mutability_from_source(reg: BuiltinRegistry, source_path:
         pending_decorators = []
 
 
+def _overlay_class_sigs_from_source(reg: BuiltinRegistry, source_path: Path) -> None:
+    """Overlay @extern-style class signatures from canonical Python source."""
+    if not source_path.exists():
+        return
+    current_class = ""
+    current_bases: list[str] = []
+    class_indent = -1
+    pending_decorators: list[str] = []
+    for raw_line in source_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.rstrip()
+        stripped = line.strip()
+        if stripped == "" or stripped.startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        if current_class != "" and indent <= class_indent and not stripped.startswith("@"):
+            current_class = ""
+            current_bases = []
+            class_indent = -1
+        if not stripped.startswith("@") and indent <= class_indent:
+            pending_decorators = []
+        if stripped.startswith("class ") and stripped.endswith(":"):
+            header = stripped[len("class "):-1].strip()
+            class_name = header
+            bases: list[str] = []
+            if "(" in header and header.endswith(")"):
+                class_name = header.split("(", 1)[0].strip()
+                inner = header[header.find("(") + 1:-1]
+                for part in inner.split(","):
+                    base_name = part.strip()
+                    if base_name != "":
+                        bases.append(normalize_type(base_name))
+            current_class = class_name.strip()
+            current_bases = bases
+            class_indent = indent
+            cls = reg.classes.get(current_class)
+            if cls is None:
+                reg.classes[current_class] = ClassSig(
+                    name=current_class,
+                    bases=list(current_bases),
+                    methods={},
+                    fields={},
+                    decorators=list(pending_decorators),
+                )
+            else:
+                if len(cls.bases) == 0 and len(current_bases) > 0:
+                    cls.bases = list(current_bases)
+                if len(cls.decorators) == 0 and len(pending_decorators) > 0:
+                    cls.decorators = list(pending_decorators)
+            pending_decorators = []
+            continue
+        if stripped.startswith("@"):
+            pending_decorators.append(stripped[1:])
+            continue
+        if current_class == "" or not stripped.startswith("def "):
+            continue
+        open_paren = stripped.find("(")
+        close_paren = stripped.rfind(")")
+        if open_paren <= len("def ") or close_paren <= open_paren:
+            continue
+        method_name = stripped[len("def "):open_paren].strip()
+        signature = stripped[open_paren + 1:close_paren]
+        return_type = "None"
+        arrow = stripped.find("->", close_paren)
+        if arrow >= 0:
+            tail = stripped[arrow + 2:]
+            colon = tail.find(":")
+            if colon >= 0:
+                return_type = tail[:colon].strip()
+            else:
+                return_type = tail.strip()
+        if method_name == "":
+            continue
+        cls = reg.classes.get(current_class)
+        if cls is None:
+            continue
+        arg_names: list[str] = []
+        arg_types: dict[str, str] = {}
+        self_is_mutable = False
+        for field in _split_source_signature_fields(signature):
+            field_text = field
+            default_pos = field_text.find("=")
+            if default_pos >= 0:
+                field_text = field_text[:default_pos].strip()
+            if field_text == "":
+                continue
+            if ":" in field_text:
+                name_part, type_part = field_text.split(":", 1)
+                arg_name = name_part.strip()
+                arg_type = normalize_type(type_part.strip())
+            else:
+                arg_name = field_text.strip()
+                arg_type = "unknown"
+            if arg_name == "":
+                continue
+            arg_names.append(arg_name)
+            arg_types[arg_name] = arg_type
+            if arg_name == "self" and "mut[" in field:
+                self_is_mutable = True
+        method_sig = cls.methods.get(method_name)
+        if method_sig is None:
+            method_sig = FuncSig(
+                name=method_name,
+                arg_names=arg_names,
+                arg_types=arg_types,
+                return_type=normalize_type(return_type),
+                decorators=list(pending_decorators),
+                is_method=True,
+                owner_class=current_class,
+                self_is_mutable=self_is_mutable,
+            )
+            cls.methods[method_name] = method_sig
+        else:
+            method_sig.arg_names = arg_names
+            method_sig.arg_types = arg_types
+            method_sig.return_type = normalize_type(return_type)
+            method_sig.self_is_mutable = self_is_mutable
+            if len(pending_decorators) > 0:
+                method_sig.decorators = list(pending_decorators)
+        pending_decorators = []
+
+
 def _default_containers_source_path() -> Path:
     repo_root = Path(__file__).resolve().parents[4]
     return repo_root / "src" / "pytra" / "built_in" / "containers.py"
+
+
+def _default_io_source_path() -> Path:
+    repo_root = Path(__file__).resolve().parents[4]
+    return repo_root / "src" / "pytra" / "built_in" / "io.py"
 
 
 def _extract_class_sig(node: dict[str, JsonVal]) -> ClassSig:
@@ -581,6 +707,7 @@ def load_builtin_registry(
     containers_east1_path: Path | None = None,
     stdlib_dir: Path | None = None,
     containers_source_path: Path | None = None,
+    io_source_path: Path | None = None,
 ) -> BuiltinRegistry:
     """Load the builtin registry from EAST1 declaration files.
 
@@ -638,5 +765,9 @@ def load_builtin_registry(
         containers_source_path = _default_containers_source_path()
     if containers_source_path is not None:
         _overlay_container_mutability_from_source(reg, containers_source_path)
+    if io_source_path is None:
+        io_source_path = _default_io_source_path()
+    if io_source_path is not None:
+        _overlay_class_sigs_from_source(reg, io_source_path)
 
     return reg
