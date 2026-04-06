@@ -1003,13 +1003,25 @@ def _maybe_refresh_selfhost_python() -> None:
 
 
 def _maybe_regenerate_progress() -> None:
-    """Regenerate backend progress pages if the last generation was more than 3 minutes ago."""
-    marker = ROOT / "docs" / "ja" / "progress-preview" / "backend-progress-fixture.md"
-    if marker.exists() and (time.time() - marker.stat().st_mtime) < 180:
-        return
+    """Regenerate backend progress pages if parity results are newer than the last generation."""
+    marker = ROOT / ".parity-results" / ".progress_generated"
+    parity_dir = ROOT / ".parity-results"
     gen_script = ROOT / "tools" / "gen" / "gen_backend_progress.py"
     if not gen_script.exists():
         return
+    # Skip if marker exists and no parity result file is newer than it
+    if marker.exists():
+        marker_mtime = marker.stat().st_mtime
+        has_newer = False
+        if parity_dir.exists():
+            for p in parity_dir.iterdir():
+                if p.name.startswith("."):
+                    continue
+                if p.stat().st_mtime > marker_mtime:
+                    has_newer = True
+                    break
+        if not has_newer:
+            return
     try:
         subprocess.run(
             ["python3", str(gen_script)],
@@ -1017,6 +1029,9 @@ def _maybe_regenerate_progress() -> None:
             timeout=30,
             capture_output=True,
         )
+        # Update marker timestamp
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(str(time.time()), encoding="utf-8")
     except Exception:
         pass
 
