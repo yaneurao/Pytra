@@ -1400,22 +1400,39 @@ class KotlinRenderer(CommonRenderer):
                         return owner_expr + ".remove(" + self._emit_expr(arg_nodes[0]) + ")"
             if isinstance(func, dict) and self._str(func, "kind") == "Name":
                 func_id = self._str(func, "id")
+                mapped = self.mapping.calls.get(func_id)
+                node_runtime_symbol = self._str(node, "runtime_symbol")
+                node_runtime_call = self._str(node, "runtime_call")
+                node_resolved_runtime_call = self._str(node, "resolved_runtime_call")
+                has_runtime_metadata = any(v != "" for v in (node_runtime_symbol, node_runtime_call, node_resolved_runtime_call))
+                resolved = ""
+                if has_runtime_metadata:
+                    resolved = resolve_runtime_symbol_name(
+                        func_id,
+                        self.mapping,
+                        module_id=self._str(node, "runtime_module_id"),
+                        resolved_runtime_call=node_resolved_runtime_call,
+                        runtime_call=node_runtime_call,
+                    )
                 if func_id in self.local_function_aliases:
                     func_name = _safe_kotlin_ident(self.local_function_aliases[func_id])
                     func_is_named_function = True
                 elif func_id in self.module_function_names:
                     func_name = _safe_kotlin_ident(func_id)
                     func_is_named_function = True
-                mapped = self.mapping.calls.get(func_id)
-                if isinstance(mapped, str) and mapped != "":
-                    func_name = mapped
+                if resolved != "":
+                    func_name = resolved
                     func_is_named_function = True
                 elif func_id in self.runtime_imports:
                     func_name = self.runtime_imports[func_id]
                     func_is_named_function = True
-                elif func_id == "sum":
+                else:
+                    if isinstance(mapped, str) and mapped != "":
+                        func_name = mapped
+                        func_is_named_function = True
+                if func_id == "sum":
                     return "(__pytra_sum(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ") as " + self._render_type(self._str(node, "resolved_type")) + ")"
-                elif func_id == "zip":
+                if func_id == "zip":
                     return "__pytra_zip(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ")"
                 if func_id == "bool":
                     arg_nodes = self._list(node, "args")
@@ -1428,7 +1445,7 @@ class KotlinRenderer(CommonRenderer):
                     if import_path.startswith("pytra_built_in_error.") and func_id.endswith("Error"):
                         first_arg = self._emit_expr(self._list(node, "args")[0]) if len(self._list(node, "args")) > 0 else "\"error\""
                         return "RuntimeException(" + first_arg + ".toString())"
-                elif not (isinstance(mapped, str) and mapped != "") and (func_id in self.module_class_names or self._str(node, "resolved_type") == func_id):
+                elif resolved == "" and not (isinstance(mapped, str) and mapped != "") and (func_id in self.module_class_names or self._str(node, "resolved_type") == func_id):
                     ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
                     class_name = func_name if "." in func_name else _safe_kotlin_ident(func_id)
                     tmp_name = "__pytraObj"

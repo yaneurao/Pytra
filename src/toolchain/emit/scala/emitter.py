@@ -1321,6 +1321,19 @@ class ScalaRenderer(CommonRenderer):
                         return "{ " + owner_expr + ".subtractOne(" + self._emit_expr(arg_nodes[0]) + "); () }"
             if isinstance(func, dict) and self._str(func, "kind") == "Name":
                 func_id = self._str(func, "id")
+                node_runtime_symbol = self._str(node, "runtime_symbol")
+                node_runtime_call = self._str(node, "runtime_call")
+                node_resolved_runtime_call = self._str(node, "resolved_runtime_call")
+                has_runtime_metadata = any(v != "" for v in (node_runtime_symbol, node_runtime_call, node_resolved_runtime_call))
+                resolved = ""
+                if has_runtime_metadata:
+                    resolved = resolve_runtime_symbol_name(
+                        func_id,
+                        self.mapping,
+                        module_id=self._str(node, "runtime_module_id"),
+                        resolved_runtime_call=node_resolved_runtime_call,
+                        runtime_call=node_runtime_call,
+                    )
                 if func_id in self.local_function_aliases:
                     func_name = _safe_scala_ident(self.local_function_aliases[func_id])
                     func_is_named_function = True
@@ -1328,25 +1341,30 @@ class ScalaRenderer(CommonRenderer):
                     func_name = _safe_scala_ident(func_id)
                     func_is_named_function = True
                 call_result_type = self._str(node, "resolved_type")
-                mapped = self.mapping.calls.get(func_id)
-                if isinstance(mapped, str) and mapped != "":
-                    if func_id == "set":
-                        return mapped + "(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ").asInstanceOf[" + scala_type(self._str(node, "resolved_type")) + "]"
-                    func_name = mapped
+                if resolved != "":
+                    if resolved == "__pytra_set_new":
+                        return resolved + "(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ").asInstanceOf[" + scala_type(self._str(node, "resolved_type")) + "]"
+                    func_name = resolved
                 elif func_id in self.runtime_imports:
                     func_name = self.runtime_imports[func_id]
-                elif func_id == "sum":
+                else:
+                    mapped = self.mapping.calls.get(func_id)
+                    if isinstance(mapped, str) and mapped != "":
+                        if func_id == "set":
+                            return mapped + "(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ").asInstanceOf[" + scala_type(self._str(node, "resolved_type")) + "]"
+                        func_name = mapped
+                if func_id == "sum":
                     return "__pytra_sum(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ").asInstanceOf[" + scala_type(self._str(node, "resolved_type")) + "]"
-                elif func_id == "zip":
+                if func_id == "zip":
                     return "__pytra_zip(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ")"
-                elif func_id in self.module_class_names or (call_result_type != "" and call_result_type == func_id):
+                if resolved == "" and (func_id in self.module_class_names or (call_result_type != "" and call_result_type == func_id)):
                     ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
                     class_name = func_name if "." in func_name else _safe_scala_ident(func_id)
                     tmp_name = "__pytra_obj"
                     if self.class_has_init.get(func_id, True):
                         return "{ val " + tmp_name + " = new " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
                     return "new " + class_name + "(" + ", ".join(ctor_args) + ")"
-                elif func_id.endswith("Error") or func_id.endswith("Exception"):
+                if func_id.endswith("Error") or func_id.endswith("Exception"):
                     ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
                     class_name = _safe_scala_ident(func_id)
                     tmp_name = "__pytra_obj"
