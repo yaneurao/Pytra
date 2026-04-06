@@ -1651,9 +1651,11 @@ func os_native_mkdir(_ path: String, _ existOk: Bool) {
 final class PyFile {
     private let handle: FileHandle
     private let path: String
+    private let mode: String
 
     init(_ path: String, _ mode: String = "r") {
         self.path = path
+        self.mode = mode
         if mode == "wb" || mode == "w" {
             FileManager.default.createFile(atPath: path, contents: nil)
             self.handle = FileHandle(forWritingAtPath: path)!
@@ -1675,6 +1677,16 @@ final class PyFile {
         } else if let s = data as? String {
             if let d = s.data(using: .utf8) { handle.write(d) }
         }
+    }
+
+    func read(_ count: Any? = nil) -> String {
+        let data: Data
+        if let n = count as? Int64 {
+            data = handle.readData(ofLength: Int(n))
+        } else {
+            data = handle.readDataToEndOfFile()
+        }
+        return String(data: data, encoding: .utf8) ?? ""
     }
 
     func close() {

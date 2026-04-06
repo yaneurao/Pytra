@@ -4121,6 +4121,42 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         lines.append(indent + "}")
         return lines
 
+    if kind == "With":
+        lines: list[str] = []
+        context_expr = _render_expr(sd2.get("context_expr"))
+        var_name = _safe_ident(sd2.get("var_name"), "ctx")
+        declared = _declared_set(ctx)
+        type_map = _type_map(ctx)
+        body_any = sd2.get("body")
+        body = body_any if isinstance(body_any, list) else []
+        hoisted = _collect_swift_hoisted_names(body, type_map)
+        i = 0
+        while i < len(hoisted):
+            name, swift_type = hoisted[i]
+            if name not in declared:
+                declared.add(name)
+                type_map[name] = swift_type
+                lines.append(indent + "var " + name + ": " + swift_type + " = " + _default_return_expr(swift_type))
+            i += 1
+        context_node = sd2.get("context_expr")
+        ctx_type = _swift_type(context_node.get("resolved_type") if isinstance(context_node, dict) else "", allow_void=False)
+        if ctx_type == "Any":
+            ctx_type = "PyFile"
+        if var_name in declared:
+            lines.append(indent + var_name + " = " + context_expr)
+        else:
+            declared.add(var_name)
+            type_map[var_name] = ctx_type
+            lines.append(indent + "var " + var_name + ": " + ctx_type + " = " + context_expr)
+        lines.append(indent + "defer {")
+        lines.append(indent + "    " + var_name + ".close()")
+        lines.append(indent + "}")
+        i = 0
+        while i < len(body):
+            lines.extend(_emit_stmt(body[i], indent=indent, ctx=ctx))
+            i += 1
+        return lines
+
     if kind == "VarDecl":
         name = _safe_ident(sd2.get("name"), "v")
         var_type = _swift_type(sd2.get("type"), allow_void=False)
@@ -4170,6 +4206,63 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return lines
 
     raise RuntimeError("swift native emitter: unsupported stmt kind: " + str(kind))
+
+
+def _collect_swift_hoisted_names(body: list[Any], type_map: dict[str, str]) -> list[tuple[str, str]]:
+    out: list[tuple[str, str]] = []
+    seen: set[str] = set()
+
+    def add_name(name: str, swift_type: str) -> None:
+        if name == "" or name in seen:
+            return
+        seen.add(name)
+        out.append((name, swift_type if swift_type != "" else "Any"))
+
+    def walk(stmts: list[Any]) -> None:
+        for raw_stmt in stmts:
+            if not isinstance(raw_stmt, dict):
+                continue
+            kind = raw_stmt.get("kind")
+            if kind == "AnnAssign":
+                target = raw_stmt.get("target")
+                if isinstance(target, dict) and target.get("kind") == "Name":
+                    name = _safe_ident(target.get("id"), "")
+                    swift_type = _swift_type(raw_stmt.get("decl_type") or raw_stmt.get("annotation"), allow_void=False)
+                    if swift_type == "Any":
+                        swift_type = _infer_swift_type(raw_stmt.get("value"), type_map)
+                    add_name(name, swift_type)
+            elif kind == "Assign":
+                target = raw_stmt.get("target")
+                if not isinstance(target, dict):
+                    targets = raw_stmt.get("targets")
+                    if isinstance(targets, list) and len(targets) > 0:
+                        target = targets[0]
+                if isinstance(target, dict) and target.get("kind") == "Name":
+                    name = _safe_ident(target.get("id"), "")
+                    swift_type = _swift_type(raw_stmt.get("decl_type"), allow_void=False)
+                    if swift_type == "Any":
+                        swift_type = _infer_swift_type(raw_stmt.get("value"), type_map)
+                    add_name(name, swift_type)
+            elif kind in {"If", "While", "With", "Try", "ForCore", "ForRange"}:
+                body_any = raw_stmt.get("body")
+                if isinstance(body_any, list):
+                    walk(body_any)
+                orelse_any = raw_stmt.get("orelse")
+                if isinstance(orelse_any, list):
+                    walk(orelse_any)
+                final_any = raw_stmt.get("finalbody")
+                if isinstance(final_any, list):
+                    walk(final_any)
+                handlers_any = raw_stmt.get("handlers")
+                if isinstance(handlers_any, list):
+                    for handler in handlers_any:
+                        if isinstance(handler, dict):
+                            h_body = handler.get("body")
+                            if isinstance(h_body, list):
+                                walk(h_body)
+
+    walk(body)
+    return out
 
 
 def _stmt_guarantees_return(stmt: Any) -> bool:
