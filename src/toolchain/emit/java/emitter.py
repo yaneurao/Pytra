@@ -255,6 +255,9 @@ def _optional_inner_type(resolved_type: str) -> str:
 
 
 def _parse_callable_type(resolved_type: str) -> tuple[list[str], str] | None:
+    inner_optional = _optional_inner_type(resolved_type)
+    if inner_optional != "":
+        resolved_type = inner_optional
     if not resolved_type.startswith("callable[") or not resolved_type.endswith("]"):
         return None
     inner = resolved_type[len("callable["):-1]
@@ -282,12 +285,38 @@ def _parse_callable_type(resolved_type: str) -> tuple[list[str], str] | None:
     return (_split_generic_args(args_text), return_type)
 
 
+def _normalized_callable_type(resolved_type: str) -> str:
+    inner_optional = _optional_inner_type(resolved_type)
+    if inner_optional != "" and _parse_callable_type(inner_optional) is not None:
+        return inner_optional
+    if _parse_callable_type(resolved_type) is not None:
+        return resolved_type
+    return ""
+
+
+def _callable_type_for_node(ctx: EmitContext, node: JsonVal) -> str:
+    if not isinstance(node, dict):
+        return ""
+    resolved = _normalized_callable_type(_str(node, "resolved_type"))
+    if resolved != "":
+        return resolved
+    if _str(node, "kind") == "Name":
+        raw_name = _str(node, "id")
+        mapped = _java_symbol_name(ctx, raw_name)
+        stored = _normalized_callable_type(ctx.var_types.get(mapped, ""))
+        if stored != "":
+            return stored
+        return _normalized_callable_type(ctx.var_types.get(raw_name, ""))
+    return ""
+
+
 def _collect_callable_types(node: JsonVal, out: set[str]) -> None:
     if isinstance(node, dict):
         for key in ("resolved_type", "decl_type", "return_type"):
             value = _str(node, key)
-            if _parse_callable_type(value) is not None:
-                out.add(value)
+            normalized = _normalized_callable_type(value)
+            if normalized != "":
+                out.add(normalized)
         for value in node.values():
             _collect_callable_types(value, out)
         return
@@ -318,9 +347,13 @@ def _emit_callable_interfaces(ctx: EmitContext, root: JsonVal) -> None:
 
 
 def _emit_callable_bridge(ctx: EmitContext, callable_node: dict[str, JsonVal], target_code: str) -> str:
-    parsed = _parse_callable_type(_str(callable_node, "resolved_type"))
+    parsed = _parse_callable_type(_callable_type_for_node(ctx, callable_node))
     if parsed is None:
         return target_code
+    return _emit_callable_bridge_for_type(parsed, target_code)
+
+
+def _emit_callable_bridge_for_type(parsed: tuple[list[str], str], target_code: str) -> str:
     arg_types, _return_type = parsed
     params: list[str] = []
     call_args: list[str] = []
@@ -340,7 +373,7 @@ def _wrap_callable_arg(ctx: EmitContext, arg_node: JsonVal, rendered: str) -> st
         if not isinstance(inner, dict):
             break
         node = inner
-    resolved_type = _str(node, "resolved_type")
+    resolved_type = _callable_type_for_node(ctx, node)
     parsed = _parse_callable_type(resolved_type)
     callableish = parsed is not None or resolved_type in ("Callable", "callable") or _str(node, "call_arg_type") in ("Callable", "callable")
     if not callableish:
@@ -371,11 +404,11 @@ def _wrap_callable_arg(ctx: EmitContext, arg_node: JsonVal, rendered: str) -> st
                 return "(" + ", ".join(params) + ") -> " + mapped_name + "(" + ", ".join(call_args) + ")"
             return rendered
         if parsed is not None:
-            return _emit_callable_bridge(ctx, node, mapped_name + ".invoke")
+            return _emit_callable_bridge_for_type(parsed, mapped_name + ".invoke")
         return rendered
     if kind == "Attribute":
         if parsed is not None:
-            return _emit_callable_bridge(ctx, node, _emit_attribute(ctx, node))
+            return _emit_callable_bridge_for_type(parsed, _emit_attribute(ctx, node))
         return rendered
     return rendered
 
@@ -510,7 +543,10 @@ def _emit_container_method_call(ctx: EmitContext, owner_node: JsonVal, arg_strs:
                 return "PyRuntime.pyListIndex(" + owner_access + ", " + arg_strs[0] + ")"
             if fn_name == "PyRuntime.pyPop":
                 idx_expr = arg_strs[0] if len(arg_strs) >= 1 else "null"
-                return "PyRuntime.pyPop(" + owner_access + ", " + idx_expr + ")"
+                popped = "PyRuntime.pyPop(" + owner_access + ", " + idx_expr + ")"
+                if call_type != "" and not _is_dynamic_type(call_type):
+                    return _emit_cast_expr(ctx, call_type, popped)
+                return popped
             return fn_name + "(" + ", ".join([owner] + arg_strs) + ")"
     if _is_dict_type(owner_type) or _is_dynamic_type(owner_type):
         attr = _str(_unwrap_node(node.get("func")), "attr")
@@ -699,6 +735,17 @@ class _JavaStmtRenderer(CommonRenderer):
         if isinstance(value, dict) and _str(value, "kind") == "Constant" and isinstance(value.get("value"), str):
             self.state.indent_level = self.ctx.indent_level
             return
+        if isinstance(value, dict) and _str(value, "kind") == "Call":
+            fn_name = _runtime_call_name(self.ctx, value, value.get("func"))
+            if fn_name == "PyRuntime.pyPop":
+                args = _list(value, "args")
+                arg_strs = [_emit_expr(self.ctx, arg) for arg in args]
+                runtime_owner = value.get("runtime_owner")
+                if isinstance(runtime_owner, dict) and not _is_module_owner(self.ctx, runtime_owner):
+                    arg_strs = [_emit_expr(self.ctx, runtime_owner)] + arg_strs
+                _emit(ctx=self.ctx, line=fn_name + "(" + ", ".join(arg_strs) + ");")
+                self.state.indent_level = self.ctx.indent_level
+                return
         _emit(ctx=self.ctx, line=_emit_expr(self.ctx, value) + ";")
         self.state.indent_level = self.ctx.indent_level
 
@@ -776,7 +823,9 @@ def _emit_expr(ctx: EmitContext, node: JsonVal) -> str:
 def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     raw_name = _str(node, "id")
     rendered = _java_symbol_name(ctx, raw_name)
-    name_type = _str(node, "resolved_type")
+    name_type = _callable_type_for_node(ctx, node)
+    if _parse_callable_type(name_type) is not None and (raw_name in ctx.function_names or rendered in ctx.function_names):
+        return _wrap_callable_arg(ctx, node, rendered)
     original_type = ctx.var_types.get(rendered, "")
     if original_type == "":
         original_type = ctx.var_types.get(raw_name, "")
@@ -787,6 +836,23 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if _java_type_in_ctx(ctx, name_type) == "Object":
         return rendered
     return _emit_cast_expr(ctx, name_type, rendered)
+
+
+def _coerce_callable_assignment(ctx: EmitContext, value: JsonVal, target_type: str, value_code: str) -> str:
+    normalized = _normalized_callable_type(target_type)
+    parsed = _parse_callable_type(normalized)
+    if parsed is None or not isinstance(value, dict):
+        return value_code
+    kind = _str(value, "kind")
+    if kind == "Name":
+        raw_name = _str(value, "id")
+        rendered = _java_symbol_name(ctx, raw_name)
+        if raw_name in ctx.function_names or rendered in ctx.function_names:
+            return _emit_callable_bridge_for_type(parsed, rendered)
+        return value_code
+    if kind == "Attribute":
+        return _emit_callable_bridge_for_type(parsed, _emit_attribute(ctx, value))
+    return value_code
 
 
 def _emit_constant(node: dict[str, JsonVal]) -> str:
@@ -944,7 +1010,7 @@ def _emit_expr_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64",
             "float32", "float64",
         }
-        expected_name = ""
+        expected_name = _str(node, "expected_type_name")
         expected_node = node.get("expected_type_id")
         if isinstance(expected_node, dict):
             expected_name = _str(expected_node, "id")
@@ -1194,6 +1260,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if placeholder != "":
             return placeholder
         if fn_name != "":
+            if fn_name == "PyRuntime.pyPop":
+                result_type = _str(node, "resolved_type")
+                rendered = fn_name + "(" + ", ".join(arg_strs) + ")"
+                if result_type != "" and not _is_dynamic_type(result_type):
+                    return _emit_cast_expr(ctx, result_type, rendered)
+                return rendered
             return fn_name + "(" + ", ".join(arg_strs) + ")"
 
     if isinstance(func, dict):
@@ -1285,7 +1357,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if fn_id in ctx.runtime_imports:
                 runtime_name = ctx.runtime_imports[fn_id]
                 return runtime_name + "(" + ", ".join(_wrap_stdout_callable_args(runtime_name, arg_strs)) + ")"
-            func_type = _str(func, "resolved_type")
+            func_type = _callable_type_for_node(ctx, func)
             if _parse_callable_type(func_type) is not None:
                 return _java_symbol_name(ctx, fn_id) + ".invoke(" + ", ".join(arg_strs) + ")"
             if (
@@ -1312,7 +1384,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return _java_symbol_name(ctx, fn_id) + "(" + ", ".join(arg_strs) + ")"
 
     if isinstance(func, dict):
-        func_type = _str(func, "resolved_type")
+        func_type = _callable_type_for_node(ctx, func)
         if _str(func, "kind") == "Lambda" and _parse_callable_type(func_type) is not None:
             iface_name = _safe_java_ident(func_type)
             return "((" + iface_name + ") (" + _emit_expr(ctx, func) + ")).invoke(" + ", ".join(arg_strs) + ")"
@@ -1376,6 +1448,12 @@ def _emit_common_stmt_if_supported(ctx: EmitContext, node: dict[str, JsonVal]) -
 
 def _decl_type(node: dict[str, JsonVal], value: JsonVal) -> str:
     decl_type = _str(node, "decl_type")
+    if decl_type in ("Callable", "callable"):
+        target = node.get("target")
+        if isinstance(target, dict):
+            target_type = _normalized_callable_type(_str(target, "resolved_type"))
+            if target_type != "":
+                decl_type = target_type
     if decl_type == "":
         target = node.get("target")
         if isinstance(target, dict):
@@ -1457,9 +1535,10 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     if not isinstance(target, dict):
         return
     value = node.get("value")
-    value_code = _emit_expr(ctx, value) if isinstance(value, dict) else "null"
     target_kind = _str(target, "kind")
     target_type = _decl_type(node, value)
+    value_code = _emit_expr(ctx, value) if isinstance(value, dict) else "null"
+    value_code = _coerce_callable_assignment(ctx, value, target_type, value_code)
     if target_kind in ("Name", "NameTarget"):
         _emit_name_assignment(ctx, _str(target, "id"), target_type, value_code, annotated=False)
         return
@@ -1485,6 +1564,7 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         target_type = _str(target, "resolved_type")
     value = node.get("value")
     value_code = _emit_expr(ctx, value) if isinstance(value, dict) else java_zero_value(target_type)
+    value_code = _coerce_callable_assignment(ctx, value, target_type, value_code)
     target_kind = _str(target, "kind")
     if target_kind in ("Name", "NameTarget"):
         _emit_name_assignment(ctx, _str(target, "id"), target_type, value_code, annotated=True)
@@ -2150,7 +2230,7 @@ def _build_java_runtime_import_map(meta: dict[str, JsonVal], mapping: RuntimeMap
     runtime_imports = build_runtime_import_map(meta, mapping)
     bindings = meta.get("import_bindings")
     if not isinstance(bindings, list):
-        return runtime_imports
+        bindings = []
     for binding in bindings:
         if not isinstance(binding, dict) or binding.get("binding_kind") != "symbol":
             continue
@@ -2185,6 +2265,29 @@ def _build_java_runtime_import_map(meta: dict[str, JsonVal], mapping: RuntimeMap
                 runtime_imports[local_name] = resolved
             continue
         runtime_imports[local_name] = _module_class_name(module_id) + "." + _safe_java_ident(export_name)
+
+    import_symbols = meta.get("import_symbols")
+    if isinstance(import_symbols, dict):
+        for local_name, spec in import_symbols.items():
+            if not isinstance(local_name, str) or local_name == "" or local_name in runtime_imports:
+                continue
+            if not isinstance(spec, dict):
+                continue
+            module_id = spec.get("module")
+            export_name = spec.get("name")
+            if not isinstance(module_id, str) or module_id == "":
+                continue
+            if not isinstance(export_name, str) or export_name == "":
+                continue
+            if not should_skip_module(module_id, mapping) and module_id != "pytra.built_in.type_id_table":
+                continue
+            resolved = mapping.calls.get(module_id + "." + export_name, "")
+            if not isinstance(resolved, str) or resolved == "":
+                resolved = mapping.calls.get(export_name, "")
+            if not isinstance(resolved, str) or resolved == "":
+                resolved = resolve_runtime_symbol_name(export_name, mapping, module_id=module_id)
+            if isinstance(resolved, str) and resolved != "":
+                runtime_imports[local_name] = resolved
     return runtime_imports
 
 
@@ -2254,6 +2357,9 @@ def _emit_java_type_id_table_module(module_id: str, linked_type_ids: dict[str, i
         + ", ".join(str(value) + "L" for value in ranges)
         + "));"
     )
+    lines.append("    static {")
+    lines.append("        PyRuntime.__pytra_register_type_ranges(id_table);")
+    lines.append("    }")
 
     emitted_consts: set[str] = set()
 

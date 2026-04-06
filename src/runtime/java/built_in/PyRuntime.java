@@ -26,6 +26,7 @@ final class PyRuntime {
 
     static ArrayList<String> __pytra_argv = new ArrayList<>();
     static ArrayList<String> __pytra_path = new ArrayList<>();
+    private static List<Long> __pytra_registered_type_ranges = java.util.Collections.emptyList();
 
     private PyRuntime() {
     }
@@ -63,7 +64,24 @@ final class PyRuntime {
     }
 
     static boolean pytraIsinstance(long actualTypeId, long tid) {
-        return actualTypeId == tid;
+        if (actualTypeId == tid) {
+            return true;
+        }
+        int base = (int) (tid * 2L);
+        if (base < 0 || base + 1 >= __pytra_registered_type_ranges.size()) {
+            return false;
+        }
+        long entry = __pytra_registered_type_ranges.get(base);
+        long exit = __pytra_registered_type_ranges.get(base + 1);
+        return actualTypeId >= entry && actualTypeId <= exit;
+    }
+
+    static void __pytra_register_type_ranges(List<Long> ranges) {
+        if (ranges == null) {
+            __pytra_registered_type_ranges = java.util.Collections.emptyList();
+            return;
+        }
+        __pytra_registered_type_ranges = ranges;
     }
 
     private static Long __pytra_user_type_id(Object value) {
@@ -1128,6 +1146,30 @@ final class PyRuntime {
         return __pytra_bytearray(data);
     }
 
+    static ArrayList<Long> __pytra_bytes() {
+        return new ArrayList<Long>();
+    }
+
+    static <T> void __pytra_append(java.util.List<T> target, T value) {
+        target.add(value);
+    }
+
+    static long __pytra_max(long left, long right) {
+        return Math.max(left, right);
+    }
+
+    static double __pytra_max(double left, double right) {
+        return Math.max(left, right);
+    }
+
+    static long __pytra_min(long left, long right) {
+        return Math.min(left, right);
+    }
+
+    static double __pytra_min(double left, double right) {
+        return Math.min(left, right);
+    }
+
     static <T> ArrayList<T> __pytra_py_sorted(java.util.List<T> data) {
         ArrayList<T> out = new ArrayList<T>(data);
         out.sort((left, right) -> {
@@ -1689,6 +1731,28 @@ final class PyRuntime {
             if (map.containsKey(key)) {
                 return map.get(key);
             }
+        }
+        return defaultValue;
+    }
+
+    static <T> T __pytra_pop(Object mapObj, Object key) {
+        if (mapObj instanceof Map<?, ?>) {
+            @SuppressWarnings("unchecked")
+            Map<Object, Object> map = (Map<Object, Object>) mapObj;
+            return (T) map.remove(key);
+        }
+        return null;
+    }
+
+    static <T> T __pytra_setdefault(Object mapObj, Object key, T defaultValue) {
+        if (mapObj instanceof Map<?, ?>) {
+            @SuppressWarnings("unchecked")
+            Map<Object, Object> map = (Map<Object, Object>) mapObj;
+            if (map.containsKey(key)) {
+                return (T) map.get(key);
+            }
+            map.put(key, defaultValue);
+            return defaultValue;
         }
         return defaultValue;
     }
