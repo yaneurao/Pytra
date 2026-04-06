@@ -929,8 +929,9 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 resolved_runtime_call=_str(node, "resolved_runtime_call"),
                 runtime_call=_str(node, "runtime_call"),
             )
-            if resolved != "":
+            if resolved not in ("", attr, ctx.mapping.builtin_prefix + attr):
                 return resolved
+            return _module_class_name(mod_id) + "." + _safe_java_ident(attr)
     owner = _emit_expr(ctx, owner_node)
     owner_access = owner
     if owner not in ("this", "super") and (" " in owner or owner.startswith("(") or owner.endswith(")")):
@@ -1302,8 +1303,9 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                         resolved_runtime_call=_str(node, "resolved_runtime_call"),
                         runtime_call=_str(node, "runtime_call"),
                     )
-                    if resolved != "":
+                    if resolved not in ("", attr, ctx.mapping.builtin_prefix + attr):
                         return resolved + "(" + ", ".join(arg_strs) + ")"
+                    return _module_class_name(mod_id) + "." + _safe_java_ident(attr) + "(" + ", ".join(arg_strs) + ")"
             runtime_call = _str(node, "resolved_runtime_call")
             if runtime_call == "":
                 runtime_call = _str(node, "runtime_call")

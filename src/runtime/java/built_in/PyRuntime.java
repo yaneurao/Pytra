@@ -1982,8 +1982,42 @@ final class pytra_std_os {
     static final os os = new os();
 }
 
+final class pytra_std_os_path {
+    private pytra_std_os_path() {
+    }
+
+    static String join(String left, String right) {
+        return os_path.join(left, right);
+    }
+
+    static ArrayList<Object> splitext(String path) {
+        return os_path.splitext(path);
+    }
+
+    static String basename(String path) {
+        return os_path.basename(path);
+    }
+
+    static String dirname(String path) {
+        return os_path.dirname(path);
+    }
+
+    static boolean exists(String path) {
+        return os_path.exists(path);
+    }
+
+    static String abspath(String path) {
+        return os_path.abspath(path);
+    }
+}
+
 final class pytra_std_glob {
-    static final glob glob = new glob();
+    private pytra_std_glob() {
+    }
+
+    static ArrayList<String> glob(String pattern) {
+        return glob.glob(pattern);
+    }
 }
 
 final class pytra_std_collections {
