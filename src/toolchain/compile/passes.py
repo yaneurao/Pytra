@@ -3928,22 +3928,54 @@ def _make_name_ref(name: str, resolved_type: str) -> Node:
     return out
 
 
-def _make_close_finalizer(var_name: str, resolved_type: str) -> Node:
-    close_attr: Node = {}
-    close_attr["kind"] = ATTRIBUTE
-    close_attr["value"] = _make_name_ref(var_name, resolved_type)
-    close_attr["attr"] = "close"
-    close_attr["resolved_type"] = "callable"
-    close_call: Node = {}
-    close_call["kind"] = CALL
-    close_call["func"] = close_attr
-    close_call["args"] = []
-    close_call["keywords"] = []
-    close_call["resolved_type"] = "None"
-    close_stmt: Node = {}
-    close_stmt["kind"] = EXPR
-    close_stmt["value"] = close_call
-    return close_stmt
+def _make_none_const() -> Node:
+    out: Node = {}
+    out["kind"] = CONSTANT
+    out["value"] = None
+    out["resolved_type"] = "None"
+    return out
+
+
+def _make_with_method_call(
+    owner_name: str,
+    owner_type: str,
+    attr: str,
+    *,
+    args: list[Node],
+    result_type: str,
+    runtime_call: str = "",
+    runtime_symbol: str = "",
+    runtime_module_id: str = "",
+    semantic_tag: str = "",
+) -> Node:
+    attr_node: Node = {}
+    attr_node["kind"] = ATTRIBUTE
+    attr_node["value"] = _make_name_ref(owner_name, owner_type)
+    attr_node["attr"] = attr
+    attr_node["resolved_type"] = "callable"
+    call_node: Node = {}
+    call_node["kind"] = CALL
+    call_node["func"] = attr_node
+    call_node["args"] = args
+    call_node["keywords"] = []
+    call_node["resolved_type"] = result_type
+    if runtime_call != "":
+        call_node["runtime_call"] = runtime_call
+        call_node["resolved_runtime_call"] = runtime_call
+    if runtime_symbol != "":
+        call_node["runtime_symbol"] = runtime_symbol
+    if runtime_module_id != "":
+        call_node["runtime_module_id"] = runtime_module_id
+    if semantic_tag != "":
+        call_node["semantic_tag"] = semantic_tag
+    return call_node
+
+
+def _make_expr_stmt(value: Node) -> Node:
+    out: Node = {}
+    out["kind"] = EXPR
+    out["value"] = value
+    return out
 
 
 def _lower_covariant_copy(node: Node, ctx: CompileContext) -> JsonVal:
@@ -4275,27 +4307,61 @@ def _apply_profile_stmt(
         if style != "try_finally":
             return [out]
         var_name = _str(out, "var_name")
-        if var_name == "":
-            var_name = ctx.next_comp_name()
-            out["var_name"] = var_name
+        ctx_name = ctx.next_comp_name()
         context_expr = out.get("context_expr")
         context_type = ""
         if isinstance(context_expr, dict):
             context_type = normalize_type_name(context_expr.get("resolved_type"))
-        bind_stmt: Node = {}
-        bind_stmt["kind"] = ASSIGN
-        bind_stmt["target"] = _make_name_ref(var_name, context_type)
-        bind_stmt["value"] = context_expr
-        bind_stmt["declare"] = True
+        bind_ctx_stmt: Node = {}
+        bind_ctx_stmt["kind"] = ASSIGN
+        bind_ctx_stmt["target"] = _make_name_ref(ctx_name, context_type)
+        bind_ctx_stmt["value"] = context_expr
+        bind_ctx_stmt["declare"] = True
         if context_type != "":
-            bind_stmt["decl_type"] = context_type
+            bind_ctx_stmt["decl_type"] = context_type
+        enter_type = _str(out, "with_enter_type")
+        if enter_type == "":
+            enter_type = context_type
+        enter_call = _make_with_method_call(
+            ctx_name,
+            context_type,
+            "__enter__",
+            args=[],
+            result_type=enter_type if enter_type != "" else context_type,
+            runtime_call=_str(out, "with_enter_runtime_call"),
+            runtime_symbol=_str(out, "with_enter_runtime_symbol"),
+            runtime_module_id=_str(out, "with_enter_runtime_module_id"),
+            semantic_tag=_str(out, "with_enter_semantic_tag"),
+        )
+        enter_stmt: Node
+        if var_name != "":
+            enter_stmt = {}
+            enter_stmt["kind"] = ASSIGN
+            enter_stmt["target"] = _make_name_ref(var_name, enter_type)
+            enter_stmt["value"] = enter_call
+            enter_stmt["declare"] = True
+            if enter_type != "":
+                enter_stmt["decl_type"] = enter_type
+        else:
+            enter_stmt = _make_expr_stmt(enter_call)
+        exit_call = _make_with_method_call(
+            ctx_name,
+            context_type,
+            "__exit__",
+            args=[_make_none_const(), _make_none_const(), _make_none_const()],
+            result_type="None",
+            runtime_call=_str(out, "with_exit_runtime_call"),
+            runtime_symbol=_str(out, "with_exit_runtime_symbol"),
+            runtime_module_id=_str(out, "with_exit_runtime_module_id"),
+            semantic_tag=_str(out, "with_exit_semantic_tag"),
+        )
         try_stmt: Node = {}
         try_stmt["kind"] = TRY
         try_stmt["body"] = out["body"]
         try_stmt["handlers"] = []
         try_stmt["orelse"] = []
-        try_stmt["finalbody"] = [_make_close_finalizer(var_name, context_type)]
-        return [bind_stmt, try_stmt]
+        try_stmt["finalbody"] = [_make_expr_stmt(exit_call)]
+        return [bind_ctx_stmt, enter_stmt, try_stmt]
     for key in ("body", "orelse", "finalbody"):
         nested = out.get(key)
         if isinstance(nested, list):

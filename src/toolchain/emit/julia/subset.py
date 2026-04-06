@@ -763,6 +763,10 @@ class JuliaSubsetRenderer:
     def _render_scalar_runtime_call(self, mapped: str, args: list[str]) -> str:
         if mapped == "__INT__" and len(args) == 1:
             return "__pytra_int(" + args[0] + ")"
+        if mapped == "__PY_IO_ENTER__" and len(args) == 1:
+            return "__py_io_enter(" + args[0] + ")"
+        if mapped == "__PY_IO_EXIT__" and len(args) == 4:
+            return "__py_io_exit(" + ", ".join(args) + ")"
         if mapped == "__PYFILE_READ__":
             if len(args) == 1:
                 return "read(" + args[0] + ", String)"
@@ -1808,6 +1812,9 @@ class JuliaSubsetRenderer:
         if kind == "Try":
             self._emit_try(node)
             return
+        if kind == "With":
+            self._emit_with(node)
+            return
         if kind == "ForCore":
             self._emit_for_stmt(node)
             return
@@ -1818,6 +1825,69 @@ class JuliaSubsetRenderer:
             self._emit_class_stmt(node)
             return
         raise RuntimeError("julia subset: unsupported stmt kind: " + kind)
+
+    def _emit_with(self, node: dict[str, JsonVal]) -> None:
+        body = _list(node, "body")
+        hoisted = self._collect_try_hoisted_names({"kind": "Try", "body": body, "handlers": [], "finalbody": []})
+        current_locals = self._current_local_names()
+        for name in hoisted:
+            if name in current_locals:
+                continue
+            current_locals.add(name)
+            self._emit(_ident(name) + " = nothing")
+
+        ctx_name = self._next_tmp("__with_ctx_")
+        var_name = _str(node, "var_name")
+        if var_name == "":
+            var_name = self._next_tmp("__with_value_")
+        current_locals.add(var_name)
+        context_expr = node.get("context_expr")
+        self._emit(ctx_name + " = " + self._render_expr(context_expr))
+        self._emit(var_name + " = " + self._render_expr({
+            "kind": "Call",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": ctx_name, "resolved_type": _str(context_expr, "resolved_type") if isinstance(context_expr, dict) else ""},
+                "attr": "__enter__",
+                "resolved_type": "callable",
+            },
+            "args": [],
+            "keywords": [],
+            "resolved_type": _str(node, "with_enter_type"),
+            "resolved_runtime_call": _str(node, "with_enter_runtime_call"),
+            "runtime_call": _str(node, "with_enter_runtime_call"),
+            "runtime_symbol": _str(node, "with_enter_runtime_symbol"),
+            "runtime_module_id": _str(node, "with_enter_runtime_module_id"),
+        }))
+        self._emit("try")
+        self.indent_level += 1
+        for stmt in body:
+            self._emit_stmt(stmt)
+        self.indent_level -= 1
+        self._emit("finally")
+        self.indent_level += 1
+        self._emit(self._render_expr({
+            "kind": "Call",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": ctx_name, "resolved_type": _str(context_expr, "resolved_type") if isinstance(context_expr, dict) else ""},
+                "attr": "__exit__",
+                "resolved_type": "callable",
+            },
+            "args": [
+                {"kind": "Constant", "value": None, "resolved_type": "None"},
+                {"kind": "Constant", "value": None, "resolved_type": "None"},
+                {"kind": "Constant", "value": None, "resolved_type": "None"},
+            ],
+            "keywords": [],
+            "resolved_type": "None",
+            "resolved_runtime_call": _str(node, "with_exit_runtime_call"),
+            "runtime_call": _str(node, "with_exit_runtime_call"),
+            "runtime_symbol": _str(node, "with_exit_runtime_symbol"),
+            "runtime_module_id": _str(node, "with_exit_runtime_module_id"),
+        }))
+        self.indent_level -= 1
+        self._emit("end")
 
     def _emit_try(self, node: dict[str, JsonVal]) -> None:
         handlers = _list(node, "handlers")

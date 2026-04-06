@@ -450,6 +450,8 @@ class PytraFile {
   final RandomAccessFile _raf;
   final String _mode;
   PytraFile(this._raf, this._mode);
+  PytraFile __enter__() => this;
+  void __exit__(dynamic excType, dynamic excVal, dynamic excTb) => close();
   void write(dynamic data) {
     if (data is List<int>) {
       _raf.writeFromSync(data);
@@ -476,6 +478,20 @@ PytraFile open(String path, [String mode = "r"]) {
   if (mode == "wb" || mode == "w") fm = FileMode.write;
   if (mode == "ab" || mode == "a") fm = FileMode.append;
   return PytraFile(File(path).openSync(mode: fm), mode);
+}
+
+dynamic pytraWithEnter(dynamic value) {
+  if (value is PytraFile) {
+    return value.__enter__();
+  }
+  return (value as dynamic).__enter__();
+}
+
+dynamic pytraWithExit(dynamic value, dynamic excType, dynamic excVal, dynamic excTb) {
+  if (value is PytraFile) {
+    return value.__exit__(excType, excVal, excTb);
+  }
+  return (value as dynamic).__exit__(excType, excVal, excTb);
 }
 
 // --- IO helpers (for sys.stderr/stdout stubs) ---

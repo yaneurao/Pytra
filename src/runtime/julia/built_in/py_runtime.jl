@@ -421,3 +421,12 @@ function py_open(path, mode="r")
     end
     return open(path, mode)
 end
+
+function __py_io_enter(io)
+    return io
+end
+
+function __py_io_exit(io, _exc_type=nothing, _exc_val=nothing, _exc_tb=nothing)
+    close(io)
+    return nothing
+end

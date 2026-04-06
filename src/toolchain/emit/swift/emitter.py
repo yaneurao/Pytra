@@ -766,6 +766,8 @@ def _swift_type(type_name: Any, *, allow_void: bool) -> str:
         return "Bool"
     if type_name == "str":
         return "String"
+    if type_name in {"IOBase", "TextIOWrapper", "BufferedWriter", "BufferedReader"}:
+        return "PyFile"
     if ts3 == "deque":
         return "[Any]"
     if ts3.startswith("list[") or ts3.startswith("tuple[") or ts3.startswith("set["):
@@ -1397,6 +1399,10 @@ def _compare_op_symbol(op: Any) -> str:
     return "=="
 
 
+def _is_swift_class_type(type_name: str) -> bool:
+    return type_name in _CLASS_NAMES[0]
+
+
 def _render_compare_expr(expr: dict[str, Any]) -> str:
     left = _render_expr(expr.get("left"))
     ops_any = expr.get("ops")
@@ -1454,6 +1460,12 @@ def _render_compare_expr(expr: dict[str, Any]) -> str:
             right_type = right_any if isinstance(right_any, str) else ""
 
         symbol = _compare_op_symbol(op)
+        if op in {"Is", "IsNot"} and _is_swift_class_type(left_type) and _is_swift_class_type(right_type):
+            identity = "(" + cur_left + (" === " if op == "Is" else " !== ") + right + ")"
+            parts.append(identity)
+            cur_left = right
+            i += 1
+            continue
         if left_type == "str" or right_type == "str":
             lhs = cur_left if _expr_emits_target_type(left_node, "String") else _to_str_expr(cur_left)
             rhs = right if _expr_emits_target_type(comp_node, "String") else _to_str_expr(right)
@@ -4125,6 +4137,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         lines: list[str] = []
         context_expr = _render_expr(sd2.get("context_expr"))
         var_name = _safe_ident(sd2.get("var_name"), "ctx")
+        ctx_name = _safe_ident("__with_ctx_" + str(len(_declared_set(ctx)) + 1), "ctx")
         declared = _declared_set(ctx)
         type_map = _type_map(ctx)
         body_any = sd2.get("body")
@@ -4142,19 +4155,28 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         ctx_type = _swift_type(context_node.get("resolved_type") if isinstance(context_node, dict) else "", allow_void=False)
         if ctx_type == "Any":
             ctx_type = "PyFile"
-        if var_name in declared:
-            lines.append(indent + var_name + " = " + context_expr)
-        else:
+        enter_type_any = sd2.get("with_enter_type")
+        enter_type = _swift_type(enter_type_any if isinstance(enter_type_any, str) else "", allow_void=False)
+        if enter_type == "Any":
+            enter_type = ctx_type
+        if var_name not in declared:
             declared.add(var_name)
-            type_map[var_name] = ctx_type
-            lines.append(indent + "var " + var_name + ": " + ctx_type + " = " + context_expr)
-        lines.append(indent + "defer {")
-        lines.append(indent + "    " + var_name + ".close()")
-        lines.append(indent + "}")
+            type_map[var_name] = enter_type
+            if enter_type == "PyFile" or _is_swift_class_type(enter_type):
+                lines.append(indent + "var " + var_name + ": " + enter_type + "!")
+            else:
+                lines.append(indent + "var " + var_name + ": " + enter_type + " = " + _default_return_expr(enter_type))
+        lines.append(indent + "do {")
+        lines.append(indent + "    var " + ctx_name + ": " + ctx_type + " = " + context_expr)
+        lines.append(indent + "    " + var_name + " = " + ctx_name + ".__enter__()")
+        lines.append(indent + "    defer {")
+        lines.append(indent + "        " + ctx_name + ".__exit__(__pytra_none, __pytra_none, __pytra_none)")
+        lines.append(indent + "    }")
         i = 0
         while i < len(body):
-            lines.extend(_emit_stmt(body[i], indent=indent, ctx=ctx))
+            lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
             i += 1
+        lines.append(indent + "}")
         return lines
 
     if kind == "VarDecl":

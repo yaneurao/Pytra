@@ -1689,6 +1689,14 @@ final class PyFile {
         return String(data: data, encoding: .utf8) ?? ""
     }
 
+    func __enter__() -> PyFile {
+        return self
+    }
+
+    func __exit__(_ excType: Any?, _ excVal: Any?, _ excTb: Any?) {
+        close()
+    }
+
     func close() {
         handle.closeFile()
     }
@@ -1696,4 +1704,17 @@ final class PyFile {
 
 func __pytra_open(_ path: Any?, _ mode: Any? = "r") -> PyFile {
     return PyFile(__pytra_str(path), __pytra_str(mode))
+}
+
+typealias IOBase = PyFile
+typealias TextIOWrapper = PyFile
+typealias BufferedWriter = PyFile
+typealias BufferedReader = PyFile
+
+func __pytra_write(_ file: PyFile, _ data: Any?) {
+    file.write(data)
+}
+
+func __pytra_read(_ file: PyFile) -> String {
+    return file.read()
 }

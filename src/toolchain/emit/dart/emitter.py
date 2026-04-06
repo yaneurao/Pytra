@@ -1940,7 +1940,7 @@ class DartNativeEmitter:
         items_any = stmt.get("items")
         items = items_any if isinstance(items_any, list) else []
         body = self._dict_list(stmt.get("body"))
-        ctx_vars: list[tuple[str, str]] = []
+        ctx_vars: list[tuple[str, str, str]] = []
 
         if len(items) == 0:
             fallback_item: dict[str, Any] = {}
@@ -1981,15 +1981,17 @@ class DartNativeEmitter:
             var_name = ""
             if isinstance(opt_var, dict):
                 var_name = _safe_ident(opt_var.get("id"), "ctx")
-            ctx_vars.append((ctx_code, var_name))
+            ctx_name = "__with_ctx_" + str(len(ctx_vars) + 1)
+            ctx_vars.append((ctx_name, ctx_code, var_name))
 
         i = 0
         while i < len(ctx_vars):
-            ctx_code, var_name = ctx_vars[i]
+            ctx_name, ctx_code, var_name = ctx_vars[i]
+            self._emit_line("final dynamic " + ctx_name + " = " + ctx_code + ";")
             if var_name != "":
-                self._emit_line("final dynamic " + var_name + " = " + ctx_code + ";")
+                self._emit_line("final dynamic " + var_name + " = " + ctx_name + ".__enter__();")
             else:
-                self._emit_line(ctx_code + ";")
+                self._emit_line(ctx_name + ".__enter__();")
             i += 1
 
         self._emit_line("try {")
@@ -2003,9 +2005,8 @@ class DartNativeEmitter:
         self.indent += 1
         i = 0
         while i < len(ctx_vars):
-            _, var_name = ctx_vars[i]
-            if var_name != "":
-                self._emit_line(var_name + ".close();")
+            ctx_name, _, _ = ctx_vars[i]
+            self._emit_line(ctx_name + ".__exit__(null, null, null);")
             i += 1
         self.indent -= 1
         self._emit_line("}")
@@ -3026,6 +3027,11 @@ class DartNativeEmitter:
             owner_mapped_expr = self._expand_owner_mapped_call(mapped_name, owner, rendered_args, owner_type)
             if owner_mapped_expr != "":
                 return owner_mapped_expr
+            if owner_type in {"IOBase", "TextIOWrapper", "BufferedWriter", "BufferedReader"}:
+                if raw_attr == "__enter__" and len(rendered_args) == 0:
+                    return "pytraWithEnter(" + owner + ")"
+                if raw_attr == "__exit__" and len(rendered_args) == 3:
+                    return "pytraWithExit(" + owner + ", " + ", ".join(rendered_args) + ")"
             if module_alias != "":
                 return module_alias + "." + attr + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
             if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
