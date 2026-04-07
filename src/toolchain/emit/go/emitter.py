@@ -98,6 +98,7 @@ class EmitContext:
     # Go package names: loaded from mapping.json "go_pkg_imports"
     go_pkg_math: str = ""
     go_pkg_os: str = ""
+    go_pkg_sort: str = ""
     # Builtin dispatch names: loaded from mapping.json "go_builtin_dispatch"
     dispatch_print: str = ""
     dispatch_len: str = ""
@@ -2573,6 +2574,10 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     adapter = _str(node, "runtime_call_adapter_kind")
     resolved = resolve_runtime_call(rc, bn, adapter, ctx.mapping)
     dispatch = resolved if resolved != "" else rc
+    if dispatch == "":
+        semantic_tag = _str(node, "semantic_tag")
+        if semantic_tag in ("core.bytearray_ctor", "core.bytes_ctor"):
+            dispatch = "__MAKE_BYTES__"
 
     # Type cast builtins
     if rc in ("static_cast", "int", "float", "bool"):
@@ -2714,7 +2719,7 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if len(args) >= 1 and isinstance(args[0], dict):
                 src_code = _wrapper_container_storage_expr(ctx, args[0], src_code)
             if src_rt == "set[str]":
-                ctx.imports_needed.add("sort")
+                ctx.imports_needed.add(ctx.go_pkg_sort)
                 key_name = _next_temp(ctx, "k")
                 return (
                     "func() *PyList[string] {\n"
@@ -2727,7 +2732,7 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     + "}()"
                 )
             if src_rt == "list[str]" or result_gt == "[]string":
-                ctx.imports_needed.add("sort")
+                ctx.imports_needed.add(ctx.go_pkg_sort)
                 return (
                     "func() *PyList[string] {\n"
                     + "\t" + out_name + " := append([]string{}, " + src_code + "...)\n"
@@ -2738,7 +2743,7 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if src_rt.startswith("list[") and result_gt.startswith("[]") and key_attr != "":
                 result_rt = _str(node, "resolved_type")
                 result_wrapper_gt = _go_ref_container_type(ctx, result_rt) if _is_container_resolved_type(result_rt) else result_gt
-                ctx.imports_needed.add("sort")
+                ctx.imports_needed.add(ctx.go_pkg_sort)
                 return (
                     "func() " + result_wrapper_gt + " {\n"
                     + "\t" + out_name + " := append(" + result_gt + "{}, " + src_code + "...)\n"
@@ -2777,13 +2782,18 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     # Container methods
     if dispatch == "__LIST_APPEND__":
         if isinstance(func, dict):
-            owner = _emit_expr(ctx, func.get("value"))
-            owner = _wrapper_container_storage_expr(ctx, func.get("value"), owner)
             owner_node = func.get("value")
+            call_args = args
+            if _str(func, "kind") == "Name" and len(args) >= 2 and isinstance(args[0], dict):
+                owner_node = args[0]
+                call_args = args[1:]
+            owner = _emit_expr(ctx, owner_node)
+            owner = _wrapper_container_storage_expr(ctx, owner_node, owner)
             owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
-            if len(arg_strs) >= 1:
-                arg_code = arg_strs[0]
-                arg_node = args[0] if len(args) >= 1 and isinstance(args[0], dict) else None
+            call_arg_strs = arg_strs[1:] if _str(func, "kind") == "Name" and len(arg_strs) >= 2 else arg_strs
+            if len(call_arg_strs) >= 1:
+                arg_code = call_arg_strs[0]
+                arg_node = call_args[0] if len(call_args) >= 1 and isinstance(call_args[0], dict) else None
                 # Type coerce element if needed (e.g., int64 → byte for []byte)
                 if owner_rt in ("list[uint8]", "bytes", "bytearray"):
                     arg_code = "byte(" + arg_code + ")"
@@ -2797,8 +2807,31 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if owner_id != "" and owner_id in ctx.var_types:
                     declared = ctx.var_types[owner_id]
                     if declared in ("list[uint8]", "bytes", "bytearray"):
-                        arg_code = "byte(" + arg_strs[0] + ")"
+                        arg_code = "byte(" + call_arg_strs[0] + ")"
                 return owner + " = append(" + owner + ", " + arg_code + ")"
+
+    if dispatch == "__LIST_EXTEND__":
+        if isinstance(func, dict):
+            owner_node = func.get("value")
+            call_args = args
+            if _str(func, "kind") == "Name" and len(args) >= 2 and isinstance(args[0], dict):
+                owner_node = args[0]
+                call_args = args[1:]
+            owner = _emit_expr(ctx, owner_node)
+            owner = _wrapper_container_storage_expr(ctx, owner_node, owner)
+            owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+            call_arg_strs = arg_strs[1:] if _str(func, "kind") == "Name" and len(arg_strs) >= 2 else arg_strs
+            if len(call_arg_strs) >= 1:
+                src_code = call_arg_strs[0]
+                src_node = call_args[0] if len(call_args) >= 1 and isinstance(call_args[0], dict) else None
+                if isinstance(src_node, dict):
+                    src_rt = _effective_resolved_type(ctx, src_node)
+                    if _is_container_resolved_type(src_rt):
+                        src_code = _wrapper_container_storage_expr(ctx, src_node, src_code)
+                if owner_rt in ("bytes", "bytearray", "list[uint8]", "unknown"):
+                    return owner + " = append(" + owner + ", " + src_code + "...)"
+                if owner_rt.startswith("list["):
+                    return owner + " = append(" + owner + ", " + src_code + "...)"
 
     if dispatch == "__SET_ADD__":
         if isinstance(func, dict):
@@ -5977,7 +6010,11 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
     mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "go" / "mapping.json"
     mapping = load_runtime_mapping(mapping_path)
 
-    # Skip runtime modules (provided by hand-written native files)
+    # Skip modules provided by hand-written native files.
+    if module_id in mapping.module_native_files:
+        return ""
+
+    # Skip runtime modules (provided by native runtime)
     if should_skip_module(module_id, mapping):
         return ""
 
@@ -5997,6 +6034,7 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
     _go_pkg = _raw_map.get("go_pkg_imports") or {}
     ctx.go_pkg_math = (_go_pkg.get("float_math") or "") if isinstance(_go_pkg, dict) else ""
     ctx.go_pkg_os = (_go_pkg.get("file_io") or "") if isinstance(_go_pkg, dict) else ""
+    ctx.go_pkg_sort = (_go_pkg.get("list_sort") or "") if isinstance(_go_pkg, dict) else ""
     _go_bd = _raw_map.get("go_builtin_dispatch") or {}
     ctx.dispatch_print = (_go_bd.get("print") or "") if isinstance(_go_bd, dict) else ""
     ctx.dispatch_len = (_go_bd.get("len") or "") if isinstance(_go_bd, dict) else ""

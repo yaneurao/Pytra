@@ -16,6 +16,10 @@
     "list.extend": "__LIST_EXTEND__",
     "list.pop": "__LIST_POP__",
     "list.clear": "__LIST_CLEAR__",
+    "bytearray.append": "__LIST_APPEND__",
+    "bytearray.extend": "__LIST_EXTEND__",
+    "bytearray.pop": "__LIST_POP__",
+    "bytearray.clear": "__LIST_CLEAR__",
     "list.index": "py_index",
     "dict.get": "__DICT_GET__",
     "dict.items": "__DICT_ITEMS__",
@@ -76,11 +80,15 @@
   },
   "go_pkg_imports": {
     "float_math": "math",
-    "file_io": "os"
+    "file_io": "os",
+    "list_sort": "sort"
   },
   "go_builtin_dispatch": {
     "print": "py_print",
     "len": "py_len"
+  },
+  "module_native_files": {
+    "pytra.std.pathlib": "std/pathlib_native.go"
   },
   "go_class_names": {
     "exception_type_bounds": {
@@ -141,7 +149,6 @@
     "pytra.std.math",
     "pytra.std.os",
     "pytra.std.os_path",
-    "pytra.std.pathlib",
     "pytra.std.sys",
     "pytra.std.time",
     "pytra.core."
