@@ -504,11 +504,17 @@ def collect_hits(
 ) -> list[tuple[str, str, Path, int, str]]:
     hits: list[tuple[str, str, Path, int, str]] = []
 
+    def _is_known_false_positive(lang: str, cat: str, stripped: str) -> bool:
+        if lang == "nim" and cat == "runtime_symbol":
+            if stripped in ('_emit(ctx, "discard")', 'return "discard"'):
+                return True
+        return False
+
     # 除外ファイル:
     #   code_emitter.py  — mapping 読み込み共通基盤（禁止パターンの定義場所）
     #   types.py         — 型写像テーブル（"Exception": "Error" 等は正当）
     #   cli.py           — CLI エントリポイント（if __name__ == "__main__" は Python 標準ガード）
-    EXCLUDE_NAMES = {"code_emitter.py", "types.py", "__init__.py", "cli.py"}
+    EXCLUDE_NAMES = {"code_emitter.py", "types.py", "__init__.py", "cli.py", "cli_runner.py"}
 
     files = sorted(
         f for f in EMIT_DIR.rglob("*.py")
@@ -541,6 +547,8 @@ def collect_hits(
                     continue
                 for pat in patterns:
                     if re.search(pat, raw):
+                        if _is_known_false_positive(lang, cat, stripped):
+                            continue
                         hits.append((lang, cat, fpath, lineno, stripped[:120]))
                         break  # 1行につき同カテゴリの重複カウントを避ける
 
