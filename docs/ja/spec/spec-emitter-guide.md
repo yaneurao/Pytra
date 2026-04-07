@@ -1267,8 +1267,8 @@ IOBase                    ← 基底クラス。close / __enter__ / __exit__ を
 
 #### emitter の対応
 
-- **`resolved_type` として `"PyFile"` を参照してはならない**（lint `class_name` 違反）。`"PyFile"` は廃止済み。
-- emitter の `mapping.json` の `types` で `IOBase` / `TextIOWrapper` / `BufferedWriter` / `BufferedReader` を runtime のクラス名に写像する。runtime 側の実装クラス名が `PyFile` のままでも構わない（例: `"IOBase": "PyFile"`, `"TextIOWrapper": "PyFile"`）。
+- **emitter は `IOBase` / `TextIOWrapper` 等の型名文字列で分岐してはならない。** `"PyFile"` も同様（lint `class_name` 違反）。型名のハードコードは §1 の原則に違反する。
+- 型の変換は `mapping.json` の `types` テーブルのみで行う。runtime 側の実装クラス名が `PyFile` のままでも構わない（例: `"IOBase": "PyFile"`, `"TextIOWrapper": "PyFile"`）。emitter のコードに型名文字列は不要。
 - `with` 文の `__enter__` / `__exit__` は CommonRenderer のデフォルト変換（try/finally + hoist）を使う。言語固有の構文がある場合（C# の `using`、Java の `try-with-resources`、Go の `defer` 等）はオーバーライドする。
 - `__enter__` / `__exit__` の呼び出し情報は EAST3 の `With` ノードの metadata（`with_enter_type` 等）から取得する。emitter が `resolved_type` からメソッドを推論してはならない。
 
