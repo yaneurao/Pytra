@@ -1245,6 +1245,33 @@ EAST3 の `callable` 型（`GenericType(base="callable", args=[引数型, 戻り
 
 **禁止**: callable を常に non-null 扱いにして `is None` を定数 `false` に落とすこと。`OptionalType` なら `is None` チェックは有効。
 
+### 12.7 ファイル I/O 型の写像（`PyFile` 廃止）
+
+`open()` の戻り値は Python の `io` モジュールの型階層に基づく。resolver は mode 引数に応じて以下の `resolved_type` を付与する:
+
+| mode | `resolved_type` |
+|------|----------------|
+| `"r"`, `"w"`, `"a"` | `TextIOWrapper` |
+| `"rb"` | `BufferedReader` |
+| `"wb"`, `"ab"` | `BufferedWriter` |
+| 不明（変数、省略等） | `IOBase` |
+
+型階層は `src/pytra/built_in/io.py` に `@extern class` として定義されている:
+
+```
+IOBase                    ← 基底クラス。close / __enter__ / __exit__ を持つ
+├── TextIOWrapper         ← text mode。read() -> str, write(str) -> int
+├── BufferedWriter        ← binary write。write(bytes) -> int
+└── BufferedReader        ← binary read。read() -> bytes
+```
+
+#### emitter の対応
+
+- **`resolved_type` として `"PyFile"` を参照してはならない**（lint `class_name` 違反）。`"PyFile"` は廃止済み。
+- emitter の `mapping.json` の `types` で `IOBase` / `TextIOWrapper` / `BufferedWriter` / `BufferedReader` を runtime のクラス名に写像する。runtime 側の実装クラス名が `PyFile` のままでも構わない（例: `"IOBase": "PyFile"`, `"TextIOWrapper": "PyFile"`）。
+- `with` 文の `__enter__` / `__exit__` は CommonRenderer のデフォルト変換（try/finally + hoist）を使う。言語固有の構文がある場合（C# の `using`、Java の `try-with-resources`、Go の `defer` 等）はオーバーライドする。
+- `__enter__` / `__exit__` の呼び出し情報は EAST3 の `With` ノードの metadata（`with_enter_type` 等）から取得する。emitter が `resolved_type` からメソッドを推論してはならない。
+
 ## 13. parity check の実施
 
 ### 初回セットアップ（git clone 直後）
