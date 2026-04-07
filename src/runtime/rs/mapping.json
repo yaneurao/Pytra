@@ -27,6 +27,7 @@
     "Obj": "PyAny",
     "Any": "PyAny",
     "JsonVal": "PyAny",
+    "Path": "PyPath",
     "Node": "HashMap<String, PyAny>",
     "Callable": "Box<dyn Fn()>",
     "callable": "Box<dyn Fn()>",
@@ -103,6 +104,8 @@
     "pytra.std.os_path.basename": "py_basename",
     "pytra.std.os_path.dirname": "py_dirname",
     "pytra.std.os_path.exists": "py_exists",
+    "pytra.std.sys.argv": "py_get_argv()",
+    "pytra.std.sys.path": "py_get_path()",
     "pytra.std.glob.glob": "py_glob",
     "pytra.std.os.getcwd": "py_getcwd",
     "dict.clear": "py_clear",
@@ -138,6 +141,9 @@
     "py_print": "multi_arg_print",
     "py_len": "ref_arg",
     "open": "first_ref_arg"
+  },
+  "predicate_types": {
+    "path_like": "PyPath"
   },
   "skip_modules": [
     "pytra.built_in.",

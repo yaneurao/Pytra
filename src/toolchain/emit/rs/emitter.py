@@ -106,7 +106,7 @@ class RsEmitContext:
     # Type info table from linked manifest type_info_table_v1: {name → {id, entry, exit}}
     class_type_info_table: dict[str, dict[str, int]] = field(default_factory=dict)
     needs_runtime_type_ids: bool = False
-    known_method_signatures: dict[tuple[str, str], dict[str, JsonVal]] = field(default_factory=dict)
+    known_method_signatures: dict[str, dict[str, JsonVal]] = field(default_factory=dict)
     imported_symbol_storage_hints: dict[str, str] = field(default_factory=dict)
     imported_class_fields: dict[str, dict[str, str]] = field(default_factory=dict)
     imported_symbol_names: set[str] = field(default_factory=set)
@@ -145,14 +145,6 @@ _STD_SEG = "std"
 _UTILS_SEG = "utils"
 _BUILT_IN_SEG = "built_in"
 _TOOLCHAIN2_ROOT = "toolchain2"
-_SYS_SEG = "sy" + "s"
-_ARGPARSE_SEG = "arg" + "parse"
-_SYS_MODULE_ID = ".".join((_PYTRA_ROOT, _STD_SEG, _SYS_SEG))
-_ARGPARSE_CLASS = "Argument" + "Parser"
-_ARGPARSE_MODULE_ID = ".".join((_PYTRA_ROOT, _STD_SEG, _ARGPARSE_SEG))
-_ARGPARSE_FQCN = ".".join((_ARGPARSE_MODULE_ID, _ARGPARSE_CLASS))
-_PATH_TYPE_NAME = "Pa" + "th"
-
 def _str(node: JsonVal, key: str) -> str:
     if isinstance(node, dict):
         v = node.get(key)
@@ -627,10 +619,10 @@ def _rs_type_for_context(ctx: RsEmitContext, resolved_type: str) -> str:
 def _is_path_type_name(ctx: RsEmitContext, type_name: str) -> bool:
     if type_name in ("", "unknown"):
         return False
-    if type_name == _PATH_TYPE_NAME:
-        return True
-    mapped_path = ctx.mapping.types.get(_PATH_TYPE_NAME, "")
-    return mapped_path != "" and type_name == mapped_path
+    path_like_rs = ctx.mapping.predicate_types.get("path_like", "")
+    if path_like_rs == "":
+        return False
+    return _rs_type_for_context(ctx, type_name) == path_like_rs
 
 
 def _resolve_import_module_ctor(ctx: RsEmitContext, module_name: str) -> str:
@@ -883,9 +875,6 @@ def _lookup_method_sig(ctx: RsEmitContext, owner_type: str, method: str) -> dict
         sig = ctx.class_instance_methods.get(candidate, {}).get(method)
         if isinstance(sig, dict):
             return sig
-        known = ctx.known_method_signatures.get((candidate, method))
-        if isinstance(known, dict):
-            return known
     fallback: dict[str, JsonVal] | None = None
     for methods in ctx.class_instance_methods.values():
         sig = methods.get(method)
@@ -899,9 +888,18 @@ def _lookup_method_sig(ctx: RsEmitContext, owner_type: str, method: str) -> dict
     return None
 
 
-def _lookup_known_method_sig(ctx: RsEmitContext, owner_type: str, method: str) -> dict[str, JsonVal] | None:
-    for candidate in _type_lookup_candidates(owner_type):
-        known = ctx.known_method_signatures.get((candidate, method))
+def _lookup_known_method_sig(ctx: RsEmitContext, call_node: dict[str, JsonVal]) -> dict[str, JsonVal] | None:
+    for key in (
+        _str(call_node, "runtime_call"),
+        _str(call_node, "resolved_runtime_call"),
+    ):
+        known = ctx.known_method_signatures.get(key)
+        if isinstance(known, dict):
+            return known
+    runtime_module_id = _str(call_node, "runtime_module_id")
+    runtime_symbol = _str(call_node, "runtime_symbol")
+    if runtime_module_id != "" and runtime_symbol != "":
+        known = ctx.known_method_signatures.get(runtime_module_id + "." + runtime_symbol)
         if isinstance(known, dict):
             return known
     return None
@@ -1769,11 +1767,6 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         if ctx.package_mode and _is_package_crate_module(ctx, module_id):
             module_ref = safe_rs_ident(obj_id) if obj_id != "" else _module_id_to_rs_mod_name(module_id)
             return module_ref + "::" + safe_rs_ident(attr)
-        if module_id == _SYS_MODULE_ID:
-            if attr == "argv":
-                return "py_get_argv()"
-            if attr == "path":
-                return "py_get_path()"
         if is_emitted_pytra_module:
             return safe_rs_ident(attr)
         runtime_symbol = _str(node, "runtime_symbol") or attr
@@ -3021,9 +3014,7 @@ def _emit_method_call(
 
     obj_str = _emit_expr(ctx, obj)
     raw_obj_str = _emit_attr_receiver_raw(ctx, obj)
-    method_sig = _lookup_known_method_sig(ctx, obj_actual_type, method)
-    if method_sig is None:
-        method_sig = _lookup_known_method_sig(ctx, obj_type, method)
+    method_sig = _lookup_known_method_sig(ctx, call_node)
     if method_sig is None:
         method_sig = _dict(call_node, "method_signature_v1")
     if not method_sig:
@@ -7229,10 +7220,8 @@ def emit_rs_module(east3_doc: dict[str, JsonVal], *, package_mode: bool = False)
     ctx.imported_symbol_names = _build_imported_symbol_names(meta)
     ctx.type_only_imported_symbols = _build_type_only_imported_symbols(meta, body, main_guard)
     ctx.known_method_signatures = {
-        (_ARGPARSE_CLASS, 'add_argument'): _ARGPARSE_ADD_ARGUMENT_SIG,
-        (_ARGPARSE_FQCN, 'add_argument'): _ARGPARSE_ADD_ARGUMENT_SIG,
-        (_ARGPARSE_CLASS, 'parse_args'): _ARGPARSE_PARSE_ARGS_SIG,
-        (_ARGPARSE_FQCN, 'parse_args'): _ARGPARSE_PARSE_ARGS_SIG,
+        "ArgumentParser.add_argument": _ARGPARSE_ADD_ARGUMENT_SIG,
+        "ArgumentParser.parse_args": _ARGPARSE_PARSE_ARGS_SIG,
     }
 
     # Collect module private symbols
