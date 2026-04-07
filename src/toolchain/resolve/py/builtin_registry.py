@@ -41,6 +41,58 @@ def _split_source_signature_fields(signature: str) -> list[str]:
     return parts
 
 
+def _parse_source_extern_kwargs(text: str) -> dict[str, str] | None:
+    result: dict[str, str] = {}
+    current = ""
+    depth = 0
+    for ch in text:
+        if ch == "," and depth == 0:
+            part = current.strip()
+            current = ""
+        else:
+            if ch in "([{":
+                depth += 1
+            elif ch in ")]}" and depth > 0:
+                depth -= 1
+            current += ch
+            continue
+        if part == "" or "=" not in part:
+            continue
+        key, val = part.split("=", 1)
+        value = val.strip()
+        if len(value) >= 2 and value[0] in ('"', "'") and value[-1] == value[0]:
+            value = value[1:-1]
+        result[key.strip()] = value
+    tail = current.strip()
+    if tail != "" and "=" in tail:
+        key, val = tail.split("=", 1)
+        value = val.strip()
+        if len(value) >= 2 and value[0] in ('"', "'") and value[-1] == value[0]:
+            value = value[1:-1]
+        result[key.strip()] = value
+    if "module" in result and "symbol" in result and "tag" in result:
+        return result
+    return None
+
+
+def _parse_source_extern_decorator(decorators: list[str]) -> ExternV2 | None:
+    for decorator in decorators:
+        deco = decorator.strip()
+        for prefix in ("extern(", "extern_fn(", "extern_class("):
+            if not deco.startswith(prefix) or not deco.endswith(")"):
+                continue
+            parsed = _parse_source_extern_kwargs(deco[len(prefix):-1])
+            if parsed is None:
+                continue
+            return ExternV2(
+                module=parsed["module"],
+                symbol=parsed["symbol"],
+                tag=parsed["tag"],
+                kind="method",
+            )
+    return None
+
+
 @dataclass
 class ExternV2:
     """Runtime binding metadata from meta.extern_v2."""
@@ -462,6 +514,9 @@ def _overlay_class_sigs_from_source(reg: BuiltinRegistry, source_path: Path) -> 
             method_sig.self_is_mutable = self_is_mutable
             if len(pending_decorators) > 0:
                 method_sig.decorators = list(pending_decorators)
+        parsed_extern = _parse_source_extern_decorator(pending_decorators)
+        if parsed_extern is not None:
+            method_sig.extern_v2 = parsed_extern
         pending_decorators = []
 
 

@@ -397,6 +397,36 @@ function __pytra_file_write {
     return 0
 }
 
+function __pytra_file_read {
+    param([object]$stream)
+    if ($stream -eq $null) { return "" }
+    if ($stream -is [System.IO.StreamReader]) {
+        return $stream.ReadToEnd()
+    }
+    if ($stream.PSObject.Methods.Name -contains "ReadToEnd") {
+        return $stream.ReadToEnd()
+    }
+    return ""
+}
+
+function __pytra_file_enter {
+    param([object]$stream)
+    return $stream
+}
+
+function __pytra_file_exit {
+    param([object]$stream, [object]$exc_type = $null, [object]$exc_val = $null, [object]$exc_tb = $null)
+    if ($stream -eq $null) { return $null }
+    if ($stream.PSObject.Methods.Name -contains "Close") {
+        $stream.Close()
+        return $null
+    }
+    if ($stream.PSObject.Methods.Name -contains "Dispose") {
+        $stream.Dispose()
+    }
+    return $null
+}
+
 function __pytra_in {
     param($item, $collection)
     if ($collection -is [hashtable] -or $collection -is [System.Collections.IDictionary]) {
@@ -719,6 +749,13 @@ function __pytra_list_sort {
     foreach ($item in $arr) { [void]$list.Add($item) }
 }
 
+function __pytra_sorted {
+    param([object]$value)
+    $arr = @($value)
+    [array]::Sort($arr)
+    return ,$arr
+}
+
 function __pytra_list_reverse {
     param([object]$list)
     if ($list -eq $null) { return }
@@ -782,6 +819,10 @@ function __pytra_str_find {
     param([object]$s, [object]$sub) return [string]$s.IndexOf([string]$sub)
 }
 
+function __pytra_str_rfind {
+    param([object]$s, [object]$sub) return [string]$s.LastIndexOf([string]$sub)
+}
+
 function __pytra_str_index {
     param([object]$s, [object]$sub)
     $idx = [string]$s.IndexOf([string]$sub)
@@ -811,6 +852,11 @@ function __pytra_str_join {
     param([object]$sep, [object]$iterable)
     $arr = @($iterable)
     return [string]::Join([string]$sep, $arr)
+}
+
+function __pytra_str_format {
+    param([object]$fmt, [Parameter(ValueFromRemainingArguments = $true)][object[]]$rest)
+    return [string]::Format([string]$fmt, $rest)
 }
 
 function __pytra_str_upper {
@@ -895,12 +941,31 @@ function __pytra_list_extend {
     foreach ($item in $items) { [void]$list.Add($item) }
 }
 
+function __pytra_list_insert {
+    param([object]$list, [object]$index, [object]$value)
+    if ($list -eq $null) { return $null }
+    $list.Insert([int]$index, $value)
+    return $list
+}
+
+function __pytra_list_copy {
+    param([object]$list)
+    return ,@($list)
+}
+
 # (duplicate removed - see __pytra_list_index above)
 
 function __pytra_dict_clear {
     param([object]$dict)
     if ($dict -eq $null) { return }
     $dict.Clear()
+}
+
+function __pytra_dict_update {
+    param([object]$dict, [object]$other)
+    if ($dict -eq $null -or $other -eq $null) { return $dict }
+    foreach ($k in $other.Keys) { $dict[$k] = $other[$k] }
+    return $dict
 }
 
 function __pytra_set_clear {

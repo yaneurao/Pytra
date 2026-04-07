@@ -1,0 +1,2974 @@
+{
+  "kind": "Module",
+  "source_path": "/workspace/Pytra/test/fixture/source/py/control/with_context_manager.py",
+  "body": [
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 1,
+        "col_offset": 0,
+        "end_lineno": 1,
+        "end_col_offset": 62
+      },
+      "module": "pytra.utils.assertions",
+      "names": [
+        {
+          "name": "py_assert_all",
+          "asname": null
+        },
+        {
+          "name": "py_assert_eq",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 4,
+        "col_offset": 0,
+        "end_lineno": 15,
+        "end_col_offset": 0
+      },
+      "name": "TrackingContext",
+      "original_name": "TrackingContext",
+      "base": null,
+      "dataclass": false,
+      "field_types": {
+        "log": "list[str]"
+      },
+      "decorators": [],
+      "body": [
+        {
+          "kind": "ClosureDef",
+          "source_span": {
+            "lineno": 5,
+            "col_offset": 4,
+            "end_lineno": 6,
+            "end_col_offset": 32
+          },
+          "name": "__init__",
+          "original_name": "__init__",
+          "arg_types": {
+            "self": "TrackingContext"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "None",
+          "arg_usage": {
+            "self": "reassigned"
+          },
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [
+            {
+              "kind": "AnnAssign",
+              "source_span": {
+                "lineno": 6,
+                "col_offset": 8,
+                "end_lineno": 6,
+                "end_col_offset": 32
+              },
+              "target": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 6,
+                  "col_offset": 8,
+                  "end_lineno": 6,
+                  "end_col_offset": 16
+                },
+                "resolved_type": "list[str]",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "self.log",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 6,
+                    "col_offset": 8,
+                    "end_lineno": 6,
+                    "end_col_offset": 12
+                  },
+                  "resolved_type": "TrackingContext",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "self",
+                  "id": "self"
+                },
+                "attr": "log",
+                "type_expr": {
+                  "kind": "GenericType",
+                  "base": "list",
+                  "args": [
+                    {
+                      "kind": "NamedType",
+                      "name": "str"
+                    }
+                  ]
+                }
+              },
+              "annotation": "list[str]",
+              "declare": true,
+              "decl_type": "list[str]",
+              "annotation_type_expr": {
+                "kind": "GenericType",
+                "base": "list",
+                "args": [
+                  {
+                    "kind": "NamedType",
+                    "name": "str"
+                  }
+                ]
+              },
+              "decl_type_expr": {
+                "kind": "GenericType",
+                "base": "list",
+                "args": [
+                  {
+                    "kind": "NamedType",
+                    "name": "str"
+                  }
+                ]
+              },
+              "value": {
+                "kind": "List",
+                "source_span": {
+                  "lineno": 6,
+                  "col_offset": 30,
+                  "end_lineno": 6,
+                  "end_col_offset": 32
+                },
+                "resolved_type": "list[str]",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "[]",
+                "elements": [],
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "GenericType",
+                  "category": "static",
+                  "mirror": "list[str]"
+                }
+              },
+              "type_expr_summary_v1": {
+                "schema_version": 1,
+                "kind": "GenericType",
+                "category": "static",
+                "mirror": "list[str]"
+              },
+              "cpp_empty_init_shorthand_v1": {
+                "version": "1",
+                "target_type": "list[str]",
+                "rhs_kind": "List"
+              }
+            }
+          ],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": [],
+          "captures": [],
+          "capture_types": {},
+          "capture_modes": {},
+          "returns": "None",
+          "mutates_self": true
+        },
+        {
+          "kind": "ClosureDef",
+          "source_span": {
+            "lineno": 8,
+            "col_offset": 4,
+            "end_lineno": 10,
+            "end_col_offset": 19
+          },
+          "name": "__enter__",
+          "original_name": "__enter__",
+          "arg_types": {
+            "self": "TrackingContext"
+          },
+          "arg_order": [
+            "self"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0
+          },
+          "return_type": "TrackingContext",
+          "arg_usage": {
+            "self": "reassigned"
+          },
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [
+            {
+              "kind": "Expr",
+              "source_span": {
+                "lineno": 9,
+                "col_offset": 8,
+                "end_lineno": 9,
+                "end_col_offset": 32
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 9,
+                  "col_offset": 8,
+                  "end_lineno": 9,
+                  "end_col_offset": 32
+                },
+                "resolved_type": "None",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "self.log.append(\"enter\")",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 9,
+                    "col_offset": 8,
+                    "end_lineno": 9,
+                    "end_col_offset": 23
+                  },
+                  "resolved_type": "callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "self.log.append",
+                  "value": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 9,
+                      "col_offset": 8,
+                      "end_lineno": 9,
+                      "end_col_offset": 16
+                    },
+                    "resolved_type": "list[str]",
+                    "casts": [],
+                    "borrow_kind": "mutable_ref",
+                    "repr": "self.log",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 9,
+                        "col_offset": 8,
+                        "end_lineno": 9,
+                        "end_col_offset": 12
+                      },
+                      "resolved_type": "TrackingContext",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "self",
+                      "id": "self"
+                    },
+                    "attr": "log"
+                  },
+                  "attr": "append"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col_offset": 24,
+                      "end_lineno": 9,
+                      "end_col_offset": 31
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"enter\"",
+                    "value": "enter",
+                    "call_arg_type": "str"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "runtime_call": "list.append",
+                "runtime_module_id": "pytra.core.list",
+                "runtime_symbol": "list.append",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "stdlib.method.append",
+                "runtime_owner": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 9,
+                    "col_offset": 8,
+                    "end_lineno": 9,
+                    "end_col_offset": 16
+                  },
+                  "resolved_type": "list[str]",
+                  "casts": [],
+                  "borrow_kind": "mutable_ref",
+                  "repr": "self.log",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 9,
+                      "col_offset": 8,
+                      "end_lineno": 9,
+                      "end_col_offset": 12
+                    },
+                    "resolved_type": "TrackingContext",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "self",
+                    "id": "self"
+                  },
+                  "attr": "log"
+                },
+                "meta": {
+                  "mutates_receiver": true
+                },
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
+                }
+              }
+            },
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 10,
+                "col_offset": 8,
+                "end_lineno": 10,
+                "end_col_offset": 19
+              },
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 10,
+                  "col_offset": 15,
+                  "end_lineno": 10,
+                  "end_col_offset": 19
+                },
+                "resolved_type": "TrackingContext",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "self",
+                "id": "self"
+              }
+            }
+          ],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": [],
+          "captures": [],
+          "capture_types": {},
+          "capture_modes": {},
+          "returns": "TrackingContext",
+          "mutates_self": true
+        },
+        {
+          "kind": "ClosureDef",
+          "source_span": {
+            "lineno": 12,
+            "col_offset": 4,
+            "end_lineno": 13,
+            "end_col_offset": 31
+          },
+          "name": "__exit__",
+          "original_name": "__exit__",
+          "arg_types": {
+            "self": "TrackingContext",
+            "exc_type": "object",
+            "exc_val": "object",
+            "exc_tb": "object"
+          },
+          "arg_order": [
+            "self",
+            "exc_type",
+            "exc_val",
+            "exc_tb"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "exc_type": 1,
+            "exc_val": 2,
+            "exc_tb": 3
+          },
+          "return_type": "None",
+          "arg_usage": {
+            "self": "reassigned",
+            "exc_type": "readonly",
+            "exc_val": "readonly",
+            "exc_tb": "readonly"
+          },
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [
+            {
+              "kind": "Expr",
+              "source_span": {
+                "lineno": 13,
+                "col_offset": 8,
+                "end_lineno": 13,
+                "end_col_offset": 31
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 13,
+                  "col_offset": 8,
+                  "end_lineno": 13,
+                  "end_col_offset": 31
+                },
+                "resolved_type": "None",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "self.log.append(\"exit\")",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 13,
+                    "col_offset": 8,
+                    "end_lineno": 13,
+                    "end_col_offset": 23
+                  },
+                  "resolved_type": "callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "self.log.append",
+                  "value": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 13,
+                      "col_offset": 8,
+                      "end_lineno": 13,
+                      "end_col_offset": 16
+                    },
+                    "resolved_type": "list[str]",
+                    "casts": [],
+                    "borrow_kind": "mutable_ref",
+                    "repr": "self.log",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 13,
+                        "col_offset": 8,
+                        "end_lineno": 13,
+                        "end_col_offset": 12
+                      },
+                      "resolved_type": "TrackingContext",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "self",
+                      "id": "self"
+                    },
+                    "attr": "log"
+                  },
+                  "attr": "append"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 13,
+                      "col_offset": 24,
+                      "end_lineno": 13,
+                      "end_col_offset": 30
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"exit\"",
+                    "value": "exit",
+                    "call_arg_type": "str"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "runtime_call": "list.append",
+                "runtime_module_id": "pytra.core.list",
+                "runtime_symbol": "list.append",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "stdlib.method.append",
+                "runtime_owner": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 13,
+                    "col_offset": 8,
+                    "end_lineno": 13,
+                    "end_col_offset": 16
+                  },
+                  "resolved_type": "list[str]",
+                  "casts": [],
+                  "borrow_kind": "mutable_ref",
+                  "repr": "self.log",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 13,
+                      "col_offset": 8,
+                      "end_lineno": 13,
+                      "end_col_offset": 12
+                    },
+                    "resolved_type": "TrackingContext",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "self",
+                    "id": "self"
+                  },
+                  "attr": "log"
+                },
+                "meta": {
+                  "mutates_receiver": true
+                },
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
+                }
+              }
+            }
+          ],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": [],
+          "captures": [],
+          "capture_types": {},
+          "capture_modes": {},
+          "returns": "None",
+          "mutates_self": true
+        }
+      ],
+      "class_storage_hint": "ref",
+      "leading_comments": [],
+      "leading_trivia": [],
+      "meta": {}
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 16,
+        "col_offset": 0,
+        "end_lineno": 40,
+        "end_col_offset": 56
+      },
+      "name": "run_with_context_manager",
+      "original_name": "run_with_context_manager",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "bool",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 17,
+            "col_offset": 4,
+            "end_lineno": 17,
+            "end_col_offset": 27
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 17,
+              "col_offset": 4,
+              "end_lineno": 17,
+              "end_col_offset": 10
+            },
+            "resolved_type": "list[bool]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks",
+            "id": "checks",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "bool"
+                }
+              ]
+            }
+          },
+          "annotation": "list[bool]",
+          "declare": true,
+          "decl_type": "list[bool]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "bool"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "bool"
+              }
+            ]
+          },
+          "value": {
+            "kind": "List",
+            "source_span": {
+              "lineno": 17,
+              "col_offset": 25,
+              "end_lineno": 17,
+              "end_col_offset": 27
+            },
+            "resolved_type": "list[bool]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "[]",
+            "elements": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "GenericType",
+              "category": "static",
+              "mirror": "list[bool]"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "GenericType",
+            "category": "static",
+            "mirror": "list[bool]"
+          },
+          "cpp_empty_init_shorthand_v1": {
+            "version": "1",
+            "target_type": "list[bool]",
+            "rhs_kind": "List"
+          },
+          "meta": {
+            "lifetime_node_id": "n9",
+            "lifetime_defs": [
+              "checks"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "TrackingContext",
+              "ValueError",
+              "py_assert_all",
+              "py_assert_eq"
+            ],
+            "lifetime_live_out": [
+              "TrackingContext",
+              "ValueError",
+              "checks",
+              "py_assert_all",
+              "py_assert_eq"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 20,
+            "col_offset": 4,
+            "end_lineno": 20,
+            "end_col_offset": 27
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 20,
+              "col_offset": 4,
+              "end_lineno": 20,
+              "end_col_offset": 7
+            },
+            "resolved_type": "TrackingContext",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ctx",
+            "id": "ctx"
+          },
+          "declare": true,
+          "decl_type": "TrackingContext",
+          "declare_init": true,
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "comment",
+              "text": "basic: __enter__ and __exit__ are called in order"
+            }
+          ],
+          "leading_comments": [
+            "basic: __enter__ and __exit__ are called in order"
+          ],
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 20,
+              "col_offset": 10,
+              "end_lineno": 20,
+              "end_col_offset": 27
+            },
+            "resolved_type": "TrackingContext",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "TrackingContext()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 20,
+                "col_offset": 10,
+                "end_lineno": 20,
+                "end_col_offset": 25
+              },
+              "resolved_type": "type",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "TrackingContext",
+              "id": "TrackingContext"
+            },
+            "args": [],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "TrackingContext"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "TrackingContext"
+          },
+          "meta": {
+            "lifetime_node_id": "n8",
+            "lifetime_defs": [
+              "ctx"
+            ],
+            "lifetime_uses": [
+              "TrackingContext"
+            ],
+            "lifetime_live_in": [
+              "TrackingContext",
+              "ValueError",
+              "checks",
+              "py_assert_all",
+              "py_assert_eq"
+            ],
+            "lifetime_live_out": [
+              "TrackingContext",
+              "ValueError",
+              "checks",
+              "ctx",
+              "py_assert_all",
+              "py_assert_eq"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "With",
+          "source_span": {
+            "lineno": 21,
+            "col_offset": 4,
+            "end_lineno": 22,
+            "end_col_offset": 28
+          },
+          "context_expr": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 21,
+              "col_offset": 9,
+              "end_lineno": 21,
+              "end_col_offset": 12
+            },
+            "resolved_type": "TrackingContext",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "ctx",
+            "id": "ctx"
+          },
+          "var_name": "c",
+          "body": [
+            {
+              "kind": "Expr",
+              "source_span": {
+                "lineno": 22,
+                "col_offset": 8,
+                "end_lineno": 22,
+                "end_col_offset": 28
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 22,
+                  "col_offset": 8,
+                  "end_lineno": 22,
+                  "end_col_offset": 28
+                },
+                "resolved_type": "None",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "c.log.append(\"body\")",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 22,
+                    "col_offset": 8,
+                    "end_lineno": 22,
+                    "end_col_offset": 20
+                  },
+                  "resolved_type": "callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "c.log.append",
+                  "value": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 22,
+                      "col_offset": 8,
+                      "end_lineno": 22,
+                      "end_col_offset": 13
+                    },
+                    "resolved_type": "list[str]",
+                    "casts": [],
+                    "borrow_kind": "mutable_ref",
+                    "repr": "c.log",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 22,
+                        "col_offset": 8,
+                        "end_lineno": 22,
+                        "end_col_offset": 9
+                      },
+                      "resolved_type": "TrackingContext",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "c",
+                      "id": "c"
+                    },
+                    "attr": "log"
+                  },
+                  "attr": "append"
+                },
+                "args": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 22,
+                      "col_offset": 21,
+                      "end_lineno": 22,
+                      "end_col_offset": 27
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"body\"",
+                    "value": "body",
+                    "call_arg_type": "str"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "runtime_call": "list.append",
+                "runtime_module_id": "pytra.core.list",
+                "runtime_symbol": "list.append",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "stdlib.method.append",
+                "runtime_owner": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 22,
+                    "col_offset": 8,
+                    "end_lineno": 22,
+                    "end_col_offset": 13
+                  },
+                  "resolved_type": "list[str]",
+                  "casts": [],
+                  "borrow_kind": "mutable_ref",
+                  "repr": "c.log",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 22,
+                      "col_offset": 8,
+                      "end_lineno": 22,
+                      "end_col_offset": 9
+                    },
+                    "resolved_type": "TrackingContext",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "c",
+                    "id": "c"
+                  },
+                  "attr": "log"
+                },
+                "meta": {
+                  "mutates_receiver": true
+                },
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
+                }
+              }
+            }
+          ],
+          "with_enter_type": "TrackingContext",
+          "with_lowering_style": "raii",
+          "meta": {
+            "lifetime_node_id": "n7",
+            "lifetime_defs": [],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "TrackingContext",
+              "ValueError",
+              "checks",
+              "ctx",
+              "py_assert_all",
+              "py_assert_eq"
+            ],
+            "lifetime_live_out": [
+              "TrackingContext",
+              "ValueError",
+              "checks",
+              "ctx",
+              "py_assert_all",
+              "py_assert_eq"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 23,
+            "col_offset": 4,
+            "end_lineno": 23,
+            "end_col_offset": 82
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 23,
+              "col_offset": 4,
+              "end_lineno": 23,
+              "end_col_offset": 82
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq(ctx.log, [\"enter\", \"body\", \"exit\"], \"basic_order\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 23,
+                "col_offset": 4,
+                "end_lineno": 23,
+                "end_col_offset": 17
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 23,
+                  "col_offset": 4,
+                  "end_lineno": 23,
+                  "end_col_offset": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "mutable_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 23,
+                  "col_offset": 18,
+                  "end_lineno": 23,
+                  "end_col_offset": 81
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(ctx.log, [\"enter\", \"body\", \"exit\"], \"basic_order\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 23,
+                    "col_offset": 18,
+                    "end_lineno": 23,
+                    "end_col_offset": 30
+                  },
+                  "resolved_type": "callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 23,
+                      "col_offset": 31,
+                      "end_lineno": 23,
+                      "end_col_offset": 38
+                    },
+                    "resolved_type": "list[str]",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "ctx.log",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 23,
+                        "col_offset": 31,
+                        "end_lineno": 23,
+                        "end_col_offset": 34
+                      },
+                      "resolved_type": "TrackingContext",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "ctx",
+                      "id": "ctx"
+                    },
+                    "attr": "log",
+                    "call_arg_type": "int64 | str | bool | None | list[int64] | list[str]"
+                  },
+                  {
+                    "kind": "List",
+                    "source_span": {
+                      "lineno": 23,
+                      "col_offset": 40,
+                      "end_lineno": 23,
+                      "end_col_offset": 65
+                    },
+                    "resolved_type": "list[str]",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "[\"enter\", \"body\", \"exit\"]",
+                    "elements": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 23,
+                          "col_offset": 41,
+                          "end_lineno": 23,
+                          "end_col_offset": 48
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"enter\"",
+                        "value": "enter"
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 23,
+                          "col_offset": 50,
+                          "end_lineno": 23,
+                          "end_col_offset": 56
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"body\"",
+                        "value": "body"
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 23,
+                          "col_offset": 58,
+                          "end_lineno": 23,
+                          "end_col_offset": 64
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"exit\"",
+                        "value": "exit"
+                      }
+                    ],
+                    "call_arg_type": "int64 | str | bool | None | list[int64] | list[str]"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 23,
+                      "col_offset": 67,
+                      "end_lineno": 23,
+                      "end_col_offset": 80
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"basic_order\"",
+                    "value": "basic_order",
+                    "call_arg_type": "str"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate",
+                "call_arg_type": "bool",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "bool"
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 23,
+                "col_offset": 4,
+                "end_lineno": 23,
+                "end_col_offset": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "mutable_ref",
+              "repr": "checks",
+              "id": "checks"
+            },
+            "meta": {
+              "mutates_receiver": true
+            },
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n6",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "checks",
+              "ctx",
+              "py_assert_eq"
+            ],
+            "lifetime_live_in": [
+              "TrackingContext",
+              "ValueError",
+              "checks",
+              "ctx",
+              "py_assert_all",
+              "py_assert_eq"
+            ],
+            "lifetime_live_out": [
+              "TrackingContext",
+              "ValueError",
+              "checks",
+              "py_assert_all",
+              "py_assert_eq"
+            ],
+            "lifetime_last_use_vars": [
+              "ctx"
+            ]
+          }
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 26,
+            "col_offset": 4,
+            "end_lineno": 26,
+            "end_col_offset": 28
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 26,
+              "col_offset": 4,
+              "end_lineno": 26,
+              "end_col_offset": 8
+            },
+            "resolved_type": "TrackingContext",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ctx2",
+            "id": "ctx2"
+          },
+          "declare": true,
+          "decl_type": "TrackingContext",
+          "declare_init": true,
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "comment",
+              "text": "__exit__ is called even when exception is raised"
+            }
+          ],
+          "leading_comments": [
+            "__exit__ is called even when exception is raised"
+          ],
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 26,
+              "col_offset": 11,
+              "end_lineno": 26,
+              "end_col_offset": 28
+            },
+            "resolved_type": "TrackingContext",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "TrackingContext()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 26,
+                "col_offset": 11,
+                "end_lineno": 26,
+                "end_col_offset": 26
+              },
+              "resolved_type": "type",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "TrackingContext",
+              "id": "TrackingContext"
+            },
+            "args": [],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "TrackingContext"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "TrackingContext"
+          },
+          "meta": {
+            "lifetime_node_id": "n5",
+            "lifetime_defs": [
+              "ctx2"
+            ],
+            "lifetime_uses": [
+              "TrackingContext"
+            ],
+            "lifetime_live_in": [
+              "TrackingContext",
+              "ValueError",
+              "checks",
+              "py_assert_all",
+              "py_assert_eq"
+            ],
+            "lifetime_live_out": [
+              "TrackingContext",
+              "ValueError",
+              "checks",
+              "ctx2",
+              "py_assert_all",
+              "py_assert_eq"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Try",
+          "source_span": {
+            "lineno": 27,
+            "col_offset": 4,
+            "end_lineno": 32,
+            "end_col_offset": 12
+          },
+          "body": [
+            {
+              "kind": "With",
+              "source_span": {
+                "lineno": 28,
+                "col_offset": 8,
+                "end_lineno": 30,
+                "end_col_offset": 36
+              },
+              "context_expr": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 28,
+                  "col_offset": 13,
+                  "end_lineno": 28,
+                  "end_col_offset": 17
+                },
+                "resolved_type": "TrackingContext",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "ctx2",
+                "id": "ctx2"
+              },
+              "var_name": "c2",
+              "body": [
+                {
+                  "kind": "Expr",
+                  "source_span": {
+                    "lineno": 29,
+                    "col_offset": 12,
+                    "end_lineno": 29,
+                    "end_col_offset": 33
+                  },
+                  "value": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 29,
+                      "col_offset": 12,
+                      "end_lineno": 29,
+                      "end_col_offset": 33
+                    },
+                    "resolved_type": "None",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "c2.log.append(\"body\")",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 29,
+                        "col_offset": 12,
+                        "end_lineno": 29,
+                        "end_col_offset": 25
+                      },
+                      "resolved_type": "callable",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "c2.log.append",
+                      "value": {
+                        "kind": "Attribute",
+                        "source_span": {
+                          "lineno": 29,
+                          "col_offset": 12,
+                          "end_lineno": 29,
+                          "end_col_offset": 18
+                        },
+                        "resolved_type": "list[str]",
+                        "casts": [],
+                        "borrow_kind": "mutable_ref",
+                        "repr": "c2.log",
+                        "value": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 29,
+                            "col_offset": 12,
+                            "end_lineno": 29,
+                            "end_col_offset": 14
+                          },
+                          "resolved_type": "TrackingContext",
+                          "casts": [],
+                          "borrow_kind": "readonly_ref",
+                          "repr": "c2",
+                          "id": "c2"
+                        },
+                        "attr": "log"
+                      },
+                      "attr": "append"
+                    },
+                    "args": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 29,
+                          "col_offset": 26,
+                          "end_lineno": 29,
+                          "end_col_offset": 32
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"body\"",
+                        "value": "body",
+                        "call_arg_type": "str"
+                      }
+                    ],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "runtime_call": "list.append",
+                    "runtime_module_id": "pytra.core.list",
+                    "runtime_symbol": "list.append",
+                    "runtime_call_adapter_kind": "builtin",
+                    "semantic_tag": "stdlib.method.append",
+                    "runtime_owner": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 29,
+                        "col_offset": 12,
+                        "end_lineno": 29,
+                        "end_col_offset": 18
+                      },
+                      "resolved_type": "list[str]",
+                      "casts": [],
+                      "borrow_kind": "mutable_ref",
+                      "repr": "c2.log",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 29,
+                          "col_offset": 12,
+                          "end_lineno": 29,
+                          "end_col_offset": 14
+                        },
+                        "resolved_type": "TrackingContext",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "c2",
+                        "id": "c2"
+                      },
+                      "attr": "log"
+                    },
+                    "meta": {
+                      "mutates_receiver": true
+                    },
+                    "type_expr_summary_v1": {
+                      "schema_version": 1,
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "None"
+                    }
+                  }
+                },
+                {
+                  "kind": "Raise",
+                  "source_span": {
+                    "lineno": 30,
+                    "col_offset": 12,
+                    "end_lineno": 30,
+                    "end_col_offset": 36
+                  },
+                  "exc": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 30,
+                      "col_offset": 18,
+                      "end_lineno": 30,
+                      "end_col_offset": 36
+                    },
+                    "resolved_type": "ValueError",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "ValueError(\"boom\")",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 30,
+                        "col_offset": 18,
+                        "end_lineno": 30,
+                        "end_col_offset": 28
+                      },
+                      "resolved_type": "type",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "ValueError",
+                      "id": "ValueError",
+                      "runtime_module_id": "pytra.built_in.error"
+                    },
+                    "args": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 30,
+                          "col_offset": 29,
+                          "end_lineno": 30,
+                          "end_col_offset": 35
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"boom\"",
+                        "value": "boom",
+                        "call_arg_type": "str"
+                      }
+                    ],
+                    "keywords": [],
+                    "runtime_module_id": "pytra.built_in.error",
+                    "type_expr_summary_v1": {
+                      "schema_version": 1,
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "ValueError"
+                    }
+                  },
+                  "cause": null
+                }
+              ],
+              "with_enter_type": "TrackingContext",
+              "with_lowering_style": "raii"
+            }
+          ],
+          "handlers": [
+            {
+              "kind": "ExceptHandler",
+              "type": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 31,
+                  "col_offset": 11,
+                  "end_lineno": 31,
+                  "end_col_offset": 21
+                },
+                "resolved_type": "ValueError",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "ValueError",
+                "id": "ValueError",
+                "runtime_module_id": "pytra.built_in.error"
+              },
+              "name": null,
+              "body": [
+                {
+                  "kind": "Pass",
+                  "source_span": {
+                    "lineno": 32,
+                    "col_offset": 0,
+                    "end_lineno": 32,
+                    "end_col_offset": 12
+                  }
+                }
+              ]
+            }
+          ],
+          "orelse": [],
+          "finalbody": [],
+          "meta": {
+            "lifetime_node_id": "n4",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "ValueError"
+            ],
+            "lifetime_live_in": [
+              "TrackingContext",
+              "ValueError",
+              "checks",
+              "ctx2",
+              "py_assert_all",
+              "py_assert_eq"
+            ],
+            "lifetime_live_out": [
+              "TrackingContext",
+              "checks",
+              "ctx2",
+              "py_assert_all",
+              "py_assert_eq"
+            ],
+            "lifetime_last_use_vars": [
+              "ValueError"
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 33,
+            "col_offset": 4,
+            "end_lineno": 33,
+            "end_col_offset": 88
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 33,
+              "col_offset": 4,
+              "end_lineno": 33,
+              "end_col_offset": 88
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "checks.append(py_assert_eq(ctx2.log, [\"enter\", \"body\", \"exit\"], \"exception_safety\"))",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 33,
+                "col_offset": 4,
+                "end_lineno": 33,
+                "end_col_offset": 17
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "checks.append",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 33,
+                  "col_offset": 4,
+                  "end_lineno": 33,
+                  "end_col_offset": 10
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "mutable_ref",
+                "repr": "checks",
+                "id": "checks"
+              },
+              "attr": "append"
+            },
+            "args": [
+              {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 33,
+                  "col_offset": 18,
+                  "end_lineno": 33,
+                  "end_col_offset": 87
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "py_assert_eq(ctx2.log, [\"enter\", \"body\", \"exit\"], \"exception_safety\")",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 33,
+                    "col_offset": 18,
+                    "end_lineno": 33,
+                    "end_col_offset": 30
+                  },
+                  "resolved_type": "callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "py_assert_eq",
+                  "id": "py_assert_eq"
+                },
+                "args": [
+                  {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 33,
+                      "col_offset": 31,
+                      "end_lineno": 33,
+                      "end_col_offset": 39
+                    },
+                    "resolved_type": "list[str]",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "ctx2.log",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 33,
+                        "col_offset": 31,
+                        "end_lineno": 33,
+                        "end_col_offset": 35
+                      },
+                      "resolved_type": "TrackingContext",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "ctx2",
+                      "id": "ctx2"
+                    },
+                    "attr": "log",
+                    "call_arg_type": "int64 | str | bool | None | list[int64] | list[str]"
+                  },
+                  {
+                    "kind": "List",
+                    "source_span": {
+                      "lineno": 33,
+                      "col_offset": 41,
+                      "end_lineno": 33,
+                      "end_col_offset": 66
+                    },
+                    "resolved_type": "list[str]",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "[\"enter\", \"body\", \"exit\"]",
+                    "elements": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 33,
+                          "col_offset": 42,
+                          "end_lineno": 33,
+                          "end_col_offset": 49
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"enter\"",
+                        "value": "enter"
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 33,
+                          "col_offset": 51,
+                          "end_lineno": 33,
+                          "end_col_offset": 57
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"body\"",
+                        "value": "body"
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 33,
+                          "col_offset": 59,
+                          "end_lineno": 33,
+                          "end_col_offset": 65
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"exit\"",
+                        "value": "exit"
+                      }
+                    ],
+                    "call_arg_type": "int64 | str | bool | None | list[int64] | list[str]"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 33,
+                      "col_offset": 68,
+                      "end_lineno": 33,
+                      "end_col_offset": 86
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"exception_safety\"",
+                    "value": "exception_safety",
+                    "call_arg_type": "str"
+                  }
+                ],
+                "keywords": [],
+                "resolved_runtime_call": "py_assert_eq",
+                "resolved_runtime_source": "import_symbol",
+                "runtime_module_id": "pytra.utils.assertions",
+                "runtime_symbol": "py_assert_eq",
+                "runtime_call_adapter_kind": "extern_delegate",
+                "call_arg_type": "bool",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "bool"
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "runtime_call": "list.append",
+            "runtime_module_id": "pytra.core.list",
+            "runtime_symbol": "list.append",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.append",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 33,
+                "col_offset": 4,
+                "end_lineno": 33,
+                "end_col_offset": 10
+              },
+              "resolved_type": "list[bool]",
+              "casts": [],
+              "borrow_kind": "mutable_ref",
+              "repr": "checks",
+              "id": "checks"
+            },
+            "meta": {
+              "mutates_receiver": true
+            },
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n3",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "checks",
+              "ctx2",
+              "py_assert_eq"
+            ],
+            "lifetime_live_in": [
+              "TrackingContext",
+              "checks",
+              "ctx2",
+              "py_assert_all",
+              "py_assert_eq"
+            ],
+            "lifetime_live_out": [
+              "TrackingContext",
+              "checks",
+              "py_assert_all"
+            ],
+            "lifetime_last_use_vars": [
+              "ctx2",
+              "py_assert_eq"
+            ]
+          }
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 36,
+            "col_offset": 4,
+            "end_lineno": 36,
+            "end_col_offset": 28
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 36,
+              "col_offset": 4,
+              "end_lineno": 36,
+              "end_col_offset": 8
+            },
+            "resolved_type": "TrackingContext",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "ctx3",
+            "id": "ctx3"
+          },
+          "declare": true,
+          "decl_type": "TrackingContext",
+          "declare_init": true,
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "comment",
+              "text": "__enter__ return value is bound to as-variable"
+            }
+          ],
+          "leading_comments": [
+            "__enter__ return value is bound to as-variable"
+          ],
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 36,
+              "col_offset": 11,
+              "end_lineno": 36,
+              "end_col_offset": 28
+            },
+            "resolved_type": "TrackingContext",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "TrackingContext()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 36,
+                "col_offset": 11,
+                "end_lineno": 36,
+                "end_col_offset": 26
+              },
+              "resolved_type": "type",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "TrackingContext",
+              "id": "TrackingContext"
+            },
+            "args": [],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "TrackingContext"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "TrackingContext"
+          },
+          "meta": {
+            "lifetime_node_id": "n2",
+            "lifetime_defs": [
+              "ctx3"
+            ],
+            "lifetime_uses": [
+              "TrackingContext"
+            ],
+            "lifetime_live_in": [
+              "TrackingContext",
+              "checks",
+              "py_assert_all"
+            ],
+            "lifetime_live_out": [
+              "checks",
+              "py_assert_all"
+            ],
+            "lifetime_last_use_vars": [
+              "TrackingContext"
+            ]
+          }
+        },
+        {
+          "kind": "With",
+          "source_span": {
+            "lineno": 37,
+            "col_offset": 4,
+            "end_lineno": 38,
+            "end_col_offset": 75
+          },
+          "context_expr": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 37,
+              "col_offset": 9,
+              "end_lineno": 37,
+              "end_col_offset": 13
+            },
+            "resolved_type": "TrackingContext",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "ctx3",
+            "id": "ctx3"
+          },
+          "var_name": "c3",
+          "body": [
+            {
+              "kind": "Expr",
+              "source_span": {
+                "lineno": 38,
+                "col_offset": 8,
+                "end_lineno": 38,
+                "end_col_offset": 75
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 38,
+                  "col_offset": 8,
+                  "end_lineno": 38,
+                  "end_col_offset": 75
+                },
+                "resolved_type": "None",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "checks.append(py_assert_eq(c3 is ctx3, True, \"enter_returns_self\"))",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 38,
+                    "col_offset": 8,
+                    "end_lineno": 38,
+                    "end_col_offset": 21
+                  },
+                  "resolved_type": "callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "checks.append",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 38,
+                      "col_offset": 8,
+                      "end_lineno": 38,
+                      "end_col_offset": 14
+                    },
+                    "resolved_type": "list[bool]",
+                    "casts": [],
+                    "borrow_kind": "mutable_ref",
+                    "repr": "checks",
+                    "id": "checks"
+                  },
+                  "attr": "append"
+                },
+                "args": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 38,
+                      "col_offset": 22,
+                      "end_lineno": 38,
+                      "end_col_offset": 74
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "py_assert_eq(c3 is ctx3, True, \"enter_returns_self\")",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 38,
+                        "col_offset": 22,
+                        "end_lineno": 38,
+                        "end_col_offset": 34
+                      },
+                      "resolved_type": "callable",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "py_assert_eq",
+                      "id": "py_assert_eq"
+                    },
+                    "args": [
+                      {
+                        "kind": "Compare",
+                        "source_span": {
+                          "lineno": 38,
+                          "col_offset": 35,
+                          "end_lineno": 38,
+                          "end_col_offset": 45
+                        },
+                        "resolved_type": "bool",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "c3 is ctx3",
+                        "left": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 38,
+                            "col_offset": 35,
+                            "end_lineno": 38,
+                            "end_col_offset": 37
+                          },
+                          "resolved_type": "TrackingContext",
+                          "casts": [],
+                          "borrow_kind": "readonly_ref",
+                          "repr": "c3",
+                          "id": "c3"
+                        },
+                        "ops": [
+                          "Is"
+                        ],
+                        "comparators": [
+                          {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 38,
+                              "col_offset": 41,
+                              "end_lineno": 38,
+                              "end_col_offset": 45
+                            },
+                            "resolved_type": "TrackingContext",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "ctx3",
+                            "id": "ctx3"
+                          }
+                        ],
+                        "call_arg_type": "int64 | str | bool | None | list[int64] | list[str]",
+                        "normalized_expr_version": "east3_expr_v1",
+                        "normalized_expr": {
+                          "kind": "Compare",
+                          "source_span": {
+                            "lineno": 38,
+                            "col_offset": 35,
+                            "end_lineno": 38,
+                            "end_col_offset": 45
+                          },
+                          "resolved_type": "bool",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "c3 is ctx3",
+                          "left": {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 38,
+                              "col_offset": 35,
+                              "end_lineno": 38,
+                              "end_col_offset": 37
+                            },
+                            "resolved_type": "TrackingContext",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "c3",
+                            "id": "c3"
+                          },
+                          "ops": [
+                            "Is"
+                          ],
+                          "comparators": [
+                            {
+                              "kind": "Name",
+                              "source_span": {
+                                "lineno": 38,
+                                "col_offset": 41,
+                                "end_lineno": 38,
+                                "end_col_offset": 45
+                              },
+                              "resolved_type": "TrackingContext",
+                              "casts": [],
+                              "borrow_kind": "readonly_ref",
+                              "repr": "ctx3",
+                              "id": "ctx3"
+                            }
+                          ],
+                          "call_arg_type": "int64 | str | bool | None | list[int64] | list[str]"
+                        }
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 38,
+                          "col_offset": 47,
+                          "end_lineno": 38,
+                          "end_col_offset": 51
+                        },
+                        "resolved_type": "bool",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "True",
+                        "value": true,
+                        "call_arg_type": "int64 | str | bool | None | list[int64] | list[str]"
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 38,
+                          "col_offset": 53,
+                          "end_lineno": 38,
+                          "end_col_offset": 73
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"enter_returns_self\"",
+                        "value": "enter_returns_self",
+                        "call_arg_type": "str"
+                      }
+                    ],
+                    "keywords": [],
+                    "resolved_runtime_call": "py_assert_eq",
+                    "resolved_runtime_source": "import_symbol",
+                    "runtime_module_id": "pytra.utils.assertions",
+                    "runtime_symbol": "py_assert_eq",
+                    "runtime_call_adapter_kind": "extern_delegate",
+                    "call_arg_type": "bool",
+                    "type_expr_summary_v1": {
+                      "schema_version": 1,
+                      "kind": "NamedType",
+                      "category": "static",
+                      "mirror": "bool"
+                    }
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "runtime_call": "list.append",
+                "runtime_module_id": "pytra.core.list",
+                "runtime_symbol": "list.append",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "stdlib.method.append",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 38,
+                    "col_offset": 8,
+                    "end_lineno": 38,
+                    "end_col_offset": 14
+                  },
+                  "resolved_type": "list[bool]",
+                  "casts": [],
+                  "borrow_kind": "mutable_ref",
+                  "repr": "checks",
+                  "id": "checks"
+                },
+                "meta": {
+                  "mutates_receiver": true
+                },
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "None"
+                }
+              }
+            }
+          ],
+          "with_enter_type": "TrackingContext",
+          "with_lowering_style": "raii",
+          "meta": {
+            "lifetime_node_id": "n1",
+            "lifetime_defs": [],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "checks",
+              "py_assert_all"
+            ],
+            "lifetime_live_out": [
+              "checks",
+              "py_assert_all"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 40,
+            "col_offset": 4,
+            "end_lineno": 40,
+            "end_col_offset": 56
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 40,
+              "col_offset": 11,
+              "end_lineno": 40,
+              "end_col_offset": 56
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "py_assert_all(checks, \"with_context_manager\")",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 40,
+                "col_offset": 11,
+                "end_lineno": 40,
+                "end_col_offset": 24
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "py_assert_all",
+              "id": "py_assert_all"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 40,
+                  "col_offset": 25,
+                  "end_lineno": 40,
+                  "end_col_offset": 31
+                },
+                "resolved_type": "list[bool]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "checks",
+                "id": "checks",
+                "call_arg_type": "list[bool]"
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 40,
+                  "col_offset": 33,
+                  "end_lineno": 40,
+                  "end_col_offset": 55
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"with_context_manager\"",
+                "value": "with_context_manager",
+                "call_arg_type": "str"
+              }
+            ],
+            "keywords": [],
+            "resolved_runtime_call": "py_assert_all",
+            "resolved_runtime_source": "import_symbol",
+            "runtime_module_id": "pytra.utils.assertions",
+            "runtime_symbol": "py_assert_all",
+            "runtime_call_adapter_kind": "extern_delegate",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "bool"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n0",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "checks",
+              "py_assert_all"
+            ],
+            "lifetime_live_in": [
+              "checks",
+              "py_assert_all"
+            ],
+            "lifetime_live_out": [],
+            "lifetime_last_use_vars": [
+              "checks",
+              "py_assert_all"
+            ]
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "bool"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "bool",
+      "meta": {
+        "lifetime_analysis": {
+          "schema_version": "east3_lifetime_v1",
+          "status": "ok",
+          "reason": "",
+          "entry_node": "n9",
+          "order": [
+            "n0",
+            "n1",
+            "n2",
+            "n3",
+            "n4",
+            "n5",
+            "n6",
+            "n7",
+            "n8",
+            "n9"
+          ],
+          "cfg": [
+            {
+              "id": "n0",
+              "kind": "Return",
+              "defs": [],
+              "uses": [
+                "checks",
+                "py_assert_all"
+              ],
+              "succ": []
+            },
+            {
+              "id": "n1",
+              "kind": "With",
+              "defs": [],
+              "uses": [],
+              "succ": [
+                "n0"
+              ]
+            },
+            {
+              "id": "n2",
+              "kind": "Assign",
+              "defs": [
+                "ctx3"
+              ],
+              "uses": [
+                "TrackingContext"
+              ],
+              "succ": [
+                "n1"
+              ]
+            },
+            {
+              "id": "n3",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "checks",
+                "ctx2",
+                "py_assert_eq"
+              ],
+              "succ": [
+                "n2"
+              ]
+            },
+            {
+              "id": "n4",
+              "kind": "Try",
+              "defs": [],
+              "uses": [
+                "ValueError"
+              ],
+              "succ": [
+                "n3"
+              ]
+            },
+            {
+              "id": "n5",
+              "kind": "Assign",
+              "defs": [
+                "ctx2"
+              ],
+              "uses": [
+                "TrackingContext"
+              ],
+              "succ": [
+                "n4"
+              ]
+            },
+            {
+              "id": "n6",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "checks",
+                "ctx",
+                "py_assert_eq"
+              ],
+              "succ": [
+                "n5"
+              ]
+            },
+            {
+              "id": "n7",
+              "kind": "With",
+              "defs": [],
+              "uses": [],
+              "succ": [
+                "n6"
+              ]
+            },
+            {
+              "id": "n8",
+              "kind": "Assign",
+              "defs": [
+                "ctx"
+              ],
+              "uses": [
+                "TrackingContext"
+              ],
+              "succ": [
+                "n7"
+              ]
+            },
+            {
+              "id": "n9",
+              "kind": "AnnAssign",
+              "defs": [
+                "checks"
+              ],
+              "uses": [],
+              "succ": [
+                "n8"
+              ]
+            }
+          ],
+          "def_use": {
+            "defs": {
+              "checks": [
+                "n9"
+              ],
+              "ctx": [
+                "n8"
+              ],
+              "ctx2": [
+                "n5"
+              ],
+              "ctx3": [
+                "n2"
+              ]
+            },
+            "uses": {
+              "TrackingContext": [
+                "n2",
+                "n5",
+                "n8"
+              ],
+              "ValueError": [
+                "n4"
+              ],
+              "checks": [
+                "n0",
+                "n3",
+                "n6"
+              ],
+              "ctx": [
+                "n6"
+              ],
+              "ctx2": [
+                "n3"
+              ],
+              "py_assert_all": [
+                "n0"
+              ],
+              "py_assert_eq": [
+                "n3",
+                "n6"
+              ]
+            }
+          },
+          "variables": {
+            "TrackingContext": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n2",
+                "n5",
+                "n8"
+              ],
+              "live_in_nodes": [
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9"
+              ],
+              "live_out_nodes": [
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9"
+              ],
+              "last_use_nodes": [
+                "n2"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "ValueError": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n4"
+              ],
+              "live_in_nodes": [
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9"
+              ],
+              "live_out_nodes": [
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9"
+              ],
+              "last_use_nodes": [
+                "n4"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "checks": {
+              "def_nodes": [
+                "n9"
+              ],
+              "use_nodes": [
+                "n0",
+                "n3",
+                "n6"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "escape_or_unknown"
+            },
+            "ctx": {
+              "def_nodes": [
+                "n8"
+              ],
+              "use_nodes": [
+                "n6"
+              ],
+              "live_in_nodes": [
+                "n6",
+                "n7"
+              ],
+              "live_out_nodes": [
+                "n7",
+                "n8"
+              ],
+              "last_use_nodes": [
+                "n6"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "ctx2": {
+              "def_nodes": [
+                "n5"
+              ],
+              "use_nodes": [
+                "n3"
+              ],
+              "live_in_nodes": [
+                "n3",
+                "n4"
+              ],
+              "live_out_nodes": [
+                "n4",
+                "n5"
+              ],
+              "last_use_nodes": [
+                "n3"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "ctx3": {
+              "def_nodes": [
+                "n2"
+              ],
+              "use_nodes": [],
+              "live_in_nodes": [],
+              "live_out_nodes": [],
+              "last_use_nodes": [],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "py_assert_all": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "escape_or_unknown"
+            },
+            "py_assert_eq": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n3",
+                "n6"
+              ],
+              "live_in_nodes": [
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9"
+              ],
+              "live_out_nodes": [
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9"
+              ],
+              "last_use_nodes": [
+                "n3"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            }
+          },
+          "arg_order": [],
+          "arg_escape": [],
+          "has_dynamic_name_access": false
+        }
+      }
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 44,
+        "col_offset": 4,
+        "end_lineno": 44,
+        "end_col_offset": 37
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 44,
+          "col_offset": 4,
+          "end_lineno": 44,
+          "end_col_offset": 37
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "print(run_with_context_manager())",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 44,
+            "col_offset": 4,
+            "end_lineno": 44,
+            "end_col_offset": 9
+          },
+          "resolved_type": "callable",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "print",
+          "id": "print"
+        },
+        "args": [
+          {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 44,
+              "col_offset": 10,
+              "end_lineno": 44,
+              "end_col_offset": 36
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "run_with_context_manager()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 44,
+                "col_offset": 10,
+                "end_lineno": 44,
+                "end_col_offset": 34
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "run_with_context_manager",
+              "id": "run_with_context_manager"
+            },
+            "args": [],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "bool"
+            }
+          }
+        ],
+        "keywords": [],
+        "lowered_kind": "BuiltinCall",
+        "runtime_call": "py_print",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_symbol": "py_print",
+        "runtime_call_adapter_kind": "builtin",
+        "semantic_tag": "core.print",
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_all",
+          "local_name": "py_assert_all",
+          "binding_kind": "symbol",
+          "source_file": "/workspace/Pytra/test/fixture/source/py/control/with_context_manager.py",
+          "source_line": 1,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_all",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_all",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_all"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_eq",
+          "local_name": "py_assert_eq",
+          "binding_kind": "symbol",
+          "source_file": "/workspace/Pytra/test/fixture/source/py/control/with_context_manager.py",
+          "source_line": 1,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_eq",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_eq",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_eq"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "/workspace/Pytra/test/fixture/source/py/control/with_context_manager.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_all",
+          "local_name": "py_assert_all"
+        },
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_eq",
+          "local_name": "py_assert_eq"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_all",
+        "local_name": "py_assert_all",
+        "binding_kind": "symbol",
+        "source_file": "/workspace/Pytra/test/fixture/source/py/control/with_context_manager.py",
+        "source_line": 1,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_all",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_all",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_all"
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_eq",
+        "local_name": "py_assert_eq",
+        "binding_kind": "symbol",
+        "source_file": "/workspace/Pytra/test/fixture/source/py/control/with_context_manager.py",
+        "source_line": 1,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_eq",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_eq",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_eq"
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "/workspace/Pytra/test/fixture/source/py/control/with_context_manager.py",
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.io_ops",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_group": "built_in"
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_all",
+        "local_name": "py_assert_all"
+      },
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_eq",
+        "local_name": "py_assert_eq"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "py_assert_all": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_all"
+      },
+      "py_assert_eq": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_eq"
+      }
+    },
+    "dispatch_mode": "native",
+    "lifetime_schema_version": "east3_lifetime_v1"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

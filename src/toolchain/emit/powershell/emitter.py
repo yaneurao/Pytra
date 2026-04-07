@@ -834,18 +834,34 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
                     other = rendered_args[:-1]
                     return "(py_assert_stdout " + " ".join(other) + ' "' + fn_ref + '")'
 
-            # Check runtime_call mapping
+            # Check resolved runtime mapping
             runtime_call = _gs(expr, "runtime_call")
+            resolved_runtime_call = _gs(expr, "resolved_runtime_call")
+            runtime_symbol = _gs(expr, "runtime_symbol")
+            runtime_module_id = _gs(expr, "runtime_module_id")
+            runtime_keys: list[str] = []
             if runtime_call != "":
-                mapped = ctx.mapping.calls.get(runtime_call)
-                if mapped is not None and mapped != "" and mapped != "__CAST__" and mapped != "__THROW__":
-                    if mapped.startswith("[Math]::"):
-                        if mapped.endswith("::PI") or mapped.endswith("::E"):
-                            return "(" + mapped + ")"
-                        return "(" + mapped + "(" + ", ".join(rendered_args) + "))"
-                    if len(rendered_args) == 0:
+                runtime_keys.append(runtime_call)
+            if resolved_runtime_call != "":
+                runtime_keys.append(resolved_runtime_call)
+            if runtime_module_id != "" and runtime_symbol != "":
+                runtime_keys.append(runtime_module_id + "." + runtime_symbol)
+            if runtime_symbol != "":
+                runtime_keys.append(runtime_symbol)
+            mapped = ""
+            for key in runtime_keys:
+                maybe = ctx.mapping.calls.get(key, "")
+                if maybe != "":
+                    mapped = maybe
+                    break
+            if mapped != "" and mapped != "__CAST__" and mapped != "__THROW__":
+                if mapped.startswith("[Math]::"):
+                    if mapped.endswith("::PI") or mapped.endswith("::E"):
                         return "(" + mapped + ")"
-                    return "(" + mapped + " " + " ".join(rendered_args) + ")"
+                    return "(" + mapped + "(" + ", ".join(rendered_args) + "))"
+                if len(rendered_args) == 0:
+                    return "(" + mapped + ")"
+                return "(" + mapped + " " + " ".join(rendered_args) + ")"
 
             # Import aliases (e.g. from math import sqrt)
             if fn_name in ctx.import_func_aliases:
@@ -861,7 +877,7 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
             # Callable variable: call via & $var (handles string names and scriptblocks)
             # Use & $var whenever resolved_type is callable and it's not a top-level function/class.
             func_rt = _gs(func, "resolved_type")
-            if (func_rt.startswith("callable") or func_rt.startswith("Callable")) and fn_name not in ctx.function_names and fn_name not in ctx.class_names and runtime_call == "":
+            if (func_rt.startswith("callable") or func_rt.startswith("Callable")) and fn_name not in ctx.function_names and fn_name not in ctx.class_names and mapped == "":
                 if len(rendered_args) == 0:
                     return "(& $" + safe_fn + ")"
                 return "(& $" + safe_fn + " " + " ".join(rendered_args) + ")"
@@ -893,6 +909,74 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
                 if _gs(owner_node, "kind") == "Name":
                     owner_name = _gs(owner_node, "id")
                 owner_type = _gs(owner_node, "resolved_type")
+            runtime_call = _gs(expr, "runtime_call")
+            resolved_runtime_call = _gs(expr, "resolved_runtime_call")
+            runtime_symbol = _gs(expr, "runtime_symbol")
+            runtime_module_id = _gs(expr, "runtime_module_id")
+            runtime_keys_attr: list[str] = []
+            if runtime_call != "":
+                runtime_keys_attr.append(runtime_call)
+            if resolved_runtime_call != "":
+                runtime_keys_attr.append(resolved_runtime_call)
+            if runtime_module_id != "" and runtime_symbol != "":
+                runtime_keys_attr.append(runtime_module_id + "." + runtime_symbol)
+            if owner_type != "":
+                runtime_keys_attr.append(owner_type + "." + raw_attr)
+            mapped_runtime_attr = ""
+            for key in runtime_keys_attr:
+                maybe = ctx.mapping.calls.get(key, "")
+                if maybe != "":
+                    mapped_runtime_attr = maybe
+                    break
+            if mapped_runtime_attr != "":
+                if mapped_runtime_attr.startswith("__pytra_str_"):
+                    if len(rendered_args) == 0:
+                        return "(" + mapped_runtime_attr + " " + owner + ")"
+                    return "(" + mapped_runtime_attr + " " + owner + " " + " ".join(rendered_args) + ")"
+                if mapped_runtime_attr == "__LIST_APPEND__":
+                    if len(rendered_args) > 0:
+                        return owner + ".Add(" + rendered_args[0] + ")"
+                    return owner
+                if mapped_runtime_attr == "__LIST_POP__":
+                    if len(rendered_args) == 0:
+                        return "(__pytra_list_pop " + owner + ")"
+                    return "(__pytra_list_pop " + owner + " " + rendered_args[0] + ")"
+                if mapped_runtime_attr == "__LIST_CLEAR__":
+                    return "(__pytra_list_clear " + owner + ")"
+                if mapped_runtime_attr == "__DICT_GET__":
+                    if len(rendered_args) >= 2:
+                        return "$(if (" + owner + ".Contains(" + rendered_args[0] + ")) { " + owner + "[" + rendered_args[0] + "] } else { " + rendered_args[1] + " })"
+                    if len(rendered_args) == 1:
+                        return owner + "[" + rendered_args[0] + "]"
+                    return "$null"
+                if mapped_runtime_attr == "__DICT_KEYS__":
+                    return owner + ".Keys"
+                if mapped_runtime_attr == "__DICT_VALUES__":
+                    return owner + ".Values"
+                if mapped_runtime_attr == "__DICT_ITEMS__":
+                    return "(@(" + owner + ".GetEnumerator() | ForEach-Object { ,@($_.Key, $_.Value) }))"
+                if mapped_runtime_attr == "__SET_ADD__":
+                    if len(rendered_args) > 0:
+                        return owner + "[(__pytra_set_key " + rendered_args[0] + ")] = $true"
+                    return owner
+                if mapped_runtime_attr == "__SET_DISCARD__" or mapped_runtime_attr == "__SET_REMOVE__":
+                    if len(rendered_args) > 0:
+                        return owner + ".Remove(" + rendered_args[0] + ")"
+                    return owner
+                if mapped_runtime_attr in (
+                    "__pytra_list_extend", "__pytra_list_insert", "__pytra_list_remove",
+                    "__pytra_list_copy", "__pytra_list_clear", "__pytra_list_sort",
+                    "__pytra_list_reverse", "__pytra_list_index",
+                    "__pytra_dict_pop", "__pytra_dict_setdefault", "__pytra_dict_update",
+                    "__pytra_dict_clear", "__pytra_set_clear", "__pytra_file_write",
+                    "__pytra_file_read", "__pytra_file_enter", "__pytra_file_exit",
+                ):
+                    if len(rendered_args) == 0:
+                        return "(" + mapped_runtime_attr + " " + owner + ")"
+                    return "(" + mapped_runtime_attr + " " + owner + " " + " ".join(rendered_args) + ")"
+                if len(rendered_args) == 0:
+                    return "(" + mapped_runtime_attr + " " + owner + ")"
+                return "(" + mapped_runtime_attr + " " + owner + " " + " ".join(rendered_args) + ")"
 
             # Nested module attribute call: mod.sub.func() e.g. os.path.join(...)
             if isinstance(owner_node, dict) and _gs(owner_node, "kind") == "Attribute":
@@ -970,170 +1054,17 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
                     return "(" + safe_fn3 + ")"
                 return "(" + safe_fn3 + " " + " ".join(rendered_args) + ")"
 
-            # Common method mappings
-            if raw_attr == "append":
-                if len(rendered_args) > 0:
-                    return owner + ".Add(" + rendered_args[0] + ")"
-                return owner
-            if raw_attr == "join":
-                if len(rendered_args) > 0:
-                    return "(" + rendered_args[0] + " -join " + owner + ")"
-                return owner
-            if raw_attr == "format":
-                return owner + " -f " + ", ".join(rendered_args) if len(rendered_args) > 0 else owner
-            if raw_attr == "startswith":
-                return owner + ".StartsWith(" + ", ".join(rendered_args) + ")"
-            if raw_attr == "endswith":
-                return owner + ".EndsWith(" + ", ".join(rendered_args) + ")"
-            if raw_attr == "upper":
-                return owner + ".ToUpper()"
-            if raw_attr == "lower":
-                return owner + ".ToLower()"
-            if raw_attr == "strip":
-                return owner + ".Trim()"
-            if raw_attr == "rstrip":
-                return owner + ".TrimEnd()"
-            if raw_attr == "lstrip":
-                return owner + ".TrimStart()"
-            if raw_attr == "find":
-                if len(rendered_args) > 0:
-                    return owner + ".IndexOf(" + rendered_args[0] + ")"
-                return "-1"
-            if raw_attr == "rfind":
-                if len(rendered_args) > 0:
-                    return owner + ".LastIndexOf(" + rendered_args[0] + ")"
-                return "-1"
-            if raw_attr == "index" and owner_type == "str":
-                if len(rendered_args) > 0:
-                    return "(__pytra_str_index " + owner + " " + rendered_args[0] + ")"
-                return "-1"
-            if raw_attr == "count" and owner_type == "str":
-                if len(rendered_args) > 0:
-                    return "(__pytra_str_count " + owner + " " + rendered_args[0] + ")"
-                return "0"
-            if raw_attr == "isdigit":
-                return "([char]::IsDigit([string]" + owner + ", 0))"
-            if raw_attr == "isalpha":
-                return "([char]::IsLetter([string]" + owner + ", 0))"
-            if raw_attr == "isalnum":
-                return "([char]::IsLetterOrDigit([string]" + owner + ", 0))"
-            if raw_attr == "isspace":
-                return "([char]::IsWhiteSpace([string]" + owner + ", 0))"
-            if raw_attr == "split":
-                if len(rendered_args) > 0:
-                    return owner + ".Split(" + rendered_args[0] + ")"
-                return owner + ".Split()"
-            if raw_attr == "replace":
-                if len(rendered_args) >= 2:
-                    return owner + ".Replace(" + rendered_args[0] + ", " + rendered_args[1] + ")"
-                return owner
-            if raw_attr == "keys":
-                return owner + ".Keys"
-            if raw_attr == "values":
-                return owner + ".Values"
-            if raw_attr == "items":
-                return "(@(" + owner + ".GetEnumerator() | ForEach-Object { ,@($_.Key, $_.Value) }))"
-            if raw_attr == "get":
-                if len(rendered_args) >= 2:
-                    return "$(if (" + owner + ".Contains(" + rendered_args[0] + ")) { " + owner + "[" + rendered_args[0] + "] } else { " + rendered_args[1] + " })"
-                if len(rendered_args) == 1:
-                    return owner + "[" + rendered_args[0] + "]"
-                return "$null"
-            if raw_attr == "pop":
-                if len(rendered_args) == 0:
-                    return "(__pytra_list_pop " + owner + ")"
-                if owner_type.startswith("dict[") or owner_type == "dict":
-                    if len(rendered_args) == 1:
-                        return "(__pytra_dict_pop " + owner + " " + rendered_args[0] + ")"
-                return "(__pytra_list_pop " + owner + ")"
-            if raw_attr == "write":
-                if len(rendered_args) > 0:
-                    return "(__pytra_file_write " + owner + " " + rendered_args[0] + ")"
-                return owner
-            if raw_attr == "read":
-                return owner + ".ReadToEnd()"
+            # Common non-runtime method mappings that remain target-specific
             if raw_attr == "close":
                 return owner + ".Close()"
             if raw_attr == "flush":
                 return owner + ".Flush()"
-            if raw_attr == "index":
-                if len(rendered_args) > 0:
-                    return "(__pytra_list_index " + owner + " " + rendered_args[0] + ")"
-                return "-1"
-            if raw_attr == "extend":
-                if len(rendered_args) > 0:
-                    return owner + ".AddRange([object[]]@(" + rendered_args[0] + "))"
-                return owner
-            if raw_attr == "discard":
-                if len(rendered_args) > 0:
-                    return owner + ".Remove(" + rendered_args[0] + ")"
-                return owner
-            if raw_attr == "add":
-                raw_owner_type = owner_type.lower() if isinstance(owner_type, str) else ""
-                if raw_owner_type.startswith("set[") or raw_owner_type == "set":
-                    if len(rendered_args) > 0:
-                        return owner + "[(__pytra_set_key " + rendered_args[0] + ")] = $true"
-                    return owner
-                if len(rendered_args) > 0:
-                    return owner + " += @(" + rendered_args[0] + ")"
-                return owner
-            if raw_attr == "remove":
-                raw_owner_type2 = owner_type.lower() if isinstance(owner_type, str) else ""
-                if raw_owner_type2.startswith("set[") or raw_owner_type2 == "set":
-                    if len(rendered_args) > 0:
-                        return owner + ".Remove(" + rendered_args[0] + ")"
-                    return owner
-                if len(rendered_args) > 0:
-                    return "(__pytra_list_remove " + owner + " " + rendered_args[0] + ")"
-                return owner
-            if raw_attr == "copy":
-                return "@(" + owner + ")"
-            if raw_attr == "update":
-                if len(rendered_args) > 0:
-                    return "foreach ($__k in " + rendered_args[0] + ".Keys) { " + owner + "[$__k] = " + rendered_args[0] + "[$__k] }"
-                return owner
-            if raw_attr == "count":
-                if len(rendered_args) > 0:
-                    return "(__pytra_str_count " + owner + " " + rendered_args[0] + ")"
-                return "0"
-            if raw_attr == "insert":
-                if len(rendered_args) >= 2:
-                    return "(__pytra_list_insert " + owner + " " + rendered_args[0] + " " + rendered_args[1] + ")"
-                return owner
-            if raw_attr == "sort":
-                return "(__pytra_list_sort " + owner + ")"
-            if raw_attr == "reverse":
-                return "(__pytra_list_reverse " + owner + ")"
-            if raw_attr == "setdefault":
-                if len(rendered_args) >= 2:
-                    return "(__pytra_dict_setdefault " + owner + " " + rendered_args[0] + " " + rendered_args[1] + ")"
-                return owner
 
-            # Dynamic class method dispatch
-            _KNOWN_DOTNET_METHODS: frozenset[str] = frozenset({
-                "rstrip", "lstrip", "find", "rfind", "count", "index", "rindex",
-                "center", "ljust", "rjust", "zfill", "encode", "decode",
-                "isdigit", "isalpha", "isalnum", "isupper", "islower", "isspace",
-                "capitalize", "title", "swapcase", "expandtabs",
-                "ToString", "GetType", "GetHashCode", "Equals",
-                "Add", "Remove", "Contains", "ContainsKey", "Clear",
-                "Sort", "Reverse", "CopyTo", "ToArray", "GetEnumerator",
-                "Trim", "TrimStart", "TrimEnd", "StartsWith", "EndsWith",
-                "ToUpper", "ToLower", "Split", "Replace", "Substring",
-                "Insert", "IndexOf", "LastIndexOf",
-            })
-            if raw_attr not in _KNOWN_DOTNET_METHODS and raw_attr not in (
-                "append", "extend", "insert", "pop", "remove", "sort", "reverse",
-                "join", "format", "startswith", "endswith", "upper", "lower",
-                "strip", "rstrip", "lstrip", "split", "replace", "find", "rfind",
-                "keys", "values", "items", "get", "update", "setdefault",
-                "add", "discard", "union", "intersection", "difference",
-                "encode", "decode", "read", "write", "close", "flush", "copy",
-            ) and (
+            # Dynamic class method dispatch applies only to user-defined classes.
+            if (
                 owner_name == "self"
                 or owner_name in ctx.class_names
                 or owner_type in ctx.class_names
-                or (owner_name != "" and owner_type != "module")
             ):
                 # Determine if static dispatch is safe.
                 # Use static dispatch for:

@@ -19,6 +19,8 @@ Emitters do not read this file directly. They use EAST3 metadata
 that resolve derives from these declarations.
 """
 
+from pytra.std import extern
+
 
 @extern
 class IOBase:
@@ -26,8 +28,10 @@ class IOBase:
 
     def close(self: mut[IOBase]) -> None: ...
 
+    @extern(module="pytra.built_in.io_ops", symbol="IOBase.__enter__", tag="dunder.enter")
     def __enter__(self) -> "IOBase": ...
 
+    @extern(module="pytra.built_in.io_ops", symbol="IOBase.__exit__", tag="dunder.exit")
     def __exit__(self: mut[IOBase], exc_type: object, exc_val: object, exc_tb: object) -> None: ...
 
 
@@ -35,10 +39,13 @@ class IOBase:
 class TextIOWrapper(IOBase):
     """Text mode file object (open with "r", "w", "a")."""
 
+    @extern(module="pytra.built_in.io_ops", symbol="TextIOWrapper.__enter__", tag="dunder.enter")
     def __enter__(self) -> "TextIOWrapper": ...
 
+    @extern(module="pytra.built_in.io_ops", symbol="TextIOWrapper.read", tag="stdlib.method.read")
     def read(self) -> str: ...
 
+    @extern(module="pytra.built_in.io_ops", symbol="TextIOWrapper.write", tag="stdlib.method.write")
     def write(self: mut[TextIOWrapper], text: str) -> int: ...
 
 
@@ -46,8 +53,10 @@ class TextIOWrapper(IOBase):
 class BufferedWriter(IOBase):
     """Binary mode write file object (open with "wb", "ab")."""
 
+    @extern(module="pytra.built_in.io_ops", symbol="BufferedWriter.__enter__", tag="dunder.enter")
     def __enter__(self) -> "BufferedWriter": ...
 
+    @extern(module="pytra.built_in.io_ops", symbol="BufferedWriter.write", tag="stdlib.method.write")
     def write(self: mut[BufferedWriter], data: bytes) -> int: ...
 
 
@@ -55,6 +64,8 @@ class BufferedWriter(IOBase):
 class BufferedReader(IOBase):
     """Binary mode read file object (open with "rb")."""
 
+    @extern(module="pytra.built_in.io_ops", symbol="BufferedReader.__enter__", tag="dunder.enter")
     def __enter__(self) -> "BufferedReader": ...
 
+    @extern(module="pytra.built_in.io_ops", symbol="BufferedReader.read", tag="stdlib.method.read")
     def read(self) -> bytes: ...

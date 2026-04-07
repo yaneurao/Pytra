@@ -229,15 +229,25 @@ def _collect_golden_runtime_calls() -> set[str]:
 
     def _walk(node: object, result: set[str]) -> None:
         if isinstance(node, dict):
-            for key in ("runtime_call", "resolved_runtime_call"):
+            for key in (
+                "runtime_call",
+                "resolved_runtime_call",
+                "with_enter_runtime_call",
+                "with_exit_runtime_call",
+            ):
                 val = node.get(key)
                 if isinstance(val, str) and val:
                     result.add(val)
             # Also collect runtime_module_id + runtime_symbol (fully qualified)
-            mod_id = node.get("runtime_module_id")
-            sym = node.get("runtime_symbol")
-            if isinstance(mod_id, str) and mod_id and isinstance(sym, str) and sym:
-                result.add(mod_id + "." + sym)
+            for mod_key, sym_key in (
+                ("runtime_module_id", "runtime_symbol"),
+                ("with_enter_runtime_module_id", "with_enter_runtime_symbol"),
+                ("with_exit_runtime_module_id", "with_exit_runtime_symbol"),
+            ):
+                mod_id = node.get(mod_key)
+                sym = node.get(sym_key)
+                if isinstance(mod_id, str) and mod_id and isinstance(sym, str) and sym:
+                    result.add(mod_id + "." + sym)
             for v in node.values():
                 _walk(v, result)
         elif isinstance(node, list):

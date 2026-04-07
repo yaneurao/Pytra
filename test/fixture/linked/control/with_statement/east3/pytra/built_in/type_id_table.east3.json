@@ -1,0 +1,1049 @@
+{
+  "kind": "Module",
+  "east_stage": 3,
+  "schema_version": 1,
+  "source_path": "src/pytra/built_in/type_id_table.py",
+  "body": [
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "id_table",
+        "resolved_type": "list[int64]"
+      },
+      "annotation": "list[int64]",
+      "declare": true,
+      "decl_type": "list[int64]",
+      "value": {
+        "kind": "List",
+        "elements": [
+          {
+            "kind": "Constant",
+            "value": 0,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 0,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 2,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 2,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 3,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 3,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 4,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 4,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 5,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 5,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 6,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 6,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 7,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 7,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 8,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1013,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 9,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1010,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 10,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1009,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 11,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1000,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 12,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 12,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 13,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 13,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 14,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 14,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 15,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 15,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1000,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1000,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1001,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1001,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1002,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1002,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1003,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1003,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1004,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1004,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1005,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1005,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1006,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1006,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1007,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1007,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1008,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1008,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1009,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1009,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1010,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1010,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1011,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1012,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1012,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1012,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1013,
+            "resolved_type": "int64"
+          },
+          {
+            "kind": "Constant",
+            "value": 1013,
+            "resolved_type": "int64"
+          }
+        ],
+        "resolved_type": "list[int64]"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "NONE_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 0,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "BOOL_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 1,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "INT_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 2,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "FLOAT_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 3,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "STR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 4,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "LIST_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 5,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "DICT_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 6,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "SET_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 7,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "OBJECT_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 8,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "BASE_EXCEPTION_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 9,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "EXCEPTION_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 10,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "RUNTIME_ERROR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 11,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "VALUE_ERROR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 12,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "TYPE_ERROR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 13,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "INDEX_ERROR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 14,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "KEY_ERROR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 15,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "PYTRA_BUILT_IN_ERROR_NOT_IMPLEMENTED_ERROR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 16,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "PYTRA_BUILT_IN_ERROR_FILE_NOT_FOUND_ERROR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 17,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "PYTRA_BUILT_IN_ERROR_INDEX_ERROR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 18,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "PYTRA_BUILT_IN_ERROR_KEY_ERROR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 19,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "PYTRA_BUILT_IN_ERROR_NAME_ERROR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 20,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "PYTRA_BUILT_IN_ERROR_OVERFLOW_ERROR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 21,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "PYTRA_BUILT_IN_ERROR_PERMISSION_ERROR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 22,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "PYTRA_BUILT_IN_ERROR_RUNTIME_ERROR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 23,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "PYTRA_BUILT_IN_ERROR_TYPE_ERROR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 24,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "PYTRA_BUILT_IN_ERROR_VALUE_ERROR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 25,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "PYTRA_BUILT_IN_ERROR_EXCEPTION_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 26,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "PYTRA_BUILT_IN_ERROR_PYTRA_ERROR_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 27,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "PYTRA_BUILT_IN_ERROR_BASE_EXCEPTION_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 28,
+        "resolved_type": "int64"
+      }
+    },
+    {
+      "kind": "AnnAssign",
+      "target": {
+        "kind": "Name",
+        "id": "PYTRA_STD_PATHLIB_PATH_TID",
+        "resolved_type": "int64"
+      },
+      "annotation": "int64",
+      "declare": true,
+      "decl_type": "int64",
+      "value": {
+        "kind": "Constant",
+        "value": 29,
+        "resolved_type": "int64"
+      }
+    }
+  ],
+  "main_guard_body": [],
+  "meta": {
+    "module_id": "pytra.built_in.type_id_table",
+    "dispatch_mode": "native",
+    "import_bindings": [],
+    "import_modules": {},
+    "import_symbols": {},
+    "synthetic_helper_v1": {
+      "helper_id": "pytra.built_in.type_id_table",
+      "owner_module_id": "",
+      "generated_by": "linked_optimizer"
+    },
+    "emit_context": {
+      "module_id": "pytra.built_in.type_id_table",
+      "is_entry": false
+    },
+    "linked_program_v1": {
+      "program_id": "cpp:native:pytra.built_in.error,pytra.built_in.io_ops,pytra.built_in.scalar_ops,pytra.built_in.string_ops,pytra.std.glob,pytra.std.os,pytra.std.os_path,pytra.std.pathlib,pytra.utils.assertions,with_statement",
+      "module_id": "pytra.built_in.type_id_table",
+      "entry_modules": [
+        "with_statement"
+      ],
+      "type_id_resolved_v1": {
+        "BaseException": 9,
+        "Exception": 10,
+        "IndexError": 14,
+        "KeyError": 15,
+        "None": 0,
+        "RuntimeError": 11,
+        "TypeError": 13,
+        "ValueError": 12,
+        "bool": 1,
+        "dict": 6,
+        "float": 3,
+        "int": 2,
+        "list": 5,
+        "object": 8,
+        "pytra.built_in.error.BaseException": 1012,
+        "pytra.built_in.error.Exception": 1010,
+        "pytra.built_in.error.FileNotFoundError": 1001,
+        "pytra.built_in.error.IndexError": 1002,
+        "pytra.built_in.error.KeyError": 1003,
+        "pytra.built_in.error.NameError": 1004,
+        "pytra.built_in.error.NotImplementedError": 1000,
+        "pytra.built_in.error.OverflowError": 1005,
+        "pytra.built_in.error.PermissionError": 1006,
+        "pytra.built_in.error.PytraError": 1011,
+        "pytra.built_in.error.RuntimeError": 1007,
+        "pytra.built_in.error.TypeError": 1008,
+        "pytra.built_in.error.ValueError": 1009,
+        "pytra.std.pathlib.Path": 1013,
+        "set": 7,
+        "str": 4
+      },
+      "type_id_base_map_v1": {
+        "BaseException": 8,
+        "Exception": 9,
+        "IndexError": 10,
+        "KeyError": 10,
+        "None": 0,
+        "RuntimeError": 10,
+        "TypeError": 10,
+        "ValueError": 10,
+        "bool": 1,
+        "dict": 6,
+        "float": 3,
+        "int": 2,
+        "list": 5,
+        "object": 8,
+        "pytra.built_in.error.BaseException": 1011,
+        "pytra.built_in.error.Exception": 9,
+        "pytra.built_in.error.FileNotFoundError": 10,
+        "pytra.built_in.error.IndexError": 10,
+        "pytra.built_in.error.KeyError": 10,
+        "pytra.built_in.error.NameError": 10,
+        "pytra.built_in.error.NotImplementedError": 11,
+        "pytra.built_in.error.OverflowError": 10,
+        "pytra.built_in.error.PermissionError": 10,
+        "pytra.built_in.error.PytraError": 8,
+        "pytra.built_in.error.RuntimeError": 10,
+        "pytra.built_in.error.TypeError": 10,
+        "pytra.built_in.error.ValueError": 10,
+        "pytra.std.pathlib.Path": 8,
+        "set": 7,
+        "str": 4
+      },
+      "type_info_table_v1": {
+        "BaseException": {
+          "id": 9,
+          "entry": 9,
+          "exit": 1011
+        },
+        "Exception": {
+          "id": 10,
+          "entry": 10,
+          "exit": 1010
+        },
+        "IndexError": {
+          "id": 14,
+          "entry": 14,
+          "exit": 15
+        },
+        "KeyError": {
+          "id": 15,
+          "entry": 15,
+          "exit": 16
+        },
+        "None": {
+          "id": 0,
+          "entry": 0,
+          "exit": 1
+        },
+        "RuntimeError": {
+          "id": 11,
+          "entry": 11,
+          "exit": 1001
+        },
+        "TypeError": {
+          "id": 13,
+          "entry": 13,
+          "exit": 14
+        },
+        "ValueError": {
+          "id": 12,
+          "entry": 12,
+          "exit": 13
+        },
+        "bool": {
+          "id": 1,
+          "entry": 1,
+          "exit": 2
+        },
+        "dict": {
+          "id": 6,
+          "entry": 6,
+          "exit": 7
+        },
+        "float": {
+          "id": 3,
+          "entry": 3,
+          "exit": 4
+        },
+        "int": {
+          "id": 2,
+          "entry": 2,
+          "exit": 3
+        },
+        "list": {
+          "id": 5,
+          "entry": 5,
+          "exit": 6
+        },
+        "object": {
+          "id": 8,
+          "entry": 8,
+          "exit": 1014
+        },
+        "pytra.built_in.error.BaseException": {
+          "id": 1012,
+          "entry": 1012,
+          "exit": 1013
+        },
+        "pytra.built_in.error.Exception": {
+          "id": 1010,
+          "entry": 1010,
+          "exit": 1011
+        },
+        "pytra.built_in.error.FileNotFoundError": {
+          "id": 1001,
+          "entry": 1001,
+          "exit": 1002
+        },
+        "pytra.built_in.error.IndexError": {
+          "id": 1002,
+          "entry": 1002,
+          "exit": 1003
+        },
+        "pytra.built_in.error.KeyError": {
+          "id": 1003,
+          "entry": 1003,
+          "exit": 1004
+        },
+        "pytra.built_in.error.NameError": {
+          "id": 1004,
+          "entry": 1004,
+          "exit": 1005
+        },
+        "pytra.built_in.error.NotImplementedError": {
+          "id": 1000,
+          "entry": 1000,
+          "exit": 1001
+        },
+        "pytra.built_in.error.OverflowError": {
+          "id": 1005,
+          "entry": 1005,
+          "exit": 1006
+        },
+        "pytra.built_in.error.PermissionError": {
+          "id": 1006,
+          "entry": 1006,
+          "exit": 1007
+        },
+        "pytra.built_in.error.PytraError": {
+          "id": 1011,
+          "entry": 1011,
+          "exit": 1013
+        },
+        "pytra.built_in.error.RuntimeError": {
+          "id": 1007,
+          "entry": 1007,
+          "exit": 1008
+        },
+        "pytra.built_in.error.TypeError": {
+          "id": 1008,
+          "entry": 1008,
+          "exit": 1009
+        },
+        "pytra.built_in.error.ValueError": {
+          "id": 1009,
+          "entry": 1009,
+          "exit": 1010
+        },
+        "pytra.std.pathlib.Path": {
+          "id": 1013,
+          "entry": 1013,
+          "exit": 1014
+        },
+        "set": {
+          "id": 7,
+          "entry": 7,
+          "exit": 8
+        },
+        "str": {
+          "id": 4,
+          "entry": 4,
+          "exit": 5
+        }
+      },
+      "resolved_dependencies_v1": [],
+      "user_module_dependencies_v1": [],
+      "non_escape_summary": {},
+      "container_ownership_hints_v1": {}
+    }
+  }
+}
