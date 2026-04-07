@@ -63,6 +63,7 @@ class EmitContext:
     catch_stack: list[tuple[str, str]] = field(default_factory=list)
     vararg_functions: set[str] = field(default_factory=set)
     declared_locals: set[str] = field(default_factory=set)
+    hoisted_locals: set[str] = field(default_factory=set)
     in_class_body: bool = False
     needs_continue_label: bool = False
     loaded_module_files: set[str] = field(default_factory=set)
@@ -218,7 +219,15 @@ def _emit_isinstance_expr(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     value_node = node.get("value")
     value = _emit_expr(ctx, value_node)
     value_rt = _str(value_node, "resolved_type") if isinstance(value_node, dict) else ""
-    type_name = _str(node, "type_name")
+    type_name = _str(node, "expected_type_name")
+    if type_name == "":
+        nominal = _dict(node, "nominal_adt_test_v1")
+        if nominal:
+            type_name = _str(nominal, "family_name")
+            if type_name == "":
+                type_name = _str(nominal, "variant_name")
+    if type_name == "":
+        type_name = _str(node, "type_name")
     if type_name == "":
         expected_type = node.get("expected_type_id")
         if isinstance(expected_type, dict):
@@ -416,7 +425,7 @@ def _emit_error_return(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         err_code = _lua_symbol_name(ctx, ctx.current_exc_var)
     else:
         err_code = _quote_string("raise")
-    _emit_error_propagation(ctx, err_code, allow_current_catch=False)
+    _emit_error_propagation(ctx, err_code, allow_current_catch=(ctx.current_exc_var == ""))
 
 
 def _emit_error_check(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
@@ -647,6 +656,9 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 runtime_symbol = _str(node, "runtime_symbol")
                 if runtime_symbol == "":
                     runtime_symbol = attr
+                if mod_id in ("sys", "pytra.std.sys"):
+                    owner_name = owner_id if owner_id != "" else owner
+                    return owner_name + "." + _safe_lua_ident(attr)
                 mod_short = mod_id.rsplit(".", 1)[-1]
                 qualified_key = mod_short + "." + runtime_symbol
                 if qualified_key in ctx.mapping.calls:
@@ -687,6 +699,29 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return '"[]"'
             if arg0_kind == "Dict" and len(_list(arg0, "keys")) == 0 and len(_list(arg0, "entries")) == 0 and arg0_rt.startswith("dict["):
                 return '"{}"'
+
+    if semantic_tag == "core.bytearray_ctor":
+        if len(arg_strs) >= 1:
+            return "__pytra_bytearray(" + arg_strs[0] + ")"
+        return "__pytra_bytearray()"
+    if semantic_tag == "core.bytes_ctor":
+        if len(arg_strs) >= 1:
+            return "__pytra_bytes(" + arg_strs[0] + ")"
+        return "__pytra_bytes()"
+    if semantic_tag == "core.dict_ctor":
+        if len(arg_strs) >= 1:
+            return "__pytra_dict_ctor(" + arg_strs[0] + ")"
+        return "{}"
+    if semantic_tag == "core.list_ctor":
+        if len(arg_strs) >= 1:
+            return "__pytra_list_ctor(" + arg_strs[0] + ")"
+        return "{}"
+    if semantic_tag == "core.set_ctor":
+        if len(arg_strs) >= 1:
+            return "__pytra_set_ctor(" + arg_strs[0] + ")"
+        return "__pytra_set_ctor()"
+    if semantic_tag == "core.tuple_ctor":
+        return "{" + ", ".join(arg_strs) + "}"
 
     if runtime_call == "ArgumentParser.add_argument" or resolved_rt_call == "ArgumentParser.add_argument":
         if len(keywords) > 0:
@@ -909,7 +944,14 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
     # Resolved mapped name
     if call_name != "":
-        return call_name + "(" + ", ".join(arg_strs) + ")"
+        call_args = list(arg_strs)
+        if isinstance(func_node, dict) and _str(func_node, "kind") == "Attribute":
+            owner_node = func_node.get("value")
+            owner_id = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
+            owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+            if not (owner_rt == "module" or owner_id in ctx.import_alias_modules):
+                call_args = [_emit_expr(ctx, owner_node)] + call_args
+        return call_name + "(" + ", ".join(call_args) + ")"
 
     # Fallback: emit callee from func node
     if isinstance(func_node, dict):
@@ -1019,6 +1061,41 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return callee + "(" + ", ".join(arg_strs) + ")"
 
     return "nil"
+
+
+def _needs_checked_runtime_call(ctx: EmitContext, value: JsonVal) -> bool:
+    if len(ctx.catch_stack) == 0 or not isinstance(value, dict):
+        return False
+    if _str(value, "kind") != "Call":
+        return False
+    runtime_call = _str(value, "resolved_runtime_call")
+    if runtime_call == "":
+        runtime_call = _str(value, "runtime_call")
+    adapter_kind = _str(value, "runtime_call_adapter_kind")
+    fn_name = resolve_runtime_call(runtime_call, "", adapter_kind, ctx.mapping)
+    return fn_name == "__pytra_str_index"
+
+
+def _emit_checked_runtime_call(ctx: EmitContext, value: dict[str, JsonVal], target_code: str, *, declare_local: bool, decl_type: str = "") -> bool:
+    if not _needs_checked_runtime_call(ctx, value):
+        return False
+    call_code = _emit_expr(ctx, value)
+    ok_tmp = _next_temp(ctx, "ok")
+    res_tmp = _next_temp(ctx, "res")
+    _emit(ctx, "local " + ok_tmp + ", " + res_tmp + " = pcall(function() return " + call_code + " end)")
+    _emit(ctx, "if not " + ok_tmp + " then")
+    ctx.indent_level += 1
+    _emit_error_propagation(ctx, res_tmp, allow_current_catch=True)
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    if declare_local:
+        _emit(ctx, "local " + target_code + " = " + res_tmp)
+        ctx.declared_locals.add(target_code)
+        if decl_type != "":
+            ctx.var_types[target_code] = decl_type
+    else:
+        _emit(ctx, target_code + " = " + res_tmp)
+    return True
 
 
 def _emit_class_ctor_call(ctx: EmitContext, class_name: str, arg_strs: list[str]) -> str:
@@ -1796,15 +1873,19 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             name = _str(target, "id")
             safe = _lua_symbol_name(ctx, name)
             if safe not in ctx.declared_locals:
-                ctx.declared_locals.add(safe)
-                _emit(ctx, "local " + safe + " = " + val_code)
-                # Track type
                 decl_type = _str(node, "decl_type")
                 if decl_type == "":
                     decl_type = _str(node, "resolved_type")
+                if isinstance(value, dict) and _emit_checked_runtime_call(ctx, value, safe, declare_local=True, decl_type=decl_type):
+                    return
+                ctx.declared_locals.add(safe)
+                _emit(ctx, "local " + safe + " = " + val_code)
+                # Track type
                 if decl_type != "":
                     ctx.var_types[safe] = decl_type
                 return
+        if isinstance(value, dict) and _emit_checked_runtime_call(ctx, value, target_code, declare_local=False):
+            return
         _emit(ctx, target_code + " = " + val_code)
         return
 
@@ -2449,10 +2530,56 @@ def _emit_var_decl(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     decl_type = _str(node, "type")
     if decl_type == "":
         decl_type = _str(node, "resolved_type")
+    value = node.get("value")
+    if isinstance(value, dict) and _emit_checked_runtime_call(ctx, value, safe, declare_local=True, decl_type=decl_type):
+        return
     zero = lua_zero_value(decl_type)
     ctx.declared_locals.add(safe)
     ctx.var_types[safe] = decl_type
-    _emit(ctx, "local " + safe + " = " + zero)
+    if safe in ctx.hoisted_locals:
+        _emit(ctx, safe + " = " + zero)
+    else:
+        _emit(ctx, "local " + safe + " = " + zero)
+
+
+def _collect_try_hoist_locals(body: list[JsonVal]) -> list[tuple[str, str]]:
+    hoisted: list[tuple[str, str]] = []
+
+    def walk(stmts: list[JsonVal]) -> None:
+        for stmt in stmts:
+            if not isinstance(stmt, dict):
+                continue
+            kind = _str(stmt, "kind")
+            if kind == "VarDecl":
+                name = _str(stmt, "name")
+                if name != "":
+                    decl_type = _str(stmt, "type")
+                    if decl_type == "":
+                        decl_type = _str(stmt, "resolved_type")
+                    hoisted.append((name, decl_type))
+            elif kind == "Assign":
+                target = stmt.get("target")
+                if isinstance(target, dict) and _str(target, "kind") == "Name" and _bool(stmt, "declare"):
+                    name = _str(target, "id")
+                    if name != "":
+                        decl_type = _str(stmt, "decl_type")
+                        if decl_type == "":
+                            decl_type = _str(stmt, "resolved_type")
+                        hoisted.append((name, decl_type))
+            for key in ("body", "orelse", "finalbody"):
+                inner = _list(stmt, key)
+                if len(inner) > 0:
+                    walk(inner)
+
+    walk(body)
+    seen: set[str] = set()
+    unique: list[tuple[str, str]] = []
+    for name, decl_type in hoisted:
+        if name in seen:
+            continue
+        seen.add(name)
+        unique.append((name, decl_type))
+    return unique
 
 
 def _emit_swap(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
@@ -2538,6 +2665,47 @@ def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         _emit_body(ctx, body)
         return
 
+    if len(handlers) > 0:
+        catch_node = {
+            "kind": "ErrorCatch",
+            "body": body,
+            "handlers": handlers,
+            "finalbody": finalbody,
+        }
+        _emit_error_catch(ctx, catch_node)
+        return
+
+    if len(finalbody) > 0 and len(ctx.catch_stack) > 0:
+        finally_err = _next_temp(ctx, "finally_err")
+        finally_label = _next_temp(ctx, "finally")
+        _emit(ctx, "local " + finally_err + " = nil")
+        ctx.catch_stack.append((finally_err, finally_label))
+        _emit_body(ctx, body)
+        ctx.catch_stack.pop()
+        _emit(ctx, "::" + finally_label + "::")
+        _emit_body(ctx, finalbody)
+        _emit(ctx, "if " + finally_err + " ~= nil then")
+        ctx.indent_level += 1
+        _emit_error_propagation(ctx, finally_err, allow_current_catch=True)
+        ctx.indent_level -= 1
+        _emit(ctx, "end")
+        return
+
+    if len(finalbody) > 0 and len(ctx.catch_stack) == 0:
+        _emit_body(ctx, body)
+        _emit_body(ctx, finalbody)
+        return
+
+    hoisted_locals = _collect_try_hoist_locals(body) if len(finalbody) > 0 else []
+    saved_hoisted = set(ctx.hoisted_locals)
+    for name, decl_type in hoisted_locals:
+        safe = _lua_symbol_name(ctx, name)
+        if safe not in ctx.declared_locals:
+            ctx.declared_locals.add(safe)
+            ctx.var_types[safe] = decl_type
+            _emit(ctx, "local " + safe + " = " + lua_zero_value(decl_type))
+        ctx.hoisted_locals.add(safe)
+
     _emit(ctx, "local __try_ok__, __try_err__ = pcall(function()")
     ctx.indent_level += 1
     _emit_body(ctx, body)
@@ -2563,6 +2731,7 @@ def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
     if len(finalbody) > 0:
         _emit_body(ctx, finalbody)
+    ctx.hoisted_locals = saved_hoisted
 
 
 def _emit_raise(ctx: EmitContext, node: dict[str, JsonVal]) -> None:

@@ -2,6 +2,7 @@
 # Provides Python built-in functions only (print, len, range, int, float, str, etc.).
 # pytra.std.* / pytra.utils.* functions are provided by generated modules
 # and their _native seam files.
+require "zlib"
 
 def __pytra_noop(*args)
   _ = args
@@ -29,6 +30,8 @@ end
 
 def __pytra_float(v)
   return 0.0 if v.nil?
+  return 1.0 if v == true
+  return 0.0 if v == false
   v.to_f
 end
 
@@ -125,6 +128,10 @@ def __pytra_bytearray(v = nil)
   out
 end
 
+def bytearray(v = nil)
+  __pytra_bytearray(v)
+end
+
 def __pytra_bytes(v = nil)
   return [] if v.nil?
   return v.bytes if v.is_a?(String)
@@ -136,6 +143,10 @@ def __pytra_bytes(v = nil)
     i += 1
   end
   out
+end
+
+def bytes(v = nil)
+  __pytra_bytes(v)
 end
 
 def __pytra_range(*args)
@@ -224,6 +235,101 @@ def __pytra_set_index(container, index, value)
   if container.is_a?(Hash)
     container[index] = value
   end
+end
+
+def __pytra_clear(container)
+  if container.is_a?(Array) || container.is_a?(Hash) || container.is_a?(Set)
+    container.clear
+  end
+  nil
+end
+
+def __pytra_pop(container, key = nil)
+  return nil if container.nil?
+  if container.is_a?(Hash)
+    return container.delete(key)
+  end
+  if container.is_a?(Array)
+    return key.nil? ? container.pop : container.delete_at(__pytra_int(key))
+  end
+  nil
+end
+
+def __pytra_setdefault(container, key, default)
+  return default unless container.is_a?(Hash)
+  container[key] = default unless container.key?(key)
+  container[key]
+end
+
+module PytraNative_TimeProxy
+  def self.perf_counter
+    __pytra_perf_counter
+  end
+end
+
+def time
+  PytraNative_TimeProxy
+end
+
+def __pytra_write_rgb_png(path, width, height, pixels)
+  raw = __pytra_bytearray(pixels)
+  expected = __pytra_int(width) * __pytra_int(height) * 3
+  raise ArgumentError, "pixels length mismatch" if raw.length != expected
+
+  row_bytes = __pytra_int(width) * 3
+  scanlines = []
+  y = 0
+  while y < __pytra_int(height)
+    start = y * row_bytes
+    scanlines << 0
+    scanlines.concat(raw[start, row_bytes])
+    y += 1
+  end
+
+  s1 = 1
+  s2 = 0
+  scanlines.each do |b|
+    s1 += b
+    s1 -= 65_521 if s1 >= 65_521
+    s2 = (s2 + s1) % 65_521
+  end
+  adler = ((s2 << 16) | s1) & 0xFFFFFFFF
+
+  idat = +""
+  idat << [0x78, 0x01].pack("C*")
+  pos = 0
+  while pos < scanlines.length
+    remain = scanlines.length - pos
+    chunk_len = remain > 65_535 ? 65_535 : remain
+    final = (pos + chunk_len) >= scanlines.length ? 1 : 0
+    idat << [final].pack("C")
+    idat << [chunk_len & 0xFF, (chunk_len >> 8) & 0xFF].pack("C*")
+    nlen = 0xFFFF ^ chunk_len
+    idat << [nlen & 0xFF, (nlen >> 8) & 0xFF].pack("C*")
+    idat << scanlines[pos, chunk_len].pack("C*")
+    pos += chunk_len
+  end
+  idat << [adler].pack("N")
+
+  ihdr = [__pytra_int(width), __pytra_int(height), 8, 2, 0, 0, 0].pack("NNC5")
+  png = +""
+  png << [137, 80, 78, 71, 13, 10, 26, 10].pack("C*")
+  [["IHDR", ihdr], ["IDAT", idat], ["IEND", ""]].each do |chunk_type, data|
+    crc = 0xFFFFFFFF
+    (chunk_type.bytes + data.bytes).each do |byte|
+      crc ^= byte
+      8.times do
+        crc = (crc & 1) != 0 ? ((crc >> 1) ^ 0xEDB88320) : (crc >> 1)
+      end
+    end
+    crc ^= 0xFFFFFFFF
+    png << [data.bytesize].pack("N")
+    png << chunk_type
+    png << data
+    png << [crc & 0xFFFFFFFF].pack("N")
+  end
+  File.binwrite(path, png)
+  nil
 end
 
 def __pytra_slice(container, lower, upper)
@@ -323,6 +429,13 @@ class PyFile
   def close
     @io.close
   end
+  def __enter__
+    self
+  end
+  def __exit__(_exc_type, _exc_val, _exc_tb)
+    close
+    nil
+  end
 end
 
 def open(path, mode = "r")
@@ -375,6 +488,9 @@ class PytraPathModule
   def exists(path)
     File.exist?(__pytra_str(path))
   end
+  def abspath(path)
+    File.expand_path(__pytra_str(path))
+  end
 end
 
 PYTRA_SYS = PytraSys.new
@@ -384,8 +500,118 @@ def sys
   PYTRA_SYS
 end
 
+def __pytra_argv
+  sys.argv
+end
+
 def __pytra_path
   PYTRA_PATH
+end
+
+class Path
+  def initialize(path)
+    @path = __pytra_str(path)
+  end
+  def joinpath(*parts)
+    Path.new(File.join(@path, *parts.map { |p| __pytra_str(p) }))
+  end
+  def parent
+    Path.new(File.dirname(@path))
+  end
+  def name
+    File.basename(@path)
+  end
+  def stem
+    File.basename(@path, File.extname(@path))
+  end
+  def mkdir(parents = false, exist_ok = false)
+    if parents
+      require 'fileutils'
+      FileUtils.mkdir_p(@path)
+      return nil
+    end
+    return nil if exist_ok && File.exist?(@path)
+    Dir.mkdir(@path)
+    nil
+  end
+  def write_text(text)
+    parent_path = File.dirname(@path)
+    if parent_path != "" && parent_path != "." && !File.directory?(parent_path)
+      require 'fileutils'
+      FileUtils.mkdir_p(parent_path)
+    end
+    File.write(@path, __pytra_str(text))
+    nil
+  end
+  def read_text
+    File.read(@path)
+  end
+  def exists
+    File.exist?(@path)
+  end
+  def to_s
+    @path
+  end
+end
+
+def __pytra_Path(path)
+  Path.new(path)
+end
+
+def __pytra_set_argv(values)
+  sys.set_argv(values)
+end
+
+def __pytra_set_path(values)
+  sys.set_path(values)
+end
+
+def __pytra_pi
+  Math::PI
+end
+
+def __pytra_e
+  Math::E
+end
+
+def __pytra_sqrt(v)
+  Math.sqrt(__pytra_float(v))
+end
+
+def __pytra_sin(v)
+  Math.sin(__pytra_float(v))
+end
+
+def __pytra_cos(v)
+  Math.cos(__pytra_float(v))
+end
+
+def __pytra_tan(v)
+  Math.tan(__pytra_float(v))
+end
+
+def __pytra_exp(v)
+  Math.exp(__pytra_float(v))
+end
+
+def __pytra_log(v)
+  Math.log(__pytra_float(v))
+end
+
+def __pytra_log10(v)
+  Math.log10(__pytra_float(v))
+end
+
+def __pytra_fabs(v)
+  __pytra_abs(v)
+end
+
+def __pytra_msqrt(v)
+  __pytra_sqrt(v)
+end
+
+def __pytra_abspath(path)
+  File.expand_path(__pytra_str(path))
 end
 
 def __pytra_reversed(v)
@@ -427,6 +653,7 @@ class Hash
 end
 
 class String
+  alias __pytra_native_index index
   def startswith(prefix)
     self.start_with?(prefix)
   end
@@ -440,7 +667,7 @@ class String
     self.downcase
   end
   def find(sub, start = 0)
-    idx = self[start..].index(sub)
+    idx = self[start..].__pytra_native_index(sub)
     idx.nil? ? -1 : idx + start
   end
   def rfind(sub)
@@ -449,6 +676,11 @@ class String
   end
   def count(sub)
     self.scan(sub).length
+  end
+  def index(sub, offset = nil)
+    idx = offset.nil? ? __pytra_native_index(sub) : __pytra_native_index(sub, offset)
+    raise ArgumentError, "substring not found" if idx.nil?
+    idx
   end
   def zfill(width)
     s = self
@@ -569,6 +801,18 @@ def __pytra_sorted(v)
   __pytra_as_list(v).sort
 end
 
+def __pytra_py_sorted(v)
+  __pytra_sorted(v)
+end
+
+def __pytra_sort(v)
+  v.sort!
+end
+
+def __pytra_reverse(v)
+  v.reverse!
+end
+
 def __pytra_makedirs(path, *args)
   require 'fileutils'
   FileUtils.mkdir_p(__pytra_str(path))
@@ -595,6 +839,10 @@ end
 # type() built-in
 def __pytra_type(obj)
   obj.class
+end
+
+def type(obj)
+  __pytra_type(obj)
 end
 
 # delete from dict/list

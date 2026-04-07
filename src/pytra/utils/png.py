@@ -107,5 +107,8 @@ def write_rgb_png(path: str, width: int, height: int, pixels: bytes) -> None:
     iend_data: bytearray = bytearray()
     _png_append(png, _chunk(bytearray([73, 69, 78, 68]), iend_data))
 
-    with open(path, "wb") as f:
+    f = open(path, "wb")
+    try:
         f.write(bytes(png))
+    finally:
+        f.close()

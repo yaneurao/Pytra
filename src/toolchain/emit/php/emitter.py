@@ -273,6 +273,8 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     name = _str(node, "id")
     if name == "":
         name = _str(node, "repr")
+    if name == "self" and ctx.current_class != "":
+        return "$this"
     safe_name = _safe_php_ident(name)
     if name == "None":
         return "null"
@@ -285,6 +287,8 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     # Check runtime_imports for mapped names
     if name in ctx.runtime_imports:
         return ctx.runtime_imports[name]
+    if name in ("bytearray", "bytes"):
+        return name
     if name in ctx.mapping.calls:
         mapped = ctx.mapping.calls[name]
         if isinstance(mapped, str) and mapped != "":
@@ -618,9 +622,10 @@ def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         obj_node = node.get("obj")
     type_node = node.get("type")
     obj_code = _emit_expr(ctx, obj_node)
-    type_name = ""
+    type_name = _str(node, "expected_type_name")
     if isinstance(type_node, dict):
-        type_name = _str(type_node, "id")
+        if type_name == "":
+            type_name = _str(type_node, "id")
         if type_name == "":
             type_name = _str(type_node, "repr")
     if type_name == "":
@@ -872,6 +877,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
     # BuiltinCall: runtime function
     lowered = _str(node, "lowered_kind")
+    semantic_tag = _str(node, "semantic_tag")
     if lowered == "BuiltinCall" or lowered == "RuntimeCall":
         method_owner = ""
         builtin_arg_strs = list(all_arg_strs)
@@ -879,6 +885,29 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             owner_val = func.get("value")
             method_owner = _emit_expr(ctx, owner_val)
             builtin_arg_strs = [method_owner] + list(arg_strs)
+
+        if semantic_tag == "core.bytearray_ctor":
+            if len(all_arg_strs) >= 1:
+                return "bytearray(" + all_arg_strs[0] + ")"
+            return "bytearray()"
+        if semantic_tag == "core.bytes_ctor":
+            if len(all_arg_strs) >= 1:
+                return "__pytra_bytes(" + all_arg_strs[0] + ")"
+            return "__pytra_bytes()"
+        if semantic_tag == "core.dict_ctor":
+            if len(all_arg_strs) >= 1:
+                return "(array)" + all_arg_strs[0]
+            return "[]"
+        if semantic_tag == "core.list_ctor":
+            if len(all_arg_strs) >= 1:
+                return "array_values(" + all_arg_strs[0] + ")"
+            return "[]"
+        if semantic_tag == "core.set_ctor":
+            if len(all_arg_strs) > 0:
+                return "set(" + all_arg_strs[0] + ")"
+            return "set()"
+        if semantic_tag == "core.tuple_ctor":
+            return "[" + ", ".join(all_arg_strs) + "]"
 
         fn_name = _resolve_runtime_call_name(ctx, node, func)
         if fn_name != "" and fn_name != "__CAST__" and fn_name != "__PANIC__":
@@ -960,7 +989,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return "unset(" + owner + "[" + item + "])"
             if fn_name == "__SET_CLEAR__":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
-                return owner + " = []"
+                return owner + " = set()"
             if runtime_symbol == "str.strip":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else '""'
                 return "trim(" + owner + ")"

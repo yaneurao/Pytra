@@ -144,13 +144,13 @@ def ruby_zero_value(resolved_type: str) -> str:
 def ruby_exception_class(resolved_type: str) -> str:
     """Map an EAST3 exception type to a Ruby exception class."""
     mapping: dict[str, str] = {
-        "Exception": "RuntimeError",
+        "Exception": "StandardError",
         "RuntimeError": "RuntimeError",
         "ValueError": "ArgumentError",
         "TypeError": "TypeError",
         "IndexError": "IndexError",
         "KeyError": "KeyError",
-        "BaseException": "RuntimeError",
+        "BaseException": "StandardError",
         "ZeroDivisionError": "ZeroDivisionError",
         "FileNotFoundError": "Errno::ENOENT",
         "OverflowError": "RangeError",

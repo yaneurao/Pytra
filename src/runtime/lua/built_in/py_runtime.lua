@@ -294,12 +294,35 @@ end
 
 function __pytra_float(v)
     if v == nil then return 0.0 end
+    if type(v) == "boolean" then
+        return v and 1.0 or 0.0
+    end
     return (tonumber(v) or 0.0)
+end
+
+local __pytra_bytearray_mt = {}
+__pytra_bytearray_mt.__index = __pytra_bytearray_mt
+
+function __pytra_bytearray_mt:pop()
+    local n = #self
+    if n == 0 then
+        return nil
+    end
+    local value = self[n]
+    self[n] = nil
+    return value
+end
+
+function __pytra_bytearray_mt:clear()
+    for i = #self, 1, -1 do
+        self[i] = nil
+    end
+    return nil
 end
 
 function __pytra_bytearray(v)
     if v == nil then
-        return {}
+        return setmetatable({}, __pytra_bytearray_mt)
     end
     if type(v) == "number" then
         local n = math.max(0, __pytra_int(v))
@@ -307,16 +330,20 @@ function __pytra_bytearray(v)
         for i = 1, n do
             out[i] = 0
         end
-        return out
+        return setmetatable(out, __pytra_bytearray_mt)
     end
     if type(v) == "table" then
         local out = {}
         for i = 1, #v do
             out[i] = v[i]
         end
-        return out
+        return setmetatable(out, __pytra_bytearray_mt)
     end
-    return {}
+    return setmetatable({}, __pytra_bytearray_mt)
+end
+
+function bytearray(v)
+    return __pytra_bytearray(v)
 end
 
 function __pytra_bytearray_append(self, value)
@@ -421,6 +448,15 @@ function __pytra_list_clear(items)
     end
 end
 
+function __pytra_clear(items)
+    if type(items) ~= "table" then
+        return
+    end
+    for k, _ in pairs(items) do
+        items[k] = nil
+    end
+end
+
 function __pytra_list_extend(items, other)
     if type(other) ~= "table" then
         return
@@ -508,6 +544,10 @@ function __pytra_bytes(v)
         return out
     end
     return {}
+end
+
+function bytes(v)
+    return __pytra_bytes(v)
 end
 
 function __pytra_bytes_alias(v)
@@ -727,6 +767,9 @@ function __pytra_math_module()
     return m
 end
 
+__pytra_pi = math.pi
+__pytra_e = math.exp(1)
+
 function __pytra_path_basename(path)
     if type(path) == "table" and path.path ~= nil then
         path = path.path
@@ -805,8 +848,13 @@ function __pytra_path_mt:exists()
     return false
 end
 
-function __pytra_path_mt:joinpath(part)
-    return __pytra_path_new(__pytra_path_join(self.path, tostring(part)))
+function __pytra_path_mt:joinpath(...)
+    local out = self.path
+    local parts = { ... }
+    for i = 1, #parts do
+        out = __pytra_path_join(out, tostring(parts[i]))
+    end
+    return __pytra_path_new(out)
 end
 
 function __pytra_path_mt:mkdir()
@@ -876,6 +924,28 @@ __pytra_path = {
             path = maybe_path
         end
         return __pytra_path_new(path):exists()
+    end,
+    abspath = function(path, maybe_path)
+        if maybe_path ~= nil then
+            path = maybe_path
+        end
+        local raw = tostring(path)
+        if string.sub(raw, 1, 1) == "/" then
+            return raw
+        end
+        local cwd = io.popen("pwd", "r")
+        if cwd == nil then
+            return raw
+        end
+        local base = cwd:read("*l") or ""
+        cwd:close()
+        if base == "" then
+            return raw
+        end
+        if string.sub(base, -1) == "/" then
+            return base .. raw
+        end
+        return base .. "/" .. raw
     end,
 }
 
@@ -1399,6 +1469,7 @@ time = {
     perf_counter = function() return os.clock() end,
 }
 math = math or {}
+if math.fabs == nil then math.fabs = math.abs end
 math.pi = math.pi
 math.e = 2.718281828459045
 
@@ -1755,7 +1826,7 @@ function __pytra_str_count(s, sub)
 end
 function __pytra_str_index(s, sub)
     local i = s:find(sub, 1, true)
-    if i == nil then error("ValueError: substring not found") end
+    if i == nil then error(ValueError.new("substring not found")) end
     return i - 1
 end
 function __pytra_str_isspace(s)
@@ -1856,6 +1927,13 @@ function __pytra_open(path, mode)
         else
             f:write(tostring(data))
         end
+    end
+    function wrapper:__enter__()
+        return self
+    end
+    function wrapper:__exit__(exc_type, exc_val, exc_tb)
+        self:close()
+        return nil
     end
     function wrapper:close() f:close() end
     function wrapper:read(mode_)

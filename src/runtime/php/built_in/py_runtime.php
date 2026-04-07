@@ -145,6 +145,30 @@ function __pytra_float($v): float {
     return 0.0;
 }
 
+function __pytra_clear(&$v): void {
+    if (is_array($v)) {
+        $v = [];
+        return;
+    }
+    if ($v instanceof __PytraSet) {
+        $v->clear();
+        return;
+    }
+    if ($v instanceof \ArrayObject) {
+        $v->exchangeArray([]);
+    }
+}
+
+function __pytra_setdefault(&$v, $key, $default) {
+    if (!is_array($v)) {
+        return $default;
+    }
+    if (!array_key_exists($key, $v)) {
+        $v[$key] = $default;
+    }
+    return $v[$key];
+}
+
 function py_to_string($v, string $type_hint = ""): string {
     if (is_bool($v)) {
         return $v ? "True" : "False";
@@ -208,6 +232,36 @@ function __pytra_set_argv($items): void {
 function __pytra_set_path($items): void {
     $GLOBALS['__pytra_path'] = is_array($items) ? array_values($items) : [];
 }
+
+function __pytra_sqrt($x) { return __native_sqrt($x); }
+function __pytra_sin($x) { return __native_sin($x); }
+function __pytra_cos($x) { return __native_cos($x); }
+function __pytra_tan($x) { return __native_tan($x); }
+function __pytra_exp($x) { return __native_exp($x); }
+function __pytra_log($x) { return __native_log($x); }
+function __pytra_log10($x) { return __native_log10($x); }
+function __pytra_fabs($x) { return __native_fabs($x); }
+function __pytra_floor($x) { return __native_floor($x); }
+function __pytra_ceil($x) { return __native_ceil($x); }
+function __pytra_pow($x, $y) { return __native_pow($x, $y); }
+function __pytra_abspath($p): string {
+    $path = (string)$p;
+    $resolved = realpath($path);
+    if ($resolved !== false) {
+        return $resolved;
+    }
+    if ($path === '') {
+        return getcwd() ?: '.';
+    }
+    if ($path[0] === '/' || preg_match('/^[A-Za-z]:[\\\\\\/]/', $path) === 1) {
+        return $path;
+    }
+    $cwd = getcwd() ?: '.';
+    return rtrim($cwd, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $path;
+}
+
+const __pytra_pi = M_PI;
+const __pytra_e = M_E;
 
 class __PytraPath {
     public string $path;
@@ -638,7 +692,11 @@ function __pytra_str_rfind($s, $needle): int {
 }
 
 function __pytra_str_index($s, $needle): int {
-    return __pytra_str_find($s, $needle);
+    $pos = __pytra_str_find($s, $needle);
+    if ($pos < 0) {
+        throw new \InvalidArgumentException("substring not found");
+    }
+    return $pos;
 }
 
 function __pytra_str_isalnum($s): bool {
@@ -653,6 +711,13 @@ function __pytra_str_isspace($s): bool {
         return false;
     }
     return preg_match('/^\s+$/', $s) === 1;
+}
+
+function __pytra_str_split($s, $sep) {
+    if (!is_string($s) || !is_string($sep)) {
+        return [];
+    }
+    return explode($sep, $s);
 }
 
 function __pytra_array_is_list_like(array $v): bool {
@@ -795,6 +860,10 @@ function bytes($v = null): array {
     return bytearray($v);
 }
 
+function __pytra_bytes($v = null): array {
+    return bytes($v);
+}
+
 function __pytra_enumerate($items, int $start = 0): array {
     $out = [];
     $i = $start;
@@ -812,6 +881,10 @@ function __pytra_sorted($items) {
     $out = array_values($items);
     sort($out);
     return $out;
+}
+
+function __pytra_py_sorted($items) {
+    return __pytra_sorted($items);
 }
 
 function __pytra_zip(...$iterables): array {
@@ -990,9 +1063,53 @@ function type($value): __PytraTypeInfo {
 
 if (!function_exists('__pytra_write_rgb_png')) {
     function __pytra_write_rgb_png($path, $width, $height, $pixels) {
-        if (function_exists('write_rgb_png')) {
-            return write_rgb_png($path, $width, $height, $pixels);
+        $raw = bytearray();
+        __pytra_list_extend($raw, $pixels);
+        $expected = ((int)$width * (int)$height * 3);
+        if (__pytra_len($raw) !== $expected) {
+            throw new \InvalidArgumentException("pixels length mismatch");
         }
+        $row_bytes = ((int)$width * 3);
+        $scanlines = bytearray();
+        for ($y = 0; $y < (int)$height; $y += 1) {
+            $scanlines[] = 0;
+            $start = ($y * $row_bytes);
+            __pytra_list_extend($scanlines, array_slice($raw, $start, $row_bytes));
+        }
+        $ihdr = pack('NNCCCCC', (int)$width, (int)$height, 8, 2, 0, 0, 0);
+        $idat = pack('C*', 0x78, 0x01);
+        $n = count($scanlines);
+        $pos = 0;
+        while ($pos < $n) {
+            $remain = $n - $pos;
+            $chunk_len = $remain > 65535 ? 65535 : $remain;
+            $final = (($pos + $chunk_len) >= $n) ? 1 : 0;
+            $idat .= pack('C', $final);
+            $idat .= pack('v', $chunk_len);
+            $idat .= pack('v', 0xFFFF ^ $chunk_len);
+            $chunk = array_slice($scanlines, $pos, $chunk_len);
+            $idat .= pack('C*', ...$chunk);
+            $pos += $chunk_len;
+        }
+        $s1 = 1;
+        $s2 = 0;
+        foreach ($scanlines as $b) {
+            $s1 += $b;
+            if ($s1 >= 65521) {
+                $s1 -= 65521;
+            }
+            $s2 = ($s2 + $s1) % 65521;
+        }
+        $adler = (($s2 << 16) | $s1) & 0xFFFFFFFF;
+        $idat .= pack('N', $adler);
+        $png = pack('C*', 137, 80, 78, 71, 13, 10, 26, 10);
+        foreach ([["IHDR", $ihdr], ["IDAT", $idat], ["IEND", ""]] as [$chunk_type, $data]) {
+            $png .= pack('N', strlen($data));
+            $png .= $chunk_type;
+            $png .= $data;
+            $png .= pack('N', crc32($chunk_type . $data) & 0xFFFFFFFF);
+        }
+        file_put_contents((string)$path, $png);
         return null;
     }
 }
@@ -1040,6 +1157,22 @@ class PyFile {
             throw new RuntimeException("write failed");
         }
         return $w;
+    }
+
+    public function read() {
+        $data = stream_get_contents($this->handle);
+        if ($data === false) {
+            throw new RuntimeException("read failed");
+        }
+        return $data;
+    }
+
+    public function __enter__(): PyFile {
+        return $this;
+    }
+
+    public function __exit__($exc_type, $exc_val, $exc_tb): void {
+        $this->close();
     }
 
     public function close(): void {

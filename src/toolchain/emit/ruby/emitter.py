@@ -369,6 +369,8 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     name = _str(node, "id")
     if name == "":
         name = _str(node, "repr")
+    if name == "self" and ctx.current_class != "":
+        return "self"
     if name == "None":
         return "nil"
     if name == "True":
@@ -419,6 +421,11 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 qualified_key = mod_short + "." + runtime_symbol
                 if qualified_key in ctx.mapping.calls:
                     return ctx.mapping.calls[qualified_key]
+            if mod_id in ("sys", "pytra.std.sys"):
+                owner_name = _str(owner_node, "id")
+                if owner_name == "":
+                    owner_name = _emit_expr(ctx, owner_node)
+                return owner_name + "." + _ruby_method_name(attr)
             if _should_skip_module_ruby(mod_id, ctx.mapping):
                 resolved = resolve_runtime_symbol_name(runtime_symbol, ctx.mapping, module_id=mod_id)
                 return resolved
@@ -836,6 +843,24 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 builtin_name = _str(func, "repr")
     if builtin_name == "cast":
         return _emit_cast_call(ctx, node, args)
+    if semantic_tag == "core.bytearray_ctor":
+        if len(args) >= 1:
+            return "__pytra_bytearray(" + _emit_expr(ctx, args[0]) + ")"
+        return "__pytra_bytearray()"
+    if semantic_tag == "core.bytes_ctor":
+        if len(args) >= 1:
+            return "__pytra_bytes(" + _emit_expr(ctx, args[0]) + ")"
+        return "__pytra_bytes()"
+    if semantic_tag == "core.dict_ctor":
+        if len(args) >= 1:
+            return "Hash[(" + _emit_expr(ctx, args[0]) + ")]"
+        return "{}"
+    if semantic_tag == "core.list_ctor":
+        return _emit_list_ctor(ctx, args)
+    if semantic_tag == "core.set_ctor":
+        return _emit_set_ctor(ctx, args)
+    if semantic_tag == "core.tuple_ctor":
+        return _emit_tuple_ctor(ctx, args)
     should_resolve_runtime = call_key != "" or adapter_kind != ""
     if isinstance(func, dict) and _str(func, "kind") == "Attribute":
         owner_node = func.get("value")
@@ -1036,11 +1061,15 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return safe_fn + "(" + ", ".join(fixed_args) + ")"
             fn_type = _str(func, "resolved_type")
             local_type = ctx.var_types.get(safe_fn, "")
+            fn_type_l = fn_type.lower()
+            local_type_l = local_type.lower()
             if (
                 fn_type == "callable"
                 or local_type == "callable"
                 or fn_type.startswith("callable[")
                 or local_type.startswith("callable[")
+                or "callable" in fn_type_l
+                or "callable" in local_type_l
             ) and safe_fn not in ctx.runtime_imports and not _is_function_symbol(ctx, fn_name) and fn_name not in ctx.import_alias_modules and fn_name not in ctx.mapping.calls:
                 return safe_fn + ".call(" + ", ".join(arg_strs4) + ")"
             return safe_fn + "(" + ", ".join(arg_strs4) + ")"
@@ -1055,6 +1084,15 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         arg_strs5.append(_emit_expr(ctx, a))
     if isinstance(func, dict) and _str(func, "kind") == "Lambda":
         return "(" + func_code + ").call(" + ", ".join(arg_strs5) + ")"
+    if isinstance(func, dict):
+        func_rt = _str(func, "resolved_type")
+        if func_rt == "callable" or func_rt.startswith("callable["):
+            return func_code + ".call(" + ", ".join(arg_strs5) + ")"
+        if _str(func, "kind") == "Name":
+            func_name = _str(func, "id")
+            local_type = ctx.var_types.get(_ruby_local_name(ctx, func_name), "")
+            if "callable" in local_type.lower():
+                return func_code + ".call(" + ", ".join(arg_strs5) + ")"
     return func_code + "(" + ", ".join(arg_strs5) + ")"
 
 
@@ -1119,6 +1157,10 @@ def _emit_method_call(
             if qualified_key in ctx.mapping.calls:
                 mapped_mod = ctx.mapping.calls[qualified_key]
                 return mapped_mod + "(" + ", ".join(arg_strs) + ")"
+            if _should_skip_module_ruby(owner_mod, ctx.mapping):
+                resolved = resolve_runtime_symbol_name(attr, ctx.mapping, module_id=owner_mod)
+                if resolved != "":
+                    return resolved + "(" + ", ".join(arg_strs) + ")"
             if not _should_skip_module_ruby(owner_mod, ctx.mapping):
                 return _ruby_method_name(attr) + "(" + ", ".join(arg_strs) + ")"
     mapped = ctx.mapping.calls.get(runtime_key, "")
@@ -1217,7 +1259,7 @@ def _emit_cast_call(ctx: EmitContext, node: dict[str, JsonVal], args: list[JsonV
                           "uint8", "uint16", "uint32", "uint64"):
         return value_code + ".to_i"
     if target_type in ("float", "float64", "float32"):
-        return value_code + ".to_f"
+        return "__pytra_float(" + value_code + ")"
     if target_type == "str":
         return "__pytra_str(" + value_code + ")"
     if target_type == "bool":
