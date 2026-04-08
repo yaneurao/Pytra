@@ -1085,6 +1085,9 @@ class _RsStmtCommonRenderer(CommonRenderer):
         _emit(self.ctx, "let " + safe_rs_ident(exc_name) + " = " + self.ctx.catch_err_msg_var + ".clone();")
         self.ctx.declared_vars.add(exc_name)
 
+    def emit_backend_line(self, text: str) -> None:
+        _emit(self.ctx, text)
+
     def render_user_exception_handler_open(
         self,
         handler: dict[str, JsonVal],
@@ -4970,13 +4973,9 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
 
         # Emit user-defined exception handlers first (if any)
         if len(user_handlers) > 0:
-            for i, handler in enumerate(user_handlers):
-                _emit(ctx, renderer.render_user_exception_handler_open(handler, "__catch_err", i == 0))
-                ctx.indent_level += 1
-                exc_name = renderer.exception_handler_name(handler)
-                ctx.declared_vars.add(exc_name)
-                renderer.emit_exception_handler(handler)
-                ctx.indent_level -= 1
+            renderer.state.indent_level = ctx.indent_level
+            renderer.emit_user_exception_handler_chain("__catch_err", user_handlers)
+            ctx.indent_level = renderer.state.indent_level
             # Remaining string handlers go in else block
             if len(string_handlers) > 0:
                 _emit(ctx, renderer.render_string_exception_handler_else_open())

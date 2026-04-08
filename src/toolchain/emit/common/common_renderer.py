@@ -477,6 +477,17 @@ class CommonRenderer:
         self.state.indent_level -= 1
         self.emit_backend_line(self.render_exception_dispatch_close())
 
+    def emit_user_exception_handler_chain(
+        self,
+        caught_expr: str,
+        handlers: list[dict[str, JsonVal]],
+    ) -> None:
+        for index, handler in enumerate(handlers):
+            self.emit_backend_line(self.render_user_exception_handler_open(handler, caught_expr, index == 0))
+            self.state.indent_level += 1
+            self.emit_exception_handler(handler)
+            self.state.indent_level -= 1
+
     def emit_bare_raise_stmt(self, node: dict[str, JsonVal]) -> None:
         keyword = self._syntax_text("raise", "throw")
         self._emit_stmt_line(keyword)
