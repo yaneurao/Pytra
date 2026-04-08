@@ -542,6 +542,14 @@ class CommonRenderer:
     def render_try_orelse_close(self) -> str:
         return self._syntax_text("block_close", "}")
 
+    def emit_raise_propagation(
+        self,
+        try_label: str,
+        return_stmt: str,
+    ) -> None:
+        del try_label, return_stmt
+        return None
+
     def emit_bare_raise_stmt(self, node: dict[str, JsonVal]) -> None:
         keyword = self._syntax_text("raise", "throw")
         self._emit_stmt_line(keyword)
