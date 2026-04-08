@@ -362,11 +362,32 @@ class CommonRenderer:
             raise RuntimeError("try/except/else is not supported in common renderer")
         body = self._list(node, "body")
         handlers = self._list(node, "handlers")
-        self.emit_try_setup(node)
+        finalbody = self._list(node, "finalbody")
         if len(handlers) == 0:
-            self.emit_body(body)
-            self.emit_try_teardown(node)
+            self.emit_try_no_handler_stmt(node, body, finalbody)
             return
+        self.emit_try_with_handlers_stmt(node, body, handlers, finalbody)
+
+    def emit_try_no_handler_stmt(
+        self,
+        node: dict[str, JsonVal],
+        body: list[JsonVal],
+        finalbody: list[JsonVal],
+    ) -> None:
+        self.emit_try_setup(node)
+        self.emit_body(body)
+        if len(finalbody) > 0:
+            self.emit_body(finalbody)
+        self.emit_try_teardown(node)
+
+    def emit_try_with_handlers_stmt(
+        self,
+        node: dict[str, JsonVal],
+        body: list[JsonVal],
+        handlers: list[JsonVal],
+        finalbody: list[JsonVal],
+    ) -> None:
+        self.emit_try_setup(node)
         self._emit(self._syntax_text("try", "try {"))
         self.state.indent_level += 1
         self.emit_body(body)
@@ -380,6 +401,8 @@ class CommonRenderer:
             self.emit_try_handler_body(raw_handler)
             self.state.indent_level -= 1
             self._emit(self._syntax_text("block_close", "}"))
+        if len(finalbody) > 0:
+            self.emit_body(finalbody)
         self.emit_try_teardown(node)
 
     def _collect_with_hoisted_names(self, body: list[JsonVal]) -> list[dict[str, JsonVal]]:
