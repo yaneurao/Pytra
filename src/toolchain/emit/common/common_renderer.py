@@ -396,6 +396,10 @@ class CommonRenderer:
         del caught_type_expr
         return ""
 
+    def emit_exception_dispatch_state_init(self, handled_name: str) -> None:
+        del handled_name
+        return None
+
     def render_exception_handler_guard_open(
         self,
         handler: dict[str, JsonVal],
@@ -419,6 +423,10 @@ class CommonRenderer:
             else:
                 other_handlers.append(handler)
         return user_handlers, other_handlers
+
+    def emit_exception_handler_mark_handled(self, handled_name: str) -> None:
+        del handled_name
+        return None
 
     def emit_bare_raise_stmt(self, node: dict[str, JsonVal]) -> None:
         keyword = self._syntax_text("raise", "throw")
