@@ -1753,6 +1753,10 @@ impl PyFileWritable for String {
 }
 
 impl PyFile {
+    pub fn __enter__(&mut self) {}
+
+    pub fn __exit__(&mut self, _exc_type: Option<PyAny>, _exc_val: Option<PyAny>, _exc_tb: Option<PyAny>) {}
+
     pub fn write<T: PyFileWritable>(&mut self, data: T) -> i64 {
         data.write_to_file(&mut self.inner)
     }

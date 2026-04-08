@@ -3031,7 +3031,7 @@ def _emit_method_call(
     call_builtin = _str(call_node, "builtin_name")
     if runtime_call != "" and not _typed_collection_obj:
         mapped = resolve_runtime_call(runtime_call, call_builtin, call_adapter_kind, ctx.mapping)
-        if mapped != "" and not mapped.startswith("__"):
+        if mapped != "" and not mapped.startswith("__") and mapped != safe_rs_ident(method):
             obj_str = _emit_expr(ctx, obj)
             method_sig = _lookup_method_sig(ctx, obj_actual_type, method)
             if method_sig is None:
@@ -5634,7 +5634,34 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         else:
             _emit(ctx, "let mut " + rs_name + " = Default::default();")
 
-    ctx_entries: list[tuple[str, str, str]] = []
+    def _with_protocol_call(
+        target_name: str,
+        target_type: str,
+        method: str,
+        runtime_call: str,
+        runtime_symbol: str,
+        resolved_type: str,
+        args: list[dict[str, JsonVal]] | None = None,
+    ) -> str:
+        call_node: dict[str, JsonVal] = {
+            "kind": "Call",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": target_name, "resolved_type": target_type},
+                "attr": method,
+                "resolved_type": "callable",
+            },
+            "args": args or [],
+            "keywords": [],
+            "resolved_type": resolved_type,
+        }
+        if runtime_call != "":
+            call_node["runtime_call"] = runtime_call
+            call_node["resolved_runtime_call"] = runtime_call
+            call_node["runtime_symbol"] = runtime_symbol
+        return _emit_expr(ctx, call_node)
+
+    ctx_entries: list[tuple[str, str, str, str, str, str]] = []
     for item in items:
         if not isinstance(item, dict):
             continue
@@ -5656,6 +5683,8 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         if var_name == "":
             var_name = _str(item, "var_name")
         var_rs = _rs_var_name(ctx, var_name) if var_name != "" else ""
+        enter_target_name = var_name if var_name != "" else ctx_tmp
+        enter_target_type = _str(item, "with_enter_type") or ctx_rt
         if var_name != "":
             if var_name not in ctx.declared_vars:
                 ctx.declared_vars.add(var_name)
@@ -5670,18 +5699,49 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                     _emit(ctx, var_rs + " = " + ctx_tmp + ".clone();")
                 else:
                     _emit(ctx, var_rs + " = " + ctx_tmp + ";")
+        enter_runtime_call = _str(item, "with_enter_runtime_call")
+        if enter_runtime_call != "":
+            _emit(ctx, _with_protocol_call(
+                enter_target_name,
+                enter_target_type,
+                "__enter__",
+                enter_runtime_call,
+                _str(item, "with_enter_runtime_symbol"),
+                enter_target_type,
+            ) + ";")
         if ctx_rs.startswith("Rc<RefCell<"):
             _emit(ctx, ctx_tmp + ".borrow_mut().__enter__();")
-        ctx_entries.append((ctx_tmp, var_rs, ctx_rs))
+        ctx_entries.append((
+            ctx_tmp,
+            var_rs,
+            ctx_rs,
+            enter_target_type,
+            _str(item, "with_exit_runtime_call"),
+            _str(item, "with_exit_runtime_symbol"),
+        ))
 
     _emit(ctx, "let __with_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {")
     ctx.indent_level += 1
     _emit_body(ctx, body)
     ctx.indent_level -= 1
     _emit(ctx, "}));")
-    for ctx_tmp, var_rs, ctx_rs in reversed(ctx_entries):
+    for ctx_tmp, var_rs, ctx_rs, target_type, exit_runtime_call, exit_runtime_symbol in reversed(ctx_entries):
         target = var_rs if var_rs != "" else ctx_tmp
-        if ctx_rs.startswith("Rc<RefCell<"):
+        if exit_runtime_call != "":
+            _emit(ctx, _with_protocol_call(
+                target,
+                target_type,
+                "__exit__",
+                exit_runtime_call,
+                exit_runtime_symbol,
+                "None",
+                [
+                    {"kind": "Constant", "value": None, "resolved_type": "None"},
+                    {"kind": "Constant", "value": None, "resolved_type": "None"},
+                    {"kind": "Constant", "value": None, "resolved_type": "None"},
+                ],
+            ) + ";")
+        elif ctx_rs.startswith("Rc<RefCell<"):
             _emit(ctx, target + ".borrow_mut().__exit__(PyAny::None, PyAny::None, PyAny::None);")
         else:
             _emit(ctx, target + ".close();")
