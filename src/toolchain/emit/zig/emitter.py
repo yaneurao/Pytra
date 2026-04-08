@@ -285,17 +285,11 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.state.indent_level = self.owner.indent
 
     def is_catch_all_exception_handler(self, handler: dict[str, Any]) -> bool:
-        type_node = handler.get("type")
-        if not isinstance(type_node, dict):
-            return False
-        type_name = _safe_ident(type_node.get("id"), "")
+        type_name = _safe_ident(self.exception_handler_type_name(handler), "")
         return type_name in self.owner._catch_all_exception_types
 
     def iter_exception_match_type_names(self, handler: dict[str, Any]) -> list[str]:
-        type_node = handler.get("type")
-        if not isinstance(type_node, dict):
-            return []
-        type_name = _safe_ident(type_node.get("id"), "")
+        type_name = _safe_ident(self.exception_handler_type_name(handler), "")
         if type_name == "":
             return []
         out: list[str] = [type_name]
@@ -1921,10 +1915,7 @@ class ZigNativeEmitter:
             for h in handlers:
                 if not isinstance(h, dict):
                     continue
-                type_node = h.get("type")
-                type_name = ""
-                if isinstance(type_node, dict):
-                    type_name = _safe_ident(type_node.get("id"), "")
+                type_name = _safe_ident(renderer.exception_handler_type_name(h), "")
                 cond = "true"
                 if renderer.is_catch_all_exception_handler(h):
                     cond = "true"

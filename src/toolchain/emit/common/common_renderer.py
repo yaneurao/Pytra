@@ -344,6 +344,12 @@ class CommonRenderer:
     def exception_handler_body(self, handler: dict[str, JsonVal]) -> list[JsonVal]:
         return self._list(handler, "body")
 
+    def exception_handler_type_name(self, handler: dict[str, JsonVal]) -> str:
+        type_node = handler.get("type")
+        if isinstance(type_node, dict):
+            return self._str(type_node, "id")
+        return ""
+
     def partition_exception_handlers(
         self,
         handlers: list[JsonVal],

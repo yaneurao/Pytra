@@ -1061,7 +1061,7 @@ class _RsStmtCommonRenderer(CommonRenderer):
         type_node = handler.get("type")
         if not isinstance(type_node, dict):
             return False
-        handler_type_id = self._str(type_node, "id")
+        handler_type_id = self.exception_handler_type_name(handler)
         handler_runtime_mod = self._str(type_node, "runtime_module_id")
         return handler_runtime_mod == "" and handler_type_id in self.ctx.class_names
 
@@ -4902,8 +4902,7 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         # Emit user-defined exception handlers first (if any)
         if len(user_handlers) > 0:
             for i, handler in enumerate(user_handlers):
-                type_node = handler.get("type")
-                handler_type_id = _str(type_node, "id") if isinstance(type_node, dict) else ""
+                handler_type_id = renderer.exception_handler_type_name(handler)
                 exc_name = renderer.exception_handler_name(handler)
                 handler_body = renderer.exception_handler_body(handler)
                 rs_type = safe_rs_ident(handler_type_id)
