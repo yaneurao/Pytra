@@ -384,6 +384,10 @@ class CommonRenderer:
         del caught_expr, target_name
         return None
 
+    def render_try_success_arm(self, ok_binding: str, returns_value: bool) -> str:
+        del ok_binding, returns_value
+        raise RuntimeError("common renderer requires try success arm override for " + self.language)
+
     def partition_exception_handlers(
         self,
         handlers: list[JsonVal],

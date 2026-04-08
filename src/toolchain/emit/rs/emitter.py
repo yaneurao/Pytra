@@ -1109,6 +1109,11 @@ class _RsStmtCommonRenderer(CommonRenderer):
             + ".downcast_ref::<&str>() { __s.to_string() } else { \"exception\".to_string() };",
         )
 
+    def render_try_success_arm(self, ok_binding: str, returns_value: bool) -> str:
+        if returns_value:
+            return "Ok(" + ok_binding + ") => { return " + ok_binding + "; }"
+        return "Ok(_) => {}"
+
     def is_user_exception_handler(self, handler: dict[str, JsonVal]) -> bool:
         type_node = handler.get("type")
         if not isinstance(type_node, dict):
@@ -4868,6 +4873,7 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     body = _list(node, "body")
     handlers = _list(node, "handlers")
     finalbody = _list(node, "finalbody")
+    renderer = _RsStmtCommonRenderer(ctx)
 
     for stmt in body:
         if not isinstance(stmt, dict):
@@ -4922,7 +4928,7 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         if body_has_ret:
             _emit(ctx, "match __try_result {")
             ctx.indent_level += 1
-            _emit(ctx, "Ok(__try_ok) => { return __try_ok; }")
+            _emit(ctx, renderer.render_try_success_arm("__try_ok", True))
             _emit(ctx, "Err(__try_err) => { std::panic::resume_unwind(__try_err); }")
             ctx.indent_level -= 1
             _emit(ctx, "}")
@@ -4930,7 +4936,6 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, "if let Err(__try_err) = __try_result { std::panic::resume_unwind(__try_err); };")
     else:
         # Catch and dispatch to handlers
-        renderer = _RsStmtCommonRenderer(ctx)
         _emit(ctx, "let __try_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {")
         ctx.indent_level += 1
         _emit_body(ctx, body)
@@ -4940,10 +4945,7 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         body_has_ret = _body_has_return(body) and ctx.current_return_type not in ("", "None")
         _emit(ctx, "match __try_result {")
         ctx.indent_level += 1
-        if body_has_ret:
-            _emit(ctx, "Ok(__try_ok) => { return __try_ok; }")
-        else:
-            _emit(ctx, "Ok(_) => {}")
+        _emit(ctx, renderer.render_try_success_arm("__try_ok", body_has_ret))
         _emit(ctx, "Err(ref __catch_err) => {")
         ctx.indent_level += 1
         old_catch_var = ctx.catch_err_msg_var
