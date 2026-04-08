@@ -80,21 +80,16 @@ def _replace_yield_with_append(node: JsonVal, acc: str, list_type: str) -> JsonV
             value_node["value"] = None
             value_node["resolved_type"] = "None"
             value = value_node
-        recv: Node = {}
-        recv["kind"] = NAME
-        recv["id"] = acc
-        recv["resolved_type"] = list_type
-        func_attr: Node = {}
-        func_attr["kind"] = ATTRIBUTE
-        func_attr["value"] = recv
-        func_attr["attr"] = "append"
-        call_args: list[JsonVal] = []
-        call_args.append(value)
-        call_node: Node = {}
-        call_node["kind"] = CALL
-        call_node["func"] = func_attr
-        call_node["args"] = call_args
-        call_node["resolved_type"] = "None"
+        call_args: list[Node] = []
+        if isinstance(value, dict):
+            call_args.append(cast(dict[str, JsonVal], value))
+        call_node = _make_container_method_call(
+            acc,
+            list_type,
+            "append",
+            args=call_args,
+            result_type="None",
+        )
         ac: Node = {}
         ac["kind"] = EXPR
         ac["value"] = call_node
@@ -292,22 +287,16 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
     if not isinstance(generators, list):
         generators = []
     generator_list: list[JsonVal] = cast(list[JsonVal], generators)
-    recv: Node = {}
-    recv["kind"] = NAME
-    recv["id"] = result_name
-    recv["resolved_type"] = rt
-    append_func: Node = {}
-    append_func["kind"] = ATTRIBUTE
-    append_func["value"] = recv
-    append_func["attr"] = "append"
-    append_args: list[JsonVal] = []
+    append_args: list[Node] = []
     if append_arg is not None:
-        append_args.append(append_arg)
-    append_call: Node = {}
-    append_call["kind"] = CALL
-    append_call["func"] = append_func
-    append_call["args"] = append_args
-    append_call["resolved_type"] = "None"
+        append_args.append(cast(dict[str, JsonVal], append_arg))
+    append_call = _make_container_method_call(
+        result_name,
+        rt,
+        "append",
+        args=append_args,
+        result_type="None",
+    )
     append_stmt: Node = {}
     append_stmt["kind"] = EXPR
     append_stmt["value"] = append_call
@@ -3934,6 +3923,56 @@ def _make_none_const() -> Node:
     out["value"] = None
     out["resolved_type"] = "None"
     return out
+
+
+def _make_container_method_call(
+    owner_name: str,
+    owner_type: str,
+    attr: str,
+    *,
+    args: list[Node],
+    result_type: str,
+) -> Node:
+    attr_node: Node = {}
+    attr_node["kind"] = ATTRIBUTE
+    attr_node["value"] = _make_name_ref(owner_name, owner_type)
+    attr_node["attr"] = attr
+    attr_node["resolved_type"] = "callable"
+
+    call_node: Node = {}
+    call_node["kind"] = CALL
+    call_node["func"] = attr_node
+    call_node["args"] = args
+    call_node["keywords"] = []
+    call_node["resolved_type"] = result_type
+    call_node["lowered_kind"] = "BuiltinCall"
+
+    owner_base = owner_type
+    if owner_base.startswith("list["):
+        owner_base = "list"
+    elif owner_base.startswith("dict["):
+        owner_base = "dict"
+    elif owner_base.startswith("set["):
+        owner_base = "set"
+
+    runtime_call = owner_base + "." + attr if owner_base != "" else attr
+    call_node["runtime_call"] = runtime_call
+    call_node["runtime_symbol"] = runtime_call
+    call_node["runtime_call_adapter_kind"] = "builtin"
+    if owner_base == "list":
+        call_node["runtime_module_id"] = "pytra.core.list"
+    elif owner_base == "dict":
+        call_node["runtime_module_id"] = "pytra.core.dict"
+    elif owner_base == "set":
+        call_node["runtime_module_id"] = "pytra.core.set"
+    call_node["semantic_tag"] = "stdlib.method." + attr
+    call_node["runtime_owner"] = deep_copy_json(attr_node["value"])
+
+    if attr in ("append", "extend", "insert", "remove", "pop", "clear", "update", "add", "discard", "setdefault", "sort", "reverse"):
+        meta: Node = {}
+        meta["mutates_receiver"] = True
+        call_node["meta"] = meta
+    return call_node
 
 
 def _make_with_method_call(

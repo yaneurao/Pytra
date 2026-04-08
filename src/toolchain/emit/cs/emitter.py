@@ -18,7 +18,7 @@ from toolchain.emit.common.code_emitter import (
 from toolchain.emit.common.common_renderer import CommonRenderer
 from toolchain.emit.common.profile_loader import load_profile_doc
 from toolchain.emit.cs.types import (
-    _safe_cs_ident, cs_type, cs_zero_value,
+    _safe_cs_ident, _split_generic_args, cs_type, cs_zero_value,
     CS_PATH_MEMBER_NAMES, CS_EXCEPTION_BASE_NAME,
     PYTRA_STD_MODULE_PREFIX, PYTRA_BUILTIN_MODULE_PREFIX,
     is_cs_exception_type, is_cs_path_type, is_pytra_type_id_name,
@@ -205,6 +205,9 @@ def _build_cs_runtime_import_map(meta: dict[str, JsonVal], mapping: RuntimeMappi
             continue
         local_name = binding.get("local_name")
         if not isinstance(local_name, str) or local_name == "":
+            continue
+        mapped_type = mapping.types.get(local_name)
+        if isinstance(mapped_type, str) and mapped_type != "":
             continue
         if binding.get("resolved_binding_kind") == "module":
             continue
@@ -509,9 +512,20 @@ def _render_list_literal(ctx: EmitContext, node: dict[str, JsonVal], *, preferre
         if not (rt.startswith("list[") or rt == "list"):
             rt = node_rt
     out_type = "List<object>"
+    elem_preferred_type = ""
     if rt != "":
         out_type = _render_type(ctx, rt)
-    rendered = [_emit_expr(ctx, elem) for elem in elems]
+        if rt.startswith("list[") and rt.endswith("]"):
+            inner = rt[5:-1]
+            parts = _split_generic_args(inner)
+            if len(parts) == 1:
+                elem_preferred_type = parts[0]
+    rendered = [
+        _render_expr_with_preferred_type(ctx, elem, preferred_type=elem_preferred_type)
+        if elem_preferred_type != "" and isinstance(elem, dict)
+        else _emit_expr(ctx, elem)
+        for elem in elems
+    ]
     if len(rendered) == 0:
         return "new " + out_type + "()"
     return "new " + out_type + " { " + ", ".join(rendered) + " }"
@@ -525,9 +539,20 @@ def _render_set_literal(ctx: EmitContext, node: dict[str, JsonVal], *, preferred
         if not (rt.startswith("set[") or rt == "set"):
             rt = node_rt
     out_type = "HashSet<object>"
+    elem_preferred_type = ""
     if rt != "":
         out_type = _render_type(ctx, rt)
-    rendered = [_emit_expr(ctx, elem) for elem in elems]
+        if rt.startswith("set[") and rt.endswith("]"):
+            inner = rt[4:-1]
+            parts = _split_generic_args(inner)
+            if len(parts) == 1:
+                elem_preferred_type = parts[0]
+    rendered = [
+        _render_expr_with_preferred_type(ctx, elem, preferred_type=elem_preferred_type)
+        if elem_preferred_type != "" and isinstance(elem, dict)
+        else _emit_expr(ctx, elem)
+        for elem in elems
+    ]
     if out_type.startswith("HashSet<") and out_type.endswith("[]>"):
         elem_type = out_type[len("HashSet<"):-3]
         if len(rendered) == 0:
@@ -795,6 +820,14 @@ def _render_expr_with_preferred_type(ctx: EmitContext, node: JsonVal, preferred_
         return _render_set_literal(ctx, node, preferred_type=preferred_type)
     if kind == "Dict":
         return _render_dict_literal(ctx, node, preferred_type=preferred_type)
+    if kind == "Call" and preferred_type != "":
+        func = node.get("func")
+        if isinstance(func, dict) and _str(func, "kind") == "Name":
+            func_name = _str(func, "id")
+            if func_name in ("list", "dict", "set", "bytes", "bytearray", "tuple"):
+                cloned = dict(node)
+                cloned["resolved_type"] = preferred_type
+                return _emit_expr(ctx, cloned)
     return _emit_expr(ctx, node)
 
 
@@ -823,6 +856,8 @@ def _container_method_call(
             if len(args) >= 1:
                 return "py_runtime.py_pop(" + owner_expr + ", " + args[0] + ")"
             return "py_runtime.py_pop(" + owner_expr + ")"
+        if list_marker == "py_runtime.clear":
+            return "py_runtime.clear(" + owner_expr + ")"
     if owner_type.startswith("dict["):
         if dict_marker == "py_runtime.get" and len(args) >= 1:
             default_expr = args[1] if len(args) > 1 else "null"
@@ -876,6 +911,10 @@ def _container_method_call(
 def _emit_builtin_ctor(ctx: EmitContext, func_name: str, node: dict[str, JsonVal], args: list[str]) -> str:
     resolved_ctor_type = _str(node, "resolved_type")
     target_type = _render_type(ctx, resolved_ctor_type if resolved_ctor_type != "" else func_name)
+    if func_name == "bool":
+        if len(args) == 0:
+            return "false"
+        return "py_runtime.py_bool(" + args[0] + ")"
     if func_name == "bytearray":
         if len(args) == 0:
             return "new List<byte>()"
@@ -916,6 +955,15 @@ def _render_cast_expr(ctx: EmitContext, node: dict[str, JsonVal], args: list[str
     target_type = _render_type(ctx, _str(node, "resolved_type"))
     if len(args) == 0:
         return ""
+    if target_type == "bool":
+        return "py_runtime.py_bool(" + args[-1] + ")"
+    raw_args = _list(node, "args")
+    if len(args) == 1 and len(raw_args) >= 1 and isinstance(raw_args[0], dict):
+        src_type = _str(raw_args[0], "resolved_type")
+        if src_type == "bool" and target_type in ("double", "float"):
+            true_lit = "1.0" if target_type == "double" else "1.0f"
+            false_lit = "0.0" if target_type == "double" else "0.0f"
+            return "(" + args[0] + " ? " + true_lit + " : " + false_lit + ")"
     if len(args) == 1:
         return "((" + target_type + ")(" + args[0] + "))"
     return "((" + target_type + ")(" + args[-1] + "))"
@@ -1007,8 +1055,9 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     module_id = ctx.import_alias_modules.get(_str(owner_node, "id"), "")
             if attr_name == "cast":
                 return _render_cast_expr(ctx, node, args)
-            if is_cs_path_type(attr_name):
-                return "new " + _module_class_name(module_id) + ".Path(" + ", ".join(call_parts) + ")"
+            mapped_ctor_type = ctx.mapping.types.get(attr_name, "")
+            if isinstance(mapped_ctor_type, str) and mapped_ctor_type != "":
+                return "new " + _render_type(ctx, attr_name) + "(" + ", ".join(call_parts) + ")"
             resolved_module_call = _resolve_runtime_module_member(ctx.mapping, module_id, attr_name)
             if resolved_module_call != "":
                 if resolved_module_call == "__CAST__":
@@ -1023,16 +1072,21 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         func_name = _str(func, "id")
         if func_name == "cast":
             return _render_cast_expr(ctx, node, args)
+        if func_name in ("bool", "bytearray", "bytes", "list", "dict", "set", "tuple"):
+            return _emit_builtin_ctor(ctx, func_name, node, call_parts)
         if func_name in ctx.runtime_imports and "." in ctx.runtime_imports[func_name]:
             return _maybe_cast_dynamic_call(ctx, node, ctx.runtime_imports[func_name] + "(" + ", ".join(call_parts) + ")")
         if func_name == "str":
             if len(args) == 0:
                 return "\"\""
             return "py_runtime.py_to_string(" + args[0] + ")"
-        if is_cs_path_type(func_name) and func_name in ctx.import_alias_modules:
-            module_id = ctx.import_alias_modules.get(func_name, "")
-            if module_id != "" and not should_skip_module(module_id, ctx.mapping):
-                return "new " + _module_class_name(module_id) + "." + _safe_name(ctx, func_name) + "(" + ", ".join(call_parts) + ")"
+        mapped_ctor_type = ctx.mapping.types.get(func_name, "")
+        if isinstance(mapped_ctor_type, str) and mapped_ctor_type != "" and (
+            _str(node, "resolved_type") == func_name
+            or _str(func, "resolved_type") == "type"
+            or func_name in ctx.import_alias_modules
+        ):
+            return "new " + _render_type(ctx, func_name) + "(" + ", ".join(call_parts) + ")"
         if _str(func, "resolved_type") == "type":
             if func_name in ctx.import_alias_modules:
                 module_id = ctx.import_alias_modules.get(func_name, "")
@@ -1042,6 +1096,9 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if func_name in ctx.import_alias_modules:
             module_id = ctx.import_alias_modules.get(func_name, "")
             if module_id != "" and not should_skip_module(module_id, ctx.mapping):
+                mapped_ctor_type = ctx.mapping.types.get(func_name, "")
+                if isinstance(mapped_ctor_type, str) and mapped_ctor_type != "":
+                    return "new " + _render_type(ctx, func_name) + "(" + ", ".join(call_parts) + ")"
                 return _module_class_name(module_id) + "." + _safe_name(ctx, func_name) + "(" + ", ".join(call_parts) + ")"
         if owner_expr != "":
             owner_call = _container_method_call(ctx, owner_expr, owner_type, func_name, args)
@@ -1072,7 +1129,14 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             qualified = _module_class_name(ctx.module_id) + "." + _safe_name(ctx, _str(func, "id"))
             return _maybe_cast_dynamic_call(ctx, node, qualified + "(" + ", ".join(call_parts) + ")")
         return _maybe_cast_dynamic_call(ctx, node, _safe_name(ctx, _str(func, "id")) + "(" + ", ".join(call_parts) + ")")
-    return _maybe_cast_dynamic_call(ctx, node, _emit_expr(ctx, func) + "(" + ", ".join(call_parts) + ")")
+    fallback_callee = _emit_expr(ctx, func)
+    ctor_type = _str(node, "resolved_type")
+    mapped_ctor_type = ctx.mapping.types.get(ctor_type, "")
+    if isinstance(mapped_ctor_type, str) and mapped_ctor_type != "":
+        rendered_ctor_type = _render_type(ctx, ctor_type)
+        if fallback_callee == rendered_ctor_type or fallback_callee == _safe_name(ctx, ctor_type):
+            return "new " + rendered_ctor_type + "(" + ", ".join(call_parts) + ")"
+    return _maybe_cast_dynamic_call(ctx, node, fallback_callee + "(" + ", ".join(call_parts) + ")")
 
 
 def _emit_condition_expr(ctx: EmitContext, node: JsonVal, *, wrap: bool = True) -> str:

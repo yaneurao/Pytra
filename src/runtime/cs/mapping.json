@@ -51,6 +51,7 @@
     "str.isalnum": "py_runtime.isalnum",
     "str.isalpha": "py_runtime.py_isalpha",
     "str.isdigit": "py_runtime.py_isdigit",
+    "str.isspace": "py_runtime.isspace",
     "str.index": "py_runtime.index",
     "str.join": "py_runtime.join",
     "str.count": "py_runtime.count",

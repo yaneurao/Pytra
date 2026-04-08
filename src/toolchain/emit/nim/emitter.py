@@ -119,6 +119,14 @@ def _mapped_target_type(ctx: EmitContext, type_name: str) -> str:
     return ctx.mapping.types.get(type_name, type_name)
 
 
+def _is_nim_byte_seq_type(ctx: "EmitContext", type_name: str) -> bool:
+    if type_name in ("bytes", "bytearray"):
+        return True
+    mapped_bytes = _mapped_target_type(ctx, "bytes")
+    mapped_bytearray = _mapped_target_type(ctx, "bytearray")
+    return type_name == mapped_bytes or type_name == mapped_bytearray
+
+
 def _native_module_name(ctx: EmitContext, module_name: str) -> str:
     native_module = ctx.mapping.module_native_files.get(module_name, "")
     if native_module != "":
@@ -249,6 +257,9 @@ def _get_negative_int_literal(node: dict[str, JsonVal]) -> int | None:
 
 
 def _render_type(ctx: EmitContext, resolved_type: str, *, for_return: bool = False) -> str:
+    mapped_type = _mapped_target_type(ctx, resolved_type)
+    if mapped_type != resolved_type:
+        return mapped_type
     if resolved_type in ctx.class_names:
         return _nim_name(ctx, resolved_type)
     if resolved_type in ctx.trait_names:
@@ -1442,6 +1453,10 @@ def _resolve_runtime_call_name(ctx: EmitContext, node: dict[str, JsonVal]) -> st
         resolved_rc = _str(node, "resolved_runtime_call")
         if resolved_rc != "":
             runtime_call = resolved_rc
+    if runtime_call == "" and builtin_name == "":
+        runtime_symbol = _str(node, "runtime_symbol")
+        if runtime_symbol != "":
+            runtime_call = runtime_symbol
     resolved = resolve_runtime_call(runtime_call, builtin_name, adapter_kind, ctx.mapping)
     return resolved
 
@@ -1536,6 +1551,26 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     semantic_tag = _str(node, "semantic_tag")
     if semantic_tag == "builtin.isinstance" or runtime_name == "py_isinstance":
         return _emit_isinstance(ctx, node, args)
+
+    func_node = node.get("func")
+    if (
+        isinstance(func_node, dict)
+        and _str(func_node, "kind") == "Attribute"
+        and runtime_name in (
+            "__LIST_APPEND__",
+            "__LIST_POP__",
+            "__LIST_CLEAR__",
+            "__LIST_INDEX__",
+            "__DICT_GET__",
+            "__DICT_ITEMS__",
+            "__DICT_KEYS__",
+            "__DICT_VALUES__",
+            "__SET_ADD__",
+            "__SET_DISCARD__",
+            "__SET_REMOVE__",
+        )
+    ):
+        return _emit_method_call(ctx, node, runtime_name, args)
 
     # Special markers from mapping
     if runtime_name == "__CAST__":
@@ -1972,14 +2007,14 @@ def _emit_method_call(ctx: EmitContext, node: dict[str, JsonVal], runtime_name: 
         return runtime_name + "(" + owner_code + ", " + ", ".join(arg_strs) + ")" if len(arg_strs) > 0 else runtime_name + "(" + owner_code + ")"
 
     # list methods
-    if owner_rt.startswith("list[") or owner_rt in ("list", "bytes", "bytearray"):
+    if owner_rt.startswith("list[") or owner_rt == "list" or _is_nim_byte_seq_type(ctx, owner_rt):
         if runtime_name == "__LIST_CLEAR__" or method_tag == "stdlib.method.clear":
             return owner_code + ".setLen(0)"
         if runtime_name == "__LIST_POP__" or method_tag == "stdlib.method.pop":
             if len(arg_strs) == 0:
                 return "py_runtime.pop(" + owner_code + ")"
             return "py_runtime.pop(" + owner_code + ", " + ", ".join(arg_strs) + ")"
-        if owner_rt in ("bytes", "bytearray"):
+        if _is_nim_byte_seq_type(ctx, owner_rt):
             if (runtime_name == "__LIST_APPEND__" or method_tag == "stdlib.method.append") and len(arg_strs) == 1:
                 return owner_code + ".add(uint8(" + arg_strs[0] + "))"
             if (runtime_name == "py_extend" or method_tag == "stdlib.method.extend") and len(arg_strs) == 1:

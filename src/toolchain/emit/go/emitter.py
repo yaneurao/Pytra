@@ -992,6 +992,9 @@ def _go_signature_type(ctx: EmitContext, resolved_type: str) -> str:
 def _go_type_with_ctx(ctx: EmitContext, resolved_type: str) -> str:
     if resolved_type == "" or resolved_type == "unknown":
         return "any"
+    mapped_type = ctx.mapping.types.get(resolved_type, "")
+    if isinstance(mapped_type, str) and mapped_type != "":
+        return mapped_type
     if (
         len(resolved_type) == 1
         and resolved_type[:1].isupper()
@@ -2111,7 +2114,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                         + ")"
                     )
             # Module function call: math.sqrt → py_sqrt, png.write_rgb_png → write_rgb_png
-            owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+            owner_rt = _effective_resolved_type(ctx, owner_node) if isinstance(owner_node, dict) else ""
             owner_id = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
             method_sig = ctx.method_signatures.get(owner_rt, {}).get(attr)
             if method_sig is None:
@@ -2789,7 +2792,7 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 call_args = args[1:]
             owner = _emit_expr(ctx, owner_node)
             owner = _wrapper_container_storage_expr(ctx, owner_node, owner)
-            owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+            owner_rt = _effective_resolved_type(ctx, owner_node) if isinstance(owner_node, dict) else ""
             call_arg_strs = arg_strs[1:] if _str(func, "kind") == "Name" and len(arg_strs) >= 2 else arg_strs
             if len(call_arg_strs) >= 1:
                 arg_code = call_arg_strs[0]
@@ -2980,8 +2983,8 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     # abs / min / max / sum
     if bn == "abs" and len(arg_strs) >= 1:
         return "py_abs(" + arg_strs[0] + ")"
-    if bn == "min" or bn == "max":
-        fn_base = "py_min" if bn == "min" else "py_max"
+    if bn in ("min", "max") or dispatch in ("py_min", "py_max"):
+        fn_base = "py_min" if bn == "min" or dispatch == "py_min" else "py_max"
         rt_node = _str(node, "resolved_type")
         # Infer float if any arg is float
         is_float = rt_node in ("float64", "float32")
@@ -6213,7 +6216,16 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
         if isinstance(stmt, dict) and _str(stmt, "kind") == "FunctionDef":
             mutated_arg = _detect_bytearray_mutating_first_arg(stmt)
             if mutated_arg != "":
-                ctx.bytearray_mutating_funcs[_str(stmt, "name")] = mutated_arg
+                fn_names = {
+                    _str(stmt, "name"),
+                    _str(stmt, "original_name"),
+                }
+                for fn_name in list(fn_names):
+                    if isinstance(fn_name, str) and fn_name != "":
+                        fn_names.add(_go_symbol_name(ctx, fn_name))
+                for fn_name in fn_names:
+                    if isinstance(fn_name, str) and fn_name != "":
+                        ctx.bytearray_mutating_funcs[fn_name] = mutated_arg
 
     # Derive constructor signatures for dataclasses without explicit __init__
     for stmt in body:
