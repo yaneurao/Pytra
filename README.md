@@ -137,11 +137,15 @@ Legend: ✅ = Good / 🔶 = Partial / limited / ❌ = Not supported / difficult
 
 ## Changelog
 
-> **2026-04-04** — Added 23 Python method name hardcode patterns to lint. All-skip parity now FAIL (fixes false PASS for Kotlin/Scala/PS1). pytra-cli default output → work/tmp/. Lint always 10 categories. callable_optional_none fixture. Emitter guide §12.6 callable mapping + §14.1 lint docs. mapping.json FQCN key plan. Zig fixture 146/146 PASS. Julia 145/146.
+> **2026-04-07** — Lint down to 149 / 14 languages at 10/10 PASS (697→149). PyFile abolished, IOBase hierarchy in `built_in/io.py`. Emitter guide §12.7. Cross-language PyFile coupling removal. Go/Rust/C#/PHP/Ruby/Lua emitter guide alignment.
 
-> **2026-04-03** — Unified emitter call structure (17 languages). `resolved_type: "object"` banned. IsInstance PYTRA_TID_* removed. `--opt-level` rename. Opaque type spec. `builtin_name` removed. `tools/unregistered/` deleted.
+> **2026-04-06** — With statement via `__enter__`/`__exit__` protocol (CommonRenderer try/finally + hoist). 2 with fixtures added. Parity FAIL keeps work dir. TS/JS shim cleanup complete. Dart emitter guide compliance. JVM major progress (Scala/Kotlin emitters). .east* removed from git.
 
-> **2026-04-02** — C++ monostate → `optional<variant>`. Bounds check → EAST optimizer (mandelbrot 12.8s → 0.82s). png.py/gif.py extend optimization. Emitter guide §12.4-12.6.
+> **2026-04-05** — containers.py `mut[T]` annotations for `meta.mutates_receiver`. C++ method name hardcode removed. mapping.json FQCN key unification. Toolchain rename complete.
+
+> **2026-04-04** — 23 Python method name hardcode patterns in lint. All-skip parity now FAIL. callable_optional_none fixture. Emitter guide §12.6 callable mapping + §14.1 lint docs.
+
+[Full changelog](docs/en/changelog.md)
 
 ## License
 
