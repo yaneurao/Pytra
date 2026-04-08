@@ -332,6 +332,11 @@ class CommonRenderer:
         del handler
         return None
 
+    def emit_exception_handler(self, handler: dict[str, JsonVal]) -> None:
+        self.emit_exception_handler_prelude(handler)
+        self.emit_try_handler_body(handler)
+        self.emit_exception_handler_teardown(handler)
+
     def is_user_exception_handler(self, handler: dict[str, JsonVal]) -> bool:
         return False
 

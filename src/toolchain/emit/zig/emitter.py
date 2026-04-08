@@ -284,6 +284,11 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.owner._emit_try_stmt(node)
         self.state.indent_level = self.owner.indent
 
+    def emit_exception_handler(self, handler: dict[str, Any]) -> None:
+        self.state.indent_level = self.owner.indent
+        super().emit_exception_handler(handler)
+        self.owner.indent = self.state.indent_level
+
     def is_catch_all_exception_handler(self, handler: dict[str, Any]) -> bool:
         type_name = _safe_ident(self.exception_handler_type_name(handler), "")
         return type_name in self.owner._catch_all_exception_types
@@ -1960,11 +1965,8 @@ class ZigNativeEmitter:
                 cond = renderer.render_exception_match_condition(h, "__pytra_exc_type")
                 self._emit_line("if (!" + handled + " and (" + cond + ")) {")
                 self.indent += 1
-                renderer.emit_exception_handler_prelude(h)
                 self._emit_line(handled + " = true;")
-                for sub in renderer.exception_handler_body(h):
-                    self._emit_stmt(sub)
-                renderer.emit_exception_handler_teardown(h)
+                renderer.emit_exception_handler(h)
                 self.indent -= 1
                 self._emit_line("}")
             self.indent -= 1
