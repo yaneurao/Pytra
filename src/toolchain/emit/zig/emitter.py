@@ -354,6 +354,13 @@ class _ZigStmtCommonRenderer(CommonRenderer):
             return
         self.emit_backend_line("if (__pytra_exc_type != null) break :" + try_label + ";")
 
+    def render_try_body_open(self, try_label: str) -> str:
+        return try_label + ": {"
+
+    def render_try_body_close(self, try_label: str) -> str:
+        del try_label
+        return "}"
+
     def emit_exception_handler_prelude(self, handler: dict[str, Any]) -> None:
         current_indent = self.owner.indent
         self.owner._emit_line("__pytra_caught_type = __pytra_exc_type;")
@@ -1976,7 +1983,7 @@ class ZigNativeEmitter:
         finalbody = self._dict_list(stmt.get("finalbody"))
         try_blk = "__try_blk_" + str(self.tmp_seq)
         self.tmp_seq += 1
-        self._emit_line(try_blk + ": {")
+        self._emit_line(renderer.render_try_body_open(try_blk))
         self.indent += 1
         self._try_depth += 1
         self._try_label_stack.append(try_blk)
@@ -1988,7 +1995,7 @@ class ZigNativeEmitter:
         self._try_label_stack.pop()
         self._try_depth -= 1
         self.indent -= 1
-        self._emit_line("}")
+        self._emit_line(renderer.render_try_body_close(try_blk))
         if len(handlers) > 0:
             handled = "__pytra_handled_" + str(self.tmp_seq)
             self.tmp_seq += 1

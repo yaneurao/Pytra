@@ -528,6 +528,14 @@ class CommonRenderer:
         del stmt, try_label
         return None
 
+    def render_try_body_open(self, try_label: str) -> str:
+        del try_label
+        return self._syntax_text("try", "try {")
+
+    def render_try_body_close(self, try_label: str) -> str:
+        del try_label
+        return self._syntax_text("block_close", "}")
+
     def emit_bare_raise_stmt(self, node: dict[str, JsonVal]) -> None:
         keyword = self._syntax_text("raise", "throw")
         self._emit_stmt_line(keyword)
