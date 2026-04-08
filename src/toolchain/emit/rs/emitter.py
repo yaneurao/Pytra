@@ -1057,6 +1057,24 @@ class _RsStmtCommonRenderer(CommonRenderer):
         _emit_try(self.ctx, node)
         self.state.indent_level = self.ctx.indent_level
 
+    def emit_with_enter_binding(
+        self,
+        node: dict[str, JsonVal],
+        enter_name: str,
+        enter_type: str,
+        enter_call: dict[str, JsonVal],
+    ) -> None:
+        self.ctx.indent_level = self.state.indent_level
+        assign_node: dict[str, JsonVal] = {
+            "kind": "Assign",
+            "target": {"kind": "Name", "id": enter_name, "resolved_type": enter_type},
+            "value": enter_call,
+            "declare": enter_name not in self.ctx.declared_vars,
+            "decl_type": enter_type,
+        }
+        _emit_assign(self.ctx, assign_node)
+        self.state.indent_level = self.ctx.indent_level
+
     def emit_stmt(self, node: JsonVal) -> None:
         kind = self._str(node, "kind")
         if kind in ("Expr", "Return", "Assign", "AnnAssign", "Pass", "Raise", "Try", "With", "comment", "blank", "If", "While"):

@@ -494,14 +494,7 @@ class CommonRenderer:
         if context_type != "" and enter_type != "" and context_type == enter_type:
             self.emit_expr_stmt({"kind": "Expr", "value": enter_call})
         else:
-            enter_assign = {
-                "kind": "Assign",
-                "target": {"kind": "Name", "id": enter_name, "resolved_type": enter_type},
-                "value": enter_call,
-                "declare": True,
-                "decl_type": enter_type,
-            }
-            self.emit_assign_stmt(enter_assign)
+            self.emit_with_enter_binding(node, enter_name, enter_type, enter_call)
         exit_call = {
             "kind": "Call",
             "func": {
@@ -544,6 +537,22 @@ class CommonRenderer:
             "finalbody": [{"kind": "Expr", "value": exit_call}],
         }
         self.emit_try_stmt(try_node)
+
+    def emit_with_enter_binding(
+        self,
+        node: dict[str, JsonVal],
+        enter_name: str,
+        enter_type: str,
+        enter_call: dict[str, JsonVal],
+    ) -> None:
+        enter_assign = {
+            "kind": "Assign",
+            "target": {"kind": "Name", "id": enter_name, "resolved_type": enter_type},
+            "value": enter_call,
+            "declare": True,
+            "decl_type": enter_type,
+        }
+        self.emit_assign_stmt(enter_assign)
 
     def emit_pass_stmt(self, node: dict[str, JsonVal]) -> None:
         self._emit("// pass")

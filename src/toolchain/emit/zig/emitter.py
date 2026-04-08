@@ -284,6 +284,24 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.owner._emit_try_stmt(node)
         self.state.indent_level = self.owner.indent
 
+    def emit_with_enter_binding(
+        self,
+        node: dict[str, Any],
+        enter_name: str,
+        enter_type: str,
+        enter_call: dict[str, Any],
+    ) -> None:
+        self.owner.indent = self.state.indent_level
+        assign_node: dict[str, Any] = {
+            "kind": "Assign",
+            "target": {"kind": "Name", "id": enter_name, "resolved_type": enter_type},
+            "value": enter_call,
+            "declare": not (len(self.owner._local_var_stack) > 0 and enter_name in self.owner._current_local_vars()),
+            "decl_type": enter_type,
+        }
+        self.owner._emit_stmt(assign_node)
+        self.state.indent_level = self.owner.indent
+
 
 def _binop_precedence(op: str) -> int:
     """Zig 演算子優先順位（高い値 = 高い優先度）。"""
