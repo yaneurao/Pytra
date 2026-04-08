@@ -46,6 +46,8 @@ _VALID_SWAP_STYLES: set[str] = {
 _VALID_EXCEPTION_STYLES: set[str] = {
     "native_throw",
     "union_return",
+    "panic_catch_unwind",
+    "manual_exception_slot",
 }
 
 

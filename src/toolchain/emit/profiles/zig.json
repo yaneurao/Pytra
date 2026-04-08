@@ -79,6 +79,6 @@
     "block_braces": "braces",
     "stmt_terminator": ";",
     "string_type_owned": false,
-    "exception_style": "native_throw"
+    "exception_style": "manual_exception_slot"
   }
 }

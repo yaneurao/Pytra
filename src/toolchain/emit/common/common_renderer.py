@@ -83,6 +83,10 @@ class CommonRenderer:
         value = self._lowering().get("none_literal")
         return value if isinstance(value, str) and value != "" else "null"
 
+    def _exception_style(self) -> str:
+        value = self._lowering().get("exception_style")
+        return value if isinstance(value, str) and value != "" else "native_throw"
+
     def _bool_literal(self, value: bool) -> str:
         raw = self._lowering().get("bool_literals")
         if isinstance(raw, list) and len(raw) == 2:
