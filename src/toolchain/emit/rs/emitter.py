@@ -1085,6 +1085,18 @@ class _RsStmtCommonRenderer(CommonRenderer):
         _emit(self.ctx, "let " + safe_rs_ident(exc_name) + " = " + self.ctx.catch_err_msg_var + ".clone();")
         self.ctx.declared_vars.add(exc_name)
 
+    def render_user_exception_handler_open(
+        self,
+        handler: dict[str, JsonVal],
+        caught_expr: str,
+        is_first: bool,
+    ) -> str:
+        handler_type_id = self.exception_handler_type_name(handler)
+        exc_name = self.exception_handler_name(handler)
+        rs_type = safe_rs_ident(handler_type_id)
+        prefix = "if" if is_first else "} else if"
+        return prefix + " let Some(" + safe_rs_ident(exc_name) + ") = " + caught_expr + ".downcast_ref::<" + rs_type + ">() {"
+
     def is_user_exception_handler(self, handler: dict[str, JsonVal]) -> bool:
         type_node = handler.get("type")
         if not isinstance(type_node, dict):
@@ -4930,15 +4942,9 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         # Emit user-defined exception handlers first (if any)
         if len(user_handlers) > 0:
             for i, handler in enumerate(user_handlers):
-                handler_type_id = renderer.exception_handler_type_name(handler)
-                exc_name = renderer.exception_handler_name(handler)
-                handler_body = renderer.exception_handler_body(handler)
-                rs_type = safe_rs_ident(handler_type_id)
-                if i == 0:
-                    _emit(ctx, "if let Some(" + safe_rs_ident(exc_name) + ") = __catch_err.downcast_ref::<" + rs_type + ">() {")
-                else:
-                    _emit(ctx, "} else if let Some(" + safe_rs_ident(exc_name) + ") = __catch_err.downcast_ref::<" + rs_type + ">() {")
+                _emit(ctx, renderer.render_user_exception_handler_open(handler, "__catch_err", i == 0))
                 ctx.indent_level += 1
+                exc_name = renderer.exception_handler_name(handler)
                 ctx.declared_vars.add(exc_name)
                 renderer.emit_exception_handler(handler)
                 ctx.indent_level -= 1

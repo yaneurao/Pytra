@@ -371,6 +371,15 @@ class CommonRenderer:
         del handler, caught_type_expr
         return "true"
 
+    def render_user_exception_handler_open(
+        self,
+        handler: dict[str, JsonVal],
+        caught_expr: str,
+        is_first: bool,
+    ) -> str:
+        del handler, caught_expr, is_first
+        raise RuntimeError("common renderer requires user exception handler open override for " + self.language)
+
     def partition_exception_handlers(
         self,
         handlers: list[JsonVal],
