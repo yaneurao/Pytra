@@ -37,6 +37,7 @@
 2. [x] [ID: P0-ZIG-CREXC-S2] Zig の `with` lowering を CommonRenderer 正本へ戻し、`with_statement` / `with_context_manager` parity を維持する
 3. [x] [ID: P0-ZIG-CREXC-S3] CommonRenderer に exception strategy hook を追加し、Rust / Zig の `try` / `raise` を hook 実装へ分離する
 4. [ ] [ID: P0-ZIG-CREXC-S4] Rust / Zig の `exception_types` / `try_raise` / `exception_bare_reraise` parity を維持したまま custom lowering を縮小する
+   注: `TextIOWrapper` fallback の単純撤去は不可。先に `PyFile` 実体との型 lane 整理と `with ... as name` alias hoist を CommonRenderer 側へ寄せる。
 
 ### P0-ZIG-TOOLCHAIN-LEGACY: toolchain_ 依存を解消する
 

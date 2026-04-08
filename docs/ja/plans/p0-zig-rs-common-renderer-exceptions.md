@@ -83,3 +83,4 @@
 ## 進捗メモ
 
 - 2026-04-08: Zig / Rust ともに emitter 側へ `with` / `raise` / `try` の lowering policy が残っていることを確認。特に Rust は `panic!` / `catch_unwind`、Zig は exception slot + block label escape を emitter 本体が直接生成している。最初の slice は Rust の `with` を CommonRenderer に戻すことにする。
+- 2026-04-08: `with` は user-defined context manager と `try/raise` の入口まで CommonRenderer へ戻した。次のボトルネックは `TextIOWrapper` 系で、fallback を単純に外すと Rust は `PyFile` 実体と `TextIOWrapper` 宣言型のズレで崩れ、Zig は `with ... as f` の alias hoist が不足して崩れる。S4 は custom lowering の単純削除ではなく、`io` 系 metadata / type lane / alias hoist の整理として進める。
