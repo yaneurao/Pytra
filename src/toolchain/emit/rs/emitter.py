@@ -1078,6 +1078,13 @@ class _RsStmtCommonRenderer(CommonRenderer):
         super().emit_exception_handler(handler)
         self.state.indent_level = self.ctx.indent_level
 
+    def emit_exception_handler_prelude(self, handler: dict[str, JsonVal]) -> None:
+        exc_name = self.exception_handler_name(handler)
+        if exc_name == "" or self.ctx.catch_err_msg_var == "":
+            return
+        _emit(self.ctx, "let " + safe_rs_ident(exc_name) + " = " + self.ctx.catch_err_msg_var + ".clone();")
+        self.ctx.declared_vars.add(exc_name)
+
     def is_user_exception_handler(self, handler: dict[str, JsonVal]) -> bool:
         type_node = handler.get("type")
         if not isinstance(type_node, dict):
@@ -4942,10 +4949,6 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                 _emit(ctx, "let __err_msg: String = if let Some(__s) = __catch_err.downcast_ref::<String>() { __s.clone() } else if let Some(__s) = __catch_err.downcast_ref::<&str>() { __s.to_string() } else { \"exception\".to_string() };")
                 ctx.catch_err_msg_var = "__err_msg"
                 for handler in string_handlers:
-                    exc_name = renderer.exception_handler_name(handler)
-                    if exc_name != "":
-                        _emit(ctx, "let " + safe_rs_ident(exc_name) + " = __err_msg.clone();")
-                        ctx.declared_vars.add(exc_name)
                     renderer.emit_exception_handler(handler)
                 ctx.indent_level -= 1
             _emit(ctx, "}")
@@ -4954,10 +4957,6 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, "let __err_msg: String = if let Some(__s) = __catch_err.downcast_ref::<String>() { __s.clone() } else if let Some(__s) = __catch_err.downcast_ref::<&str>() { __s.to_string() } else { \"exception\".to_string() };")
             ctx.catch_err_msg_var = "__err_msg"
             for handler in string_handlers:
-                exc_name = renderer.exception_handler_name(handler)
-                if exc_name != "":
-                    _emit(ctx, "let " + safe_rs_ident(exc_name) + " = __err_msg.clone();")
-                    ctx.declared_vars.add(exc_name)
                 renderer.emit_exception_handler(handler)
 
         ctx.catch_err_msg_var = old_catch_var
