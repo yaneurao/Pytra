@@ -1153,6 +1153,16 @@ class CommonRenderer:
         del target_name, source_name, source_type, declare
         return None
 
+    def emit_with_declared_context_bind(
+        self,
+        target_name: str,
+        source_name: str,
+        source_type: str,
+        mutable: bool,
+    ) -> None:
+        del mutable
+        self.emit_with_context_bind(target_name, source_name, source_type, True)
+
     def emit_with_exit_action(
         self,
         target_name: str,
