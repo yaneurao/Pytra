@@ -5,7 +5,7 @@
 # P0-ZIG-RS-COMMON-RENDERER-EXC: Zig / Rust の `with`・例外 lowering を CommonRenderer へ押し戻す
 
 最終更新: 2026-04-10
-ステータス: 進行中
+ステータス: 完了
 
 ## 背景
 
@@ -94,4 +94,4 @@
 - 2026-04-10: Rust の `with` item loop もさらに縮小した。item metadata の bind 名 / enter target / enter/exit metadata 解決、`with_enter_runtime_call`、`Rc<RefCell<...>>` の enter/exit fallback predicate、context capture、bound 変数の新規宣言判定と state registration、bound target naming まで CommonRenderer helper に寄せている。現時点で Rust 側に残るのは、item loop 自体と final emit の接続、そして Rust 型系の最終判断だけである。
 - 2026-04-10: 追加で大きめの batch を進めた。Rust は `with` の outer wrapper と hoisted binding 宣言も renderer helper に移し、`With` の direct custom path を削除して renderer entry に一本化した。Zig は naming override 群、stmt renderer 同期、protocol constant、fallback `with` body、handler binding、propagation check、labeled block primitive、`try` wrapper の handler/orelse/finalbody を CommonRenderer helper / accessor 経由へ寄せた。現時点で Zig に残る custom lowering は、manual exception slot を Zig 構文へ写す最終 adapter としての最小限の hook 群が中心である。
 - 2026-04-10: S4 終盤の棚卸しを継続。Zig の dispatch condition / handler guard condition / dispatch state stmt / handled mark stmt / propagation check も CommonRenderer に寄せ、冗長な `super()` pass-through override を削除した。Rust 側は `emit_custom_with_stmt()` の orchestration も CommonRenderer へ吸収し、`With` の direct custom path は消えている。現在 Zig emitter に残っている例外系 hook は、slot 名、exception match 条件、labeled block / `break :label`、fallback `with` protocol call、handler prelude/teardown といった Zig 構文 adapter にほぼ限定される。
-- 2026-04-10: さらに Zig 側の S4 をまとめて前進。`try` body post-stmt propagation と raise propagation は text primitive 化し、handler prelude/teardown は `binding_prelude` / `binding_teardown` hook に分離した。加えて Zig の `Try` statement は `_emit_try_stmt()` の direct custom path を削除し、renderer の `emit_try_stmt()` へ一本化した。現時点で Zig emitter に残る custom hook は、ほぼ slot 名、exception match 条件、labeled block / `break :label`、fallback `with` protocol call、bound exception binding といった最終 adapter に絞られている。
+- 2026-04-10: さらに Zig 側の S4 をまとめて前進。`try` body post-stmt propagation と raise propagation は text primitive 化し、handler prelude/teardown は `binding_prelude` / `binding_teardown` hook に分離した。加えて Zig の `Try` statement は `_emit_try_stmt()` の direct custom path を削除し、renderer の `emit_try_stmt()` へ一本化した。これにより S4 の目的である「custom lowering の縮小」は達成済みと判断する。現時点で Zig emitter に残る custom hook は、slot 名、exception match 条件、labeled block / `break :label`、fallback `with` protocol call、bound exception binding といった target syntax adapter に限定される。
