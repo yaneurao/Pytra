@@ -1127,6 +1127,17 @@ class _RsStmtCommonRenderer(CommonRenderer):
         del target_type
         _emit(self.ctx, target_name + ".close();")
 
+    def emit_with_context_bind(
+        self,
+        target_name: str,
+        source_name: str,
+        source_type: str,
+        declare: bool,
+    ) -> None:
+        prefix = "let mut " if declare else ""
+        suffix = ".clone()" if source_type.startswith("Rc<RefCell<") else ""
+        _emit(self.ctx, prefix + target_name + " = " + source_name + suffix + ";")
+
     def emit_backend_line(self, text: str) -> None:
         _emit(self.ctx, text)
 
@@ -5678,10 +5689,7 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         ctx_rt = _actual_type_in_context(ctx, context_expr)
         ctx_rs = _rs_type_for_context(ctx, ctx_rt) if ctx_rt != "" else ""
         ctx_tmp = renderer.next_with_context_name()
-        if ctx_rs.startswith("Rc<RefCell<"):
-            _emit(ctx, "let mut " + ctx_tmp + " = " + ctx_expr + ".clone();")
-        else:
-            _emit(ctx, "let mut " + ctx_tmp + " = " + ctx_expr + ";")
+        renderer.emit_with_context_bind(ctx_tmp, ctx_expr, ctx_rs, True)
         var_name = ""
         opt_vars = item.get("optional_vars")
         if isinstance(opt_vars, dict):
@@ -5696,15 +5704,9 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                 ctx.declared_vars.add(var_name)
                 if _str(item, "with_enter_type") != "":
                     ctx.var_types[var_name] = _str(item, "with_enter_type")
-                if ctx_rs.startswith("Rc<RefCell<"):
-                    _emit(ctx, "let mut " + var_rs + " = " + ctx_tmp + ".clone();")
-                else:
-                    _emit(ctx, "let mut " + var_rs + " = " + ctx_tmp + ";")
+                renderer.emit_with_context_bind(var_rs, ctx_tmp, ctx_rs, True)
             else:
-                if ctx_rs.startswith("Rc<RefCell<"):
-                    _emit(ctx, var_rs + " = " + ctx_tmp + ".clone();")
-                else:
-                    _emit(ctx, var_rs + " = " + ctx_tmp + ";")
+                renderer.emit_with_context_bind(var_rs, ctx_tmp, ctx_rs, False)
         enter_runtime_call = _str(item, "with_enter_runtime_call")
         if enter_runtime_call != "":
             _emit(ctx, _emit_expr(ctx, renderer.build_with_protocol_call(

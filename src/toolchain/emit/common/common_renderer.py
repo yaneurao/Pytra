@@ -1006,6 +1006,16 @@ class CommonRenderer:
         del target_name, target_type
         return None
 
+    def emit_with_context_bind(
+        self,
+        target_name: str,
+        source_name: str,
+        source_type: str,
+        declare: bool,
+    ) -> None:
+        del target_name, source_name, source_type, declare
+        return None
+
     def build_with_protocol_call(
         self,
         target_name: str,
