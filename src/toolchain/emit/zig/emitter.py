@@ -2437,8 +2437,9 @@ class ZigNativeEmitter:
                 self._try_label_stack.append(with_blk)
                 for sub in body:
                     self._emit_stmt(sub)
-                    if sub.get("kind") not in {"Return", "Raise", "Break", "Continue"}:
-                        self._emit_line("if (__pytra_exc_type != null) break :" + with_blk + ";")
+                    renderer.state.indent_level = self.indent
+                    renderer.emit_try_body_post_stmt(sub, with_blk)
+                    self.indent = renderer.state.indent_level
                 self._try_label_stack.pop()
                 self._try_depth -= 1
                 self.indent -= 1
