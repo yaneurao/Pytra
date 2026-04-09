@@ -1205,6 +1205,24 @@ class _RsStmtCommonRenderer(CommonRenderer):
         self.ctx.indent_level -= 1
         _emit(self.ctx, "}")
 
+    def emit_custom_with_stmt(
+        self,
+        node: dict[str, JsonVal],
+        items: list[JsonVal],
+        body: list[JsonVal],
+    ) -> None:
+        del node
+        self.ctx.indent_level = self.state.indent_level
+        with_result = self.next_with_result_name()
+        with_err = self.next_with_error_name()
+        self.emit_with_hoisted_bindings(body, self.ctx.declared_vars, self.ctx.var_types)
+        ctx_entries = self.emit_with_items(items, self.ctx.declared_vars, self.ctx.var_types)
+        self.ctx.temp_counter = self.state.tmp_counter
+        self.emit_with_capture_body(with_result, body)
+        self.emit_with_exit_actions(ctx_entries)
+        self.emit_with_resume_unwind(with_result, with_err)
+        self.state.indent_level = self.ctx.indent_level
+
     def emit_backend_line(self, text: str) -> None:
         _emit(self.ctx, text)
 
@@ -5730,15 +5748,7 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         items = [node]
     renderer = _RsStmtCommonRenderer(ctx)
     renderer.state.tmp_counter = ctx.temp_counter
-    with_result = renderer.next_with_result_name()
-    with_err = renderer.next_with_error_name()
-    renderer.emit_with_hoisted_bindings(body, ctx.declared_vars, ctx.var_types)
-    ctx_entries = renderer.emit_with_items(items, ctx.declared_vars, ctx.var_types)
-
-    ctx.temp_counter = renderer.state.tmp_counter
-    renderer.emit_with_capture_body(with_result, body)
-    renderer.emit_with_exit_actions(ctx_entries)
-    renderer.emit_with_resume_unwind(with_result, with_err)
+    renderer.emit_custom_with_stmt(node, items, body)
 
 
 def _emit_type_alias(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
