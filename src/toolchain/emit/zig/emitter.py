@@ -521,10 +521,7 @@ class _ZigStmtCommonRenderer(CommonRenderer):
 
     def emit_bare_raise_restore(self) -> None:
         self._require_exception_style("manual_exception_slot")
-        self.emit_copy_exception_slot(
-            self.active_exception_slot_names(),
-            self.caught_exception_slot_names(),
-        )
+        super().emit_bare_raise_restore()
 
     def emit_raise_exception_state(
         self,
