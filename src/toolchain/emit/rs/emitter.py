@@ -1148,6 +1148,15 @@ class _RsStmtCommonRenderer(CommonRenderer):
         bound_name = self.with_item_bound_name(item)
         return _rs_var_name(self.ctx, bound_name) if bound_name != "" else ""
 
+    def resolve_with_context_capture(self, context_expr: JsonVal) -> tuple[str, str, str]:
+        if not isinstance(context_expr, dict):
+            return ("", "", "")
+        ctx_expr = _emit_expr(self.ctx, context_expr)
+        ctx_rt = _actual_type_in_context(self.ctx, context_expr)
+        ctx_rs = _rs_type_for_context(self.ctx, ctx_rt) if ctx_rt != "" else ""
+        ctx_tmp = self.emit_with_context_capture(ctx_expr, ctx_rs)
+        return (ctx_tmp, ctx_rt, ctx_rs)
+
     def emit_backend_line(self, text: str) -> None:
         _emit(self.ctx, text)
 
@@ -5695,10 +5704,7 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         context_expr = item.get("context_expr")
         if not isinstance(context_expr, dict):
             continue
-        ctx_expr = _emit_expr(ctx, context_expr)
-        ctx_rt = _actual_type_in_context(ctx, context_expr)
-        ctx_rs = _rs_type_for_context(ctx, ctx_rt) if ctx_rt != "" else ""
-        ctx_tmp = renderer.emit_with_context_capture(ctx_expr, ctx_rs)
+        ctx_tmp, ctx_rt, ctx_rs = renderer.resolve_with_context_capture(context_expr)
         var_name = renderer.with_item_bound_name(item)
         var_rs = renderer.with_item_bound_target_name(item)
         enter_target_name = renderer.with_item_enter_target_name(item, ctx_tmp)
