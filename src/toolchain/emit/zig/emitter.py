@@ -3775,8 +3775,8 @@ class ZigNativeEmitter:
                     item_name = "__concat_item_" + str(self.tmp_seq)
                     self.tmp_seq += 1
                     return (
-                        blk
-                        + ": { const "
+                        _ZigStmtCommonRenderer(self).render_block_expr_open(blk)
+                        + " const "
                         + out_name
                         + " = pytra.make_list("
                         + elem_type
@@ -3826,8 +3826,8 @@ class ZigNativeEmitter:
                     item_name = "__rep_item_" + str(self.tmp_seq)
                     self.tmp_seq += 1
                     return (
-                        blk
-                        + ": { const "
+                        _ZigStmtCommonRenderer(self).render_block_expr_open(blk)
+                        + " const "
                         + src_name
                         + " = "
                         + left
@@ -4114,7 +4114,7 @@ class ZigNativeEmitter:
                     blk_label = "__list_blk_" + str(self.tmp_seq)
                     self.tmp_seq += 1
                     parts: list[str] = []
-                    parts.append(blk_label + ": {")
+                    parts.append(_ZigStmtCommonRenderer(self).render_block_expr_open(blk_label))
                     parts.append(" const __bl = pytra.make_list(" + zig_elem + ");")
                     for item in items:
                         parts.append(" pytra.list_append(__bl, " + zig_elem + ", " + item + ");")
@@ -4801,8 +4801,8 @@ class ZigNativeEmitter:
                         item_name = "__sum_item_" + str(self.tmp_seq)
                         self.tmp_seq += 1
                         return (
-                            blk
-                            + ": { var "
+                            _ZigStmtCommonRenderer(self).render_block_expr_open(blk)
+                            + " var "
                             + acc_name
                             + ": "
                             + elem_t
@@ -4860,8 +4860,8 @@ class ZigNativeEmitter:
                         idx_name = "__zip_i_" + str(self.tmp_seq)
                         self.tmp_seq += 1
                         return (
-                            blk
-                            + ": { const "
+                            _ZigStmtCommonRenderer(self).render_block_expr_open(blk)
+                            + " const "
                             + left_name
                             + " = "
                             + left_items
@@ -5066,8 +5066,8 @@ class ZigNativeEmitter:
                     tmp = "__splitext_tmp_" + str(self.tmp_seq)
                     self.tmp_seq += 1
                     return (
-                        blk
-                        + ": { const "
+                        _ZigStmtCommonRenderer(self).render_block_expr_open(blk)
+                        + " const "
                         + tmp
                         + " = "
                         + obj
@@ -5114,8 +5114,8 @@ class ZigNativeEmitter:
                         self.tmp_seq += 1
                         renderer = _ZigStmtCommonRenderer(self)
                         return (
-                            blk
-                            + ": { const "
+                            renderer.render_block_expr_open(blk)
+                            + " const "
                             + val_name
                             + ": i64 = pytra.str_index_of("
                             + obj
@@ -5570,7 +5570,7 @@ class ZigNativeEmitter:
         out_name = "__setcomp_out_" + str(self.tmp_seq)
         self.tmp_seq += 1
         parts: list[str] = []
-        parts.append(blk + ": {")
+        parts.append(_ZigStmtCommonRenderer(self).render_block_expr_open(blk))
         parts.append(" const " + out_name + " = pytra.make_list(" + elem_type + ");")
         parts.append(" for (" + iter_expr + ") |" + target_name + "| {")
         for line in unpack_lines:
@@ -5620,7 +5620,7 @@ class ZigNativeEmitter:
         out_name = "__listcomp_out_" + str(self.tmp_seq)
         self.tmp_seq += 1
         parts: list[str] = []
-        parts.append(blk + ": {")
+        parts.append(_ZigStmtCommonRenderer(self).render_block_expr_open(blk))
         parts.append(" const " + out_name + " = pytra.make_list(" + result_elem_type + ");")
         parts.append(" for (" + iter_expr + ") |" + target_name + "| {")
         for line in unpack_lines:
@@ -5703,7 +5703,7 @@ class ZigNativeEmitter:
         blk = "__dictcomp_blk_" + str(self.tmp_seq)
         self.tmp_seq += 1
         parts: list[str] = []
-        parts.append(blk + ": {")
+        parts.append(_ZigStmtCommonRenderer(self).render_block_expr_open(blk))
         parts.append(" var __dc = pytra.make_str_dict(" + val_zig + ");")
         parts.append(" for (pytra.list_items(" + iter_expr + ", " + iter_elem_type + ")) |" + target_name + "| {")
         if loop_cond != "true":
@@ -5989,8 +5989,8 @@ class ZigNativeEmitter:
         zero = self._zig_zero_value(result_zig_type)
         renderer = _ZigStmtCommonRenderer(self)
         return (
-            blk
-            + ": { const "
+            renderer.render_block_expr_open(blk)
+            + " const "
             + len_name
             + ": i64 = @intCast("
             + len_expr
