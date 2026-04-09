@@ -1123,6 +1123,10 @@ class _RsStmtCommonRenderer(CommonRenderer):
         del target_type
         _emit(self.ctx, target_name + ".borrow_mut().__exit__(PyAny::None, PyAny::None, PyAny::None);")
 
+    def emit_with_close_fallback(self, target_name: str, target_type: str) -> None:
+        del target_type
+        _emit(self.ctx, target_name + ".close();")
+
     def emit_backend_line(self, text: str) -> None:
         _emit(self.ctx, text)
 
@@ -5747,7 +5751,7 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         elif ctx_rs.startswith("Rc<RefCell<"):
             renderer.emit_with_fallback_exit(target, target_type)
         else:
-            _emit(ctx, target + ".close();")
+            renderer.emit_with_close_fallback(target, target_type)
     _emit(ctx, "if let Err(" + with_err + ") = " + with_result + " {")
     ctx.indent_level += 1
     _emit(ctx, renderer.render_resume_unwind(with_err))

@@ -1002,6 +1002,10 @@ class CommonRenderer:
         del target_name, target_type
         return None
 
+    def emit_with_close_fallback(self, target_name: str, target_type: str) -> None:
+        del target_name, target_type
+        return None
+
     def build_with_protocol_call(
         self,
         target_name: str,
