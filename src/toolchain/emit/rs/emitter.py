@@ -1157,6 +1157,35 @@ class _RsStmtCommonRenderer(CommonRenderer):
         ctx_tmp = self.emit_with_context_capture(ctx_expr, ctx_rs)
         return (ctx_tmp, ctx_rt, ctx_rs)
 
+    def emit_with_items(
+        self,
+        items: list[JsonVal],
+        declared_names: set[str],
+        type_map: dict[str, str],
+    ) -> list[tuple[str, str, str, str, str, str]]:
+        entries: list[tuple[str, str, str, str, str, str]] = []
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            entry = self.emit_with_item(item, declared_names, type_map)
+            if entry is not None:
+                entries.append(entry)
+        return entries
+
+    def emit_with_capture_body(self, with_result: str, body: list[JsonVal]) -> None:
+        _emit(self.ctx, self.render_try_capture_open(with_result))
+        self.ctx.indent_level += 1
+        _emit_body(self.ctx, body)
+        self.ctx.indent_level -= 1
+        _emit(self.ctx, self.render_try_capture_close())
+
+    def emit_with_resume_unwind(self, with_result: str, with_err: str) -> None:
+        _emit(self.ctx, "if let Err(" + with_err + ") = " + with_result + " {")
+        self.ctx.indent_level += 1
+        _emit(self.ctx, self.render_resume_unwind(with_err))
+        self.ctx.indent_level -= 1
+        _emit(self.ctx, "}")
+
     def emit_backend_line(self, text: str) -> None:
         _emit(self.ctx, text)
 
@@ -5697,26 +5726,12 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         else:
             _emit(ctx, "let mut " + rs_name + " = Default::default();")
 
-    ctx_entries: list[tuple[str, str, str, str, str, str]] = []
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        entry = renderer.emit_with_item(item, ctx.declared_vars, ctx.var_types)
-        if entry is not None:
-            ctx_entries.append(entry)
+    ctx_entries = renderer.emit_with_items(items, ctx.declared_vars, ctx.var_types)
 
     ctx.temp_counter = renderer.state.tmp_counter
-    _emit(ctx, renderer.render_try_capture_open(with_result))
-    ctx.indent_level += 1
-    _emit_body(ctx, body)
-    ctx.indent_level -= 1
-    _emit(ctx, renderer.render_try_capture_close())
+    renderer.emit_with_capture_body(with_result, body)
     renderer.emit_with_exit_actions(ctx_entries)
-    _emit(ctx, "if let Err(" + with_err + ") = " + with_result + " {")
-    ctx.indent_level += 1
-    _emit(ctx, renderer.render_resume_unwind(with_err))
-    ctx.indent_level -= 1
-    _emit(ctx, "}")
+    renderer.emit_with_resume_unwind(with_result, with_err)
 
 
 def _emit_type_alias(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
