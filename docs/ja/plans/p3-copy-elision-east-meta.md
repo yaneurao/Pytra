@@ -57,4 +57,5 @@ EAST3 / linker に関連する既存メタデータ:
 - 2026-04-02: `docs/ja/spec/spec-east.md` に `Call.meta.copy_elision_safe_v1` を追加。v1 は `bytes(bytearray)` 専用で、backend は linker が付けた metadata がある場合だけ alias / borrow へ最適化してよい。
 - 2026-04-02: linker に narrow/fail-closed な v1 解析を実装。現状は `return bytes(local_bytearray)` が同一 module 内で readonly `list[bytes]` フローにしか入らないケースだけ annotate する。
 - 2026-04-02: Lua emitter/runtime に `copy_elision_safe_v1` 対応を実装。`03_julia_set` は無回帰 PASS。`07_game_of_life_loop` は改善したが `--cmd-timeout-sec 600` ではまだ timeout。
-- 2026-04-10: linker の final linked rows に対しても `_annotate_copy_elision_safe_v1()` を再適用し、Lua emitter の `core.bytes_ctor` fast path が `copy_elision_safe_v1` を素通りしていた不具合を修正。これで `07_game_of_life_loop.render()` の `return bytes(frame)` は `__pytra_bytes_alias(frame)` に変わることを確認。残る hot path は `pytra.utils.gif` 側の `__pytra_bytes(...)`。
+- 2026-04-10: linker の final linked rows に対しても `_annotate_copy_elision_safe_v1()` を再適用し、Lua emitter の `core.bytes_ctor` fast path が `copy_elision_safe_v1` を素通りしていた不具合を修正。これで `07_game_of_life_loop.render()` の `return bytes(frame)` は `__pytra_bytes_alias(frame)` に変わることを確認。
+- 2026-04-10: readonly subscript owner も non-escape 判定に含め、`pytra.utils.gif._lzw_encode()` の `return bytes(out)` も `__pytra_bytes_alias(out)` へ切り替わることを確認。残る hot path は cross-module の `grayscale_palette()` と `f.write(bytes(out))`。

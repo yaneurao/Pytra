@@ -396,6 +396,43 @@ def _is_list_append_call_on_name(call_node: dict[str, JsonVal]) -> tuple[str, di
     return (owner_name, owner)
 
 
+def _call_arg_usage_is_readonly(
+    call_node: dict[str, JsonVal],
+    arg_node: dict[str, JsonVal],
+) -> bool:
+    sig = call_node.get("function_signature_v1")
+    if not isinstance(sig, dict):
+        return False
+    arg_order = sig.get("arg_order")
+    arg_usage = sig.get("arg_usage")
+    if not isinstance(arg_order, list) or not isinstance(arg_usage, dict):
+        return False
+
+    args = _node_list(call_node, "args")
+    i = 0
+    while i < len(args):
+        if args[i] is arg_node:
+            if i >= len(arg_order):
+                return False
+            arg_name = arg_order[i]
+            if not isinstance(arg_name, str) or arg_name == "":
+                return False
+            return arg_usage.get(arg_name) == "readonly"
+        i += 1
+
+    keywords = _node_list(call_node, "keywords")
+    for kw in keywords:
+        if not isinstance(kw, dict):
+            continue
+        if kw.get("value") is not arg_node:
+            continue
+        arg_name = kw.get("arg")
+        if not isinstance(arg_name, str) or arg_name == "":
+            return False
+        return arg_usage.get(arg_name) == "readonly"
+    return False
+
+
 def _name_used_as_arg_readonly(
     name_node: dict[str, JsonVal],
     parents: list[dict[str, JsonVal]],
@@ -434,6 +471,16 @@ def _name_is_append_owner(
     return hit is not None
 
 
+def _name_is_readonly_subscript_owner(
+    name_node: dict[str, JsonVal],
+    parents: list[dict[str, JsonVal]],
+) -> bool:
+    direct_parent = _find_direct_parent(parents)
+    if direct_parent is None or _node_str(direct_parent, "kind") != "Subscript":
+        return False
+    return direct_parent.get("value") is name_node
+
+
 def _name_is_decl_target(
     name_node: dict[str, JsonVal],
     parents: list[dict[str, JsonVal]],
@@ -445,6 +492,24 @@ def _name_is_decl_target(
     if kind != "AnnAssign" and kind != "Assign":
         return False
     return direct_parent.get("target") is name_node
+
+
+def _assigned_local_name(
+    node: dict[str, JsonVal],
+    parents: list[dict[str, JsonVal]],
+) -> str:
+    direct_parent = _find_direct_parent(parents)
+    if direct_parent is None:
+        return ""
+    kind = _node_str(direct_parent, "kind")
+    if kind != "AnnAssign" and kind != "Assign":
+        return ""
+    if direct_parent.get("value") is not node:
+        return ""
+    target = direct_parent.get("target")
+    if not isinstance(target, dict) or _node_str(target, "kind") != "Name":
+        return ""
+    return _node_str(target, "id")
 
 
 def _all_name_uses_readonly_in_function(
@@ -461,6 +526,8 @@ def _all_name_uses_readonly_in_function(
         if _name_is_decl_target(node, parents):
             continue
         if _name_is_append_owner(node, parents):
+            continue
+        if _name_is_readonly_subscript_owner(node, parents):
             continue
         if _name_used_as_arg_readonly(node, parents):
             continue
@@ -512,6 +579,12 @@ def _annotate_copy_elision_safe_v1(copied_docs: list[tuple[LinkedModule, dict[st
                     if node is call_node:
                         continue
                     saw_callsite = True
+                    outer_call = _find_outer_call_for_arg(node, parents)
+                    if outer_call is not None and _call_arg_usage_is_readonly(outer_call, node):
+                        continue
+                    local_name = _assigned_local_name(node, parents)
+                    if local_name != "" and _all_name_uses_readonly_in_function(caller_func, local_name):
+                        continue
                     outer_call = _find_outer_call_for_arg(node, parents)
                     if outer_call is None:
                         safe = False

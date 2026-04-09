@@ -74,7 +74,7 @@
 1. [x] [ID: P3-COPY-ELISION-S1] `copy_elision_safe_v1` スキーマを spec-east.md に定義する（2026-04-02）— `Call.meta.copy_elision_safe_v1` を canonical linker metadata として定義
 2. [x] [ID: P3-COPY-ELISION-S2] linker の def-use / non-escape 解析で copy elision 判定を実装する（2026-04-02）— v1 は narrow/fail-closed。`return bytes(local_bytearray)` が readonly `list[bytes]` フローにしか流れない場合だけ annotate
 3. [x] [ID: P3-COPY-ELISION-S3] Lua emitter で `copy_elision_safe_v1` を参照してコピー省略を実装する（2026-04-02）— `__pytra_bytes_alias()` を導入し、metadata がある `bytes(bytearray)` だけ alias 化
-4. [ ] [ID: P3-COPY-ELISION-S4] `07_game_of_life_loop` の Lua parity PASS + 性能改善を確認する — `03_julia_set` は無回帰 PASS。2026-04-10 に linker の final row 再 annotation と Lua emitter の `core.bytes_ctor` fast path を修正し、`render()` の `return bytes(frame)` は `__pytra_bytes_alias(frame)` へ実際に切り替わる状態まで確認した。`pytra.utils.gif` 側にはまだ `__pytra_bytes(...)` が残っており、`07_game_of_life_loop` の `--cmd-timeout-sec 600` 完走確認は継続
+4. [ ] [ID: P3-COPY-ELISION-S4] `07_game_of_life_loop` の Lua parity PASS + 性能改善を確認する — `03_julia_set` は無回帰 PASS。2026-04-10 に linker の final row 再 annotation と Lua emitter の `core.bytes_ctor` fast path を修正し、`render()` の `return bytes(frame)` は `__pytra_bytes_alias(frame)` へ実際に切り替わる状態まで確認した。さらに readonly subscript owner を copy-elision 判定に含めて `pytra.utils.gif._lzw_encode()` の `return bytes(out)` も `__pytra_bytes_alias(out)` へ切り替えた。残りは cross-module の `grayscale_palette()` と `f.write(bytes(out))` で、`07_game_of_life_loop` の `--cmd-timeout-sec 600` 完走確認は継続
 
 ### P20-LUA-SELFHOST: Lua emitter で toolchain2 を Lua に変換し実行できるようにする
 
