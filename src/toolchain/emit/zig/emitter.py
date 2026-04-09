@@ -418,29 +418,20 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         current_indent = self.owner.indent
         self.emit_exception_handler_capture()
         hname = self.exception_handler_name(handler)
-        pushed_exc = False
         if isinstance(hname, str) and hname != "":
             safe_hname = _safe_ident(hname, "err")
             handler_body = self.exception_handler_body(handler)
             if self.owner._body_uses_name_runtime(handler_body, safe_hname):
                 _, caught_msg, caught_line = self.caught_exception_slot_names()
-                self.owner._emit_line(
-                    "const "
-                    + safe_hname
-                    + " = "
-                    + self.render_bound_exception_value(caught_msg, caught_line)
-                    + ";"
+                self.owner._begin_exception_binding(
+                    safe_hname,
+                    self.render_bound_exception_value(caught_msg, caught_line),
                 )
-                self.owner._exception_var_stack.append({safe_hname})
-                pushed_exc = True
-        self.owner._pending_exception_var_push = pushed_exc
         self.owner.indent = current_indent
 
     def emit_exception_handler_teardown(self, handler: dict[str, Any]) -> None:
         del handler
-        if getattr(self.owner, "_pending_exception_var_push", False):
-            self.owner._exception_var_stack.pop()
-            self.owner._pending_exception_var_push = False
+        self.owner._end_pending_exception_binding()
 
     def emit_with_fallback_enter(self, target_name: str, target_type: str) -> None:
         del target_type
@@ -740,6 +731,16 @@ class ZigNativeEmitter:
         self._try_depth -= 1
         self.indent -= 1
         self._emit_line(renderer.render_try_body_close(try_label))
+
+    def _begin_exception_binding(self, safe_name: str, value_expr: str) -> None:
+        self._emit_line("const " + safe_name + " = " + value_expr + ";")
+        self._exception_var_stack.append({safe_name})
+        self._pending_exception_var_push = True
+
+    def _end_pending_exception_binding(self) -> None:
+        if getattr(self, "_pending_exception_var_push", False):
+            self._exception_var_stack.pop()
+            self._pending_exception_var_push = False
 
     def _union_storage_zig(self) -> str:
         return "*pytra.UnionVal"
