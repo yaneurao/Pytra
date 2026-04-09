@@ -381,9 +381,8 @@ class _ZigStmtCommonRenderer(CommonRenderer):
             return self.render_try_break(try_label)
         return return_stmt
 
-    def emit_exception_handler_prelude(self, handler: dict[str, Any]) -> None:
+    def emit_exception_handler_binding_prelude(self, handler: dict[str, Any]) -> None:
         current_indent = self.owner.indent
-        self.emit_exception_handler_capture()
         hname = self.exception_handler_name(handler)
         if isinstance(hname, str) and hname != "":
             safe_hname = _safe_ident(hname, "err")
@@ -396,7 +395,7 @@ class _ZigStmtCommonRenderer(CommonRenderer):
                 )
         self.owner.indent = current_indent
 
-    def emit_exception_handler_teardown(self, handler: dict[str, Any]) -> None:
+    def emit_exception_handler_binding_teardown(self, handler: dict[str, Any]) -> None:
         del handler
         self.owner._end_pending_exception_binding()
 

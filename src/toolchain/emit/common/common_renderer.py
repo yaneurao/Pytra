@@ -391,9 +391,14 @@ class CommonRenderer:
     def emit_try_handler_body(self, handler: dict[str, JsonVal]) -> None:
         self.emit_body(self._list(handler, "body"))
 
-    def emit_exception_handler_prelude(self, handler: dict[str, JsonVal]) -> None:
+    def emit_exception_handler_binding_prelude(self, handler: dict[str, JsonVal]) -> None:
         del handler
         return None
+
+    def emit_exception_handler_prelude(self, handler: dict[str, JsonVal]) -> None:
+        if self._exception_style() == "manual_exception_slot":
+            self.emit_exception_handler_capture()
+        self.emit_exception_handler_binding_prelude(handler)
 
     def emit_exception_handler_capture(self) -> None:
         self.emit_copy_exception_slot(
@@ -452,9 +457,12 @@ class CommonRenderer:
             + ";"
         )
 
-    def emit_exception_handler_teardown(self, handler: dict[str, JsonVal]) -> None:
+    def emit_exception_handler_binding_teardown(self, handler: dict[str, JsonVal]) -> None:
         del handler
         return None
+
+    def emit_exception_handler_teardown(self, handler: dict[str, JsonVal]) -> None:
+        self.emit_exception_handler_binding_teardown(handler)
 
     def emit_exception_handler(self, handler: dict[str, JsonVal]) -> None:
         self.emit_exception_handler_prelude(handler)
