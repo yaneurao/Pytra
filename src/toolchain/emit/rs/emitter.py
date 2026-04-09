@@ -5709,8 +5709,11 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             _str(item, "with_enter_runtime_symbol"),
             enter_target_type,
         )
-        if ctx_rs.startswith("Rc<RefCell<"):
-            renderer.emit_with_fallback_enter(ctx_tmp, ctx_rt)
+        renderer.emit_with_enter_fallback_action(
+            ctx_tmp,
+            ctx_rt,
+            ctx_rs.startswith("Rc<RefCell<"),
+        )
         ctx_entries.append(renderer.build_with_entry(
             ctx_tmp,
             var_rs,

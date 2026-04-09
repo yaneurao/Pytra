@@ -1159,6 +1159,15 @@ class CommonRenderer:
             }
         )
 
+    def emit_with_enter_fallback_action(
+        self,
+        target_name: str,
+        target_type: str,
+        use_enter_fallback: bool,
+    ) -> None:
+        if use_enter_fallback:
+            self.emit_with_fallback_enter(target_name, target_type)
+
     def emit_with_enter_binding(
         self,
         node: dict[str, JsonVal],
