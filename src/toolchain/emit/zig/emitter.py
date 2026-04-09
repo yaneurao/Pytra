@@ -294,13 +294,6 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.owner._emit_line(text)
         self.state.indent_level = self.owner.indent
 
-    def exception_slot_decl_lines(self) -> list[str]:
-        self._require_exception_style("manual_exception_slot")
-        return super().exception_slot_decl_lines()
-
-    def exception_support_decl_lines(self) -> list[str]:
-        return super().exception_support_decl_lines()
-
     def active_exception_slot_names(self) -> tuple[str, str, str]:
         self._require_exception_style("manual_exception_slot")
         return ("__pytra_exc_type", "__pytra_exc_msg", "__pytra_exc_line")
@@ -312,17 +305,6 @@ class _ZigStmtCommonRenderer(CommonRenderer):
     def bound_exception_record_type_name(self) -> str:
         self._require_exception_style("manual_exception_slot")
         return "__PytraError"
-
-    def render_bound_exception_value(self, msg_expr: str, line_expr: str) -> str:
-        self._require_exception_style("manual_exception_slot")
-        return (
-            self.bound_exception_record_type_name()
-            + "{ .msg = ("
-            + msg_expr
-            + " orelse \"\"), .line = "
-            + line_expr
-            + " }"
-        )
 
     def is_catch_all_exception_handler(self, handler: dict[str, Any]) -> bool:
         type_name = _safe_ident(self.exception_handler_type_name(handler), "")

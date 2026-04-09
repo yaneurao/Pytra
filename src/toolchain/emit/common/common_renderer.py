@@ -317,8 +317,14 @@ class CommonRenderer:
         raise RuntimeError("common renderer requires bound exception record type name for " + self.language)
 
     def render_bound_exception_value(self, msg_expr: str, line_expr: str) -> str:
-        del msg_expr, line_expr
-        raise RuntimeError("common renderer requires bound exception value hook for " + self.language)
+        return (
+            self.bound_exception_record_type_name()
+            + "{ .msg = ("
+            + msg_expr
+            + " orelse \"\"), .line = "
+            + line_expr
+            + " }"
+        )
 
     def _next_tmp(self, prefix: str) -> str:
         self.state.tmp_counter += 1
