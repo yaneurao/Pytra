@@ -5449,25 +5449,17 @@ class ZigNativeEmitter:
         local_init = fn_expr
         if self._is_optional_callable_type(fn_type):
             local_init = fn_expr + " orelse unreachable"
-        return (
-            _ZigStmtCommonRenderer(self).render_block_expr_open(blk_label)
-            + " const "
-            + fn_local
-            + " = "
-            + local_init
-            + "; "
-            + _ZigStmtCommonRenderer(self).render_break_with_value(
-                blk_label,
-                "switch (@typeInfo(@TypeOf(" + fn_local + "))) { "
-                + ".@\"struct\", .@\"union\", .@\"enum\", .@\"opaque\" => if (@hasDecl(@TypeOf(" + fn_local + "), \"call\")) "
-                + method_call.replace(fn_expr, fn_local, 1)
-                + " else "
-                + direct_call.replace(fn_expr, fn_local, 1)
-                + ", else => "
-                + direct_call.replace(fn_expr, fn_local, 1)
-                + ", }",
-            )
-            + " }"
+        return _ZigStmtCommonRenderer(self).render_simple_block_expr(
+            blk_label,
+            "const " + fn_local + " = " + local_init + ";",
+            "switch (@typeInfo(@TypeOf(" + fn_local + "))) { "
+            + ".@\"struct\", .@\"union\", .@\"enum\", .@\"opaque\" => if (@hasDecl(@TypeOf(" + fn_local + "), \"call\")) "
+            + method_call.replace(fn_expr, fn_local, 1)
+            + " else "
+            + direct_call.replace(fn_expr, fn_local, 1)
+            + ", else => "
+            + direct_call.replace(fn_expr, fn_local, 1)
+            + ", }",
         )
 
     def _coerce_call_args_for_signature(self, arg_strs: list[str], args: list[Any], fn_type: str, func_any: Any = None) -> list[str]:
