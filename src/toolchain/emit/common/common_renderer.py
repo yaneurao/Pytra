@@ -304,6 +304,9 @@ class CommonRenderer:
     def caught_exception_slot_names(self) -> tuple[str, str, str]:
         raise RuntimeError("common renderer requires caught exception slot names for " + self.language)
 
+    def bound_exception_record_type_name(self) -> str:
+        raise RuntimeError("common renderer requires bound exception record type name for " + self.language)
+
     def render_bound_exception_value(self, msg_expr: str, line_expr: str) -> str:
         del msg_expr, line_expr
         raise RuntimeError("common renderer requires bound exception value hook for " + self.language)

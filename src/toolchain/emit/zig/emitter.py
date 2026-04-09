@@ -308,7 +308,7 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         ]
 
     def exception_support_decl_lines(self) -> list[str]:
-        return ["const __PytraError = struct { msg: []const u8, line: i64 };"]
+        return ["const " + self.bound_exception_record_type_name() + " = struct { msg: []const u8, line: i64 };"]
 
     def active_exception_slot_names(self) -> tuple[str, str, str]:
         self._require_exception_style("manual_exception_slot")
@@ -318,9 +318,20 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self._require_exception_style("manual_exception_slot")
         return ("__pytra_caught_type", "__pytra_caught_msg", "__pytra_caught_line")
 
+    def bound_exception_record_type_name(self) -> str:
+        self._require_exception_style("manual_exception_slot")
+        return "__PytraError"
+
     def render_bound_exception_value(self, msg_expr: str, line_expr: str) -> str:
         self._require_exception_style("manual_exception_slot")
-        return "__PytraError{ .msg = (" + msg_expr + " orelse \"\"), .line = " + line_expr + " }"
+        return (
+            self.bound_exception_record_type_name()
+            + "{ .msg = ("
+            + msg_expr
+            + " orelse \"\"), .line = "
+            + line_expr
+            + " }"
+        )
 
     def is_catch_all_exception_handler(self, handler: dict[str, Any]) -> bool:
         type_name = _safe_ident(self.exception_handler_type_name(handler), "")
