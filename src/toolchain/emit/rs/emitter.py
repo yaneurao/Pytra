@@ -1057,7 +1057,7 @@ class _RsStmtCommonRenderer(CommonRenderer):
             _emit(
                 self.ctx,
                 self.render_try_error_arm_open(try_err)
-                + " std::panic::resume_unwind(" + try_err + "); "
+                + " " + self.render_resume_unwind(try_err) + " "
                 + self.render_try_error_arm_close(),
             )
             self.ctx.indent_level -= 1
@@ -1175,7 +1175,10 @@ class _RsStmtCommonRenderer(CommonRenderer):
         return "Err(" + prefix + err_binding + ") => {"
 
     def render_try_rethrow_fallback(self, result_name: str, err_binding: str) -> str:
-        return "if let Err(" + err_binding + ") = " + result_name + " { std::panic::resume_unwind(" + err_binding + "); };"
+        return "if let Err(" + err_binding + ") = " + result_name + " { " + self.render_resume_unwind(err_binding) + " };"
+
+    def render_resume_unwind(self, err_binding: str) -> str:
+        return "std::panic::resume_unwind(" + err_binding + ");"
 
     def render_try_match_open(self, result_name: str) -> str:
         return "match " + result_name + " {"
@@ -5786,7 +5789,7 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, target + ".close();")
     _emit(ctx, "if let Err(" + with_err + ") = " + with_result + " {")
     ctx.indent_level += 1
-    _emit(ctx, "std::panic::resume_unwind(" + with_err + ");")
+    _emit(ctx, renderer.render_resume_unwind(with_err))
     ctx.indent_level -= 1
     _emit(ctx, "}")
 
