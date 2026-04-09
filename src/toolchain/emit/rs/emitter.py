@@ -5694,7 +5694,7 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         enter_target_name = renderer.with_item_enter_target_name(item, ctx_tmp)
         enter_target_type = renderer.with_item_enter_target_type(item, ctx_rt)
         if var_name != "":
-            if var_name not in ctx.declared_vars:
+            if renderer.with_item_declares_bound_name(item, ctx.declared_vars):
                 ctx.declared_vars.add(var_name)
                 if _str(item, "with_enter_type") != "":
                     ctx.var_types[var_name] = _str(item, "with_enter_type")

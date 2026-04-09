@@ -1274,6 +1274,10 @@ class CommonRenderer:
     def with_item_exit_runtime_symbol(self, item: dict[str, JsonVal]) -> str:
         return self._str(item, "with_exit_runtime_symbol")
 
+    def with_item_declares_bound_name(self, item: dict[str, JsonVal], declared_names: set[str]) -> bool:
+        bound_name = self.with_item_bound_name(item)
+        return bound_name != "" and bound_name not in declared_names
+
     def select_with_exit_target(self, ctx_name: str, bound_name: str) -> str:
         return bound_name if bound_name != "" else ctx_name
 
