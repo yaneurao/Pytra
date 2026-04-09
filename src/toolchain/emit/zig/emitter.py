@@ -506,10 +506,11 @@ class _ZigStmtCommonRenderer(CommonRenderer):
 
     def emit_try_body_post_stmt(self, stmt: dict[str, Any], try_label: str) -> None:
         self._require_exception_style("manual_exception_slot")
-        exc_type, _, _ = self.active_exception_slot_names()
         if stmt.get("kind") in {"Return", "Raise", "Break", "Continue"}:
             return
-        self.emit_backend_line("if (" + exc_type + " != null) " + self.render_try_break(try_label))
+        self.emit_backend_line(
+            "if (" + self.active_exception_type_slot_name() + " != null) " + self.render_try_break(try_label)
+        )
 
     def emit_raise_propagation(self, try_label: str, return_stmt: str) -> None:
         self._require_exception_style("manual_exception_slot")
@@ -577,13 +578,6 @@ class _ZigStmtCommonRenderer(CommonRenderer):
                 pushed_exc = True
         self.owner._pending_exception_var_push = pushed_exc
         self.owner.indent = current_indent
-
-    def emit_exception_handler_capture(self) -> None:
-        self.emit_copy_exception_slot(
-            self.caught_exception_slot_names(),
-            self.active_exception_slot_names(),
-        )
-        self.emit_clear_exception_slot(self.active_exception_slot_names())
 
     def emit_exception_handler_teardown(self, handler: dict[str, Any]) -> None:
         del handler

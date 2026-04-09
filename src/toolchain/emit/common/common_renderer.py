@@ -386,7 +386,11 @@ class CommonRenderer:
         return None
 
     def emit_exception_handler_capture(self) -> None:
-        return None
+        self.emit_copy_exception_slot(
+            self.caught_exception_slot_names(),
+            self.active_exception_slot_names(),
+        )
+        self.emit_clear_exception_slot(self.active_exception_slot_names())
 
     def emit_copy_exception_slot(
         self,
