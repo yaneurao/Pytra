@@ -22,14 +22,14 @@ func basename(path string) string {
 }
 func py_basename(path string) string { return basename(path) }
 
-func splitext(path string) []any {
+func splitext(path string) (string, string) {
 	ext := filepath.Ext(path)
 	if ext == "" {
-		return []any{path, ""}
+		return path, ""
 	}
-	return []any{path[:len(path)-len(ext)], ext}
+	return path[:len(path)-len(ext)], ext
 }
-func py_splitext(path string) []any { return splitext(path) }
+func py_splitext(path string) (string, string) { return splitext(path) }
 
 func abspath(path string) string {
 	abs, err := filepath.Abs(path)
