@@ -5643,15 +5643,18 @@ def _emit_stmt(ctx: RsEmitContext, node: JsonVal) -> None:
         else:
             _emit(ctx, "assert!(" + test_str + ");")
     elif kind == "With":
+        renderer = _RsStmtCommonRenderer(ctx)
+        renderer.state.lines = ctx.lines
+        renderer.state.indent_level = ctx.indent_level
         items = _list(node, "items")
         if len(items) > 1 or _str(node, "with_enter_runtime_call") != "" or _str(node, "with_exit_runtime_call") != "":
-            _emit_with(ctx, node)
+            body = _list(node, "body")
+            if len(items) == 0:
+                items = [node]
+            renderer.emit_custom_with_stmt(node, items, body)
         else:
-            renderer = _RsStmtCommonRenderer(ctx)
-            renderer.state.lines = ctx.lines
-            renderer.state.indent_level = ctx.indent_level
             renderer.emit_stmt(node)
-            ctx.indent_level = renderer.state.indent_level
+        ctx.indent_level = renderer.state.indent_level
     elif kind == "TypeAlias":
         _emit_type_alias(ctx, node)
     elif kind == "VarDecl":
@@ -5739,16 +5742,6 @@ def _emit_remaining_orelse(ctx: RsEmitContext, if_node: dict[str, JsonVal]) -> N
         _emit(ctx, "}")
     else:
         _emit(ctx, "}")
-
-
-def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
-    items = _list(node, "items")
-    body = _list(node, "body")
-    if len(items) == 0:
-        items = [node]
-    renderer = _RsStmtCommonRenderer(ctx)
-    renderer.state.tmp_counter = ctx.temp_counter
-    renderer.emit_custom_with_stmt(node, items, body)
 
 
 def _emit_type_alias(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
