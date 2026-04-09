@@ -5701,40 +5701,9 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     for item in items:
         if not isinstance(item, dict):
             continue
-        context_expr = item.get("context_expr")
-        if not isinstance(context_expr, dict):
-            continue
-        ctx_tmp, ctx_rt, ctx_rs = renderer.resolve_with_context_capture(context_expr)
-        var_name = renderer.with_item_bound_name(item)
-        var_rs = renderer.with_item_bound_target_name(item)
-        enter_target_name = renderer.with_item_enter_target_name(item, ctx_tmp)
-        enter_target_type = renderer.with_item_enter_target_type(item, ctx_rt)
-        if var_name != "":
-            if renderer.with_item_declares_bound_name(item, ctx.declared_vars):
-                renderer.register_with_bound_name(item, ctx.declared_vars, ctx.var_types, enter_target_type)
-                renderer.emit_with_context_bind(var_rs, ctx_tmp, ctx_rs, True)
-            else:
-                renderer.emit_with_context_bind(var_rs, ctx_tmp, ctx_rs, False)
-        renderer.emit_with_enter_action(
-            enter_target_name,
-            enter_target_type,
-            renderer.with_item_enter_runtime_call(item),
-            renderer.with_item_enter_runtime_symbol(item),
-            enter_target_type,
-        )
-        renderer.emit_with_enter_fallback_action(
-            ctx_tmp,
-            ctx_rt,
-            renderer.with_source_uses_enter_fallback(ctx_rs),
-        )
-        ctx_entries.append(renderer.build_with_entry(
-            ctx_tmp,
-            var_rs,
-            ctx_rs,
-            enter_target_type,
-            renderer.with_item_exit_runtime_call(item),
-            renderer.with_item_exit_runtime_symbol(item),
-        ))
+        entry = renderer.emit_with_item(item, ctx.declared_vars, ctx.var_types)
+        if entry is not None:
+            ctx_entries.append(entry)
 
     ctx.temp_counter = renderer.state.tmp_counter
     _emit(ctx, renderer.render_try_capture_open(with_result))
@@ -5742,15 +5711,7 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     _emit_body(ctx, body)
     ctx.indent_level -= 1
     _emit(ctx, renderer.render_try_capture_close())
-    for ctx_tmp, var_rs, ctx_rs, target_type, exit_runtime_call, exit_runtime_symbol in reversed(ctx_entries):
-        target = renderer.select_with_exit_target(ctx_tmp, var_rs)
-        renderer.emit_with_exit_action(
-            target,
-            target_type,
-            exit_runtime_call,
-            exit_runtime_symbol,
-            renderer.with_source_uses_exit_fallback(ctx_rs),
-        )
+    renderer.emit_with_exit_actions(ctx_entries)
     _emit(ctx, "if let Err(" + with_err + ") = " + with_result + " {")
     ctx.indent_level += 1
     _emit(ctx, renderer.render_resume_unwind(with_err))

@@ -1271,6 +1271,61 @@ class CommonRenderer:
             exit_runtime_symbol,
         )
 
+    def emit_with_item(
+        self,
+        item: dict[str, JsonVal],
+        declared_names: set[str],
+        type_map: dict[str, str],
+    ) -> tuple[str, str, str, str, str, str] | None:
+        context_expr = item.get("context_expr")
+        if not isinstance(context_expr, dict):
+            return None
+        ctx_name, source_type, source_rendered_type = self.resolve_with_context_capture(context_expr)
+        bound_name = self.with_item_bound_name(item)
+        bound_target_name = self.with_item_bound_target_name(item)
+        enter_target_name = self.with_item_enter_target_name(item, ctx_name)
+        enter_target_type = self.with_item_enter_target_type(item, source_type)
+        if bound_name != "":
+            if self.with_item_declares_bound_name(item, declared_names):
+                self.register_with_bound_name(item, declared_names, type_map, enter_target_type)
+                self.emit_with_context_bind(bound_target_name, ctx_name, source_rendered_type, True)
+            else:
+                self.emit_with_context_bind(bound_target_name, ctx_name, source_rendered_type, False)
+        self.emit_with_enter_action(
+            enter_target_name,
+            enter_target_type,
+            self.with_item_enter_runtime_call(item),
+            self.with_item_enter_runtime_symbol(item),
+            enter_target_type,
+        )
+        self.emit_with_enter_fallback_action(
+            ctx_name,
+            source_type,
+            self.with_source_uses_enter_fallback(source_rendered_type),
+        )
+        return self.build_with_entry(
+            ctx_name,
+            bound_target_name,
+            source_rendered_type,
+            enter_target_type,
+            self.with_item_exit_runtime_call(item),
+            self.with_item_exit_runtime_symbol(item),
+        )
+
+    def emit_with_exit_actions(
+        self,
+        entries: list[tuple[str, str, str, str, str, str]],
+    ) -> None:
+        for ctx_name, bound_name, source_type, target_type, exit_runtime_call, exit_runtime_symbol in reversed(entries):
+            target_name = self.select_with_exit_target(ctx_name, bound_name)
+            self.emit_with_exit_action(
+                target_name,
+                target_type,
+                exit_runtime_call,
+                exit_runtime_symbol,
+                self.with_source_uses_exit_fallback(source_type),
+            )
+
     def with_item_bound_name(self, item: dict[str, JsonVal]) -> str:
         opt_vars = item.get("optional_vars")
         if isinstance(opt_vars, dict):
