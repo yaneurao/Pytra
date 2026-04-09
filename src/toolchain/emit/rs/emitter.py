@@ -1043,24 +1043,27 @@ class _RsStmtCommonRenderer(CommonRenderer):
         finalbody: list[JsonVal],
     ) -> None:
         self.ctx.indent_level = self.state.indent_level
-        self.emit_try_capture("__try_result", body)
+        try_result = self.next_try_result_name()
+        try_ok = self.next_try_success_name()
+        try_err = self.next_try_error_name()
+        self.emit_try_capture(try_result, body)
         if finalbody:
             _emit_body(self.ctx, finalbody)
         body_has_ret = _body_has_return(body) and self.ctx.current_return_type not in ("", "None")
         if body_has_ret:
-            _emit(self.ctx, self.render_try_match_open("__try_result"))
+            _emit(self.ctx, self.render_try_match_open(try_result))
             self.ctx.indent_level += 1
-            _emit(self.ctx, self.render_try_success_arm("__try_ok", True))
+            _emit(self.ctx, self.render_try_success_arm(try_ok, True))
             _emit(
                 self.ctx,
-                self.render_try_error_arm_open("__try_err")
-                + " std::panic::resume_unwind(__try_err); "
+                self.render_try_error_arm_open(try_err)
+                + " std::panic::resume_unwind(" + try_err + "); "
                 + self.render_try_error_arm_close(),
             )
             self.ctx.indent_level -= 1
             _emit(self.ctx, self.render_try_match_close())
         else:
-            _emit(self.ctx, self.render_try_rethrow_fallback("__try_result", "__try_err"))
+            _emit(self.ctx, self.render_try_rethrow_fallback(try_result, try_err))
         self.state.indent_level = self.ctx.indent_level
 
     def emit_try_with_handlers_stmt(
@@ -1073,19 +1076,23 @@ class _RsStmtCommonRenderer(CommonRenderer):
         self.ctx.indent_level = self.state.indent_level
         _emit_try_body_hoists(self.ctx, body)
         self.state.indent_level = self.ctx.indent_level
-        self.emit_try_capture("__try_result", body)
+        try_result = self.next_try_result_name()
+        try_ok = self.next_try_success_name()
+        catch_err = self.next_try_catch_name()
+        err_msg = self.next_string_exception_message_name()
+        self.emit_try_capture(try_result, body)
         self.ctx.indent_level = self.state.indent_level
         body_has_ret = _body_has_return(body) and self.ctx.current_return_type not in ("", "None")
-        _emit(self.ctx, self.render_try_match_open("__try_result"))
+        _emit(self.ctx, self.render_try_match_open(try_result))
         self.ctx.indent_level += 1
-        _emit(self.ctx, self.render_try_success_arm("__try_ok", body_has_ret))
-        _emit(self.ctx, self.render_try_error_arm_open("__catch_err", borrowed=True))
+        _emit(self.ctx, self.render_try_success_arm(try_ok, body_has_ret))
+        _emit(self.ctx, self.render_try_error_arm_open(catch_err, borrowed=True))
         self.ctx.indent_level += 1
         old_catch_var = self.ctx.catch_err_msg_var
         user_handlers, string_handlers = self.partition_exception_handlers(handlers)
         self.state.indent_level = self.ctx.indent_level
-        self.ctx.catch_err_msg_var = "__err_msg"
-        self.emit_partitioned_exception_handlers("__catch_err", user_handlers, "__err_msg", string_handlers)
+        self.ctx.catch_err_msg_var = err_msg
+        self.emit_partitioned_exception_handlers(catch_err, user_handlers, err_msg, string_handlers)
         self.ctx.indent_level = self.state.indent_level
         self.ctx.catch_err_msg_var = old_catch_var
         self.ctx.indent_level -= 1

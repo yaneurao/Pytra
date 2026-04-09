@@ -477,6 +477,21 @@ class CommonRenderer:
     def next_try_block_name(self) -> str:
         return self._next_tmp("__try_blk")
 
+    def next_try_result_name(self) -> str:
+        return self._next_tmp("__try_result")
+
+    def next_try_success_name(self) -> str:
+        return self._next_tmp("__try_ok")
+
+    def next_try_error_name(self) -> str:
+        return self._next_tmp("__try_err")
+
+    def next_try_catch_name(self) -> str:
+        return self._next_tmp("__catch_err")
+
+    def next_string_exception_message_name(self) -> str:
+        return self._next_tmp("__err_msg")
+
     def next_with_block_name(self) -> str:
         return self._next_tmp("__with_blk")
 
