@@ -3761,10 +3761,8 @@ class ZigNativeEmitter:
                         + elem_type
                         + ", "
                         + item_name
-                        + "); } break :"
-                        + blk
-                        + " "
-                        + out_name
+                        + "); } "
+                        + _ZigStmtCommonRenderer(self).render_break_with_value(blk, out_name)
                         + "; }"
                     )
             # list * int → list replication (ブロック式)
@@ -3805,9 +3803,9 @@ class ZigNativeEmitter:
                         + elem_type
                         + ", "
                         + item_name
-                        + "); } } break :"
-                        + blk
-                        + " __rl; }"
+                        + "); } } "
+                        + _ZigStmtCommonRenderer(self).render_break_with_value(blk, "__rl")
+                        + " }"
                     )
             if op == "Pow":
                 return "std.math.pow(f64, " + left + ", " + right + ")"
@@ -5532,7 +5530,7 @@ class ZigNativeEmitter:
         if loop_cond != "true":
             parts.append("  }")
         parts.append(" }")
-        parts.append(" break :" + blk + " " + out_name + "; }")
+        parts.append(" " + _ZigStmtCommonRenderer(self).render_break_with_value(blk, out_name) + " }")
         return "".join(parts)
 
     def _render_list_comp(self, node: dict[str, Any]) -> str:
@@ -5582,7 +5580,7 @@ class ZigNativeEmitter:
         if loop_cond != "true":
             parts.append("  }")
         parts.append(" }")
-        parts.append(" break :" + blk + " " + out_name + "; }")
+        parts.append(" " + _ZigStmtCommonRenderer(self).render_break_with_value(blk, out_name) + " }")
         return "".join(parts)
 
     def _comp_iter_parts(self, iter_node: dict[str, Any], capture_name: str, target: dict[str, Any]) -> tuple[str, str, list[str], dict[str, str]]:
