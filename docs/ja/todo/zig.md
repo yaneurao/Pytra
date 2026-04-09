@@ -37,8 +37,8 @@
 2. [x] [ID: P0-ZIG-CREXC-S2] Zig の `with` lowering を CommonRenderer 正本へ戻し、`with_statement` / `with_context_manager` parity を維持する
 3. [x] [ID: P0-ZIG-CREXC-S3] CommonRenderer に exception strategy hook を追加し、Rust / Zig の `try` / `raise` を hook 実装へ分離する
 4. [ ] [ID: P0-ZIG-CREXC-S4] Rust / Zig の `exception_types` / `try_raise` / `exception_bare_reraise` parity を維持したまま custom lowering を縮小する
-   進捗: `with` の alias hoist / file lane は CommonRenderer hook 化済み。Rust は `Try` statement entry、`catch_unwind` wrapper、`resume_unwind`、handler dispatch 骨格、user-defined exception raise の `panic_any`、`__try_*` / `__with_*` / `__catch_*` / `__err_*` 固定 temp 名まで CommonRenderer hook 経由に移行済み。Zig は handler dispatch loop、`try`/`with` body post-stmt propagation、body/orelse wrapper、bare re-raise restore、raise propagation、raise state writes、handler capture、global exception slot 宣言、slot 名そのものの抽象化まで hook 化済み。`lowering.exception_style` も `rs/zig` profile に反映済み。
-   残件: Zig の expression/helper 内に散っている inline exception escape の共通化と、manual exception slot protocol の profile/strategy 化。Rust 側は panic protocol 文字列が hook 実装に閉じたかの最終整理。
+   進捗: `with` の alias hoist / file lane は CommonRenderer hook 化済み。Rust は `Try` statement entry、`catch_unwind` wrapper、`resume_unwind`、handler dispatch 骨格、user-defined exception raise の `panic_any`、一般 `panic!(...)`、`__try_*` / `__with_*` / `__catch_*` / `__err_*` 固定 temp 名まで CommonRenderer hook 経由に移行済み。さらに `with` custom path では hoist 収集、protocol call builder、bind/clone 分岐、`__exit__` / `close()` fallback、entry tuple と exit target 選択も CommonRenderer helper に移行済み。Zig は handler dispatch loop、`try`/`with` body post-stmt propagation、body/orelse wrapper、bare re-raise restore、raise propagation、raise state writes、handler capture、global exception slot 宣言、slot 名そのものの抽象化まで hook 化済み。`lowering.exception_style` も `rs/zig` profile に反映済み。
+   残件: Zig の expression/helper 内に散っている inline exception escape の共通化と、manual exception slot protocol の profile/strategy 化。Rust 側は `with` item loop 本体と Rust 型判定をどこまで helper 化できるかの最終整理。
 
 ### P0-ZIG-TOOLCHAIN-LEGACY: toolchain_ 依存を解消する
 
