@@ -399,6 +399,15 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.owner.tmp_seq += 1
         return name
 
+    def next_bounds_checked_index_names(self) -> tuple[str, str, str]:
+        blk = "__idx_blk_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        len_name = "__idx_len_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        real_name = "__idx_real_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        return (blk, len_name, real_name)
+
     def render_exception_handler_guard_open(
         self,
         handler: dict[str, Any],
@@ -6018,14 +6027,9 @@ class ZigNativeEmitter:
         return "undefined"
 
     def _render_bounds_checked_index(self, obj: str, idx: str, len_expr: str, value_expr: str, result_zig_type: str) -> str:
-        blk = "__idx_blk_" + str(self.tmp_seq)
-        self.tmp_seq += 1
-        len_name = "__idx_len_" + str(self.tmp_seq)
-        self.tmp_seq += 1
-        real_name = "__idx_real_" + str(self.tmp_seq)
-        self.tmp_seq += 1
-        zero = self._zig_zero_value(result_zig_type)
         renderer = _ZigStmtCommonRenderer(self)
+        blk, len_name, real_name = renderer.next_bounds_checked_index_names()
+        zero = self._zig_zero_value(result_zig_type)
         return (
             renderer.render_block_expr_open(blk)
             + " const "

@@ -483,6 +483,13 @@ class CommonRenderer:
     def next_with_context_name(self) -> str:
         return self._next_tmp("__with_ctx")
 
+    def next_bounds_checked_index_names(self) -> tuple[str, str, str]:
+        return (
+            self._next_tmp("__idx_blk"),
+            self._next_tmp("__idx_len"),
+            self._next_tmp("__idx_real"),
+        )
+
     def render_exception_handler_guard_open(
         self,
         handler: dict[str, JsonVal],
