@@ -368,16 +368,11 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self._require_exception_style("manual_exception_slot")
         if stmt.get("kind") in {"Return", "Raise", "Break", "Continue"}:
             return
-        self.emit_backend_line(
-            "if (" + self.active_exception_type_slot_name() + " != null) " + self.render_try_break(try_label)
-        )
+        self.emit_backend_line("if (" + self.render_active_exception_check() + ") " + self.render_try_break(try_label))
 
     def emit_raise_propagation(self, try_label: str, return_stmt: str) -> None:
         self._require_exception_style("manual_exception_slot")
-        if try_label != "":
-            self.emit_backend_line(self.render_try_break(try_label))
-            return
-        self.emit_backend_line(return_stmt)
+        self.emit_backend_line(self.render_raise_propagation_stmt(try_label, return_stmt))
 
     def emit_bare_raise_restore(self) -> None:
         self._require_exception_style("manual_exception_slot")
@@ -413,6 +408,11 @@ class _ZigStmtCommonRenderer(CommonRenderer):
 
     def render_break_to_label_value(self, block_label: str, value_expr: str) -> str:
         return "break :" + block_label + " " + value_expr + ";"
+
+    def render_raise_propagation_stmt(self, try_label: str, return_stmt: str) -> str:
+        if try_label != "":
+            return self.render_try_break(try_label)
+        return return_stmt
 
     def emit_exception_handler_prelude(self, handler: dict[str, Any]) -> None:
         current_indent = self.owner.indent
@@ -1716,12 +1716,13 @@ class ZigNativeEmitter:
 
     def _emit_block(self, body_any: Any) -> None:
         body = self._dict_list(body_any)
-        exc_type = _ZigStmtCommonRenderer(self).active_exception_type_slot_name()
+        renderer = _ZigStmtCommonRenderer(self)
+        exc_check = renderer.render_active_exception_check()
         for stmt in body:
             self._emit_stmt(stmt)
             if self._function_depth > 0 and self._try_depth == 0:
                 if not self._stmt_guarantees_local_exit(stmt):
-                    self._emit_line("if (" + exc_type + " != null) " + self._exception_return_stmt())
+                    self._emit_line("if (" + exc_check + ") " + self._exception_return_stmt())
 
     def _scan_module_symbols(self, body: list[dict[str, Any]]) -> None:
         for stmt in body:

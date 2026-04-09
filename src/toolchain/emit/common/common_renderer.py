@@ -317,6 +317,9 @@ class CommonRenderer:
         exc_type, _exc_msg, _exc_line = self.active_exception_slot_names()
         return exc_type
 
+    def render_active_exception_check(self) -> str:
+        return self.active_exception_type_slot_name() + " != null"
+
     def bound_exception_record_type_name(self) -> str:
         raise RuntimeError("common renderer requires bound exception record type name for " + self.language)
 
@@ -826,6 +829,10 @@ class CommonRenderer:
     ) -> None:
         del try_label, return_stmt
         return None
+
+    def render_raise_propagation_stmt(self, try_label: str, return_stmt: str) -> str:
+        del try_label, return_stmt
+        raise RuntimeError("common renderer requires raise propagation stmt for " + self.language)
 
     def emit_bare_raise_restore(self) -> None:
         self.emit_copy_exception_slot(
