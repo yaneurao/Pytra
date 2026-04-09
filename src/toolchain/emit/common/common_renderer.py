@@ -295,6 +295,12 @@ class CommonRenderer:
     def exception_slot_decl_lines(self) -> list[str]:
         return []
 
+    def active_exception_slot_names(self) -> tuple[str, str, str]:
+        raise RuntimeError("common renderer requires active exception slot names for " + self.language)
+
+    def caught_exception_slot_names(self) -> tuple[str, str, str]:
+        raise RuntimeError("common renderer requires caught exception slot names for " + self.language)
+
     def _next_tmp(self, prefix: str) -> str:
         self.state.tmp_counter += 1
         return prefix + "_" + str(self.state.tmp_counter)

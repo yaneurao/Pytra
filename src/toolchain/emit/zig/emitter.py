@@ -296,14 +296,24 @@ class _ZigStmtCommonRenderer(CommonRenderer):
 
     def exception_slot_decl_lines(self) -> list[str]:
         self._require_exception_style("manual_exception_slot")
+        exc_type, exc_msg, exc_line = self.active_exception_slot_names()
+        caught_type, caught_msg, caught_line = self.caught_exception_slot_names()
         return [
-            "var __pytra_exc_type: ?[]const u8 = null;",
-            "var __pytra_exc_msg: ?[]const u8 = null;",
-            "var __pytra_exc_line: i64 = 0;",
-            "var __pytra_caught_type: ?[]const u8 = null;",
-            "var __pytra_caught_msg: ?[]const u8 = null;",
-            "var __pytra_caught_line: i64 = 0;",
+            "var " + exc_type + ": ?[]const u8 = null;",
+            "var " + exc_msg + ": ?[]const u8 = null;",
+            "var " + exc_line + ": i64 = 0;",
+            "var " + caught_type + ": ?[]const u8 = null;",
+            "var " + caught_msg + ": ?[]const u8 = null;",
+            "var " + caught_line + ": i64 = 0;",
         ]
+
+    def active_exception_slot_names(self) -> tuple[str, str, str]:
+        self._require_exception_style("manual_exception_slot")
+        return ("__pytra_exc_type", "__pytra_exc_msg", "__pytra_exc_line")
+
+    def caught_exception_slot_names(self) -> tuple[str, str, str]:
+        self._require_exception_style("manual_exception_slot")
+        return ("__pytra_caught_type", "__pytra_caught_msg", "__pytra_caught_line")
 
     def is_catch_all_exception_handler(self, handler: dict[str, Any]) -> bool:
         type_name = _safe_ident(self.exception_handler_type_name(handler), "")
@@ -362,9 +372,10 @@ class _ZigStmtCommonRenderer(CommonRenderer):
 
     def emit_try_body_post_stmt(self, stmt: dict[str, Any], try_label: str) -> None:
         self._require_exception_style("manual_exception_slot")
+        exc_type, _, _ = self.active_exception_slot_names()
         if stmt.get("kind") in {"Return", "Raise", "Break", "Continue"}:
             return
-        self.emit_backend_line("if (__pytra_exc_type != null) " + self.render_try_break(try_label))
+        self.emit_backend_line("if (" + exc_type + " != null) " + self.render_try_break(try_label))
 
     def emit_raise_propagation(self, try_label: str, return_stmt: str) -> None:
         self._require_exception_style("manual_exception_slot")
@@ -375,9 +386,11 @@ class _ZigStmtCommonRenderer(CommonRenderer):
 
     def emit_bare_raise_restore(self) -> None:
         self._require_exception_style("manual_exception_slot")
-        self.emit_backend_line("__pytra_exc_type = __pytra_caught_type;")
-        self.emit_backend_line("__pytra_exc_msg = __pytra_caught_msg;")
-        self.emit_backend_line("__pytra_exc_line = __pytra_caught_line;")
+        exc_type, exc_msg, exc_line = self.active_exception_slot_names()
+        caught_type, caught_msg, caught_line = self.caught_exception_slot_names()
+        self.emit_backend_line(exc_type + " = " + caught_type + ";")
+        self.emit_backend_line(exc_msg + " = " + caught_msg + ";")
+        self.emit_backend_line(exc_line + " = " + caught_line + ";")
 
     def emit_raise_exception_state(
         self,
@@ -386,9 +399,10 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         exc_line_expr: str,
     ) -> None:
         self._require_exception_style("manual_exception_slot")
-        self.emit_backend_line("__pytra_exc_type = " + exc_type_expr + ";")
-        self.emit_backend_line("__pytra_exc_msg = " + exc_msg_expr + ";")
-        self.emit_backend_line("__pytra_exc_line = " + exc_line_expr + ";")
+        slot_type, slot_msg, slot_line = self.active_exception_slot_names()
+        self.emit_backend_line(slot_type + " = " + exc_type_expr + ";")
+        self.emit_backend_line(slot_msg + " = " + exc_msg_expr + ";")
+        self.emit_backend_line(slot_line + " = " + exc_line_expr + ";")
 
     def render_inline_exception_state(
         self,
@@ -396,12 +410,18 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         exc_msg_expr: str,
         exc_line_expr: str,
     ) -> str:
+        slot_type, slot_msg, slot_line = self.active_exception_slot_names()
         return (
-            "__pytra_exc_type = "
+            slot_type
+            + " = "
             + exc_type_expr
-            + "; __pytra_exc_msg = "
+            + "; "
+            + slot_msg
+            + " = "
             + exc_msg_expr
-            + "; __pytra_exc_line = "
+            + "; "
+            + slot_line
+            + " = "
             + exc_line_expr
             + ";"
         )
@@ -428,19 +448,30 @@ class _ZigStmtCommonRenderer(CommonRenderer):
             safe_hname = _safe_ident(hname, "err")
             handler_body = self.exception_handler_body(handler)
             if self.owner._body_uses_name_runtime(handler_body, safe_hname):
-                self.owner._emit_line("const " + safe_hname + " = __PytraError{ .msg = (__pytra_caught_msg orelse \"\"), .line = __pytra_caught_line };")
+                _, caught_msg, caught_line = self.caught_exception_slot_names()
+                self.owner._emit_line(
+                    "const "
+                    + safe_hname
+                    + " = __PytraError{ .msg = ("
+                    + caught_msg
+                    + " orelse \"\"), .line = "
+                    + caught_line
+                    + " };"
+                )
                 self.owner._exception_var_stack.append({safe_hname})
                 pushed_exc = True
         self.owner._pending_exception_var_push = pushed_exc
         self.owner.indent = current_indent
 
     def emit_exception_handler_capture(self) -> None:
-        self.emit_backend_line("__pytra_caught_type = __pytra_exc_type;")
-        self.emit_backend_line("__pytra_caught_msg = __pytra_exc_msg;")
-        self.emit_backend_line("__pytra_caught_line = __pytra_exc_line;")
-        self.emit_backend_line("__pytra_exc_type = null;")
-        self.emit_backend_line("__pytra_exc_msg = null;")
-        self.emit_backend_line("__pytra_exc_line = 0;")
+        exc_type, exc_msg, exc_line = self.active_exception_slot_names()
+        caught_type, caught_msg, caught_line = self.caught_exception_slot_names()
+        self.emit_backend_line(caught_type + " = " + exc_type + ";")
+        self.emit_backend_line(caught_msg + " = " + exc_msg + ";")
+        self.emit_backend_line(caught_line + " = " + exc_line + ";")
+        self.emit_backend_line(exc_type + " = null;")
+        self.emit_backend_line(exc_msg + " = null;")
+        self.emit_backend_line(exc_line + " = 0;")
 
     def emit_exception_handler_teardown(self, handler: dict[str, Any]) -> None:
         del handler
@@ -1654,11 +1685,12 @@ class ZigNativeEmitter:
 
     def _emit_block(self, body_any: Any) -> None:
         body = self._dict_list(body_any)
+        exc_type = _ZigStmtCommonRenderer(self).active_exception_slot_names()[0]
         for stmt in body:
             self._emit_stmt(stmt)
             if self._function_depth > 0 and self._try_depth == 0:
                 if not self._stmt_guarantees_local_exit(stmt):
-                    self._emit_line("if (__pytra_exc_type != null) " + self._exception_return_stmt())
+                    self._emit_line("if (" + exc_type + " != null) " + self._exception_return_stmt())
 
     def _scan_module_symbols(self, body: list[dict[str, Any]]) -> None:
         for stmt in body:
@@ -2050,7 +2082,7 @@ class ZigNativeEmitter:
             handled = "__pytra_handled_" + str(self.tmp_seq)
             self.tmp_seq += 1
             renderer.state.indent_level = self.indent
-            renderer.emit_exception_dispatch_handlers("__pytra_exc_type", handled, handlers)
+            renderer.emit_exception_dispatch_handlers(renderer.active_exception_slot_names()[0], handled, handlers)
             self.indent = renderer.state.indent_level
         if len(orelse) > 0:
             self._emit_line(renderer.render_try_orelse_open())
