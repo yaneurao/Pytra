@@ -5736,24 +5736,13 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     _emit(ctx, renderer.render_try_capture_close())
     for ctx_tmp, var_rs, ctx_rs, target_type, exit_runtime_call, exit_runtime_symbol in reversed(ctx_entries):
         target = var_rs if var_rs != "" else ctx_tmp
-        if exit_runtime_call != "":
-            _emit(ctx, _emit_expr(ctx, renderer.build_with_protocol_call(
-                target,
-                target_type,
-                "__exit__",
-                exit_runtime_call,
-                exit_runtime_symbol,
-                "None",
-                [
-                    {"kind": "Constant", "value": None, "resolved_type": "None"},
-                    {"kind": "Constant", "value": None, "resolved_type": "None"},
-                    {"kind": "Constant", "value": None, "resolved_type": "None"},
-                ],
-            )) + ";")
-        elif ctx_rs.startswith("Rc<RefCell<"):
-            renderer.emit_with_fallback_exit(target, target_type)
-        else:
-            renderer.emit_with_close_fallback(target, target_type)
+        renderer.emit_with_exit_action(
+            target,
+            target_type,
+            exit_runtime_call,
+            exit_runtime_symbol,
+            ctx_rs.startswith("Rc<RefCell<"),
+        )
     _emit(ctx, "if let Err(" + with_err + ") = " + with_result + " {")
     ctx.indent_level += 1
     _emit(ctx, renderer.render_resume_unwind(with_err))

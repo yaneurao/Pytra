@@ -1016,6 +1016,39 @@ class CommonRenderer:
         del target_name, source_name, source_type, declare
         return None
 
+    def emit_with_exit_action(
+        self,
+        target_name: str,
+        target_type: str,
+        exit_runtime_call: str,
+        exit_runtime_symbol: str,
+        use_exit_fallback: bool,
+    ) -> None:
+        if exit_runtime_call != "":
+            self.emit_expr_stmt(
+                {
+                    "kind": "Expr",
+                    "value": self.build_with_protocol_call(
+                        target_name,
+                        target_type,
+                        "__exit__",
+                        exit_runtime_call,
+                        exit_runtime_symbol,
+                        "None",
+                        [
+                            {"kind": "Constant", "value": None, "resolved_type": "None"},
+                            {"kind": "Constant", "value": None, "resolved_type": "None"},
+                            {"kind": "Constant", "value": None, "resolved_type": "None"},
+                        ],
+                    ),
+                }
+            )
+            return
+        if use_exit_fallback:
+            self.emit_with_fallback_exit(target_name, target_type)
+            return
+        self.emit_with_close_fallback(target_name, target_type)
+
     def build_with_protocol_call(
         self,
         target_name: str,
