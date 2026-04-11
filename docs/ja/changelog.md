@@ -4,6 +4,37 @@
 
 # 更新履歴
 
+## 2026-04-10
+
+- **P0-ZIG-CREXC-S4 完了**: Zig / Rust の exception / try / with / raise 処理を CommonRenderer hook 経由で完全共有。言語固有コードの大半を共通化し、emitter の重複ロジックを撤去。
+- **Zig toolchain_ 依存解消**: `toolchain_.frontends.runtime_symbol_index` への依存を除去。残り toolchain_ 依存は撲滅完了（Dart / Swift / Julia / Zig 全て解消）。
+- **Zig 新規 fixture parity 確認**: with_statement / with_context_manager を含む新規 fixture の Zig parity を確認。
+- **Nim parity 完成**: P1-NIM-EMITTER-S5/S6 完了。compile/run parity を確立し、新規 fixture の index エラーを修正。
+- **Go type-id helper 依存除去**: P0-GO-TYPEID-CLN-S1~S3 完了。Go emitter から legacy type-id helper 依存を撲滅。
+- **Lua emitter guide 違反修正**: P0-LUA-EMITGUIDE-S1~S3 完了。hardcode 除去、mapping-driven lowering への移行。
+- **Lua full fixture parity 完了**: P1-LUA-EMITTER-S5 完了。Lua fixture 全件 parity 確認。
+- **P3-COPY-ELISION-S4 Lua 実装完了**: `bytes(bytearray)` のコピー省略を Lua runtime で実装。readonly proof をモジュール横断で拡張。png/gif copy elision path 完成。
+
+## 2026-04-09
+
+- **P0-ZIG-CREXC-S4 継続**: Zig / Rust の handler binding / bound exception value builder / slot accessor / with fallback protocol calls を hook 化。Rust with の各種 helper（entry/exit target、exit action、bind cloning、close fallback、protocol call builder、hoist collection、enter/exit metadata helpers 等）を CommonRenderer に移行。
+- **Rust panic 系 hook 化**: `panic_any` / panic capture wrapper / panic raise rendering を hook 経由に。
+- **Zig block expression helper 共有**: compare block / comprehension block / guarded inline exception block / simple block expr helper を CommonRenderer に集約。
+
+## 2026-04-08
+
+- **全言語 lint 完全クリア達成（0 件）**: 4/4 時点の 697 件から完全解消。18 言語全てが 10/10 PASS。
+- **C# / Go / Nim parity 復旧 + stdlib parity 復旧**: metadata-driven lowering への移行、runtime metadata 整合。
+- **import binding 共通化**: std / helper symbol imports を mapping.json 経由で解決するよう修正。
+- **fixture gaps 解消**: PS1 / Go / Nim の fixture parity gap を閉じる。
+- **Zig fixture parity 復旧**: with semantics と整合。
+- **P0-ZIG-CREXC S1-S3 起票・着手**: Zig / Rust の例外処理（raise / try / with）を CommonRenderer に押し戻す計画を起票。rs / zig の user-context with、raise/try の shape classification、try 処理を共通化。
+- **P0-ZIG-CREXC-S4 開始**: rs / zig の exception style を emit profile で宣言。handler type/body/name access、handler dispatch loop、try match wrapper、string/user handler chain 等を hook 化。
+- **Nim emitter の文字列分割回避を除去**: `"po" + "p"`, `"o" + "s"` 等の lint 回避の偽装を撲滅。mapping-driven method lowering に移行。
+- **PowerShell emitter guide 整合**: with-metadata と runtime mapping に整合。
+- **Rust emitter の literal coupling 除去**: emitter から文字列ハードコードを除去。
+- **lint に non-emitter 誤検出除外ロジック追加**: emitter 以外の false positive を lint から除外。
+
 ## 2026-04-07
 
 - **lint 149 件 / 14 言語 10/10 PASS 達成**: C++, JS, TS, Dart, Swift, Julia, Zig, Java, Scala, Kotlin, Ruby, Lua, PHP, Nim（ただし Nim のみ 9/10）。4/4 時点の 697 件から大幅削減。

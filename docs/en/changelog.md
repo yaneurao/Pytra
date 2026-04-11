@@ -4,6 +4,37 @@
 
 # Changelog
 
+## 2026-04-10
+
+- **P0-ZIG-CREXC-S4 complete**: Zig / Rust exception / try / with / raise handling fully shared via CommonRenderer hooks. Most language-specific duplication removed from emitters.
+- **Zig toolchain_ dependency removed**: `toolchain_.frontends.runtime_symbol_index` dependency eliminated. All toolchain_ dependencies now gone (Dart / Swift / Julia / Zig).
+- **Zig new fixture parity verified**: with_statement / with_context_manager and other new fixtures pass on Zig.
+- **Nim parity complete**: P1-NIM-EMITTER-S5/S6 done. Compile/run parity established; fixed index errors in new fixtures.
+- **Go type-id helper dependency removed**: P0-GO-TYPEID-CLN-S1~S3. Legacy type-id helper gone from Go emitter.
+- **Lua emitter guide violations fixed**: P0-LUA-EMITGUIDE-S1~S3. Hardcode removal, mapping-driven lowering.
+- **Lua full fixture parity complete**: P1-LUA-EMITTER-S5 done.
+- **P3-COPY-ELISION-S4 Lua implementation complete**: `bytes(bytearray)` copy elision in Lua runtime. Readonly proof extended across modules. png/gif copy elision path finished.
+
+## 2026-04-09
+
+- **P0-ZIG-CREXC-S4 continued**: Shared Zig / Rust handler binding, bound exception value builder, slot accessor, with fallback protocol calls via hooks. Rust with helpers (entry/exit target, exit action, bind cloning, close fallback, protocol call builder, hoist collection, enter/exit metadata helpers) migrated to CommonRenderer.
+- **Rust panic hooks**: `panic_any`, panic capture wrapper, panic raise rendering routed through hooks.
+- **Zig block expression helper sharing**: Compare block, comprehension block, guarded inline exception block, simple block expr helpers consolidated in CommonRenderer.
+
+## 2026-04-08
+
+- **All languages lint clear (0 violations)**: Down from 697 on Apr 4. 18 languages at 10/10 PASS.
+- **C# / Go / Nim parity + stdlib parity restoration**: Migration to metadata-driven lowering, runtime metadata alignment.
+- **Import binding unified**: std / helper symbol imports resolved via mapping.json.
+- **Fixture gaps closed**: PS1 / Go / Nim fixture parity gaps filled.
+- **Zig fixture parity restored**: Aligned with semantics.
+- **P0-ZIG-CREXC S1-S3 started**: Plan to push Zig / Rust exception handling (raise / try / with) into CommonRenderer. Rs/zig user-context with, raise/try shape classification, try handling shared.
+- **P0-ZIG-CREXC-S4 started**: Rs/zig exception style declared in emit profiles. Handler type/body/name access, handler dispatch loop, try match wrapper, string/user handler chain routed through hooks.
+- **Nim emitter string-split workaround removed**: `"po" + "p"`, `"o" + "s"` etc. lint-avoidance tricks eliminated. Migrated to mapping-driven method lowering.
+- **PowerShell emitter guide alignment**: Aligned with with-metadata and runtime mapping.
+- **Rust emitter literal coupling removed**: String hardcode removed from emitter.
+- **Lint: non-emitter false positive exclusion**: Lint now excludes false positives from non-emitter files.
+
 ## 2026-04-07
 
 - **Lint down to 149 / 14 languages at 10/10 PASS**: C++, JS, TS, Dart, Swift, Julia, Zig, Java, Scala, Kotlin, Ruby, Lua, PHP, Nim (Nim 9/10). Down from 697 on Apr 4.

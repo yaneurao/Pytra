@@ -137,13 +137,17 @@ Legend: ✅ = Good / 🔶 = Partial / limited / ❌ = Not supported / difficult
 
 ## Changelog
 
-> **2026-04-07** — Lint down to 149 / 14 languages at 10/10 PASS (697→149). PyFile abolished, IOBase hierarchy in `built_in/io.py`. Emitter guide §12.7. Cross-language PyFile coupling removal. Go/Rust/C#/PHP/Ruby/Lua emitter guide alignment.
+> **2026-04-10** — P0-ZIG-CREXC-S4 complete. Zig / Rust exception / try / with handling fully shared via CommonRenderer hooks. Zig toolchain_ dependency eliminated (all languages now at 0). Nim / Go / Lua new fixture parity complete. Lua copy elision done.
 
-> **2026-04-06** — With statement via `__enter__`/`__exit__` protocol (CommonRenderer try/finally + hoist). 2 with fixtures added. Parity FAIL keeps work dir. TS/JS shim cleanup complete. Dart emitter guide compliance. JVM major progress (Scala/Kotlin emitters). .east* removed from git.
+> **2026-04-09** — Zig / Rust handler binding / panic / block expression helpers consolidated in CommonRenderer.
+
+> **2026-04-08** — All languages lint clear (697→0). 18 languages at 10/10 PASS. C# / Go / Nim parity restored. Nim emitter string-split workaround eliminated. P0-ZIG-CREXC S1-S3 started.
+
+> **2026-04-07** — Lint down to 149 / 14 languages at 10/10 PASS (697→149). PyFile abolished, IOBase hierarchy in `built_in/io.py`. Emitter guide §12.7. Cross-language PyFile coupling removal.
+
+> **2026-04-06** — With statement via `__enter__`/`__exit__` protocol (CommonRenderer try/finally + hoist). 2 with fixtures added. TS/JS shim cleanup complete. Dart emitter guide compliance. JVM major progress. .east* removed from git.
 
 > **2026-04-05** — containers.py `mut[T]` annotations for `meta.mutates_receiver`. C++ method name hardcode removed. mapping.json FQCN key unification. Toolchain rename complete.
-
-> **2026-04-04** — 23 Python method name hardcode patterns in lint. All-skip parity now FAIL. callable_optional_none fixture. Emitter guide §12.6 callable mapping + §14.1 lint docs.
 
 [Full changelog](docs/en/changelog.md)
 
