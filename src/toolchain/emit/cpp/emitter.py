@@ -1471,6 +1471,7 @@ def _cpp_string(s: str) -> str:
 def _emit_name(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     name = _str(node, "id")
     if name == "": name = _str(node, "repr")
+    if name == "__file__": return _cpp_string(ctx.source_path)
     if name == "True": return "true"
     if name == "False": return "false"
     if name == "None": return "::std::nullopt"

@@ -40,4 +40,8 @@ inline int64 py_pathlib_write_text(const Path& path, const str& text) {
     return path.write_text(text);
 }
 
+inline int64 py_pathlib_write_text(const Path& path, const str& text, const str& encoding) {
+    return path.write_text(text, encoding);
+}
+
 #endif  // PYTRA_RUNTIME_STD_PATHLIB_H

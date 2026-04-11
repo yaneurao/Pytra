@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import importlib.util
 import json
 import os
 import shlex
@@ -50,9 +51,50 @@ def _fallback_collect_runtime_cpp_sources(_cpp_files: list[str], _include_dir: P
     return sorted(str(path.relative_to(ROOT)) for path in runtime_root.rglob("*.cpp"))
 
 
+def _filter_runtime_cpp_sources(runtime_sources: list[str], emit_dir: Path) -> list[str]:
+    kept: list[str] = []
+    runtime_cpp_root = ROOT / "src" / "runtime" / "cpp"
+    runtime_east_root = ROOT / "src" / "runtime" / "east"
+    for rel in runtime_sources:
+        src_path = ROOT / rel
+        if src_path.suffix != ".cpp" or not src_path.is_relative_to(runtime_cpp_root):
+            kept.append(rel)
+            continue
+        parent_rel = src_path.parent.relative_to(runtime_cpp_root)
+        stem = src_path.stem
+        candidate_headers = (
+            src_path.with_suffix(".h"),
+            emit_dir / parent_rel / f"{stem}.h",
+            runtime_east_root / parent_rel / f"{stem}.h",
+        )
+        if any(path.exists() for path in candidate_headers):
+            kept.append(rel)
+    return kept
+
+
+def _load_collect_runtime_cpp_sources():
+    try:
+        from cpp_runtime_deps import collect_runtime_cpp_sources as helper  # type: ignore
+        return helper
+    except ModuleNotFoundError:
+        pass
+
+    pyc_path = ROOT / "tools" / "__pycache__" / f"cpp_runtime_deps.cpython-{sys.version_info.major}{sys.version_info.minor}.pyc"
+    if pyc_path.exists():
+        spec = importlib.util.spec_from_file_location("cpp_runtime_deps_pyc", pyc_path)
+        if spec is not None and spec.loader is not None:
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            helper = getattr(module, "collect_runtime_cpp_sources", None)
+            if callable(helper):
+                return helper
+
+    return _fallback_collect_runtime_cpp_sources
+
+
 try:
-    from cpp_runtime_deps import collect_runtime_cpp_sources  # type: ignore
-except ModuleNotFoundError:
+    collect_runtime_cpp_sources = _load_collect_runtime_cpp_sources()  # type: ignore
+except Exception:
     collect_runtime_cpp_sources = _fallback_collect_runtime_cpp_sources  # type: ignore
 
 PARITY_DIR = ROOT / ".parity-results"
@@ -246,7 +288,10 @@ def _build_selfhost_binary(selfhost_lang: str) -> tuple[Path | None, str]:
         cwd=str(ROOT), capture_output=True, text=True,
     )
     if result.returncode != 0:
-        return None, f"emit failed: {result.stderr.strip()}"
+        details = result.stderr.strip()
+        if details == "":
+            details = result.stdout.strip()
+        return None, f"emit failed: {details}"
 
     # Step 2: compile to binary
     if selfhost_lang == "cpp":
@@ -255,7 +300,10 @@ def _build_selfhost_binary(selfhost_lang: str) -> tuple[Path | None, str]:
             return None, "no .cpp files emitted"
         runtime_sources = [
             str(ROOT / rel)
-            for rel in collect_runtime_cpp_sources(cpp_files, emit_dir)
+            for rel in _filter_runtime_cpp_sources(
+                collect_runtime_cpp_sources(cpp_files, emit_dir),
+                emit_dir,
+            )
         ]
         compile_result = subprocess.run(
             [

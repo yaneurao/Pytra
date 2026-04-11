@@ -11,6 +11,7 @@ deep_copy_json と normalize_type_name は toolchain.common から re-export す
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pytra.typing import cast
 from pytra.std.json import JsonVal
 
 from toolchain.emit.common.profile_loader import LoweringProfile, load_lowering_profile
@@ -151,37 +152,55 @@ def jv_is_list(v: JsonVal) -> bool:
     return isinstance(v, list)
 
 
-def nd_kind(node: dict[str, JsonVal]) -> str:
-    return jv_str(node.get("kind", ""))
+def nd_kind(node: JsonVal) -> str:
+    if not isinstance(node, dict):
+        return ""
+    return jv_str(cast(dict[str, JsonVal], node).get("kind", ""))
 
 
-def nd_get_str(node: dict[str, JsonVal], key: str) -> str:
-    return jv_str(node.get(key, ""))
+def nd_get_str(node: JsonVal, key: str) -> str:
+    if not isinstance(node, dict):
+        return ""
+    return jv_str(cast(dict[str, JsonVal], node).get(key, ""))
 
 
-def nd_get_str_or(node: dict[str, JsonVal], key: str, fallback: str) -> str:
-    return jv_str_or(node.get(key), fallback)
+def nd_get_str_or(node: JsonVal, key: str, fallback: str) -> str:
+    if not isinstance(node, dict):
+        return fallback
+    return jv_str_or(cast(dict[str, JsonVal], node).get(key), fallback)
 
 
-def nd_get_dict(node: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
-    return jv_dict(node.get(key))
+def nd_get_dict(node: JsonVal, key: str) -> dict[str, JsonVal]:
+    if not isinstance(node, dict):
+        return {}
+    return jv_dict(cast(dict[str, JsonVal], node).get(key))
 
 
-def nd_get_list(node: dict[str, JsonVal], key: str) -> list[JsonVal]:
-    return jv_list(node.get(key))
+def nd_get_list(node: JsonVal, key: str) -> list[JsonVal]:
+    if not isinstance(node, dict):
+        return []
+    return jv_list(cast(dict[str, JsonVal], node).get(key))
 
 
-def nd_get_int(node: dict[str, JsonVal], key: str) -> int:
-    return jv_int(node.get(key))
+def nd_get_int(node: JsonVal, key: str) -> int:
+    if not isinstance(node, dict):
+        return 0
+    return jv_int(cast(dict[str, JsonVal], node).get(key))
 
 
-def nd_get_bool(node: dict[str, JsonVal], key: str) -> bool:
-    return jv_bool(node.get(key))
+def nd_get_bool(node: JsonVal, key: str) -> bool:
+    if not isinstance(node, dict):
+        return False
+    return jv_bool(cast(dict[str, JsonVal], node).get(key))
 
 
-def nd_source_span(node: dict[str, JsonVal]) -> JsonVal:
-    return node.get("source_span")
+def nd_source_span(node: JsonVal) -> JsonVal:
+    if not isinstance(node, dict):
+        return None
+    return cast(dict[str, JsonVal], node).get("source_span")
 
 
-def nd_repr(node: dict[str, JsonVal]) -> str:
-    return jv_str(node.get("repr", ""))
+def nd_repr(node: JsonVal) -> str:
+    if not isinstance(node, dict):
+        return ""
+    return jv_str(cast(dict[str, JsonVal], node).get("repr", ""))

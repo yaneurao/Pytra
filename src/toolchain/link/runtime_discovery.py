@@ -11,7 +11,7 @@ from pytra.std.pathlib import Path
 from pytra.std import json
 
 
-_REPO_ROOT = Path(__file__).resolve().parents[3]
+_REPO_ROOT = Path.cwd()
 _RUNTIME_EAST_ROOT = _REPO_ROOT.joinpath("src").joinpath("runtime").joinpath("east")
 
 _RUNTIME_MODULE_BUCKETS: dict[str, str] = {
@@ -208,7 +208,7 @@ def _import_from_is_type_only(module_id: str, names_val: JsonVal, *, target: str
     return saw_symbol
 
 
-def _scan_runtime_refs(node: JsonVal, out: set[str], *, include_type_id_runtime: bool = True) -> None:
+def _scan_runtime_refs(node: JsonVal, out: set[str], *, include_type_id_runtime: bool) -> None:
     """Collect embedded runtime_module_id references from lowered nodes."""
     if isinstance(node, list):
         for item in node:

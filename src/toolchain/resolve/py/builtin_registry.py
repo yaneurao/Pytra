@@ -521,12 +521,12 @@ def _overlay_class_sigs_from_source(reg: BuiltinRegistry, source_path: Path) -> 
 
 
 def _default_containers_source_path() -> Path:
-    repo_root = Path(__file__).resolve().parents[4]
+    repo_root = Path.cwd()
     return repo_root / "src" / "pytra" / "built_in" / "containers.py"
 
 
 def _default_io_source_path() -> Path:
-    repo_root = Path(__file__).resolve().parents[4]
+    repo_root = Path.cwd()
     return repo_root / "src" / "pytra" / "built_in" / "io.py"
 
 

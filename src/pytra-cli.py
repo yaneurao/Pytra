@@ -23,6 +23,7 @@ from pytra.std import json
 from pytra.std import subprocess as py_subprocess
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
+from pytra.typing import cast
 from toolchain.common.jv import deep_copy_json
 from toolchain.compile.lower import lower_east2_to_east3
 from toolchain.link.linker import LinkResult
@@ -43,8 +44,11 @@ from toolchain.resolve.py.resolver import resolve_file
 
 
 def _repo_root() -> Path:
-    """Return repository root anchored to this file location."""
-    return Path(__file__).resolve().parents[1]
+    """Return repository root from the current working directory.
+
+    Selfhost binaries run from repo root, so avoid relying on `__file__`.
+    """
+    return Path.cwd()
 
 
 def _unsupported_target_attr(module_name: str, attr_name: str) -> None:
@@ -176,16 +180,14 @@ def _module_stem_from_source_path(source_path: str, fallback_input: str) -> str:
 
 
 def _lower_cpp_doc(east2_doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
-    mutable_east2_doc: dict[str, JsonVal] = east2_doc
-    typed_east3_doc: dict[str, JsonVal] = lower_east2_to_east3(mutable_east2_doc, target_language="cpp")
-    return typed_east3_doc
+    return cast(dict[str, JsonVal], lower_east2_to_east3(east2_doc, target_language="cpp"))
 
 
 def _optimize_cpp_doc(east3_doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
     optimized_doc: dict[str, JsonVal] = optimize_east3_doc_only(
         east3_doc,
         opt_level=1,
-        debug_flags=_optimizer_debug_flags("", ""),
+        debug_flags=_optimizer_debug_flags(1, "", ""),
     )
     return optimized_doc
 
@@ -256,22 +258,29 @@ def _collect_build_sources(inputs: list[str]) -> list[tuple[str, dict[str, JsonV
         ordered.append((current_key, typed_east1_doc))
         seen.add(current_key)
 
-        meta = east1_doc.get("meta")
-        if not isinstance(meta, dict):
+        meta_raw = east1_doc.get("meta")
+        if not isinstance(meta_raw, dict):
             continue
-        import_resolution = meta.get("import_resolution")
-        if not isinstance(import_resolution, dict):
+        meta = cast(dict[str, JsonVal], meta_raw)
+        import_resolution_raw = meta.get("import_resolution")
+        if not isinstance(import_resolution_raw, dict):
             continue
-        bindings = import_resolution.get("bindings")
-        if not isinstance(bindings, list):
+        import_resolution = cast(dict[str, JsonVal], import_resolution_raw)
+        bindings_raw = import_resolution.get("bindings")
+        if not isinstance(bindings_raw, list):
             continue
+        bindings = cast(list[JsonVal], bindings_raw)
         for binding in bindings:
             if not isinstance(binding, dict):
                 continue
-            module_id = binding.get("module_id")
-            if not isinstance(module_id, str) or module_id == "" or module_id.startswith("pytra."):
+            binding_node = cast(dict[str, JsonVal], binding)
+            module_id_raw = binding_node.get("module_id", "")
+            if not isinstance(module_id_raw, str):
                 continue
-            dep_path = _module_source_path(module_id)
+            module_id_text = cast(str, module_id_raw)
+            if module_id_text == "" or module_id_text.startswith("pytra."):
+                continue
+            dep_path = _module_source_path(module_id_text)
             dep_key = str(dep_path.resolve()) if str(dep_path) != "" else ""
             if dep_key != "" and dep_key not in seen:
                 pending.append(dep_path.resolve())
@@ -364,7 +373,7 @@ def _resolve_one(input_path: Path, output_text: str, pretty: bool) -> int:
 
     # Load builtin registry
     builtins_path, containers_path, containers_source_path, stdlib_dir = _builtin_registry_paths()
-    registry = load_builtin_registry(builtins_path, containers_path, stdlib_dir, containers_source_path)
+    registry = load_builtin_registry(builtins_path, containers_path, stdlib_dir, containers_source_path, None)
 
     result = resolve_file(input_path, registry=registry)
     if output_text != "":
@@ -467,7 +476,7 @@ def _compile_one(input_path: Path, output_text: str, pretty: bool) -> int:
         return 1
 
     typed_east2_doc: dict[str, JsonVal] = east2_doc
-    east3_doc = lower_east2_to_east3(typed_east2_doc, target_language="cpp")
+    east3_doc = cast(dict[str, JsonVal], lower_east2_to_east3(typed_east2_doc, target_language="cpp"))
     out_path = Path(output_text) if output_text != "" else _default_east3_output_path(input_path)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -842,6 +851,15 @@ def _emit_nim(manifest_path: Path, output_dir: Path) -> int:
     return 1
 
 
+def _emit_go(manifest_path: Path, output_dir: Path) -> int:
+    """Go emit: linked output → subprocess delegated Go emitter + runtime copy."""
+    status = _emit_target_subprocess("go", manifest_path, output_dir)
+    if status != 0:
+        return status
+    _copy_go_runtime_files(output_dir)
+    return 0
+
+
 def _copy_ts_runtime_files(_output_dir: Path) -> int:
     _unsupported_target_attr("toolchain.emit.ts.emitter", "emit_ts_module")
     return 0
@@ -949,8 +967,8 @@ def cmd_build(args: list[str]) -> int:
             negative_index_mode=negative_index_mode,
             bounds_check_mode=bounds_check_mode,
         )
-    except Exception:
-        print("error: build failed")
+    except Exception as exc:
+        print("error: build failed: " + str(exc))
         return 1
 
 
@@ -971,7 +989,7 @@ def _build_pipeline(
 
     # 2. Resolve
     builtins_path, containers_path, containers_source_path, stdlib_dir = _builtin_registry_paths()
-    registry = load_builtin_registry(builtins_path, containers_path, stdlib_dir, containers_source_path)
+    registry = load_builtin_registry(builtins_path, containers_path, stdlib_dir, containers_source_path, None)
 
     east2_docs: list[tuple[str, dict[str, JsonVal]]] = []
     for inp, east1_doc in east1_docs:
@@ -983,16 +1001,21 @@ def _build_pipeline(
     # 3. Compile
     east3_docs: list[tuple[str, dict[str, JsonVal]]] = []
     for inp, east2_doc in east2_docs:
-        east3_docs.append((inp, lower_east2_to_east3(east2_doc, target_language=target)))
+        compiled_doc = cast(dict[str, JsonVal], lower_east2_to_east3(east2_doc, target_language=target))
+        east3_docs.append((inp, compiled_doc))
     print("build: compiled " + str(len(east3_docs)) + " files")
 
     # 4. Optimize
     east3_opt_docs: list[tuple[str, dict[str, JsonVal]]] = []
     optimizer_debug_flags = _optimizer_debug_flags(opt_level, negative_index_mode, bounds_check_mode)
     for inp, east3_doc in east3_docs:
+        optimized_doc = cast(
+            dict[str, JsonVal],
+            optimize_east3_doc_only(east3_doc, opt_level=opt_level, debug_flags=optimizer_debug_flags),
+        )
         east3_opt_docs.append((
             inp,
-            optimize_east3_doc_only(east3_doc, opt_level=opt_level, debug_flags=optimizer_debug_flags),
+            optimized_doc,
         ))
     print("build: optimized " + str(len(east3_opt_docs)) + " files")
 
@@ -1015,11 +1038,14 @@ def _build_pipeline(
         east3_opt_paths.append(str(out_path))
 
     link_result = link_modules(east3_opt_paths, target=target, dispatch_mode="native")
-    _optimize_linked_runtime_modules(
-        link_result.linked_modules,
-        opt_level=opt_level,
-        debug_flags=optimizer_debug_flags,
-    )
+    for module in link_result.linked_modules:
+        if module.module_kind not in ("runtime", "helper"):
+            continue
+        module.east_doc = optimize_east3_doc_only(
+            module.east_doc,
+            opt_level=opt_level,
+            debug_flags=optimizer_debug_flags,
+        )
     # Only the first input is the actual entry module; demote others
     if len(inputs) >= 1:
         entry_abs = str(Path(inputs[0]).resolve())

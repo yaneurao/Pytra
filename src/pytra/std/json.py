@@ -94,6 +94,18 @@ def _jv_as_bool(raw: JsonVal) -> bool | None:
     return cast(bool, raw)
 
 
+def _jv_as_obj(raw: JsonVal) -> dict[str, JsonVal] | None:
+    if not isinstance(raw, dict):
+        return None
+    return cast(dict[str, JsonVal], raw)
+
+
+def _jv_as_arr(raw: JsonVal) -> list[JsonVal] | None:
+    if not isinstance(raw, list):
+        return None
+    return cast(list[JsonVal], raw)
+
+
 def _jv_obj_require(raw: dict[str, JsonVal], key: str) -> JsonVal:
     for k, value in raw.items():
         if k == key:
@@ -206,18 +218,16 @@ class JsonValue:
         self.raw = raw
 
     def as_obj(self) -> JsonObj | None:
-        jv: JsonVal = self.raw
-        out: JsonObj | None = None
-        if isinstance(jv, dict):
-            out = JsonObj(cast(dict[str, JsonVal], jv))
-        return out
+        raw_obj = _jv_as_obj(self.raw)
+        if raw_obj is None:
+            return None
+        return JsonObj(raw_obj)
 
     def as_arr(self) -> JsonArr | None:
-        jv: JsonVal = self.raw
-        out: JsonArr | None = None
-        if isinstance(jv, list):
-            out = JsonArr(cast(list[JsonVal], jv))
-        return out
+        raw_arr = _jv_as_arr(self.raw)
+        if raw_arr is None:
+            return None
+        return JsonArr(raw_arr)
 
     def as_str(self) -> str | None:
         value: str | None = _jv_as_str(self.raw)
@@ -417,19 +427,17 @@ def loads(text: str) -> JsonValue:
 
 
 def loads_obj(text: str) -> JsonObj | None:
-    val: JsonVal = _JsonParser(text).parse()
-    out: JsonObj | None = None
-    if isinstance(val, dict):
-        out = JsonObj(cast(dict[str, JsonVal], val))
-    return out
+    raw_obj = _jv_as_obj(_JsonParser(text).parse())
+    if raw_obj is None:
+        return None
+    return JsonObj(raw_obj)
 
 
 def loads_arr(text: str) -> JsonArr | None:
-    val: JsonVal = _JsonParser(text).parse()
-    out: JsonArr | None = None
-    if isinstance(val, list):
-        out = JsonArr(cast(list[JsonVal], val))
-    return out
+    raw_arr = _jv_as_arr(_JsonParser(text).parse())
+    if raw_arr is None:
+        return None
+    return JsonArr(raw_arr)
 
 
 def _join_strs(parts: list[str], sep: str) -> str:
@@ -544,15 +552,13 @@ def _dump_json_value(
     if v is None:
         return "null"
     if isinstance(v, bool):
-        if str(v) == "True":
-            return "true"
-        return "false"
+        return "true" if v else "false"
     if isinstance(v, int):
-        return str(v)
+        return str(cast(int64, v))
     if isinstance(v, float):
-        return str(v)
+        return str(cast(float, v))
     if isinstance(v, str):
-        return _escape_str(str(v), ensure_ascii)
+        return _escape_str(cast(str, v), ensure_ascii)
     if isinstance(v, list):
         return _dump_json_list(cast(list[JsonVal], v), ensure_ascii, indent, item_sep, key_sep, level)
     if isinstance(v, dict):

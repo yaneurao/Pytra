@@ -48,7 +48,7 @@ _TYPE_MAP: dict[str, str] = {
     "Obj": "object",
     "object": "object",
     "JsonVal": "JsonVal",
-    "Node": "Object<dict<str, object>>",
+    "Node": "Object<dict<str, JsonVal>>",
     "Callable": "::std::function<object(object)>",
 }
 
@@ -230,6 +230,8 @@ def cpp_param_decl(resolved_type: str, name: str, *, is_mutable: bool = False) -
     """Render a function parameter declaration."""
     ct = cpp_signature_type(resolved_type)
     if _is_small_value_type(ct):
+        return ct + " " + name
+    if is_mutable and ct.startswith("::std::optional<"):
         return ct + " " + name
     if is_mutable:
         return ct + "& " + name
