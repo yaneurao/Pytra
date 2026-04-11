@@ -2064,6 +2064,18 @@ def _emit_condition_expr(ctx: CppEmitContext, node: JsonVal) -> str:
 
 def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     rc = _str(node, "runtime_call")
+    semantic_tag = _str(node, "semantic_tag")
+    if rc == "":
+        if semantic_tag == "core.bytearray_ctor":
+            rc = "bytearray_ctor"
+        elif semantic_tag == "core.bytes_ctor":
+            rc = "bytes_ctor"
+        elif semantic_tag == "core.dict_ctor":
+            rc = "dict_ctor"
+        elif semantic_tag == "core.list_ctor":
+            rc = "list_ctor"
+        elif semantic_tag == "core.set_ctor":
+            rc = "set_ctor"
     args = _list(node, "args")
     arg_strs = [_emit_expr(ctx, a) for a in args]
     func = node.get("func")
