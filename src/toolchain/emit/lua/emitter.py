@@ -1235,8 +1235,31 @@ def _get_negative_int_literal(node: dict[str, JsonVal]) -> int | None:
     return None
 
 
+def _subscript_access_hint(node: dict[str, JsonVal]) -> dict[str, JsonVal] | None:
+    meta_obj = node.get("meta")
+    meta = meta_obj if isinstance(meta_obj, dict) else None
+    if meta is None:
+        return None
+    hint_obj = meta.get("subscript_access_v1")
+    hint = hint_obj if isinstance(hint_obj, dict) else None
+    if hint is None:
+        return None
+    if _str(hint, "schema_version") != "subscript_access_v1":
+        return None
+    negative_index = _str(hint, "negative_index")
+    bounds_check = _str(hint, "bounds_check")
+    if negative_index not in ("normalize", "skip"):
+        return None
+    if bounds_check not in ("full", "off"):
+        return None
+    return hint
+
+
 def _emit_checked_subscript_call(ctx: EmitContext, value: JsonVal) -> str:
     if not isinstance(value, dict) or _str(value, "kind") != "Subscript":
+        return ""
+    hint = _subscript_access_hint(value)
+    if hint is not None and _str(hint, "bounds_check") == "off" and _str(hint, "negative_index") == "skip":
         return ""
     owner_node = value.get("value")
     if not isinstance(owner_node, dict):
