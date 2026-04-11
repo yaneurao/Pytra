@@ -19,8 +19,6 @@ __pycache__/
 /out/
 /selfhost/
 
-# Deprecated legacy toolchain (pending deletion when Julia/Dart/Swift/Zig remove deps)
-/src/toolchain_/
 /tmp/
 /.parity-results/
 
