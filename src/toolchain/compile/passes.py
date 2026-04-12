@@ -35,6 +35,22 @@ def _is_function_like_kind(kind: str) -> bool:
 def _is_function_like(node: JsonVal) -> bool:
     return isinstance(node, dict) and _is_function_like_kind(nd_kind(jv_dict(node)))
 
+
+def _empty_jv_list() -> list[JsonVal]:
+    out: list[JsonVal] = []
+    return out
+
+
+def _lc_temp_name(stmt: Node, ordinal: int) -> str:
+    span = stmt.get("source_span")
+    if isinstance(span, dict):
+        span_node: Node = jv_dict(span)
+        line_no = span_node.get("line")
+        col_no = span_node.get("col")
+        if isinstance(line_no, int) and isinstance(col_no, int):
+            return "__comp_" + str(line_no) + "_" + str(col_no) + "_" + str(ordinal)
+    return "__comp_" + str(ordinal)
+
 # Re-export stubs — these are imported by lower.py
 # Each function mutates the module in place and returns it.
 
@@ -228,10 +244,16 @@ def _build_lc_target_plan(target: JsonVal) -> Node:
                 plan["target_type"] = rt
             return plan
         if kind == TUPLE:
-            elements = target_node.get("elements") or target_node.get("elts") or []
-            eps: list[JsonVal] = []
-            if isinstance(elements, list):
-                for elem in elements:
+            elements: list[JsonVal] = _empty_jv_list()
+            elems_obj = target_node.get("elements")
+            if isinstance(elems_obj, list):
+                elements = cast(list[JsonVal], elems_obj)
+            else:
+                elts_obj = target_node.get("elts")
+                if isinstance(elts_obj, list):
+                    elements = cast(list[JsonVal], elts_obj)
+            eps: list[JsonVal] = _empty_jv_list()
+            for elem in elements:
                     eps.append(_build_lc_target_plan(elem))
             plan: Node = {}
             plan["kind"] = TUPLE_TARGET
@@ -259,7 +281,7 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
     target_node["resolved_type"] = rt
     value_node: Node = {}
     value_node["kind"] = LIST
-    value_node["elements"] = []
+    value_node["elements"] = _empty_jv_list()
     value_node["resolved_type"] = rt
     init: Node = {}
     init["kind"] = ANN_ASSIGN
@@ -284,10 +306,10 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
             append_node["resolved_type"] = elem_type
         elif append_kind == SET and append_rt in ("", "unknown", "set[unknown]"):
             append_node["resolved_type"] = elem_type
-    generators = lc.get("generators", [])
-    if not isinstance(generators, list):
-        generators = []
-    generator_list: list[JsonVal] = cast(list[JsonVal], generators)
+    generator_list: list[JsonVal] = _empty_jv_list()
+    generators = lc.get("generators")
+    if isinstance(generators, list):
+        generator_list = cast(list[JsonVal], generators)
     append_args: list[Node] = []
     if append_arg is not None:
         append_args.append(cast(dict[str, JsonVal], append_arg))
@@ -318,8 +340,8 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
                         if_stmt["kind"] = IF
                         if_stmt["test"] = deep_copy_json(cond)
                         if_stmt["body"] = body
-                        if_stmt["orelse"] = []
-                        body2: list[JsonVal] = []
+                        if_stmt["orelse"] = _empty_jv_list()
+                        body2: list[JsonVal] = _empty_jv_list()
                         body2.append(if_stmt)
                         body = body2
         target = gen_node.get("target")
@@ -327,7 +349,7 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
         iter_kind = ""
         iter_node: Node = {}
         if isinstance(iter_expr, dict):
-            iter_node = cast(dict[str, JsonVal], iter_expr)
+            iter_node = jv_dict(iter_expr)
             iter_kind = nd_kind(iter_node)
         tp = _build_lc_target_plan(target)
         if iter_kind in ("RangeExpr", FOR_RANGE):
@@ -353,7 +375,7 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
             fs["iter_plan"] = iter_plan
             fs["target_plan"] = tp
             fs["body"] = body
-            fs["orelse"] = []
+            fs["orelse"] = _empty_jv_list()
         else:
             iter_plan: Node = {}
             iter_plan["kind"] = RUNTIME_ITER_FOR_PLAN
@@ -373,8 +395,8 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
             fs["iter_plan"] = iter_plan
             fs["target_plan"] = tp
             fs["body"] = body
-            fs["orelse"] = []
-        body3: list[JsonVal] = []
+            fs["orelse"] = _empty_jv_list()
+        body3: list[JsonVal] = _empty_jv_list()
         body3.append(fs)
         body = body3
     out: list[Node] = [init]
@@ -385,10 +407,12 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
 
 
 def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
-    result: list[JsonVal] = []
+    result: list[JsonVal] = _empty_jv_list()
+    stmt_idx = 0
     for stmt in stmts:
         if not isinstance(stmt, dict):
             result.append(stmt)
+            stmt_idx += 1
             continue
         stmt_node: Node = jv_dict(stmt)
         kind = nd_kind(stmt_node)
@@ -397,14 +421,17 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
             if isinstance(value, dict) and nd_kind(jv_dict(value)) == LIST_COMP:
                 target = stmt_node.get("target")
                 tn = ""
-                if isinstance(target, dict) and nd_kind(jv_dict(target)) == NAME:
-                    tn = jv_str(target.get("id", ""))
-                cn = tn if tn != "" else ctx.next_comp_name()
+                if isinstance(target, dict):
+                    target_node = jv_dict(target)
+                    if nd_kind(target_node) == NAME:
+                        tn = jv_str(target_node.get("id", ""))
+                cn = tn if tn != "" else _lc_temp_name(stmt_node, stmt_idx)
                 at = ""
                 if kind == ANN_ASSIGN:
                     ann = stmt_node.get("annotation")
-                    if isinstance(ann, str) and ann != "" and "unknown" not in ann:
-                        at = ann
+                    ann_s = jv_str(ann)
+                    if ann_s != "" and "unknown" not in ann_s:
+                        at = ann_s
                 expanded = _expand_lc_to_stmts(value, cn, at)
                 if cn != tn and isinstance(target, dict):
                     assign_value: Node = {}
@@ -419,14 +446,16 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
                     expanded.append(assign_stmt)
                 for ex in expanded:
                     result.append(ex)
+                stmt_idx += 1
                 continue
         if kind == EXPR:
             ev = stmt_node.get("value")
             if isinstance(ev, dict) and nd_kind(jv_dict(ev)) == LIST_COMP:
-                tmp: str = ctx.next_comp_name()
+                tmp = _lc_temp_name(stmt_node, stmt_idx)
                 expanded_expr = _expand_lc_to_stmts(ev, tmp)
                 for ex in expanded_expr:
                     result.append(ex)
+                stmt_idx += 1
                 continue
         # Recurse
         for key in ("body", "orelse", "finalbody"):
@@ -442,6 +471,7 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
                         if isinstance(hb, list):
                             h["body"] = _lc_in_stmts(hb, ctx)
         result.append(stmt)
+        stmt_idx += 1
     return result
 
 
@@ -1540,10 +1570,10 @@ def _try_lower_enum_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
             is_enum = func_node.get("id") == "enumerate" or func_node.get("attr") == "enumerate"
     if not is_enum:
         return None
-    args = ie_node.get("args", [])
-    if not isinstance(args, list):
+    args_obj = ie_node.get("args")
+    if not isinstance(args_obj, list):
         return None
-    args_list: list[JsonVal] = cast(list[JsonVal], args)
+    args_list: list[JsonVal] = cast(list[JsonVal], args_obj)
     if len(args_list) < 1:
         return None
     iterable = args_list[0]
@@ -1555,14 +1585,14 @@ def _try_lower_enum_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
             sv = sa_node.get("value")
             if isinstance(sv, int):
                 start_val = sv
-    tp = stmt.get("target_plan", {})
+    tp = stmt.get("target_plan")
     if not isinstance(tp, dict):
         return None
     tp_node: Node = cast(dict[str, JsonVal], tp)
-    body = stmt.get("body", [])
-    if not isinstance(body, list):
+    body_obj = stmt.get("body")
+    if not isinstance(body_obj, list):
         return None
-    body_list: list[JsonVal] = cast(list[JsonVal], body)
+    body_list: list[JsonVal] = cast(list[JsonVal], body_obj)
     idx_name = ""
     val_name = ""
     remaining: list[JsonVal] = []
@@ -1654,7 +1684,10 @@ def _try_lower_enum_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
         nd_tuple: Node = {}
         nd_tuple["kind"] = TUPLE
         nd_tuple["resolved_type"] = pair_type
-        nd_tuple["elements"] = [nd_ctr_name, nd_elem_name]
+        tuple_elems: list[JsonVal] = _empty_jv_list()
+        tuple_elems.append(nd_ctr_name)
+        tuple_elems.append(nd_elem_name)
+        nd_tuple["elements"] = tuple_elems
         nd_pair_target: Node = {}
         nd_pair_target["kind"] = NAME
         nd_pair_target["id"] = pair_name
@@ -1678,7 +1711,7 @@ def _try_lower_enum_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
         nd_increment["target"] = nd_increment_target
         nd_increment["op"] = "Add"
         nd_increment["value"] = nd_increment_value
-        nd_nb: list[JsonVal] = []
+        nd_nb: list[JsonVal] = _empty_jv_list()
         nd_nb.append(nd_pair_assign)
         for item in body_list:
             nd_nb.append(item)
@@ -1689,8 +1722,12 @@ def _try_lower_enum_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
         nd_nf["iter_plan"] = nd_nip
         nd_nf["target_plan"] = nd_ntp
         nd_nf["body"] = nd_nb
-        nd_nf["orelse"] = stmt.get("orelse", [])
-        nd_out: list[JsonVal] = []
+        orelse_obj = stmt.get("orelse")
+        if isinstance(orelse_obj, list):
+            nd_nf["orelse"] = cast(list[JsonVal], orelse_obj)
+        else:
+            nd_nf["orelse"] = _empty_jv_list()
+        nd_out: list[JsonVal] = _empty_jv_list()
         nd_out.append(nd_init)
         nd_out.append(nd_nf)
         return nd_out
@@ -1810,7 +1847,7 @@ def _try_lower_reversed_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
     if not isinstance(ip, dict):
         return None
     ip_node: Node = cast(dict[str, JsonVal], ip)
-    if ip_node.get("kind") != RUNTIME_ITER_FOR_PLAN:
+    if nd_kind(ip_node) != RUNTIME_ITER_FOR_PLAN:
         return None
     ie = ip_node.get("iter_expr")
     if not isinstance(ie, dict):
@@ -1825,10 +1862,10 @@ def _try_lower_reversed_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
             is_rev = func_node.get("id") == "reversed" or func_node.get("attr") == "reversed"
     if not is_rev:
         return None
-    args = ie_node.get("args", [])
-    if not isinstance(args, list):
+    args_obj = ie_node.get("args")
+    if not isinstance(args_obj, list):
         return None
-    args_list: list[JsonVal] = cast(list[JsonVal], args)
+    args_list: list[JsonVal] = cast(list[JsonVal], args_obj)
     if len(args_list) < 1:
         return None
     xs = args_list[0]
@@ -1838,7 +1875,7 @@ def _try_lower_reversed_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
     xs_type: str = jv_str(xs_node.get("resolved_type", ""))
     if xs_type in ("", "object", "Any", "unknown"):
         return None
-    tp = stmt.get("target_plan", {})
+    tp = stmt.get("target_plan")
     if not isinstance(tp, dict):
         return None
     tp_node: Node = cast(dict[str, JsonVal], tp)
@@ -1846,10 +1883,10 @@ def _try_lower_reversed_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
     v_type: str = jv_str(tp_node.get("target_type", ""))
     if v_name == "" or v_type in ("", "object", "Any", "unknown"):
         return None
-    body = stmt.get("body", [])
-    if not isinstance(body, list):
+    body_obj = stmt.get("body")
+    if not isinstance(body_obj, list):
         return None
-    body_list: list[JsonVal] = cast(list[JsonVal], body)
+    body_list: list[JsonVal] = cast(list[JsonVal], body_obj)
     counter: str = ctx.next_enum_name()
     # Build len(xs) call
     len_func: Node = {}
@@ -1860,8 +1897,10 @@ def _try_lower_reversed_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
     len_call["kind"] = CALL
     len_call["resolved_type"] = "int64"
     len_call["func"] = len_func
-    len_call["args"] = [deep_copy_json(xs)]
-    len_call["keywords"] = []
+    len_args: list[JsonVal] = _empty_jv_list()
+    len_args.append(deep_copy_json(xs))
+    len_call["args"] = len_args
+    len_call["keywords"] = _empty_jv_list()
     len_call["lowered_kind"] = "BuiltinCall"
     len_call["runtime_call"] = "len"
     len_call["runtime_module_id"] = "pytra.core.py_runtime"
@@ -1919,7 +1958,7 @@ def _try_lower_reversed_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
     elem_assign["value"] = sub_node
     elem_assign["decl_type"] = v_type
     elem_assign["declare"] = True
-    nb: list[JsonVal] = []
+    nb: list[JsonVal] = _empty_jv_list()
     nb.append(elem_assign)
     for item in body_list:
         nb.append(item)
@@ -1929,7 +1968,11 @@ def _try_lower_reversed_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
     nf["iter_plan"] = iter_plan
     nf["target_plan"] = ntp
     nf["body"] = nb
-    nf["orelse"] = stmt.get("orelse", [])
+    orelse_obj = stmt.get("orelse")
+    if isinstance(orelse_obj, list):
+        nf["orelse"] = cast(list[JsonVal], orelse_obj)
+    else:
+        nf["orelse"] = _empty_jv_list()
     return nf
 
 

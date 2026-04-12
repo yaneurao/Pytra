@@ -907,8 +907,16 @@ def _lower_for_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext) -> N
     out["iter_mode"] = "runtime_protocol"
     out["iter_plan"] = iter_plan
     out["target_plan"] = _build_target_plan(stmt.get("target"), target_type, dispatch_mode=dispatch_mode, ctx=ctx)
-    out["body"] = _lower_node(stmt.get("body", []), dispatch_mode=dispatch_mode, ctx=ctx)
-    out["orelse"] = _lower_node(stmt.get("orelse", []), dispatch_mode=dispatch_mode, ctx=ctx)
+    body_obj = stmt.get("body")
+    if isinstance(body_obj, list):
+        out["body"] = _lower_node(body_obj, dispatch_mode=dispatch_mode, ctx=ctx)
+    else:
+        out["body"] = _lower_node(_empty_jv_list(), dispatch_mode=dispatch_mode, ctx=ctx)
+    orelse_obj = stmt.get("orelse")
+    if isinstance(orelse_obj, list):
+        out["orelse"] = _lower_node(orelse_obj, dispatch_mode=dispatch_mode, ctx=ctx)
+    else:
+        out["orelse"] = _lower_node(_empty_jv_list(), dispatch_mode=dispatch_mode, ctx=ctx)
     consumed = {"kind", "target", "target_type", "iter_mode", "iter_source_type", "iter_element_type", "iter", "body", "orelse"}
     _copy_extra_fields(stmt, out, consumed, dispatch_mode=dispatch_mode, ctx=ctx)
     return out
@@ -930,8 +938,16 @@ def _lower_forrange_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext)
     out["iter_mode"] = "static_fastpath"
     out["iter_plan"] = iter_plan
     out["target_plan"] = _build_target_plan(stmt.get("target"), stmt.get("target_type"), dispatch_mode=dispatch_mode, ctx=ctx)
-    out["body"] = _lower_node(stmt.get("body", []), dispatch_mode=dispatch_mode, ctx=ctx)
-    out["orelse"] = _lower_node(stmt.get("orelse", []), dispatch_mode=dispatch_mode, ctx=ctx)
+    body_obj = stmt.get("body")
+    if isinstance(body_obj, list):
+        out["body"] = _lower_node(body_obj, dispatch_mode=dispatch_mode, ctx=ctx)
+    else:
+        out["body"] = _lower_node(_empty_jv_list(), dispatch_mode=dispatch_mode, ctx=ctx)
+    orelse_obj = stmt.get("orelse")
+    if isinstance(orelse_obj, list):
+        out["orelse"] = _lower_node(orelse_obj, dispatch_mode=dispatch_mode, ctx=ctx)
+    else:
+        out["orelse"] = _lower_node(_empty_jv_list(), dispatch_mode=dispatch_mode, ctx=ctx)
     consumed = {"kind", "target", "target_type", "start", "stop", "step", "range_mode", "body", "orelse"}
     _copy_extra_fields(stmt, out, consumed, dispatch_mode=dispatch_mode, ctx=ctx)
     return out
