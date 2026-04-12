@@ -125,7 +125,8 @@ def _replace_yield_with_append(node: JsonVal, acc: str, list_type: str) -> JsonV
             hs: list[JsonVal] = _empty_jv_list()
             for h in handlers:
                 if isinstance(h, dict):
-                    nh: Node = jv_dict(deep_copy_json(h))
+                    h_copy: JsonVal = deep_copy_json(h)
+                    nh: Node = jv_dict(h_copy)
                     if "body" in nh:
                         nh["body"] = _replace_yield_with_append(nh["body"], acc, list_type)
                     hs.append(nh)
@@ -194,17 +195,17 @@ def _yield_walk(node: JsonVal) -> None:
         return
     nd: Node = jv_dict(node)
     if _is_function_like_kind(nd_kind(nd)):
-        body_jv: JsonVal = nd.get("body")
+        body_jv: JsonVal = nd["body"] if "body" in nd else None
         if isinstance(body_jv, list) and _contains_yield(body_jv):
             _lower_generator_function(nd)
-        body2_jv: JsonVal = nd.get("body")
+        body2_jv: JsonVal = nd["body"] if "body" in nd else None
         if isinstance(body2_jv, list):
             body2_list: list[JsonVal] = jv_list(body2_jv)
             for s in body2_list:
                 _yield_walk(s)
         return
     if nd_kind(nd) == CLASS_DEF or nd_kind(nd) == MODULE:
-        body_jv: JsonVal = nd.get("body")
+        body_jv: JsonVal = nd["body"] if "body" in nd else None
         if isinstance(body_jv, list):
             body_list: list[JsonVal] = jv_list(body_jv)
             for s in body_list:
@@ -423,13 +424,13 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
             value = stmt_node.get("value")
             if isinstance(value, dict) and nd_kind(jv_dict(value)) == LIST_COMP:
                 target = stmt_node.get("target")
-                tn = ""
+                tn: str = ""
                 if isinstance(target, dict):
-                    target_node = jv_dict(target)
+                    target_node: Node = jv_dict(target)
                     if nd_kind(target_node) == NAME:
                         tn = jv_str(target_node["id"] if "id" in target_node else "")
-                cn = tn if tn != "" else _lc_temp_name(stmt_node, stmt_idx)
-                at = ""
+                cn: str = tn if tn != "" else _lc_temp_name(stmt_node, stmt_idx)
+                at: str = ""
                 if kind == ANN_ASSIGN:
                     ann = stmt_node.get("annotation")
                     ann_text: str = jv_str(ann)
@@ -455,7 +456,7 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
         if kind == EXPR:
             ev = stmt_node.get("value")
             if isinstance(ev, dict) and nd_kind(jv_dict(ev)) == LIST_COMP:
-                tmp = _lc_temp_name(stmt_node, stmt_idx)
+                tmp: str = _lc_temp_name(stmt_node, stmt_idx)
                 expanded_expr = _expand_lc_to_stmts(jv_dict(ev), tmp)
                 for ex in expanded_expr:
                     result.append(ex)
@@ -481,7 +482,7 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
                         hb = h_node.get("body")
                         if isinstance(hb, list):
                             h_node["body"] = _lc_in_stmts(jv_list(hb), ctx)
-        result.append(stmt)
+        result.append(stmt_node)
         stmt_idx += 1
     return result
 
@@ -530,7 +531,8 @@ def _collect_function_locals(stmts: list[JsonVal], out: dict[str, str]) -> None:
                 for item in items:
                     if not isinstance(item, dict):
                         continue
-                    _collect_target_local_types(item.get("optional_vars"), "", out)
+                    item_node: Node = jv_dict(item)
+                    _collect_target_local_types(item_node.get("optional_vars"), "", out)
         nested_body = stmt.get("body")
         if isinstance(nested_body, list):
             _collect_function_locals(jv_list(nested_body), out)
@@ -545,12 +547,13 @@ def _collect_function_locals(stmts: list[JsonVal], out: dict[str, str]) -> None:
             for handler in handlers:
                 if not isinstance(handler, dict):
                     continue
-                name3 = jv_str(handler.get("name", ""))
+                handler_node: Node = jv_dict(handler)
+                name3: str = jv_str(handler_node.get("name", ""))
                 if name3 != "" and name3 not in out:
                     out[name3] = "BaseException"
-                hbody = handler.get("body")
+                hbody = handler_node.get("body")
                 if isinstance(hbody, list):
-                    _collect_function_locals(hbody, out)
+                    _collect_function_locals(jv_list(hbody), out)
 
 
 def _collect_target_local_types(target: JsonVal, inferred_type: str, out: dict[str, str]) -> None:
