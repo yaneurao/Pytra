@@ -409,7 +409,7 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
     out: list[Node] = [init]
     for stmt in body:
         if isinstance(stmt, dict):
-            out.append(cast(dict[str, JsonVal], stmt))
+            out.append(jv_dict(stmt))
     return out
 
 
@@ -466,20 +466,25 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
                 stmt_idx += 1
                 continue
         # Recurse
-        nested_keys: list[str] = ["body", "orelse", "finalbody"]
-        for key in nested_keys:
-            nested = stmt_node.get(key)
-            if isinstance(nested, list):
-                stmt_node[key] = _lc_in_stmts(nested, ctx)
+        nested_body = stmt_node.get("body")
+        if isinstance(nested_body, list):
+            stmt_node["body"] = _lc_in_stmts(jv_list(nested_body), ctx)
+        nested_orelse = stmt_node.get("orelse")
+        if isinstance(nested_orelse, list):
+            stmt_node["orelse"] = _lc_in_stmts(jv_list(nested_orelse), ctx)
+        nested_finalbody = stmt_node.get("finalbody")
+        if isinstance(nested_finalbody, list):
+            stmt_node["finalbody"] = _lc_in_stmts(jv_list(nested_finalbody), ctx)
         if kind == TRY:
             hs = stmt_node.get("handlers")
             if isinstance(hs, list):
-                hs_list: list[JsonVal] = cast(list[JsonVal], hs)
+                hs_list: list[JsonVal] = jv_list(hs)
                 for h in hs_list:
                     if isinstance(h, dict):
-                        hb = h.get("body")
+                        h_node: Node = jv_dict(h)
+                        hb = h_node.get("body")
                         if isinstance(hb, list):
-                            h["body"] = _lc_in_stmts(hb, ctx)
+                            h_node["body"] = _lc_in_stmts(jv_list(hb), ctx)
         result.append(stmt)
         stmt_idx += 1
     return result
@@ -488,7 +493,7 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
 def lower_listcomp(module: Node, ctx: CompileContext) -> Node:
     body = module.get("body")
     if isinstance(body, list):
-        body_list: list[JsonVal] = cast(list[JsonVal], body)
+        body_list: list[JsonVal] = jv_list(body)
         module["body"] = _lc_in_stmts(body_list, ctx)
     return module
 
@@ -530,10 +535,15 @@ def _collect_function_locals(stmts: list[JsonVal], out: dict[str, str]) -> None:
                     if not isinstance(item, dict):
                         continue
                     _collect_target_local_types(item.get("optional_vars"), "", out)
-        for key in ("body", "orelse", "finalbody"):
-            nested = stmt.get(key)
-            if isinstance(nested, list):
-                _collect_function_locals(nested, out)
+        nested_body = stmt.get("body")
+        if isinstance(nested_body, list):
+            _collect_function_locals(jv_list(nested_body), out)
+        nested_orelse = stmt.get("orelse")
+        if isinstance(nested_orelse, list):
+            _collect_function_locals(jv_list(nested_orelse), out)
+        nested_finalbody = stmt.get("finalbody")
+        if isinstance(nested_finalbody, list):
+            _collect_function_locals(jv_list(nested_finalbody), out)
         handlers = stmt.get("handlers")
         if isinstance(handlers, list):
             for handler in handlers:
@@ -870,7 +880,7 @@ def _lower_closure_function(
     body = func.get("body")
     if not isinstance(body, list):
         return
-    body_list: list[JsonVal] = cast(list[JsonVal], body)
+    body_list: list[JsonVal] = jv_list(body)
     current_visible: dict[str, str] = {}
     for name, value in outer_visible_types.items():
         current_visible[name] = value
@@ -884,14 +894,14 @@ def _lower_closure_function(
 def lower_nested_function_defs(module: Node, ctx: CompileContext) -> Node:
     body = module.get("body")
     if isinstance(body, list):
-        body_list: list[JsonVal] = cast(list[JsonVal], body)
+        body_list: list[JsonVal] = jv_list(body)
         for stmt in body_list:
             if isinstance(stmt, dict) and _is_function_like_kind(_sk(stmt)):
                 _lower_closure_function(stmt, {}, set())
             elif isinstance(stmt, dict) and _sk(stmt) == CLASS_DEF:
                 class_body = stmt.get("body")
                 if isinstance(class_body, list):
-                    class_body_list: list[JsonVal] = cast(list[JsonVal], class_body)
+                    class_body_list: list[JsonVal] = jv_list(class_body)
                     stmt["body"] = _lower_closure_stmt_list(class_body_list, {}, set())
     return module
 
@@ -905,7 +915,7 @@ def _collect_fn_sigs(module: Node) -> dict[str, Node]:
     body = module.get("body")
     if not isinstance(body, list):
         return sigs
-    body_list: list[JsonVal] = cast(list[JsonVal], body)
+    body_list: list[JsonVal] = jv_list(body)
     for stmt in body_list:
         if isinstance(stmt, dict):
             _collect_sig_node(stmt, sigs, "")
@@ -922,11 +932,11 @@ def _collect_sig_node(node: Node, sigs: dict[str, Node], class_name: str) -> Non
         ad = node.get("arg_defaults")
         if not isinstance(ao, list):
             return
-        ao_list: list[JsonVal] = cast(list[JsonVal], ao)
+        ao_list: list[JsonVal] = jv_list(ao)
         sig: Node = {}
         sig["arg_order"] = ao_list
         if isinstance(ad, dict):
-            sig["arg_defaults"] = cast(dict[str, JsonVal], ad)
+            sig["arg_defaults"] = jv_dict(ad)
         else:
             sig["arg_defaults"] = {}
         full = name
@@ -938,7 +948,7 @@ def _collect_sig_node(node: Node, sigs: dict[str, Node], class_name: str) -> Non
             sigs[full] = sig
         body = node.get("body")
         if isinstance(body, list):
-            body_list: list[JsonVal] = cast(list[JsonVal], body)
+            body_list: list[JsonVal] = jv_list(body)
             for s in body_list:
                 if isinstance(s, dict):
                     _collect_sig_node(s, sigs, "")
@@ -946,7 +956,7 @@ def _collect_sig_node(node: Node, sigs: dict[str, Node], class_name: str) -> Non
         cn: str = jv_str(node.get("name", ""))
         body = node.get("body")
         if isinstance(body, list):
-            body_list: list[JsonVal] = cast(list[JsonVal], body)
+            body_list: list[JsonVal] = jv_list(body)
             for s in body_list:
                 if isinstance(s, dict):
                     _collect_sig_node(s, sigs, cn)
@@ -955,29 +965,29 @@ def _collect_sig_node(node: Node, sigs: dict[str, Node], class_name: str) -> Non
         if not isinstance(target, dict):
             targets = node.get("targets")
             if isinstance(targets, list):
-                targets_list: list[JsonVal] = cast(list[JsonVal], targets)
+                targets_list: list[JsonVal] = jv_list(targets)
                 if len(targets_list) == 1 and isinstance(targets_list[0], dict):
-                    target = cast(dict[str, JsonVal], targets_list[0])
+                    target = jv_dict(targets_list[0])
         value = node.get("value")
-        value_node2: Node = cast(dict[str, JsonVal], value) if isinstance(value, dict) else {}
+        value_node2: Node = jv_dict(value) if isinstance(value, dict) else {}
         if (
             isinstance(target, dict)
             and nd_kind(jv_dict(target)) == NAME
             and isinstance(value, dict)
             and nd_kind(value_node2) == "Lambda"
         ):
-            target_node: Node = cast(dict[str, JsonVal], target)
+            target_node: Node = jv_dict(target)
             value_node: Node = value_node2
             lambda_name: str = jv_str(target_node.get("id", ""))
             args = value_node.get("args")
             if lambda_name != "" and isinstance(args, list):
                 arg_order: list[str] = []
                 arg_defaults: dict[str, JsonVal] = {}
-                args_list: list[JsonVal] = cast(list[JsonVal], args)
+                args_list: list[JsonVal] = jv_list(args)
                 for arg in args_list:
                     if not isinstance(arg, dict):
                         continue
-                    arg_node: Node = cast(dict[str, JsonVal], arg)
+                    arg_node: Node = jv_dict(arg)
                     arg_name: str = jv_str(arg_node.get("arg", ""))
                     if arg_name == "":
                         continue
@@ -1003,7 +1013,7 @@ def _expand_defaults_walk(node: JsonVal, sigs: dict[str, Node]) -> None:
         func = nd.get("func")
         cn = ""
         if isinstance(func, dict):
-            func_node: Node = cast(dict[str, JsonVal], func)
+            func_node: Node = jv_dict(func)
             func_kind = nd_kind(func_node)
             if func_kind == NAME:
                 cn = jv_str(func_node.get("id", ""))
@@ -1011,7 +1021,7 @@ def _expand_defaults_walk(node: JsonVal, sigs: dict[str, Node]) -> None:
                 attr: str = jv_str(func_node.get("attr", ""))
                 owner = func_node.get("value")
                 if isinstance(owner, dict):
-                    owner_node: Node = cast(dict[str, JsonVal], owner)
+                    owner_node: Node = jv_dict(owner)
                     owner_type: str = jv_str(owner_node.get("resolved_type", ""))
                     if owner_type != "" and owner_type != "unknown":
                         qualified = owner_type + "." + attr
@@ -1027,9 +1037,9 @@ def _expand_defaults_walk(node: JsonVal, sigs: dict[str, Node]) -> None:
             ad = sig.get("arg_defaults")
             args = nd.get("args")
             if isinstance(args, list) and isinstance(ao, list) and isinstance(ad, dict):
-                args_list: list[JsonVal] = cast(list[JsonVal], args)
-                ao_list: list[JsonVal] = cast(list[JsonVal], ao)
-                ad_node: Node = cast(dict[str, JsonVal], ad)
+                args_list: list[JsonVal] = jv_list(args)
+                ao_list: list[JsonVal] = jv_list(ao)
+                ad_node: Node = jv_dict(ad)
                 ep: list[str] = []
                 for p in ao_list:
                     if isinstance(p, str) and p != "self":
@@ -1038,10 +1048,10 @@ def _expand_defaults_walk(node: JsonVal, sigs: dict[str, Node]) -> None:
                 kw_map: dict[str, JsonVal] = {}
                 kws = nd.get("keywords")
                 if isinstance(kws, list):
-                    kw_list: list[JsonVal] = cast(list[JsonVal], kws)
+                    kw_list: list[JsonVal] = jv_list(kws)
                     for kw in kw_list:
                         if isinstance(kw, dict):
-                            kw_node: Node = cast(dict[str, JsonVal], kw)
+                            kw_node: Node = jv_dict(kw)
                             ka = jv_str(kw_node.get("arg", ""))
                             kv = kw_node.get("value")
                             if ka != "":
@@ -1059,10 +1069,10 @@ def _expand_defaults_walk(node: JsonVal, sigs: dict[str, Node]) -> None:
                     nd["args"] = args_list
                     if isinstance(kws, list) and len(kw_map) > 0:
                         remaining: list[JsonVal] = []
-                        kw_list2: list[JsonVal] = cast(list[JsonVal], kws)
+                        kw_list2: list[JsonVal] = jv_list(kws)
                         for kw in kw_list2:
                             if isinstance(kw, dict):
-                                kw_node2: Node = cast(dict[str, JsonVal], kw)
+                                kw_node2: Node = jv_dict(kw)
                                 ka = jv_str(kw_node2.get("arg", ""))
                                 if ka in kw_map:
                                     continue
