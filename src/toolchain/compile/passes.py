@@ -428,7 +428,7 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
                 if isinstance(target, dict):
                     target_node: Node = jv_dict(target)
                     if nd_kind(target_node) == NAME:
-                        tn = jv_str(target_node["id"] if "id" in target_node else "")
+                        tn = jv_str(target.get("id", ""))
                 cn: str = tn if tn != "" else _lc_temp_name(stmt_node, stmt_idx)
                 at: str = ""
                 if kind == ANN_ASSIGN:
@@ -442,7 +442,7 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
                     assign_value: Node = {}
                     assign_value["kind"] = NAME
                     assign_value["id"] = cn
-                    assign_value["resolved_type"] = jv_str(value_node["resolved_type"] if "resolved_type" in value_node else "")
+                    assign_value["resolved_type"] = jv_str(value.get("resolved_type", ""))
                     assign_stmt: Node = {}
                     assign_stmt["kind"] = ASSIGN
                     assign_stmt["target"] = deep_copy_json(target)
@@ -518,7 +518,7 @@ def _collect_function_locals(stmts: list[JsonVal], out: dict[str, str]) -> None:
             if name2_s != "" and name2_s not in out:
                 out[name2_s] = type2_s
         elif kind in (ASSIGN, ANN_ASSIGN, AUG_ASSIGN):
-            _collect_assign_names(stmt, out)
+            _collect_assign_names(jv_dict(stmt), out)
         elif kind == FOR:
             _collect_target_local_types(stmt.get("target"), jv_str(stmt.get("target_type", "")), out)
         elif kind == FOR_RANGE:
@@ -599,8 +599,9 @@ def _collect_function_scope_types(func: Node) -> dict[str, str]:
         arg_types_node: Node = jv_dict(arg_types)
         for name in arg_types_node.keys():
             value = arg_types_node[name]
-            if name != "" and isinstance(value, str):
-                out[name] = value
+            value_s: str = jv_str(value)
+            if name != "" and value_s != "":
+                out[name] = value_s
     captures = func.get("captures")
     if isinstance(captures, list):
         capture_list: list[JsonVal] = jv_list(captures)
@@ -608,8 +609,8 @@ def _collect_function_scope_types(func: Node) -> dict[str, str]:
             if not isinstance(capture, dict):
                 continue
             capture_node: Node = jv_dict(capture)
-            name2 = jv_str(capture_node.get("name", ""))
-            type2 = jv_str(capture_node.get("type", ""))
+            name2: str = jv_str(capture.get("name", ""))
+            type2: str = jv_str(capture.get("type", ""))
             if name2 != "" and name2 not in out:
                 out[name2] = type2
     body = func.get("body")
@@ -654,8 +655,8 @@ def _collect_reassigned_lexical(stmts: list[JsonVal], out: dict[str, int]) -> No
             target = stmt.get("target")
             if isinstance(target, dict) and nd_kind(jv_dict(target)) == NAME:
                 target_node = jv_dict(target)
-                name = target_node.get("id")
-                if isinstance(name, str) and name != "":
+                name: str = jv_str(target.get("id", ""))
+                if name != "":
                     _bump_reassigned(out, name)
             elif isinstance(target, dict) and nd_kind(jv_dict(target)) == TUPLE:
                 _collect_target_write_counts(target, out)
@@ -663,8 +664,8 @@ def _collect_reassigned_lexical(stmts: list[JsonVal], out: dict[str, int]) -> No
             target2 = stmt.get("target")
             if isinstance(target2, dict) and nd_kind(jv_dict(target2)) == NAME:
                 target2_node = jv_dict(target2)
-                name2 = target2_node.get("id")
-                if isinstance(name2, str) and name2 != "":
+                name2: str = jv_str(target2.get("id", ""))
+                if name2 != "":
                     _bump_reassigned(out, name2)
         elif kind == FOR or kind == FOR_RANGE:
             _collect_target_write_counts(stmt.get("target"), out)
@@ -699,7 +700,7 @@ def _collect_target_write_counts(target: JsonVal, out: dict[str, int]) -> None:
     kind = _sk(target)
     if kind == NAME:
         target_node = jv_dict(target)
-        name = jv_str(target_node.get("id", ""))
+        name: str = jv_str(target.get("id", ""))
         if name != "":
             _bump_reassigned(out, name)
         return
@@ -716,7 +717,7 @@ def _collect_target_plan_write_counts(target_plan: JsonVal, out: dict[str, int])
     kind = _sk(target_plan)
     if kind == NAME_TARGET:
         target_plan_node = jv_dict(target_plan)
-        name = jv_str(target_plan_node.get("id", ""))
+        name: str = jv_str(target_plan.get("id", ""))
         if name != "":
             _bump_reassigned(out, name)
         return
@@ -739,7 +740,7 @@ def _collect_name_refs_lexical(node: JsonVal, out: set[str], *, descend_into_roo
     if not descend_into_root and (_is_function_like_kind(kind) or kind == CLASS_DEF):
         return
     if kind == NAME:
-        name = jv_str(node.get("id", ""))
+        name: str = jv_str(node.get("id", ""))
         if name != "":
             out.add(name)
     for key, value in node.items():
@@ -791,7 +792,11 @@ def _closure_capture_entries(
         for stmt in body_list:
             _collect_name_refs_lexical(stmt, used_names, descend_into_root=False)
     captures: list[Node] = []
-    for name in sorted(used_names):
+    sorted_names: list[str] = []
+    for used_name in used_names:
+        sorted_names.append(used_name)
+    sorted_names.sort()
+    for name in sorted_names:
         if name in local_types or name not in visible_types:
             continue
         capture_type = visible_types.get(name, "")
@@ -886,7 +891,8 @@ def _lower_closure_function(
     for name, value in _collect_function_scope_types(func).items():
         current_visible[name] = value
     current_mutable = set(outer_visible_mutable)
-    current_mutable.update(_collect_function_reassigned_names(func))
+    for reassigned_name in _collect_function_reassigned_names(func):
+        current_mutable.add(reassigned_name)
     func["body"] = _lower_closure_stmt_list(body_list, current_visible, current_mutable)
 
 
