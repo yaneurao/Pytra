@@ -62,8 +62,8 @@
 
 1. [x] [ID: P0-RESOLVE-NARROW-S1] resolve の isinstance narrowing で、union 型の構成要素から `isinstance` の判定対象にマッチする型をパラメータ付きで取り出すよう修正する
 2. [x] [ID: P0-RESOLVE-NARROW-S2] `isinstance(value, dict)` で `dict[str, JsonVal]` に narrowing されることを確認するテストを追加する
-3. [ ] [ID: P0-RESOLVE-NARROW-S4] elif/else チェーンでの段階的 union narrowing を実装する。isinstance の偽ブランチで、マッチした型を union から除外し、残りの構成要素を resolved_type にする。残りが 1 つなら単一型に narrowing する
-4. [ ] [ID: P0-RESOLVE-NARROW-S5] `isinstance_chain_narrowing` fixture で C++ が PASS することを確認する
+3. [x] [ID: P0-RESOLVE-NARROW-S4] elif/else チェーンでの段階的 union narrowing を実装する。isinstance の偽ブランチで、マッチした型を union から除外し、残りの構成要素を resolved_type にする。残りが 1 つなら単一型に narrowing する
+4. [x] [ID: P0-RESOLVE-NARROW-S5] `isinstance_chain_narrowing` fixture で C++ が PASS することを確認する
 
 ### P0-RESOLVE-TYPE-ALIAS: 型エイリアスの同値性判定を正しく実装する
 
@@ -92,9 +92,9 @@
 
 **方針**: CommonRenderer に `_is_union_member(member_type, union_type)` helper を追加。append / 代入時に引数型が要素型の union 構成要素なら covariant copy をスキップして単純格納にする。全言語共通。
 
-1. [ ] [ID: P0-CR-UNION-S1] CommonRenderer に `_is_union_member` helper を実装する
-2. [ ] [ID: P0-CR-UNION-S2] `list[Union].append(member)` で union 構成要素の場合に covariant copy をスキップするよう修正する
-3. [ ] [ID: P0-CR-UNION-S3] C++ selfhost の `list[JsonVal].append(dict[str, JsonVal])` が単純格納に変換されることを確認する
+1. [x] [ID: P0-CR-UNION-S1] CommonRenderer 相当の共通 type helper に union member 判定を実装する
+2. [x] [ID: P0-CR-UNION-S2] `list[Union].append(member)` で union 構成要素の場合に covariant copy をスキップするよう修正する
+3. [x] [ID: P0-CR-UNION-S3] C++ selfhost の `list[JsonVal].append(dict[str, JsonVal])` が単純格納に変換されることを確認する
 
 ### P20-CPP-SELFHOST: C++ emitter で toolchain を C++ に変換し g++ build を通す
 
@@ -106,6 +106,6 @@ S0〜S4 完了済み（[archive/20260402.md](archive/20260402.md) 参照）。
    - build 失敗の都度、backend で直るか EAST 修正が必要か判断する
    - EAST 修正が必要と思われる場合は **作業を停止し、問題報告フォーマットで報告する**
    - 2026-04-11: `expand_defaults.py → type_norm.py` の transitive closure 疑いは infra 側で誤診と確定。closure 自体は保持されており、現在は g++ build の残 blocker に戻っている。
-   - **2026-04-13 停止中**: isinstance narrowing（P0-RESOLVE-ISINSTANCE-NARROWING）と型エイリアス同値性（P0-RESOLVE-TYPE-ALIAS）の resolve 修正待ち。両方完了後に再開する。
+   - 2026-04-13: resolve narrowing / type alias / union member append の前提 TODO を先に消化。次は fresh selfhost build を再開する。
 2. [ ] [ID: P20-CPP-SELFHOST-S6] `run_selfhost_parity.py --selfhost-lang cpp --emit-target cpp --case-root fixture` で fixture parity が PASS することを確認する
 3. [ ] [ID: P20-CPP-SELFHOST-S7] `run_selfhost_parity.py --selfhost-lang cpp --emit-target cpp --case-root sample` で sample parity が PASS することを確認する

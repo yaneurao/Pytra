@@ -41,15 +41,11 @@ py_list_append_mut(out, JsonVal(stmt));
 
 ## 修正方針
 
-### CommonRenderer に helper を追加
+### 共通 type helper に union member 判定を追加
 
 ```python
-def _is_union_member(self, member_type: str, union_type: str) -> bool:
-    """member_type が union_type の構成要素かどうか判定する。
-
-    例: _is_union_member("dict[str, JsonVal]", "JsonVal") → True
-        （JsonVal = None | bool | int | ... | dict[str, JsonVal]）
-    """
+def select_union_member_type(union_type: str, member_type: str) -> str:
+    """member_type が union_type の構成要素なら対応する lane を返す。"""
 ```
 
 ### 適用箇所
@@ -76,3 +72,13 @@ def _is_union_member(self, member_type: str, union_type: str) -> bool:
 1. `union_type` が type alias なら展開する（P0-RESOLVE-TYPE-ALIAS の仕組みを使う）
 2. 展開後の union 構成要素リストに `member_type` が含まれるか判定
 3. 再帰型（`JsonVal` 自体が構成要素に `list[JsonVal]` を含む）は名前比較で判定
+
+
+## 実装メモ
+
+- `toolchain.common.types` に `select_union_member_type()` / `is_union_member_type()` を追加
+- `Node -> dict[str,JsonVal]` と `JsonVal -> None | bool | int64 | float64 | str | list[JsonVal] | dict[str,JsonVal]` を共通側で正規化
+- C++ emitter の `_select_union_lane()` がこの helper を使うようにして、`list[JsonVal].append(Node)` を covariant copy ではなく union member 格納として扱うようにした
+- representative 確認:
+  - `typing/isinstance_chain_narrowing` fixture PASS
+  - focused unit で `py_list_append_mut(out, ::std::get<Object<dict<str, JsonVal>>>((*value)));` を確認

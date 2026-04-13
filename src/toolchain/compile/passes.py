@@ -98,9 +98,9 @@ def _replace_yield_with_append(node: JsonVal, acc: str, list_type: str) -> JsonV
             value_node["value"] = None
             value_node["resolved_type"] = "None"
             value = value_node
-        call_args: list[Node] = []
-        if isinstance(value, dict):
-            call_args.append(jv_dict(value))
+        call_args: list[JsonVal] = _empty_jv_list()
+        if value is not None:
+            call_args.append(value)
         call_node = _make_container_method_call(
             acc,
             list_type,
@@ -195,17 +195,23 @@ def _yield_walk(node: JsonVal) -> None:
         return
     nd: Node = jv_dict(node)
     if _is_function_like_kind(nd_kind(nd)):
-        body_jv: JsonVal = nd["body"] if "body" in nd else None
+        body_jv: JsonVal = None
+        if "body" in nd:
+            body_jv = nd["body"]
         if isinstance(body_jv, list) and _contains_yield(body_jv):
             _lower_generator_function(nd)
-        body2_jv: JsonVal = nd["body"] if "body" in nd else None
+        body2_jv: JsonVal = None
+        if "body" in nd:
+            body2_jv = nd["body"]
         if isinstance(body2_jv, list):
             body2_list: list[JsonVal] = jv_list(body2_jv)
             for s in body2_list:
                 _yield_walk(s)
         return
     if nd_kind(nd) == CLASS_DEF or nd_kind(nd) == MODULE:
-        body_jv: JsonVal = nd["body"] if "body" in nd else None
+        body_jv: JsonVal = None
+        if "body" in nd:
+            body_jv = nd["body"]
         if isinstance(body_jv, list):
             body_list: list[JsonVal] = jv_list(body_jv)
             for s in body_list:
@@ -269,7 +275,7 @@ def _build_lc_target_plan(target: JsonVal) -> Node:
     return out
 
 
-def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -> list[Node]:
+def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -> list[JsonVal]:
     rt: str = jv_str(lc.get("resolved_type", ""))
     if rt in ("", "unknown") or "unknown" in rt:
         if annotation_type != "":
@@ -313,9 +319,9 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
     generators = lc.get("generators")
     if isinstance(generators, list):
         generator_list = jv_list(generators)
-    append_args: list[Node] = []
+    append_args: list[JsonVal] = _empty_jv_list()
     if append_arg is not None:
-        append_args.append(jv_dict(append_arg))
+        append_args.append(append_arg)
     append_call = _make_container_method_call(
         result_name,
         rt,
@@ -403,10 +409,11 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
         body3: list[JsonVal] = _empty_jv_list()
         body3.append(fs)
         body = body3
-    out: list[Node] = [init]
+    out: list[JsonVal] = _empty_jv_list()
+    out.append(init)
     for stmt in body:
         if isinstance(stmt, dict):
-            out.append(jv_dict(stmt))
+            out.append(stmt)
     return out
 
 
@@ -428,7 +435,7 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
                 if isinstance(target, dict):
                     target_node: Node = jv_dict(target)
                     if nd_kind(target_node) == NAME:
-                        tn = jv_str(target.get("id", ""))
+                        tn = jv_str(target_node.get("id", ""))
                 cn: str = tn if tn != "" else _lc_temp_name(stmt_node, stmt_idx)
                 at: str = ""
                 if kind == ANN_ASSIGN:
@@ -463,7 +470,7 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
                 stmt_idx += 1
                 continue
         # Recurse
-        nested_body = stmt_node.get("body")
+        nested_body = stmt.get("body")
         if isinstance(nested_body, list):
             stmt_node["body"] = _lc_in_stmts(jv_list(nested_body), ctx)
         nested_orelse = stmt_node.get("orelse")
@@ -503,7 +510,8 @@ def _collect_function_locals(stmts: list[JsonVal], out: dict[str, str]) -> None:
     for stmt in stmts:
         if not isinstance(stmt, dict):
             continue
-        kind = _sk(stmt)
+        stmt_node: Node = jv_dict(stmt)
+        kind = nd_kind(stmt_node)
         if _is_function_like_kind(kind) or kind == CLASS_DEF:
             name_s: str = jv_str(stmt.get("name", ""))
             if name_s != "" and name_s not in out:
@@ -533,16 +541,16 @@ def _collect_function_locals(stmts: list[JsonVal], out: dict[str, str]) -> None:
                         continue
                     item_node: Node = jv_dict(item)
                     _collect_target_local_types(item_node.get("optional_vars"), "", out)
-        nested_body = stmt.get("body")
+        nested_body = stmt_node.get("body")
         if isinstance(nested_body, list):
             _collect_function_locals(jv_list(nested_body), out)
-        nested_orelse = stmt.get("orelse")
+        nested_orelse = stmt_node.get("orelse")
         if isinstance(nested_orelse, list):
             _collect_function_locals(jv_list(nested_orelse), out)
-        nested_finalbody = stmt.get("finalbody")
+        nested_finalbody = stmt_node.get("finalbody")
         if isinstance(nested_finalbody, list):
             _collect_function_locals(jv_list(nested_finalbody), out)
-        handlers = stmt.get("handlers")
+        handlers = stmt_node.get("handlers")
         if isinstance(handlers, list):
             for handler in handlers:
                 if not isinstance(handler, dict):
@@ -650,7 +658,8 @@ def _collect_reassigned_lexical(stmts: list[JsonVal], out: dict[str, int]) -> No
     for stmt in stmts:
         if not isinstance(stmt, dict):
             continue
-        kind = _sk(stmt)
+        stmt_node: Node = jv_dict(stmt)
+        kind = nd_kind(stmt_node)
         if kind in (ASSIGN, ANN_ASSIGN):
             target = stmt.get("target")
             if isinstance(target, dict) and nd_kind(jv_dict(target)) == NAME:
@@ -682,7 +691,7 @@ def _collect_reassigned_lexical(stmts: list[JsonVal], out: dict[str, int]) -> No
         nested = stmt.get("finalbody")
         if isinstance(nested, list):
             _collect_reassigned_lexical(jv_list(nested), out)
-        handlers = stmt.get("handlers")
+        handlers = stmt_node.get("handlers")
         if isinstance(handlers, list):
             handler_list: list[JsonVal] = jv_list(handlers)
             for handler in handler_list:
@@ -780,7 +789,7 @@ def _closure_capture_entries(
     visible_types: dict[str, str],
     visible_mutable: set[str],
     func: Node,
-) -> tuple[list[Node], bool]:
+) -> tuple[list[JsonVal], bool]:
     local_types = _collect_function_scope_types(func)
     used_names: set[str] = set()
     defaults = func.get("arg_defaults")
@@ -791,7 +800,7 @@ def _closure_capture_entries(
         body_list: list[JsonVal] = jv_list(body)
         for stmt in body_list:
             _collect_name_refs_lexical(stmt, used_names, descend_into_root=False)
-    captures: list[Node] = []
+    captures: list[JsonVal] = _empty_jv_list()
     sorted_names: list[str] = []
     for used_name in used_names:
         sorted_names.append(used_name)
@@ -814,54 +823,56 @@ def _lower_closure_stmt_list(
     visible_types: dict[str, str],
     visible_mutable: set[str],
 ) -> list[JsonVal]:
-    result: list[JsonVal] = []
+    result: list[JsonVal] = _empty_jv_list()
     for stmt in stmts:
         if not isinstance(stmt, dict):
             result.append(stmt)
             continue
-        kind = _sk(stmt)
+        stmt_node: Node = jv_dict(stmt)
+        kind = nd_kind(stmt_node)
         if kind == FUNCTION_DEF:
-            captures, is_recursive = _closure_capture_entries(visible_types, visible_mutable, stmt)
-            stmt["kind"] = CLOSURE_DEF
-            stmt["captures"] = captures
+            captures, is_recursive = _closure_capture_entries(visible_types, visible_mutable, stmt_node)
+            stmt_node["kind"] = CLOSURE_DEF
+            stmt_node["captures"] = captures
             capture_types: dict[str, str] = {}
             capture_modes: dict[str, str] = {}
             for capture in captures:
-                capture_name = jv_str(capture.get("name", ""))
+                capture_node: Node = jv_dict(capture)
+                capture_name = jv_str(capture_node.get("name", ""))
                 if capture_name == "":
                     continue
-                capture_types[capture_name] = jv_str(capture.get("type", ""))
-                capture_modes[capture_name] = jv_str(capture.get("mode", ""))
-            stmt["capture_types"] = capture_types
-            stmt["capture_modes"] = capture_modes
+                capture_types[capture_name] = jv_str(capture_node.get("type", ""))
+                capture_modes[capture_name] = jv_str(capture_node.get("mode", ""))
+            stmt_node["capture_types"] = capture_types
+            stmt_node["capture_modes"] = capture_modes
             if is_recursive:
-                stmt["is_recursive"] = True
-            _lower_closure_function(stmt, visible_types, visible_mutable)
-            result.append(stmt)
+                stmt_node["is_recursive"] = True
+            _lower_closure_function(stmt_node, visible_types, visible_mutable)
+            result.append(stmt_node)
             continue
         if kind == CLASS_DEF:
-            body = stmt.get("body")
+            body = stmt_node.get("body")
             if isinstance(body, list):
                 body_list: list[JsonVal] = jv_list(body)
                 class_visible: dict[str, str] = {}
                 for name, value in visible_types.items():
                     class_visible[name] = value
-                class_name = jv_str(stmt.get("name", ""))
+                class_name = jv_str(stmt_node.get("name", ""))
                 if class_name != "":
                     class_visible[class_name] = class_name
-                stmt["body"] = _lower_closure_stmt_list(body_list, class_visible, visible_mutable)
-            result.append(stmt)
+                stmt_node["body"] = _lower_closure_stmt_list(body_list, class_visible, visible_mutable)
+            result.append(stmt_node)
             continue
-        nested_body = stmt.get("body")
+        nested_body = stmt_node.get("body")
         if isinstance(nested_body, list):
-            stmt["body"] = _lower_closure_stmt_list(jv_list(nested_body), visible_types, visible_mutable)
-        nested_orelse = stmt.get("orelse")
+            stmt_node["body"] = _lower_closure_stmt_list(jv_list(nested_body), visible_types, visible_mutable)
+        nested_orelse = stmt_node.get("orelse")
         if isinstance(nested_orelse, list):
-            stmt["orelse"] = _lower_closure_stmt_list(jv_list(nested_orelse), visible_types, visible_mutable)
-        nested_finalbody = stmt.get("finalbody")
+            stmt_node["orelse"] = _lower_closure_stmt_list(jv_list(nested_orelse), visible_types, visible_mutable)
+        nested_finalbody = stmt_node.get("finalbody")
         if isinstance(nested_finalbody, list):
-            stmt["finalbody"] = _lower_closure_stmt_list(jv_list(nested_finalbody), visible_types, visible_mutable)
-        handlers = stmt.get("handlers")
+            stmt_node["finalbody"] = _lower_closure_stmt_list(jv_list(nested_finalbody), visible_types, visible_mutable)
+        handlers = stmt_node.get("handlers")
         if isinstance(handlers, list):
             handler_list: list[JsonVal] = jv_list(handlers)
             for handler in handler_list:
@@ -943,7 +954,8 @@ def _collect_sig_node(node: Node, sigs: dict[str, Node], class_name: str) -> Non
         if isinstance(ad, dict):
             sig["arg_defaults"] = jv_dict(ad)
         else:
-            sig["arg_defaults"] = {}
+            empty_defaults: Node = {}
+            sig["arg_defaults"] = empty_defaults
         full = name
         if class_name != "":
             full = class_name + "." + name
@@ -1181,7 +1193,7 @@ def _tte_walk(node: JsonVal, ctx: CompileContext) -> None:
                             body = nd.get("body")
                             if isinstance(body, list):
                                 body_list: list[JsonVal] = jv_list(body)
-                                new_body: list[JsonVal] = []
+                                new_body: list[JsonVal] = _empty_jv_list()
                                 for stmt in assigns:
                                     new_body.append(stmt)
                                 for stmt in body_list:
@@ -1205,15 +1217,16 @@ def expand_forcore_tuple_targets(module: Node, ctx: CompileContext) -> Node:
 
 def _expand_tuple_unpack_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
     """Expand Assign(target=Tuple, value=expr) into temp + individual assigns."""
-    result: list[JsonVal] = []
+    result: list[JsonVal] = _empty_jv_list()
     for stmt in stmts:
         if not isinstance(stmt, dict):
             result.append(stmt)
             continue
-        kind = _sk(stmt)
+        stmt_node: Node = jv_dict(stmt)
+        kind = nd_kind(stmt_node)
         # Recurse into block-creating statements first
         if _is_function_like_kind(kind) or kind == CLASS_DEF:
-            body = stmt.get("body")
+            body = stmt_node.get("body")
             if isinstance(body, list):
                 stmt["body"] = _expand_tuple_unpack_in_stmts(body, ctx)
             mg = stmt.get("main_guard_body")
@@ -1224,7 +1237,7 @@ def _expand_tuple_unpack_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> 
                 nested = stmt.get(key)
                 if isinstance(nested, list):
                     stmt[key] = _expand_tuple_unpack_in_stmts(nested, ctx)
-            handlers = stmt.get("handlers")
+            handlers = stmt_node.get("handlers")
             if isinstance(handlers, list):
                 for h in handlers:
                     if isinstance(h, dict):
@@ -1234,20 +1247,20 @@ def _expand_tuple_unpack_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> 
 
         # Check for tuple unpack Assign
         if kind != ASSIGN:
-            result.append(stmt)
+            result.append(stmt_node)
             continue
         target = stmt.get("target")
         if not isinstance(target, dict) or target.get("kind") != TUPLE:
-            result.append(stmt)
+            result.append(stmt_node)
             continue
         target_node: Node = cast(dict[str, JsonVal], target)
         elements = target_node.get("elements")
         if not isinstance(elements, list):
-            result.append(stmt)
+            result.append(stmt_node)
             continue
         elements_list: list[JsonVal] = cast(list[JsonVal], elements)
         if len(elements_list) == 0:
-            result.append(stmt)
+            result.append(stmt_node)
             continue
         value = stmt.get("value")
 
@@ -1851,7 +1864,7 @@ def _try_lower_enum_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
 
 
 def _enum_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
-    result: list[JsonVal] = []
+    result: list[JsonVal] = _empty_jv_list()
     for stmt in stmts:
         if not isinstance(stmt, dict):
             result.append(stmt)
@@ -2019,7 +2032,7 @@ def _try_lower_reversed_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
 
 
 def _reversed_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
-    result: list[JsonVal] = []
+    result: list[JsonVal] = _empty_jv_list()
     for stmt in stmts:
         if not isinstance(stmt, dict):
             result.append(stmt)
@@ -2183,7 +2196,8 @@ def _collect_assigned_in_stmts(stmts: list[JsonVal]) -> dict[str, str]:
     for stmt in stmts:
         if not isinstance(stmt, dict):
             continue
-        kind = _sk(stmt)
+        stmt_node: Node = jv_dict(stmt)
+        kind = nd_kind(stmt_node)
         if kind in (ASSIGN, ANN_ASSIGN):
             _collect_assign_names(stmt, out)
         elif kind == IF:
@@ -2263,7 +2277,8 @@ def _mark_reassign(stmts: list[JsonVal], hoisted: set[str]) -> None:
     for stmt in stmts:
         if not isinstance(stmt, dict):
             continue
-        kind = _sk(stmt)
+        stmt_node: Node = jv_dict(stmt)
+        kind = nd_kind(stmt_node)
         if kind in (ASSIGN, ANN_ASSIGN):
             target = stmt.get("target")
             if isinstance(target, dict):
@@ -2329,14 +2344,15 @@ def _collect_multi_branch(if_stmt: Node) -> set[str]:
 
 
 def _hoist_in_stmt_list(stmts: list[JsonVal], param_names: set[str]) -> list[JsonVal]:
-    result: list[JsonVal] = []
+    result: list[JsonVal] = _empty_jv_list()
     already: set[str] = set(param_names)
     for i in range(len(stmts)):
         stmt = stmts[i]
         if not isinstance(stmt, dict):
             result.append(stmt)
             continue
-        kind = _sk(stmt)
+        stmt_node: Node = jv_dict(stmt)
+        kind = nd_kind(stmt_node)
         if kind in (ASSIGN, ANN_ASSIGN):
             target = stmt.get("target")
             if isinstance(target, dict):
@@ -2356,16 +2372,16 @@ def _hoist_in_stmt_list(stmts: list[JsonVal], param_names: set[str]) -> list[Jso
                                 already.add(n)
                         elif t.get("kind") == TUPLE:
                             _collect_tuple_names_flat(t, already)
-            result.append(stmt)
+            result.append(stmt_node)
             continue
         if kind == VAR_DECL:
             n = stmt.get("name")
             if isinstance(n, str) and n != "":
                 already.add(n)
-            result.append(stmt)
+            result.append(stmt_node)
             continue
         if kind not in (IF, WHILE, FOR, FOR_RANGE, FOR_CORE):
-            result.append(stmt)
+            result.append(stmt_node)
             continue
         # Block-creating statement
         ba2 = _collect_block_assigned(stmt)
@@ -2895,6 +2911,26 @@ def _select_guard_target_type(source_type: str, expected_name: str) -> str:
     return expected
 
 
+def _exclude_guard_target_type(source_type: str, expected_name: str) -> str:
+    src: str = normalize_type_name(source_type)
+    expected: str = normalize_type_name(expected_name)
+    if src == "" or src == "unknown" or expected == "" or expected == "unknown":
+        return ""
+    members = _split_union_members(src)
+    if len(members) == 0:
+        members = [src]
+    remaining: list[str] = []
+    for member in members:
+        normalized_member = normalize_type_name(member)
+        if not _type_matches_guard(normalized_member, expected):
+            remaining.append(normalized_member)
+    if len(remaining) == 0:
+        return ""
+    if len(remaining) == 1:
+        return remaining[0]
+    return " | ".join(remaining)
+
+
 def _guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
     if not isinstance(expr, dict):
         return {}
@@ -2995,6 +3031,27 @@ def _invert_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
     if nd.get("kind", "") == UNARY_OP and _tp_safe(nd.get("op")) == "Not":
         operand = nd.get("operand")
         return _guard_narrowing_from_expr(operand)
+    if nd.get("kind", "") == "IsInstance":
+        raw_value = nd.get("value")
+        if isinstance(raw_value, dict):
+            value_node0: Node = cast(dict[str, JsonVal], raw_value)
+            if value_node0.get("kind") == UNBOX:
+                inner = value_node0.get("value")
+                if isinstance(inner, dict):
+                    raw_value = inner
+        if not isinstance(raw_value, dict):
+            return {}
+        value_node: Node = cast(dict[str, JsonVal], raw_value)
+        if value_node.get("kind") != NAME:
+            return {}
+        name = _tp_safe(value_node.get("id"))
+        if name == "":
+            return {}
+        expected_name = _tp_safe(nd.get("expected_type_name"))
+        target_type = _exclude_guard_target_type(_tp_safe(value_node.get("resolved_type")), expected_name)
+        if target_type == "" or target_type == "unknown":
+            return {}
+        return {name: target_type}
     if nd.get("kind", "") == BOOL_OP and _tp_safe(nd.get("op")) == "Or":
         merged: dict[str, str] = {}
         values = nd.get("values")
@@ -4160,7 +4217,7 @@ def _make_container_method_call(
     owner_type: str,
     attr: str,
     *,
-    args: list[Node],
+    args: list[JsonVal],
     result_type: str,
 ) -> Node:
     attr_node: Node = {}
@@ -4210,7 +4267,7 @@ def _make_with_method_call(
     owner_type: str,
     attr: str,
     *,
-    args: list[Node],
+    args: list[JsonVal],
     result_type: str,
     runtime_call: str = "",
     runtime_symbol: str = "",
@@ -4711,7 +4768,7 @@ def _expr_key(node: JsonVal) -> str:
 
 
 def _swap_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
-    result: list[JsonVal] = []
+    result: list[JsonVal] = _empty_jv_list()
     for stmt in stmts:
         if not isinstance(stmt, dict):
             result.append(stmt)

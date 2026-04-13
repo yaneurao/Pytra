@@ -8,6 +8,15 @@ from __future__ import annotations
 from pytra.std.json import JsonVal
 
 
+_KNOWN_TYPE_ALIASES: dict[str, str] = {
+    "Node": "dict[str,JsonVal]",
+}
+
+_KNOWN_UNION_ALIASES: dict[str, str] = {
+    "JsonVal": "None | bool | int64 | float64 | str | list[JsonVal] | dict[str,JsonVal]",
+}
+
+
 def normalize_type_name(value: JsonVal) -> str:
     """Normalize a type name string, returning 'unknown' for missing/empty."""
     if isinstance(value, str):
@@ -59,3 +68,66 @@ def split_generic_types(text: str) -> list[str]:
     if last != "":
         out.append(last)
     return out
+
+
+def normalize_known_type_alias(type_name: JsonVal) -> str:
+    normalized = normalize_type_name(type_name)
+    return _KNOWN_TYPE_ALIASES.get(normalized, normalized)
+
+
+def split_top_level_union_types(text: str) -> list[str]:
+    normalized = normalize_type_name(text)
+    if normalized == "unknown":
+        return []
+    out: list[str] = []
+    part = ""
+    depth = 0
+    for ch in normalized:
+        if ch in "[<(":
+            depth += 1
+            part += ch
+            continue
+        if ch in "]>)":
+            if depth > 0:
+                depth -= 1
+            part += ch
+            continue
+        if ch == "|" and depth == 0:
+            item = part.strip()
+            if item != "":
+                out.append(item)
+            part = ""
+            continue
+        part += ch
+    tail = part.strip()
+    if tail != "":
+        out.append(tail)
+    return out
+
+
+def expand_known_union_alias(type_name: JsonVal) -> str:
+    normalized = normalize_known_type_alias(type_name)
+    return _KNOWN_UNION_ALIASES.get(normalized, normalized)
+
+
+def select_union_member_type(union_type: JsonVal, member_type: JsonVal) -> str:
+    normalized_member = normalize_known_type_alias(member_type)
+    if normalized_member in ("", "unknown"):
+        return ""
+    expanded_union = expand_known_union_alias(union_type)
+    lanes = split_top_level_union_types(expanded_union)
+    if len(lanes) == 0:
+        return normalized_member if normalize_known_type_alias(expanded_union) == normalized_member else ""
+    for lane in lanes:
+        normalized_lane = normalize_known_type_alias(lane)
+        if normalized_lane == normalized_member:
+            return lane
+        if normalized_member in ("int", "int64") and normalized_lane in ("int", "int64"):
+            return lane
+        if normalized_member in ("float", "float64") and normalized_lane in ("float", "float64"):
+            return lane
+    return ""
+
+
+def is_union_member_type(member_type: JsonVal, union_type: JsonVal) -> bool:
+    return select_union_member_type(union_type, member_type) != ""
