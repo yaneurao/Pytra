@@ -228,10 +228,11 @@ def make_type_expr(type_str: str) -> dict[str, JsonVal]:
         base: str = t[:bracket]
         inner: str = t[bracket + 1:-1]
         args: list[str] = _split_generic_type_args(inner)
+        arg_exprs: list[JsonVal] = [make_type_expr(a) for a in args]
         return {
             "kind": "GenericType",
             "base": base,
-            "args": [make_type_expr(a) for a in args],
+            "args": arg_exprs,
         }
 
     # Union type: X | Y
@@ -245,9 +246,10 @@ def make_type_expr(type_str: str) -> dict[str, JsonVal]:
                 "kind": "OptionalType",
                 "inner": make_type_expr(non_none[0]),
             }
+        type_exprs: list[JsonVal] = [make_type_expr(p) for p in parts]
         return {
             "kind": "UnionType",
-            "types": [make_type_expr(p) for p in parts],
+            "types": type_exprs,
         }
 
     # Simple named type
