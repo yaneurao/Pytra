@@ -199,7 +199,7 @@ def _verify_cpp_outputs(changed_cpp_stems: set[str], compile_flags: str) -> tupl
     stems = sorted(changed_cpp_stems)
     cmd = [
         "python3",
-        "tools/check/runtime_parity_check.py",
+        "tools/check/runtime_parity_check_fast.py",
         "--targets", "cpp",
         "--case-root", "sample",
         *stems,

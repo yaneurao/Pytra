@@ -105,7 +105,7 @@ python3 -m pytest tools/unittest/selfhost/test_selfhost_golden.py
 ## 3. Cross-Language Verification
 
 - `tools/check/runtime_parity_check.py`
-  - Purpose: run runtime-level equalization checks across multiple target languages.
+  - Purpose: canonical entrypoint for runtime-level parity checks across multiple target languages, backed by the in-memory parity engine.
   - Notes: unstable time lines such as `elapsed_sec`, `elapsed`, and `time_sec` are excluded from comparison by default.
   - Notes: artifact comparison requires exact matches for presence + size + CRC32 on artifacts reported via `output:`.
   - Notes: before each case runs, artifacts with the same name under `sample/out`, `test/out`, and `out` are deleted to prevent stale-output mixups.

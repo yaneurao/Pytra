@@ -15,7 +15,7 @@ This page consolidates day-to-day development procedures — parity, local CI, b
 
 ## Runtime Parity Operations (sample, all targets)
 
-- `tools/check/runtime_parity_check.py` compares not only stdout but also the `size` and `CRC32` of the artifact indicated by `output:`.
+- `tools/check/runtime_parity_check.py` is the canonical fast-backed parity entrypoint. It compares not only stdout but also the `size` and `CRC32` of the artifact indicated by `output:`.
 - Before each parity run, stale artifacts in `sample/out`, `test/out`, `out`, and `work/transpile/<target>/<case>` are automatically deleted per case.
 - Unstable lines such as `elapsed_sec` are excluded from comparison by default (`--ignore-unstable-stdout` is a compatibility flag).
 - Canonical wrapper for validating all 14 targets at once:

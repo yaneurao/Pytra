@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-RUNTIME_PARITY_CHECK = ROOT / "tools" / "runtime_parity_check.py"
+RUNTIME_PARITY_CHECK = ROOT / "tools" / "check" / "runtime_parity_check.py"
 
 PARITY_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("cpp", ("cpp",)),

@@ -983,6 +983,8 @@ def _build_pipeline(
     bounds_check_mode: str = "",
 ) -> int:
     """Run the full build pipeline in-memory."""
+    lowering_target = "ts" if target == "js" else target
+
     # 1. Parse
     east1_docs = _collect_build_sources(inputs)
     print("build: parsed " + str(len(east1_docs)) + " files")
@@ -1001,7 +1003,7 @@ def _build_pipeline(
     # 3. Compile
     east3_docs: list[tuple[str, dict[str, JsonVal]]] = []
     for inp, east2_doc in east2_docs:
-        compiled_doc = cast(dict[str, JsonVal], lower_east2_to_east3(east2_doc, target_language=target))
+        compiled_doc = cast(dict[str, JsonVal], lower_east2_to_east3(east2_doc, target_language=lowering_target))
         east3_docs.append((inp, compiled_doc))
     print("build: compiled " + str(len(east3_docs)) + " files")
 

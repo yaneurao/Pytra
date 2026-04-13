@@ -71,12 +71,17 @@
 
 旧版 `runtime_parity_check.py` は `pytra-cli.py` subprocess 方式で、JS の `"js"` → `"ts"` マッピング漏れ等メンテが追いついていない。fast 版（in-memory API）に一本化する。
 
-1. [ ] [ID: P1-PARITY-CONSOLIDATION-S1] `check_noncpp_backend_health.py` の旧版呼び出しを fast 版に切り替える
-2. [ ] [ID: P1-PARITY-CONSOLIDATION-S2] `regenerate_samples.py` の旧版参照を fast 版に変更する
-3. [ ] [ID: P1-PARITY-CONSOLIDATION-S3] ドキュメント一括更新（tutorial / README / spec-tools.md のコマンド例を fast 版に書き換え）
-4. [ ] [ID: P1-PARITY-CONSOLIDATION-S4] fast 版を `runtime_parity_check.py` にリネームするか検討・実施する
+1. [x] [ID: P1-PARITY-CONSOLIDATION-S1] `check_noncpp_backend_health.py` の旧版呼び出しを fast 版に切り替える
+   - 2026-04-14: parity 実行を `tools/check/runtime_parity_check_fast.py` へ切替。
+2. [x] [ID: P1-PARITY-CONSOLIDATION-S2] `regenerate_samples.py` の旧版参照を fast 版に変更する
+   - 2026-04-14: `--verify-cpp-on-diff` の検証経路を fast 版へ切替。
+3. [x] [ID: P1-PARITY-CONSOLIDATION-S3] ドキュメント一括更新（tutorial / README / spec-tools.md のコマンド例を fast 版に書き換え）
+   - 2026-04-14: `spec-tools.md` / tutorial / `tools/README.md` / `sample/README*.md` を更新し、`runtime_parity_check.py` を fast-backed 正規エントリとして明記。
+4. [x] [ID: P1-PARITY-CONSOLIDATION-S4] fast 版を `runtime_parity_check.py` にリネームするか検討・実施する
+   - 2026-04-14: 物理リネームは見送り。`runtime_parity_check.py` を fast 実装へ委譲する正規エントリにし、`runtime_parity_check_fast.py` は互換エイリアスとして維持する方針に決定。
 5. [ ] [ID: P1-PARITY-CONSOLIDATION-S5] 旧版削除とテスト整理
-6. [ ] [ID: P1-PARITY-CONSOLIDATION-S6] `pytra-cli.py` の `_build_pipeline` で `target="js"` → `target_language="ts"` 変換を追加する
+6. [x] [ID: P1-PARITY-CONSOLIDATION-S6] `pytra-cli.py` の `_build_pipeline` で `target="js"` → `target_language="ts"` 変換を追加する
+   - 2026-04-14: `_build_pipeline()` に lowering 用 `js -> ts` マッピングを追加。
 
 ### 保留中タスク
 

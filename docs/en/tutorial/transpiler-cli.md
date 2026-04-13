@@ -124,7 +124,7 @@ Notes:
 - `pytra-cli.py --target ruby` generates Ruby code directly from EAST3 via the native emitter (`src/toolchain/emit/ruby/emitter/ruby_native_emitter.py`).
 - Image output APIs (`png.write_rgb_png` / `save_gif`) are currently handled by no-op runtime hooks; use this primarily for syntax/execution-path regression at this stage.
 - Check transpile regressions with `python3 tools/check/check_py2rb_transpile.py`.
-- Run parity with `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby` (environments without Ruby toolchain are recorded as `toolchain_missing`). Unstable timing lines such as `elapsed_sec` are excluded from comparison by default.
+- Run parity with the fast-backed canonical entrypoint `python3 tools/check/runtime_parity_check.py --case-root sample --targets ruby` (environments without Ruby toolchain are recorded as `toolchain_missing`). Unstable timing lines such as `elapsed_sec` are excluded from comparison by default.
 
 </details>
 
@@ -140,7 +140,7 @@ Notes:
 - `pytra-cli.py --target lua` generates Lua code directly from EAST3 via the native emitter (`src/toolchain/emit/lua/emitter/lua_native_emitter.py`).
 - Image APIs (`png.write_rgb_png` / `save_gif`) are currently handled by stub/no-op runtime.
 - Check transpile regressions with `python3 tools/check/check_py2lua_transpile.py` (currently monitors with expected failures excluded).
-- Run parity with `python3 tools/check/runtime_parity_check.py --case-root sample --targets lua 17_monte_carlo_pi` (environments without Lua toolchain are recorded as `toolchain_missing`). Unstable lines are excluded by default.
+- Run parity with the fast-backed canonical entrypoint `python3 tools/check/runtime_parity_check.py --case-root sample --targets lua 17_monte_carlo_pi` (environments without Lua toolchain are recorded as `toolchain_missing`). Unstable lines are excluded by default.
 - `sample/lua` currently has `02_raytrace_spheres` / `03_julia_set` / `04_orbit_trap_julia` / `17_monte_carlo_pi` regenerated.
 
 </details>
@@ -157,7 +157,7 @@ Notes:
 - `pytra-cli.py --target php` generates PHP code directly from EAST3 via the native emitter (`src/toolchain/emit/php/emitter/php_native_emitter.py`).
 - Canonical PHP runtime helpers live under `src/runtime/php/{generated,native}/`, and transpilation stages only the required helpers into `work/transpile/php/`.
 - Check transpile regressions with `python3 tools/check/check_py2php_transpile.py`.
-- Run parity with `python3 tools/check/runtime_parity_check.py --case-root sample --targets php` (environments without PHP toolchain are recorded as `toolchain_missing`).
+- Run parity with the fast-backed canonical entrypoint `python3 tools/check/runtime_parity_check.py --case-root sample --targets php` (environments without PHP toolchain are recorded as `toolchain_missing`).
 
 </details>
 

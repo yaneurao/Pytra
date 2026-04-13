@@ -209,7 +209,7 @@ def _run_target_parity(spec: TargetSpec) -> StepResult:
         cp = subprocess.run(
             [
                 "python3",
-                "tools/check/runtime_parity_check.py",
+                "tools/check/runtime_parity_check_fast.py",
                 "--targets",
                 spec.target,
                 "--case-root",

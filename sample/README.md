@@ -148,14 +148,14 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 
 ### Parity Check (Output Verification)
 
-`tools/runtime_parity_check.py` is the canonical parity check tool for all languages. It compares Python execution results (stdout + artifacts) against target language results.
+`tools/check/runtime_parity_check.py` is the canonical parity check tool for all languages. It uses the fast parity engine internally and compares Python execution results (stdout + artifacts) against target language results.
 
 ```bash
 # C++ only
-python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples
+python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples
 
 # All languages
-python3 tools/runtime_parity_check.py \
+python3 tools/check/runtime_parity_check.py \
   --targets cpp,rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,php,scala,nim \
   --case-root sample --all-samples
 ```

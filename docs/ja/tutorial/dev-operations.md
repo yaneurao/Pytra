@@ -15,7 +15,7 @@
 
 ## runtime parity 運用（sample, 全target）
 
-- `tools/check/runtime_parity_check.py` は stdout だけでなく、`output:` で示された artifact の `size` と `CRC32` まで比較します。
+- `tools/check/runtime_parity_check.py` は fast-backed の正規 parity エントリで、stdout だけでなく `output:` で示された artifact の `size` と `CRC32` まで比較します。
 - parity 実行時は case ごとに `sample/out`, `test/out`, `out`, `work/transpile/<target>/<case>` の stale artifact を自動削除します。
 - `elapsed_sec` などの不安定行は既定で比較対象外です（`--ignore-unstable-stdout` は互換フラグ）。
 - 全14targetを一括検証する場合の canonical wrapper:

@@ -150,14 +150,14 @@ PYTHONPATH=src python3 sample/py/01_mandelbrot.py
 
 ### parity check（出力一致検証）
 
-`tools/runtime_parity_check.py` が全言語共通の parity check 正本ツールです。Python 実行結果（stdout + artifact）とターゲット言語の実行結果を比較します。
+`tools/check/runtime_parity_check.py` が全言語共通の parity check 正本ツールです。内部では fast parity エンジンを使い、Python 実行結果（stdout + artifact）とターゲット言語の実行結果を比較します。
 
 ```bash
 # C++ のみ
-python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples
+python3 tools/check/runtime_parity_check.py --targets cpp --case-root sample --all-samples
 
 # 全言語
-python3 tools/runtime_parity_check.py \
+python3 tools/check/runtime_parity_check.py \
   --targets cpp,rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,php,scala,nim \
   --case-root sample --all-samples
 ```
