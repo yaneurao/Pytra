@@ -88,6 +88,19 @@
    - 確認メモ: 2026-04-13 に C++ fixture `typing/type_alias_pep695` は PASS。全言語 sweep は未実施。
 5. [x] [ID: P0-RESOLVE-ALIAS-S5] spec に「型エイリアスの相互再帰は禁止。自己再帰は名前保持」を明記する
 
+### P0-COMMON-RENDERER-UNION-MEMBER: union 構成要素の格納で covariant copy をスキップする
+
+文脈: [docs/ja/plans/p0-common-renderer-union-member.md](../plans/p0-common-renderer-union-member.md)
+
+**発端**: C++ selfhost で `list[JsonVal].append(stmt)` が covariant copy ラムダに誤変換。`stmt` は `dict[str, JsonVal]` で `JsonVal` の union 構成要素。variant への単純格納で済むのに dict の push_back を呼んで g++ エラー。
+
+**方針**: CommonRenderer に `_is_union_member(member_type, union_type)` helper を追加。append / 代入時に引数型が要素型の union 構成要素なら covariant copy をスキップして単純格納にする。全言語共通。
+
+1. [ ] [ID: P0-CR-UNION-S1] CommonRenderer に `_is_union_member` helper を実装する
+2. [ ] [ID: P0-CR-UNION-S2] `list[Union].append(member)` で union 構成要素の場合に covariant copy をスキップするよう修正する
+3. [ ] [ID: P0-CR-UNION-S3] C++ selfhost の `list[JsonVal].append(dict[str, JsonVal])` が単純格納に変換されることを確認する
+4. [ ] [ID: P0-CR-UNION-S4] 全言語の fixture parity に回帰がないことを確認する
+
 ### P20-CPP-SELFHOST: C++ emitter で toolchain を C++ に変換し g++ build を通す
 
 文脈: [docs/ja/plans/p4-cpp-selfhost.md](../plans/p4-cpp-selfhost.md)
