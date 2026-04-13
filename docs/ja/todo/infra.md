@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-11
+最終更新: 2026-04-14
 
 ## 運用ルール
 
@@ -64,6 +64,19 @@
 7. [ ] [ID: P20-DDT-S7] `tools/unittest/emit/<lang>/test_py2*_smoke.py` (~20件) を JSON に移行する
 8. [ ] [ID: P20-DDT-S8] `tools/unittest/common/test_pylib_*.py` (~10件) を JSON に移行する
 9. [ ] [ID: P20-DDT-S9] 空になったスクリプトを削除する
+
+### P1-PARITY-CONSOLIDATION: runtime_parity_check.py を fast 版に統合する
+
+文脈: [docs/ja/plans/p1-parity-check-consolidation.md](../plans/p1-parity-check-consolidation.md)
+
+旧版 `runtime_parity_check.py` は `pytra-cli.py` subprocess 方式で、JS の `"js"` → `"ts"` マッピング漏れ等メンテが追いついていない。fast 版（in-memory API）に一本化する。
+
+1. [ ] [ID: P1-PARITY-CONSOLIDATION-S1] `check_noncpp_backend_health.py` の旧版呼び出しを fast 版に切り替える
+2. [ ] [ID: P1-PARITY-CONSOLIDATION-S2] `regenerate_samples.py` の旧版参照を fast 版に変更する
+3. [ ] [ID: P1-PARITY-CONSOLIDATION-S3] ドキュメント一括更新（tutorial / README / spec-tools.md のコマンド例を fast 版に書き換え）
+4. [ ] [ID: P1-PARITY-CONSOLIDATION-S4] fast 版を `runtime_parity_check.py` にリネームするか検討・実施する
+5. [ ] [ID: P1-PARITY-CONSOLIDATION-S5] 旧版削除とテスト整理
+6. [ ] [ID: P1-PARITY-CONSOLIDATION-S6] `pytra-cli.py` の `_build_pipeline` で `target="js"` → `target_language="ts"` 変換を追加する
 
 ### 保留中タスク
 
