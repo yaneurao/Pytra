@@ -1107,7 +1107,7 @@ def _build_pipeline(
         return 1
 
     linked_dir = work_dir.joinpath("linked").resolve()
-    _write_link_output(link_result, linked_dir, True)
+    _write_link_output(link_result, linked_dir, False)
     if target == "rs":
         return _emit_rs(linked_dir.joinpath("manifest.json"), output_dir, package_mode=rs_package)
     if target == "go":
@@ -1135,7 +1135,7 @@ def _build_pipeline(
 # main
 # ---------------------------------------------------------------------------
 
-def main() -> int:
+def cli_main() -> int:
     cli_argv: list[str] = []
     index = 0
     for arg in sys.argv:
@@ -1185,4 +1185,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(cli_main())

@@ -49,6 +49,9 @@ _TYPE_MAP: dict[str, str] = {
     "object": "object",
     "JsonVal": "JsonVal",
     "Node": "Object<dict<str, JsonVal>>",
+    # toolchain.parse.py.nodes.TypeExpr = Union[NamedType, GenericType]
+    # The alias itself may be elided from EAST3, so emit its storage type directly.
+    "TypeExpr": "::std::variant<NamedType, GenericType>",
     "Callable": "::std::function<object(object)>",
 }
 
@@ -164,10 +167,15 @@ def cpp_type(resolved_type: str, *, prefer_value_container: bool = False) -> str
     if optional_inner != "":
         return "::std::optional<" + cpp_signature_type(optional_inner) + ">"
 
-    # callable[[P1, P2, ...], RetType] → ::std::function<RetType(P1, P2, ...)>
+    # callable[[P1, P2, ...], RetType] / Callable[[...], RetType]
+    #   → ::std::function<RetType(P1, P2, ...)>
+    callable_inner = ""
     if resolved_type.startswith("callable[") and resolved_type.endswith("]"):
-        inner = resolved_type[9:-1]  # strip "callable[" and "]"
-        parts = _split_generic_args(inner)
+        callable_inner = resolved_type[9:-1]
+    elif resolved_type.startswith("Callable[") and resolved_type.endswith("]"):
+        callable_inner = resolved_type[9:-1]
+    if callable_inner != "":
+        parts = _split_generic_args(callable_inner)
         if len(parts) == 2:
             params_raw = parts[0].strip()
             ret_raw = parts[1].strip()

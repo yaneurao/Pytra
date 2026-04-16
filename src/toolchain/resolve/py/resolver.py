@@ -1552,7 +1552,8 @@ def _collect_callable_param_uses(node: JsonVal, params: set[str], out: dict[str,
                 actual = _collect_call_arg_types(node)
                 if fn_name in out and out[fn_name] != actual:
                     invalid.add(fn_name)
-                    out.pop(fn_name, None)
+                    if fn_name in out:
+                        del out[fn_name]
                 else:
                     out[fn_name] = actual
     for value in node.values():
@@ -1730,28 +1731,34 @@ def _refresh_callable_param_calls(node: JsonVal, refined: dict[str, str], ctx: R
 
 def _refine_callable_params_from_calls(module_doc: dict[str, JsonVal], ctx: ResolveContext) -> None:
     functions: dict[str, dict[str, JsonVal]] = {}
-    for stmt in module_doc.get("body", []):
+    body_val = module_doc.get("body")
+    body_list: list[JsonVal] = body_val if isinstance(body_val, list) else []
+    for stmt in body_list:
         if isinstance(stmt, dict) and stmt.get("kind") == "FunctionDef":
             name = stmt.get("name")
             if isinstance(name, str) and name != "":
                 functions[name] = stmt
 
     def _local_function_callable_type(name: str) -> str:
-        fn_def = functions.get(name)
-        if not isinstance(fn_def, dict):
+        fn_def: dict[str, JsonVal] | None = functions.get(name)
+        if fn_def is None:
             renamed = ctx.renamed_symbols.get(name, "")
             if renamed != "":
                 fn_def = functions.get(renamed)
-        if not isinstance(fn_def, dict):
+        if fn_def is None:
             return ""
-        arg_order_obj = fn_def.get("arg_order")
-        arg_types_obj = fn_def.get("arg_types")
-        ret_obj = fn_def.get("return_type")
+        arg_order_obj: JsonVal = fn_def.get("arg_order")
+        arg_types_obj: JsonVal = fn_def.get("arg_types")
+        ret_obj: JsonVal = fn_def.get("return_type")
         if not isinstance(arg_order_obj, list) or not isinstance(arg_types_obj, dict) or not isinstance(ret_obj, str):
             return ""
+        arg_order_list: list[str] = []
+        for arg_name_obj in arg_order_obj:
+            if isinstance(arg_name_obj, str):
+                arg_order_list.append(arg_name_obj)
         params: list[str] = []
-        for arg_name in arg_order_obj:
-            if not isinstance(arg_name, str) or arg_name == "self":
+        for arg_name in arg_order_list:
+            if arg_name == "self":
                 continue
             arg_type_obj = arg_types_obj.get(arg_name)
             arg_type = arg_type_obj if isinstance(arg_type_obj, str) else ""
@@ -1773,7 +1780,8 @@ def _refine_callable_params_from_calls(module_doc: dict[str, JsonVal], ctx: Reso
             cur[param_name] = callable_type
             return
         invalid.add(key)
-        cur.pop(param_name, None)
+        if param_name in cur:
+            del cur[param_name]
 
     def _visit(node: JsonVal) -> None:
         if isinstance(node, list):
@@ -1785,15 +1793,19 @@ def _refine_callable_params_from_calls(module_doc: dict[str, JsonVal], ctx: Reso
         if node.get("kind") == "Call":
             func = node.get("func")
             fn_name = func.get("id") if isinstance(func, dict) else None
-            fn_def = functions.get(fn_name) if isinstance(fn_name, str) else None
-            if isinstance(fn_def, dict):
+            fn_def: dict[str, JsonVal] | None = functions.get(fn_name) if isinstance(fn_name, str) else None
+            if fn_def is not None:
                 arg_order_obj = fn_def.get("arg_order")
                 arg_types_obj = fn_def.get("arg_types")
                 args_obj = node.get("args")
                 if isinstance(arg_order_obj, list) and isinstance(arg_types_obj, dict) and isinstance(args_obj, list):
+                    arg_order_list: list[str] = []
+                    for param_obj in arg_order_obj:
+                        if isinstance(param_obj, str):
+                            arg_order_list.append(param_obj)
                     positional_index = 0
-                    for param in arg_order_obj:
-                        if not isinstance(param, str) or param == "self":
+                    for param in arg_order_list:
+                        if param == "self":
                             continue
                         declared_obj = arg_types_obj.get(param)
                         declared = declared_obj if isinstance(declared_obj, str) else ""
@@ -1822,8 +1834,8 @@ def _refine_callable_params_from_calls(module_doc: dict[str, JsonVal], ctx: Reso
     _visit(module_doc.get("main_guard_body", []))
 
     for fn_name, param_map in observed.items():
-        fn_def = functions.get(fn_name)
-        if not isinstance(fn_def, dict):
+        fn_def: dict[str, JsonVal] | None = functions.get(fn_name)
+        if fn_def is None:
             continue
         arg_types_obj = fn_def.get("arg_types")
         if not isinstance(arg_types_obj, dict):
@@ -1832,16 +1844,39 @@ def _refine_callable_params_from_calls(module_doc: dict[str, JsonVal], ctx: Reso
         for param_name, callable_type in param_map.items():
             if (fn_name, param_name) in invalid:
                 continue
-            arg_types_obj[param_name] = callable_type
-            refined[param_name] = callable_type
+            declared_prev_obj = arg_types_obj.get(param_name)
+            declared_prev = declared_prev_obj if isinstance(declared_prev_obj, str) else ""
+            final_type = callable_type
+            # Preserve `| None` from the original declaration so a refined
+            # callable type does not silently strip the parameter's
+            # optionality (otherwise a defaulted `None` argument becomes
+            # ill-typed at every call site).
+            if declared_prev != "" and _type_text_contains_none(declared_prev):
+                if not _type_text_contains_none(final_type):
+                    final_type = final_type + " | None"
+            arg_types_obj[param_name] = final_type
+            refined[param_name] = final_type
             arg_types_raw = fn_def.get("arg_types_raw")
             if isinstance(arg_types_raw, dict):
-                arg_types_raw[param_name] = callable_type
+                arg_types_raw[param_name] = final_type
             arg_type_exprs = fn_def.get("arg_type_exprs")
             if isinstance(arg_type_exprs, dict):
-                arg_type_exprs[param_name] = make_type_expr(callable_type)
+                arg_type_exprs[param_name] = make_type_expr(final_type)
         if refined:
             _refresh_callable_param_calls(fn_def.get("body"), refined, ctx)
+
+
+def _type_text_contains_none(type_str: str) -> bool:
+    t: str = type_str.strip()
+    if t == "" or t == "None":
+        return t == "None"
+    # Rough top-level `| None` check; good enough for preserving the
+    # optionality that a refined callable dropped.
+    parts = t.split(" | ")
+    for part in parts:
+        if part.strip() == "None":
+            return True
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -3738,10 +3773,17 @@ def _resolve_function_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None
         callable_sig = _infer_callable_param_signature(stmt, arg_name, ctx)
         if callable_sig == "":
             continue
-        arg_types[arg_name] = callable_sig
-        refined_callable_params[arg_name] = callable_sig
+        final_sig = callable_sig
+        # Preserve `| None` from the original declaration so a refined
+        # callable type does not silently strip the parameter's
+        # optionality — otherwise a defaulted `None` argument becomes
+        # ill-typed at every call site.
+        if _type_text_contains_none(arg_type) and not _type_text_contains_none(final_sig):
+            final_sig = final_sig + " | None"
+        arg_types[arg_name] = final_sig
+        refined_callable_params[arg_name] = final_sig
         if isinstance(arg_types_raw, dict):
-            arg_types_raw[arg_name] = callable_sig
+            arg_types_raw[arg_name] = final_sig
     if len(refined_callable_params) > 0:
         arg_type_exprs = stmt.get("arg_type_exprs")
         if isinstance(arg_type_exprs, dict):
@@ -3873,7 +3915,11 @@ def _resolve_class_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
             # @extern class with no fields → opaque (raw pointer, no RC)
             stmt["class_storage_hint"] = "opaque"
             meta_obj = stmt.get("meta")
-            meta_dict: dict[str, JsonVal] = dict(meta_obj) if isinstance(meta_obj, dict) else {}
+            meta_dict: dict[str, JsonVal] = {}
+            if isinstance(meta_obj, dict):
+                for meta_key, meta_value in meta_obj.items():
+                    if isinstance(meta_key, str):
+                        meta_dict[meta_key] = meta_value
             meta_dict["opaque_v1"] = {"schema_version": 1}
             stmt["meta"] = meta_dict
         else:

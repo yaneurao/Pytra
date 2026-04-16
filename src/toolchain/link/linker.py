@@ -23,6 +23,7 @@ from toolchain.link.dependencies import build_all_resolved_dependencies
 from toolchain.link.import_maps import collect_import_maps
 from toolchain.link.expand_defaults import expand_cross_module_defaults
 from toolchain.resolve.py.type_norm import normalize_type
+from toolchain.compile.jv import jv_dict
 
 
 # ---------------------------------------------------------------------------
@@ -72,7 +73,7 @@ def _module_id_from_doc(
     if isinstance(source_path_val, str) and source_path_val.strip() != "":
         source_path_norm = source_path_val.strip().replace("\\", "/")
         # Handle both relative (src/toolchain2/...) and absolute (/path/to/src/toolchain2/...) paths
-        _tc2_markers = ("src/toolchain2/",)
+        _tc2_markers: list[str] = ["src/toolchain2/"]
         for marker in _tc2_markers:
             idx = source_path_norm.find(marker)
             if idx >= 0 and source_path_norm.endswith(".py"):
@@ -85,11 +86,14 @@ def _module_id_from_doc(
             return "pytra_cli2"
 
     # Runtime .east ファイルの場合はパスから導出
-    resolved = Path(file_path).resolve()
-    east_root = runtime_east_root.resolve()
+    resolved_path = Path(file_path).resolve()
+    east_root_path = runtime_east_root.resolve()
     try:
-        rel = str(resolved.relative_to(east_root))
-        rel_str = str(rel).replace("\\", "/")
+        root_prefix = str(east_root_path).replace("\\", "/")
+        resolved_prefix = str(resolved_path).replace("\\", "/")
+        if not resolved_prefix.startswith(root_prefix + "/"):
+            raise ValueError("outside runtime east root")
+        rel_str = resolved_prefix[len(root_prefix) + 1 :]
         if rel_str.endswith(".east"):
             rel_str = rel_str.replace(".east", "")
         module_id = "pytra." + rel_str.replace("/", ".")
@@ -208,11 +212,52 @@ def _append_missing_importer(
 
 
 def _sorted_doc_map_keys(module_map: dict[str, dict[str, JsonVal]]) -> list[str]:
-    return sorted(list(module_map.keys()))
+    return _sorted_str_list(list(module_map.keys()))
 
 
 def _sorted_str_map_keys(values: dict[str, JsonVal]) -> list[str]:
-    return sorted(list(values.keys()))
+    return _sorted_str_list(list(values.keys()))
+
+
+def _sorted_str_list(values: list[str]) -> list[str]:
+    out = list(values)
+    n = len(out)
+    i = 0
+    while i < n:
+        j = i + 1
+        while j < n:
+            if out[j] < out[i]:
+                cur = out[i]
+                out[i] = out[j]
+                out[j] = cur
+            j += 1
+        i += 1
+    return out
+
+
+def _import_maps(doc: dict[str, JsonVal]) -> tuple[dict[str, str], dict[str, str]]:
+    raw = collect_import_maps(doc)
+    import_modules: dict[str, str] = {}
+    import_symbols: dict[str, str] = {}
+    if isinstance(raw, tuple) and len(raw) == 2:
+        left = raw[0]
+        right = raw[1]
+        if isinstance(left, dict):
+            for key, value in left.items():
+                if isinstance(key, str) and key != "" and isinstance(value, str):
+                    import_modules[key] = value
+        if isinstance(right, dict):
+            for key, value in right.items():
+                if isinstance(key, str) and key != "" and isinstance(value, str):
+                    import_symbols[key] = value
+    return import_modules, import_symbols
+
+
+def _set_to_sorted_str_list(values: set[str]) -> list[str]:
+    out: list[str] = []
+    for value in values:
+        out.append(value)
+    return _sorted_str_list(out)
 
 
 def _sorted_modules_by_id(modules: list[LinkedModule]) -> list[LinkedModule]:
@@ -243,10 +288,8 @@ def _doc_map_get(module_map: dict[str, dict[str, JsonVal]], path_str: str) -> di
 
 def _docs_as_json(copied_docs: list[tuple[LinkedModule, dict[str, JsonVal]]]) -> list[JsonVal]:
     out: list[JsonVal] = []
-    for module, doc in copied_docs:
-        # Pass (module_id, doc) tuples so expand_cross_module_defaults can resolve
-        # module IDs for runtime modules that don't have meta.module_id set.
-        out.append((module.module_id, doc))
+    for _module, doc in copied_docs:
+        out.append(doc)
     return out
 
 
@@ -276,6 +319,18 @@ def _node_list(node: dict[str, JsonVal], key: str) -> list[JsonVal]:
     if isinstance(value, list):
         return value
     return []
+
+
+def _json_dict_equal(left: JsonVal, right: dict[str, JsonVal]) -> bool:
+    return isinstance(left, dict) and jv_dict(left) == right
+
+
+def _json_dict_not_equal(left: JsonVal, right: dict[str, JsonVal]) -> bool:
+    return not _json_dict_equal(left, right)
+
+
+def _json_list_item_equal(items: list[JsonVal], index: int, node: dict[str, JsonVal]) -> bool:
+    return 0 <= index < len(items) and isinstance(items[index], dict) and jv_dict(items[index]) == node
 
 
 def _walk_nodes_with_parents(
@@ -325,7 +380,7 @@ def _is_bytes_from_local_bytearray_call(node: dict[str, JsonVal]) -> tuple[str, 
     source_name = _node_str(arg, "id")
     if source_name == "":
         return None
-    return (source_name, arg)
+    return (source_name, jv_dict(arg))
 
 
 def _top_level_function_map(doc: dict[str, JsonVal]) -> dict[str, dict[str, JsonVal]]:
@@ -339,7 +394,7 @@ def _top_level_function_map(doc: dict[str, JsonVal]) -> dict[str, dict[str, Json
         name = _node_str(stmt, "name")
         if name == "":
             continue
-        out[name] = stmt
+        out[name] = jv_dict(stmt)
     return out
 
 
@@ -366,7 +421,7 @@ def _find_outer_call_for_arg(
         if _node_str(parent, "kind") == "Call":
             args = _node_list(parent, "args")
             for arg in args:
-                if arg is node:
+                if _json_dict_equal(arg, node):
                     return parent
         i -= 1
     return None
@@ -408,7 +463,7 @@ def _call_arg_usage_is_readonly(
             args = _node_list(call_node, "args")
             i = 0
             while i < len(args):
-                if args[i] is arg_node:
+                if _json_list_item_equal(args, i, arg_node):
                     if i >= len(arg_order):
                         return False
                     arg_name = arg_order[i]
@@ -421,7 +476,7 @@ def _call_arg_usage_is_readonly(
             for kw in keywords:
                 if not isinstance(kw, dict):
                     continue
-                if kw.get("value") is not arg_node:
+                if _json_dict_not_equal(kw.get("value"), arg_node):
                     continue
                 arg_name = kw.get("arg")
                 if not isinstance(arg_name, str) or arg_name == "":
@@ -431,7 +486,7 @@ def _call_arg_usage_is_readonly(
     semantic_tag = _node_str(call_node, "semantic_tag")
     if runtime_call in ("TextIOWrapper.write", "BufferedWriter.write") or semantic_tag == "stdlib.method.write":
         args = _node_list(call_node, "args")
-        return len(args) >= 1 and args[0] is arg_node
+        return _json_list_item_equal(args, 0, arg_node)
     return False
 
 
@@ -456,7 +511,7 @@ def _call_local_function_arg_is_readonly(
     args = _node_list(call_node, "args")
     i = 0
     while i < len(args):
-        if args[i] is arg_node:
+        if _json_list_item_equal(args, i, arg_node):
             if i >= len(arg_order):
                 return False
             arg_name = arg_order[i]
@@ -496,7 +551,7 @@ def _name_is_append_owner(
         return False
     if _node_str(direct_parent, "kind") != "Attribute":
         return False
-    if direct_parent.get("value") is not name_node:
+    if _json_dict_not_equal(direct_parent.get("value"), name_node):
         return False
     outer = _find_direct_parent(parents[: len(parents) - 1])
     if outer is None or _node_str(outer, "kind") != "Call":
@@ -512,7 +567,7 @@ def _name_is_readonly_subscript_owner(
     direct_parent = _find_direct_parent(parents)
     if direct_parent is None or _node_str(direct_parent, "kind") != "Subscript":
         return False
-    return direct_parent.get("value") is name_node
+    return _json_dict_equal(direct_parent.get("value"), name_node)
 
 
 def _name_is_decl_target(
@@ -525,7 +580,7 @@ def _name_is_decl_target(
     kind = _node_str(direct_parent, "kind")
     if kind != "AnnAssign" and kind != "Assign":
         return False
-    return direct_parent.get("target") is name_node
+    return _json_dict_equal(direct_parent.get("target"), name_node)
 
 
 def _assigned_local_name(
@@ -538,7 +593,7 @@ def _assigned_local_name(
     kind = _node_str(direct_parent, "kind")
     if kind != "AnnAssign" and kind != "Assign":
         return ""
-    if direct_parent.get("value") is not node:
+    if _json_dict_not_equal(direct_parent.get("value"), node):
         return ""
     target = direct_parent.get("target")
     if not isinstance(target, dict) or _node_str(target, "kind") != "Name":
@@ -576,7 +631,7 @@ def _annotate_copy_elision_safe_v1(copied_docs: list[tuple[LinkedModule, dict[st
 
     for module, _doc in copied_docs:
         funcs = module_funcs.get(module.module_id, {})
-        for func_name in sorted(list(funcs.keys())):
+        for func_name in _sorted_str_list(list(funcs.keys())):
             func_node = funcs[func_name]
             for node, parents in _walk_nodes_with_parents(func_node, []):
                 if _node_str(node, "kind") != "Call":
@@ -598,25 +653,25 @@ def _annotate_copy_elision_safe_v1(copied_docs: list[tuple[LinkedModule, dict[st
                 meta = _ensure_node_meta(node)
                 if "copy_elision_safe_v1" in meta:
                     continue
-                meta["copy_elision_safe_v1"] = {
-                    "schema_version": 1,
-                    "operation": "bytes_from_bytearray",
-                    "source_name": hit[0],
-                    "borrow_kind": "readonly_ref",
-                    "analysis_scope": "linked_program",
-                    "proof_summary": "linker verified local bytes(bytearray) result flows only through readonly uses",
-                }
+                copy_meta: dict[str, JsonVal] = {}
+                copy_meta["schema_version"] = 1
+                copy_meta["operation"] = "bytes_from_bytearray"
+                copy_meta["source_name"] = hit[0]
+                copy_meta["borrow_kind"] = "readonly_ref"
+                copy_meta["analysis_scope"] = "linked_program"
+                copy_meta["proof_summary"] = "linker verified local bytes(bytearray) result flows only through readonly uses"
+                meta["copy_elision_safe_v1"] = copy_meta
 
     candidate_calls: dict[str, dict[str, JsonVal]] = {}
     for module, _doc in copied_docs:
         funcs = module_funcs.get(module.module_id, {})
-        for func_name in sorted(list(funcs.keys())):
+        for func_name in _sorted_str_list(list(funcs.keys())):
             func_node = funcs[func_name]
             call_node = _copy_elision_return_candidate(func_node)
             if call_node is not None:
                 candidate_calls[module.module_id + "::" + func_name] = call_node
 
-    for candidate_key in sorted(list(candidate_calls.keys())):
+    for candidate_key in _sorted_str_list(list(candidate_calls.keys())):
         sep = candidate_key.find("::")
         if sep < 0:
             continue
@@ -633,7 +688,7 @@ def _annotate_copy_elision_safe_v1(copied_docs: list[tuple[LinkedModule, dict[st
         caller_lists: dict[str, dict[str, JsonVal]] = {}
         for module, _doc in copied_docs:
             funcs = module_funcs.get(module.module_id, {})
-            for caller_name in sorted(list(funcs.keys())):
+            for caller_name in _sorted_str_list(list(funcs.keys())):
                 caller_func = funcs[caller_name]
                 for node, parents in _walk_nodes_with_parents(caller_func, []):
                     if _node_str(node, "kind") != "Call":
@@ -641,7 +696,7 @@ def _annotate_copy_elision_safe_v1(copied_docs: list[tuple[LinkedModule, dict[st
                     func = node.get("func")
                     if not isinstance(func, dict) or _node_str(func, "kind") != "Name" or _node_str(func, "id") != func_name:
                         continue
-                    if node is call_node:
+                    if _json_dict_equal(node, call_node):
                         continue
                     saw_callsite = True
                     outer_call = _find_outer_call_for_arg(node, parents)
@@ -667,7 +722,7 @@ def _annotate_copy_elision_safe_v1(copied_docs: list[tuple[LinkedModule, dict[st
         if not safe or not saw_callsite:
             continue
 
-        for list_key in sorted(list(caller_lists.keys())):
+        for list_key in _sorted_str_list(list(caller_lists.keys())):
             sep2 = list_key.find("::")
             if sep2 < 0:
                 safe = False
@@ -681,14 +736,14 @@ def _annotate_copy_elision_safe_v1(copied_docs: list[tuple[LinkedModule, dict[st
             continue
 
         meta = _ensure_node_meta(call_node)
-        meta["copy_elision_safe_v1"] = {
-            "schema_version": 1,
-            "operation": "bytes_from_bytearray",
-            "source_name": source_name,
-            "borrow_kind": "readonly_ref",
-            "analysis_scope": "linked_program",
-            "proof_summary": "linker verified local bytes(bytearray) result flows only through readonly list[bytes] uses",
-        }
+        copy_meta2: dict[str, JsonVal] = {}
+        copy_meta2["schema_version"] = 1
+        copy_meta2["operation"] = "bytes_from_bytearray"
+        copy_meta2["source_name"] = source_name
+        copy_meta2["borrow_kind"] = "readonly_ref"
+        copy_meta2["analysis_scope"] = "linked_program"
+        copy_meta2["proof_summary"] = "linker verified local bytes(bytearray) result flows only through readonly list[bytes] uses"
+        meta["copy_elision_safe_v1"] = copy_meta2
 
 
 def _raise_types_in_node(node: JsonVal) -> set[str]:
@@ -795,7 +850,10 @@ def _attach_can_raise_markers(
                         excs = can_raise.get(qualified, set())
                         if len(excs) > 0:
                             meta = _ensure_meta(stmt)
-                            meta["can_raise_v1"] = {"schema_version": 1, "exception_types": sorted(list(excs))}
+                            can_raise_meta: dict[str, JsonVal] = {}
+                            can_raise_meta["schema_version"] = 1
+                            can_raise_meta["exception_types"] = _set_to_sorted_str_list(excs)
+                            meta["can_raise_v1"] = can_raise_meta
                 elif kind == "ClassDef":
                     class_name = stmt.get("name")
                     class_body = stmt.get("body")
@@ -810,11 +868,17 @@ def _attach_can_raise_markers(
                             excs2 = can_raise.get(qualified2, set())
                             if len(excs2) > 0:
                                 meta2 = _ensure_meta(method)
-                                meta2["can_raise_v1"] = {"schema_version": 1, "exception_types": sorted(list(excs2))}
+                                can_raise_meta2: dict[str, JsonVal] = {}
+                                can_raise_meta2["schema_version"] = 1
+                                can_raise_meta2["exception_types"] = _set_to_sorted_str_list(excs2)
+                                meta2["can_raise_v1"] = can_raise_meta2
         main_excs = can_raise.get(module.module_id + "::__main__", set())
         if len(main_excs) > 0:
             meta3 = _ensure_meta(doc)
-            meta3["can_raise_v1"] = {"schema_version": 1, "exception_types": sorted(list(main_excs))}
+            can_raise_meta3: dict[str, JsonVal] = {}
+            can_raise_meta3["schema_version"] = 1
+            can_raise_meta3["exception_types"] = _set_to_sorted_str_list(main_excs)
+            meta3["can_raise_v1"] = can_raise_meta3
 
 
 def _link_resolve_trait_ref(
@@ -867,9 +931,7 @@ def _fold_trait_predicates(
     all_traits: set[str],
     trait_impls: dict[str, set[str]],
 ) -> None:
-    import_parts = cast(tuple[JsonVal, JsonVal], collect_import_maps(doc))
-    import_modules = cast(dict[str, str], import_parts[0])
-    import_symbols = cast(dict[str, str], import_parts[1])
+    import_modules, import_symbols = _import_maps(doc)
     local_traits: dict[str, str] = {}
     body = doc.get("body")
     if isinstance(body, list):
@@ -1093,9 +1155,7 @@ def _attach_receiver_storage_hints(
 ) -> None:
     class_storage_hints = _collect_class_storage_hints(copied_docs)
     for module, doc in copied_docs:
-        import_parts = cast(tuple[JsonVal, JsonVal], collect_import_maps(doc))
-        import_modules = cast(dict[str, str], import_parts[0])
-        import_symbols = cast(dict[str, str], import_parts[1])
+        import_modules, import_symbols = _import_maps(doc)
         local_classes = _collect_local_class_names(doc, module.module_id)
         for node in _walk_nodes(doc):
             kind = node.get("kind")
@@ -1138,9 +1198,7 @@ def _attach_resolved_storage_hints(
 ) -> None:
     class_storage_hints = _collect_class_storage_hints(copied_docs)
     for module, doc in copied_docs:
-        import_parts = cast(tuple[JsonVal, JsonVal], collect_import_maps(doc))
-        import_modules = cast(dict[str, str], import_parts[0])
-        import_symbols = cast(dict[str, str], import_parts[1])
+        import_modules, import_symbols = _import_maps(doc)
         local_classes = _collect_local_class_names(doc, module.module_id)
         for node in _walk_nodes(doc):
             resolved_type = node.get("resolved_type")
@@ -1167,9 +1225,7 @@ def _attach_attribute_field_hints(
     class_storage_hints = _collect_class_storage_hints(copied_docs)
     class_field_types = _collect_class_field_types(copied_docs)
     for module, doc in copied_docs:
-        import_parts = cast(tuple[JsonVal, JsonVal], collect_import_maps(doc))
-        import_modules = cast(dict[str, str], import_parts[0])
-        import_symbols = cast(dict[str, str], import_parts[1])
+        import_modules, import_symbols = _import_maps(doc)
         local_classes = _collect_local_class_names(doc, module.module_id)
         for node in _walk_nodes(doc):
             if node.get("kind") != "Attribute":
@@ -1347,10 +1403,15 @@ def _attach_function_signature_hints(
 ) -> None:
     class_storage_hints = _collect_class_storage_hints(copied_docs)
     module_function_signatures = _collect_module_function_signatures(copied_docs)
+    # Snapshot each function signature once so subsequent attaches on Call
+    # nodes inside the same function bodies don't compound into later copies.
+    module_function_snapshots: dict[str, dict[str, JsonVal]] = {}
+    for key, sig in module_function_signatures.items():
+        snap = _copy_json(sig)
+        if isinstance(snap, dict):
+            module_function_snapshots[key] = snap
     for module, doc in copied_docs:
-        import_parts = cast(tuple[JsonVal, JsonVal], collect_import_maps(doc))
-        import_modules = cast(dict[str, str], import_parts[0])
-        import_symbols = cast(dict[str, str], import_parts[1])
+        import_modules, import_symbols = _import_maps(doc)
         local_classes = _collect_local_class_names(doc, module.module_id)
         for node in _walk_nodes(doc):
             if node.get("kind") != "Call":
@@ -1383,7 +1444,7 @@ def _attach_function_signature_hints(
                         target_key = imported_module_id + "::" + attr
             if target_key == "":
                 continue
-            fn_sig = module_function_signatures.get(target_key)
+            fn_sig = module_function_snapshots.get(target_key)
             if not isinstance(fn_sig, dict):
                 continue
             node["function_signature_v1"] = cast(dict[str, JsonVal], _copy_json(fn_sig))
@@ -1415,10 +1476,20 @@ def _attach_method_signature_hints(
 ) -> None:
     class_storage_hints = _collect_class_storage_hints(copied_docs)
     class_method_signatures = _collect_class_method_signatures(copied_docs)
+    # Snapshot each method signature once. method_signature_v1 attaches to
+    # Call nodes inside the same method bodies would otherwise compound into
+    # later copies, producing exponential size growth on modules with many
+    # cross-referencing methods (e.g. emitter subset renderers).
+    class_method_snapshots: dict[str, dict[str, dict[str, JsonVal]]] = {}
+    for fqcn, methods in class_method_signatures.items():
+        snaps: dict[str, dict[str, JsonVal]] = {}
+        for method_name, sig in methods.items():
+            snap = _copy_json(sig)
+            if isinstance(snap, dict):
+                snaps[method_name] = snap
+        class_method_snapshots[fqcn] = snaps
     for module, doc in copied_docs:
-        import_parts = cast(tuple[JsonVal, JsonVal], collect_import_maps(doc))
-        import_modules = cast(dict[str, str], import_parts[0])
-        import_symbols = cast(dict[str, str], import_parts[1])
+        import_modules, import_symbols = _import_maps(doc)
         local_classes = _collect_local_class_names(doc, module.module_id)
         for node in _walk_nodes(doc):
             if node.get("kind") != "Call":
@@ -1445,7 +1516,7 @@ def _attach_method_signature_hints(
             )
             if fqcn == "":
                 continue
-            method_sig = class_method_signatures.get(fqcn, {}).get(method_name)
+            method_sig = class_method_snapshots.get(fqcn, {}).get(method_name)
             if isinstance(method_sig, dict):
                 node["method_signature_v1"] = cast(dict[str, JsonVal], _copy_json(method_sig))
 
@@ -1460,9 +1531,7 @@ def _attach_import_storage_hints(
         bindings = meta.get("import_bindings")
         if not isinstance(bindings, list):
             continue
-        import_parts = cast(tuple[JsonVal, JsonVal], collect_import_maps(doc))
-        import_modules = cast(dict[str, str], import_parts[0])
-        import_symbols = cast(dict[str, str], import_parts[1])
+        import_modules, import_symbols = _import_maps(doc)
         local_classes = _collect_local_class_names(doc, module.module_id)
         for binding in bindings:
             if not isinstance(binding, dict):
@@ -1589,9 +1658,7 @@ def _rewrite_type_id_isinstance(
 ) -> None:
     if target == "cpp":
         return
-    import_parts = cast(tuple[JsonVal, JsonVal], collect_import_maps(doc))
-    import_modules = cast(dict[str, str], import_parts[0])
-    import_symbols = cast(dict[str, str], import_parts[1])
+    import_modules, import_symbols = _import_maps(doc)
     local_classes = _collect_local_class_names(doc, module_id)
     meta = _ensure_meta(doc)
     for node in _walk_nodes(doc):

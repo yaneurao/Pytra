@@ -16,15 +16,16 @@ accept an EAST3 document and return a code string.
 
 from __future__ import annotations
 
-import typing
+from typing import Callable
 
 from pytra.std import json
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
 
 
-EmitFn = typing.Callable[[dict[str, JsonVal]], str]
-DirectEmitFn = typing.Callable[[dict[str, JsonVal], Path], int]
+type EmitFn = Callable[[dict[str, JsonVal]], str]
+type DirectEmitFn = Callable[[dict[str, JsonVal], Path], int]
+type PostEmitFn = Callable[[Path], None]
 
 
 def _parse_args(argv: list[str]) -> tuple[str, str, str]:
@@ -82,11 +83,12 @@ def _load_linked_modules(manifest_path: Path) -> list[dict[str, JsonVal]]:
             raise RuntimeError("linked EAST root must be object: " + str(east_path))
         typed_east: dict[str, JsonVal] = east_doc
         # Inject module metadata from manifest entry into east_doc meta
-        meta: JsonVal = typed_east.get("meta")
-        if not isinstance(meta, dict):
-            meta = {}
-            typed_east["meta"] = meta
-        typed_meta: dict[str, JsonVal] = meta
+        meta_val: JsonVal = typed_east.get("meta")
+        typed_meta: dict[str, JsonVal] = {}
+        if isinstance(meta_val, dict):
+            typed_meta = meta_val
+        else:
+            typed_east["meta"] = typed_meta
         module_id: JsonVal = typed_entry.get("module_id")
         if isinstance(module_id, str):
             typed_meta["_cli_module_id"] = module_id
@@ -101,9 +103,6 @@ def _load_linked_modules(manifest_path: Path) -> list[dict[str, JsonVal]]:
             typed_meta["_cli_source_path"] = source_path
         result.append(typed_east)
     return result
-
-
-PostEmitFn = typing.Callable[[Path], None]
 
 
 def run_emit_cli(

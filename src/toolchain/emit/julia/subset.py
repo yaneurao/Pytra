@@ -7,7 +7,7 @@ Unsupported modules must fall back to the legacy bridge.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from typing import Callable
 
 from pytra.std.json import JsonVal
 
@@ -2014,7 +2014,10 @@ class JuliaSubsetRenderer:
         self._emit("__pytra_exception_message(e::" + class_name + ") = string(e.__pytra_message)")
 
     def _emit_exception_struct(self, class_name: str, base_type: str, field_names: list[str]) -> None:
-        self._emit_mutable_struct(class_name, base_type, ["__pytra_message", *field_names])
+        all_fields: list[str] = ["__pytra_message"]
+        for name in field_names:
+            all_fields.append(name)
+        self._emit_mutable_struct(class_name, base_type, all_fields)
 
     def _emit_exception_class(self, node: dict[str, JsonVal]) -> None:
         class_name = _str(node, "name")
