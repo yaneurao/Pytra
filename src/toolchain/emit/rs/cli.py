@@ -79,7 +79,7 @@ def _write_rs_package_files(output_dir: Path, manifest_path: Path) -> None:
             module_names.append(module_name)
 
     _copy_rs_runtime_files(src_dir)
-    for runtime_mod in ("py_runtime", "time_native", "math_native"):
+    for runtime_mod in ["py_runtime", "time_native", "math_native"]:
         if runtime_mod not in module_names:
             module_names.append(runtime_mod)
 

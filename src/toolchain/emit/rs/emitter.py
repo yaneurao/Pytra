@@ -2148,7 +2148,7 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     obj_class = obj_type if obj_type in ctx.class_names else ""
     actual_class = obj_actual_type if obj_actual_type in ctx.class_names else ""
     property_candidates: list[str] = []
-    for cls in (ctx.current_class, actual_class, obj_class):
+    for cls in [ctx.current_class, actual_class, obj_class]:
         if cls != "" and cls not in property_candidates:
             property_candidates.append(cls)
     if isinstance(obj_node, dict) and _str(obj_node, "kind") == "Name":
@@ -2157,7 +2157,7 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             cls = name_rs[len("Rc<RefCell<"):-2]
             if cls not in property_candidates:
                 property_candidates.append(cls)
-    for candidate_type in (obj_actual_type, obj_type, _str(node, "resolved_type")):
+    for candidate_type in [obj_actual_type, obj_type, _str(node, "resolved_type")]:
         candidate_rs = _rs_type_for_context(ctx, candidate_type) if candidate_type != "" else ""
         if candidate_rs.startswith("Rc<RefCell<") and candidate_rs.endswith(">>"):
             cls = candidate_rs[len("Rc<RefCell<"):-2]
@@ -2170,7 +2170,7 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             return obj + "." + safe_rs_ident(attr) + "()"
     ref_attr_class = actual_class if actual_class in ctx.ref_classes else obj_class
     if ref_attr_class == "":
-        for candidate in (actual_class, obj_class, obj_type, obj_actual_type):
+        for candidate in [actual_class, obj_class, obj_type, obj_actual_type]:
             if candidate != "" and ctx.imported_symbol_storage_hints.get(candidate) == "ref":
                 ref_attr_class = candidate
                 break
@@ -2179,7 +2179,7 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             name_rs = ctx.var_rust_types.get(_str(obj_node, "id"), "")
             if name_rs.startswith("Rc<RefCell<") and name_rs.endswith(">>"):
                 ref_attr_class = name_rs[len("Rc<RefCell<"):-2]
-        for candidate_type in (obj_actual_type, obj_type, _str(node, "resolved_type")):
+        for candidate_type in [obj_actual_type, obj_type, _str(node, "resolved_type")]:
             candidate_rs = _rs_type_for_context(ctx, candidate_type) if candidate_type != "" else ""
             if candidate_rs.startswith("Rc<RefCell<") and candidate_rs.endswith(">>"):
                 ref_attr_class = candidate_rs[len("Rc<RefCell<"):-2]
@@ -2188,7 +2188,7 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             unboxed_rt = _str(obj_node, "resolved_type")
             if unboxed_rt in ctx.ref_classes:
                 ref_attr_class = unboxed_rt
-        for candidate in (obj_actual_type, obj_type):
+        for candidate in [obj_actual_type, obj_type]:
             if candidate.endswith(" | None"):
                 inner_candidate = candidate[:-7].strip()
                 if inner_candidate in ctx.ref_classes:
@@ -3462,7 +3462,7 @@ def _emit_method_call(
             name_rs = ctx.var_rust_types.get(_str(obj, "id"), "")
             if name_rs.startswith("Rc<RefCell<") and name_rs.endswith(">>"):
                 ref_method_class = name_rs[len("Rc<RefCell<"):-2]
-        for candidate_type in (obj_actual_type, obj_type):
+        for candidate_type in [obj_actual_type, obj_type]:
             candidate_rs = _rs_type_for_context(ctx, candidate_type) if candidate_type != "" else ""
             if candidate_rs.startswith("Rc<RefCell<") and candidate_rs.endswith(">>"):
                 ref_method_class = candidate_rs[len("Rc<RefCell<"):-2]

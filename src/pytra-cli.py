@@ -70,7 +70,7 @@ def _subprocess_env() -> dict[str, str]:
 
 
 def _run_subprocess(cmd: list[str]) -> int:
-    result = py_subprocess.run(cmd, env=_subprocess_env())
+    result = py_subprocess.run(cmd, "", False, _subprocess_env())
     return result.returncode
 
 
@@ -186,8 +186,10 @@ def _lower_cpp_doc(east2_doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
 def _optimize_cpp_doc(east3_doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
     optimized_doc: dict[str, JsonVal] = optimize_east3_doc_only(
         east3_doc,
-        opt_level=1,
-        debug_flags=_optimizer_debug_flags(1, "", ""),
+        1,
+        "",
+        "",
+        _optimizer_debug_flags(1, "", ""),
     )
     return optimized_doc
 
@@ -214,8 +216,10 @@ def _optimize_linked_runtime_modules(
             continue
         module.east_doc = optimize_east3_doc_only(
             module.east_doc,
-            opt_level=opt_level,
-            debug_flags=debug_flags,
+            opt_level,
+            "",
+            "",
+            debug_flags,
         )
 
 
@@ -560,8 +564,10 @@ def _optimize_one(
     typed_east3_doc: dict[str, JsonVal] = east3_doc
     optimized_doc = optimize_east3_doc_only(
         typed_east3_doc,
-        opt_level=opt_level,
-        debug_flags=_optimizer_debug_flags(opt_level, negative_index_mode, bounds_check_mode),
+        opt_level,
+        "",
+        "",
+        _optimizer_debug_flags(opt_level, negative_index_mode, bounds_check_mode),
     )
     if output_text != "":
         out_path = Path(output_text)
@@ -841,14 +847,28 @@ def _emit_rs(manifest_path: Path, output_dir: Path, *, package_mode: bool = Fals
     return _run_subprocess(cmd)
 
 
+def _copy_nim_runtime_files(output_dir: Path) -> int:
+    """Copy native Nim runtime files into the flat emit directory."""
+    runtime_root = _repo_root().joinpath("src").joinpath("runtime").joinpath("nim")
+    copied = 0
+    for bucket in ["built_in", "std"]:
+        bucket_dir = runtime_root.joinpath(bucket)
+        if not bucket_dir.exists():
+            continue
+        for nim_file in bucket_dir.glob("*.nim"):
+            dst = output_dir.joinpath(nim_file.name)
+            dst.write_text(nim_file.read_text(encoding="utf-8"), encoding="utf-8")
+            copied += 1
+    return copied
+
+
 def _emit_nim(manifest_path: Path, output_dir: Path) -> int:
-    """Nim emit: linked output -> Nim source files."""
-    _manifest_path = manifest_path
-    _output_dir = output_dir
-    _ = _manifest_path
-    _ = _output_dir
-    _unsupported_target_attr("toolchain.emit.nim.emitter", "emit_nim_module")
-    return 1
+    """Nim emit: linked output -> Nim source files via subprocess + runtime copy."""
+    status = _emit_target_subprocess("nim", manifest_path, output_dir)
+    if status != 0:
+        return status
+    _copy_nim_runtime_files(output_dir)
+    return 0
 
 
 def _emit_go(manifest_path: Path, output_dir: Path) -> int:
@@ -860,17 +880,31 @@ def _emit_go(manifest_path: Path, output_dir: Path) -> int:
     return 0
 
 
-def _copy_ts_runtime_files(_output_dir: Path) -> int:
-    _unsupported_target_attr("toolchain.emit.ts.emitter", "emit_ts_module")
+def _copy_ts_runtime_files(output_dir: Path) -> int:
+    """Copy TypeScript/JavaScript runtime files into the flat emit directory."""
+    runtime_root = _repo_root().joinpath("src").joinpath("runtime").joinpath("ts")
+    copied: int = 0
+    for bucket in ["built_in", "std"]:
+        bucket_dir = runtime_root.joinpath(bucket)
+        if not bucket_dir.exists():
+            continue
+        for ts_file in bucket_dir.glob("*.ts"):
+            dst = output_dir.joinpath(ts_file.name)
+            dst.write_text(ts_file.read_text(encoding="utf-8"), encoding="utf-8")
+            copied += 1
+    return copied
+
+
+def _emit_ts(manifest_path: Path, output_dir: Path, *, strip_types: bool = False) -> int:
+    """TypeScript/JavaScript emit: linked output → TS/JS source files via subprocess."""
+    ext = ".js" if strip_types else ".ts"
+    cmd = [_python(), "-m", "toolchain.emit.ts.cli",
+           str(manifest_path), "--output-dir", str(output_dir), "--ext", ext]
+    status = _run_subprocess(cmd)
+    if status != 0:
+        return status
+    _copy_ts_runtime_files(output_dir)
     return 0
-
-
-def _emit_ts(_manifest_path: Path, _output_dir: Path, *, strip_types: bool = False) -> int:
-    """TypeScript/JavaScript emit: linked output → TS/JS source files."""
-    _unused_strip_types = strip_types
-    _ = _unused_strip_types
-    _unsupported_target_attr("toolchain.emit.ts.emitter", "emit_ts_module")
-    return 1
 
 
 def _emit_cpp(manifest_path: Path, output_dir: Path) -> int:
@@ -1013,7 +1047,7 @@ def _build_pipeline(
     for inp, east3_doc in east3_docs:
         optimized_doc = cast(
             dict[str, JsonVal],
-            optimize_east3_doc_only(east3_doc, opt_level=opt_level, debug_flags=optimizer_debug_flags),
+            optimize_east3_doc_only(east3_doc, opt_level, "", "", optimizer_debug_flags),
         )
         east3_opt_docs.append((
             inp,
@@ -1022,7 +1056,7 @@ def _build_pipeline(
     print("build: optimized " + str(len(east3_opt_docs)) + " files")
 
     # 5. Link — write east3-opt to temp files for link_modules
-    work_dir = Path("work").joinpath("tmp").joinpath("build_" + Path(inputs[0]).stem)
+    work_dir = Path("work").joinpath("tmp").joinpath("build_" + Path(inputs[0]).stem).resolve()
     east3_opt_dir = work_dir.joinpath("east3-opt")
     east3_opt_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1037,7 +1071,7 @@ def _build_pipeline(
             json.dumps(east3_opt_doc, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
         )
-        east3_opt_paths.append(str(out_path))
+        east3_opt_paths.append(str(out_path.resolve()))
 
     link_result = link_modules(east3_opt_paths, target=target, dispatch_mode="native")
     for module in link_result.linked_modules:
@@ -1045,8 +1079,10 @@ def _build_pipeline(
             continue
         module.east_doc = optimize_east3_doc_only(
             module.east_doc,
-            opt_level=opt_level,
-            debug_flags=optimizer_debug_flags,
+            opt_level,
+            "",
+            "",
+            optimizer_debug_flags,
         )
     # Only the first input is the actual entry module; demote others
     if len(inputs) >= 1:
@@ -1058,7 +1094,7 @@ def _build_pipeline(
     # 6. Emit
     if output_dir_text == "":
         output_dir_text = str(work_dir.joinpath("emit").joinpath(target))
-    output_dir = Path(output_dir_text)
+    output_dir = Path(output_dir_text).resolve()
 
     entry_path = Path("")
     for m in link_result.linked_modules:
@@ -1070,7 +1106,7 @@ def _build_pipeline(
         print("error: no entry module found")
         return 1
 
-    linked_dir = work_dir.joinpath("linked")
+    linked_dir = work_dir.joinpath("linked").resolve()
     _write_link_output(link_result, linked_dir, True)
     if target == "rs":
         return _emit_rs(linked_dir.joinpath("manifest.json"), output_dir, package_mode=rs_package)
