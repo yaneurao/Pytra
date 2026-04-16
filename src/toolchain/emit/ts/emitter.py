@@ -224,7 +224,14 @@ def _emit_constant(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, str):
-        return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
+        escaped: str = (
+            value.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
+        )
+        return '"' + escaped + '"'
     return str(value)
 
 
