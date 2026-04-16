@@ -702,7 +702,7 @@ def _is_float_type(rt: str) -> bool:
     return rt in ("float", "float32", "float64")
 
 
-def _wrap_pyprint_arg(a_str: str, a_node: object) -> str:
+def _wrap_pyprint_arg(a_str: str, a_node: JsonVal) -> str:
     """Wrap a pyPrint argument with pyFloatStr or float-list formatter as needed."""
     if not isinstance(a_node, dict):
         return a_str
@@ -1132,7 +1132,7 @@ def _types_may_mismatch(left_rt: str, right_rt: str) -> bool:
     return (left_rt in _STR and right_rt in _NUM) or (left_rt in _NUM and right_rt in _STR)
 
 
-def _is_none_constant(node_or_none: object) -> bool:
+def _is_none_constant(node_or_none: JsonVal) -> bool:
     if not isinstance(node_or_none, dict):
         return False
     if _str(node_or_none, "kind") != "Constant":
@@ -1150,7 +1150,7 @@ def _is_primitive_ts_rt(rt: str) -> bool:
     )
 
 
-def _get_ts_rt(ctx: EmitContext, node_or_none: object) -> str:
+def _get_ts_rt(ctx: EmitContext, node_or_none: JsonVal) -> str:
     """Get the TypeScript type for a node, preferring ctx.var_types for Name nodes."""
     if not isinstance(node_or_none, dict):
         return ""
@@ -1642,7 +1642,7 @@ def _py_type_name_to_ts(name: str) -> str:
     return _safe_ts_ident(name)
 
 
-def _elem_to_ts_type(elem: object) -> str:
+def _elem_to_ts_type(elem: JsonVal) -> str:
     """Convert a Union element (Name or Subscript node) to a TypeScript type string."""
     if not isinstance(elem, dict):
         return "any"
@@ -1662,7 +1662,7 @@ def _elem_to_ts_type(elem: object) -> str:
     return _py_type_name_to_ts(raw) if raw else "any"
 
 
-def _union_subscript_members(value_node: object) -> list[str] | None:
+def _union_subscript_members(value_node: JsonVal) -> list[str] | None:
     """If value_node is Union[A, B, ...] or Optional[A], return TS member type names; else None."""
     if not isinstance(value_node, dict):
         return None
@@ -1688,7 +1688,7 @@ def _union_subscript_members(value_node: object) -> list[str] | None:
     return members if members else None
 
 
-def _container_type_alias(value_node: object) -> str | None:
+def _container_type_alias(value_node: JsonVal) -> str | None:
     """If value_node is dict[K,V], list[T], set[T] (Python type alias), return TS type string.
 
     Returns None if not recognized as a container type alias.
