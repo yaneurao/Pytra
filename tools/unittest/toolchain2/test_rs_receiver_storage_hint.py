@@ -31,6 +31,74 @@ def _module_doc(body: list[dict[str, object]]) -> dict[str, object]:
 
 
 class RsReceiverStorageHintTests(unittest.TestCase):
+    def test_optional_callable_call_uses_guarded_as_ref(self) -> None:
+        doc = _module_doc(
+            [
+                {
+                    "kind": "FunctionDef",
+                    "name": "run",
+                    "arg_order": [],
+                    "arg_types": {},
+                    "return_type": "int64",
+                    "body": [
+                        {
+                            "kind": "AnnAssign",
+                            "target": {"kind": "Name", "id": "cb", "resolved_type": "callable[[int64],int64]|None"},
+                            "annotation": {"kind": "Name", "id": "callable[[int64],int64]|None"},
+                            "value": {"kind": "Constant", "value": None, "resolved_type": "callable[[int64],int64]|None"},
+                        },
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "cb", "resolved_type": "callable[[int64],int64]|None"},
+                                "args": [{"kind": "Constant", "value": 4, "resolved_type": "int64"}],
+                                "keywords": [],
+                                "resolved_type": "int64",
+                            },
+                        },
+                    ],
+                }
+            ]
+        )
+
+        emitted = emit_rs_module(doc)
+        self.assertIn('(cb.as_ref().expect("callable guard"))(4_i64)', emitted)
+
+    def test_optional_callable_unbox_uses_guarded_as_ref(self) -> None:
+        doc = _module_doc(
+            [
+                {
+                    "kind": "FunctionDef",
+                    "name": "run",
+                    "arg_order": ["cb"],
+                    "arg_types": {"cb": "callable[[int64],int64]|None"},
+                    "return_type": "int64",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Call",
+                                "func": {
+                                    "kind": "Unbox",
+                                    "value": {"kind": "Name", "id": "cb", "resolved_type": "unknown"},
+                                    "resolved_type": "Callable",
+                                    "target": "Callable",
+                                    "on_fail": "raise",
+                                },
+                                "args": [{"kind": "Constant", "value": 4, "resolved_type": "int64"}],
+                                "keywords": [],
+                                "resolved_type": "int64",
+                            },
+                        },
+                    ],
+                }
+            ]
+        )
+
+        emitted = emit_rs_module(doc)
+        self.assertIn('(cb.as_ref().expect("callable guard"))(4_i64)', emitted)
+
     def test_receiver_storage_hint_forces_borrow_on_property_and_method(self) -> None:
         doc = _module_doc(
             [

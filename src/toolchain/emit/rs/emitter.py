@@ -2915,8 +2915,12 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     if isinstance(func, dict):
         func_actual_type = _actual_type_in_context(ctx, func)
         func_actual_rs = _rs_type_for_context(ctx, func_actual_type) if func_actual_type != "" else ""
+        if func_actual_rs == "" and func_kind == "Name":
+            stored_type = ctx.var_types.get(func_name, "")
+            if stored_type != "":
+                func_actual_rs = _rs_type_for_context(ctx, stored_type)
         if func_actual_rs.startswith("Option<Box<dyn Fn"):
-            call_target = _emit_expr(ctx, func) + '.as_ref().expect("callable guard")'
+            call_target = "(" + _emit_expr(ctx, func) + '.as_ref().expect("callable guard"))'
     extra_capture_args = ctx.nested_capture_args.get(call_target, [])
     if extra_capture_args:
         rendered_args.extend(_rs_var_name(ctx, name) for name in extra_capture_args)
@@ -4195,6 +4199,12 @@ def _emit_expr(ctx: RsEmitContext, node: JsonVal) -> str:
             and inner_rt == outer_rt
         ):
             return inner_expr
+        if outer_rt == "Callable" and isinstance(inner_node, dict) and _str(inner_node, "kind") == "Name":
+            inner_name = _str(inner_node, "id")
+            storage_type = ctx.var_types.get(inner_name, "")
+            storage_rs = _rs_type_for_context(ctx, storage_type) if storage_type != "" else ""
+            if storage_rs.startswith("Option<Box<dyn Fn"):
+                return inner_expr + '.as_ref().expect("callable guard")'
         if isinstance(inner_node, dict) and _str(inner_node, "kind") == "BinOp" and outer_rt not in ("", "Any", "object", "Obj", "JsonVal"):
             return inner_expr
 
@@ -7378,7 +7388,7 @@ def emit_rs_module(east3_doc: dict[str, JsonVal], *, package_mode: bool = False)
         module_id = _str(lp, "module_id")
 
     if module_id != "":
-        expand_cross_module_defaults([(module_id, east3_doc)])
+        expand_cross_module_defaults([east3_doc])
 
     # Load runtime mapping
     mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "rs" / "mapping.json"

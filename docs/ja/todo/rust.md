@@ -45,7 +45,8 @@
 
 対象: `bytes_copy_semantics`, `negative_index_comprehensive`, `negative_index_out_of_range`, `callable_optional_none`, `str_find_index`, `eo_extern_opaque_basic`(emit-only), `math_extended`(stdlib), `os_glob_extended`(stdlib)
 
-1. [ ] [ID: P0-RS-NEWFIX-S1] 上記 fixture/stdlib の parity を確認する（対象 fixture のみ実行）
+1. [x] [ID: P0-RS-NEWFIX-S1] 上記 fixture/stdlib の parity を確認する（対象 fixture のみ実行）
+   - 完了: 2026-04-16 `runtime_parity_check_fast.py` で `bytes_copy_semantics` / `negative_index_comprehensive` / `negative_index_out_of_range` / `callable_optional_none` / `str_find_index` / `eo_extern_opaque_basic`(emit-only) / `math_extended` / `os_glob_extended` を再検証し、Rust で 8/8 PASS。`callable_optional_none` の optional callable 呼び出し描画と `math_native.rs` の `py_*` 互換エイリアスを修正。
 
 ### P9-RS-SELFHOST: Rust emitter で toolchain2 を Rust に変換し cargo build を通す
 
