@@ -112,7 +112,8 @@ class Scope:
         self.lambda_vars[name] = expr
 
     def clear_lambda(self, name: str) -> None:
-        self.lambda_vars.pop(name, None)
+        if name in self.lambda_vars:
+            self.lambda_vars.pop(name)
 
     def lookup_lambda(self, name: str) -> dict[str, JsonVal] | None:
         expr = self.lambda_vars.get(name)
@@ -155,24 +156,18 @@ class ResolveContext:
     current_function: str = ""
     # Source file path
     source_file: str = ""
-    # Runtime symbol index (loaded lazily)
-    _runtime_index: dict[str, JsonVal] | None = None
-
     def load_runtime_index(self) -> dict[str, JsonVal]:
-        if self._runtime_index is not None:
-            return self._runtime_index
         try:
             idx_path: Path = _repo_root_from_cwd().joinpath("tools").joinpath("runtime_symbol_index.json")
             if idx_path.exists():
                 text: str = idx_path.read_text(encoding="utf-8")
                 raw: JsonVal = json.loads(text).raw
                 if isinstance(raw, dict):
-                    self._runtime_index = raw
                     return raw
         except Exception:
             pass
-        self._runtime_index = {}
-        return self._runtime_index
+        empty: dict[str, JsonVal] = {}
+        return empty
 
     def lookup_runtime_module_group(self, module_id: str) -> str:
         idx: dict[str, JsonVal] = self.load_runtime_index()
@@ -1185,7 +1180,8 @@ def _resolve_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
                 if cur == "" or cur == target_type:
                     merged[name3] = target_type
                 else:
-                    merged.pop(name3, None)
+                    if name3 in merged:
+                        merged.pop(name3)
         return merged
     return {}
 
@@ -1255,7 +1251,8 @@ def _resolve_invert_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
                 if cur2 == "" or cur2 == target_type2:
                     merged2[name2] = target_type2
                 else:
-                    merged2.pop(name2, None)
+                    if name2 in merged2:
+                        merged2.pop(name2)
         return merged2
     return {}
 
@@ -1305,14 +1302,17 @@ def _resolve_stmt_list_with_narrowing(stmts: JsonVal, ctx: ResolveContext, narro
                     if had_local:
                         ctx.scope.vars[name] = value
                     else:
-                        ctx.scope.vars.pop(name, None)
-                    saved.pop(name, None)
+                        if name in ctx.scope.vars:
+                            ctx.scope.vars.pop(name)
+                    if name in saved:
+                        saved.pop(name)
     finally:
         for name, (had_local, value) in saved.items():
             if had_local:
                 ctx.scope.vars[name] = value
             else:
-                ctx.scope.vars.pop(name, None)
+                if name in ctx.scope.vars:
+                    ctx.scope.vars.pop(name)
 
 
 def _same_expr_shape(left: JsonVal, right: JsonVal) -> bool:
@@ -2230,7 +2230,8 @@ def _resolve_boolop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
                 if had_local:
                     ctx.scope.vars[name] = value
                 else:
-                    ctx.scope.vars.pop(name, None)
+                    if name in ctx.scope.vars:
+                        ctx.scope.vars.pop(name)
     expr["resolved_type"] = result_type
     return result_type
 
@@ -4343,6 +4344,17 @@ def _resolve_for(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
         elem_type = "str"
     elif it in ("bytes", "bytearray", "list[uint8]"):
         elem_type = "int64"
+    elif it.startswith("tuple[") and it.endswith("]"):
+        tup_elems: list[str] = extract_type_args(it)
+        if len(tup_elems) > 0:
+            first: str = tup_elems[0]
+            all_same: bool = True
+            for te in tup_elems:
+                if te != first:
+                    all_same = False
+                    break
+            if all_same:
+                elem_type = first
     elif it.startswith("dict[") and it.endswith("]"):
         # Iterating over dict gives keys
         targs: list[str] = extract_type_args(it)
@@ -4564,7 +4576,7 @@ def _convert_for_to_forrange(
 
     # Remove iter (no longer needed)
     if "iter" in stmt:
-        stmt.pop("iter", None)
+        stmt.pop("iter")
 
     # Define loop variable
     target = stmt.get("target")
@@ -4715,7 +4727,12 @@ def _build_import_resolution_meta(
         # Build from import_bindings
         bindings_raw = east1_meta.get("import_bindings")
         if isinstance(bindings_raw, list):
-            ir = {"schema_version": 1, "bindings": bindings_raw, "qualified_refs": []}
+            ir_dict: dict[str, JsonVal] = {}
+            ir_dict["schema_version"] = 1
+            ir_dict["bindings"] = bindings_raw
+            empty_qrefs: list[JsonVal] = []
+            ir_dict["qualified_refs"] = empty_qrefs
+            ir = ir_dict
             east1_meta["import_resolution"] = ir
         else:
             return
@@ -4908,10 +4925,10 @@ def _prescan_module(doc: dict[str, JsonVal], ctx: ResolveContext) -> None:
                     if promoted_module != "":
                         ctx.import_modules[k] = promoted_module
                         continue
-                    ctx.import_symbols[k] = {
-                        "module": module_id,
-                        "name": export_name,
-                    }
+                    symbol_info: dict[str, str] = {}
+                    symbol_info["module"] = module_id
+                    symbol_info["name"] = export_name
+                    ctx.import_symbols[k] = symbol_info
 
     # Collect module-local type aliases before signature extraction.
     body = doc.get("body")
@@ -4923,8 +4940,10 @@ def _prescan_module(doc: dict[str, JsonVal], ctx: ResolveContext) -> None:
             alias_value = item.get("value")
             if not isinstance(alias_value, str):
                 alias_value = item.get("type_expr")
-            if isinstance(alias_name, str) and alias_name != "" and isinstance(alias_value, str) and alias_value != "":
-                ctx.type_aliases[alias_name] = alias_value
+            alias_name_str: str = alias_name if isinstance(alias_name, str) else ""
+            alias_value_str: str = alias_value if isinstance(alias_value, str) else ""
+            if alias_name_str != "" and alias_value_str != "":
+                ctx.type_aliases[alias_name_str] = alias_value_str
         _resolve_validate_type_alias_cycles(ctx.type_aliases)
         alias_names: list[str] = []
         for alias_name in ctx.type_aliases.keys():
