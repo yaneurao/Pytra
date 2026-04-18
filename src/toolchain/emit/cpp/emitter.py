@@ -4214,12 +4214,16 @@ def _function_param_meta(node: dict[str, JsonVal], ctx: CppEmitContext | None = 
     arg_order = _list(node, "arg_order")
     arg_usage = _dict(node, "arg_usage")
     is_static = _has_decorator(node, "staticmethod")
+    vararg_name_val = node.get("vararg_name")
+    vararg_name_str = vararg_name_val if isinstance(vararg_name_val, str) else ""
     out: list[tuple[str, str, bool]] = []
     for arg in arg_order:
         arg_name = arg if isinstance(arg, str) else ""
         if arg_name == "":
             continue
         if arg_name == "self" and not is_static:
+            continue
+        if arg_name == vararg_name_str:
             continue
         arg_type = arg_types.get(arg_name, "")
         arg_type_str = arg_type if isinstance(arg_type, str) else "object"
