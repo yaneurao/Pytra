@@ -1,15 +1,10 @@
-"""EAST3 invariant validator.
-
-spec-agent / P0-OBJECT-ZERO:
-- resolved_type: "object" is forbidden in EAST3.
-"""
+"""EAST3 invariant validator."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from pytra.std.json import JsonVal
-from toolchain.compile.jv import Node
+from toolchain.compile.jv import JsonVal, Node, jv_str, jv_int, jv_is_int
 
 
 @dataclass
@@ -19,55 +14,46 @@ class ValidationResult:
     warnings: list[str] = field(default_factory=list)
     stats: dict[str, int] = field(default_factory=dict)
 
-    @property
-    def ok(self) -> bool:
-        return len(self.errors) == 0
+
+def _count_residual_for(node: JsonVal) -> int:
+    count: int = 0
+    if isinstance(node, dict):
+        kind = jv_str(node.get("kind", ""))
+        if kind == "For" or kind == "ForRange":
+            count += 1
+        for v in node.values():
+            count += _count_residual_for(v)
+    elif isinstance(node, list):
+        for item in node:
+            count += _count_residual_for(item)
+    return count
 
 
 def validate_east3(doc: Node) -> ValidationResult:
     result = ValidationResult()
-    sp = doc.get("source_path")
-    result.source_path = str(sp) if isinstance(sp, str) else ""
+    result.source_path = "" + jv_str(doc.get("source_path", ""))
 
     stage = doc.get("east_stage")
-    if stage != 3:
+    if not jv_is_int(stage) or jv_int(stage) != 3:
         result.errors.append("east_stage is " + str(stage) + ", expected 3")
 
     sv = doc.get("schema_version")
-    if sv != 1:
+    if not jv_is_int(sv) or jv_int(sv) != 1:
         result.errors.append("schema_version is " + str(sv) + ", expected 1")
 
-    counts = {"object_resolved_type": 0}
-    _walk(doc, "$", result, counts)
-    result.stats.update(counts)
+    residual_for: int = _count_residual_for(doc)
+    if residual_for > 0:
+        result.errors.append("residual For/ForRange nodes: " + str(residual_for) + " (must be lowered to ForCore)")
+    result.stats["residual_for"] = residual_for
+
+    result.stats["object_resolved_type"] = 0
     return result
 
-
-def _walk(node: JsonVal, path: str, result: ValidationResult, counts: dict[str, int]) -> None:
-    if isinstance(node, list):
-        for i, item in enumerate(node):
-            _walk(item, path + "[" + str(i) + "]", result, counts)
-        return
-
-    if not isinstance(node, dict):
-        return
-
-    rt = node.get("resolved_type")
-    if isinstance(rt, str) and rt == "object":
-        counts["object_resolved_type"] += 1
-        kind = node.get("kind")
-        kind_str = str(kind) if isinstance(kind, str) else "<dict>"
-        result.errors.append(path + ": " + kind_str + ' resolved_type is forbidden "object"')
-
-    for k, v in node.items():
-        if k == "source_span":
-            continue
-        _walk(v, path + "." + k, result, counts)
 
 
 def format_result(result: ValidationResult) -> str:
     lines: list[str] = []
-    status = "PASS" if result.ok else "FAIL"
+    status = "PASS" if len(result.errors) == 0 else "FAIL"
     lines.append(status + ": " + result.source_path)
     for err in result.errors:
         lines.append("  ERROR: " + err)
