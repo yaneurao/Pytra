@@ -10,6 +10,7 @@ from pytra.std.json import JsonVal
 from pytra.typing import cast
 
 from toolchain.link.shared_types import LinkedModule
+from toolchain.compile.jv import jv_is_dict, jv_is_list, jv_dict, jv_list, nd_get_str, nd_get_dict, nd_get_list
 
 
 def _collect_symbols(
@@ -21,37 +22,38 @@ def _collect_symbols(
     Returns: {qualified_name: module_id}
     """
     symbols: dict[str, str] = {}
-    body_val = east_doc.get("body")
-    if not isinstance(body_val, list):
+    body_val: JsonVal = east_doc.get("body")
+    if not jv_is_list(body_val):
         return symbols
 
-    for stmt in body_val:
-        if not isinstance(stmt, dict):
+    for stmt in jv_list(body_val):
+        if not jv_is_dict(stmt):
             continue
-        kind = stmt.get("kind")
+        stmt_node = jv_dict(stmt)
+        kind = nd_get_str(stmt_node, "kind")
         if kind == "FunctionDef":
-            name = stmt.get("name")
-            if isinstance(name, str) and name.strip() != "":
-                qualified = module_id + "::" + name.strip()
+            name = nd_get_str(stmt_node, "name").strip()
+            if name != "":
+                qualified = module_id + "::" + name
                 symbols[qualified] = module_id
         elif kind == "ClassDef":
-            class_name = stmt.get("name")
-            if not isinstance(class_name, str):
+            class_name = nd_get_str(stmt_node, "name").strip()
+            if class_name == "":
                 continue
-            class_body = stmt.get("body")
-            if not isinstance(class_body, list):
+            class_body = nd_get_list(stmt, "body")
+            if len(class_body) == 0:
                 continue
             for method in class_body:
-                if not isinstance(method, dict):
+                if not jv_is_dict(method):
                     continue
-                if method.get("kind") == "FunctionDef":
-                    method_name = method.get("name")
-                    if isinstance(method_name, str) and method_name.strip() != "":
-                        qualified = module_id + "::" + class_name.strip() + "." + method_name.strip()
+                method_node = jv_dict(method)
+                if nd_get_str(method_node, "kind") == "FunctionDef":
+                    method_name = nd_get_str(method_node, "name").strip()
+                    if method_name != "":
+                        qualified = module_id + "::" + class_name + "." + method_name
                         symbols[qualified] = module_id
 
     return symbols
-
 
 def _collect_calls_in_node(
     node: JsonVal,
@@ -62,36 +64,32 @@ def _collect_calls_in_node(
     unresolved: dict[str, int],
 ) -> None:
     """Recursively collect call edges from a node."""
-    if isinstance(node, dict):
-        if node.get("kind") == "Call":
-            func = node.get("func")
+    if jv_is_dict(node):
+        node_map = jv_dict(node)
+        if nd_get_str(node_map, "kind") == "Call":
+            func_node = nd_get_dict(node, "func")
             callee = ""
-            if isinstance(func, dict):
-                func_kind = func.get("kind")
+            func_kind = nd_get_str(func_node, "kind")
+            if func_kind != "":
                 if func_kind == "Name":
-                    name_id = func.get("id")
-                    if isinstance(name_id, str):
-                        # Try qualified name first
-                        qualified = module_id + "::" + name_id.strip()
+                    name_id = nd_get_str(func_node, "id").strip()
+                    if name_id != "":
+                        qualified = module_id + "::" + name_id
                         if qualified in known_symbols:
                             callee = qualified
                         else:
-                            # Try as-is
                             for sym in known_symbols:
-                                if sym.endswith("::" + name_id.strip()):
+                                if sym.endswith("::" + name_id):
                                     callee = sym
                                     break
                 elif func_kind == "Attribute":
-                    attr = func.get("attr")
-                    if isinstance(attr, str):
-                        # Try meta.non_escape_callsite
-                        meta_val = node.get("meta")
-                        if isinstance(meta_val, dict):
-                            nec = meta_val.get("non_escape_callsite")
-                            if isinstance(nec, dict):
-                                callee_val = nec.get("callee")
-                                if isinstance(callee_val, str) and callee_val in known_symbols:
-                                    callee = callee_val
+                    attr = nd_get_str(func_node, "attr")
+                    if attr != "":
+                        meta_val = nd_get_dict(node, "meta")
+                        nec = nd_get_dict(meta_val, "non_escape_callsite")
+                        callee_val = nd_get_str(nec, "callee")
+                        if callee_val in known_symbols:
+                            callee = "" + callee_val
             if callee != "":
                 if current_fn not in graph:
                     graph[current_fn] = set()
@@ -100,12 +98,11 @@ def _collect_calls_in_node(
                 if current_fn != "":
                     unresolved[current_fn] = unresolved.get(current_fn, 0) + 1
 
-        for v in node.values():
+        for _k, v in node_map.items():
             _collect_calls_in_node(v, known_symbols, module_id, current_fn, graph, unresolved)
-    elif isinstance(node, list):
-        for item in node:
+    elif jv_is_list(node):
+        for item in jv_list(node):
             _collect_calls_in_node(item, known_symbols, module_id, current_fn, graph, unresolved)
-
 
 def _build_module_call_graph(
     east_doc: dict[str, JsonVal],
@@ -116,60 +113,56 @@ def _build_module_call_graph(
     graph: dict[str, set[str]] = {}
     unresolved: dict[str, int] = {}
 
-    body_val = east_doc.get("body")
-    if not isinstance(body_val, list):
+    body_val: JsonVal = east_doc.get("body")
+    if not jv_is_list(body_val):
         return graph, unresolved
 
-    for stmt in body_val:
-        if not isinstance(stmt, dict):
+    for stmt in jv_list(body_val):
+        if not jv_is_dict(stmt):
             continue
-        kind = stmt.get("kind")
+        stmt_node = jv_dict(stmt)
+        kind = nd_get_str(stmt_node, "kind")
         if kind == "FunctionDef":
-            name = stmt.get("name")
-            if isinstance(name, str):
-                fn_qualified = module_id + "::" + name.strip()
+            name = nd_get_str(stmt_node, "name").strip()
+            if name != "":
+                fn_qualified = module_id + "::" + name
                 if fn_qualified not in graph:
                     graph[fn_qualified] = set()
                 _collect_calls_in_node(
-                    stmt.get("body", []),
+                    nd_get_list(stmt, "body"),
                     known_symbols, module_id, fn_qualified, graph, unresolved,
                 )
         elif kind == "ClassDef":
-            class_name = stmt.get("name")
-            if not isinstance(class_name, str):
+            class_name = nd_get_str(stmt_node, "name").strip()
+            if class_name == "":
                 continue
-            class_body = stmt.get("body")
-            if not isinstance(class_body, list):
+            class_body = nd_get_list(stmt, "body")
+            if len(class_body) == 0:
                 continue
             for method in class_body:
-                if not isinstance(method, dict) or method.get("kind") != "FunctionDef":
+                if not jv_is_dict(method):
                     continue
-                method_name = method.get("name")
-                if isinstance(method_name, str):
-                    fn_qualified = module_id + "::" + class_name.strip() + "." + method_name.strip()
+                method_node = jv_dict(method)
+                if nd_get_str(method_node, "kind") != "FunctionDef":
+                    continue
+                method_name = nd_get_str(method_node, "name").strip()
+                if method_name != "":
+                    fn_qualified = module_id + "::" + class_name + "." + method_name
                     if fn_qualified not in graph:
                         graph[fn_qualified] = set()
                     _collect_calls_in_node(
-                        method.get("body", []),
+                        nd_get_list(method, "body"),
                         known_symbols, module_id, fn_qualified, graph, unresolved,
                     )
 
-    # Also scan main_guard_body
-    main_guard = east_doc.get("main_guard_body")
-    if isinstance(main_guard, list):
-        has_main_guard = False
-        for item in main_guard:
-            _ = item
-            has_main_guard = True
-            break
-        if has_main_guard:
-            main_fn = module_id + "::__main__"
-            if main_fn not in graph:
-                graph[main_fn] = set()
-            _collect_calls_in_node(main_guard, known_symbols, module_id, main_fn, graph, unresolved)
+    main_guard: JsonVal = east_doc.get("main_guard_body")
+    if jv_is_list(main_guard) and len(jv_list(main_guard)) != 0:
+        main_fn = module_id + "::__main__"
+        if main_fn not in graph:
+            graph[main_fn] = set()
+        _collect_calls_in_node(main_guard, known_symbols, module_id, main_fn, graph, unresolved)
 
     return graph, unresolved
-
 
 def _strongly_connected_components(
     graph: dict[str, set[str]],
@@ -222,27 +215,22 @@ def build_call_graph(
 
     Returns:
         (graph, sccs)
-        - graph: {caller: (callee, ...)}
+        - graph: {caller: [callee, ...]}
         - sccs: list of strongly connected components
     """
-    # Collect all known symbols
     known_symbols: set[str] = set()
-    for module in sorted(modules, key=lambda m: m.module_id):
-        doc = module.east_doc
-        if isinstance(doc, dict):
-            doc_node: dict[str, JsonVal] = cast(dict[str, JsonVal], doc)
-            syms = _collect_symbols(doc_node, module.module_id)
-            known_symbols.update(syms.keys())
+    modules_sorted = sorted(modules, key=lambda m: m.module_id)
+    for module in modules_sorted:
+        doc_node: dict[str, JsonVal] = module.east_doc
+        syms = _collect_symbols(doc_node, module.module_id)
+        for sym in syms.keys():
+            known_symbols.add(sym)
 
-    # Build per-module call graphs and merge
     raw_graph: dict[str, set[str]] = {}
     all_unresolved: dict[str, int] = {}
 
-    for module in sorted(modules, key=lambda m: m.module_id):
-        doc = module.east_doc
-        if not isinstance(doc, dict):
-            continue
-        doc_node: dict[str, JsonVal] = cast(dict[str, JsonVal], doc)
+    for module in modules_sorted:
+        doc_node: dict[str, JsonVal] = module.east_doc
         module_graph, module_unresolved = _build_module_call_graph(
             doc_node, module.module_id, known_symbols,
         )
@@ -250,12 +238,14 @@ def build_call_graph(
             raw_graph[caller] = set(sorted(module_graph[caller]))
             all_unresolved[caller] = int(module_unresolved.get(caller, 0))
 
-    # Compute SCCs
     sccs = _strongly_connected_components(raw_graph)
 
-    # Convert to sorted tuples for determinism
     graph: dict[str, list[str]] = {}
     for caller in sorted(raw_graph.keys()):
-        graph[caller] = tuple(sorted(raw_graph[caller]))
+        callee_list: list[str] = []
+        for callee in sorted(raw_graph[caller]):
+            callee_list.append(callee)
+        graph[caller] = callee_list
 
     return graph, sccs
+

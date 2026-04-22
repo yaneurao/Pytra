@@ -11,7 +11,7 @@ from typing import Union
 from pytra.typing import cast
 
 from toolchain.compile.jv import JsonVal, Node, CompileContext, deep_copy_json
-from toolchain.compile.jv import jv_str, jv_is_dict, jv_is_list, jv_dict, jv_list, nd_kind
+from toolchain.compile.jv import jv_str, jv_int, jv_is_int, jv_is_dict, jv_is_list, jv_dict, jv_list, nd_kind, nd_get_str
 from toolchain.compile.jv import normalize_type_name
 from toolchain.common.kinds import (
     MODULE, FUNCTION_DEF, CLOSURE_DEF, CLASS_DEF, VAR_DECL,
@@ -33,22 +33,27 @@ def _is_function_like_kind(kind: str) -> bool:
 
 
 def _is_function_like(node: JsonVal) -> bool:
-    return isinstance(node, dict) and _is_function_like_kind(nd_kind(jv_dict(node)))
+    return jv_is_dict(node) and _is_function_like_kind(nd_kind(jv_dict(node)))
 
 
 def _empty_jv_list() -> list[JsonVal]:
     out: list[JsonVal] = []
     return out
 
+def _empty_node() -> Node:
+    out: dict[str, JsonVal] = {}
+    return out
+
+
 
 def _lc_temp_name(stmt: Node, ordinal: int) -> str:
     span = stmt.get("source_span")
-    if isinstance(span, dict):
+    if jv_is_dict(span):
         span_node: Node = jv_dict(span)
         line_no = span_node.get("line")
         col_no = span_node.get("col")
-        if isinstance(line_no, int) and isinstance(col_no, int):
-            return "__comp_" + str(line_no) + "_" + str(col_no) + "_" + str(ordinal)
+        if jv_is_int(line_no) and jv_is_int(col_no):
+            return "__comp_" + str(jv_int(line_no)) + "_" + str(jv_int(col_no)) + "_" + str(ordinal)
     return "__comp_" + str(ordinal)
 
 # Re-export stubs — these are imported by lower.py
@@ -59,7 +64,7 @@ def _lc_temp_name(stmt: Node, ordinal: int) -> str:
 # ===========================================================================
 
 def _contains_yield(node: JsonVal) -> bool:
-    if isinstance(node, dict):
+    if jv_is_dict(node):
         node_dict: Node = jv_dict(node)
         if nd_kind(node_dict) == YIELD:
             return True
@@ -67,33 +72,32 @@ def _contains_yield(node: JsonVal) -> bool:
             value_jv = node_dict[key_s]
             if _contains_yield(value_jv):
                 return True
-    elif isinstance(node, list):
-        for item in node:
+    elif jv_is_list(node):
+        for item in jv_list(node):
             if _contains_yield(item):
                 return True
     return False
 
 
 def _replace_yield_with_append(node: JsonVal, acc: str, list_type: str) -> JsonVal:
-    if isinstance(node, list):
+    if jv_is_list(node):
         result: list[JsonVal] = _empty_jv_list()
-        for item in node:
+        for item in jv_list(node):
             replaced = _replace_yield_with_append(item, acc, list_type)
-            if isinstance(replaced, list):
-                replaced_list: list[JsonVal] = replaced
-                for elem in replaced_list:
+            if jv_is_list(replaced):
+                for elem in jv_list(replaced):
                     result.append(elem)
             else:
                 result.append(replaced)
         return result
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return node
     nd: Node = jv_dict(node)
     kind = nd_kind(nd)
     if kind == YIELD:
         value = nd.get("value")
         if value is None:
-            value_node: Node = {}
+            value_node: Node = _empty_node()
             value_node["kind"] = CONSTANT
             value_node["value"] = None
             value_node["resolved_type"] = "None"
@@ -108,23 +112,22 @@ def _replace_yield_with_append(node: JsonVal, acc: str, list_type: str) -> JsonV
             args=call_args,
             result_type="None",
         )
-        ac: Node = {}
+        ac: Node = _empty_node()
         ac["kind"] = EXPR
         ac["value"] = call_node
         span = nd.get("source_span")
-        if isinstance(span, dict):
+        if jv_is_dict(span):
             ac["source_span"] = span
         return ac
-    out: Node = {}
+    out: Node = _empty_node()
     for key_s in nd.keys():
         value_jv = nd[key_s]
         if key_s == "body" or key_s == "orelse" or key_s == "finalbody":
             out[key_s] = _replace_yield_with_append(value_jv, acc, list_type)
-        elif key_s == "handlers" and isinstance(value_jv, list):
-            handlers: list[JsonVal] = jv_list(value_jv)
+        elif key_s == "handlers" and jv_is_list(value_jv):
             hs: list[JsonVal] = _empty_jv_list()
-            for h in handlers:
-                if isinstance(h, dict):
+            for h in jv_list(value_jv):
+                if jv_is_dict(h):
                     h_copy: JsonVal = deep_copy_json(h)
                     nh: Node = jv_dict(h_copy)
                     if "body" in nh:
@@ -140,10 +143,10 @@ def _replace_yield_with_append(node: JsonVal, acc: str, list_type: str) -> JsonV
 
 def _lower_generator_function(func: Node) -> None:
     body_obj = func.get("body")
-    if not isinstance(body_obj, list):
+    if not jv_is_list(body_obj):
         return
-    body: list[JsonVal] = jv_list(body_obj)
-    ret_type: str = jv_str(func.get("return_type", ""))
+    body = jv_list(body_obj)
+    ret_type = "" + jv_str(func.get("return_type", ""))
     elem_type = "unknown"
     if ret_type.startswith("list[") and ret_type.endswith("]"):
         elem_type = ret_type[5:-1]
@@ -152,76 +155,75 @@ def _lower_generator_function(func: Node) -> None:
         func["return_type"] = "list[" + ret_type + "]"
     acc = "__yield_values"
     lt = "list[" + elem_type + "]"
-    target: Node = {}
+    target: Node = _empty_node()
     target["kind"] = NAME
     target["id"] = acc
     target["resolved_type"] = lt
-    list_value: Node = {}
+    list_value: Node = _empty_node()
     list_value["kind"] = LIST
     list_value["elements"] = _empty_jv_list()
     list_value["resolved_type"] = lt
-    init: Node = {}
+    init: Node = _empty_node()
     init["kind"] = ANN_ASSIGN
     init["target"] = target
     init["annotation"] = lt
     init["decl_type"] = lt
     init["declare"] = True
     init["value"] = list_value
-    new_body_list: list[JsonVal] = body
     new_body = _replace_yield_with_append(body, acc, lt)
-    if isinstance(new_body, list):
-        new_body_list = jv_list(new_body)
-    ret_name: Node = {}
+    ret_name: Node = _empty_node()
     ret_name["kind"] = NAME
     ret_name["id"] = acc
     ret_name["resolved_type"] = lt
-    ret_stmt: Node = {}
+    ret_stmt: Node = _empty_node()
     ret_stmt["kind"] = RETURN
     ret_stmt["value"] = ret_name
     final_body: list[JsonVal] = _empty_jv_list()
     final_body.append(init)
-    for stmt in new_body_list:
-        final_body.append(stmt)
+    if jv_is_list(new_body):
+        for stmt in jv_list(new_body):
+            final_body.append(stmt)
+    else:
+        for stmt in body:
+            final_body.append(stmt)
     final_body.append(ret_stmt)
     func["body"] = final_body
 
 
 def _yield_walk(node: JsonVal) -> None:
-    if isinstance(node, list):
-        for item in node:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _yield_walk(item)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
     nd: Node = jv_dict(node)
     if _is_function_like_kind(nd_kind(nd)):
         body_jv: JsonVal = None
         if "body" in nd:
             body_jv = nd["body"]
-        if isinstance(body_jv, list) and _contains_yield(body_jv):
+        if jv_is_list(body_jv) and _contains_yield(body_jv):
             _lower_generator_function(nd)
         body2_jv: JsonVal = None
         if "body" in nd:
             body2_jv = nd["body"]
-        if isinstance(body2_jv, list):
-            body2_list: list[JsonVal] = jv_list(body2_jv)
-            for s in body2_list:
+        if jv_is_list(body2_jv):
+            for s in jv_list(body2_jv):
                 _yield_walk(s)
         return
     if nd_kind(nd) == CLASS_DEF or nd_kind(nd) == MODULE:
         body_jv: JsonVal = None
         if "body" in nd:
             body_jv = nd["body"]
-        if isinstance(body_jv, list):
-            body_list: list[JsonVal] = jv_list(body_jv)
-            for s in body_list:
+        if jv_is_list(body_jv):
+            for s in jv_list(body_jv):
                 _yield_walk(s)
         return
     for key_s in nd.keys():
         value_jv = nd[key_s]
-        if isinstance(value_jv, dict):
+        if jv_is_dict(value_jv):
             _yield_walk(value_jv)
-        elif isinstance(value_jv, list):
+        elif jv_is_list(value_jv):
             _yield_walk(value_jv)
 
 
@@ -235,62 +237,60 @@ def lower_yield_generators(module: Node, ctx: CompileContext) -> Node:
 # ===========================================================================
 
 def _build_lc_target_plan(target: JsonVal) -> Node:
-    if isinstance(target, dict):
+    if jv_is_dict(target):
         target_node: Node = jv_dict(target)
         kind = nd_kind(target_node)
         if kind == NAME:
-            plan: Node = {}
+            plan: Node = _empty_node()
             plan["kind"] = NAME_TARGET
             plan["id"] = target_node["id"] if "id" in target_node else "_"
-            rt: str = jv_str(target_node.get("resolved_type", ""))
+            rt = "" + jv_str(target_node.get("resolved_type", ""))
             if rt not in ("", "unknown"):
                 plan["target_type"] = rt
             return plan
         if kind == TUPLE:
             elements = _empty_jv_list()
             elems_obj = target_node.get("elements")
-            if isinstance(elems_obj, list):
-                elems_list: list[JsonVal] = jv_list(elems_obj)
-                for elem in elems_list:
+            if jv_is_list(elems_obj):
+                for elem in jv_list(elems_obj):
                     elements.append(elem)
             else:
                 elts_obj = target_node.get("elts")
-                if isinstance(elts_obj, list):
-                    elts_list: list[JsonVal] = jv_list(elts_obj)
-                    for elem in elts_list:
+                if jv_is_list(elts_obj):
+                    for elem in jv_list(elts_obj):
                         elements.append(elem)
             eps: list[JsonVal] = _empty_jv_list()
             for elem in elements:
                 eps.append(_build_lc_target_plan(elem))
-            plan: Node = {}
+            plan: Node = _empty_node()
             plan["kind"] = TUPLE_TARGET
             plan["elements"] = eps
-            rt: str = jv_str(target_node.get("resolved_type", ""))
+            rt = "" + jv_str(target_node.get("resolved_type", ""))
             if rt not in ("", "unknown"):
                 plan["target_type"] = rt
             return plan
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = NAME_TARGET
     out["id"] = "_"
     return out
 
 
 def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -> list[JsonVal]:
-    rt: str = jv_str(lc.get("resolved_type", ""))
+    rt = "" + jv_str(lc.get("resolved_type", ""))
     if rt in ("", "unknown") or "unknown" in rt:
         if annotation_type != "":
             rt = annotation_type
         elif rt in ("", "unknown"):
             rt = "list[unknown]"
-    target_node: Node = {}
+    target_node: Node = _empty_node()
     target_node["kind"] = NAME
     target_node["id"] = result_name
     target_node["resolved_type"] = rt
-    value_node: Node = {}
+    value_node: Node = _empty_node()
     value_node["kind"] = LIST
     value_node["elements"] = _empty_jv_list()
     value_node["resolved_type"] = rt
-    init: Node = {}
+    init: Node = _empty_node()
     init["kind"] = ANN_ASSIGN
     init["target"] = target_node
     init["annotation"] = rt
@@ -304,11 +304,11 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
     elem_type = ""
     if rt.startswith("list[") and rt.endswith("]"):
         elem_type = rt[5:-1]
-    if isinstance(append_arg, dict) and elem_type != "":
+    if jv_is_dict(append_arg) and elem_type != "":
         append_node: Node = jv_dict(append_arg)
         append_node["call_arg_type"] = elem_type
         append_kind = nd_kind(append_node)
-        append_rt: str = jv_str(append_node.get("resolved_type", ""))
+        append_rt = "" + jv_str(append_node.get("resolved_type", ""))
         if append_kind == LIST and append_rt in ("", "unknown", "list[unknown]"):
             append_node["resolved_type"] = elem_type
         elif append_kind == DICT and append_rt in ("", "unknown", "dict[unknown,unknown]"):
@@ -317,8 +317,9 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
             append_node["resolved_type"] = elem_type
     generator_list: list[JsonVal] = _empty_jv_list()
     generators = lc.get("generators")
-    if isinstance(generators, list):
-        generator_list = jv_list(generators)
+    if jv_is_list(generators):
+        for gen_item in jv_list(generators):
+            generator_list.append(gen_item)
     append_args: list[JsonVal] = _empty_jv_list()
     if append_arg is not None:
         append_args.append(append_arg)
@@ -329,57 +330,54 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
         args=append_args,
         result_type="None",
     )
-    append_stmt: Node = {}
+    append_stmt: Node = _empty_node()
     append_stmt["kind"] = EXPR
     append_stmt["value"] = append_call
     body: list[JsonVal] = _empty_jv_list()
     body.append(append_stmt)
     for gen_idx in range(len(generator_list) - 1, -1, -1):
         gen = generator_list[gen_idx]
-        if not isinstance(gen, dict):
+        if not jv_is_dict(gen):
             continue
         gen_node: Node = jv_dict(gen)
         ifs = gen_node.get("ifs")
-        if isinstance(ifs, list):
-            ifs_list: list[JsonVal] = jv_list(ifs)
-            if len(ifs_list) > 0:
-                for cond_idx in range(len(ifs_list) - 1, -1, -1):
-                    cond = ifs_list[cond_idx]
-                    if isinstance(cond, dict):
-                        if_stmt: Node = {}
-                        if_stmt["kind"] = IF
-                        if_stmt["test"] = deep_copy_json(cond)
-                        if_stmt["body"] = body
-                        if_stmt["orelse"] = _empty_jv_list()
-                        body2: list[JsonVal] = _empty_jv_list()
-                        body2.append(if_stmt)
-                        body = body2
+        if jv_is_list(ifs):
+            for cond in jv_list(ifs):
+                if jv_is_dict(cond):
+                    if_stmt: Node = _empty_node()
+                    if_stmt["kind"] = IF
+                    if_stmt["test"] = deep_copy_json(cond)
+                    if_stmt["body"] = body
+                    if_stmt["orelse"] = _empty_jv_list()
+                    body2: list[JsonVal] = _empty_jv_list()
+                    body2.append(if_stmt)
+                    body = body2
         target = gen_node.get("target")
         iter_expr = gen_node.get("iter")
         iter_kind = ""
-        iter_node: Node = {}
-        if isinstance(iter_expr, dict):
+        iter_node: Node = _empty_node()
+        if jv_is_dict(iter_expr):
             iter_node = jv_dict(iter_expr)
-            iter_kind = nd_kind(iter_node)
+            iter_kind = "" + nd_kind(iter_node)
         tp = _build_lc_target_plan(target)
         if iter_kind in ("RangeExpr", FOR_RANGE):
-            iter_plan: Node = {}
+            iter_plan: Node = _empty_node()
             iter_plan["kind"] = STATIC_RANGE_FOR_PLAN
-            start_default: Node = {}
+            start_default: Node = _empty_node()
             start_default["kind"] = CONSTANT
             start_default["value"] = 0
             start_default["resolved_type"] = "int64"
-            stop_default: Node = {}
+            stop_default: Node = _empty_node()
             stop_default["kind"] = CONSTANT
             stop_default["value"] = 0
-            step_default: Node = {}
+            step_default: Node = _empty_node()
             step_default["kind"] = CONSTANT
             step_default["value"] = 1
             step_default["resolved_type"] = "int64"
             iter_plan["start"] = deep_copy_json(iter_node.get("start", start_default))
             iter_plan["stop"] = deep_copy_json(iter_node.get("stop", stop_default))
             iter_plan["step"] = deep_copy_json(iter_node.get("step", step_default))
-            fs: Node = {}
+            fs: Node = _empty_node()
             fs["kind"] = FOR_CORE
             fs["iter_mode"] = "static_fastpath"
             fs["iter_plan"] = iter_plan
@@ -387,19 +385,19 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
             fs["body"] = body
             fs["orelse"] = _empty_jv_list()
         else:
-            iter_plan: Node = {}
+            iter_plan: Node = _empty_node()
             iter_plan["kind"] = RUNTIME_ITER_FOR_PLAN
             if iter_expr is not None:
                 iter_plan["iter_expr"] = deep_copy_json(iter_expr)
             else:
-                empty_name: Node = {}
+                empty_name: Node = _empty_node()
                 empty_name["kind"] = NAME
                 empty_name["id"] = "__empty"
                 iter_plan["iter_expr"] = empty_name
             iter_plan["dispatch_mode"] = "generic"
             iter_plan["init_op"] = "ObjIterInit"
             iter_plan["next_op"] = "ObjIterNext"
-            fs: Node = {}
+            fs: Node = _empty_node()
             fs["kind"] = FOR_CORE
             fs["iter_mode"] = "runtime_protocol"
             fs["iter_plan"] = iter_plan
@@ -412,7 +410,7 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
     out: list[JsonVal] = _empty_jv_list()
     out.append(init)
     for stmt in body:
-        if isinstance(stmt, dict):
+        if jv_is_dict(stmt):
             out.append(stmt)
     return out
 
@@ -421,7 +419,7 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
     result: list[JsonVal] = _empty_jv_list()
     stmt_idx = 0
     for stmt in stmts:
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             result.append(stmt)
             stmt_idx += 1
             continue
@@ -429,28 +427,28 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
         kind = nd_kind(stmt_node)
         if kind in (ASSIGN, ANN_ASSIGN):
             value = stmt_node.get("value")
-            if isinstance(value, dict) and nd_kind(jv_dict(value)) == LIST_COMP:
+            if jv_is_dict(value) and nd_kind(jv_dict(value)) == LIST_COMP:
                 target = stmt_node.get("target")
                 tn: str = ""
-                if isinstance(target, dict):
+                if jv_is_dict(target):
                     target_node: Node = jv_dict(target)
                     if nd_kind(target_node) == NAME:
-                        tn = jv_str(target_node.get("id", ""))
+                        tn = "" + jv_str(target_node.get("id", ""))
                 cn: str = tn if tn != "" else _lc_temp_name(stmt_node, stmt_idx)
                 at: str = ""
                 if kind == ANN_ASSIGN:
                     ann = stmt_node.get("annotation")
-                    ann_text: str = jv_str(ann)
+                    ann_text = "" + jv_str(ann)
                     if ann_text != "" and "unknown" not in ann_text:
                         at = ann_text
                 value_node = jv_dict(value)
                 expanded = _expand_lc_to_stmts(value_node, cn, at)
-                if cn != tn and isinstance(target, dict):
-                    assign_value: Node = {}
+                if cn != tn and jv_is_dict(target):
+                    assign_value: Node = _empty_node()
                     assign_value["kind"] = NAME
                     assign_value["id"] = cn
-                    assign_value["resolved_type"] = jv_str(value.get("resolved_type", ""))
-                    assign_stmt: Node = {}
+                    assign_value["resolved_type"] = nd_get_str(value_node, "resolved_type")
+                    assign_stmt: Node = _empty_node()
                     assign_stmt["kind"] = ASSIGN
                     assign_stmt["target"] = deep_copy_json(target)
                     assign_stmt["value"] = assign_value
@@ -462,7 +460,7 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
                 continue
         if kind == EXPR:
             ev = stmt_node.get("value")
-            if isinstance(ev, dict) and nd_kind(jv_dict(ev)) == LIST_COMP:
+            if jv_is_dict(ev) and nd_kind(jv_dict(ev)) == LIST_COMP:
                 tmp: str = _lc_temp_name(stmt_node, stmt_idx)
                 expanded_expr = _expand_lc_to_stmts(jv_dict(ev), tmp)
                 for ex in expanded_expr:
@@ -470,24 +468,23 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
                 stmt_idx += 1
                 continue
         # Recurse
-        nested_body = stmt.get("body")
-        if isinstance(nested_body, list):
+        nested_body = stmt_node.get("body")
+        if jv_is_list(nested_body):
             stmt_node["body"] = _lc_in_stmts(jv_list(nested_body), ctx)
         nested_orelse = stmt_node.get("orelse")
-        if isinstance(nested_orelse, list):
+        if jv_is_list(nested_orelse):
             stmt_node["orelse"] = _lc_in_stmts(jv_list(nested_orelse), ctx)
         nested_finalbody = stmt_node.get("finalbody")
-        if isinstance(nested_finalbody, list):
+        if jv_is_list(nested_finalbody):
             stmt_node["finalbody"] = _lc_in_stmts(jv_list(nested_finalbody), ctx)
         if kind == TRY:
             hs = stmt_node.get("handlers")
-            if isinstance(hs, list):
-                hs_list: list[JsonVal] = jv_list(hs)
-                for h in hs_list:
-                    if isinstance(h, dict):
+            if jv_is_list(hs):
+                for h in jv_list(hs):
+                    if jv_is_dict(h):
                         h_node: Node = jv_dict(h)
                         hb = h_node.get("body")
-                        if isinstance(hb, list):
+                        if jv_is_list(hb):
                             h_node["body"] = _lc_in_stmts(jv_list(hb), ctx)
         result.append(stmt_node)
         stmt_idx += 1
@@ -496,8 +493,8 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
 
 def lower_listcomp(module: Node, ctx: CompileContext) -> Node:
     body = module.get("body")
-    if isinstance(body, list):
-        body_list: list[JsonVal] = jv_list(body)
+    if jv_is_list(body):
+        body_list = jv_list(body)
         module["body"] = _lc_in_stmts(body_list, ctx)
     return module
 
@@ -508,122 +505,123 @@ def lower_listcomp(module: Node, ctx: CompileContext) -> Node:
 
 def _collect_function_locals(stmts: list[JsonVal], out: dict[str, str]) -> None:
     for stmt in stmts:
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             continue
         stmt_node: Node = jv_dict(stmt)
         kind = nd_kind(stmt_node)
         if _is_function_like_kind(kind) or kind == CLASS_DEF:
-            name_s: str = jv_str(stmt.get("name", ""))
+            name_s = "" + jv_str(stmt_node.get("name", ""))
             if name_s != "" and name_s not in out:
                 if kind == CLASS_DEF:
                     out[name_s] = name_s
                 else:
-                    out[name_s] = _closure_callable_type(jv_dict(stmt))
+                    out[name_s] = _closure_callable_type(stmt_node)
             continue
         if kind == VAR_DECL:
-            name2_s: str = jv_str(stmt.get("name", ""))
-            type2_s: str = jv_str(stmt.get("type", ""))
+            name2_s = "" + jv_str(stmt_node.get("name", ""))
+            type2_s = "" + jv_str(stmt_node.get("type", ""))
             if name2_s != "" and name2_s not in out:
                 out[name2_s] = type2_s
         elif kind in (ASSIGN, ANN_ASSIGN, AUG_ASSIGN):
-            _collect_assign_names(jv_dict(stmt), out)
+            _collect_assign_names(stmt_node, out)
         elif kind == FOR:
-            _collect_target_local_types(stmt.get("target"), jv_str(stmt.get("target_type", "")), out)
+            _collect_target_local_types(stmt_node.get("target"), "" + jv_str(stmt_node.get("target_type", "")), out)
         elif kind == FOR_RANGE:
-            _collect_target_local_types(stmt.get("target"), jv_str(stmt.get("target_type", "int64")), out)
+            _collect_target_local_types(stmt_node.get("target"), "" + jv_str(stmt_node.get("target_type", "int64")), out)
         elif kind == FOR_CORE:
-            _collect_target_plan_local_types(stmt.get("target_plan"), out)
+            _collect_target_plan_local_types(stmt_node.get("target_plan"), out)
         elif kind == WITH:
-            items = stmt.get("items")
-            if isinstance(items, list):
-                for item in items:
-                    if not isinstance(item, dict):
+            items = stmt_node.get("items")
+            if jv_is_list(items):
+                for item in jv_list(items):
+                    if not jv_is_dict(item):
                         continue
                     item_node: Node = jv_dict(item)
                     _collect_target_local_types(item_node.get("optional_vars"), "", out)
         nested_body = stmt_node.get("body")
-        if isinstance(nested_body, list):
+        if jv_is_list(nested_body):
             _collect_function_locals(jv_list(nested_body), out)
         nested_orelse = stmt_node.get("orelse")
-        if isinstance(nested_orelse, list):
+        if jv_is_list(nested_orelse):
             _collect_function_locals(jv_list(nested_orelse), out)
         nested_finalbody = stmt_node.get("finalbody")
-        if isinstance(nested_finalbody, list):
+        if jv_is_list(nested_finalbody):
             _collect_function_locals(jv_list(nested_finalbody), out)
         handlers = stmt_node.get("handlers")
-        if isinstance(handlers, list):
-            for handler in handlers:
-                if not isinstance(handler, dict):
+        if jv_is_list(handlers):
+            for handler in jv_list(handlers):
+                if not jv_is_dict(handler):
                     continue
                 handler_node: Node = jv_dict(handler)
-                name3: str = jv_str(handler_node.get("name", ""))
+                name3 = "" + jv_str(handler_node.get("name", ""))
                 if name3 != "" and name3 not in out:
                     out[name3] = "BaseException"
                 hbody = handler_node.get("body")
-                if isinstance(hbody, list):
+                if jv_is_list(hbody):
                     _collect_function_locals(jv_list(hbody), out)
 
 
 def _collect_target_local_types(target: JsonVal, inferred_type: str, out: dict[str, str]) -> None:
-    if not isinstance(target, dict):
+    if not jv_is_dict(target):
         return
-    kind = _sk(target)
+    target_node: Node = jv_dict(target)
+    kind = _sk(target_node)
     if kind == NAME:
-        name = jv_str(target.get("id", ""))
+        name = "" + jv_str(target_node.get("id", ""))
         if name != "" and name not in out:
-            target_type = jv_str(target.get("resolved_type", ""))
+            target_type = "" + jv_str(target_node.get("resolved_type", ""))
             out[name] = target_type if target_type != "" else inferred_type
         return
     if kind == TUPLE:
-        elements = target.get("elements")
-        if isinstance(elements, list):
-            for elem in elements:
+        elements = target_node.get("elements")
+        if jv_is_list(elements):
+            for elem in jv_list(elements):
                 _collect_target_local_types(elem, inferred_type, out)
 
 
 def _collect_target_plan_local_types(target_plan: JsonVal, out: dict[str, str]) -> None:
-    if not isinstance(target_plan, dict):
+    if not jv_is_dict(target_plan):
         return
-    kind = _sk(target_plan)
+    target_plan_node: Node = jv_dict(target_plan)
+    kind = _sk(target_plan_node)
     if kind == NAME_TARGET:
-        name = jv_str(target_plan.get("id", ""))
+        name = "" + jv_str(target_plan_node.get("id", ""))
         if name != "" and name not in out:
-            out[name] = jv_str(target_plan.get("target_type", ""))
+            out[name] = "" + jv_str(target_plan_node.get("target_type", ""))
         return
     if kind == TUPLE_TARGET:
-        elements = target_plan.get("elements")
-        if isinstance(elements, list):
-            for elem in elements:
+        elements = target_plan_node.get("elements")
+        if jv_is_list(elements):
+            for elem in jv_list(elements):
                 _collect_target_plan_local_types(elem, out)
 
 
 def _collect_function_scope_types(func: Node) -> dict[str, str]:
     out: dict[str, str] = {}
-    self_name = jv_str(func.get("name", ""))
+    self_name = "" + jv_str(func.get("name", ""))
     if self_name != "":
         out[self_name] = _closure_callable_type(func)
     arg_types = func.get("arg_types")
-    if isinstance(arg_types, dict):
+    if jv_is_dict(arg_types):
         arg_types_node: Node = jv_dict(arg_types)
         for name in arg_types_node.keys():
             value = arg_types_node[name]
-            value_s: str = jv_str(value)
+            value_s = "" + jv_str(value)
             if name != "" and value_s != "":
                 out[name] = value_s
     captures = func.get("captures")
-    if isinstance(captures, list):
-        capture_list: list[JsonVal] = jv_list(captures)
-        for capture in capture_list:
-            if not isinstance(capture, dict):
+    if jv_is_list(captures):
+        for capture in jv_list(captures):
+            if not jv_is_dict(capture):
                 continue
             capture_node: Node = jv_dict(capture)
-            name2: str = jv_str(capture.get("name", ""))
-            type2: str = jv_str(capture.get("type", ""))
+            name2 = "" + jv_str(capture_node.get("name", ""))
+            type2 = "" + jv_str(capture_node.get("type", ""))
             if name2 != "" and name2 not in out:
                 out[name2] = type2
     body = func.get("body")
-    if isinstance(body, list):
-        body_list: list[JsonVal] = jv_list(body)
+    if jv_is_list(body):
+        body_list = jv_list(body)
         _collect_function_locals(body_list, out)
     return out
 
@@ -631,17 +629,16 @@ def _collect_function_scope_types(func: Node) -> dict[str, str]:
 def _collect_function_reassigned_names(func: Node) -> set[str]:
     counts: dict[str, int] = {}
     body = func.get("body")
-    if isinstance(body, list):
-        body_list: list[JsonVal] = jv_list(body)
-        _collect_reassigned_lexical(body_list, counts)
+    if jv_is_list(body):
+        _collect_reassigned_lexical(jv_list(body), counts)
     out: set[str] = set()
     arg_order = func.get("arg_order")
     param_names: set[str] = set()
-    if isinstance(arg_order, list):
-        arg_order_list: list[JsonVal] = jv_list(arg_order)
-        for arg in arg_order_list:
-            if isinstance(arg, str) and arg != "":
-                param_names.add(arg)
+    if jv_is_list(arg_order):
+        for arg in jv_list(arg_order):
+            arg_s = "" + jv_str(arg)
+            if arg_s != "":
+                param_names.add(arg_s)
     for name, count in counts.items():
         if name in param_names:
             out.add(name)
@@ -656,130 +653,126 @@ def _bump_reassigned(out: dict[str, int], name: str) -> None:
 
 def _collect_reassigned_lexical(stmts: list[JsonVal], out: dict[str, int]) -> None:
     for stmt in stmts:
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             continue
         stmt_node: Node = jv_dict(stmt)
         kind = nd_kind(stmt_node)
         if kind in (ASSIGN, ANN_ASSIGN):
-            target = stmt.get("target")
-            if isinstance(target, dict) and nd_kind(jv_dict(target)) == NAME:
-                target_node = jv_dict(target)
-                name: str = jv_str(target.get("id", ""))
+            target = stmt_node.get("target")
+            if jv_is_dict(target) and nd_kind(jv_dict(target)) == NAME:
+                target_node: Node = jv_dict(target)
+                name = "" + jv_str(target_node.get("id", ""))
                 if name != "":
                     _bump_reassigned(out, name)
-            elif isinstance(target, dict) and nd_kind(jv_dict(target)) == TUPLE:
+            elif jv_is_dict(target) and nd_kind(jv_dict(target)) == TUPLE:
                 _collect_target_write_counts(target, out)
         elif kind == AUG_ASSIGN:
-            target2 = stmt.get("target")
-            if isinstance(target2, dict) and nd_kind(jv_dict(target2)) == NAME:
-                target2_node = jv_dict(target2)
-                name2: str = jv_str(target2.get("id", ""))
+            target2 = stmt_node.get("target")
+            if jv_is_dict(target2) and nd_kind(jv_dict(target2)) == NAME:
+                target2_node: Node = jv_dict(target2)
+                name2 = "" + jv_str(target2_node.get("id", ""))
                 if name2 != "":
                     _bump_reassigned(out, name2)
         elif kind == FOR or kind == FOR_RANGE:
-            _collect_target_write_counts(stmt.get("target"), out)
+            _collect_target_write_counts(stmt_node.get("target"), out)
         elif kind == FOR_CORE:
-            _collect_target_plan_write_counts(stmt.get("target_plan"), out)
+            _collect_target_plan_write_counts(stmt_node.get("target_plan"), out)
         if _is_function_like_kind(kind) or kind == CLASS_DEF:
             continue
-        nested = stmt.get("body")
-        if isinstance(nested, list):
+        nested = stmt_node.get("body")
+        if jv_is_list(nested):
             _collect_reassigned_lexical(jv_list(nested), out)
-        nested = stmt.get("orelse")
-        if isinstance(nested, list):
+        nested = stmt_node.get("orelse")
+        if jv_is_list(nested):
             _collect_reassigned_lexical(jv_list(nested), out)
-        nested = stmt.get("finalbody")
-        if isinstance(nested, list):
+        nested = stmt_node.get("finalbody")
+        if jv_is_list(nested):
             _collect_reassigned_lexical(jv_list(nested), out)
         handlers = stmt_node.get("handlers")
-        if isinstance(handlers, list):
-            handler_list: list[JsonVal] = jv_list(handlers)
-            for handler in handler_list:
-                if isinstance(handler, dict):
+        if jv_is_list(handlers):
+            for handler in jv_list(handlers):
+                if jv_is_dict(handler):
                     handler_node: Node = jv_dict(handler)
                     hbody = handler_node.get("body")
-                    if isinstance(hbody, list):
-                        hbody_list: list[JsonVal] = jv_list(hbody)
-                        _collect_reassigned_lexical(hbody_list, out)
+                    if jv_is_list(hbody):
+                        _collect_reassigned_lexical(jv_list(hbody), out)
 
 
 def _collect_target_write_counts(target: JsonVal, out: dict[str, int]) -> None:
-    if not isinstance(target, dict):
+    if not jv_is_dict(target):
         return
-    kind = _sk(target)
+    target_node: Node = jv_dict(target)
+    kind = _sk(target_node)
     if kind == NAME:
-        target_node = jv_dict(target)
-        name: str = jv_str(target.get("id", ""))
+        name = "" + jv_str(target_node.get("id", ""))
         if name != "":
             _bump_reassigned(out, name)
         return
     if kind == TUPLE:
-        elements = target.get("elements")
-        if isinstance(elements, list):
-            for elem in elements:
+        elements = target_node.get("elements")
+        if jv_is_list(elements):
+            for elem in jv_list(elements):
                 _collect_target_write_counts(elem, out)
 
 
 def _collect_target_plan_write_counts(target_plan: JsonVal, out: dict[str, int]) -> None:
-    if not isinstance(target_plan, dict):
+    if not jv_is_dict(target_plan):
         return
-    kind = _sk(target_plan)
+    target_plan_node: Node = jv_dict(target_plan)
+    kind = _sk(target_plan_node)
     if kind == NAME_TARGET:
-        target_plan_node = jv_dict(target_plan)
-        name: str = jv_str(target_plan.get("id", ""))
+        name = "" + jv_str(target_plan_node.get("id", ""))
         if name != "":
             _bump_reassigned(out, name)
         return
     if kind == TUPLE_TARGET:
-        elements = target_plan.get("elements")
-        if isinstance(elements, list):
-            for elem in elements:
+        elements = target_plan_node.get("elements")
+        if jv_is_list(elements):
+            for elem in jv_list(elements):
                 _collect_target_plan_write_counts(elem, out)
 
 
 def _collect_name_refs_lexical(node: JsonVal, out: set[str], *, descend_into_root: bool = True) -> None:
-    if isinstance(node, list):
-        node_list: list[JsonVal] = jv_list(node)
-        for item in node_list:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _collect_name_refs_lexical(item, out, descend_into_root=True)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    kind = _sk(node)
+    node_node: Node = jv_dict(node)
+    kind = _sk(node_node)
     if not descend_into_root and (_is_function_like_kind(kind) or kind == CLASS_DEF):
         return
     if kind == NAME:
-        name: str = jv_str(node.get("id", ""))
+        name = "" + jv_str(node_node.get("id", ""))
         if name != "":
             out.add(name)
-    for key, value in node.items():
+    for key, value in node_node.items():
         if key == "body" and (_is_function_like_kind(kind) or kind == CLASS_DEF):
-            if descend_into_root and isinstance(value, list):
-                value_list: list[JsonVal] = jv_list(value)
-                for item in value_list:
+            if descend_into_root and jv_is_list(value):
+                for item in jv_list(value):
                     _collect_name_refs_lexical(item, out, descend_into_root=False)
             continue
-        if isinstance(value, dict):
+        if jv_is_dict(value):
             _collect_name_refs_lexical(value, out, descend_into_root=True)
-        elif isinstance(value, list):
+        elif jv_is_list(value):
             _collect_name_refs_lexical(value, out, descend_into_root=True)
-
 
 def _closure_callable_type(node: Node) -> str:
     arg_order = node.get("arg_order")
     arg_types = node.get("arg_types")
     params: list[str] = []
-    if isinstance(arg_order, list) and isinstance(arg_types, dict):
-        arg_order_list: list[JsonVal] = jv_list(arg_order)
+    if jv_is_list(arg_order) and jv_is_dict(arg_types):
         arg_types_node: Node = jv_dict(arg_types)
-        for arg in arg_order_list:
-            if not isinstance(arg, str) or arg == "":
+        for arg in jv_list(arg_order):
+            arg_s = "" + jv_str(arg)
+            if arg_s == "":
                 continue
-            if arg == "self":
+            if arg_s == "self":
                 continue
-            arg_type_s: str = jv_str(arg_types_node[arg] if arg in arg_types_node else "")
+            arg_type_s = "" + jv_str(arg_types_node[arg_s] if arg_s in arg_types_node else "")
             params.append(arg_type_s if arg_type_s != "" else "unknown")
-    ret = jv_str(node.get("return_type", ""))
+    ret = "" + jv_str(node.get("return_type", ""))
     if ret == "":
         ret = "unknown"
     return "callable[[" + ",".join(params) + "]," + ret + "]"
@@ -793,12 +786,11 @@ def _closure_capture_entries(
     local_types = _collect_function_scope_types(func)
     used_names: set[str] = set()
     defaults = func.get("arg_defaults")
-    if isinstance(defaults, dict):
+    if jv_is_dict(defaults):
         _collect_name_refs_lexical(defaults, used_names, descend_into_root=True)
     body = func.get("body")
-    if isinstance(body, list):
-        body_list: list[JsonVal] = jv_list(body)
-        for stmt in body_list:
+    if jv_is_list(body):
+        for stmt in jv_list(body):
             _collect_name_refs_lexical(stmt, used_names, descend_into_root=False)
     captures: list[JsonVal] = _empty_jv_list()
     sorted_names: list[str] = []
@@ -810,12 +802,12 @@ def _closure_capture_entries(
             continue
         capture_type = visible_types.get(name, "")
         capture_mode = "mutable" if name in visible_mutable else "readonly"
-        capture: Node = {}
+        capture: Node = _empty_node()
         capture["name"] = name
         capture["mode"] = capture_mode
         capture["type"] = capture_type
         captures.append(capture)
-    return captures, jv_str(func.get("name", "")) in used_names
+    return captures, ("" + jv_str(func.get("name", ""))) in used_names
 
 
 def _lower_closure_stmt_list(
@@ -825,7 +817,7 @@ def _lower_closure_stmt_list(
 ) -> list[JsonVal]:
     result: list[JsonVal] = _empty_jv_list()
     for stmt in stmts:
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             result.append(stmt)
             continue
         stmt_node: Node = jv_dict(stmt)
@@ -834,15 +826,15 @@ def _lower_closure_stmt_list(
             captures, is_recursive = _closure_capture_entries(visible_types, visible_mutable, stmt_node)
             stmt_node["kind"] = CLOSURE_DEF
             stmt_node["captures"] = captures
-            capture_types: dict[str, str] = {}
-            capture_modes: dict[str, str] = {}
+            capture_types: Node = _empty_node()
+            capture_modes: Node = _empty_node()
             for capture in captures:
                 capture_node: Node = jv_dict(capture)
-                capture_name = jv_str(capture_node.get("name", ""))
+                capture_name = "" + jv_str(capture_node.get("name", ""))
                 if capture_name == "":
                     continue
-                capture_types[capture_name] = jv_str(capture_node.get("type", ""))
-                capture_modes[capture_name] = jv_str(capture_node.get("mode", ""))
+                capture_types[capture_name] = "" + jv_str(capture_node.get("type", ""))
+                capture_modes[capture_name] = "" + jv_str(capture_node.get("mode", ""))
             stmt_node["capture_types"] = capture_types
             stmt_node["capture_modes"] = capture_modes
             if is_recursive:
@@ -852,38 +844,35 @@ def _lower_closure_stmt_list(
             continue
         if kind == CLASS_DEF:
             body = stmt_node.get("body")
-            if isinstance(body, list):
-                body_list: list[JsonVal] = jv_list(body)
+            if jv_is_list(body):
                 class_visible: dict[str, str] = {}
                 for name, value in visible_types.items():
                     class_visible[name] = value
-                class_name = jv_str(stmt_node.get("name", ""))
+                class_name = "" + jv_str(stmt_node.get("name", ""))
                 if class_name != "":
                     class_visible[class_name] = class_name
-                stmt_node["body"] = _lower_closure_stmt_list(body_list, class_visible, visible_mutable)
+                stmt_node["body"] = _lower_closure_stmt_list(jv_list(body), class_visible, visible_mutable)
             result.append(stmt_node)
             continue
         nested_body = stmt_node.get("body")
-        if isinstance(nested_body, list):
+        if jv_is_list(nested_body):
             stmt_node["body"] = _lower_closure_stmt_list(jv_list(nested_body), visible_types, visible_mutable)
         nested_orelse = stmt_node.get("orelse")
-        if isinstance(nested_orelse, list):
+        if jv_is_list(nested_orelse):
             stmt_node["orelse"] = _lower_closure_stmt_list(jv_list(nested_orelse), visible_types, visible_mutable)
         nested_finalbody = stmt_node.get("finalbody")
-        if isinstance(nested_finalbody, list):
+        if jv_is_list(nested_finalbody):
             stmt_node["finalbody"] = _lower_closure_stmt_list(jv_list(nested_finalbody), visible_types, visible_mutable)
         handlers = stmt_node.get("handlers")
-        if isinstance(handlers, list):
-            handler_list: list[JsonVal] = jv_list(handlers)
-            for handler in handler_list:
-                if not isinstance(handler, dict):
+        if jv_is_list(handlers):
+            for handler in jv_list(handlers):
+                if not jv_is_dict(handler):
                     continue
                 handler_node: Node = jv_dict(handler)
                 hbody = handler_node.get("body")
-                if isinstance(hbody, list):
-                    hbody_list: list[JsonVal] = jv_list(hbody)
-                    handler_node["body"] = _lower_closure_stmt_list(hbody_list, visible_types, visible_mutable)
-        result.append(stmt)
+                if jv_is_list(hbody):
+                    handler_node["body"] = _lower_closure_stmt_list(jv_list(hbody), visible_types, visible_mutable)
+        result.append(stmt_node)
     return result
 
 
@@ -893,9 +882,8 @@ def _lower_closure_function(
     outer_visible_mutable: set[str],
 ) -> None:
     body = func.get("body")
-    if not isinstance(body, list):
+    if not jv_is_list(body):
         return
-    body_list: list[JsonVal] = jv_list(body)
     current_visible: dict[str, str] = {}
     for name, value in outer_visible_types.items():
         current_visible[name] = value
@@ -904,21 +892,22 @@ def _lower_closure_function(
     current_mutable = set(outer_visible_mutable)
     for reassigned_name in _collect_function_reassigned_names(func):
         current_mutable.add(reassigned_name)
-    func["body"] = _lower_closure_stmt_list(body_list, current_visible, current_mutable)
+    func["body"] = _lower_closure_stmt_list(jv_list(body), current_visible, current_mutable)
 
 
 def lower_nested_function_defs(module: Node, ctx: CompileContext) -> Node:
     body = module.get("body")
-    if isinstance(body, list):
-        body_list: list[JsonVal] = jv_list(body)
-        for stmt in body_list:
-            if isinstance(stmt, dict) and _is_function_like_kind(_sk(stmt)):
-                _lower_closure_function(stmt, {}, set())
-            elif isinstance(stmt, dict) and _sk(stmt) == CLASS_DEF:
-                class_body = stmt.get("body")
-                if isinstance(class_body, list):
-                    class_body_list: list[JsonVal] = jv_list(class_body)
-                    stmt["body"] = _lower_closure_stmt_list(class_body_list, {}, set())
+    if jv_is_list(body):
+        for stmt in jv_list(body):
+            if not jv_is_dict(stmt):
+                continue
+            stmt_node: Node = jv_dict(stmt)
+            if _is_function_like_kind(_sk(stmt_node)):
+                _lower_closure_function(stmt_node, {}, set())
+            elif _sk(stmt_node) == CLASS_DEF:
+                class_body = stmt_node.get("body")
+                if jv_is_list(class_body):
+                    stmt_node["body"] = _lower_closure_stmt_list(jv_list(class_body), {}, set())
     return module
 
 
@@ -929,32 +918,30 @@ def lower_nested_function_defs(module: Node, ctx: CompileContext) -> Node:
 def _collect_fn_sigs(module: Node) -> dict[str, Node]:
     sigs: dict[str, Node] = {}
     body = module.get("body")
-    if not isinstance(body, list):
+    if not jv_is_list(body):
         return sigs
-    body_list: list[JsonVal] = jv_list(body)
-    for stmt in body_list:
-        if isinstance(stmt, dict):
-            _collect_sig_node(stmt, sigs, "")
+    for stmt in jv_list(body):
+        if jv_is_dict(stmt):
+            _collect_sig_node(jv_dict(stmt), sigs, "")
     return sigs
 
 
 def _collect_sig_node(node: Node, sigs: dict[str, Node], class_name: str) -> None:
     kind = nd_kind(node)
     if _is_function_like_kind(kind):
-        name: str = jv_str(node.get("name", ""))
+        name = "" + jv_str(node.get("name", ""))
         if name == "":
             return
         ao = node.get("arg_order")
         ad = node.get("arg_defaults")
-        if not isinstance(ao, list):
+        if not jv_is_list(ao):
             return
-        ao_list: list[JsonVal] = jv_list(ao)
-        sig: Node = {}
-        sig["arg_order"] = ao_list
-        if isinstance(ad, dict):
+        sig: Node = _empty_node()
+        sig["arg_order"] = jv_list(ao)
+        if jv_is_dict(ad):
             sig["arg_defaults"] = jv_dict(ad)
         else:
-            empty_defaults: Node = {}
+            empty_defaults: Node = _empty_node()
             sig["arg_defaults"] = empty_defaults
         full = name
         if class_name != "":
@@ -963,83 +950,83 @@ def _collect_sig_node(node: Node, sigs: dict[str, Node], class_name: str) -> Non
             sigs[name] = sig
         if full != name:
             sigs[full] = sig
-        body = node.get("body")
-        if isinstance(body, list):
-            body_list: list[JsonVal] = jv_list(body)
-            for s in body_list:
-                if isinstance(s, dict):
-                    _collect_sig_node(s, sigs, "")
-    elif kind == CLASS_DEF:
-        cn: str = jv_str(node.get("name", ""))
-        body = node.get("body")
-        if isinstance(body, list):
-            body_list: list[JsonVal] = jv_list(body)
-            for s in body_list:
-                if isinstance(s, dict):
-                    _collect_sig_node(s, sigs, cn)
-    elif kind == ASSIGN or kind == ANN_ASSIGN:
-        target: JsonVal = node.get("target")
-        if not isinstance(target, dict):
-            targets = node.get("targets")
-            if isinstance(targets, list):
-                targets_list: list[JsonVal] = jv_list(targets)
-                if len(targets_list) == 1 and isinstance(targets_list[0], dict):
-                    target = jv_dict(targets_list[0])
-        value = node.get("value")
-        value_node2: Node = jv_dict(value) if isinstance(value, dict) else {}
-        if (
-            isinstance(target, dict)
-            and nd_kind(jv_dict(target)) == NAME
-            and isinstance(value, dict)
-            and nd_kind(value_node2) == "Lambda"
-        ):
-            target_node: Node = jv_dict(target)
-            value_node: Node = value_node2
-            lambda_name: str = jv_str(target_node.get("id", ""))
-            args = value_node.get("args")
-            if lambda_name != "" and isinstance(args, list):
-                arg_order: list[str] = []
-                arg_defaults: dict[str, JsonVal] = {}
-                args_list: list[JsonVal] = jv_list(args)
-                for arg in args_list:
-                    if not isinstance(arg, dict):
-                        continue
-                    arg_node: Node = jv_dict(arg)
-                    arg_name: str = jv_str(arg_node.get("arg", ""))
-                    if arg_name == "":
-                        continue
-                    arg_order.append(arg_name)
-                    default_node = arg_node.get("default")
-                    if isinstance(default_node, dict):
-                        arg_defaults[arg_name] = deep_copy_json(default_node)
-                lambda_sig: Node = {}
-                lambda_sig["arg_order"] = arg_order
-                lambda_sig["arg_defaults"] = arg_defaults
-                sigs[lambda_name] = lambda_sig
-
+        if jv_is_list(node.get("body")):
+            for s in jv_list(node.get("body")):
+                if jv_is_dict(s):
+                    _collect_sig_node(jv_dict(s), sigs, "")
+        return
+    if kind == CLASS_DEF:
+        cn = "" + jv_str(node.get("name", ""))
+        if jv_is_list(node.get("body")):
+            for s in jv_list(node.get("body")):
+                if jv_is_dict(s):
+                    _collect_sig_node(jv_dict(s), sigs, cn)
+        return
+    if kind != ASSIGN and kind != ANN_ASSIGN:
+        return
+    target: JsonVal = node.get("target")
+    if not jv_is_dict(target):
+        targets = node.get("targets")
+        if jv_is_list(targets):
+            targets_list = jv_list(targets)
+            if len(targets_list) == 1:
+                for item in targets_list:
+                    if jv_is_dict(item):
+                        target = jv_dict(item)
+                    break
+    value = node.get("value")
+    if not jv_is_dict(target) or nd_kind(jv_dict(target)) != NAME:
+        return
+    if not jv_is_dict(value):
+        return
+    value_node: Node = jv_dict(value)
+    if nd_kind(value_node) != "Lambda":
+        return
+    target_node: Node = jv_dict(target)
+    lambda_name = "" + jv_str(target_node.get("id", ""))
+    args = value_node.get("args")
+    if lambda_name == "" or not jv_is_list(args):
+        return
+    arg_order: list[JsonVal] = _empty_jv_list()
+    arg_defaults: Node = _empty_node()
+    for arg in jv_list(args):
+        if not jv_is_dict(arg):
+            continue
+        arg_node: Node = jv_dict(arg)
+        arg_name = "" + jv_str(arg_node.get("arg", ""))
+        if arg_name == "":
+            continue
+        arg_order.append(arg_name)
+        default_node = arg_node.get("default")
+        if jv_is_dict(default_node):
+            arg_defaults[arg_name] = deep_copy_json(default_node)
+    lambda_sig: Node = _empty_node()
+    lambda_sig["arg_order"] = arg_order
+    lambda_sig["arg_defaults"] = arg_defaults
+    sigs[lambda_name] = lambda_sig
 
 def _expand_defaults_walk(node: JsonVal, sigs: dict[str, Node]) -> None:
-    if isinstance(node, list):
-        for item in node:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _expand_defaults_walk(item, sigs)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    nd: Node = node
+    nd: Node = jv_dict(node)
     if nd_kind(nd) == CALL:
         func = nd.get("func")
         cn = ""
-        if isinstance(func, dict):
+        if jv_is_dict(func):
             func_node: Node = jv_dict(func)
             func_kind = nd_kind(func_node)
             if func_kind == NAME:
-                cn = jv_str(func_node.get("id", ""))
+                cn = "" + jv_str(func_node.get("id", ""))
             elif func_kind == ATTRIBUTE:
-                attr: str = jv_str(func_node.get("attr", ""))
+                attr = "" + jv_str(func_node.get("attr", ""))
                 owner = func_node.get("value")
-                if isinstance(owner, dict):
+                if jv_is_dict(owner):
                     owner_node: Node = jv_dict(owner)
-                    owner_type: str = jv_str(owner_node.get("resolved_type", ""))
+                    owner_type = "" + jv_str(owner_node.get("resolved_type", ""))
                     if owner_type != "" and owner_type != "unknown":
                         qualified = owner_type + "." + attr
                         if qualified in sigs:
@@ -1053,23 +1040,24 @@ def _expand_defaults_walk(node: JsonVal, sigs: dict[str, Node]) -> None:
             ao = sig.get("arg_order")
             ad = sig.get("arg_defaults")
             args = nd.get("args")
-            if isinstance(args, list) and isinstance(ao, list) and isinstance(ad, dict):
-                args_list: list[JsonVal] = jv_list(args)
-                ao_list: list[JsonVal] = jv_list(ao)
+            if jv_is_list(args) and jv_is_list(ao) and jv_is_dict(ad):
+                args_list: list[JsonVal] = _empty_jv_list()
+                for arg in jv_list(args):
+                    args_list.append(arg)
                 ad_node: Node = jv_dict(ad)
                 ep: list[str] = []
-                for p in ao_list:
-                    if isinstance(p, str) and p != "self":
-                        ep.append(p)
+                for p in jv_list(ao):
+                    p_s = "" + jv_str(p)
+                    if p_s != "" and p_s != "self":
+                        ep.append(p_s)
                 ne = len(ep)
                 kw_map: dict[str, JsonVal] = {}
                 kws = nd.get("keywords")
-                if isinstance(kws, list):
-                    kw_list: list[JsonVal] = jv_list(kws)
-                    for kw in kw_list:
-                        if isinstance(kw, dict):
+                if jv_is_list(kws):
+                    for kw in jv_list(kws):
+                        if jv_is_dict(kw):
                             kw_node: Node = jv_dict(kw)
-                            ka = jv_str(kw_node.get("arg", ""))
+                            ka = "" + jv_str(kw_node.get("arg", ""))
                             kv = kw_node.get("value")
                             if ka != "":
                                 kw_map[ka] = kv
@@ -1078,29 +1066,27 @@ def _expand_defaults_walk(node: JsonVal, sigs: dict[str, Node]) -> None:
                         pn = ep[i]
                         if pn in kw_map:
                             kv2 = kw_map[pn]
-                            args_list.append(deep_copy_json(kv2) if isinstance(kv2, dict) else kv2)
+                            args_list.append(deep_copy_json(kv2) if jv_is_dict(kv2) else kv2)
                         elif pn in ad_node:
                             dn = ad_node[pn]
-                            if isinstance(dn, dict):
+                            if jv_is_dict(dn):
                                 args_list.append(deep_copy_json(dn))
                     nd["args"] = args_list
-                    if isinstance(kws, list) and len(kw_map) > 0:
+                    if jv_is_list(kws) and len(kw_map) > 0:
                         remaining: list[JsonVal] = []
-                        kw_list2: list[JsonVal] = jv_list(kws)
-                        for kw in kw_list2:
-                            if isinstance(kw, dict):
+                        for kw in jv_list(kws):
+                            if jv_is_dict(kw):
                                 kw_node2: Node = jv_dict(kw)
-                                ka = jv_str(kw_node2.get("arg", ""))
+                                ka = "" + jv_str(kw_node2.get("arg", ""))
                                 if ka in kw_map:
                                     continue
                             remaining.append(kw)
                         nd["keywords"] = remaining
     for v in nd.values():
-        if isinstance(v, dict):
+        if jv_is_dict(v):
             _expand_defaults_walk(v, sigs)
-        elif isinstance(v, list):
+        elif jv_is_list(v):
             _expand_defaults_walk(v, sigs)
-
 
 def expand_default_arguments(module: Node, ctx: CompileContext) -> Node:
     sigs = _collect_fn_sigs(module)
@@ -1114,15 +1100,15 @@ def expand_default_arguments(module: Node, ctx: CompileContext) -> Node:
 # ===========================================================================
 
 def _tte_subscript(owner: str, index: int, elem_type: str) -> Node:
-    value_node: Node = {}
+    value_node: Node = _empty_node()
     value_node["kind"] = NAME
     value_node["id"] = owner
     value_node["resolved_type"] = "tuple"
-    slice_node: Node = {}
+    slice_node: Node = _empty_node()
     slice_node["kind"] = CONSTANT
     slice_node["value"] = index
     slice_node["resolved_type"] = "int64"
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = SUBSCRIPT
     out["value"] = value_node
     out["slice"] = slice_node
@@ -1130,51 +1116,57 @@ def _tte_subscript(owner: str, index: int, elem_type: str) -> Node:
     return out
 
 
+def _local_tmp_name(prefix: str, node: Node, ordinal: int = 0) -> str:
+    span = node.get("source_span")
+    if jv_is_dict(span):
+        span_node: Node = jv_dict(span)
+        line_no = span_node.get("line")
+        col_no = span_node.get("col")
+        if jv_is_int(line_no) and jv_is_int(col_no):
+            return prefix + str(jv_int(line_no)) + "_" + str(jv_int(col_no)) + "_" + str(ordinal)
+    return prefix + str(ordinal)
+
+
 def _tte_walk(node: JsonVal, ctx: CompileContext) -> None:
-    if isinstance(node, list):
-        for item in node:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _tte_walk(item, ctx)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    nd: Node = node
+    nd: Node = jv_dict(node)
     if nd_kind(nd) == FOR_CORE:
         tp = nd.get("target_plan")
-        if isinstance(tp, dict):
+        if jv_is_dict(tp):
             tp_node: Node = jv_dict(tp)
-            if nd_kind(tp_node) != TUPLE_TARGET:
-                pass
-            else:
+            if nd_kind(tp_node) == TUPLE_TARGET:
                 elements = tp_node.get("elements")
-                if isinstance(elements, list):
-                    elements_list: list[JsonVal] = jv_list(elements)
-                    if len(elements_list) < 2:
-                        pass
-                    else:
-                        tmp = ctx.next_tte_name()
-                        assigns: list[JsonVal] = []
-                        direct_names: list[JsonVal] = []
+                if jv_is_list(elements):
+                    elements_list = jv_list(elements)
+                    if len(elements_list) >= 2:
+                        tmp = _local_tmp_name("__tte_", nd)
+                        assigns: list[JsonVal] = _empty_jv_list()
+                        direct_names: list[JsonVal] = _empty_jv_list()
                         all_flat_names = True
-                        for i, elem in enumerate(elements_list):
-                            if not isinstance(elem, dict):
+                        i = 0
+                        for elem in elements_list:
+                            if not jv_is_dict(elem):
                                 all_flat_names = False
                                 continue
                             elem_node: Node = jv_dict(elem)
                             if nd_kind(elem_node) != NAME_TARGET:
                                 all_flat_names = False
                                 continue
-                            en = elem_node["id"] if "id" in elem_node else ""
-                            et = elem_node["target_type"] if "target_type" in elem_node else ""
-                            if not isinstance(en, str) or en == "":
+                            en = "" + jv_str(elem_node["id"] if "id" in elem_node else "")
+                            et = "" + jv_str(elem_node["target_type"] if "target_type" in elem_node else "")
+                            if en == "":
                                 all_flat_names = False
                                 continue
-                            if not isinstance(et, str):
-                                et = ""
-                            target_node: Node = {}
+                            target_node: Node = _empty_node()
                             target_node["kind"] = NAME
                             target_node["id"] = en
                             target_node["resolved_type"] = et if et != "" else "unknown"
-                            assign: Node = {}
+                            assign: Node = _empty_node()
                             assign["kind"] = ASSIGN
                             assign["target"] = target_node
                             assign["value"] = _tte_subscript(tmp, i, et)
@@ -1182,8 +1174,9 @@ def _tte_walk(node: JsonVal, ctx: CompileContext) -> None:
                             assign["declare"] = True
                             assigns.append(assign)
                             direct_names.append(en)
+                            i += 1
                         if all_flat_names and len(direct_names) == len(elements_list):
-                            tp_out: Node = {}
+                            tp_out: Node = _empty_node()
                             tp_out["kind"] = NAME_TARGET
                             tp_out["id"] = tmp
                             tp_out["target_type"] = tp_node.get("target_type", "")
@@ -1191,20 +1184,18 @@ def _tte_walk(node: JsonVal, ctx: CompileContext) -> None:
                             tp_out["tuple_expanded"] = True
                             nd["target_plan"] = tp_out
                             body = nd.get("body")
-                            if isinstance(body, list):
-                                body_list: list[JsonVal] = jv_list(body)
+                            if jv_is_list(body):
                                 new_body: list[JsonVal] = _empty_jv_list()
                                 for stmt in assigns:
                                     new_body.append(stmt)
-                                for stmt in body_list:
+                                for stmt in jv_list(body):
                                     new_body.append(stmt)
                                 nd["body"] = new_body
     for v in nd.values():
-        if isinstance(v, dict):
+        if jv_is_dict(v):
             _tte_walk(v, ctx)
-        elif isinstance(v, list):
+        elif jv_is_list(v):
             _tte_walk(v, ctx)
-
 
 def expand_forcore_tuple_targets(module: Node, ctx: CompileContext) -> Node:
     _tte_walk(module, ctx)
@@ -1219,139 +1210,134 @@ def _expand_tuple_unpack_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> 
     """Expand Assign(target=Tuple, value=expr) into temp + individual assigns."""
     result: list[JsonVal] = _empty_jv_list()
     for stmt in stmts:
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             result.append(stmt)
             continue
         stmt_node: Node = jv_dict(stmt)
         kind = nd_kind(stmt_node)
-        # Recurse into block-creating statements first
         if _is_function_like_kind(kind) or kind == CLASS_DEF:
             body = stmt_node.get("body")
-            if isinstance(body, list):
-                stmt["body"] = _expand_tuple_unpack_in_stmts(body, ctx)
-            mg = stmt.get("main_guard_body")
-            if isinstance(mg, list):
-                stmt["main_guard_body"] = _expand_tuple_unpack_in_stmts(mg, ctx)
+            if jv_is_list(body):
+                stmt_node["body"] = _expand_tuple_unpack_in_stmts(jv_list(body), ctx)
+            mg = stmt_node.get("main_guard_body")
+            if jv_is_list(mg):
+                stmt_node["main_guard_body"] = _expand_tuple_unpack_in_stmts(jv_list(mg), ctx)
         elif kind in (IF, WHILE, FOR, FOR_RANGE, FOR_CORE, TRY):
-            for key in ("body", "orelse", "finalbody"):
-                nested = stmt.get(key)
-                if isinstance(nested, list):
-                    stmt[key] = _expand_tuple_unpack_in_stmts(nested, ctx)
+            for key in ["body", "orelse", "finalbody"]:
+                nested = stmt_node.get(key)
+                if jv_is_list(nested):
+                    stmt_node[key] = _expand_tuple_unpack_in_stmts(jv_list(nested), ctx)
             handlers = stmt_node.get("handlers")
-            if isinstance(handlers, list):
-                for h in handlers:
-                    if isinstance(h, dict):
-                        hb = h.get("body")
-                        if isinstance(hb, list):
-                            h["body"] = _expand_tuple_unpack_in_stmts(hb, ctx)
-
-        # Check for tuple unpack Assign
+            if jv_is_list(handlers):
+                for h in jv_list(handlers):
+                    if not jv_is_dict(h):
+                        continue
+                    h_node: Node = jv_dict(h)
+                    hb = h_node.get("body")
+                    if jv_is_list(hb):
+                        h_node["body"] = _expand_tuple_unpack_in_stmts(jv_list(hb), ctx)
         if kind != ASSIGN:
             result.append(stmt_node)
             continue
-        target = stmt.get("target")
-        if not isinstance(target, dict) or target.get("kind") != TUPLE:
+        target = stmt_node.get("target")
+        if not jv_is_dict(target):
             result.append(stmt_node)
             continue
-        target_node: Node = cast(dict[str, JsonVal], target)
+        target_node: Node = jv_dict(target)
+        if nd_kind(target_node) != TUPLE:
+            result.append(stmt_node)
+            continue
         elements = target_node.get("elements")
-        if not isinstance(elements, list):
+        if not jv_is_list(elements):
             result.append(stmt_node)
             continue
-        elements_list: list[JsonVal] = cast(list[JsonVal], elements)
+        elements_list = jv_list(elements)
         if len(elements_list) == 0:
             result.append(stmt_node)
             continue
-        value = stmt.get("value")
-
-        # Detect swap pattern: a, b = b, a → Swap node
-        if isinstance(value, dict) and value.get("kind") == TUPLE and len(elements_list) == 2:
-            val_elements = value.get("elements")
-            if isinstance(val_elements, list) and len(val_elements) == 2:
-                val_elements_list: list[JsonVal] = cast(list[JsonVal], val_elements)
-                le0 = cast(dict[str, JsonVal], elements_list[0]) if isinstance(elements_list[0], dict) else {}
-                le1 = cast(dict[str, JsonVal], elements_list[1]) if isinstance(elements_list[1], dict) else {}
-                re0 = cast(dict[str, JsonVal], val_elements_list[0]) if isinstance(val_elements_list[0], dict) else {}
-                re1 = cast(dict[str, JsonVal], val_elements_list[1]) if isinstance(val_elements_list[1], dict) else {}
-                # Check if targets[0]=rhs[1] and targets[1]=rhs[0] (cross reference)
-                if _same_lvalue(le0, re1) and _same_lvalue(le1, re0):
-                    swap_node: Node = {}
+        value = stmt_node.get("value")
+        if jv_is_dict(value) and nd_kind(jv_dict(value)) == TUPLE and len(elements_list) == 2:
+            value_node_tuple: Node = jv_dict(value)
+            val_elements = value_node_tuple.get("elements")
+            if jv_is_list(val_elements):
+                val_elements_list = jv_list(val_elements)
+                lefts: list[Node] = []
+                rights: list[Node] = []
+                for elem in elements_list:
+                    if jv_is_dict(elem):
+                        lefts.append(jv_dict(elem))
+                for elem in val_elements_list:
+                    if jv_is_dict(elem):
+                        rights.append(jv_dict(elem))
+                if len(lefts) == 2 and len(rights) == 2 and _same_lvalue(lefts[0], rights[1]) and _same_lvalue(lefts[1], rights[0]):
+                    swap_node: Node = _empty_node()
                     swap_node["kind"] = SWAP
-                    swap_node["left"] = deep_copy_json(le0)
-                    swap_node["right"] = deep_copy_json(le1)
+                    swap_node["left"] = deep_copy_json(lefts[0])
+                    swap_node["right"] = deep_copy_json(lefts[1])
                     result.append(swap_node)
                     continue
-
         val_rt = ""
-        if isinstance(value, dict):
-            value_node: Node = cast(dict[str, JsonVal], value)
-            val_rt = jv_str(value_node.get("resolved_type"))
-        target_rt = jv_str(target_node.get("resolved_type"))
+        if jv_is_dict(value):
+            value_node: Node = jv_dict(value)
+            val_rt = "" + jv_str(value_node.get("resolved_type", ""))
+        target_rt = "" + jv_str(target_node.get("resolved_type", ""))
         elem_types: list[str] = _parse_tuple_element_types(target_rt)
         if len(elem_types) == 0:
             elem_types = _parse_tuple_element_types(val_rt)
-
-        tuple_style: str = ctx.lowering_profile.tuple_unpack_style
-        if (tuple_style == "structured_binding" or tuple_style == "pattern_match") and _tuple_unpack_targets_are_simple_names(elements_list):
+        if ((ctx.lowering_profile.tuple_unpack_style == "structured_binding") or (ctx.lowering_profile.tuple_unpack_style == "pattern_match")) and _tuple_unpack_targets_are_simple_names(elements_list):
             result.append(_make_tuple_unpack_high_level(TUPLE_UNPACK, elements_list, value, elem_types))
             continue
-        if tuple_style == "multi_return" and _tuple_unpack_targets_are_simple_names(elements_list):
+        if ctx.lowering_profile.tuple_unpack_style == "multi_return" and _tuple_unpack_targets_are_simple_names(elements_list):
             result.append(_make_tuple_unpack_high_level(MULTI_ASSIGN, elements_list, value, elem_types))
             continue
-
-        # Generate: _tmp = value
-        tmp_name: str = ctx.next_tuple_tmp_name()
+        tmp_name = _local_tmp_name("__tuple_unpack_", stmt_node, len(result))
         tmp_value, tmp_rt = _make_tuple_unpack_source(value, val_rt, target_rt)
-        tmp_target: Node = {}
+        tmp_target: Node = _empty_node()
         tmp_target["kind"] = NAME
         tmp_target["id"] = tmp_name
         tmp_target["resolved_type"] = tmp_rt
-        tmp_assign: Node = {}
+        tmp_assign: Node = _empty_node()
         tmp_assign["kind"] = ASSIGN
         tmp_assign["target"] = tmp_target
         tmp_assign["value"] = tmp_value
         tmp_assign["declare"] = True
         tmp_assign["decl_type"] = tmp_rt
         result.append(tmp_assign)
-
-        # Parse tuple element types from the effective tuple source.
         elem_types = _parse_tuple_element_types(tmp_rt)
         if len(elem_types) == 0:
             elem_types = _parse_tuple_element_types(target_rt)
-
-        # Generate: x = _tmp[0], y = _tmp[1], ...
-        for i, elem in enumerate(elements_list):
-            if not isinstance(elem, dict):
+        i = 0
+        for elem in elements_list:
+            if not jv_is_dict(elem):
                 continue
             elem_rt = elem_types[i] if i < len(elem_types) else "unknown"
-            idx_value: Node = {}
+            idx_value: Node = _empty_node()
             idx_value["kind"] = NAME
             idx_value["id"] = tmp_name
             idx_value["resolved_type"] = tmp_rt
-            idx_slice: Node = {}
+            idx_slice: Node = _empty_node()
             idx_slice["kind"] = CONSTANT
             idx_slice["value"] = i
             idx_slice["resolved_type"] = "int64"
-            idx_node: Node = {}
+            idx_node: Node = _empty_node()
             idx_node["kind"] = SUBSCRIPT
             idx_node["value"] = idx_value
             idx_node["slice"] = idx_slice
             idx_node["resolved_type"] = elem_rt
-            _append_tuple_unpack_target_assignments(result, cast(Node, elem), idx_node, elem_rt, ctx)
-
+            _append_tuple_unpack_target_assignments(result, jv_dict(elem), idx_node, elem_rt, ctx)
+            i += 1
     return result
-
 
 def _tuple_unpack_targets_are_simple_names(elements: list[JsonVal]) -> bool:
     for elem in elements:
-        if not isinstance(elem, dict):
+        if not jv_is_dict(elem):
             return False
-        if _sk(cast(Node, elem)) not in (NAME, "NameTarget"):
+        elem_node: Node = jv_dict(elem)
+        if _sk(elem_node) not in (NAME, "NameTarget"):
             return False
-        if jv_str(elem.get("id")) == "":
+        if "" + jv_str(elem_node.get("id", "")) == "":
             return False
     return True
-
 
 def _append_tuple_unpack_target_assignments(
     out: list[JsonVal],
@@ -1365,11 +1351,11 @@ def _append_tuple_unpack_target_assignments(
         elem_name = jv_str(target.get("id"))
         if elem_name == "":
             return
-        elem_target: Node = {}
+        elem_target: Node = _empty_node()
         elem_target["kind"] = NAME
         elem_target["id"] = elem_name
         elem_target["resolved_type"] = elem_rt
-        elem_assign: Node = {}
+        elem_assign: Node = _empty_node()
         elem_assign["kind"] = ASSIGN
         elem_assign["target"] = elem_target
         elem_assign["value"] = value
@@ -1378,7 +1364,7 @@ def _append_tuple_unpack_target_assignments(
         out.append(elem_assign)
         return
 
-    elem_assign: Node = {}
+    elem_assign: Node = _empty_node()
     elem_assign["kind"] = ASSIGN
     elem_assign["target"] = deep_copy_json(target)
     elem_assign["value"] = value
@@ -1387,68 +1373,33 @@ def _append_tuple_unpack_target_assignments(
 
 
 def _same_lvalue(a: Node, b: Node) -> bool:
-    """Check if two nodes refer to the same l-value (Name or Subscript)."""
-    if not isinstance(a, dict) or not isinstance(b, dict):
-        return False
     ak = nd_kind(a)
     bk = nd_kind(b)
     if ak != bk:
         return False
     if ak == NAME:
-        return a.get("id", "") == b.get("id", "") and a.get("id", "") != ""
+        a_id = "" + jv_str(a.get("id", ""))
+        b_id = "" + jv_str(b.get("id", ""))
+        return a_id != "" and a_id == b_id
     if ak == SUBSCRIPT:
-        av = a.get("value")
-        bv = b.get("value")
-        asl = a.get("slice")
-        bsl = b.get("slice")
-        av_node: Node = {}
-        bv_node: Node = {}
-        asl_node: Node = {}
-        bsl_node: Node = {}
-        if isinstance(av, dict):
-            av_node = cast(dict[str, JsonVal], av)
-        if isinstance(bv, dict):
-            bv_node = cast(dict[str, JsonVal], bv)
-        if isinstance(asl, dict):
-            asl_node = cast(dict[str, JsonVal], asl)
-        if isinstance(bsl, dict):
-            bsl_node = cast(dict[str, JsonVal], bsl)
-        return _same_lvalue(av_node, bv_node) and _same_lvalue(asl_node, bsl_node)
+        if not jv_is_dict(a.get("value")) or not jv_is_dict(b.get("value")):
+            return False
+        if not jv_is_dict(a.get("slice")) or not jv_is_dict(b.get("slice")):
+            return False
+        return _same_lvalue(jv_dict(a.get("value")), jv_dict(b.get("value"))) and _same_lvalue(jv_dict(a.get("slice")), jv_dict(b.get("slice")))
     if ak == CONSTANT:
-        return a.get("value") == b.get("value")
+        return ("" + jv_str(a.get("value", ""))) == ("" + jv_str(b.get("value", "")))
     if ak == ATTRIBUTE:
-        av = a.get("value")
-        bv = b.get("value")
-        av_node: Node = {}
-        bv_node: Node = {}
-        if isinstance(av, dict):
-            av_node = cast(dict[str, JsonVal], av)
-        if isinstance(bv, dict):
-            bv_node = cast(dict[str, JsonVal], bv)
-        return (a.get("attr", "") == b.get("attr", "") and
-                _same_lvalue(av_node, bv_node))
+        if not jv_is_dict(a.get("value")) or not jv_is_dict(b.get("value")):
+            return False
+        return ("" + jv_str(a.get("attr", ""))) == ("" + jv_str(b.get("attr", ""))) and _same_lvalue(jv_dict(a.get("value")), jv_dict(b.get("value")))
     if ak == BIN_OP:
-        al = a.get("left")
-        bl = b.get("left")
-        ar = a.get("right")
-        br = b.get("right")
-        al_node: Node = {}
-        bl_node: Node = {}
-        ar_node: Node = {}
-        br_node: Node = {}
-        if isinstance(al, dict):
-            al_node = cast(dict[str, JsonVal], al)
-        if isinstance(bl, dict):
-            bl_node = cast(dict[str, JsonVal], bl)
-        if isinstance(ar, dict):
-            ar_node = cast(dict[str, JsonVal], ar)
-        if isinstance(br, dict):
-            br_node = cast(dict[str, JsonVal], br)
-        return (a.get("op", "") == b.get("op", "") and
-                _same_lvalue(al_node, bl_node) and
-                _same_lvalue(ar_node, br_node))
+        if not jv_is_dict(a.get("left")) or not jv_is_dict(b.get("left")):
+            return False
+        if not jv_is_dict(a.get("right")) or not jv_is_dict(b.get("right")):
+            return False
+        return ("" + jv_str(a.get("op", ""))) == ("" + jv_str(b.get("op", ""))) and _same_lvalue(jv_dict(a.get("left")), jv_dict(b.get("left"))) and _same_lvalue(jv_dict(a.get("right")), jv_dict(b.get("right")))
     return False
-
 
 def _parse_tuple_element_types(rt: str) -> list[str]:
     """Parse "tuple[int64,str,float64]" into ["int64", "str", "float64"]."""
@@ -1504,7 +1455,7 @@ def _split_type_args(type_name: str) -> list[str]:
 
 
 def _list_elem_type(type_name: str) -> str:
-    norm: str = normalize_type_name(type_name)
+    norm = "" + normalize_type_name(type_name)
     if not norm.startswith("list[") or not norm.endswith("]"):
         return ""
     parts = _split_type_args(norm)
@@ -1514,27 +1465,27 @@ def _list_elem_type(type_name: str) -> str:
 
 
 def _make_tuple_unpack_source(value: JsonVal, source_type: str, target_type: str) -> tuple[JsonVal, str]:
-    normalized_source: str = normalize_type_name(source_type)
-    normalized_target: str = normalize_type_name(target_type)
+    normalized_source = "" + normalize_type_name(source_type)
+    normalized_target = "" + normalize_type_name(target_type)
     if normalized_target.startswith("tuple["):
         if normalized_source.startswith("tuple["):
             return value, normalized_source
-        if "None" in normalized_source.split(" | "):
-            out: Node = {}
+        if normalized_source.find("None") >= 0:
+            out: Node = _empty_node()
             out["kind"] = UNBOX
             out["value"] = deep_copy_json(value)
             out["resolved_type"] = normalized_target
             out["borrow_kind"] = "value"
-            out["casts"] = []
+            out["casts"] = _empty_jv_list()
             out["target"] = normalized_target
             out["on_fail"] = "raise"
-            if isinstance(value, dict):
+            if jv_is_dict(value):
                 value_node: Node = cast(dict[str, JsonVal], value)
                 span = value_node.get("source_span")
-                if isinstance(span, dict):
+                if jv_is_dict(span):
                     out["source_span"] = span
-                repr_text = value_node.get("repr")
-                if isinstance(repr_text, str) and repr_text != "":
+                repr_text = "" + jv_str(value_node.get("repr", ""))
+                if repr_text != "":
                     out["repr"] = repr_text
             return out, normalized_target
     return value, normalized_source
@@ -1546,17 +1497,19 @@ def _make_tuple_unpack_high_level(
     value: JsonVal,
     elem_types: list[str],
 ) -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = style_kind
-    targets: list[JsonVal] = []
-    target_types: list[JsonVal] = []
-    for i, elem in enumerate(elements_list):
-        if not isinstance(elem, dict):
+    targets: list[JsonVal] = _empty_jv_list()
+    target_types: list[JsonVal] = _empty_jv_list()
+    i = 0
+    for elem in elements_list:
+        if not jv_is_dict(elem):
             continue
+        elem_node: Node = jv_dict(elem)
         targets.append(deep_copy_json(elem))
         elem_rt = elem_types[i] if i < len(elem_types) else ""
         if elem_rt in ("", "unknown"):
-            elem_rt = normalize_type_name(elem.get("resolved_type"))
+            elem_rt = "" + normalize_type_name("" + jv_str(elem_node.get("resolved_type", "")))
         target_types.append(elem_rt)
     out["targets"] = targets
     out["target_types"] = target_types
@@ -1564,38 +1517,36 @@ def _make_tuple_unpack_high_level(
     out["declare"] = True
     return out
 
-
 def expand_tuple_unpack(module: Node, ctx: CompileContext) -> Node:
     """Expand all Assign(target=Tuple, ...) in the module."""
     body = module.get("body")
-    if isinstance(body, list):
-        body_list: list[JsonVal] = cast(list[JsonVal], body)
-        module["body"] = _expand_tuple_unpack_in_stmts(body_list, ctx)
+    if jv_is_list(body):
+        module["body"] = _expand_tuple_unpack_in_stmts(jv_list(body), ctx)
     mg = module.get("main_guard_body")
-    if isinstance(mg, list):
-        mg_list: list[JsonVal] = cast(list[JsonVal], mg)
-        module["main_guard_body"] = _expand_tuple_unpack_in_stmts(mg_list, ctx)
+    if jv_is_list(mg):
+        module["main_guard_body"] = _expand_tuple_unpack_in_stmts(jv_list(mg), ctx)
     if ctx.lowering_profile.tuple_unpack_style == "multi_return":
-        _rewrite_multi_return_function_types(module)
+        module_jv: JsonVal = module
+        _rewrite_multi_return_function_types(module_jv)
     return module
 
-
 def _rewrite_multi_return_function_types(node: JsonVal) -> None:
-    if isinstance(node, list):
-        for item in node:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _rewrite_multi_return_function_types(item)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    kind = _sk(node)
+    node_node: Node = jv_dict(node)
+    kind = _sk(node_node)
     if kind == FUNCTION_DEF or kind == CLOSURE_DEF:
-        ret = node.get("return_type")
-        if isinstance(ret, str):
-            norm = normalize_type_name(ret)
+        ret = "" + jv_str(node_node.get("return_type", ""))
+        if ret != "":
+            norm = "" + normalize_type_name(ret)
             if norm.startswith("tuple[") and norm.endswith("]"):
-                node["return_type"] = "multi_return[" + norm[6:]
-    for value in node.values():
-        if isinstance(value, dict) or isinstance(value, list):
+                node_node["return_type"] = "multi_return[" + norm[6:]
+    for value in node_node.values():
+        if jv_is_dict(value) or jv_is_list(value):
             _rewrite_multi_return_function_types(value)
 
 
@@ -1605,291 +1556,170 @@ def _rewrite_multi_return_function_types(node: JsonVal) -> None:
 
 def _try_lower_enum_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
     ip = stmt.get("iter_plan")
-    if not isinstance(ip, dict):
+    if not jv_is_dict(ip):
         return None
     ip_node: Node = jv_dict(ip)
     if nd_kind(ip_node) != RUNTIME_ITER_FOR_PLAN:
         return None
     ie = ip_node.get("iter_expr")
-    if not isinstance(ie, dict):
+    if not jv_is_dict(ie):
         return None
     ie_node: Node = jv_dict(ie)
-    st: str = jv_str(ie_node.get("semantic_tag", ""))
+    st = "" + jv_str(ie_node.get("semantic_tag", ""))
     is_enum = st == "iter.enumerate"
     if not is_enum:
         func = ie_node.get("func")
-        if isinstance(func, dict):
+        if jv_is_dict(func):
             func_node: Node = jv_dict(func)
-            func_id: str = jv_str(func_node["id"] if "id" in func_node else "")
-            func_attr: str = jv_str(func_node["attr"] if "attr" in func_node else "")
-            is_enum = func_id == "enumerate" or func_attr == "enumerate"
+            is_enum = ("" + jv_str(func_node.get("id", ""))) == "enumerate" or ("" + jv_str(func_node.get("attr", ""))) == "enumerate"
     if not is_enum:
         return None
     args_obj = ie_node.get("args")
-    if not isinstance(args_obj, list):
+    if not jv_is_list(args_obj):
         return None
-    args_list: list[JsonVal] = jv_list(args_obj)
-    if len(args_list) < 1:
+    xs_nodes: list[Node] = []
+    for arg in jv_list(args_obj):
+        if jv_is_dict(arg):
+            xs_nodes.append(jv_dict(arg))
+            break
+    if len(xs_nodes) == 0:
         return None
-    iterable = args_list[0]
-    start_val = 0
-    if len(args_list) >= 2:
-        sa = args_list[1]
-        if isinstance(sa, dict) and nd_kind(jv_dict(sa)) == CONSTANT:
-            sa_node: Node = jv_dict(sa)
-            sv = sa_node.get("value")
-            if isinstance(sv, int):
-                start_val = sv
+    xs_node = xs_nodes[0]
+    xs_type = "" + jv_str(xs_node.get("resolved_type", ""))
+    if xs_type in ("", "object", "Any", "unknown"):
+        return None
     tp = stmt.get("target_plan")
-    if not isinstance(tp, dict):
+    if not jv_is_dict(tp):
         return None
     tp_node: Node = jv_dict(tp)
-    body_obj = stmt.get("body")
-    if not isinstance(body_obj, list):
+    v_name = "" + jv_str(tp_node.get("id", ""))
+    v_type = "" + jv_str(tp_node.get("target_type", ""))
+    if v_name == "" or v_type in ("", "object", "Any", "unknown"):
         return None
-    body_list: list[JsonVal] = jv_list(body_obj)
-    idx_name = ""
-    val_name = ""
-    remaining: list[JsonVal] = []
-    iter_tmp: str = jv_str(tp_node.get("id", ""))
-    for s in body_list:
-        if not isinstance(s, dict):
-            remaining.append(s)
-            continue
-        s_node: Node = jv_dict(s)
-        if nd_kind(s_node) == ASSIGN:
-            target = s_node.get("target")
-            value = s_node.get("value")
-            if isinstance(target, dict) and isinstance(value, dict):
-                target_node: Node = jv_dict(target)
-                value_node: Node = jv_dict(value)
-                if nd_kind(value_node) != SUBSCRIPT:
-                    remaining.append(s)
-                    continue
-                sl = value_node.get("slice")
-                if isinstance(sl, dict):
-                    sl_node: Node = jv_dict(sl)
-                    if nd_kind(sl_node) != CONSTANT:
-                        remaining.append(s)
-                        continue
-                    idx_v = sl_node.get("value")
-                    owner = value_node.get("value")
-                    if isinstance(owner, dict):
-                        owner_node: Node = jv_dict(owner)
-                        if jv_str(owner_node.get("id", "")) != iter_tmp:
-                            remaining.append(s)
-                            continue
-                        name: str = jv_str(target_node.get("id", ""))
-                        if idx_v == 0 and name != "":
-                            idx_name = name
-                            continue
-                        elif idx_v == 1 and name != "":
-                            val_name = name
-                            continue
-        remaining.append(s)
-    if idx_name == "" or val_name == "":
-        # Non-destructured case: for pair in enumerate(xs, start)
-        # target_plan has a non-tuple id (e.g. "pair") with type tuple[int64, T]
-        pair_name: str = jv_str(tp_node.get("id", ""))
-        pair_type: str = jv_str(tp_node.get("target_type", ""))
-        if pair_name == "" or not pair_type.startswith("tuple["):
-            return None
-        # Extract element type T from tuple[int64, T]
-        inner_types = _split_comma_types(pair_type[6:-1])
-        elem_type = inner_types[1] if len(inner_types) >= 2 else "object"
-        if elem_type in ("", "object", "Any", "unknown"):
-            return None
-        counter_nd = ctx.next_enum_name()
-        elem_var = ctx.next_enum_name()
-        # init: counter_nd = start_val
-        nd_init_target: Node = {}
-        nd_init_target["kind"] = NAME
-        nd_init_target["id"] = counter_nd
-        nd_init_target["resolved_type"] = "int64"
-        nd_init_value: Node = {}
-        nd_init_value["kind"] = CONSTANT
-        nd_init_value["value"] = start_val
-        nd_init_value["resolved_type"] = "int64"
-        nd_init: Node = {}
-        nd_init["kind"] = ASSIGN
-        nd_init["target"] = nd_init_target
-        nd_init["value"] = nd_init_value
-        nd_init["decl_type"] = "int64"
-        nd_init["declare"] = True
-        # iter over xs with new loop variable elem_var
-        nd_nip: Node = {}
-        nd_nip["kind"] = RUNTIME_ITER_FOR_PLAN
-        nd_nip["iter_expr"] = deep_copy_json(iterable)
-        nd_nip["dispatch_mode"] = ip_node.get("dispatch_mode", "native")
-        nd_nip["init_op"] = "ObjIterInit"
-        nd_nip["next_op"] = "ObjIterNext"
-        nd_ntp: Node = {}
-        nd_ntp["kind"] = NAME_TARGET
-        nd_ntp["id"] = elem_var
-        nd_ntp["target_type"] = elem_type
-        # pair = (counter_nd, elem_var)
-        nd_ctr_name: Node = {}
-        nd_ctr_name["kind"] = NAME
-        nd_ctr_name["id"] = counter_nd
-        nd_ctr_name["resolved_type"] = "int64"
-        nd_elem_name: Node = {}
-        nd_elem_name["kind"] = NAME
-        nd_elem_name["id"] = elem_var
-        nd_elem_name["resolved_type"] = elem_type
-        nd_tuple: Node = {}
-        nd_tuple["kind"] = TUPLE
-        nd_tuple["resolved_type"] = pair_type
-        tuple_elems: list[JsonVal] = _empty_jv_list()
-        tuple_elems.append(nd_ctr_name)
-        tuple_elems.append(nd_elem_name)
-        nd_tuple["elements"] = tuple_elems
-        nd_pair_target: Node = {}
-        nd_pair_target["kind"] = NAME
-        nd_pair_target["id"] = pair_name
-        nd_pair_target["resolved_type"] = pair_type
-        nd_pair_assign: Node = {}
-        nd_pair_assign["kind"] = ASSIGN
-        nd_pair_assign["target"] = nd_pair_target
-        nd_pair_assign["value"] = nd_tuple
-        nd_pair_assign["decl_type"] = pair_type
-        nd_pair_assign["declare"] = True
-        nd_increment_target: Node = {}
-        nd_increment_target["kind"] = NAME
-        nd_increment_target["id"] = counter_nd
-        nd_increment_target["resolved_type"] = "int64"
-        nd_increment_value: Node = {}
-        nd_increment_value["kind"] = CONSTANT
-        nd_increment_value["value"] = 1
-        nd_increment_value["resolved_type"] = "int64"
-        nd_increment: Node = {}
-        nd_increment["kind"] = AUG_ASSIGN
-        nd_increment["target"] = nd_increment_target
-        nd_increment["op"] = "Add"
-        nd_increment["value"] = nd_increment_value
-        nd_nb: list[JsonVal] = _empty_jv_list()
-        nd_nb.append(nd_pair_assign)
-        for item in body_list:
-            nd_nb.append(item)
-        nd_nb.append(nd_increment)
-        nd_nf: Node = {}
-        nd_nf["kind"] = FOR_CORE
-        nd_nf["iter_mode"] = stmt.get("iter_mode", "runtime_protocol")
-        nd_nf["iter_plan"] = nd_nip
-        nd_nf["target_plan"] = nd_ntp
-        nd_nf["body"] = nd_nb
-        orelse_obj = stmt.get("orelse")
-        if isinstance(orelse_obj, list):
-            nd_nf["orelse"] = jv_list(orelse_obj)
-        else:
-            nd_nf["orelse"] = _empty_jv_list()
-        nd_out: list[JsonVal] = _empty_jv_list()
-        nd_out.append(nd_init)
-        nd_out.append(nd_nf)
-        return nd_out
-    counter = ctx.next_enum_name()
-    init_target: Node = {}
+    body_obj = stmt.get("body")
+    if not jv_is_list(body_obj):
+        return None
+    body_list = jv_list(body_obj)
+    counter = _local_tmp_name("__enum_", stmt)
+    len_func: Node = _empty_node()
+    len_func["kind"] = NAME
+    len_func["id"] = "len"
+    len_func["resolved_type"] = "callable"
+    len_call: Node = _empty_node()
+    len_call["kind"] = CALL
+    len_call["resolved_type"] = "int64"
+    len_call["func"] = len_func
+    len_args: list[JsonVal] = _empty_jv_list()
+    len_args.append(deep_copy_json(xs_node))
+    len_call["args"] = len_args
+    len_call["keywords"] = _empty_jv_list()
+    len_call["lowered_kind"] = "BuiltinCall"
+    len_call["runtime_call"] = "len"
+    len_call["runtime_module_id"] = "pytra.core.py_runtime"
+    len_call["runtime_symbol"] = "len"
+    len_call["runtime_call_adapter_kind"] = "builtin"
+    len_call["semantic_tag"] = "core.len"
+    one: Node = _empty_node()
+    one["kind"] = CONSTANT
+    one["value"] = 1
+    one["resolved_type"] = "int64"
+    start_expr: Node = _empty_node()
+    start_expr["kind"] = BIN_OP
+    start_expr["resolved_type"] = "int64"
+    start_expr["left"] = len_call
+    start_expr["op"] = "Sub"
+    start_expr["right"] = one
+    init_target: Node = _empty_node()
     init_target["kind"] = NAME
     init_target["id"] = counter
     init_target["resolved_type"] = "int64"
-    init_value: Node = {}
-    init_value["kind"] = CONSTANT
-    init_value["value"] = start_val
-    init_value["resolved_type"] = "int64"
-    init: Node = {}
+    init: Node = _empty_node()
     init["kind"] = ASSIGN
     init["target"] = init_target
-    init["value"] = init_value
-    init["decl_type"] = "int64"
+    init["value"] = start_expr
     init["declare"] = True
-    raw_tt: str = jv_str(tp_node.get("target_type", ""))
-    vtt = raw_tt
-    if raw_tt.startswith("tuple[") and raw_tt.endswith("]"):
-        inner = raw_tt[6:-1]
-        parts = _split_comma_types(inner)
-        if len(parts) >= 2:
-            vtt = parts[1]
-    ntp: Node = {}
+    init["decl_type"] = "int64"
+    nip: Node = _empty_node()
+    for k, v in ip_node.items():
+        nip[k] = deep_copy_json(v)
+    ntp: Node = _empty_node()
     ntp["kind"] = NAME_TARGET
-    ntp["id"] = val_name
-    ntp["target_type"] = vtt
-    nip: Node = {}
-    nip["kind"] = RUNTIME_ITER_FOR_PLAN
-    nip["iter_expr"] = deep_copy_json(iterable)
-    nip["dispatch_mode"] = ip_node.get("dispatch_mode", "native")
-    nip["init_op"] = "ObjIterInit"
-    nip["next_op"] = "ObjIterNext"
-    assign_target: Node = {}
-    assign_target["kind"] = NAME
-    assign_target["id"] = idx_name
-    assign_target["resolved_type"] = "int64"
-    assign_value: Node = {}
-    assign_value["kind"] = NAME
-    assign_value["id"] = counter
-    assign_value["resolved_type"] = "int64"
-    assign_idx: Node = {}
+    ntp["id"] = counter
+    ntp["target_type"] = "int64"
+    assign_idx: Node = _empty_node()
     assign_idx["kind"] = ASSIGN
-    assign_idx["target"] = assign_target
-    assign_idx["value"] = assign_value
-    assign_idx["decl_type"] = "int64"
+    idx_target: Node = _empty_node()
+    idx_target["kind"] = NAME
+    idx_target["id"] = v_name
+    idx_target["resolved_type"] = v_type
+    assign_idx["target"] = idx_target
+    idx_value: Node = _empty_node()
+    idx_value["kind"] = SUBSCRIPT
+    idx_value["value"] = deep_copy_json(xs_node)
+    idx_slice: Node = _empty_node()
+    idx_slice["kind"] = NAME
+    idx_slice["id"] = counter
+    idx_slice["resolved_type"] = "int64"
+    idx_value["slice"] = idx_slice
+    idx_value["resolved_type"] = v_type
+    assign_idx["value"] = idx_value
     assign_idx["declare"] = True
-    increment_target: Node = {}
+    assign_idx["decl_type"] = v_type
+    increment_target: Node = _empty_node()
     increment_target["kind"] = NAME
     increment_target["id"] = counter
     increment_target["resolved_type"] = "int64"
-    increment_value: Node = {}
+    increment_value: Node = _empty_node()
     increment_value["kind"] = CONSTANT
     increment_value["value"] = 1
     increment_value["resolved_type"] = "int64"
-    increment: Node = {}
+    increment: Node = _empty_node()
     increment["kind"] = AUG_ASSIGN
     increment["target"] = increment_target
     increment["op"] = "Add"
     increment["value"] = increment_value
-    nb: list[JsonVal] = []
+    nb: list[JsonVal] = _empty_jv_list()
     nb.append(assign_idx)
-    for item in remaining:
+    for item in body_list:
         nb.append(item)
     nb.append(increment)
-    nf: Node = {}
+    nf: Node = _empty_node()
     nf["kind"] = FOR_CORE
     nf["iter_mode"] = stmt.get("iter_mode", "runtime_protocol")
     nf["iter_plan"] = nip
     nf["target_plan"] = ntp
     nf["body"] = nb
-    nf["orelse"] = stmt.get("orelse", [])
-    out_nodes: list[JsonVal] = []
+    nf["orelse"] = stmt.get("orelse", _empty_jv_list())
+    out_nodes: list[JsonVal] = _empty_jv_list()
     out_nodes.append(init)
     out_nodes.append(nf)
     return out_nodes
 
-
 def _enum_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
     result: list[JsonVal] = _empty_jv_list()
     for stmt in stmts:
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             result.append(stmt)
             continue
-        kind = stmt.get("kind", "")
+        stmt_node: Node = jv_dict(stmt)
+        kind = "" + jv_str(stmt_node.get("kind", ""))
         if kind == FOR_CORE:
-            expanded = _try_lower_enum_forcore(stmt, ctx)
-            if isinstance(expanded, list):
-                expanded_list: list[JsonVal] = cast(list[JsonVal], expanded)
-                for item in expanded_list:
+            expanded = _try_lower_enum_forcore(stmt_node, ctx)
+            if jv_is_list(expanded):
+                for item in jv_list(expanded):
                     result.append(item)
                 continue
-        for key in ("body", "orelse"):
-            nested = stmt.get(key)
-            if isinstance(nested, list):
-                stmt[key] = _enum_in_stmts(nested, ctx)
-        result.append(stmt)
+        for key in ["body", "orelse"]:
+            nested = stmt_node.get(key)
+            if jv_is_list(nested):
+                stmt_node[key] = _enum_in_stmts(jv_list(nested), ctx)
+        result.append(stmt_node)
     return result
-
 
 def lower_enumerate(module: Node, ctx: CompileContext) -> Node:
     body = module.get("body")
-    if isinstance(body, list):
-        body_list: list[JsonVal] = cast(list[JsonVal], body)
-        module["body"] = _enum_in_stmts(body_list, ctx)
+    if jv_is_list(body):
+        module["body"] = _enum_in_stmts(jv_list(body), ctx)
     return module
 
 
@@ -1899,61 +1729,61 @@ def lower_enumerate(module: Node, ctx: CompileContext) -> Node:
 
 def _try_lower_reversed_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
     ip = stmt.get("iter_plan")
-    if not isinstance(ip, dict):
+    if not jv_is_dict(ip):
         return None
-    ip_node: Node = cast(dict[str, JsonVal], ip)
+    ip_node: Node = jv_dict(ip)
     if nd_kind(ip_node) != RUNTIME_ITER_FOR_PLAN:
         return None
     ie = ip_node.get("iter_expr")
-    if not isinstance(ie, dict):
+    if not jv_is_dict(ie):
         return None
-    ie_node: Node = cast(dict[str, JsonVal], ie)
-    st: str = jv_str(ie_node.get("semantic_tag", ""))
+    ie_node: Node = jv_dict(ie)
+    st = "" + jv_str(ie_node.get("semantic_tag", ""))
     is_rev = st == "iter.reversed"
     if not is_rev:
         func = ie_node.get("func")
-        if isinstance(func, dict):
-            func_node: Node = cast(dict[str, JsonVal], func)
-            is_rev = func_node.get("id") == "reversed" or func_node.get("attr") == "reversed"
+        if jv_is_dict(func):
+            func_node: Node = jv_dict(func)
+            is_rev = ("" + jv_str(func_node.get("id", ""))) == "reversed" or ("" + jv_str(func_node.get("attr", ""))) == "reversed"
     if not is_rev:
         return None
     args_obj = ie_node.get("args")
-    if not isinstance(args_obj, list):
+    if not jv_is_list(args_obj):
         return None
-    args_list: list[JsonVal] = cast(list[JsonVal], args_obj)
-    if len(args_list) < 1:
+    xs_nodes: list[Node] = []
+    for arg in jv_list(args_obj):
+        if jv_is_dict(arg):
+            xs_nodes.append(jv_dict(arg))
+            break
+    if len(xs_nodes) == 0:
         return None
-    xs = args_list[0]
-    if not isinstance(xs, dict):
-        return None
-    xs_node: Node = cast(dict[str, JsonVal], xs)
-    xs_type: str = jv_str(xs_node.get("resolved_type", ""))
+    xs_node = xs_nodes[0]
+    xs_type = "" + jv_str(xs_node.get("resolved_type", ""))
     if xs_type in ("", "object", "Any", "unknown"):
         return None
     tp = stmt.get("target_plan")
-    if not isinstance(tp, dict):
+    if not jv_is_dict(tp):
         return None
-    tp_node: Node = cast(dict[str, JsonVal], tp)
-    v_name: str = jv_str(tp_node.get("id", ""))
-    v_type: str = jv_str(tp_node.get("target_type", ""))
+    tp_node: Node = jv_dict(tp)
+    v_name = "" + jv_str(tp_node.get("id", ""))
+    v_type = "" + jv_str(tp_node.get("target_type", ""))
     if v_name == "" or v_type in ("", "object", "Any", "unknown"):
         return None
     body_obj = stmt.get("body")
-    if not isinstance(body_obj, list):
+    if not jv_is_list(body_obj):
         return None
-    body_list: list[JsonVal] = cast(list[JsonVal], body_obj)
-    counter: str = ctx.next_enum_name()
-    # Build len(xs) call
-    len_func: Node = {}
+    body_list = jv_list(body_obj)
+    counter = _local_tmp_name("__reversed_", stmt)
+    len_func: Node = _empty_node()
     len_func["kind"] = NAME
     len_func["id"] = "len"
     len_func["resolved_type"] = "callable"
-    len_call: Node = {}
+    len_call: Node = _empty_node()
     len_call["kind"] = CALL
     len_call["resolved_type"] = "int64"
     len_call["func"] = len_func
     len_args: list[JsonVal] = _empty_jv_list()
-    len_args.append(deep_copy_json(xs))
+    len_args.append(deep_copy_json(xs_node))
     len_call["args"] = len_args
     len_call["keywords"] = _empty_jv_list()
     len_call["lowered_kind"] = "BuiltinCall"
@@ -1962,52 +1792,47 @@ def _try_lower_reversed_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
     len_call["runtime_symbol"] = "len"
     len_call["runtime_call_adapter_kind"] = "builtin"
     len_call["semantic_tag"] = "core.len"
-    # Build len(xs) - 1
-    one: Node = {}
+    one: Node = _empty_node()
     one["kind"] = CONSTANT
     one["value"] = 1
     one["resolved_type"] = "int64"
-    start_expr: Node = {}
+    start_expr: Node = _empty_node()
     start_expr["kind"] = BIN_OP
     start_expr["resolved_type"] = "int64"
     start_expr["left"] = len_call
     start_expr["op"] = "Sub"
     start_expr["right"] = one
-    # stop = -1, step = -1
-    stop_expr: Node = {}
+    stop_expr: Node = _empty_node()
     stop_expr["kind"] = CONSTANT
     stop_expr["value"] = -1
     stop_expr["resolved_type"] = "int64"
-    step_expr: Node = {}
+    step_expr: Node = _empty_node()
     step_expr["kind"] = CONSTANT
     step_expr["value"] = -1
     step_expr["resolved_type"] = "int64"
-    # iter_plan: StaticRangeForPlan
-    iter_plan: Node = {}
+    iter_plan: Node = _empty_node()
     iter_plan["kind"] = STATIC_RANGE_FOR_PLAN
     iter_plan["start"] = start_expr
     iter_plan["stop"] = stop_expr
     iter_plan["step"] = step_expr
-    # target_plan: counter index
-    ntp: Node = {}
+    ntp: Node = _empty_node()
     ntp["kind"] = NAME_TARGET
     ntp["id"] = counter
     ntp["target_type"] = "int64"
-    # body prepend: v: v_type = xs[counter]
-    idx_name_node: Node = {}
+    idx_name_node: Node = _empty_node()
     idx_name_node["kind"] = NAME
     idx_name_node["id"] = counter
     idx_name_node["resolved_type"] = "int64"
-    sub_node: Node = {}
+    sub_node: Node = _empty_node()
     sub_node["kind"] = SUBSCRIPT
     sub_node["resolved_type"] = v_type
-    sub_node["value"] = deep_copy_json(xs)
+    sub_node["value"] = deep_copy_json(xs_node)
     sub_node["slice"] = idx_name_node
-    assign_target: Node = {}
+    assign_target: Node = _empty_node()
     assign_target["kind"] = NAME
     assign_target["id"] = v_name
     assign_target["resolved_type"] = v_type
-    elem_assign: Node = {}
+    elem_assign: Node = _empty_node()
     elem_assign["kind"] = ASSIGN
     elem_assign["target"] = assign_target
     elem_assign["value"] = sub_node
@@ -2017,50 +1842,48 @@ def _try_lower_reversed_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
     nb.append(elem_assign)
     for item in body_list:
         nb.append(item)
-    nf: Node = {}
+    nf: Node = _empty_node()
     nf["kind"] = FOR_CORE
     nf["iter_mode"] = "static_fastpath"
     nf["iter_plan"] = iter_plan
     nf["target_plan"] = ntp
     nf["body"] = nb
     orelse_obj = stmt.get("orelse")
-    if isinstance(orelse_obj, list):
-        nf["orelse"] = cast(list[JsonVal], orelse_obj)
+    if jv_is_list(orelse_obj):
+        nf["orelse"] = jv_list(orelse_obj)
     else:
         nf["orelse"] = _empty_jv_list()
     return nf
 
-
 def _reversed_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
     result: list[JsonVal] = _empty_jv_list()
     for stmt in stmts:
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             result.append(stmt)
             continue
-        kind = stmt.get("kind", "")
+        stmt_node: Node = jv_dict(stmt)
+        kind = "" + jv_str(stmt_node.get("kind", ""))
         if kind == FOR_CORE:
-            lowered = _try_lower_reversed_forcore(stmt, ctx)
-            if isinstance(lowered, dict):
-                lowered_node: Node = cast(dict[str, JsonVal], lowered)
-                # Recurse into the new body
+            lowered = _try_lower_reversed_forcore(stmt_node, ctx)
+            if jv_is_dict(lowered):
+                lowered_node: Node = jv_dict(lowered)
                 inner = lowered_node.get("body")
-                if isinstance(inner, list):
-                    lowered_node["body"] = _reversed_in_stmts(cast(list[JsonVal], inner), ctx)
+                if jv_is_list(inner):
+                    lowered_node["body"] = _reversed_in_stmts(jv_list(inner), ctx)
                 result.append(lowered_node)
                 continue
-        for key in ("body", "orelse"):
-            nested = stmt.get(key)
-            if isinstance(nested, list):
-                stmt[key] = _reversed_in_stmts(cast(list[JsonVal], nested), ctx)
-        result.append(stmt)
+        for key in ["body", "orelse"]:
+            nested = stmt_node.get(key)
+            if jv_is_list(nested):
+                stmt_node[key] = _reversed_in_stmts(jv_list(nested), ctx)
+        result.append(stmt_node)
     return result
 
 
 def lower_reversed(module: Node, ctx: CompileContext) -> Node:
     body = module.get("body")
-    if isinstance(body, list):
-        body_list: list[JsonVal] = cast(list[JsonVal], body)
-        module["body"] = _reversed_in_stmts(body_list, ctx)
+    if jv_is_list(body):
+        module["body"] = _reversed_in_stmts(jv_list(body), ctx)
     return module
 
 
@@ -2069,26 +1892,28 @@ def lower_reversed(module: Node, ctx: CompileContext) -> Node:
 # ===========================================================================
 
 def _sk(node: JsonVal) -> str:
-    if isinstance(node, dict):
-        k = node.get("kind")
-        if isinstance(k, str):
-            return k
+    if jv_is_dict(node):
+        node_node: Node = jv_dict(node)
+        return "" + jv_str(node_node.get("kind", ""))
     return ""
 
 
 def _str(node: JsonVal, key: str) -> str:
-    if isinstance(node, dict):
-        value = node.get(key)
-        if isinstance(value, str):
-            return value
+    if jv_is_dict(node):
+        node_node: Node = jv_dict(node)
+        return "" + jv_str(node_node.get(key, ""))
     return ""
 
 
 def _node_list(node: JsonVal, key: str) -> list[JsonVal]:
-    if isinstance(node, dict):
-        value = node.get(key)
-        if isinstance(value, list):
-            return cast(list[JsonVal], value)
+    if jv_is_dict(node):
+        node_node: Node = jv_dict(node)
+        value = node_node.get(key)
+        if jv_is_list(value):
+            items: list[JsonVal] = []
+            for item in jv_list(value):
+                items.append(item)
+            return items
     return []
 
 
@@ -2118,93 +1943,97 @@ def _split_comma_types(tn: str) -> list[str]:
 
 
 def _resolve_atype(stmt: Node) -> str:
-    dt = stmt.get("decl_type")
-    if isinstance(dt, str) and dt.strip() not in ("", "unknown"):
-        return dt.strip()
-    ann = stmt.get("annotation")
-    if isinstance(ann, str) and ann.strip() not in ("", "unknown"):
-        return ann.strip()
+    dt = ("" + jv_str(stmt.get("decl_type", ""))).strip()
+    if dt not in ("", "unknown"):
+        return dt
+    ann = ("" + jv_str(stmt.get("annotation", ""))).strip()
+    if ann not in ("", "unknown"):
+        return ann
     target = stmt.get("target")
-    if isinstance(target, dict):
-        target_node: Node = cast(dict[str, JsonVal], target)
-        rt = target_node.get("resolved_type")
-        if isinstance(rt, str) and rt.strip() not in ("", "unknown"):
-            return rt.strip()
-    # Also check value's resolved_type (for computed assignments)
+    if jv_is_dict(target):
+        target_node: Node = jv_dict(target)
+        rt = ("" + jv_str(target_node.get("resolved_type", ""))).strip()
+        if rt not in ("", "unknown"):
+            return rt
     value = stmt.get("value")
-    if isinstance(value, dict):
-        value_node: Node = cast(dict[str, JsonVal], value)
-        vrt = value_node.get("resolved_type")
-        if isinstance(vrt, str) and vrt.strip() not in ("", "unknown"):
-            return vrt.strip()
+    if jv_is_dict(value):
+        value_node: Node = jv_dict(value)
+        vrt = ("" + jv_str(value_node.get("resolved_type", ""))).strip()
+        if vrt not in ("", "unknown"):
+            return vrt
     return ""
 
 
 def _collect_assign_names(stmt: Node, out: dict[str, str]) -> None:
     target = stmt.get("target")
-    if isinstance(target, dict):
-        target_node: Node = cast(dict[str, JsonVal], target)
-        tk = target_node.get("kind")
+    if jv_is_dict(target):
+        target_node: Node = jv_dict(target)
+        tk = "" + jv_str(target_node.get("kind", ""))
         if tk == NAME:
-            n = target_node.get("id")
-            if isinstance(n, str) and n != "" and n not in out:
+            n = "" + jv_str(target_node.get("id", ""))
+            if n != "" and n not in out:
                 out[n] = _resolve_atype(stmt)
         elif tk == TUPLE:
             _collect_tuple_tgt_names(target_node, stmt, out)
     targets = stmt.get("targets")
-    if isinstance(targets, list):
-        targets_list: list[JsonVal] = cast(list[JsonVal], targets)
-        for t in targets_list:
-            if isinstance(t, dict):
-                t_node: Node = cast(dict[str, JsonVal], t)
-                if t_node.get("kind") == NAME:
-                    n = t_node.get("id")
-                    if isinstance(n, str) and n != "" and n not in out:
+    if jv_is_list(targets):
+        for t in jv_list(targets):
+            if jv_is_dict(t):
+                t_node: Node = jv_dict(t)
+                tk = "" + jv_str(t_node.get("kind", ""))
+                if tk == NAME:
+                    n = "" + jv_str(t_node.get("id", ""))
+                    if n != "" and n not in out:
                         out[n] = _resolve_atype(stmt)
-                elif t_node.get("kind") == TUPLE:
+                elif tk == TUPLE:
                     _collect_tuple_tgt_names(t_node, stmt, out)
 
 
 def _collect_tuple_tgt_names(tn: Node, stmt: Node, out: dict[str, str]) -> None:
     elements = tn.get("elements")
-    if not isinstance(elements, list):
+    if not jv_is_list(elements):
         return
-    element_list: list[JsonVal] = cast(list[JsonVal], elements)
     vt = _resolve_atype(stmt)
     ets: list[str] = []
     if vt.startswith("tuple[") and vt.endswith("]"):
         ets = _split_comma_types(vt[6:-1])
-    for i, elem in enumerate(element_list):
-        if not isinstance(elem, dict) or elem.get("kind") != NAME:
+    i = 0
+    for elem in jv_list(elements):
+        if not jv_is_dict(elem):
+            i += 1
             continue
-        n = elem.get("id")
-        if not isinstance(n, str) or n == "":
+        elem_node: Node = jv_dict(elem)
+        if ("" + jv_str(elem_node.get("kind", ""))) != NAME:
+            i += 1
+            continue
+        n = "" + jv_str(elem_node.get("id", ""))
+        if n == "":
+            i += 1
             continue
         et = ""
         if i < len(ets):
             et = ets[i]
         if et == "":
-            rt = elem.get("resolved_type")
-            if isinstance(rt, str):
-                et = rt
+            et = "" + jv_str(elem_node.get("resolved_type", ""))
         if n not in out:
             out[n] = et
+        i += 1
 
 
 def _collect_assigned_in_stmts(stmts: list[JsonVal]) -> dict[str, str]:
     out: dict[str, str] = {}
     for stmt in stmts:
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             continue
         stmt_node: Node = jv_dict(stmt)
         kind = nd_kind(stmt_node)
         if kind in (ASSIGN, ANN_ASSIGN):
-            _collect_assign_names(stmt, out)
+            _collect_assign_names(stmt_node, out)
         elif kind == IF:
-            for key in ("body", "orelse"):
-                nested = stmt.get(key)
-                if isinstance(nested, list):
-                    sub = _collect_assigned_in_stmts(nested)
+            for key in ["body", "orelse"]:
+                nested: JsonVal = stmt_node.get(key)
+                if jv_is_list(nested):
+                    sub = _collect_assigned_in_stmts(jv_list(nested))
                     for n, t in sub.items():
                         if n not in out:
                             out[n] = t
@@ -2212,27 +2041,30 @@ def _collect_assigned_in_stmts(stmts: list[JsonVal]) -> dict[str, str]:
                             out[n] = t
         elif kind in (WHILE, FOR, FOR_RANGE, FOR_CORE):
             if kind == FOR_CORE:
-                tp = stmt.get("target_plan")
-                if isinstance(tp, dict):
-                    tpk = tp.get("kind")
+                tp = stmt_node.get("target_plan")
+                if jv_is_dict(tp):
+                    tp_node: Node = jv_dict(tp)
+                    tpk = "" + jv_str(tp_node.get("kind", ""))
                     if tpk == NAME_TARGET:
-                        tpn = tp.get("id")
-                        tpt = tp.get("target_type", "")
-                        if isinstance(tpn, str) and tpn != "" and tpn not in out:
-                            out[tpn] = tpt if isinstance(tpt, str) else ""
+                        tpn = "" + jv_str(tp_node.get("id", ""))
+                        tpt = "" + jv_str(tp_node.get("target_type", ""))
+                        if tpn != "" and tpn not in out:
+                            out[tpn] = tpt
                     elif tpk == TUPLE_TARGET:
-                        elems = tp.get("elements")
-                        if isinstance(elems, list):
-                            for e in elems:
-                                if isinstance(e, dict) and e.get("kind") == NAME_TARGET:
-                                    en = e.get("id")
-                                    et2 = e.get("target_type", "")
-                                    if isinstance(en, str) and en != "" and en not in out:
-                                        out[en] = et2 if isinstance(et2, str) else ""
-            for key in ("body", "orelse"):
-                nested = stmt.get(key)
-                if isinstance(nested, list):
-                    sub = _collect_assigned_in_stmts(nested)
+                        elems = tp_node.get("elements")
+                        if jv_is_list(elems):
+                            for e in jv_list(elems):
+                                if jv_is_dict(e):
+                                    e_node: Node = jv_dict(e)
+                                    if ("" + jv_str(e_node.get("kind", ""))) == NAME_TARGET:
+                                        en = "" + jv_str(e_node.get("id", ""))
+                                        et2 = "" + jv_str(e_node.get("target_type", ""))
+                                        if en != "" and en not in out:
+                                            out[en] = et2
+            for key in ["body", "orelse"]:
+                nested: JsonVal = stmt_node.get(key)
+                if jv_is_list(nested):
+                    sub = _collect_assigned_in_stmts(jv_list(nested))
                     for n, t in sub.items():
                         if n not in out:
                             out[n] = t
@@ -2242,64 +2074,66 @@ def _collect_assigned_in_stmts(stmts: list[JsonVal]) -> dict[str, str]:
 
 
 def _collect_refs(node: JsonVal, out: set[str]) -> None:
-    if isinstance(node, list):
-        node_list: list[JsonVal] = cast(list[JsonVal], node)
-        for item in node_list:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _collect_refs(item, out)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    nd: Node = node
-    if nd.get("kind") == NAME:
-        n = nd.get("id")
-        if isinstance(n, str) and n != "":
+    nd: Node = jv_dict(node)
+    if ("" + jv_str(nd.get("kind", ""))) == NAME:
+        n = "" + jv_str(nd.get("id", ""))
+        if n != "":
             out.add(n)
     for v in nd.values():
-        if isinstance(v, dict):
-            _collect_refs(v, out)
-        elif isinstance(v, list):
+        if jv_is_dict(v) or jv_is_list(v):
             _collect_refs(v, out)
 
 
 def _collect_tuple_names_flat(tn: Node, out: set[str]) -> None:
     elements = tn.get("elements")
-    if not isinstance(elements, list):
+    if not jv_is_list(elements):
         return
-    element_list: list[JsonVal] = cast(list[JsonVal], elements)
-    for elem in element_list:
-        if isinstance(elem, dict) and elem.get("kind") == NAME:
-            n = elem.get("id")
-            if isinstance(n, str) and n != "":
-                out.add(n)
+    for elem in jv_list(elements):
+        if jv_is_dict(elem):
+            elem_node: Node = jv_dict(elem)
+            if ("" + jv_str(elem_node.get("kind", ""))) == NAME:
+                n = "" + jv_str(elem_node.get("id", ""))
+                if n != "":
+                    out.add(n)
 
 
 def _mark_reassign(stmts: list[JsonVal], hoisted: set[str]) -> None:
     for stmt in stmts:
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             continue
         stmt_node: Node = jv_dict(stmt)
         kind = nd_kind(stmt_node)
         if kind in (ASSIGN, ANN_ASSIGN):
-            target = stmt.get("target")
-            if isinstance(target, dict):
-                if target.get("kind") == NAME:
-                    n = target.get("id")
-                    if isinstance(n, str) and n in hoisted:
-                        stmt["is_reassign"] = True
-                elif target.get("kind") == TUPLE:
-                    elements = target.get("elements")
-                    if isinstance(elements, list):
-                        for elem in elements:
-                            if isinstance(elem, dict) and elem.get("kind") == NAME:
-                                en = elem.get("id")
-                                if isinstance(en, str) and en in hoisted:
-                                    stmt["is_reassign"] = True
-                                    break
+            target = stmt_node.get("target")
+            if jv_is_dict(target):
+                target_node: Node = jv_dict(target)
+                target_kind = "" + jv_str(target_node.get("kind", ""))
+                if target_kind == NAME:
+                    n = "" + jv_str(target_node.get("id", ""))
+                    if n in hoisted:
+                        stmt_node["is_reassign"] = True
+                elif target_kind == TUPLE:
+                    elements = target_node.get("elements")
+                    if jv_is_list(elements):
+                        for elem in jv_list(elements):
+                            if jv_is_dict(elem):
+                                elem_node: Node = jv_dict(elem)
+                                if ("" + jv_str(elem_node.get("kind", ""))) == NAME:
+                                    en = "" + jv_str(elem_node.get("id", ""))
+                                    if en in hoisted:
+                                        stmt_node["is_reassign"] = True
+                                        break
         if kind in (IF, WHILE, FOR, FOR_RANGE, FOR_CORE):
-            for key in ("body", "orelse"):
-                nested = stmt.get(key)
-                if isinstance(nested, list):
-                    _mark_reassign(nested, hoisted)
+            for key in ["body", "orelse"]:
+                nested: JsonVal = stmt_node.get(key)
+                if jv_is_list(nested):
+                    _mark_reassign(jv_list(nested), hoisted)
 
 
 def _collect_multi_branch(if_stmt: Node) -> set[str]:
@@ -2307,21 +2141,19 @@ def _collect_multi_branch(if_stmt: Node) -> set[str]:
     def _walk_chain(node: Node) -> None:
         body = node.get("body")
         orelse = node.get("orelse")
-        if isinstance(body, list):
-            body_list: list[JsonVal] = cast(list[JsonVal], body)
+        if jv_is_list(body):
             bn: set[str] = set()
-            ba = _collect_assigned_in_stmts(body_list)
+            ba = _collect_assigned_in_stmts(jv_list(body))
             for n in ba:
                 bn.add(n)
             branches.append(bn)
-        if isinstance(orelse, list):
-            orelse_list: list[JsonVal] = cast(list[JsonVal], orelse)
+        if jv_is_list(orelse):
+            orelse_list = jv_list(orelse)
             if len(orelse_list) == 1:
-                nested = orelse_list[0]
-                if isinstance(nested, dict) and _sk(nested) == IF:
-                    nested_node: Node = cast(dict[str, JsonVal], nested)
-                    _walk_chain(nested_node)
-                    return
+                for nested in orelse_list:
+                    if jv_is_dict(nested) and _sk(nested) == IF:
+                        _walk_chain(jv_dict(nested))
+                        return
             if len(orelse_list) > 0:
                 bn2: set[str] = set()
                 oa = _collect_assigned_in_stmts(orelse_list)
@@ -2348,35 +2180,39 @@ def _hoist_in_stmt_list(stmts: list[JsonVal], param_names: set[str]) -> list[Jso
     already: set[str] = set(param_names)
     for i in range(len(stmts)):
         stmt = stmts[i]
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             result.append(stmt)
             continue
         stmt_node: Node = jv_dict(stmt)
         kind = nd_kind(stmt_node)
         if kind in (ASSIGN, ANN_ASSIGN):
-            target = stmt.get("target")
-            if isinstance(target, dict):
-                if target.get("kind") == NAME:
-                    n = target.get("id")
-                    if isinstance(n, str) and n != "":
+            target = stmt_node.get("target")
+            if jv_is_dict(target):
+                target_node: Node = jv_dict(target)
+                target_kind = "" + jv_str(target_node.get("kind", ""))
+                if target_kind == NAME:
+                    n = "" + jv_str(target_node.get("id", ""))
+                    if n != "":
                         already.add(n)
-                elif target.get("kind") == TUPLE:
-                    _collect_tuple_names_flat(target, already)
-            targets = stmt.get("targets")
-            if isinstance(targets, list):
-                for t in targets:
-                    if isinstance(t, dict):
-                        if t.get("kind") == NAME:
-                            n = t.get("id")
-                            if isinstance(n, str) and n != "":
+                elif target_kind == TUPLE:
+                    _collect_tuple_names_flat(target_node, already)
+            targets = stmt_node.get("targets")
+            if jv_is_list(targets):
+                for t in jv_list(targets):
+                    if jv_is_dict(t):
+                        t_node: Node = jv_dict(t)
+                        target_kind = "" + jv_str(t_node.get("kind", ""))
+                        if target_kind == NAME:
+                            n = "" + jv_str(t_node.get("id", ""))
+                            if n != "":
                                 already.add(n)
-                        elif t.get("kind") == TUPLE:
-                            _collect_tuple_names_flat(t, already)
+                        elif target_kind == TUPLE:
+                            _collect_tuple_names_flat(t_node, already)
             result.append(stmt_node)
             continue
         if kind == VAR_DECL:
-            n = stmt.get("name")
-            if isinstance(n, str) and n != "":
+            n = "" + jv_str(stmt_node.get("name", ""))
+            if n != "":
                 already.add(n)
             result.append(stmt_node)
             continue
@@ -2384,13 +2220,13 @@ def _hoist_in_stmt_list(stmts: list[JsonVal], param_names: set[str]) -> list[Jso
             result.append(stmt_node)
             continue
         # Block-creating statement
-        ba2 = _collect_block_assigned(stmt)
+        ba2 = _collect_block_assigned(stmt_node)
         names_after: set[str] = set()
         for j in range(i + 1, len(stmts)):
             _collect_refs(stmts[j], names_after)
         multi_branch: set[str] = set()
         if kind == IF:
-            multi_branch = _collect_multi_branch(stmt)
+            multi_branch = _collect_multi_branch(stmt_node)
         to_hoist: dict[str, str] = {}
         for n, vt in ba2.items():
             if n in already:
@@ -2401,7 +2237,7 @@ def _hoist_in_stmt_list(stmts: list[JsonVal], param_names: set[str]) -> list[Jso
         for n in sorted(to_hoist.keys()):
             if n == "":
                 continue
-            vd: Node = {}
+            vd: Node = _empty_node()
             vd["kind"] = VAR_DECL
             vd["name"] = n
             vd["type"] = to_hoist[n] if to_hoist[n] != "" else "unknown"
@@ -2410,9 +2246,9 @@ def _hoist_in_stmt_list(stmts: list[JsonVal], param_names: set[str]) -> list[Jso
             already.add(n)
         if to_hoist:
             hs = set(to_hoist.keys())
-            _mark_reassign_block(stmt, hs)
-        _recurse_hoist(stmt, already)
-        result.append(stmt)
+            _mark_reassign_block(stmt_node, hs)
+        _recurse_hoist(stmt_node, already)
+        result.append(stmt_node)
     return result
 
 
@@ -2421,18 +2257,16 @@ def _collect_block_assigned(stmt: Node) -> dict[str, str]:
     all_names: dict[str, str] = {}
     if kind == IF:
         body = stmt.get("body")
-        if isinstance(body, list):
-            body_list: list[JsonVal] = cast(list[JsonVal], body)
-            sub = _collect_assigned_in_stmts(body_list)
+        if jv_is_list(body):
+            sub = _collect_assigned_in_stmts(jv_list(body))
             for n, t in sub.items():
                 if n not in all_names:
                     all_names[n] = t
                 elif all_names[n] == "" and t != "":
                     all_names[n] = t
         orelse = stmt.get("orelse")
-        if isinstance(orelse, list):
-            orelse_list: list[JsonVal] = cast(list[JsonVal], orelse)
-            sub2 = _collect_assigned_in_stmts(orelse_list)
+        if jv_is_list(orelse):
+            sub2 = _collect_assigned_in_stmts(jv_list(orelse))
             for n, t in sub2.items():
                 if n not in all_names:
                     all_names[n] = t
@@ -2441,37 +2275,36 @@ def _collect_block_assigned(stmt: Node) -> dict[str, str]:
     elif kind in (WHILE, FOR, FOR_RANGE, FOR_CORE):
         if kind == FOR_CORE:
             tp = stmt.get("target_plan")
-            if isinstance(tp, dict):
-                tp_node: Node = cast(dict[str, JsonVal], tp)
-                tpk = tp_node.get("kind")
+            if jv_is_dict(tp):
+                tp_node: Node = jv_dict(tp)
+                tpk = "" + jv_str(tp_node.get("kind", ""))
                 if tpk == NAME_TARGET:
-                    tpn = tp_node.get("id")
-                    tpt = tp_node.get("target_type", "")
-                    if isinstance(tpn, str) and tpn != "" and tpn not in all_names:
-                        all_names[tpn] = tpt if isinstance(tpt, str) else ""
+                    tpn = "" + jv_str(tp_node.get("id", ""))
+                    tpt = "" + jv_str(tp_node.get("target_type", ""))
+                    if tpn != "" and tpn not in all_names:
+                        all_names[tpn] = tpt
                 elif tpk == TUPLE_TARGET:
                     elems = tp_node.get("elements")
-                    if isinstance(elems, list):
-                        elem_list: list[JsonVal] = cast(list[JsonVal], elems)
-                        for e in elem_list:
-                            if isinstance(e, dict) and e.get("kind") == NAME_TARGET:
-                                en = e.get("id")
-                                et2 = e.get("target_type", "")
-                                if isinstance(en, str) and en != "" and en not in all_names:
-                                    all_names[en] = et2 if isinstance(et2, str) else ""
+                    if jv_is_list(elems):
+                        for e in jv_list(elems):
+                            if jv_is_dict(e):
+                                e_node: Node = jv_dict(e)
+                                if ("" + jv_str(e_node.get("kind", ""))) == NAME_TARGET:
+                                    en = "" + jv_str(e_node.get("id", ""))
+                                    et2 = "" + jv_str(e_node.get("target_type", ""))
+                                    if en != "" and en not in all_names:
+                                        all_names[en] = et2
         body2 = stmt.get("body")
-        if isinstance(body2, list):
-            body_list2: list[JsonVal] = cast(list[JsonVal], body2)
-            sub3 = _collect_assigned_in_stmts(body_list2)
+        if jv_is_list(body2):
+            sub3 = _collect_assigned_in_stmts(jv_list(body2))
             for n, t in sub3.items():
                 if n not in all_names:
                     all_names[n] = t
                 elif all_names[n] == "" and t != "":
                     all_names[n] = t
         orelse2 = stmt.get("orelse")
-        if isinstance(orelse2, list):
-            orelse_list2: list[JsonVal] = cast(list[JsonVal], orelse2)
-            sub4 = _collect_assigned_in_stmts(orelse_list2)
+        if jv_is_list(orelse2):
+            sub4 = _collect_assigned_in_stmts(jv_list(orelse2))
             for n, t in sub4.items():
                 if n not in all_names:
                     all_names[n] = t
@@ -2484,79 +2317,67 @@ def _mark_reassign_block(stmt: Node, hoisted: set[str]) -> None:
     kind = _sk(stmt)
     _ = kind
     body = stmt.get("body")
-    if isinstance(body, list):
-        body_list: list[JsonVal] = cast(list[JsonVal], body)
-        _mark_reassign(body_list, hoisted)
+    if jv_is_list(body):
+        _mark_reassign(jv_list(body), hoisted)
     orelse = stmt.get("orelse")
-    if isinstance(orelse, list):
-        orelse_list: list[JsonVal] = cast(list[JsonVal], orelse)
-        _mark_reassign(orelse_list, hoisted)
+    if jv_is_list(orelse):
+        _mark_reassign(jv_list(orelse), hoisted)
 
 
 def _recurse_hoist(stmt: Node, parent: set[str]) -> None:
     body = stmt.get("body")
-    if isinstance(body, list):
-        body_list: list[JsonVal] = cast(list[JsonVal], body)
-        stmt["body"] = _hoist_in_stmt_list(body_list, parent)
+    if jv_is_list(body):
+        stmt["body"] = _hoist_in_stmt_list(jv_list(body), parent)
     orelse = stmt.get("orelse")
-    if isinstance(orelse, list):
-        orelse_list: list[JsonVal] = cast(list[JsonVal], orelse)
-        stmt["orelse"] = _hoist_in_stmt_list(orelse_list, parent)
+    if jv_is_list(orelse):
+        stmt["orelse"] = _hoist_in_stmt_list(jv_list(orelse), parent)
 
 
 def _fn_param_names(func: Node) -> set[str]:
     params: set[str] = set()
     ao = func.get("arg_order")
-    if isinstance(ao, list):
-        ao_list: list[JsonVal] = cast(list[JsonVal], ao)
-        for arg in ao_list:
-            if isinstance(arg, str) and arg != "":
-                params.add(arg)
+    if jv_is_list(ao):
+        for arg in jv_list(ao):
+            arg_name = "" + jv_str(arg)
+            if arg_name != "":
+                params.add(arg_name)
     args = func.get("args")
-    if isinstance(args, list):
-        args_list: list[JsonVal] = cast(list[JsonVal], args)
-        for arg in args_list:
-            if isinstance(arg, dict):
-                arg_node: Node = cast(dict[str, JsonVal], arg)
-                n = arg_node.get("arg")
-                if isinstance(n, str) and n != "":
+    if jv_is_list(args):
+        for arg in jv_list(args):
+            if jv_is_dict(arg):
+                arg_node: Node = jv_dict(arg)
+                n = "" + jv_str(arg_node.get("arg", ""))
+                if n != "":
                     params.add(n)
     return params
 
 
 def _hoist_walk(node: JsonVal) -> None:
-    if isinstance(node, list):
-        node_list: list[JsonVal] = cast(list[JsonVal], node)
-        for item in node_list:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _hoist_walk(item)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    nd: Node = node
+    nd: Node = jv_dict(node)
     kind = _sk(nd)
     if _is_function_like_kind(kind):
-        body = nd.get("body")
-        if isinstance(body, list):
-            body_list: list[JsonVal] = cast(list[JsonVal], body)
-            hoisted_body = _hoist_in_stmt_list(body_list, _fn_param_names(nd))
+        body_obj: JsonVal = nd.get("body")
+        if jv_is_list(body_obj):
+            hoisted_body = _hoist_in_stmt_list(jv_list(body_obj), _fn_param_names(nd))
             nd["body"] = hoisted_body
             for s in hoisted_body:
                 _hoist_walk(s)
         return
     if kind in (CLASS_DEF, MODULE):
-        body = nd.get("body")
-        if isinstance(body, list):
-            body_list2: list[JsonVal] = cast(list[JsonVal], body)
-            for s in body_list2:
+        body_obj: JsonVal = nd.get("body")
+        if jv_is_list(body_obj):
+            for s in jv_list(body_obj):
                 _hoist_walk(s)
         return
     for v in nd.values():
-        if isinstance(v, dict):
-            v_node: Node = cast(dict[str, JsonVal], v)
-            _hoist_walk(v_node)
-        elif isinstance(v, list):
-            v_list: list[JsonVal] = cast(list[JsonVal], v)
-            _hoist_walk(v_list)
+        if jv_is_dict(v) or jv_is_list(v):
+            _hoist_walk(v)
 
 
 def hoist_block_scope_variables(module: Node, ctx: CompileContext) -> Node:
@@ -2575,9 +2396,7 @@ _INT_WIDTH: dict[str, int] = {"int8": 8, "uint8": 8, "int16": 16, "uint16": 16, 
 
 
 def _nt(t: JsonVal) -> str:
-    if isinstance(t, str):
-        return t.strip()
-    return ""
+    return ("" + jv_str(t)).strip()
 
 
 def _promoted(t: str) -> str:
@@ -2607,48 +2426,48 @@ def _promote_result(lt: str, rt: str) -> str:
 
 
 def _int_promo_walk(node: JsonVal) -> None:
-    if isinstance(node, list):
-        for item in node:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _int_promo_walk(item)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    nd: Node = node
-    kind = nd.get("kind")
+    nd: Node = jv_dict(node)
+    kind = "" + jv_str(nd.get("kind", ""))
     if kind == BIN_OP:
-        op = nd.get("op", "")
+        op = "" + jv_str(nd.get("op", ""))
         if op in _ARITH_OPS:
             left = nd.get("left")
             right = nd.get("right")
             lt2 = ""
             rt2 = ""
-            if isinstance(left, dict):
-                left_node: Node = cast(dict[str, JsonVal], left)
+            if jv_is_dict(left):
+                left_node: Node = jv_dict(left)
                 lt2 = _nt(left_node.get("resolved_type"))
-            if isinstance(right, dict):
-                right_node: Node = cast(dict[str, JsonVal], right)
+            if jv_is_dict(right):
+                right_node: Node = jv_dict(right)
                 rt2 = _nt(right_node.get("resolved_type"))
             promoted = _promote_result(lt2, rt2)
             if promoted != "":
-                if isinstance(left, dict) and lt2 in _SMALL_INTS:
-                    left_node2: Node = cast(dict[str, JsonVal], left)
+                if jv_is_dict(left) and lt2 in _SMALL_INTS:
+                    left_node2: Node = jv_dict(left)
                     left_node2["resolved_type"] = promoted
-                if isinstance(right, dict) and rt2 in _SMALL_INTS:
-                    right_node2: Node = cast(dict[str, JsonVal], right)
+                if jv_is_dict(right) and rt2 in _SMALL_INTS:
+                    right_node2: Node = jv_dict(right)
                     right_node2["resolved_type"] = promoted
                 cur = _nt(nd.get("resolved_type"))
                 if cur == "" or cur == "unknown" or cur in _SMALL_INTS:
                     nd["resolved_type"] = promoted
     if kind == UNARY_OP:
-        op = nd.get("op", "")
+        op = "" + jv_str(nd.get("op", ""))
         if op in _UNARY_OPS:
             operand = nd.get("operand")
             ot = ""
-            if isinstance(operand, dict):
-                operand_node: Node = cast(dict[str, JsonVal], operand)
+            if jv_is_dict(operand):
+                operand_node: Node = jv_dict(operand)
                 ot = _nt(operand_node.get("resolved_type"))
-            if ot in _SMALL_INTS and isinstance(operand, dict):
-                operand_node2: Node = cast(dict[str, JsonVal], operand)
+            if ot in _SMALL_INTS and jv_is_dict(operand):
+                operand_node2: Node = jv_dict(operand)
                 tgt = _promoted(ot)
                 operand_node2["resolved_type"] = tgt
                 cur = _nt(nd.get("resolved_type"))
@@ -2656,36 +2475,31 @@ def _int_promo_walk(node: JsonVal) -> None:
                     nd["resolved_type"] = tgt
     if kind == FOR_CORE:
         tp = nd.get("target_plan")
-        if isinstance(tp, dict):
-            tp_node: Node = cast(dict[str, JsonVal], tp)
+        if jv_is_dict(tp):
+            tp_node: Node = jv_dict(tp)
             tt = _nt(tp_node.get("target_type"))
             if tt == "uint8":
                 tp_node["target_type"] = "int64"
     for v in nd.values():
-        if isinstance(v, dict):
-            v_node: Node = cast(dict[str, JsonVal], v)
-            _int_promo_walk(v_node)
-        elif isinstance(v, list):
-            v_list: list[JsonVal] = cast(list[JsonVal], v)
-            _int_promo_walk(v_list)
+        if jv_is_dict(v) or jv_is_list(v):
+            _int_promo_walk(v)
 
 
 def _narrowing_walk(node: JsonVal) -> None:
-    if isinstance(node, list):
-        node_list: list[JsonVal] = cast(list[JsonVal], node)
-        for item in node_list:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _narrowing_walk(item)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    nd: Node = node
-    kind = nd.get("kind")
+    nd: Node = jv_dict(node)
+    kind = "" + jv_str(nd.get("kind", ""))
     if kind in (ASSIGN, ANN_ASSIGN):
         target = nd.get("target")
         value = nd.get("value")
-        if isinstance(target, dict) and isinstance(value, dict):
-            target_node: Node = cast(dict[str, JsonVal], target)
-            value_node: Node = cast(dict[str, JsonVal], value)
+        if jv_is_dict(target) and jv_is_dict(value):
+            target_node: Node = jv_dict(target)
+            value_node: Node = jv_dict(value)
             tt = _nt(nd.get("decl_type"))
             if tt == "" or tt == "unknown":
                 tt = _nt(nd.get("annotation"))
@@ -2694,16 +2508,12 @@ def _narrowing_walk(node: JsonVal) -> None:
             if tt in _INT_WIDTH:
                 _narrow_value(value_node, tt)
     for v in nd.values():
-        if isinstance(v, dict):
-            v_node2: Node = cast(dict[str, JsonVal], v)
-            _narrowing_walk(v_node2)
-        elif isinstance(v, list):
-            v_list2: list[JsonVal] = cast(list[JsonVal], v)
-            _narrowing_walk(v_list2)
+        if jv_is_dict(v) or jv_is_list(v):
+            _narrowing_walk(v)
 
 
 def _narrow_value(vn: Node, tt: str) -> None:
-    kind = vn.get("kind")
+    kind = "" + jv_str(vn.get("kind", ""))
     rt = _nt(vn.get("resolved_type"))
     tw = _INT_WIDTH.get(tt, 0)
     if tw <= 0 or tt not in _INT_WIDTH:
@@ -2716,11 +2526,11 @@ def _narrow_value(vn: Node, tt: str) -> None:
         right = vn.get("right")
         lt2 = ""
         rt2 = ""
-        if isinstance(left, dict):
-            left_node: Node = cast(dict[str, JsonVal], left)
+        if jv_is_dict(left):
+            left_node: Node = jv_dict(left)
             lt2 = _nt(left_node.get("resolved_type"))
-        if isinstance(right, dict):
-            right_node: Node = cast(dict[str, JsonVal], right)
+        if jv_is_dict(right):
+            right_node: Node = jv_dict(right)
             rt2 = _nt(right_node.get("resolved_type"))
         lw = _INT_WIDTH.get(lt2, 0) if lt2 in _INT_WIDTH else 0
         rw2 = _INT_WIDTH.get(rt2, 0) if rt2 in _INT_WIDTH else 0
@@ -2729,8 +2539,8 @@ def _narrow_value(vn: Node, tt: str) -> None:
     elif kind == UNARY_OP:
         operand = vn.get("operand")
         ot = ""
-        if isinstance(operand, dict):
-            operand_node: Node = cast(dict[str, JsonVal], operand)
+        if jv_is_dict(operand):
+            operand_node: Node = jv_dict(operand)
             ot = _nt(operand_node.get("resolved_type"))
         ow = _INT_WIDTH.get(ot, 0) if ot in _INT_WIDTH else 0
         if ow > 0 and tw >= ow:
@@ -2738,36 +2548,31 @@ def _narrow_value(vn: Node, tt: str) -> None:
 
 
 def _remove_redundant_unbox(node: JsonVal) -> None:
-    if isinstance(node, list):
-        node_list: list[JsonVal] = cast(list[JsonVal], node)
-        for item in node_list:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _remove_redundant_unbox(item)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    nd: Node = node
-    kind = nd.get("kind")
+    nd: Node = jv_dict(node)
+    kind = "" + jv_str(nd.get("kind", ""))
     if kind in (ASSIGN, ANN_ASSIGN):
         value = nd.get("value")
-        if isinstance(value, dict):
-            value_node: Node = cast(dict[str, JsonVal], value)
-            if value_node.get("kind") != UNBOX:
-                inner = None
-            else:
+        if jv_is_dict(value):
+            value_node: Node = jv_dict(value)
+            if ("" + jv_str(value_node.get("kind", ""))) == UNBOX:
                 inner = value_node.get("value")
-            if isinstance(inner, dict):
-                inner_node: Node = cast(dict[str, JsonVal], inner)
-                ut = _nt(value_node.get("target"))
-                it = _nt(inner_node.get("resolved_type"))
-                if ut != "" and ut == it:
-                    nd["value"] = inner
+                if jv_is_dict(inner):
+                    inner_node: Node = jv_dict(inner)
+                    ut = _nt(nd.get("decl_type"))
+                    if ut == "" or ut == "unknown":
+                        ut = _nt(nd.get("annotation"))
+                    it = _nt(inner_node.get("resolved_type"))
+                    if ut != "" and ut == it:
+                        nd["value"] = inner
     for v in nd.values():
-        if isinstance(v, dict):
-            v_node: Node = cast(dict[str, JsonVal], v)
-            _remove_redundant_unbox(v_node)
-        elif isinstance(v, list):
-            v_list: list[JsonVal] = cast(list[JsonVal], v)
-            _remove_redundant_unbox(v_list)
+        if jv_is_dict(v) or jv_is_list(v):
+            _remove_redundant_unbox(v)
 
 
 def apply_integer_promotion(module: Node, ctx: CompileContext) -> Node:
@@ -2840,20 +2645,20 @@ def _split_top_level_generic_args(type_name: str) -> list[str]:
 
 
 def _expr_effective_type(node: JsonVal) -> str:
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return ""
-    nd: Node = cast(dict[str, JsonVal], node)
+    nd: Node = jv_dict(node)
     kind = _tp_safe(nd.get("kind"))
     if kind == UNBOX:
         target = _tp_safe(nd.get("target"))
         if target != "":
-            return normalize_type_name(target)
-    return normalize_type_name(nd.get("resolved_type"))
+            return "" + normalize_type_name(target)
+    return "" + normalize_type_name(nd.get("resolved_type"))
 
 
 def _guard_refine_subscript_type(nd: Node) -> None:
     owner = nd.get("value")
-    if not isinstance(owner, dict):
+    if not jv_is_dict(owner):
         return
     owner_type = _expr_effective_type(owner)
     if owner_type == "":
@@ -2863,19 +2668,19 @@ def _guard_refine_subscript_type(nd: Node) -> None:
     if owner_type == "str":
         target_type = "str"
     elif owner_type.startswith("list[") and len(args) == 1:
-        target_type = normalize_type_name(args[0])
+        target_type = "" + normalize_type_name(args[0])
     elif owner_type.startswith("dict[") and len(args) == 2:
-        target_type = normalize_type_name(args[1])
+        target_type = "" + normalize_type_name(args[1])
     elif owner_type.startswith("set[") and len(args) == 1:
-        target_type = normalize_type_name(args[0])
+        target_type = "" + normalize_type_name(args[0])
     if target_type == "":
         return
     nd["resolved_type"] = target_type
 
 
 def _type_matches_guard(type_name: str, guard_type: str) -> bool:
-    norm: str = normalize_type_name(type_name)
-    guard: str = normalize_type_name(guard_type)
+    norm = "" + normalize_type_name(type_name)
+    guard = "" + normalize_type_name(guard_type)
     if norm == "" or norm == "unknown" or guard == "" or guard == "unknown":
         return False
     if guard == "None":
@@ -2895,8 +2700,8 @@ def _type_matches_guard(type_name: str, guard_type: str) -> bool:
 
 
 def _select_guard_target_type(source_type: str, expected_name: str) -> str:
-    src: str = normalize_type_name(source_type)
-    expected: str = normalize_type_name(expected_name)
+    src = "" + normalize_type_name(source_type)
+    expected = "" + normalize_type_name(expected_name)
     if src == "" or src == "unknown" or expected == "" or expected == "unknown":
         return ""
     guard_type = expected
@@ -2905,15 +2710,15 @@ def _select_guard_target_type(source_type: str, expected_name: str) -> str:
         members = [src]
     for member in members:
         if _type_matches_guard(member, guard_type):
-            return normalize_type_name(member)
+            return "" + normalize_type_name(member)
     if _type_matches_guard(src, guard_type):
         return src
     return expected
 
 
 def _exclude_guard_target_type(source_type: str, expected_name: str) -> str:
-    src: str = normalize_type_name(source_type)
-    expected: str = normalize_type_name(expected_name)
+    src = "" + normalize_type_name(source_type)
+    expected = "" + normalize_type_name(expected_name)
     if src == "" or src == "unknown" or expected == "" or expected == "unknown":
         return ""
     members = _split_union_members(src)
@@ -2932,22 +2737,22 @@ def _exclude_guard_target_type(source_type: str, expected_name: str) -> str:
 
 
 def _guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
-    if not isinstance(expr, dict):
+    if not jv_is_dict(expr):
         return {}
-    nd: Node = expr
-    kind = nd.get("kind", "")
+    nd: Node = jv_dict(expr)
+    kind = "" + jv_str(nd.get("kind", ""))
     if kind == "IsInstance":
         raw_value = nd.get("value")
-        if isinstance(raw_value, dict):
-            value_node0: Node = cast(dict[str, JsonVal], raw_value)
-            if value_node0.get("kind") == UNBOX:
+        if jv_is_dict(raw_value):
+            value_node0: Node = jv_dict(raw_value)
+            if ("" + jv_str(value_node0.get("kind", ""))) == UNBOX:
                 inner = value_node0.get("value")
-                if isinstance(inner, dict):
+                if jv_is_dict(inner):
                     raw_value = inner
-        if not isinstance(raw_value, dict):
+        if not jv_is_dict(raw_value):
             return {}
-        value_node: Node = cast(dict[str, JsonVal], raw_value)
-        if value_node.get("kind") != NAME:
+        value_node: Node = jv_dict(raw_value)
+        if ("" + jv_str(value_node.get("kind", ""))) != NAME:
             return {}
         name = _tp_safe(value_node.get("id"))
         if name == "":
@@ -2961,22 +2766,27 @@ def _guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
         left = nd.get("left")
         comparators = nd.get("comparators")
         ops = nd.get("ops")
-        if not isinstance(left, dict):
+        if not jv_is_dict(left):
             return {}
-        left_node: Node = cast(dict[str, JsonVal], left)
-        if left_node.get("kind") != NAME:
+        left_node: Node = jv_dict(left)
+        if ("" + jv_str(left_node.get("kind", ""))) != NAME:
             return {}
-        if not isinstance(comparators, list):
+        if not jv_is_list(comparators):
             return {}
-        comparator_list: list[JsonVal] = cast(list[JsonVal], comparators)
-        if len(comparator_list) != 1 or not isinstance(comparator_list[0], dict):
+        comparator_list = jv_list(comparators)
+        comp0_nodes: list[Node] = []
+        for comp in comparator_list:
+            if jv_is_dict(comp):
+                comp0_nodes.append(jv_dict(comp))
+            break
+        if len(comparator_list) != 1 or len(comp0_nodes) != 1:
             return {}
-        comp0: Node = cast(dict[str, JsonVal], comparator_list[0])
-        if comp0.get("kind") != CONSTANT or comp0.get("value") is not None:
+        comp0: Node = comp0_nodes[0]
+        if (("" + jv_str(comp0.get("kind", ""))) != CONSTANT) or (comp0.get("value") is not None):
             return {}
-        if not isinstance(ops, list):
+        if not jv_is_list(ops):
             return {}
-        ops_list: list[JsonVal] = cast(list[JsonVal], ops)
+        ops_list = jv_list(ops)
         if len(ops_list) != 1:
             return {}
         name2 = _tp_safe(left_node.get("id"))
@@ -2985,25 +2795,28 @@ def _guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
             return {}
         members: list[str] = []
         for member in _split_union_members(src_type):
-            if normalize_type_name(member) != "None":
+            if ("" + normalize_type_name(member)) != "None":
                 members.append(member)
-        op = _tp_safe(ops_list[0])
+        op = ""
+        for op_item in ops_list:
+            op = _tp_safe(op_item)
+            break
         if op == "IsNot":
             if len(members) == 0:
                 return {}
             if len(members) == 1:
-                return {name2: normalize_type_name(members[0])}
+                return {name2: "" + normalize_type_name(members[0])}
             member_names: list[str] = []
             for member in members:
-                member_names.append(normalize_type_name(member))
+                member_names.append("" + normalize_type_name(member))
             return {name2: " | ".join(member_names)}
         return {}
     if kind == BOOL_OP and _tp_safe(nd.get("op")) == "And":
         merged: dict[str, str] = {}
         values = nd.get("values")
-        if not isinstance(values, list):
+        if not jv_is_list(values):
             return merged
-        value_list: list[JsonVal] = cast(list[JsonVal], values)
+        value_list = jv_list(values)
         for value in value_list:
             child = _guard_narrowing_from_expr(value)
             for name, target_type in child.items():
@@ -3025,24 +2838,24 @@ def _guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
 
 
 def _invert_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
-    if not isinstance(expr, dict):
+    if not jv_is_dict(expr):
         return {}
-    nd: Node = expr
-    if nd.get("kind", "") == UNARY_OP and _tp_safe(nd.get("op")) == "Not":
+    nd: Node = jv_dict(expr)
+    if ("" + jv_str(nd.get("kind", ""))) == UNARY_OP and _tp_safe(nd.get("op")) == "Not":
         operand = nd.get("operand")
         return _guard_narrowing_from_expr(operand)
-    if nd.get("kind", "") == "IsInstance":
+    if (("" + jv_str(nd.get("kind", ""))) == "IsInstance"):
         raw_value = nd.get("value")
-        if isinstance(raw_value, dict):
-            value_node0: Node = cast(dict[str, JsonVal], raw_value)
-            if value_node0.get("kind") == UNBOX:
+        if jv_is_dict(raw_value):
+            value_node0: Node = jv_dict(raw_value)
+            if ("" + jv_str(value_node0.get("kind", ""))) == UNBOX:
                 inner = value_node0.get("value")
-                if isinstance(inner, dict):
+                if jv_is_dict(inner):
                     raw_value = inner
-        if not isinstance(raw_value, dict):
+        if not jv_is_dict(raw_value):
             return {}
-        value_node: Node = cast(dict[str, JsonVal], raw_value)
-        if value_node.get("kind") != NAME:
+        value_node: Node = jv_dict(raw_value)
+        if ("" + jv_str(value_node.get("kind", ""))) != NAME:
             return {}
         name = _tp_safe(value_node.get("id"))
         if name == "":
@@ -3052,12 +2865,12 @@ def _invert_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
         if target_type == "" or target_type == "unknown":
             return {}
         return {name: target_type}
-    if nd.get("kind", "") == BOOL_OP and _tp_safe(nd.get("op")) == "Or":
+    if (("" + jv_str(nd.get("kind", ""))) == BOOL_OP) and _tp_safe(nd.get("op")) == "Or":
         merged: dict[str, str] = {}
         values = nd.get("values")
-        if not isinstance(values, list):
+        if not jv_is_list(values):
             return merged
-        value_list: list[JsonVal] = cast(list[JsonVal], values)
+        value_list = jv_list(values)
         for value in value_list:
             child = _invert_guard_narrowing_from_expr(value)
             for name, target_type in child.items():
@@ -3072,27 +2885,32 @@ def _invert_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
             if target_type != "__conflict__":
                 out[name] = target_type
         return out
-    if nd.get("kind", "") != COMPARE:
+    if (("" + jv_str(nd.get("kind", ""))) != COMPARE):
         return {}
     left = nd.get("left")
     comparators = nd.get("comparators")
     ops = nd.get("ops")
-    if not isinstance(left, dict):
+    if not jv_is_dict(left):
         return {}
-    left_node: Node = cast(dict[str, JsonVal], left)
-    if left_node.get("kind") != NAME:
+    left_node: Node = jv_dict(left)
+    if ("" + jv_str(left_node.get("kind", ""))) != NAME:
         return {}
-    if not isinstance(comparators, list):
+    if not jv_is_list(comparators):
         return {}
-    comparator_list: list[JsonVal] = cast(list[JsonVal], comparators)
-    if len(comparator_list) != 1 or not isinstance(comparator_list[0], dict):
+    comparator_list = jv_list(comparators)
+    comp0_nodes: list[Node] = []
+    for comp in comparator_list:
+        if jv_is_dict(comp):
+            comp0_nodes.append(jv_dict(comp))
+        break
+    if len(comparator_list) != 1 or len(comp0_nodes) != 1:
         return {}
-    comp0: Node = cast(dict[str, JsonVal], comparator_list[0])
-    if comp0.get("kind") != CONSTANT or comp0.get("value") is not None:
+    comp0: Node = comp0_nodes[0]
+    if (("" + jv_str(comp0.get("kind", ""))) != CONSTANT) or (comp0.get("value") is not None):
         return {}
-    if not isinstance(ops, list):
+    if not jv_is_list(ops):
         return {}
-    ops_list: list[JsonVal] = cast(list[JsonVal], ops)
+    ops_list = jv_list(ops)
     if len(ops_list) != 1:
         return {}
     name = _tp_safe(left_node.get("id"))
@@ -3101,40 +2919,43 @@ def _invert_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
         return {}
     members: list[str] = []
     for member in _split_union_members(src_type):
-        if normalize_type_name(member) != "None":
+        if ("" + normalize_type_name(member)) != "None":
             members.append(member)
     if len(members) == 0:
         return {}
     member_names: list[str] = []
     for member in members:
-        member_names.append(normalize_type_name(member))
+        member_names.append("" + normalize_type_name(member))
     narrowed = member_names[0] if len(member_names) == 1 else " | ".join(member_names)
-    op = _tp_safe(ops_list[0])
+    op = ""
+    for op_item in ops_list:
+        op = _tp_safe(op_item)
+        break
     if op == "Is":
-        return {name: normalize_type_name(narrowed)}
+        return {name: "" + normalize_type_name(narrowed)}
     return {}
 
 
 def _make_guard_unbox(name_node: Node, target_type: str, storage_type: str = "") -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = UNBOX
     inner = deep_copy_json(name_node)
-    # Restore the original storage type on the inner node so the emitter can see the
-    # pre-narrowing type and emit the correct runtime conversion (e.g. py_str, py_any_as_list).
-    if storage_type != "" and storage_type != target_type:
-        inner["resolved_type"] = storage_type
+    if storage_type != "" and storage_type != target_type and jv_is_dict(inner):
+        inner_node: Node = jv_dict(inner)
+        inner_node["resolved_type"] = storage_type
     out["value"] = inner
     out["resolved_type"] = target_type
     out["borrow_kind"] = "value"
-    out["casts"] = []
+    out["casts"] = _empty_jv_list()
     out["target"] = target_type
     out["on_fail"] = "raise"
     span = name_node.get("source_span")
-    if isinstance(span, dict):
+    if jv_is_dict(span):
         out["source_span"] = span
     repr_obj = name_node.get("repr")
-    if isinstance(repr_obj, str) and repr_obj != "":
-        out["repr"] = repr_obj
+    repr_text = "" + jv_str(repr_obj)
+    if repr_text != "":
+        out["repr"] = repr_text
     return out
 
 
@@ -3157,15 +2978,15 @@ def _guard_needs_unbox(current_type: str, storage_type: str, target_type: str) -
 
 
 def _guard_expr(node: JsonVal, env: dict[str, str]) -> JsonVal:
-    if isinstance(node, list):
-        node_list: list[JsonVal] = cast(list[JsonVal], node)
-        for i in range(len(node_list)):
-            node_list[i] = _guard_expr(node_list[i], env)
-        return node_list
-    if not isinstance(node, dict):
+    if jv_is_list(node):
+        out_list: list[JsonVal] = _empty_jv_list()
+        for item in jv_list(node):
+            out_list.append(_guard_expr(item, env))
+        return out_list
+    if not jv_is_dict(node):
         return node
-    nd: Node = node
-    kind = nd.get("kind", "")
+    nd: Node = jv_dict(node)
+    kind = "" + jv_str(nd.get("kind", ""))
     if kind == NAME:
         name = _tp_safe(nd.get("id"))
         target_type = env.get(name, "")
@@ -3180,22 +3001,14 @@ def _guard_expr(node: JsonVal, env: dict[str, str]) -> JsonVal:
     if kind in (FUNCTION_DEF, CLOSURE_DEF, CLASS_DEF):
         return nd
     if kind == UNBOX:
-        value = nd.get("value")
-        if isinstance(value, dict):
-            value_node_unbox: Node = cast(dict[str, JsonVal], value)
-            nd["value"] = _guard_expr(value_node_unbox, env)
-        elif isinstance(value, list):
-            value_list_unbox: list[JsonVal] = cast(list[JsonVal], value)
-            nd["value"] = _guard_expr(value_list_unbox, env)
+        value: JsonVal = nd.get("value")
+        if jv_is_dict(value) or jv_is_list(value):
+            nd["value"] = _guard_expr(value, env)
         return nd
     if kind == IF_EXP:
         test = nd.get("test")
-        if isinstance(test, dict):
-            test_node_ifexp: Node = cast(dict[str, JsonVal], test)
-            nd["test"] = _guard_expr(test_node_ifexp, env)
-        elif isinstance(test, list):
-            test_list_ifexp: list[JsonVal] = cast(list[JsonVal], test)
-            nd["test"] = _guard_expr(test_list_ifexp, env)
+        if jv_is_dict(test) or jv_is_list(test):
+            nd["test"] = _guard_expr(test, env)
         body_env_ifexp: dict[str, str] = {}
         for key_ifexp, val_ifexp in env.items():
             body_env_ifexp[key_ifexp] = val_ifexp
@@ -3205,121 +3018,116 @@ def _guard_expr(node: JsonVal, env: dict[str, str]) -> JsonVal:
             orelse_env_ifexp[key_ifexp] = val_ifexp
         _guard_env_merge(orelse_env_ifexp, _invert_guard_narrowing_from_expr(nd.get("test")))
         body_ifexp = nd.get("body")
-        if isinstance(body_ifexp, dict):
-            body_node_ifexp: Node = cast(dict[str, JsonVal], body_ifexp)
-            nd["body"] = _guard_expr(body_node_ifexp, body_env_ifexp)
-        elif isinstance(body_ifexp, list):
-            body_list_ifexp: list[JsonVal] = cast(list[JsonVal], body_ifexp)
-            nd["body"] = _guard_expr(body_list_ifexp, body_env_ifexp)
+        if jv_is_dict(body_ifexp) or jv_is_list(body_ifexp):
+            nd["body"] = _guard_expr(body_ifexp, body_env_ifexp)
         orelse_ifexp = nd.get("orelse")
-        if isinstance(orelse_ifexp, dict):
-            orelse_node_ifexp: Node = cast(dict[str, JsonVal], orelse_ifexp)
-            nd["orelse"] = _guard_expr(orelse_node_ifexp, orelse_env_ifexp)
-        elif isinstance(orelse_ifexp, list):
-            orelse_list_ifexp: list[JsonVal] = cast(list[JsonVal], orelse_ifexp)
-            nd["orelse"] = _guard_expr(orelse_list_ifexp, orelse_env_ifexp)
+        if jv_is_dict(orelse_ifexp) or jv_is_list(orelse_ifexp):
+            nd["orelse"] = _guard_expr(orelse_ifexp, orelse_env_ifexp)
         return nd
     if kind == BOOL_OP and _tp_safe(nd.get("op")) == "And":
         values = nd.get("values")
-        if isinstance(values, list):
-            values_list: list[JsonVal] = cast(list[JsonVal], values)
+        if jv_is_list(values):
+            values_list = jv_list(values)
             and_env: dict[str, str] = {}
             for key, val in env.items():
                 and_env[key] = val
-            for i in range(len(values_list)):
-                values_list[i] = _guard_expr(values_list[i], and_env)
-                extra = _guard_narrowing_from_expr(values_list[i])
+            out_values: list[JsonVal] = _empty_jv_list()
+            for value_item in values_list:
+                guarded_value = _guard_expr(value_item, and_env)
+                out_values.append(guarded_value)
+                extra = _guard_narrowing_from_expr(guarded_value)
                 _guard_env_merge(and_env, extra)
+            nd["values"] = out_values
         return nd
     if kind == COMPARE:
         left = nd.get("left")
         comparators = nd.get("comparators")
         ops = nd.get("ops")
-        is_name_none_compare = False
-        if (
-            isinstance(left, dict)
-            and _tp_safe(left.get("kind")) == NAME
-            and isinstance(comparators, list)
-            and len(comparators) == 1
-            and isinstance(comparators[0], dict)
-            and _tp_safe(comparators[0].get("kind")) == CONSTANT
-            and comparators[0].get("value") is None
-            and isinstance(ops, list)
-            and len(ops) == 1
-            and _tp_safe(ops[0]) in ("Is", "IsNot")
-        ):
-            # `x is None` / `x is not None` must observe the original optional/union
-            # value. Unboxing `x` here would destroy the None lane before comparison.
-            is_name_none_compare = True
-        if isinstance(left, dict) and not is_name_none_compare:
-            left_node_cmp: Node = cast(dict[str, JsonVal], left)
+        left_is_name = False
+        if jv_is_dict(left):
+            left_node_check: Node = jv_dict(left)
+            left_is_name = _tp_safe(left_node_check.get("kind")) == NAME
+        single_const_none_comparator = False
+        if jv_is_list(comparators):
+            comparator_check = jv_list(comparators)
+            comparator0_nodes: list[Node] = []
+            for comp in comparator_check:
+                if jv_is_dict(comp):
+                    comparator0_nodes.append(jv_dict(comp))
+                break
+            if len(comparator_check) == 1 and len(comparator0_nodes) == 1:
+                comparator0 = comparator0_nodes[0]
+                single_const_none_comparator = (
+                    _tp_safe(comparator0.get("kind")) == CONSTANT
+                    and comparator0.get("value") is None
+                )
+        single_is_op = False
+        if jv_is_list(ops):
+            op_list = jv_list(ops)
+            if len(op_list) == 1:
+                op0 = ""
+                for op_item in op_list:
+                    op0 = _tp_safe(op_item)
+                    break
+                single_is_op = op0 in ("Is", "IsNot")
+        is_name_none_compare = (
+            left_is_name and single_const_none_comparator and single_is_op
+        )
+        if jv_is_dict(left) and not is_name_none_compare:
+            left_node_cmp: Node = jv_dict(left)
             nd["left"] = _guard_expr(left_node_cmp, env)
-        elif isinstance(left, list):
-            left_list_cmp: list[JsonVal] = cast(list[JsonVal], left)
-            nd["left"] = _guard_expr(left_list_cmp, env)
-        if isinstance(comparators, list):
-            comparator_list_cmp: list[JsonVal] = cast(list[JsonVal], comparators)
-            for i in range(len(comparator_list_cmp)):
-                comparator_list_cmp[i] = _guard_expr(comparator_list_cmp[i], env)
+        elif jv_is_list(left):
+            nd["left"] = _guard_expr(left, env)
+        if jv_is_list(comparators):
+            comparator_list_cmp = jv_list(comparators)
+            out_comparators: list[JsonVal] = _empty_jv_list()
+            for comp in comparator_list_cmp:
+                out_comparators.append(_guard_expr(comp, env))
+            nd["comparators"] = out_comparators
         return nd
     for key in list(nd.keys()):
-        value = nd[key]
-        if isinstance(value, dict):
-            value_node: Node = cast(dict[str, JsonVal], value)
-            nd[key] = _guard_expr(value_node, env)
-        elif isinstance(value, list):
-            value_list: list[JsonVal] = cast(list[JsonVal], value)
-            nd[key] = _guard_expr(value_list, env)
+        value: JsonVal = nd[key]
+        if jv_is_dict(value) or jv_is_list(value):
+            nd[key] = _guard_expr(value, env)
     return nd
 
 
 def _guard_lvalue(node: JsonVal, env: dict[str, str]) -> JsonVal:
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return node
-    nd: Node = node
-    kind = nd.get("kind", "")
+    nd: Node = jv_dict(node)
+    kind = "" + jv_str(nd.get("kind", ""))
     if kind == ATTRIBUTE:
-        value = nd.get("value")
-        if isinstance(value, dict):
-            value_node: Node = cast(dict[str, JsonVal], value)
-            nd["value"] = _guard_expr(value_node, env)
-        elif isinstance(value, list):
-            value_list: list[JsonVal] = cast(list[JsonVal], value)
-            nd["value"] = _guard_expr(value_list, env)
+        value: JsonVal = nd.get("value")
+        if jv_is_dict(value) or jv_is_list(value):
+            nd["value"] = _guard_expr(value, env)
         return nd
     if kind == SUBSCRIPT:
         value = nd.get("value")
-        if isinstance(value, dict):
-            value_node2: Node = cast(dict[str, JsonVal], value)
-            nd["value"] = _guard_expr(value_node2, env)
-        elif isinstance(value, list):
-            value_list2: list[JsonVal] = cast(list[JsonVal], value)
-            nd["value"] = _guard_expr(value_list2, env)
-        slice_obj = nd.get("slice")
-        if isinstance(slice_obj, dict):
-            slice_node: Node = cast(dict[str, JsonVal], slice_obj)
-            nd["slice"] = _guard_expr(slice_node, env)
-        elif isinstance(slice_obj, list):
-            slice_list: list[JsonVal] = cast(list[JsonVal], slice_obj)
-            nd["slice"] = _guard_expr(slice_list, env)
+        if jv_is_dict(value) or jv_is_list(value):
+            nd["value"] = _guard_expr(value, env)
+        slice_obj: JsonVal = nd.get("slice")
+        if jv_is_dict(slice_obj) or jv_is_list(slice_obj):
+            nd["slice"] = _guard_expr(slice_obj, env)
         _guard_refine_subscript_type(nd)
         return nd
     if kind in (TUPLE, LIST):
         elements = nd.get("elements")
-        if isinstance(elements, list):
-            element_list: list[JsonVal] = cast(list[JsonVal], elements)
-            for i in range(len(element_list)):
-                element_list[i] = _guard_lvalue(element_list[i], env)
+        if jv_is_list(elements):
+            out_elements: list[JsonVal] = _empty_jv_list()
+            for elem in jv_list(elements):
+                out_elements.append(_guard_lvalue(elem, env))
+            nd["elements"] = out_elements
         return nd
     return nd
 
 
 def _target_names(node: JsonVal) -> set[str]:
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         empty: set[str] = set()
         return empty
-    nd: Node = node
-    kind = nd.get("kind", "")
+    nd: Node = jv_dict(node)
+    kind = "" + jv_str(nd.get("kind", ""))
     if kind == NAME:
         name = _tp_safe(nd.get("id"))
         out_name: set[str] = set()
@@ -3334,18 +3142,16 @@ def _target_names(node: JsonVal) -> set[str]:
         return out_target
     if kind in (TUPLE, LIST):
         out: set[str] = set()
-        elements = nd.get("elements")
-        if isinstance(elements, list):
-            element_list: list[JsonVal] = cast(list[JsonVal], elements)
-            for elem in element_list:
+        elements: JsonVal = nd.get("elements")
+        if jv_is_list(elements):
+            for elem in jv_list(elements):
                 out.update(_target_names(elem))
         return out
     if kind == TUPLE_TARGET:
         out: set[str] = set()
-        elements = nd.get("elements")
-        if isinstance(elements, list):
-            element_list2: list[JsonVal] = cast(list[JsonVal], elements)
-            for elem in element_list2:
+        elements: JsonVal = nd.get("elements")
+        if jv_is_list(elements):
+            for elem in jv_list(elements):
                 out.update(_target_names(elem))
         return out
     empty2: set[str] = set()
@@ -3353,150 +3159,127 @@ def _target_names(node: JsonVal) -> set[str]:
 
 
 def _guard_stmt_list(stmts: JsonVal, env: dict[str, str]) -> JsonVal:
-    if not isinstance(stmts, list):
+    if not jv_is_list(stmts):
         return stmts
-    stmt_list: list[JsonVal] = cast(list[JsonVal], stmts)
+    stmt_list = jv_list(stmts)
     local_env: dict[str, str] = {}
     for key, value in env.items():
         local_env[key] = value
     for stmt in stmt_list:
         _guard_stmt(stmt, local_env)
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             continue
-        kind = stmt.get("kind", "")
+        stmt_node: Node = jv_dict(stmt)
+        kind = "" + jv_str(stmt_node.get("kind", ""))
         if kind == IF:
-            body = stmt.get("body")
-            orelse = stmt.get("orelse")
+            body: JsonVal = stmt_node.get("body")
+            orelse: JsonVal = stmt_node.get("orelse")
             body_exits = _guard_block_guarantees_exit(body)
             orelse_exits = _guard_block_guarantees_exit(orelse)
             if body_exits and not orelse_exits:
-                _guard_env_merge(local_env, _invert_guard_narrowing_from_expr(stmt.get("test")))
+                _guard_env_merge(local_env, _invert_guard_narrowing_from_expr(stmt_node.get("test")))
             elif orelse_exits and not body_exits:
-                _guard_env_merge(local_env, _guard_narrowing_from_expr(stmt.get("test")))
+                _guard_env_merge(local_env, _guard_narrowing_from_expr(stmt_node.get("test")))
         if kind in (ASSIGN, ANN_ASSIGN, AUG_ASSIGN, FOR, FOR_RANGE):
-            for name in _target_names(stmt.get("target")):
+            for name in _target_names(stmt_node.get("target")):
                 if name in local_env:
                     local_env[name] = ""
         elif kind == FOR_CORE:
-            for name in _target_names(stmt.get("target_plan")):
+            for name in _target_names(stmt_node.get("target_plan")):
                 if name in local_env:
                     local_env[name] = ""
     return stmt_list
 
 
 def _guard_stmt_guarantees_exit(stmt: JsonVal) -> bool:
-    if not isinstance(stmt, dict):
+    if not jv_is_dict(stmt):
         return False
-    kind = _tp_safe(stmt.get("kind"))
+    stmt_node: Node = jv_dict(stmt)
+    kind = _tp_safe(stmt_node.get("kind"))
     if kind in (RETURN, "Raise"):
         return True
     if kind == IF:
-        return _guard_block_guarantees_exit(stmt.get("body")) and _guard_block_guarantees_exit(stmt.get("orelse"))
+        return _guard_block_guarantees_exit(stmt_node.get("body")) and _guard_block_guarantees_exit(stmt_node.get("orelse"))
     return False
 
 
 def _guard_block_guarantees_exit(stmts: JsonVal) -> bool:
-    if not isinstance(stmts, list):
+    if not jv_is_list(stmts):
         return False
-    stmt_list: list[JsonVal] = cast(list[JsonVal], stmts)
+    stmt_list = jv_list(stmts)
     if len(stmt_list) == 0:
         return False
-    last_idx = len(stmt_list) - 1
-    last_stmt = stmt_list[last_idx]
-    return _guard_stmt_guarantees_exit(last_stmt)
+    last_stmt: JsonVal = None
+    for item in stmt_list:
+        last_stmt = item
+    return last_stmt is not None and _guard_stmt_guarantees_exit(last_stmt)
 
 
 def _guard_stmt(stmt: JsonVal, env: dict[str, str]) -> None:
-    if not isinstance(stmt, dict):
+    if not jv_is_dict(stmt):
         return
-    nd: Node = stmt
-    kind = nd.get("kind", "")
+    nd: Node = jv_dict(stmt)
+    kind = "" + jv_str(nd.get("kind", ""))
     if _is_function_like_kind(kind):
         _guard_stmt_list(nd.get("body"), _guard_function_env(nd))
         return
     if kind == CLASS_DEF:
-        body = nd.get("body")
-        if isinstance(body, list):
-            body_list: list[JsonVal] = cast(list[JsonVal], body)
-            for item in body_list:
+        body: JsonVal = nd.get("body")
+        if jv_is_list(body):
+            for item in jv_list(body):
                 _guard_stmt(item, {})
         return
     if kind in (ASSIGN, ANN_ASSIGN, AUG_ASSIGN):
         target = nd.get("target")
-        if isinstance(target, dict):
-            target_node: Node = cast(dict[str, JsonVal], target)
-            nd["target"] = _guard_lvalue(target_node, env)
-        value = nd.get("value")
-        if isinstance(value, dict):
-            value_node: Node = cast(dict[str, JsonVal], value)
-            nd["value"] = _guard_expr(value_node, env)
-        elif isinstance(value, list):
-            value_list: list[JsonVal] = cast(list[JsonVal], value)
-            nd["value"] = _guard_expr(value_list, env)
+        if jv_is_dict(target):
+            nd["target"] = _guard_lvalue(target, env)
+        value: JsonVal = nd.get("value")
+        if jv_is_dict(value) or jv_is_list(value):
+            nd["value"] = _guard_expr(value, env)
         return
     if kind == EXPR:
-        value = nd.get("value")
-        if isinstance(value, dict):
-            value_node2: Node = cast(dict[str, JsonVal], value)
-            nd["value"] = _guard_expr(value_node2, env)
-        elif isinstance(value, list):
-            value_list2: list[JsonVal] = cast(list[JsonVal], value)
-            nd["value"] = _guard_expr(value_list2, env)
+        value: JsonVal = nd.get("value")
+        if jv_is_dict(value) or jv_is_list(value):
+            nd["value"] = _guard_expr(value, env)
         return
     if kind == RETURN:
-        value = nd.get("value")
-        if isinstance(value, dict):
-            value_node3: Node = cast(dict[str, JsonVal], value)
-            nd["value"] = _guard_expr(value_node3, env)
-        elif isinstance(value, list):
-            value_list3: list[JsonVal] = cast(list[JsonVal], value)
-            nd["value"] = _guard_expr(value_list3, env)
+        value: JsonVal = nd.get("value")
+        if jv_is_dict(value) or jv_is_list(value):
+            nd["value"] = _guard_expr(value, env)
         return
     if kind == IF:
-        test = nd.get("test")
-        if isinstance(test, dict):
-            test_node: Node = cast(dict[str, JsonVal], test)
-            nd["test"] = _guard_expr(test_node, env)
-        elif isinstance(test, list):
-            test_list: list[JsonVal] = cast(list[JsonVal], test)
-            nd["test"] = _guard_expr(test_list, env)
+        test: JsonVal = nd.get("test")
+        if jv_is_dict(test) or jv_is_list(test):
+            nd["test"] = _guard_expr(test, env)
         body_env: dict[str, str] = {}
-        for key, value in env.items():
-            body_env[key] = value
+        for env_name, env_type in env.items():
+            body_env[env_name] = env_type
         _guard_env_merge(body_env, _guard_narrowing_from_expr(nd.get("test")))
         orelse_env: dict[str, str] = {}
-        for key, value in env.items():
-            orelse_env[key] = value
+        for env_name, env_type in env.items():
+            orelse_env[env_name] = env_type
         _guard_env_merge(orelse_env, _invert_guard_narrowing_from_expr(nd.get("test")))
         _guard_stmt_list(nd.get("body"), body_env)
         _guard_stmt_list(nd.get("orelse"), orelse_env)
         return
     if kind == WHILE:
-        test = nd.get("test")
-        if isinstance(test, dict):
-            test_node2: Node = cast(dict[str, JsonVal], test)
-            nd["test"] = _guard_expr(test_node2, env)
-        elif isinstance(test, list):
-            test_list2: list[JsonVal] = cast(list[JsonVal], test)
-            nd["test"] = _guard_expr(test_list2, env)
+        test: JsonVal = nd.get("test")
+        if jv_is_dict(test) or jv_is_list(test):
+            nd["test"] = _guard_expr(test, env)
         body_env: dict[str, str] = {}
-        for key, value in env.items():
-            body_env[key] = value
+        for env_name, env_type in env.items():
+            body_env[env_name] = env_type
         _guard_env_merge(body_env, _guard_narrowing_from_expr(nd.get("test")))
         _guard_stmt_list(nd.get("body"), body_env)
         _guard_stmt_list(nd.get("orelse"), env)
         return
     if kind == FOR:
-        iter_obj = nd.get("iter")
-        if isinstance(iter_obj, dict):
-            iter_node: Node = cast(dict[str, JsonVal], iter_obj)
-            nd["iter"] = _guard_expr(iter_node, env)
-        elif isinstance(iter_obj, list):
-            iter_list: list[JsonVal] = cast(list[JsonVal], iter_obj)
-            nd["iter"] = _guard_expr(iter_list, env)
+        iter_obj: JsonVal = nd.get("iter")
+        if jv_is_dict(iter_obj) or jv_is_list(iter_obj):
+            nd["iter"] = _guard_expr(iter_obj, env)
         body_env: dict[str, str] = {}
-        for key, value in env.items():
-            body_env[key] = value
+        for env_name, env_type in env.items():
+            body_env[env_name] = env_type
         for name in _target_names(nd.get("target")):
             if name in body_env:
                 body_env[name] = ""
@@ -3504,27 +3287,15 @@ def _guard_stmt(stmt: JsonVal, env: dict[str, str]) -> None:
         _guard_stmt_list(nd.get("orelse"), env)
         return
     if kind == FOR_RANGE:
-        start_val = nd.get("start")
-        if isinstance(start_val, dict):
-            start_node: Node = cast(dict[str, JsonVal], start_val)
-            nd["start"] = _guard_expr(start_node, env)
-        elif isinstance(start_val, list):
-            start_list: list[JsonVal] = cast(list[JsonVal], start_val)
-            nd["start"] = _guard_expr(start_list, env)
-        stop_val = nd.get("stop")
-        if isinstance(stop_val, dict):
-            stop_node: Node = cast(dict[str, JsonVal], stop_val)
-            nd["stop"] = _guard_expr(stop_node, env)
-        elif isinstance(stop_val, list):
-            stop_list: list[JsonVal] = cast(list[JsonVal], stop_val)
-            nd["stop"] = _guard_expr(stop_list, env)
-        step_val = nd.get("step")
-        if isinstance(step_val, dict):
-            step_node: Node = cast(dict[str, JsonVal], step_val)
-            nd["step"] = _guard_expr(step_node, env)
-        elif isinstance(step_val, list):
-            step_list: list[JsonVal] = cast(list[JsonVal], step_val)
-            nd["step"] = _guard_expr(step_list, env)
+        start_val: JsonVal = nd.get("start")
+        if jv_is_dict(start_val) or jv_is_list(start_val):
+            nd["start"] = _guard_expr(start_val, env)
+        stop_val: JsonVal = nd.get("stop")
+        if jv_is_dict(stop_val) or jv_is_list(stop_val):
+            nd["stop"] = _guard_expr(stop_val, env)
+        step_val: JsonVal = nd.get("step")
+        if jv_is_dict(step_val) or jv_is_list(step_val):
+            nd["step"] = _guard_expr(step_val, env)
         body_env: dict[str, str] = {}
         for env_name, env_type in env.items():
             body_env[env_name] = env_type
@@ -3536,36 +3307,20 @@ def _guard_stmt(stmt: JsonVal, env: dict[str, str]) -> None:
         return
     if kind == FOR_CORE:
         iter_plan = nd.get("iter_plan")
-        if isinstance(iter_plan, dict):
-            iter_plan_node: Node = cast(dict[str, JsonVal], iter_plan)
-            iter_expr_val = iter_plan_node.get("iter_expr")
-            if isinstance(iter_expr_val, dict):
-                iter_expr_node: Node = cast(dict[str, JsonVal], iter_expr_val)
-                iter_plan_node["iter_expr"] = _guard_expr(iter_expr_node, env)
-            elif isinstance(iter_expr_val, list):
-                iter_expr_list: list[JsonVal] = cast(list[JsonVal], iter_expr_val)
-                iter_plan_node["iter_expr"] = _guard_expr(iter_expr_list, env)
-            start_val2 = iter_plan_node.get("start")
-            if isinstance(start_val2, dict):
-                start_node2: Node = cast(dict[str, JsonVal], start_val2)
-                iter_plan_node["start"] = _guard_expr(start_node2, env)
-            elif isinstance(start_val2, list):
-                start_list2: list[JsonVal] = cast(list[JsonVal], start_val2)
-                iter_plan_node["start"] = _guard_expr(start_list2, env)
-            stop_val2 = iter_plan_node.get("stop")
-            if isinstance(stop_val2, dict):
-                stop_node2: Node = cast(dict[str, JsonVal], stop_val2)
-                iter_plan_node["stop"] = _guard_expr(stop_node2, env)
-            elif isinstance(stop_val2, list):
-                stop_list2: list[JsonVal] = cast(list[JsonVal], stop_val2)
-                iter_plan_node["stop"] = _guard_expr(stop_list2, env)
-            step_val2 = iter_plan_node.get("step")
-            if isinstance(step_val2, dict):
-                step_node2: Node = cast(dict[str, JsonVal], step_val2)
-                iter_plan_node["step"] = _guard_expr(step_node2, env)
-            elif isinstance(step_val2, list):
-                step_list2: list[JsonVal] = cast(list[JsonVal], step_val2)
-                iter_plan_node["step"] = _guard_expr(step_list2, env)
+        if jv_is_dict(iter_plan):
+            iter_plan_node: Node = jv_dict(iter_plan)
+            iter_expr_val: JsonVal = iter_plan_node.get("iter_expr")
+            if jv_is_dict(iter_expr_val) or jv_is_list(iter_expr_val):
+                iter_plan_node["iter_expr"] = _guard_expr(iter_expr_val, env)
+            start_val2: JsonVal = iter_plan_node.get("start")
+            if jv_is_dict(start_val2) or jv_is_list(start_val2):
+                iter_plan_node["start"] = _guard_expr(start_val2, env)
+            stop_val2: JsonVal = iter_plan_node.get("stop")
+            if jv_is_dict(stop_val2) or jv_is_list(stop_val2):
+                iter_plan_node["stop"] = _guard_expr(stop_val2, env)
+            step_val2: JsonVal = iter_plan_node.get("step")
+            if jv_is_dict(step_val2) or jv_is_list(step_val2):
+                iter_plan_node["step"] = _guard_expr(step_val2, env)
         body_env: dict[str, str] = {}
         for env_name2, env_type2 in env.items():
             body_env[env_name2] = env_type2
@@ -3578,27 +3333,21 @@ def _guard_stmt(stmt: JsonVal, env: dict[str, str]) -> None:
     if kind == TRY:
         _guard_stmt_list(nd.get("body"), env)
         handlers = nd.get("handlers")
-        if isinstance(handlers, list):
-            handler_list: list[JsonVal] = cast(list[JsonVal], handlers)
-            for handler in handler_list:
-                if not isinstance(handler, dict):
+        if jv_is_list(handlers):
+            for handler in jv_list(handlers):
+                if not jv_is_dict(handler):
                     continue
-                handler_node: Node = cast(dict[str, JsonVal], handler)
+                handler_node: Node = jv_dict(handler)
                 body = handler_node.get("body")
-                if isinstance(body, list):
-                    body_list2: list[JsonVal] = cast(list[JsonVal], body)
-                    _guard_stmt_list(body_list2, env)
+                if jv_is_list(body):
+                    _guard_stmt_list(jv_list(body), env)
         _guard_stmt_list(nd.get("orelse"), env)
         _guard_stmt_list(nd.get("finalbody"), env)
         return
     for key in list(nd.keys()):
-        value = nd[key]
-        if isinstance(value, dict):
-            value_node6: Node = cast(dict[str, JsonVal], value)
-            nd[key] = _guard_expr(value_node6, env)
-        elif isinstance(value, list):
-            value_list6: list[JsonVal] = cast(list[JsonVal], value)
-            nd[key] = _guard_expr(value_list6, env)
+        value: JsonVal = nd[key]
+        if jv_is_dict(value) or jv_is_list(value):
+            nd[key] = _guard_expr(value, env)
 
 
 def apply_guard_narrowing(module: Node, ctx: CompileContext) -> Node:
@@ -3622,45 +3371,48 @@ def _guard_env_merge(dst: dict[str, str], narrowed: dict[str, str]) -> None:
 def _guard_storage_env(module: Node) -> dict[str, str]:
     out: dict[str, str] = {}
     body = module.get("body")
-    if isinstance(body, list):
-        body_list: list[JsonVal] = cast(list[JsonVal], body)
-        _guard_collect_storage_types(body_list, out)
+    if jv_is_list(body):
+        _guard_collect_storage_types(jv_list(body), out)
     main_guard_body = module.get("main_guard_body")
-    if isinstance(main_guard_body, list):
-        main_guard_list: list[JsonVal] = cast(list[JsonVal], main_guard_body)
-        _guard_collect_storage_types(main_guard_list, out)
+    if jv_is_list(main_guard_body):
+        _guard_collect_storage_types(jv_list(main_guard_body), out)
     return out
 
 
 def _guard_function_env(func: Node) -> dict[str, str]:
     out: dict[str, str] = {}
     arg_types = func.get("arg_types")
-    if isinstance(arg_types, dict):
-        for arg_name, arg_type in arg_types.items():
-            if isinstance(arg_name, str) and isinstance(arg_type, str) and arg_name != "":
-                out["__storage__:" + arg_name] = arg_type
+    if jv_is_dict(arg_types):
+        arg_types_node: Node = jv_dict(arg_types)
+        for arg_name, arg_type in arg_types_node.items():
+            arg_name_text = str(arg_name).strip()
+            arg_type_text = _tp_safe(arg_type)
+            if arg_name_text != "" and arg_type_text != "":
+                out["__storage__:" + arg_name_text] = arg_type_text
     body = func.get("body")
-    if isinstance(body, list):
-        body_list: list[JsonVal] = cast(list[JsonVal], body)
-        _guard_collect_storage_types(body_list, out)
+    if jv_is_list(body):
+        _guard_collect_storage_types(jv_list(body), out)
     return out
 
 
 def _guard_collect_storage_types(stmts: list[JsonVal], out: dict[str, str]) -> None:
     for stmt in stmts:
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             continue
-        stmt_node: Node = cast(dict[str, JsonVal], stmt)
+        stmt_node: Node = jv_dict(stmt)
         kind = _tp_safe(stmt_node.get("kind"))
         if kind == FUNCTION_DEF or kind == CLOSURE_DEF:
             name = _tp_safe(stmt_node.get("name"))
             if name != "":
                 out["__storage__:" + name] = _closure_callable_type(stmt_node)
             arg_types = stmt_node.get("arg_types")
-            if isinstance(arg_types, dict):
-                for arg_name, arg_type in arg_types.items():
-                    if isinstance(arg_name, str) and isinstance(arg_type, str) and arg_name != "":
-                        out["__storage__:" + arg_name] = arg_type
+            if jv_is_dict(arg_types):
+                arg_types_node: Node = jv_dict(arg_types)
+                for arg_name, arg_type in arg_types_node.items():
+                    arg_name_text = str(arg_name).strip()
+                    arg_type_text = _tp_safe(arg_type)
+                    if arg_name_text != "" and arg_type_text != "":
+                        out["__storage__:" + arg_name_text] = arg_type_text
             continue
         if kind == CLASS_DEF:
             name2 = _tp_safe(stmt_node.get("name"))
@@ -3680,31 +3432,26 @@ def _guard_collect_storage_types(stmts: list[JsonVal], out: dict[str, str]) -> N
         elif kind == FOR_CORE:
             _guard_collect_target_plan_storage(stmt_node.get("target_plan"), out)
         body = stmt_node.get("body")
-        if isinstance(body, list):
-            body_list2: list[JsonVal] = cast(list[JsonVal], body)
-            _guard_collect_storage_types(body_list2, out)
+        if jv_is_list(body):
+            _guard_collect_storage_types(jv_list(body), out)
         orelse = stmt_node.get("orelse")
-        if isinstance(orelse, list):
-            orelse_list: list[JsonVal] = cast(list[JsonVal], orelse)
-            _guard_collect_storage_types(orelse_list, out)
+        if jv_is_list(orelse):
+            _guard_collect_storage_types(jv_list(orelse), out)
         finalbody = stmt_node.get("finalbody")
-        if isinstance(finalbody, list):
-            finalbody_list: list[JsonVal] = cast(list[JsonVal], finalbody)
-            _guard_collect_storage_types(finalbody_list, out)
+        if jv_is_list(finalbody):
+            _guard_collect_storage_types(jv_list(finalbody), out)
         handlers = stmt_node.get("handlers")
-        if isinstance(handlers, list):
-            handler_list: list[JsonVal] = cast(list[JsonVal], handlers)
-            for handler in handler_list:
-                if not isinstance(handler, dict):
+        if jv_is_list(handlers):
+            for handler in jv_list(handlers):
+                if not jv_is_dict(handler):
                     continue
-                handler_node: Node = cast(dict[str, JsonVal], handler)
+                handler_node: Node = jv_dict(handler)
                 ex_name = _tp_safe(handler_node.get("name"))
                 if ex_name != "":
                     out["__storage__:" + ex_name] = "BaseException"
                 hbody = handler_node.get("body")
-                if isinstance(hbody, list):
-                    hbody_list: list[JsonVal] = cast(list[JsonVal], hbody)
-                    _guard_collect_storage_types(hbody_list, out)
+                if jv_is_list(hbody):
+                    _guard_collect_storage_types(jv_list(hbody), out)
 
 
 def _guard_collect_target_storage(target: JsonVal, stmt: Node, out: dict[str, str]) -> None:
@@ -3713,16 +3460,16 @@ def _guard_collect_target_storage(target: JsonVal, stmt: Node, out: dict[str, st
         decl_type = _tp_safe(stmt.get("annotation"))
     if decl_type == "":
         value = stmt.get("value")
-        if isinstance(value, dict):
-            value_node: Node = cast(dict[str, JsonVal], value)
+        if jv_is_dict(value):
+            value_node: Node = jv_dict(value)
             decl_type = _tp_safe(value_node.get("resolved_type"))
     _guard_collect_target_storage_direct(target, decl_type, out)
 
 
 def _guard_collect_target_storage_direct(target: JsonVal, target_type: str, out: dict[str, str]) -> None:
-    if not isinstance(target, dict):
+    if not jv_is_dict(target):
         return
-    target_node: Node = cast(dict[str, JsonVal], target)
+    target_node: Node = jv_dict(target)
     kind = _tp_safe(target_node.get("kind"))
     if kind == NAME:
         name = _tp_safe(target_node.get("id"))
@@ -3731,16 +3478,15 @@ def _guard_collect_target_storage_direct(target: JsonVal, target_type: str, out:
         return
     if kind == TUPLE or kind == LIST:
         elements = target_node.get("elements")
-        if isinstance(elements, list):
-            element_list: list[JsonVal] = cast(list[JsonVal], elements)
-            for elem in element_list:
+        if jv_is_list(elements):
+            for elem in jv_list(elements):
                 _guard_collect_target_storage_direct(elem, target_type, out)
 
 
 def _guard_collect_target_plan_storage(target_plan: JsonVal, out: dict[str, str]) -> None:
-    if not isinstance(target_plan, dict):
+    if not jv_is_dict(target_plan):
         return
-    target_plan_node: Node = cast(dict[str, JsonVal], target_plan)
+    target_plan_node: Node = jv_dict(target_plan)
     kind = _tp_safe(target_plan_node.get("kind"))
     if kind == NAME_TARGET:
         name = _tp_safe(target_plan_node.get("id"))
@@ -3750,9 +3496,8 @@ def _guard_collect_target_plan_storage(target_plan: JsonVal, out: dict[str, str]
         return
     if kind == TUPLE_TARGET:
         elements = target_plan_node.get("elements")
-        if isinstance(elements, list):
-            element_list2: list[JsonVal] = cast(list[JsonVal], elements)
-            for elem in element_list2:
+        if jv_is_list(elements):
+            for elem in jv_list(elements):
                 _guard_collect_target_plan_storage(elem, out)
 
 
@@ -3761,21 +3506,18 @@ def _guard_collect_target_plan_storage(target_plan: JsonVal, out: dict[str, str]
 # ===========================================================================
 
 def _tp_safe(v: JsonVal) -> str:
-    if isinstance(v, str):
-        return v.strip()
-    return ""
+    return ("" + jv_str(v)).strip()
 
 
 def _tp_assign_target(node: JsonVal) -> None:
-    if isinstance(node, list):
-        node_list: list[JsonVal] = cast(list[JsonVal], node)
-        for item in node_list:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _tp_assign_target(item)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    nd: Node = node
-    kind = nd.get("kind", "")
+    nd: Node = jv_dict(node)
+    kind = "" + jv_str(nd.get("kind", ""))
     if _is_function_like_kind(kind):
         rt = _tp_safe(nd.get("return_type"))
         returns = nd.get("returns")
@@ -3784,38 +3526,34 @@ def _tp_assign_target(node: JsonVal) -> None:
     if kind in (ASSIGN, ANN_ASSIGN):
         target = nd.get("target")
         value = nd.get("value")
-        if isinstance(target, dict):
-            target_node: Node = cast(dict[str, JsonVal], target)
+        if jv_is_dict(target):
+            target_node: Node = jv_dict(target)
             tt = _tp_safe(target_node.get("resolved_type"))
             if tt in ("", "unknown"):
                 inf = _tp_safe(nd.get("decl_type"))
                 if inf in ("", "unknown"):
                     inf = _tp_safe(nd.get("annotation"))
-                if inf in ("", "unknown") and isinstance(value, dict):
-                    value_node: Node = cast(dict[str, JsonVal], value)
+                if inf in ("", "unknown") and jv_is_dict(value):
+                    value_node: Node = jv_dict(value)
                     inf = _tp_safe(value_node.get("resolved_type"))
                 if inf not in ("", "unknown"):
                     target_node["resolved_type"] = inf
                     if _tp_safe(nd.get("decl_type")) in ("", "unknown"):
                         nd["decl_type"] = inf
-            if isinstance(value, dict):
-                value_node2: Node = cast(dict[str, JsonVal], value)
+            if jv_is_dict(value):
+                value_node2: Node = jv_dict(value)
                 vt = _tp_safe(value_node2.get("resolved_type"))
                 dt = _tp_safe(nd.get("decl_type"))
                 if dt not in ("", "unknown") and "unknown" in vt:
-                    vk = value_node2.get("kind", "")
+                    vk = "" + jv_str(value_node2.get("kind", ""))
                     if vk in (LIST, DICT, SET):
                         value_node2["resolved_type"] = dt
-            if target_node.get("kind") == TUPLE and isinstance(value, dict):
-                value_node3: Node = cast(dict[str, JsonVal], value)
+            if ("" + jv_str(target_node.get("kind", ""))) == TUPLE and jv_is_dict(value):
+                value_node3: Node = jv_dict(value)
                 _tp_tuple_targets(target_node, value_node3)
     for v in nd.values():
-        if isinstance(v, dict):
-            v_node: Node = cast(dict[str, JsonVal], v)
-            _tp_assign_target(v_node)
-        elif isinstance(v, list):
-            v_list: list[JsonVal] = cast(list[JsonVal], v)
-            _tp_assign_target(v_list)
+        if jv_is_dict(v) or jv_is_list(v):
+            _tp_assign_target(v)
 
 
 def _tp_tuple_targets(target: Node, value: Node) -> None:
@@ -3825,233 +3563,229 @@ def _tp_tuple_targets(target: Node, value: Node) -> None:
     inner = vt[6:-1]
     ets = _split_comma_types(inner)
     elements = target.get("elements")
-    if not isinstance(elements, list):
+    if not jv_is_list(elements):
         return
-    element_list: list[JsonVal] = cast(list[JsonVal], elements)
-    for i, elem in enumerate(element_list):
-        if not isinstance(elem, dict) or i >= len(ets):
+    i = 0
+    for elem in jv_list(elements):
+        if i >= len(ets) or not jv_is_dict(elem):
+            i += 1
             continue
-        elem_node: Node = cast(dict[str, JsonVal], elem)
+        elem_node: Node = jv_dict(elem)
         et = _tp_safe(elem_node.get("resolved_type"))
         if et in ("", "unknown"):
             elem_node["resolved_type"] = ets[i].strip()
+        i += 1
 
 
 def _tp_binop(node: JsonVal) -> None:
-    if isinstance(node, list):
-        node_list: list[JsonVal] = cast(list[JsonVal], node)
-        for item in node_list:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _tp_binop(item)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    nd: Node = node
+    nd: Node = jv_dict(node)
     for v in nd.values():
-        if isinstance(v, dict):
-            v_node: Node = cast(dict[str, JsonVal], v)
-            _tp_binop(v_node)
-        elif isinstance(v, list):
-            v_list: list[JsonVal] = cast(list[JsonVal], v)
-            _tp_binop(v_list)
-    if nd.get("kind") == BIN_OP:
-        rt = _tp_safe(nd.get("resolved_type"))
-        if rt not in ("", "unknown") and "|" not in rt:
+        if jv_is_dict(v) or jv_is_list(v):
+            _tp_binop(v)
+    kind = "" + jv_str(nd.get("kind", ""))
+    if kind == BIN_OP:
+        resolved_type = _tp_safe(nd.get("resolved_type"))
+        if resolved_type not in ("", "unknown") and "|" not in resolved_type:
             return
         left = nd.get("left")
         right = nd.get("right")
-        lt2 = ""
-        rt2 = ""
-        if isinstance(left, dict):
-            left_node: Node = cast(dict[str, JsonVal], left)
-            lt2 = _tp_safe(left_node.get("resolved_type"))
-        if isinstance(right, dict):
-            right_node: Node = cast(dict[str, JsonVal], right)
-            rt2 = _tp_safe(right_node.get("resolved_type"))
-        if lt2 in ("", "unknown") and rt2 in ("", "unknown"):
+        left_type = ""
+        right_type = ""
+        if jv_is_dict(left):
+            left_node: Node = jv_dict(left)
+            left_type = _tp_safe(left_node.get("resolved_type"))
+        if jv_is_dict(right):
+            right_node: Node = jv_dict(right)
+            right_type = _tp_safe(right_node.get("resolved_type"))
+        if left_type in ("", "unknown") and right_type in ("", "unknown"):
             return
-        fts = {"float32", "float64"}
-        its = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
-        if lt2 in fts or rt2 in fts:
+        float_types = {"float32", "float64"}
+        int_types = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+        if left_type in float_types or right_type in float_types:
             nd["resolved_type"] = "float64"
-        elif lt2 in its and rt2 in its:
+        elif left_type in int_types and right_type in int_types:
             nd["resolved_type"] = "int64"
-        elif lt2 == "str" or rt2 == "str":
-            if nd.get("op", "") == "Add":
+        elif left_type == "str" or right_type == "str":
+            if ("" + jv_str(nd.get("op", ""))) == "Add":
                 nd["resolved_type"] = "str"
-        elif lt2 not in ("", "unknown"):
-            nd["resolved_type"] = lt2
-        elif rt2 not in ("", "unknown"):
-            nd["resolved_type"] = rt2
-    if nd.get("kind") == COMPARE:
+        elif left_type not in ("", "unknown"):
+            nd["resolved_type"] = left_type
+        elif right_type not in ("", "unknown"):
+            nd["resolved_type"] = right_type
+    if kind == COMPARE:
         if _tp_safe(nd.get("resolved_type")) in ("", "unknown"):
             nd["resolved_type"] = "bool"
-    if nd.get("kind") == SUBSCRIPT:
+    if kind == SUBSCRIPT:
         if _tp_safe(nd.get("resolved_type")) in ("", "unknown"):
             value = nd.get("value")
-            if isinstance(value, dict):
-                value_node2: Node = cast(dict[str, JsonVal], value)
-                vt = _tp_safe(value_node2.get("resolved_type"))
-                if vt == "str":
+            if jv_is_dict(value):
+                value_node2: Node = jv_dict(value)
+                value_type = _tp_safe(value_node2.get("resolved_type"))
+                if value_type == "str":
                     nd["resolved_type"] = "str"
-                elif vt in ("bytes", "bytearray"):
+                elif value_type in ("bytes", "bytearray"):
                     nd["resolved_type"] = "int32"
-                elif vt.startswith("list[") and vt.endswith("]"):
-                    nd["resolved_type"] = vt[5:-1].strip()
-                elif vt.startswith("dict[") and vt.endswith("]"):
-                    parts = _split_comma_types(vt[5:-1])
+                elif value_type.startswith("list[") and value_type.endswith("]"):
+                    nd["resolved_type"] = value_type[5:-1].strip()
+                elif value_type.startswith("dict[") and value_type.endswith("]"):
+                    parts = _split_comma_types(value_type[5:-1])
                     if len(parts) >= 2:
                         nd["resolved_type"] = parts[1].strip()
-    if nd.get("kind") == UNARY_OP:
+    if kind == UNARY_OP:
         if _tp_safe(nd.get("resolved_type")) in ("", "unknown"):
             operand = nd.get("operand")
-            if isinstance(operand, dict):
-                operand_node: Node = cast(dict[str, JsonVal], operand)
-                ot = _tp_safe(operand_node.get("resolved_type"))
-                if ot == "bool" and nd.get("op") == "Not":
+            if jv_is_dict(operand):
+                operand_node: Node = jv_dict(operand)
+                operand_type = _tp_safe(operand_node.get("resolved_type"))
+                if operand_type == "bool" and ("" + jv_str(nd.get("op", ""))) == "Not":
                     nd["resolved_type"] = "bool"
-                elif ot not in ("", "unknown"):
-                    nd["resolved_type"] = ot
+                elif operand_type not in ("", "unknown"):
+                    nd["resolved_type"] = operand_type
 
 
-def _tp_truediv(node: JsonVal) -> None:
-    if isinstance(node, list):
-        for i in range(len(node)):
-            r = _try_truediv(node[i])
-            if r is not None:
-                node[i] = r
-            _tp_truediv(node[i])
-        return
-    if not isinstance(node, dict):
-        return
-    nd: Node = node
-    for key in list(nd.keys()):
-        val = nd[key]
-        if isinstance(val, dict):
-            r = _try_truediv(val)
-            if r is not None:
-                nd[key] = r
-            else:
-                _tp_truediv(val)
-        elif isinstance(val, list):
-            _tp_truediv(val)
+def _tp_truediv(node: JsonVal) -> JsonVal:
+    replacement = _try_truediv(node)
+    current = node if replacement is None else replacement
+    if jv_is_list(current):
+        out_list: list[JsonVal] = _empty_jv_list()
+        for item in jv_list(current):
+            out_list.append(_tp_truediv(item))
+        return out_list
+    if not jv_is_dict(current):
+        return current
+    nd: Node = jv_dict(current)
+    out: Node = _empty_node()
+    for key in nd.keys():
+        key_s = "" + jv_str(key)
+        if key_s == "":
+            continue
+        value = nd.get(key_s)
+        if jv_is_dict(value) or jv_is_list(value):
+            out[key_s] = _tp_truediv(value)
+        else:
+            out[key_s] = value
+    return out
 
 
 def _try_truediv(node: JsonVal) -> JsonVal:
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return None
-    node_obj: Node = cast(dict[str, JsonVal], node)
-    if node_obj.get("kind") != BIN_OP or node_obj.get("op") != "Div":
+    node_obj: Node = jv_dict(node)
+    if ("" + jv_str(node_obj.get("kind", ""))) != BIN_OP or ("" + jv_str(node_obj.get("op", ""))) != "Div":
         return None
     left = node_obj.get("left")
-    if not isinstance(left, dict):
+    if not jv_is_dict(left):
         return None
-    left_node: Node = cast(dict[str, JsonVal], left)
-    lt = _tp_safe(left_node.get("resolved_type"))
-    if lt != "Path":
+    left_node: Node = jv_dict(left)
+    left_type = _tp_safe(left_node.get("resolved_type"))
+    if left_type != "Path":
         return None
     right = node_obj.get("right")
-    func_node: Node = {}
+    func_node: Node = _empty_node()
     func_node["kind"] = ATTRIBUTE
     func_node["value"] = left_node
     func_node["attr"] = "joinpath"
     func_node["resolved_type"] = "Path"
-    args: list[JsonVal] = []
+    args: list[JsonVal] = _empty_jv_list()
     if right is not None:
         args.append(right)
-    call: Node = {}
+    call: Node = _empty_node()
     call["kind"] = CALL
     call["func"] = func_node
     call["args"] = args
-    call["keywords"] = []
+    call["keywords"] = _empty_jv_list()
     call["resolved_type"] = "Path"
     span = node_obj.get("source_span")
-    if isinstance(span, dict):
-        call["source_span"] = span
+    if jv_is_dict(span):
+        call["source_span"] = jv_dict(span)
     return call
 
 
 def _collect_fn_callable_types(module: Node) -> dict[str, str]:
     out: dict[str, str] = {}
     renamed: dict[str, str] = {}
-    rs = module.get("renamed_symbols")
-    if isinstance(rs, dict):
-        for orig, rn in rs.items():
-            if isinstance(orig, str) and isinstance(rn, str):
-                renamed[rn] = orig
+    renamed_symbols = module.get("renamed_symbols")
+    if jv_is_dict(renamed_symbols):
+        renamed_map: Node = jv_dict(renamed_symbols)
+        for renamed_name in renamed_map.keys():
+            renamed_name_s = "" + jv_str(renamed_name)
+            original_name_s = _tp_safe(renamed_map.get(renamed_name_s))
+            if renamed_name_s != "" and original_name_s != "":
+                renamed[renamed_name_s] = original_name_s
     body = module.get("body")
-    if not isinstance(body, list):
+    if not jv_is_list(body):
         return out
-    body_list: list[JsonVal] = cast(list[JsonVal], body)
-    for stmt in body_list:
-        if not isinstance(stmt, dict):
+    for stmt in jv_list(body):
+        if not jv_is_dict(stmt):
             continue
-        stmt_node: Node = cast(dict[str, JsonVal], stmt)
-        kind = stmt_node.get("kind", "")
+        stmt_node: Node = jv_dict(stmt)
+        kind = "" + jv_str(stmt_node.get("kind", ""))
         if _is_function_like_kind(kind):
             name = _tp_safe(stmt_node.get("name"))
             ret = _tp_safe(stmt_node.get("return_type"))
             if name != "" and ret not in ("", "unknown"):
-                ao = stmt_node.get("arg_order")
-                at = stmt_node.get("arg_types")
-                if isinstance(ao, list) and isinstance(at, dict):
-                    ao_list: list[JsonVal] = cast(list[JsonVal], ao)
-                    at_map: dict[str, JsonVal] = cast(dict[str, JsonVal], at)
+                arg_order = stmt_node.get("arg_order")
+                arg_types = stmt_node.get("arg_types")
+                if jv_is_list(arg_order) and jv_is_dict(arg_types):
                     params: list[str] = []
-                    for p in ao_list:
-                        if isinstance(p, str) and p != "self":
-                            params.append(p)
-                    pts: list[str] = []
-                    for p in params:
-                        pts.append(_tp_safe(at_map.get(p)))
-                    ct = "callable[[" + ",".join(pts) + "]," + ret + "]"
+                    for param_name in jv_list(arg_order):
+                        param_name_s = _tp_safe(param_name)
+                        if param_name_s != "" and param_name_s != "self":
+                            params.append(param_name_s)
+                    param_types: list[str] = []
+                    arg_type_map: Node = jv_dict(arg_types)
+                    for param_name in params:
+                        param_types.append(_tp_safe(arg_type_map.get(param_name)))
+                    ct = "callable[[" + ",".join(param_types) + "]," + ret + "]"
                 else:
-                    ct = "callable[[],"+ret+"]"
+                    ct = "callable[[]," + ret + "]"
                 out[name] = ct
-                if name in renamed:
-                    out[renamed[name]] = ct
+                original_name2 = renamed.get(name, "")
+                if original_name2 != "":
+                    out[original_name2] = ct
         elif kind == CLASS_DEF:
-            cb = stmt_node.get("body")
-            if isinstance(cb, list):
-                cb_list: list[JsonVal] = cast(list[JsonVal], cb)
-                for m in cb_list:
-                    if isinstance(m, dict) and m.get("kind") == FUNCTION_DEF:
-                        method_node: Node = cast(dict[str, JsonVal], m)
-                        mn = _tp_safe(method_node.get("name"))
-                        if mn != "":
-                            ret = _tp_safe(method_node.get("return_type"))
-                            if ret not in ("", "unknown"):
-                                out[mn] = "callable"
+            class_body = stmt_node.get("body")
+            if jv_is_list(class_body):
+                for method in jv_list(class_body):
+                    if jv_is_dict(method):
+                        method_node: Node = jv_dict(method)
+                        if ("" + jv_str(method_node.get("kind", ""))) == FUNCTION_DEF:
+                            method_name = _tp_safe(method_node.get("name"))
+                            if method_name != "":
+                                ret = _tp_safe(method_node.get("return_type"))
+                                if ret not in ("", "unknown"):
+                                    out[method_name] = "callable"
     return out
 
-
 def _tp_fn_refs(node: JsonVal, ft: dict[str, str]) -> None:
-    if isinstance(node, list):
-        node_list: list[JsonVal] = cast(list[JsonVal], node)
-        for item in node_list:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _tp_fn_refs(item, ft)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    nd: Node = node
-    if nd.get("kind") == CALL:
+    nd: Node = jv_dict(node)
+    if _tp_safe(nd.get("kind")) == "Call":
         args = nd.get("args")
-        if isinstance(args, list):
-            arg_list: list[JsonVal] = cast(list[JsonVal], args)
-            for arg in arg_list:
-                if isinstance(arg, dict) and arg.get("kind") == NAME:
-                    arg_node: Node = cast(dict[str, JsonVal], arg)
-                    n = _tp_safe(arg_node.get("id"))
-                    if n in ft:
-                        cur = _tp_safe(arg_node.get("resolved_type"))
-                        if cur in ("", "unknown"):
-                            arg_node["resolved_type"] = ft[n]
-    for v in nd.values():
-        if isinstance(v, dict):
-            v_node: Node = cast(dict[str, JsonVal], v)
-            _tp_fn_refs(v_node, ft)
-        elif isinstance(v, list):
-            v_list: list[JsonVal] = cast(list[JsonVal], v)
-            _tp_fn_refs(v_list, ft)
+        if jv_is_list(args):
+            for arg in jv_list(args):
+                if jv_is_dict(arg):
+                    arg_node: Node = jv_dict(arg)
+                    if _tp_safe(arg_node.get("kind")) == "Name":
+                        name = _tp_safe(arg_node.get("id"))
+                        if name in ft:
+                            current_type = _tp_safe(arg_node.get("resolved_type"))
+                            if current_type in ("", "unknown"):
+                                arg_node["resolved_type"] = ft[name]
+    for value in nd.values():
+        if jv_is_dict(value) or jv_is_list(value):
+            _tp_fn_refs(value, ft)
 
 
 _FLOAT_TAGS: set[str] = {
@@ -4064,47 +3798,42 @@ _INT_TYPES: set[str] = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "
 
 
 def _tp_numeric_casts(node: JsonVal) -> None:
-    if isinstance(node, list):
-        node_list: list[JsonVal] = cast(list[JsonVal], node)
-        for item in node_list:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _tp_numeric_casts(item)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    nd: Node = node
-    if nd.get("kind") == CALL:
-        cr = _tp_safe(nd.get("resolved_type"))
-        is_float = cr == "float64"
+    nd: Node = jv_dict(node)
+    if _tp_safe(nd.get("kind")) == "Call":
+        call_resolved_type = _tp_safe(nd.get("resolved_type"))
+        is_float = call_resolved_type == "float64"
         if not is_float:
-            st = _tp_safe(nd.get("semantic_tag"))
-            is_float = st in _FLOAT_TAGS
+            semantic_tag = _tp_safe(nd.get("semantic_tag"))
+            is_float = semantic_tag in _FLOAT_TAGS
         if is_float:
             args = nd.get("args")
-            if isinstance(args, list):
-                arg_list: list[JsonVal] = cast(list[JsonVal], args)
-                for arg in arg_list:
-                    if isinstance(arg, dict):
-                        arg_node: Node = cast(dict[str, JsonVal], arg)
-                        at = _tp_safe(arg_node.get("resolved_type"))
-                        if at in _INT_TYPES:
-                            ec = arg_node.get("casts")
-                            if not isinstance(ec, list):
-                                ec = []
-                            cast_list: list[JsonVal] = cast(list[JsonVal], ec)
-                            cast_entry: Node = {}
+            if jv_is_list(args):
+                for arg in jv_list(args):
+                    if jv_is_dict(arg):
+                        arg_node: Node = jv_dict(arg)
+                        arg_type = _tp_safe(arg_node.get("resolved_type"))
+                        if arg_type in _INT_TYPES:
+                            existing_casts = arg_node.get("casts")
+                            cast_list: list[JsonVal] = _empty_jv_list()
+                            if jv_is_list(existing_casts):
+                                for cast_item in jv_list(existing_casts):
+                                    cast_list.append(cast_item)
+                            cast_entry: Node = _empty_node()
                             cast_entry["on"] = "body"
-                            cast_entry["from"] = at
+                            cast_entry["from"] = arg_type
                             cast_entry["to"] = "float64"
                             cast_entry["reason"] = "numeric_promotion"
                             cast_list.append(cast_entry)
                             arg_node["casts"] = cast_list
-    for v in nd.values():
-        if isinstance(v, dict):
-            v_node2: Node = cast(dict[str, JsonVal], v)
-            _tp_numeric_casts(v_node2)
-        elif isinstance(v, list):
-            v_list2: list[JsonVal] = cast(list[JsonVal], v)
-            _tp_numeric_casts(v_list2)
+    for value in nd.values():
+        if jv_is_dict(value) or jv_is_list(value):
+            _tp_numeric_casts(value)
 
 
 def _tp_is_unknown_container_literal(node: Node) -> bool:
@@ -4112,23 +3841,23 @@ def _tp_is_unknown_container_literal(node: Node) -> bool:
     resolved_type = _tp_safe(node.get("resolved_type"))
     if kind == LIST:
         elements = node.get("elements")
-        return isinstance(elements, list) and len(cast(list[JsonVal], elements)) == 0 and resolved_type in ("", "unknown", "list[unknown]")
+        return jv_is_list(elements) and len(jv_list(elements)) == 0 and resolved_type in ("", "unknown", "list[unknown]")
     if kind == DICT:
         entries = node.get("entries")
-        return isinstance(entries, list) and len(cast(list[JsonVal], entries)) == 0 and resolved_type in ("", "unknown", "dict[unknown,unknown]")
+        return jv_is_list(entries) and len(jv_list(entries)) == 0 and resolved_type in ("", "unknown", "dict[unknown,unknown]")
     if kind == SET:
         elements2 = node.get("elements")
-        return isinstance(elements2, list) and len(cast(list[JsonVal], elements2)) == 0 and resolved_type in ("", "unknown", "set[unknown]")
+        return jv_is_list(elements2) and len(jv_list(elements2)) == 0 and resolved_type in ("", "unknown", "set[unknown]")
     return False
 
 
 def _tp_adopt_peer_container_type(candidate: JsonVal, peer: JsonVal) -> None:
-    if not isinstance(candidate, dict) or not isinstance(peer, dict):
+    if not jv_is_dict(candidate) or not jv_is_dict(peer):
         return
-    candidate_node: Node = cast(dict[str, JsonVal], candidate)
+    candidate_node: Node = jv_dict(candidate)
     if not _tp_is_unknown_container_literal(candidate_node):
         return
-    peer_node: Node = cast(dict[str, JsonVal], peer)
+    peer_node: Node = jv_dict(peer)
     peer_type = normalize_type_name(peer_node.get("resolved_type"))
     kind = _tp_safe(candidate_node.get("kind"))
     if kind == LIST and peer_type.startswith("list[") and peer_type.endswith("]"):
@@ -4140,35 +3869,39 @@ def _tp_adopt_peer_container_type(candidate: JsonVal, peer: JsonVal) -> None:
 
 
 def _tp_assert_eq_peer_literals(node: JsonVal) -> None:
-    if isinstance(node, list):
-        node_list: list[JsonVal] = cast(list[JsonVal], node)
-        for item in node_list:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _tp_assert_eq_peer_literals(item)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    nd: Node = node
-    if nd.get("kind") == CALL:
+    nd: Node = jv_dict(node)
+    if _tp_safe(nd.get("kind")) == "Call":
         func = nd.get("func")
-        if isinstance(func, dict):
-            func_node: Node = cast(dict[str, JsonVal], func)
-            if func_node.get("kind") == NAME and _tp_safe(func_node.get("id")) == "py_assert_eq":
+        if jv_is_dict(func):
+            func_node: Node = jv_dict(func)
+            if _tp_safe(func_node.get("kind")) == "Name" and _tp_safe(func_node.get("id")) == "py_assert_eq":
                 args = nd.get("args")
-                if isinstance(args, list):
-                    arg_list: list[JsonVal] = cast(list[JsonVal], args)
+                if jv_is_list(args):
+                    arg_list = jv_list(args)
                     if len(arg_list) >= 2:
-                        _tp_adopt_peer_container_type(arg_list[0], arg_list[1])
-                        _tp_adopt_peer_container_type(arg_list[1], arg_list[0])
-    for v in nd.values():
-        if isinstance(v, dict):
-            _tp_assert_eq_peer_literals(v)
-        elif isinstance(v, list):
-            _tp_assert_eq_peer_literals(v)
-
+                        arg_items: list[JsonVal] = _empty_jv_list()
+                        for arg_item in arg_list:
+                            arg_items.append(arg_item)
+                            if len(arg_items) >= 2:
+                                break
+                        if len(arg_items) >= 2:
+                            _tp_adopt_peer_container_type(arg_items[0], arg_items[1])
+                            _tp_adopt_peer_container_type(arg_items[1], arg_items[0])
+    for value in nd.values():
+        if jv_is_dict(value) or jv_is_list(value):
+            _tp_assert_eq_peer_literals(value)
 
 def apply_type_propagation(module: Node, ctx: CompileContext) -> Node:
     _tp_binop(module)
-    _tp_truediv(module)
+    rewritten = _tp_truediv(module)
+    if jv_is_dict(rewritten):
+        module = jv_dict(rewritten)
     _tp_assign_target(module)
     ft = _collect_fn_callable_types(module)
     if ft:
@@ -4183,40 +3916,37 @@ def apply_type_propagation(module: Node, ctx: CompileContext) -> Node:
 # ===========================================================================
 
 def _yd_walk(node: JsonVal) -> None:
-    if isinstance(node, list):
-        node_list: list[JsonVal] = cast(list[JsonVal], node)
-        for item in node_list:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _yd_walk(item)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    nd: Node = node
-    kind = nd.get("kind", "")
+    nd: Node = jv_dict(node)
+    kind = "" + jv_str(nd.get("kind", ""))
     if kind == IF_EXP:
         nd["yields_dynamic"] = True
     if kind == CALL:
         func = nd.get("func")
-        if isinstance(func, dict):
-            func_node: Node = cast(dict[str, JsonVal], func)
-            fk = func_node.get("kind", "")
-            if fk == NAME:
-                cn = func_node.get("id", "")
-                if cn == "min" or cn == "max":
+        if jv_is_dict(func):
+            func_node: Node = jv_dict(func)
+            func_kind = "" + jv_str(func_node.get("kind", ""))
+            if func_kind == NAME:
+                callee_name = _tp_safe(func_node.get("id"))
+                if callee_name == "min" or callee_name == "max":
                     nd["yields_dynamic"] = True
-            if fk == ATTRIBUTE:
-                attr = func_node.get("attr", "")
+            if func_kind == ATTRIBUTE:
+                attr = _tp_safe(func_node.get("attr"))
                 if attr == "get":
                     owner = func_node.get("value")
-                    if isinstance(owner, dict):
-                        owner_node: Node = cast(dict[str, JsonVal], owner)
-                        ot: str = jv_str(owner_node.get("resolved_type", ""))
-                        if ot.startswith("dict["):
+                    if jv_is_dict(owner):
+                        owner_node: Node = jv_dict(owner)
+                        owner_type = _tp_safe(owner_node.get("resolved_type"))
+                        if owner_type.startswith("dict["):
                             nd["yields_dynamic"] = True
-    for v in nd.values():
-        if isinstance(v, dict):
-            _yd_walk(v)
-        elif isinstance(v, list):
-            _yd_walk(v)
+    for value in nd.values():
+        if jv_is_dict(value) or jv_is_list(value):
+            _yd_walk(value)
 
 
 def apply_yields_dynamic(module: Node, ctx: CompileContext) -> None:
@@ -4228,7 +3958,7 @@ def apply_yields_dynamic(module: Node, ctx: CompileContext) -> None:
 # ===========================================================================
 
 def _make_name_ref(name: str, resolved_type: str) -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = NAME
     out["id"] = name
     out["resolved_type"] = resolved_type
@@ -4236,7 +3966,7 @@ def _make_name_ref(name: str, resolved_type: str) -> Node:
 
 
 def _make_none_const() -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = CONSTANT
     out["value"] = None
     out["resolved_type"] = "None"
@@ -4251,17 +3981,17 @@ def _make_container_method_call(
     args: list[JsonVal],
     result_type: str,
 ) -> Node:
-    attr_node: Node = {}
+    attr_node: Node = _empty_node()
     attr_node["kind"] = ATTRIBUTE
     attr_node["value"] = _make_name_ref(owner_name, owner_type)
     attr_node["attr"] = attr
     attr_node["resolved_type"] = "callable"
 
-    call_node: Node = {}
+    call_node: Node = _empty_node()
     call_node["kind"] = CALL
     call_node["func"] = attr_node
     call_node["args"] = args
-    call_node["keywords"] = []
+    call_node["keywords"] = _empty_jv_list()
     call_node["resolved_type"] = result_type
     call_node["lowered_kind"] = "BuiltinCall"
 
@@ -4287,7 +4017,7 @@ def _make_container_method_call(
     call_node["runtime_owner"] = deep_copy_json(attr_node["value"])
 
     if attr in ("append", "extend", "insert", "remove", "pop", "clear", "update", "add", "discard", "setdefault", "sort", "reverse"):
-        meta: Node = {}
+        meta: Node = _empty_node()
         meta["mutates_receiver"] = True
         call_node["meta"] = meta
     return call_node
@@ -4305,16 +4035,16 @@ def _make_with_method_call(
     runtime_module_id: str = "",
     semantic_tag: str = "",
 ) -> Node:
-    attr_node: Node = {}
+    attr_node: Node = _empty_node()
     attr_node["kind"] = ATTRIBUTE
     attr_node["value"] = _make_name_ref(owner_name, owner_type)
     attr_node["attr"] = attr
     attr_node["resolved_type"] = "callable"
-    call_node: Node = {}
+    call_node: Node = _empty_node()
     call_node["kind"] = CALL
     call_node["func"] = attr_node
     call_node["args"] = args
-    call_node["keywords"] = []
+    call_node["keywords"] = _empty_jv_list()
     call_node["resolved_type"] = result_type
     if runtime_call != "":
         call_node["runtime_call"] = runtime_call
@@ -4329,7 +4059,7 @@ def _make_with_method_call(
 
 
 def _make_expr_stmt(value: Node) -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = EXPR
     out["value"] = value
     return out
@@ -4340,20 +4070,21 @@ def _lower_covariant_copy(node: Node, ctx: CompileContext) -> JsonVal:
         return node
     func = node.get("func")
     args = _node_list(node, "args")
-    if not isinstance(func, dict) or _str(func, "kind") != NAME or _str(func, "id") != "list" or len(args) != 1:
+    if not jv_is_dict(func) or _str(func, "kind") != NAME or _str(func, "id") != "list" or len(args) != 1:
         return node
     source = args[0]
-    if not isinstance(source, dict):
+    if not jv_is_dict(source):
         return node
-    source_type = normalize_type_name(source.get("resolved_type"))
+    source_node: Node = jv_dict(source)
+    source_type = normalize_type_name(source_node.get("resolved_type"))
     target_type = normalize_type_name(node.get("resolved_type"))
     source_elem_type = _list_elem_type(source_type)
     target_elem_type = _list_elem_type(target_type)
     if source_elem_type == "" or target_elem_type == "" or source_elem_type == target_elem_type:
         return node
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = COVARIANT_COPY
-    out["source"] = deep_copy_json(source)
+    out["source"] = deep_copy_json(source_node)
     out["source_type"] = source_type
     out["source_elem_type"] = source_elem_type
     out["target_type"] = target_type
@@ -4363,19 +4094,21 @@ def _lower_covariant_copy(node: Node, ctx: CompileContext) -> JsonVal:
 
 
 def _apply_profile_expr(node: JsonVal, ctx: CompileContext) -> JsonVal:
-    if isinstance(node, list):
-        items: list[JsonVal] = []
-        for item in node:
+    if jv_is_list(node):
+        items: list[JsonVal] = _empty_jv_list()
+        for item in jv_list(node):
             items.append(_apply_profile_expr(item, ctx))
         return items
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return node
-    out: Node = {}
-    for key, value in node.items():
-        key_s = key if isinstance(key, str) else ""
+    out: Node = _empty_node()
+    node_map: Node = jv_dict(node)
+    for key in node_map.keys():
+        key_s = "" + jv_str(key)
         if key_s == "":
             continue
-        if isinstance(value, dict) or isinstance(value, list):
+        value = node_map.get(key_s)
+        if jv_is_dict(value) or jv_is_list(value):
             out[key_s] = _apply_profile_expr(value, ctx)
         else:
             out[key_s] = value
@@ -4389,7 +4122,7 @@ def _apply_profile_expr(node: JsonVal, ctx: CompileContext) -> JsonVal:
 
 
 def _union_return_type(return_type: str) -> str:
-    rt = normalize_type_name(return_type)
+    rt = "" + normalize_type_name(return_type)
     if rt in ("", "unknown", "None"):
         return "Exception"
     if rt.startswith("multi_return["):
@@ -4400,47 +4133,52 @@ def _union_return_type(return_type: str) -> str:
 def _collect_local_can_raise_symbols(module: Node) -> set[str]:
     funcs: dict[str, Node] = {}
     for stmt in _node_list(module, "body"):
-        if isinstance(stmt, dict) and _sk(stmt) in (FUNCTION_DEF, CLOSURE_DEF):
+        if jv_is_dict(stmt) and _sk(stmt) in (FUNCTION_DEF, CLOSURE_DEF):
             name = _str(stmt, "name")
             if name != "":
-                funcs[name] = cast(dict[str, JsonVal], stmt)
+                funcs[name] = jv_dict(stmt)
 
     def _contains_raise(node: JsonVal) -> bool:
-        if isinstance(node, list):
-            for item in cast(list[JsonVal], node):
+        if jv_is_list(node):
+            for item in jv_list(node):
                 if _contains_raise(item):
                     return True
             return False
-        if not isinstance(node, dict):
+        if not jv_is_dict(node):
             return False
         kind = _sk(node)
         if kind == "Raise":
             return True
         if kind in (FUNCTION_DEF, CLOSURE_DEF, CLASS_DEF):
             return False
-        for value in node.values():
-            if isinstance(value, dict) or isinstance(value, list):
+        node_map: Node = jv_dict(node)
+        for value in node_map.values():
+            if jv_is_dict(value) or jv_is_list(value):
                 if _contains_raise(value):
                     return True
         return False
 
     def _contains_call_to(node: JsonVal, can_raise: set[str]) -> bool:
-        if isinstance(node, list):
-            for item in cast(list[JsonVal], node):
+        if jv_is_list(node):
+            for item in jv_list(node):
                 if _contains_call_to(item, can_raise):
                     return True
             return False
-        if not isinstance(node, dict):
+        if not jv_is_dict(node):
             return False
         kind = _sk(node)
         if kind == CALL:
-            func = node.get("func")
-            if isinstance(func, dict) and _sk(func) == NAME and _str(func, "id") in can_raise:
+            node_map3: Node = jv_dict(node)
+            func: JsonVal = None
+            if "func" in node_map3:
+                func = node_map3["func"]
+            if jv_is_dict(func) and _sk(func) == NAME and _str(func, "id") in can_raise:
                 return True
         if kind in (FUNCTION_DEF, CLOSURE_DEF, CLASS_DEF):
             return False
-        for value in node.values():
-            if isinstance(value, dict) or isinstance(value, list):
+        node_map2: Node = jv_dict(node)
+        for value in node_map2.values():
+            if jv_is_dict(value) or jv_is_list(value):
                 if _contains_call_to(value, can_raise):
                     return True
         return False
@@ -4463,28 +4201,34 @@ def _collect_local_can_raise_symbols(module: Node) -> set[str]:
 
 def _raise_exception_type(stmt: Node) -> str:
     exc = stmt.get("exc")
-    if isinstance(exc, dict):
-        if _sk(exc) == CALL:
-            func = exc.get("func")
-            if isinstance(func, dict) and _sk(func) == NAME:
+    if jv_is_dict(exc):
+        exc_node: Node = jv_dict(exc)
+        if _sk(exc_node) == CALL:
+            func: JsonVal = None
+            if "func" in exc_node:
+                func = exc_node["func"]
+            if jv_is_dict(func) and _sk(func) == NAME:
                 name = _str(func, "id")
                 if name != "":
                     return name
-        rt = _str(exc, "resolved_type")
+        rt = _str(exc_node, "resolved_type")
         if rt != "":
             return rt
     return "RuntimeError"
 
 
 def _is_can_raise_call(value: JsonVal, can_raise_symbols: set[str]) -> bool:
-    if not isinstance(value, dict) or _sk(value) != CALL:
+    if not jv_is_dict(value) or _sk(value) != CALL:
         return False
-    func = value.get("func")
-    return isinstance(func, dict) and _sk(func) == NAME and _str(func, "id") in can_raise_symbols
+    value_node: Node = jv_dict(value)
+    func: JsonVal = None
+    if "func" in value_node:
+        func = value_node["func"]
+    return jv_is_dict(func) and _sk(func) == NAME and _str(func, "id") in can_raise_symbols
 
 
 def _make_error_check(call_node: Node, ok_target: JsonVal, ok_type: str, on_error: str) -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = ERROR_CHECK
     out["call"] = call_node
     out["ok_target"] = ok_target
@@ -4499,23 +4243,26 @@ def _rewrite_expr_error_checks(
     can_raise_symbols: set[str],
     on_error: str,
 ) -> tuple[list[JsonVal], JsonVal]:
-    if isinstance(node, list):
-        prefix: list[JsonVal] = []
-        items: list[JsonVal] = []
-        for item in cast(list[JsonVal], node):
+    if jv_is_list(node):
+        prefix: list[JsonVal] = _empty_jv_list()
+        items: list[JsonVal] = _empty_jv_list()
+        for item in jv_list(node):
             item_prefix, item_out = _rewrite_expr_error_checks(item, ctx, can_raise_symbols, on_error)
             prefix.extend(item_prefix)
             items.append(item_out)
         return prefix, items
-    if not isinstance(node, dict):
-        return [], node
-    out: Node = {}
-    prefix2: list[JsonVal] = []
-    for key, value in node.items():
-        key_s = key if isinstance(key, str) else ""
+    if not jv_is_dict(node):
+        empty_prefix: list[JsonVal] = _empty_jv_list()
+        return empty_prefix, node
+    out: Node = _empty_node()
+    prefix2: list[JsonVal] = _empty_jv_list()
+    node_map4: Node = jv_dict(node)
+    for key in node_map4.keys():
+        key_s = "" + jv_str(key)
         if key_s == "":
             continue
-        if isinstance(value, dict) or isinstance(value, list):
+        value = node_map4.get(key_s)
+        if jv_is_dict(value) or jv_is_list(value):
             value_prefix, value_out = _rewrite_expr_error_checks(value, ctx, can_raise_symbols, on_error)
             prefix2.extend(value_prefix)
             out[key_s] = value_out
@@ -4523,7 +4270,8 @@ def _rewrite_expr_error_checks(
             out[key_s] = value
     if _is_can_raise_call(out, can_raise_symbols):
         ok_type = _str(out, "resolved_type")
-        tmp_name = ctx.next_comp_name()
+        ctx2 = ctx
+        tmp_name = ctx2.next_comp_name()
         tmp_target = _make_name_ref(tmp_name, ok_type)
         prefix2.append(_make_error_check(out, tmp_target, ok_type, on_error))
         return prefix2, deep_copy_json(tmp_target)
@@ -4538,161 +4286,215 @@ def _apply_profile_stmt(
     current_function_can_raise: bool = False,
     catch_mode: bool = False,
 ) -> list[JsonVal]:
-    if not isinstance(stmt, dict):
-        return [stmt]
+    if not jv_is_dict(stmt):
+        single_stmt: list[JsonVal] = _empty_jv_list()
+        single_stmt.append(stmt)
+        return single_stmt
     out = _apply_profile_expr(stmt, ctx)
-    if not isinstance(out, dict):
-        return [out]
+    if not jv_is_dict(out):
+        single_out: list[JsonVal] = _empty_jv_list()
+        single_out.append(out)
+        return single_out
+    out_node: Node = jv_dict(out)
 
     if ctx.lowering_profile.exception_style == "union_return":
-        active_symbols = can_raise_symbols or set()
-        kind0 = _sk(out)
+        active_symbols: set[str] = set()
+        if can_raise_symbols is not None:
+            for symbol in can_raise_symbols:
+                active_symbols.add(symbol)
+        kind0 = _sk(out_node)
         if kind0 in (FUNCTION_DEF, CLOSURE_DEF):
-            fn_name = _str(out, "name")
+            fn_name = _str(out_node, "name")
             fn_can_raise = fn_name in active_symbols
-            out["body"] = _apply_profile_stmts(
-                _node_list(out, "body"),
+            out_node["body"] = _apply_profile_stmts(
+                _node_list(out_node, "body"),
                 ctx,
                 active_symbols,
                 current_function_can_raise=fn_can_raise,
                 catch_mode=False,
             )
             if fn_can_raise:
-                out["return_type"] = _union_return_type(_str(out, "return_type"))
-                meta = out.get("meta")
-                if not isinstance(meta, dict):
-                    meta = {}
-                    out["meta"] = meta
-                meta["can_raise_v1"] = {"schema_version": 1, "exception_types": []}
-            return [out]
+                out_node["return_type"] = _union_return_type(_str(out_node, "return_type"))
+                meta = out_node.get("meta")
+                meta_node: Node = _empty_node()
+                if jv_is_dict(meta):
+                    meta_src: Node = jv_dict(meta)
+                    for meta_key_s in meta_src.keys():
+                        meta_node[meta_key_s] = meta_src.get(meta_key_s)
+                can_raise_meta: Node = _empty_node()
+                can_raise_meta["schema_version"] = 1
+                can_raise_meta["exception_types"] = _empty_jv_list()
+                meta_node["can_raise_v1"] = can_raise_meta
+                out_node["meta"] = meta_node
+            result_fn: list[JsonVal] = _empty_jv_list()
+            result_fn.append(out_node)
+            return result_fn
         if kind0 == CLASS_DEF:
-            out["body"] = _apply_profile_stmts(
-                _node_list(out, "body"),
+            out_node["body"] = _apply_profile_stmts(
+                _node_list(out_node, "body"),
                 ctx,
                 active_symbols,
                 current_function_can_raise=False,
                 catch_mode=False,
             )
-            return [out]
+            result_class: list[JsonVal] = _empty_jv_list()
+            result_class.append(out_node)
+            return result_class
         if kind0 == "Raise":
-            err: Node = {}
+            err: Node = _empty_node()
             err["kind"] = ERROR_RETURN
-            err["value"] = out.get("exc")
-            err["exception_type"] = _raise_exception_type(out)
-            return [err]
+            err["value"] = out_node.get("exc")
+            err["exception_type"] = _raise_exception_type(out_node)
+            result_err: list[JsonVal] = _empty_jv_list()
+            result_err.append(err)
+            return result_err
         if kind0 == TRY:
-            err_catch: Node = {}
+            err_catch: Node = _empty_node()
             err_catch["kind"] = ERROR_CATCH
             err_catch["body"] = _apply_profile_stmts(
-                _node_list(out, "body"),
+                _node_list(out_node, "body"),
                 ctx,
                 active_symbols,
                 current_function_can_raise=current_function_can_raise,
                 catch_mode=True,
             )
-            handlers: list[JsonVal] = []
-            for handler in _node_list(out, "handlers"):
-                if isinstance(handler, dict):
-                    handler_out = cast(dict[str, JsonVal], _apply_profile_expr(handler, ctx))
-                    handler_out["body"] = _apply_profile_stmts(
-                        _node_list(handler_out, "body"),
-                        ctx,
-                        active_symbols,
-                        current_function_can_raise=current_function_can_raise,
-                        catch_mode=False,
-                    )
-                    handlers.append(handler_out)
+            handlers: list[JsonVal] = _empty_jv_list()
+            for handler in _node_list(out_node, "handlers"):
+                if jv_is_dict(handler):
+                    handler_out = _apply_profile_expr(handler, ctx)
+                    if jv_is_dict(handler_out):
+                        handler_node: Node = jv_dict(handler_out)
+                        handler_node["body"] = _apply_profile_stmts(
+                            _node_list(handler_node, "body"),
+                            ctx,
+                            active_symbols,
+                            current_function_can_raise=current_function_can_raise,
+                            catch_mode=False,
+                        )
+                        handlers.append(handler_node)
             err_catch["handlers"] = handlers
             err_catch["finalbody"] = _apply_profile_stmts(
-                _node_list(out, "finalbody"),
+                _node_list(out_node, "finalbody"),
                 ctx,
                 active_symbols,
                 current_function_can_raise=current_function_can_raise,
                 catch_mode=False,
             )
-            return [err_catch]
+            result_try: list[JsonVal] = _empty_jv_list()
+            result_try.append(err_catch)
+            return result_try
         if kind0 in (ASSIGN, ANN_ASSIGN):
-            value = out.get("value")
+            value = out_node.get("value")
             if _is_can_raise_call(value, active_symbols):
-                ok_target = out.get("target")
+                ok_target = out_node.get("target")
                 ok_type = ""
-                if isinstance(ok_target, dict):
-                    ok_type = _str(ok_target, "resolved_type")
-                if ok_type == "" and isinstance(value, dict):
-                    ok_type = _str(value, "resolved_type")
-                return [_make_error_check(cast(dict[str, JsonVal], value), ok_target, ok_type, "catch" if catch_mode else "propagate")]
+                if jv_is_dict(ok_target):
+                    ok_type = _str(jv_dict(ok_target), "resolved_type")
+                if ok_type == "" and jv_is_dict(value):
+                    ok_type = _str(jv_dict(value), "resolved_type")
+                checks: list[JsonVal] = _empty_jv_list()
+                if jv_is_dict(value):
+                    checks.append(_make_error_check(jv_dict(value), ok_target, ok_type, "catch" if catch_mode else "propagate"))
+                    return checks
             value_prefix, value_out = _rewrite_expr_error_checks(value, ctx, active_symbols, "catch" if catch_mode else "propagate")
             if len(value_prefix) != 0:
-                out["value"] = value_out
-                return value_prefix + [out]
+                out_node["value"] = value_out
+                result_assign: list[JsonVal] = _empty_jv_list()
+                for item in value_prefix:
+                    result_assign.append(item)
+                result_assign.append(out_node)
+                return result_assign
         if kind0 == RETURN:
-            value3 = out.get("value")
-            if isinstance(value3, dict) or isinstance(value3, list):
+            value3 = out_node.get("value")
+            if jv_is_dict(value3) or jv_is_list(value3):
                 value_prefix2, value_out2 = _rewrite_expr_error_checks(value3, ctx, active_symbols, "catch" if catch_mode else "propagate")
                 if len(value_prefix2) != 0:
-                    out["value"] = value_out2
-                    return value_prefix2 + [out]
+                    out_node["value"] = value_out2
+                    result_return: list[JsonVal] = _empty_jv_list()
+                    for item in value_prefix2:
+                        result_return.append(item)
+                    result_return.append(out_node)
+                    return result_return
         if kind0 == EXPR:
-            value2 = out.get("value")
+            value2 = out_node.get("value")
             if _is_can_raise_call(value2, active_symbols):
-                ok_type2 = _str(cast(dict[str, JsonVal], value2), "resolved_type")
-                return [_make_error_check(cast(dict[str, JsonVal], value2), None, ok_type2, "catch" if catch_mode else "propagate")]
+                ok_type2 = ""
+                expr_checks: list[JsonVal] = _empty_jv_list()
+                if jv_is_dict(value2):
+                    ok_type2 = _str(jv_dict(value2), "resolved_type")
+                    expr_checks.append(_make_error_check(jv_dict(value2), None, ok_type2, "catch" if catch_mode else "propagate"))
+                    return expr_checks
             value_prefix3, value_out3 = _rewrite_expr_error_checks(value2, ctx, active_symbols, "catch" if catch_mode else "propagate")
             if len(value_prefix3) != 0:
-                out["value"] = value_out3
-                return value_prefix3 + [out]
+                out_node["value"] = value_out3
+                result_expr: list[JsonVal] = _empty_jv_list()
+                for item in value_prefix3:
+                    result_expr.append(item)
+                result_expr.append(out_node)
+                return result_expr
         if kind0 in (IF, WHILE):
-            test = out.get("test")
-            if isinstance(test, dict) or isinstance(test, list):
+            test = out_node.get("test")
+            if jv_is_dict(test) or jv_is_list(test):
                 test_prefix, test_out = _rewrite_expr_error_checks(test, ctx, active_symbols, "catch" if catch_mode else "propagate")
                 if len(test_prefix) != 0:
-                    out["test"] = test_out
-                    return test_prefix + [out]
+                    out_node["test"] = test_out
+                    result_test: list[JsonVal] = _empty_jv_list()
+                    for item in test_prefix:
+                        result_test.append(item)
+                    result_test.append(out_node)
+                    return result_test
         if kind0 == WITH:
-            context_expr0 = out.get("context_expr")
-            if isinstance(context_expr0, dict) or isinstance(context_expr0, list):
+            context_expr0 = out_node.get("context_expr")
+            if jv_is_dict(context_expr0) or jv_is_list(context_expr0):
                 expr_prefix, expr_out = _rewrite_expr_error_checks(context_expr0, ctx, active_symbols, "catch" if catch_mode else "propagate")
                 if len(expr_prefix) != 0:
-                    out["context_expr"] = expr_out
-                    return expr_prefix + [out]
+                    out_node["context_expr"] = expr_out
+                    result_context: list[JsonVal] = _empty_jv_list()
+                    for item in expr_prefix:
+                        result_context.append(item)
+                    result_context.append(out_node)
+                    return result_context
 
-    kind = _sk(out)
+    kind = _sk(out_node)
     if kind == WITH:
-        out["body"] = _apply_profile_stmts(_node_list(out, "body"), ctx, can_raise_symbols, current_function_can_raise=current_function_can_raise, catch_mode=catch_mode)
+        out_node["body"] = _apply_profile_stmts(_node_list(out_node, "body"), ctx, can_raise_symbols, current_function_can_raise=current_function_can_raise, catch_mode=catch_mode)
         style = ctx.lowering_profile.with_style
-        out["with_lowering_style"] = style
+        out_node["with_lowering_style"] = style
         if style != "try_finally":
-            return [out]
-        var_name = _str(out, "var_name")
-        ctx_name = ctx.next_comp_name()
-        context_expr = out.get("context_expr")
+            result_with: list[JsonVal] = _empty_jv_list()
+            result_with.append(out_node)
+            return result_with
+        var_name = _str(out_node, "var_name")
+        ctx2 = ctx
+        ctx_name = ctx2.next_comp_name()
+        context_expr = out_node.get("context_expr")
         context_type = ""
-        if isinstance(context_expr, dict):
-            context_type = normalize_type_name(context_expr.get("resolved_type"))
-        bind_ctx_stmt: Node = {}
+        if jv_is_dict(context_expr):
+            context_type = "" + normalize_type_name(nd_get_str(context_expr, "resolved_type"))
+        bind_ctx_stmt: Node = _empty_node()
         bind_ctx_stmt["kind"] = ASSIGN
         bind_ctx_stmt["target"] = _make_name_ref(ctx_name, context_type)
         bind_ctx_stmt["value"] = context_expr
         bind_ctx_stmt["declare"] = True
         if context_type != "":
             bind_ctx_stmt["decl_type"] = context_type
-        enter_type = _str(out, "with_enter_type")
+        enter_type = _str(out_node, "with_enter_type")
         if enter_type == "":
             enter_type = context_type
         enter_call = _make_with_method_call(
             ctx_name,
             context_type,
             "__enter__",
-            args=[],
+            args=_empty_jv_list(),
             result_type=enter_type if enter_type != "" else context_type,
-            runtime_call=_str(out, "with_enter_runtime_call"),
-            runtime_symbol=_str(out, "with_enter_runtime_symbol"),
-            runtime_module_id=_str(out, "with_enter_runtime_module_id"),
-            semantic_tag=_str(out, "with_enter_semantic_tag"),
+            runtime_call=_str(out_node, "with_enter_runtime_call"),
+            runtime_symbol=_str(out_node, "with_enter_runtime_symbol"),
+            runtime_module_id=_str(out_node, "with_enter_runtime_module_id"),
+            semantic_tag=_str(out_node, "with_enter_semantic_tag"),
         )
         enter_stmt: Node
         if var_name != "":
-            enter_stmt = {}
+            enter_stmt = _empty_node()
             enter_stmt["kind"] = ASSIGN
             enter_stmt["target"] = _make_name_ref(var_name, enter_type)
             enter_stmt["value"] = enter_call
@@ -4701,44 +4503,61 @@ def _apply_profile_stmt(
                 enter_stmt["decl_type"] = enter_type
         else:
             enter_stmt = _make_expr_stmt(enter_call)
+        exit_args: list[JsonVal] = _empty_jv_list()
+        exit_args.append(_make_none_const())
+        exit_args.append(_make_none_const())
+        exit_args.append(_make_none_const())
         exit_call = _make_with_method_call(
             ctx_name,
             context_type,
             "__exit__",
-            args=[_make_none_const(), _make_none_const(), _make_none_const()],
+            args=exit_args,
             result_type="None",
-            runtime_call=_str(out, "with_exit_runtime_call"),
-            runtime_symbol=_str(out, "with_exit_runtime_symbol"),
-            runtime_module_id=_str(out, "with_exit_runtime_module_id"),
-            semantic_tag=_str(out, "with_exit_semantic_tag"),
+            runtime_call=_str(out_node, "with_exit_runtime_call"),
+            runtime_symbol=_str(out_node, "with_exit_runtime_symbol"),
+            runtime_module_id=_str(out_node, "with_exit_runtime_module_id"),
+            semantic_tag=_str(out_node, "with_exit_semantic_tag"),
         )
-        try_stmt: Node = {}
+        try_stmt: Node = _empty_node()
         try_stmt["kind"] = TRY
-        try_stmt["body"] = out["body"]
-        try_stmt["handlers"] = []
-        try_stmt["orelse"] = []
-        try_stmt["finalbody"] = [_make_expr_stmt(exit_call)]
-        return [bind_ctx_stmt, enter_stmt, try_stmt]
-    for key in ("body", "orelse", "finalbody"):
-        nested = out.get(key)
-        if isinstance(nested, list):
-            out[key] = _apply_profile_stmts(cast(list[JsonVal], nested), ctx, can_raise_symbols, current_function_can_raise=current_function_can_raise, catch_mode=catch_mode)
-    handlers = out.get("handlers")
-    if isinstance(handlers, list):
-        new_handlers: list[JsonVal] = []
-        for handler in cast(list[JsonVal], handlers):
-            if isinstance(handler, dict):
+        try_stmt["body"] = out_node["body"]
+        try_stmt["handlers"] = _empty_jv_list()
+        try_stmt["orelse"] = _empty_jv_list()
+        finalbody: list[JsonVal] = _empty_jv_list()
+        finalbody.append(_make_expr_stmt(exit_call))
+        try_stmt["finalbody"] = finalbody
+        result_try_finally: list[JsonVal] = _empty_jv_list()
+        result_try_finally.append(bind_ctx_stmt)
+        result_try_finally.append(enter_stmt)
+        result_try_finally.append(try_stmt)
+        return result_try_finally
+    nested_body = out_node.get("body")
+    if jv_is_list(nested_body):
+        out_node["body"] = _apply_profile_stmts(jv_list(nested_body), ctx, can_raise_symbols, current_function_can_raise=current_function_can_raise, catch_mode=catch_mode)
+    nested_orelse = out_node.get("orelse")
+    if jv_is_list(nested_orelse):
+        out_node["orelse"] = _apply_profile_stmts(jv_list(nested_orelse), ctx, can_raise_symbols, current_function_can_raise=current_function_can_raise, catch_mode=catch_mode)
+    nested_finalbody = out_node.get("finalbody")
+    if jv_is_list(nested_finalbody):
+        out_node["finalbody"] = _apply_profile_stmts(jv_list(nested_finalbody), ctx, can_raise_symbols, current_function_can_raise=current_function_can_raise, catch_mode=catch_mode)
+    handlers_obj = out_node.get("handlers")
+    if jv_is_list(handlers_obj):
+        new_handlers: list[JsonVal] = _empty_jv_list()
+        for handler in jv_list(handlers_obj):
+            if jv_is_dict(handler):
                 handler_out = _apply_profile_expr(handler, ctx)
-                if isinstance(handler_out, dict):
-                    hb = handler_out.get("body")
-                    if isinstance(hb, list):
-                        handler_out["body"] = _apply_profile_stmts(cast(list[JsonVal], hb), ctx, can_raise_symbols, current_function_can_raise=current_function_can_raise, catch_mode=False)
-                new_handlers.append(handler_out)
+                if jv_is_dict(handler_out):
+                    handler_node2: Node = jv_dict(handler_out)
+                    hb = handler_node2.get("body")
+                    if jv_is_list(hb):
+                        handler_node2["body"] = _apply_profile_stmts(jv_list(hb), ctx, can_raise_symbols, current_function_can_raise=current_function_can_raise, catch_mode=False)
+                    new_handlers.append(handler_node2)
             else:
                 new_handlers.append(handler)
-        out["handlers"] = new_handlers
-    return [out]
-
+        out_node["handlers"] = new_handlers
+    result_default: list[JsonVal] = _empty_jv_list()
+    result_default.append(out_node)
+    return result_default
 
 def _apply_profile_stmts(
     stmts: list[JsonVal],
@@ -4748,7 +4567,7 @@ def _apply_profile_stmts(
     current_function_can_raise: bool = False,
     catch_mode: bool = False,
 ) -> list[JsonVal]:
-    out: list[JsonVal] = []
+    out: list[JsonVal] = _empty_jv_list()
     for stmt in stmts:
         lowered = _apply_profile_stmt(
             stmt,
@@ -4763,15 +4582,21 @@ def _apply_profile_stmts(
 
 
 def apply_profile_lowering(module: Node, ctx: CompileContext) -> Node:
-    can_raise_symbols: set[str] | None = None
     if ctx.lowering_profile.exception_style == "union_return":
-        can_raise_symbols = _collect_local_can_raise_symbols(module)
-    body = module.get("body")
-    if isinstance(body, list):
-        module["body"] = _apply_profile_stmts(cast(list[JsonVal], body), ctx, can_raise_symbols)
-    mg = module.get("main_guard_body")
-    if isinstance(mg, list):
-        module["main_guard_body"] = _apply_profile_stmts(cast(list[JsonVal], mg), ctx, can_raise_symbols)
+        can_raise_symbols: set[str] = _collect_local_can_raise_symbols(module)
+        body_obj: JsonVal = module.get("body")
+        if jv_is_list(body_obj):
+            module["body"] = _apply_profile_stmts(jv_list(body_obj), ctx, can_raise_symbols)
+        mg_obj: JsonVal = module.get("main_guard_body")
+        if jv_is_list(mg_obj):
+            module["main_guard_body"] = _apply_profile_stmts(jv_list(mg_obj), ctx, can_raise_symbols)
+        return module
+    body_obj2: JsonVal = module.get("body")
+    if jv_is_list(body_obj2):
+        module["body"] = _apply_profile_stmts(jv_list(body_obj2), ctx, None)
+    mg_obj2: JsonVal = module.get("main_guard_body")
+    if jv_is_list(mg_obj2):
+        module["main_guard_body"] = _apply_profile_stmts(jv_list(mg_obj2), ctx, None)
     return module
 
 
@@ -4780,143 +4605,138 @@ def apply_profile_lowering(module: Node, ctx: CompileContext) -> Node:
 # ===========================================================================
 
 def _expr_key(node: JsonVal) -> str:
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return ""
-    kind = node.get("kind", "")
+    node_map: Node = jv_dict(node)
+    kind = nd_get_str(node_map, "kind")
     if kind == NAME:
-        return "Name:" + jv_str(node.get("id", ""))
+        return "Name:" + nd_get_str(node_map, "id")
     if kind == SUBSCRIPT:
-        val = _expr_key(node.get("value"))
-        slc = _expr_key(node.get("slice"))
+        val = _expr_key(node_map.get("value"))
+        slc = _expr_key(node_map.get("slice"))
         return "Sub:" + val + "[" + slc + "]"
     if kind == CONSTANT:
-        return "Const:" + str(node.get("value", ""))
+        return "Const:" + str(node_map.get("value", ""))
     if kind == BIN_OP:
-        l2 = _expr_key(node.get("left"))
-        r2 = _expr_key(node.get("right"))
-        return "BinOp:" + l2 + jv_str(node.get("op", "")) + r2
+        l2 = _expr_key(node_map.get("left"))
+        r2 = _expr_key(node_map.get("right"))
+        return "BinOp:" + l2 + nd_get_str(node_map, "op") + r2
     return ""
-
 
 def _swap_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
     result: list[JsonVal] = _empty_jv_list()
     for stmt in stmts:
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             result.append(stmt)
             continue
-        stmt_node: Node = cast(dict[str, JsonVal], stmt)
-        kind = stmt_node.get("kind", "")
+        stmt_node: Node = jv_dict(stmt)
+        kind = nd_get_str(stmt_node, "kind")
         if kind == ASSIGN:
             target = stmt_node.get("target")
             value = stmt_node.get("value")
-            if isinstance(target, dict) and isinstance(value, dict):
-                target_node: Node = cast(dict[str, JsonVal], target)
-                value_node: Node = cast(dict[str, JsonVal], value)
-                if target_node.get("kind") == TUPLE and value_node.get("kind") == TUPLE:
+            if jv_is_dict(target) and jv_is_dict(value):
+                target_node: Node = jv_dict(target)
+                value_node: Node = jv_dict(value)
+                if nd_get_str(target_node, "kind") == TUPLE and nd_get_str(value_node, "kind") == TUPLE:
                     te = target_node.get("elements")
-                    if not isinstance(te, list):
-                        te = target_node.get("elts", [])
+                    if not jv_is_list(te):
+                        te = target_node.get("elts", _empty_jv_list())
                     ve = value_node.get("elements")
-                    if not isinstance(ve, list):
-                        ve = value_node.get("elts", [])
-                    te_list: list[JsonVal] = []
-                    ve_list: list[JsonVal] = []
-                    if isinstance(te, list) and isinstance(ve, list):
-                        te_list = cast(list[JsonVal], te)
-                        ve_list = cast(list[JsonVal], ve)
-                    if len(te_list) == 2 and len(ve_list) == 2:
-                        t0 = _expr_key(te_list[0])
-                        t1 = _expr_key(te_list[1])
-                        v0 = _expr_key(ve_list[0])
-                        v1 = _expr_key(ve_list[1])
-                        if t0 != "" and t1 != "" and t0 == v1 and t1 == v0:
-                            span = stmt_node.get("source_span")
-                            if isinstance(te_list[0], dict) and isinstance(te_list[1], dict):
-                                left_node: Node = cast(dict[str, JsonVal], te_list[0])
-                                right_node: Node = cast(dict[str, JsonVal], te_list[1])
-                                if left_node.get("kind") == NAME and right_node.get("kind") == NAME:
-                                    swap: Node = {}
-                                    swap["kind"] = SWAP
-                                    swap["left"] = left_node
-                                    swap["right"] = right_node
-                                    swap["lhs"] = left_node
-                                    swap["rhs"] = right_node
-                                    if isinstance(span, dict):
-                                        swap["source_span"] = span
-                                    result.append(swap)
-                                    continue
-                            tmp = ctx.next_swap_name()
-                            bs: Node = cast(dict[str, JsonVal], span) if isinstance(span, dict) else {}
-                            tt: Node = {}
-                            tt["kind"] = NAME
-                            tt["id"] = tmp
-                            if bs:
-                                tt["source_span"] = bs
-                            a1: Node = {}
-                            a1["kind"] = ASSIGN
-                            a1["target"] = tt
-                            a1["value"] = te_list[0]
-                            a1["declare"] = True
-                            if bs:
-                                a1["source_span"] = bs
-                            a2: Node = {}
-                            a2["kind"] = ASSIGN
-                            a2["target"] = te_list[0]
-                            a2["value"] = te_list[1]
-                            if bs:
-                                a2["source_span"] = bs
-                            tr: Node = {}
-                            tr["kind"] = NAME
-                            tr["id"] = tmp
-                            if bs:
-                                tr["source_span"] = bs
-                            a3: Node = {}
-                            a3["kind"] = ASSIGN
-                            a3["target"] = te_list[1]
-                            a3["value"] = tr
-                            if bs:
-                                a3["source_span"] = bs
-                            result.append(a1)
-                            result.append(a2)
-                            result.append(a3)
-                            continue
-        for key in ("body", "orelse"):
-            key_name: str = key
-            nested = stmt_node.get(key_name)
-            if isinstance(nested, list):
-                nested_list: list[JsonVal] = cast(list[JsonVal], nested)
-                stmt_node[key_name] = _swap_in_stmts(nested_list, ctx)
+                    if not jv_is_list(ve):
+                        ve = value_node.get("elts", _empty_jv_list())
+                    if jv_is_list(te) and jv_is_list(ve):
+                        te_items: list[JsonVal] = _empty_jv_list()
+                        for item in jv_list(te):
+                            te_items.append(item)
+                        ve_items: list[JsonVal] = _empty_jv_list()
+                        for item in jv_list(ve):
+                            ve_items.append(item)
+                        if len(te_items) == 2 and len(ve_items) == 2:
+                            left = te_items[0]
+                            right = te_items[1]
+                            vleft = ve_items[0]
+                            vright = ve_items[1]
+                            if jv_is_dict(left) and jv_is_dict(right) and jv_is_dict(vleft) and jv_is_dict(vright):
+                                left_node: Node = jv_dict(left)
+                                right_node: Node = jv_dict(right)
+                                vleft_node: Node = jv_dict(vleft)
+                                vright_node: Node = jv_dict(vright)
+                                if _expr_key(left_node) == _expr_key(vright_node) and _expr_key(right_node) == _expr_key(vleft_node):
+                                    ctx2 = ctx
+                                    tmp = ctx2.next_swap_name()
+                                    span = stmt_node.get("source_span")
+                                    bs: Node = _empty_node()
+                                    if jv_is_dict(span):
+                                        bs = jv_dict(span)
+                                    if nd_get_str(left_node, "kind") == NAME and nd_get_str(right_node, "kind") == NAME:
+                                        tt: Node = _empty_node()
+                                        tt["kind"] = NAME
+                                        tt["id"] = tmp
+                                        if len(bs) != 0:
+                                            tt["source_span"] = bs
+                                        a1: Node = _empty_node()
+                                        a1["kind"] = ASSIGN
+                                        a1["target"] = tt
+                                        a1["value"] = te_items[0]
+                                        a1["declare"] = True
+                                        if len(bs) != 0:
+                                            a1["source_span"] = bs
+                                        a2: Node = _empty_node()
+                                        a2["kind"] = ASSIGN
+                                        a2["target"] = te_items[0]
+                                        a2["value"] = te_items[1]
+                                        if len(bs) != 0:
+                                            a2["source_span"] = bs
+                                        tr: Node = _empty_node()
+                                        tr["kind"] = NAME
+                                        tr["id"] = tmp
+                                        if len(bs) != 0:
+                                            tr["source_span"] = bs
+                                        a3: Node = _empty_node()
+                                        a3["kind"] = ASSIGN
+                                        a3["target"] = te_items[1]
+                                        a3["value"] = tr
+                                        if len(bs) != 0:
+                                            a3["source_span"] = bs
+                                        result.append(a1)
+                                        result.append(a2)
+                                        result.append(a3)
+                                        continue
+        nested_body = stmt_node.get("body")
+        if jv_is_list(nested_body):
+            stmt_node["body"] = _swap_in_stmts(jv_list(nested_body), ctx)
+        nested_orelse = stmt_node.get("orelse")
+        if jv_is_list(nested_orelse):
+            stmt_node["orelse"] = _swap_in_stmts(jv_list(nested_orelse), ctx)
         if _is_function_like_kind(kind) or kind == CLASS_DEF:
             body = stmt_node.get("body")
-            if isinstance(body, list):
-                body_list: list[JsonVal] = cast(list[JsonVal], body)
-                stmt_node["body"] = _swap_in_stmts(body_list, ctx)
+            if jv_is_list(body):
+                stmt_node["body"] = _swap_in_stmts(jv_list(body), ctx)
         elif kind == TRY:
-            for key in ("body", "orelse", "finalbody"):
-                key_name2: str = key
-                nested = stmt_node.get(key_name2)
-                if isinstance(nested, list):
-                    nested_list2: list[JsonVal] = cast(list[JsonVal], nested)
-                    stmt_node[key_name2] = _swap_in_stmts(nested_list2, ctx)
+            nested_try_body = stmt_node.get("body")
+            if jv_is_list(nested_try_body):
+                stmt_node["body"] = _swap_in_stmts(jv_list(nested_try_body), ctx)
+            nested_try_orelse = stmt_node.get("orelse")
+            if jv_is_list(nested_try_orelse):
+                stmt_node["orelse"] = _swap_in_stmts(jv_list(nested_try_orelse), ctx)
+            nested_try_finalbody = stmt_node.get("finalbody")
+            if jv_is_list(nested_try_finalbody):
+                stmt_node["finalbody"] = _swap_in_stmts(jv_list(nested_try_finalbody), ctx)
             hs = stmt_node.get("handlers")
-            if isinstance(hs, list):
-                hs_list: list[JsonVal] = cast(list[JsonVal], hs)
-                for h in hs_list:
-                    if isinstance(h, dict):
-                        handler_node2: Node = cast(dict[str, JsonVal], h)
+            if jv_is_list(hs):
+                for h in jv_list(hs):
+                    if jv_is_dict(h):
+                        handler_node2: Node = jv_dict(h)
                         hb = handler_node2.get("body")
-                        if isinstance(hb, list):
-                            hb_list: list[JsonVal] = cast(list[JsonVal], hb)
-                            handler_node2["body"] = _swap_in_stmts(hb_list, ctx)
+                        if jv_is_list(hb):
+                            handler_node2["body"] = _swap_in_stmts(jv_list(hb), ctx)
         result.append(stmt_node)
     return result
 
-
 def detect_swap_patterns(module: Node, ctx: CompileContext) -> Node:
     body = module.get("body")
-    if isinstance(body, list):
-        body_list: list[JsonVal] = cast(list[JsonVal], body)
-        module["body"] = _swap_in_stmts(body_list, ctx)
+    if jv_is_list(body):
+        module["body"] = _swap_in_stmts(jv_list(body), ctx)
     return module
 
 
@@ -4925,178 +4745,98 @@ def detect_swap_patterns(module: Node, ctx: CompileContext) -> Node:
 # ===========================================================================
 
 def _is_self_attr(node: Node) -> bool:
-    if node.get("kind") != ATTRIBUTE:
+    if nd_get_str(node, "kind") != ATTRIBUTE:
         return False
     value = node.get("value")
-    if not isinstance(value, dict):
+    if not jv_is_dict(value):
         return False
-    value_node: Node = cast(dict[str, JsonVal], value)
-    return value_node.get("kind") == NAME and value_node.get("id") == "self"
-
+    value_node: Node = jv_dict(value)
+    return nd_get_str(value_node, "kind") == NAME and nd_get_str(value_node, "id") == "self"
 
 def _node_mutates(node: JsonVal) -> bool:
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return False
-    node_obj: Node = cast(dict[str, JsonVal], node)
-    kind = node_obj.get("kind", "")
+    node_obj: Node = jv_dict(node)
+    kind = nd_get_str(node_obj, "kind")
     if kind in (ASSIGN, ANN_ASSIGN, AUG_ASSIGN):
         target = node_obj.get("target")
-        if isinstance(target, dict):
-            target_node: Node = cast(dict[str, JsonVal], target)
+        if jv_is_dict(target):
+            target_node: Node = jv_dict(target)
             if _is_self_attr(target_node):
                 return True
-            if target_node.get("kind") == SUBSCRIPT:
+            if nd_get_str(target_node, "kind") == SUBSCRIPT:
                 val = target_node.get("value")
-                if isinstance(val, dict):
-                    val_node: Node = cast(dict[str, JsonVal], val)
+                if jv_is_dict(val):
+                    val_node: Node = jv_dict(val)
                     if _is_self_attr(val_node):
                         return True
     if kind == EXPR:
         value = node_obj.get("value")
-        if isinstance(value, dict):
-            value_node: Node = cast(dict[str, JsonVal], value)
-            if value_node.get("kind") == CALL:
+        if jv_is_dict(value):
+            value_node: Node = jv_dict(value)
+            if nd_get_str(value_node, "kind") == CALL:
                 func = value_node.get("func")
-                if isinstance(func, dict):
-                    func_node: Node = cast(dict[str, JsonVal], func)
-                    if func_node.get("kind") == ATTRIBUTE:
+                if jv_is_dict(func):
+                    func_node: Node = jv_dict(func)
+                    if nd_get_str(func_node, "kind") == ATTRIBUTE:
                         owner = func_node.get("value")
-                        if isinstance(owner, dict):
-                            owner_node: Node = cast(dict[str, JsonVal], owner)
+                        if jv_is_dict(owner):
+                            owner_node: Node = jv_dict(owner)
                             if _is_self_attr(owner_node):
                                 return True
-    nested = node_obj.get("body")
-    if isinstance(nested, list):
-        nested_list: list[JsonVal] = cast(list[JsonVal], nested)
-        for item in nested_list:
+    nested_body = node_obj.get("body")
+    if jv_is_list(nested_body):
+        for item in jv_list(nested_body):
             if _node_mutates(item):
                 return True
-    nested = node_obj.get("orelse")
-    if isinstance(nested, list):
-        nested_list2: list[JsonVal] = cast(list[JsonVal], nested)
-        for item in nested_list2:
+    nested_orelse = node_obj.get("orelse")
+    if jv_is_list(nested_orelse):
+        for item in jv_list(nested_orelse):
             if _node_mutates(item):
                 return True
-    nested = node_obj.get("finalbody")
-    if isinstance(nested, list):
-        nested_list3: list[JsonVal] = cast(list[JsonVal], nested)
-        for item in nested_list3:
+    nested_finalbody = node_obj.get("finalbody")
+    if jv_is_list(nested_finalbody):
+        for item in jv_list(nested_finalbody):
             if _node_mutates(item):
                 return True
     if kind == TRY:
         hs = node_obj.get("handlers")
-        if isinstance(hs, list):
-            hs_list: list[JsonVal] = cast(list[JsonVal], hs)
-            for h in hs_list:
-                if isinstance(h, dict):
-                    handler_node: Node = cast(dict[str, JsonVal], h)
-                    hb = handler_node.get("body")
-                    if isinstance(hb, list):
-                        hb_list: list[JsonVal] = cast(list[JsonVal], hb)
-                        for item in hb_list:
+        if jv_is_list(hs):
+            for h in jv_list(hs):
+                if jv_is_dict(h):
+                    handler_node: Node = jv_dict(h)
+                    hb: JsonVal = handler_node.get("body")
+                    if jv_is_list(hb):
+                        for item in jv_list(hb):
                             if _node_mutates(item):
                                 return True
     return False
 
-
-def _collect_self_calls(node: JsonVal, out: set[str]) -> None:
-    if isinstance(node, list):
-        node_list: list[JsonVal] = cast(list[JsonVal], node)
-        for item in node_list:
-            _collect_self_calls(item, out)
-        return
-    if not isinstance(node, dict):
-        return
-    node_obj: Node = cast(dict[str, JsonVal], node)
-    if node_obj.get("kind") == CALL:
-        func = node_obj.get("func")
-        if isinstance(func, dict):
-            func_node: Node = cast(dict[str, JsonVal], func)
-            if func_node.get("kind") == ATTRIBUTE:
-                owner = func_node.get("value")
-                if isinstance(owner, dict):
-                    owner_node: Node = cast(dict[str, JsonVal], owner)
-                    if owner_node.get("kind") == NAME and owner_node.get("id") == "self":
-                        mn = func_node.get("attr")
-                        if isinstance(mn, str) and mn != "":
-                            out.add(mn)
-    for v in node_obj.values():
-        if isinstance(v, dict):
-            v_node: Node = cast(dict[str, JsonVal], v)
-            _collect_self_calls(v_node, out)
-        elif isinstance(v, list):
-            v_list: list[JsonVal] = cast(list[JsonVal], v)
-            _collect_self_calls(v_list, out)
-
-
-def _detect_ms_class(cd: Node) -> None:
-    body = cd.get("body")
-    if not isinstance(body, list):
-        return
-    body_list: list[JsonVal] = cast(list[JsonVal], body)
-    methods: dict[str, Node] = {}
-    direct: set[str] = set()
-    cg: dict[str, set[str]] = {}
-    for stmt in body_list:
-        if not isinstance(stmt, dict):
-            continue
-        stmt_node: Node = cast(dict[str, JsonVal], stmt)
-        if not _is_function_like_kind(jv_str(stmt_node.get("kind", ""))):
-            continue
-        name = jv_str(stmt_node.get("name", ""))
-        if name == "":
-            continue
-        methods[name] = stmt_node
-        mb = stmt_node.get("body")
-        if isinstance(mb, list):
-            mb_list: list[JsonVal] = cast(list[JsonVal], mb)
-            for s in mb_list:
-                if _node_mutates(s):
-                    direct.add(name)
-                    break
-        sc: set[str] = set()
-        if isinstance(mb, list):
-            mb_list2: list[JsonVal] = cast(list[JsonVal], mb)
-            _collect_self_calls(mb_list2, sc)
-        cg[name] = sc
-    mutators = set(direct)
-    changed = True
-    while changed:
-        changed = False
-        for name, callees in cg.items():
-            if name in mutators:
-                continue
-            for callee in callees:
-                if callee in mutators:
-                    mutators.add(name)
-                    changed = True
-                    break
-    for special in ("__init__", "__del__"):
-        if special in methods:
-            mutators.add(special)
-    for name, stmt in methods.items():
-        stmt["mutates_self"] = name in mutators
-
-
 def _ms_walk(node: JsonVal) -> None:
-    if isinstance(node, list):
-        node_list: list[JsonVal] = cast(list[JsonVal], node)
-        for item in node_list:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _ms_walk(item)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    node_obj: Node = cast(dict[str, JsonVal], node)
-    if node_obj.get("kind") == CLASS_DEF:
-        _detect_ms_class(node_obj)
-    for v in node_obj.values():
-        if isinstance(v, dict):
-            v_node: Node = cast(dict[str, JsonVal], v)
-            _ms_walk(v_node)
-        elif isinstance(v, list):
-            v_list: list[JsonVal] = cast(list[JsonVal], v)
-            _ms_walk(v_list)
-
+    node_obj: Node = jv_dict(node)
+    kind = nd_get_str(node_obj, "kind")
+    if _is_function_like_kind(kind):
+        body_obj: JsonVal = node_obj.get("body")
+        node_obj["mutates_self"] = _node_mutates(body_obj)
+        if jv_is_list(body_obj):
+            for item in jv_list(body_obj):
+                _ms_walk(item)
+        return
+    if kind == CLASS_DEF:
+        body_obj2: JsonVal = node_obj.get("body")
+        if jv_is_list(body_obj2):
+            for item in jv_list(body_obj2):
+                _ms_walk(item)
+        return
+    for value in node_obj.values():
+        if jv_is_dict(value) or jv_is_list(value):
+            _ms_walk(value)
 
 def detect_mutates_self(module: Node, ctx: CompileContext) -> Node:
     _ms_walk(module)
@@ -5108,113 +4848,110 @@ def detect_mutates_self(module: Node, ctx: CompileContext) -> Node:
 # ===========================================================================
 
 def _uv_refs(node: JsonVal, out: set[str]) -> None:
-    if isinstance(node, list):
-        node_list: list[JsonVal] = cast(list[JsonVal], node)
-        for item in node_list:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _uv_refs(item, out)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    nd: Node = node
-    kind = nd.get("kind", "")
+    nd: Node = jv_dict(node)
+    kind = nd_get_str(nd, "kind")
     if kind == NAME:
-        n = nd.get("id")
-        if isinstance(n, str) and n != "":
+        n = "" + nd_get_str(nd, "id")
+        if n != "":
             out.add(n)
-    elif kind in (ASSIGN, ANN_ASSIGN, AUG_ASSIGN):
+        return
+    if kind in (ASSIGN, ANN_ASSIGN, AUG_ASSIGN):
         value = nd.get("value")
-        if isinstance(value, dict):
-            value_node: Node = cast(dict[str, JsonVal], value)
-            _uv_refs(value_node, out)
-        elif isinstance(value, list):
-            value_list: list[JsonVal] = cast(list[JsonVal], value)
-            _uv_refs(value_list, out)
+        if jv_is_dict(value) or jv_is_list(value):
+            _uv_refs(value, out)
         if kind == AUG_ASSIGN:
             target = nd.get("target")
-            if isinstance(target, dict):
-                target_node: Node = cast(dict[str, JsonVal], target)
-                if target_node.get("kind") != NAME:
+            if jv_is_dict(target):
+                target_node: Node = jv_dict(target)
+                if nd_get_str(target_node, "kind") != NAME:
                     return
-                n = target_node.get("id")
-                if isinstance(n, str) and n != "":
+                n = "" + nd_get_str(target_node, "id")
+                if n != "":
                     out.add(n)
         return
     for v in nd.values():
-        if isinstance(v, dict):
-            v_node2: Node = cast(dict[str, JsonVal], v)
-            _uv_refs(v_node2, out)
-        elif isinstance(v, list):
-            v_list2: list[JsonVal] = cast(list[JsonVal], v)
-            _uv_refs(v_list2, out)
-
+        if jv_is_dict(v) or jv_is_list(v):
+            _uv_refs(v, out)
 
 def _uv_mark_fn(func: Node) -> None:
-    body = func.get("body")
-    if not isinstance(body, list):
+    body: JsonVal = func.get("body")
+    if not jv_is_list(body):
         return
-    body_list: list[JsonVal] = cast(list[JsonVal], body)
     all_refs: set[str] = set()
-    _uv_refs(body_list, all_refs)
+    _uv_refs(jv_list(body), all_refs)
     ao = func.get("arg_order")
-    if isinstance(ao, list):
-        ao_list: list[JsonVal] = cast(list[JsonVal], ao)
-        for arg in ao_list:
-            if isinstance(arg, str):
-                all_refs.add(arg)
-    _uv_mark_stmts(body_list, all_refs)
+    if jv_is_list(ao):
+        for arg in jv_list(ao):
+            arg_name = "" + jv_str(arg)
+            if arg_name != "":
+                all_refs.add(arg_name)
+    _uv_mark_stmts(jv_list(body), all_refs)
 
 
 def _uv_mark_stmts(stmts: list[JsonVal], all_refs: set[str]) -> None:
     for stmt in stmts:
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             continue
-        kind = stmt.get("kind", "")
+        stmt_node: Node = jv_dict(stmt)
+        kind = nd_get_str(stmt_node, "kind")
         if kind == VAR_DECL:
-            n = stmt.get("name")
-            if isinstance(n, str) and n != "" and n not in all_refs:
-                stmt["unused"] = True
+            n = "" + nd_get_str(stmt_node, "name")
+            if n != "" and n not in all_refs:
+                stmt_node["unused"] = True
         elif kind in (ASSIGN, ANN_ASSIGN):
-            target = stmt.get("target")
-            if isinstance(target, dict) and target.get("kind") == NAME:
-                n = target.get("id")
-                if isinstance(n, str) and n != "" and n not in all_refs:
-                    stmt["unused"] = True
-            elif isinstance(target, dict) and target.get("kind") == TUPLE:
-                elements = target.get("elements")
-                if isinstance(elements, list):
-                    for elem in elements:
-                        if isinstance(elem, dict) and elem.get("kind") == NAME:
-                            en = elem.get("id")
-                            if isinstance(en, str) and en != "" and en not in all_refs:
-                                elem["unused"] = True
-        for key in ("body", "orelse", "finalbody"):
-            nested = stmt.get(key)
-            if isinstance(nested, list):
-                _uv_mark_stmts(nested, all_refs)
+            target = stmt_node.get("target")
+            if jv_is_dict(target) and nd_get_str(jv_dict(target), "kind") == NAME:
+                target_node: Node = jv_dict(target)
+                n = "" + nd_get_str(target_node, "id")
+                if n != "" and n not in all_refs:
+                    stmt_node["unused"] = True
+            elif jv_is_dict(target) and nd_get_str(jv_dict(target), "kind") == TUPLE:
+                target_node: Node = jv_dict(target)
+                elements = target_node.get("elements")
+                if jv_is_list(elements):
+                    for elem in jv_list(elements):
+                        if jv_is_dict(elem) and nd_get_str(jv_dict(elem), "kind") == NAME:
+                            elem_node: Node = jv_dict(elem)
+                            en = "" + nd_get_str(elem_node, "id")
+                            if en != "" and en not in all_refs:
+                                elem_node["unused"] = True
+        nested_body = stmt_node.get("body")
+        if jv_is_list(nested_body):
+            _uv_mark_stmts(jv_list(nested_body), all_refs)
+        nested_orelse = stmt_node.get("orelse")
+        if jv_is_list(nested_orelse):
+            _uv_mark_stmts(jv_list(nested_orelse), all_refs)
+        nested_finalbody = stmt_node.get("finalbody")
+        if jv_is_list(nested_finalbody):
+            _uv_mark_stmts(jv_list(nested_finalbody), all_refs)
         if kind == TRY:
-            hs = stmt.get("handlers")
-            if isinstance(hs, list):
-                for h in hs:
-                    if isinstance(h, dict):
-                        hb = h.get("body")
-                        if isinstance(hb, list):
-                            _uv_mark_stmts(hb, all_refs)
-
+            hs = stmt_node.get("handlers")
+            if jv_is_list(hs):
+                for h in jv_list(hs):
+                    if jv_is_dict(h):
+                        h_node: Node = jv_dict(h)
+                        hb = h_node.get("body")
+                        if jv_is_list(hb):
+                            _uv_mark_stmts(jv_list(hb), all_refs)
 
 def _uv_walk(node: JsonVal) -> None:
-    if isinstance(node, list):
-        for item in node:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _uv_walk(item)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
-    nd: Node = node
+    nd: Node = jv_dict(node)
     if _is_function_like(nd):
         _uv_mark_fn(nd)
     for v in nd.values():
-        if isinstance(v, dict):
-            _uv_walk(v)
-        elif isinstance(v, list):
+        if jv_is_dict(v) or jv_is_list(v):
             _uv_walk(v)
 
 
@@ -5229,27 +4966,28 @@ def detect_unused_variables(module: Node, ctx: CompileContext) -> Node:
 
 def _mgd_stmts(stmts: list[JsonVal]) -> None:
     for stmt in stmts:
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             continue
-        if stmt.get("kind") == EXPR:
-            value = stmt.get("value")
-            if isinstance(value, dict) and value.get("kind") == CALL:
-                stmt["discard_result"] = True
+        stmt_node: Node = jv_dict(stmt)
+        if nd_get_str(stmt_node, "kind") == EXPR:
+            value = stmt_node.get("value")
+            if jv_is_dict(value) and nd_get_str(jv_dict(value), "kind") == CALL:
+                stmt_node["discard_result"] = True
 
 
 def mark_main_guard_discard(module: Node, ctx: CompileContext) -> Node:
-    mg = module.get("main_guard_body")
-    if isinstance(mg, list):
-        mg_list: list[JsonVal] = cast(list[JsonVal], mg)
-        _mgd_stmts(mg_list)
-    body = module.get("body")
-    if isinstance(body, list):
-        body_list: list[JsonVal] = cast(list[JsonVal], body)
-        for stmt in body_list:
-            if isinstance(stmt, dict) and _is_function_like(stmt):
-                name = stmt.get("name", "")
-                if name == "__pytra_main":
-                    fb = stmt.get("body")
-                    if isinstance(fb, list):
-                        _mgd_stmts(fb)
+    mg: JsonVal = module.get("main_guard_body")
+    if jv_is_list(mg):
+        _mgd_stmts(jv_list(mg))
+    body: JsonVal = module.get("body")
+    if jv_is_list(body):
+        for stmt in jv_list(body):
+            if jv_is_dict(stmt):
+                stmt_node: Node = jv_dict(stmt)
+                if _is_function_like(stmt_node):
+                    name = "" + nd_get_str(stmt_node, "name")
+                    if name == "__pytra_main":
+                        fb: JsonVal = stmt_node.get("body")
+                        if jv_is_list(fb):
+                            _mgd_stmts(jv_list(fb))
     return module

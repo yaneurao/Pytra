@@ -157,7 +157,7 @@ def _canonical_type_name(ctx: CompileContext, value: JsonVal) -> str:
 
 
 def _copy_node(node: Node) -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     for key, value in node.items():
         out[key] = deep_copy_json(value)
     return out
@@ -169,6 +169,11 @@ def _empty_casts() -> list[JsonVal]:
 
 def _empty_jv_list() -> list[JsonVal]:
     return []
+
+def _empty_node() -> Node:
+    out: dict[str, JsonVal] = {}
+    return out
+
 
 
 def _drop_last_char(text: str) -> str:
@@ -203,7 +208,7 @@ def _is_any_like_type(type_name: JsonVal, ctx: CompileContext) -> bool:
 
 
 def _const_int_node(value: int) -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = CONSTANT
     out["resolved_type"] = "int64"
     out["borrow_kind"] = "value"
@@ -214,7 +219,7 @@ def _const_int_node(value: int) -> Node:
 
 
 def _const_bool_node(value: bool) -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = CONSTANT
     out["resolved_type"] = "bool"
     out["borrow_kind"] = "value"
@@ -225,7 +230,7 @@ def _const_bool_node(value: bool) -> Node:
 
 
 def _make_name_node(name: str, resolved_type: str = "unknown") -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = NAME
     out["id"] = name
     out["resolved_type"] = resolved_type
@@ -263,7 +268,7 @@ def _make_boundary_expr(
     source_expr: JsonVal,
     ctx: CompileContext,
 ) -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = kind
     out["resolved_type"] = resolved_type
     out["borrow_kind"] = "value"
@@ -314,7 +319,7 @@ def _is_string_index_expr(node: JsonVal) -> bool:
 
 
 def _make_named_type_expr(name: str) -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = NAMED_TYPE
     out["name"] = name
     return out
@@ -349,7 +354,7 @@ def _make_static_scalar_cast_expr(value_expr: JsonVal, target_type: str, *, ctx:
     func_name = "int"
     if target_type == "float32" or target_type == "float64":
         func_name = "float"
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = CALL
     out["func"] = _make_name_node(func_name, "callable")
     out["args"] = [value_expr]
@@ -735,7 +740,7 @@ def _build_target_plan(
         td: Node = jv_dict(target)
         kind = nd_kind(td)
         if kind == NAME:
-            name_plan: Node = {}
+            name_plan: dict[str, JsonVal] = {}
             name_plan["kind"] = NAME_TARGET
             name_plan["id"] = td.get("id", "")
             if tt_norm != "unknown":
@@ -754,13 +759,13 @@ def _build_target_plan(
                         et = elem_types[i]
                     elem_plans.append(_build_target_plan(elem, et, dispatch_mode=dispatch_mode, ctx=ctx))
                     i += 1
-            tuple_plan: Node = {}
+            tuple_plan: dict[str, JsonVal] = {}
             tuple_plan["kind"] = TUPLE_TARGET
             tuple_plan["elements"] = elem_plans
             if tt_norm != "unknown":
                 tuple_plan["target_type"] = tt_norm
             return tuple_plan
-    expr_plan: Node = {}
+    expr_plan: dict[str, JsonVal] = {}
     expr_plan["kind"] = EXPR_TARGET
     expr_plan["target"] = _lower_node(target, dispatch_mode=dispatch_mode, ctx=ctx)
     if tt_norm != "unknown":
@@ -769,7 +774,7 @@ def _build_target_plan(
 
 
 def _lower_assignment_like_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext) -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     for key_s, value in stmt.items():
         if key_s == "value":
             continue
@@ -788,24 +793,19 @@ def _lower_assignment_like_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileC
     if target_type_expr is None and jv_is_dict(target_obj):
         tod: Node = jv_dict(target_obj)
         target_type_expr = tod.get("type_expr")
-    value_lowered_node: Node = {}
-    has_value_lowered_node = False
-    if jv_is_dict(value_lowered):
-        value_lowered_node = jv_dict(value_lowered)
-        has_value_lowered_node = True
-    if target_type_expr is None and has_value_lowered_node and nd_kind(value_lowered_node) == UNBOX:
-        unboxed_type = _normalize_type_name(value_lowered_node.get("resolved_type"))
+    if target_type_expr is None and jv_is_dict(value_lowered) and nd_kind(value_lowered) == UNBOX:
+        unboxed_type = nd_get_str(value_lowered, "resolved_type")
         if unboxed_type not in ("", "unknown"):
             optional_inner = _optional_inner_target_type(target_type)
             if target_type in ("", "unknown") or optional_inner == unboxed_type:
-                target_type = unboxed_type
+                target_type = "" + unboxed_type
                 target_type_expr = _make_named_type_expr(unboxed_type)
-                out["decl_type"] = unboxed_type
+                out["decl_type"] = "" + unboxed_type
                 out["decl_type_expr"] = target_type_expr
                 target_out: JsonVal = out.get("target")
                 if jv_is_dict(target_out):
                     target_dict: Node = jv_dict(target_out)
-                    target_dict["resolved_type"] = unboxed_type
+                    target_dict["resolved_type"] = "" + unboxed_type
                     target_dict["type_expr"] = target_type_expr
     storage_type = _assignment_storage_type_override(stmt, value_lowered, target_type)
     if storage_type != "":
@@ -824,12 +824,8 @@ def _lower_assignment_like_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileC
     )
     set_type_expr_summary(out, type_expr_summary_from_payload(ctx, target_type_expr, target_type))
     target_out: JsonVal = out.get("target")
-    target_dict: Node = {}
-    has_target_dict = False
-    if jv_is_dict(target_out):
+    if jv_is_dict(target_out) and nd_kind(target_out) == NAME:
         target_dict = jv_dict(target_out)
-        has_target_dict = True
-    if has_target_dict and nd_kind(target_dict) == NAME:
         target_name = jv_str(target_dict.get("id", ""))
         storage_type = _normalize_type_name(out.get("decl_type"))
         if storage_type == "unknown":
@@ -840,7 +836,7 @@ def _lower_assignment_like_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileC
 
 
 def _lower_return_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext) -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     for key_s, value in stmt.items():
         if key_s == "value":
             continue
@@ -877,7 +873,7 @@ def _lower_function_def_stmt(
         vararg_type = jv_str(stmt.get("vararg_type", ""))
         if vararg_name != "" and vararg_type != "":
             ctx.set_storage_type(vararg_name, vararg_type)
-        out: Node = {}
+        out: Node = _empty_node()
         for key_s, value in stmt.items():
             out[key_s] = _lower_node(value, dispatch_mode=dispatch_mode, ctx=ctx)
         return out
@@ -888,7 +884,7 @@ def _lower_function_def_stmt(
 
 def _lower_for_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext) -> Node:
     iter_expr = _lower_node(stmt.get("iter"), dispatch_mode=dispatch_mode, ctx=ctx)
-    iter_plan: Node = {}
+    iter_plan: dict[str, JsonVal] = {}
     iter_plan["kind"] = RUNTIME_ITER_FOR_PLAN
     iter_plan["iter_expr"] = iter_expr
     iter_plan["dispatch_mode"] = dispatch_mode
@@ -897,7 +893,7 @@ def _lower_for_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext) -> N
     target_type = _normalize_type_name(stmt.get("target_type"))
     if target_type == "unknown":
         target_type = _normalize_type_name(stmt.get("iter_element_type"))
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = FOR_CORE
     out["iter_mode"] = "runtime_protocol"
     out["iter_plan"] = iter_plan
@@ -923,12 +919,12 @@ def _lower_forrange_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext)
     step_node = _lower_node(stmt.get("step"), dispatch_mode=dispatch_mode, ctx=ctx)
     if not jv_is_dict(step_node):
         step_node = _const_int_node(1)
-    iter_plan: Node = {}
+    iter_plan: dict[str, JsonVal] = {}
     iter_plan["kind"] = STATIC_RANGE_FOR_PLAN
     iter_plan["start"] = start_node
     iter_plan["stop"] = stop_node
     iter_plan["step"] = step_node
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = FOR_CORE
     out["iter_mode"] = "static_fastpath"
     out["iter_plan"] = iter_plan
@@ -949,7 +945,7 @@ def _lower_forrange_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext)
 
 
 def _lower_forcore_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext) -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     for key_s, value in stmt.items():
         out[key_s] = _lower_node(value, dispatch_mode=dispatch_mode, ctx=ctx)
     ip = out.get("iter_plan")
@@ -982,7 +978,7 @@ def _build_nominal_adt_ctor_meta(call: Node, ctx: CompileContext) -> JsonVal:
     ps = jv_str(decl["payload_style"] if "payload_style" in decl else "")
     if ps == "":
         ps = "unit"
-    meta: Node = {}
+    meta: dict[str, JsonVal] = {}
     meta["schema_version"] = 1
     meta["ir_category"] = NOMINAL_ADT_CTOR_CALL
     meta["family_name"] = jv_str(decl["family_name"] if "family_name" in decl else ctor_name)
@@ -1021,14 +1017,14 @@ def _decorate_nominal_adt_projection_attr(attr_expr: Node, ctx: CompileContext) 
     decl_role = jv_str(decl["role"] if "role" in decl else "")
     if decl_role != "variant":
         return attr_expr
-    ft: Node = {}
     ft_obj = decl.get("field_types")
+    field_types: Node = _empty_node()
     if jv_is_dict(ft_obj):
-        ft = jv_dict(ft_obj)
-    field_type = _normalize_type_name(ft.get(attr_name))
+        field_types = jv_dict(ft_obj)
+    field_type = _normalize_type_name(field_types.get(attr_name))
     if field_type == "unknown":
         return attr_expr
-    meta: Node = {}
+    meta: dict[str, JsonVal] = {}
     meta["schema_version"] = 1
     meta["ir_category"] = NOMINAL_ADT_PROJECTION
     meta["family_name"] = jv_str(decl["family_name"] if "family_name" in decl else variant_name)
@@ -1103,7 +1099,7 @@ def _infer_json_semantic_tag(call: Node, *, legacy_compat_bridge_enabled: bool, 
 
 
 def _build_json_decode_meta(call: Node, semantic_tag: str, ctx: CompileContext) -> Node:
-    meta: Node = {}
+    meta: dict[str, JsonVal] = {}
     meta["schema_version"] = 1
     meta["semantic_tag"] = semantic_tag
     meta["result_type"] = type_expr_summary_from_node(ctx, call)
@@ -1192,7 +1188,7 @@ def _make_type_predicate_expr(
     expected_type_id_expr: JsonVal = None,
     expected_type_name: str = "",
 ) -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = kind
     out["resolved_type"] = "bool"
     out["borrow_kind"] = "value"
@@ -1207,7 +1203,7 @@ def _make_type_predicate_expr(
     set_type_expr_summary(out, ls)
     mode = jv_str(ls.get("category", "unknown"))
     if mode != "" and mode != "unknown":
-        lane: Node = {}
+        lane: dict[str, JsonVal] = {}
         lane["schema_version"] = 1
         lane["source_category"] = mode
         lane["source_type"] = ls
@@ -1226,7 +1222,7 @@ def _build_nominal_adt_type_test_meta(type_ref_expr: JsonVal, ctx: CompileContex
     if not jv_is_dict(decl_obj):
         return None
     decl: Node = jv_dict(decl_obj)
-    meta: Node = {}
+    meta: dict[str, JsonVal] = {}
     meta["schema_version"] = 1
     meta["family_name"] = jv_str(decl.get("family_name", tn))
     role = jv_str(decl.get("role", ""))
@@ -1247,7 +1243,7 @@ def _attach_nominal_adt_type_test_meta(check: Node, ttm: Node | None) -> Node:
     ttm_node: Node = jv_dict(ttm)
     check["nominal_adt_test_v1"] = ttm_node
     lane = check.get("narrowing_lane_v1")
-    l2: Node = {}
+    l2: dict[str, JsonVal] = {}
     if jv_is_dict(lane):
         _ = lane
     if "schema_version" not in l2:
@@ -1267,7 +1263,7 @@ def _attach_nominal_adt_type_test_meta(check: Node, ttm: Node | None) -> Node:
 def _build_or_of_checks(checks: list[Node], source_expr: JsonVal) -> Node:
     if len(checks) == 1:
         return checks[0]
-    out: Node = {}
+    out: Node = _empty_node()
     out["kind"] = BOOL_OP
     out["op"] = "Or"
     check_values: list[JsonVal] = _empty_jv_list()
@@ -1338,7 +1334,7 @@ def _collect_expected_type_id_specs(
             for elem in el:
                 lowered = _type_ref_to_type_id(elem, dispatch_mode=dispatch_mode, ctx=ctx)
                 if lowered is not None:
-                    spec: Node = {}
+                    spec: dict[str, JsonVal] = {}
                     spec["type_id_expr"] = lowered
                     spec["type_name_str"] = _type_ref_to_type_name(elem, dispatch_mode=dispatch_mode, ctx=ctx)
                     spec["type_ref_expr"] = elem
@@ -1347,7 +1343,7 @@ def _collect_expected_type_id_specs(
             return out
     lowered_one = _type_ref_to_type_id(spec_node, dispatch_mode=dispatch_mode, ctx=ctx)
     if lowered_one is not None:
-        spec1: Node = {}
+        spec1: dict[str, JsonVal] = {}
         spec1["type_id_expr"] = lowered_one
         spec1["type_name_str"] = _type_ref_to_type_name(spec_node, dispatch_mode=dispatch_mode, ctx=ctx)
         spec1["type_ref_expr"] = spec_node
@@ -1481,7 +1477,7 @@ def _apply_vararg_walk(node: JsonVal, vt: dict[str, Node]) -> JsonVal:
 
 
 def _lower_call_expr(call: Node, *, dispatch_mode: str, ctx: CompileContext) -> Node:
-    out: Node = {}
+    out: Node = _empty_node()
     for key_s, value_jv in call.items():
         out[key_s] = _lower_node(value_jv, dispatch_mode=dispatch_mode, ctx=ctx)
     if not jv_is_dict(out):
@@ -1521,9 +1517,9 @@ def _lower_node_dispatch(node: Node, *, dispatch_mode: str, ctx: CompileContext)
         return _decorate_nominal_adt_match_stmt(out, ctx)
     if kind == FOR_CORE:
         return _lower_forcore_stmt(node, dispatch_mode=dispatch_mode, ctx=ctx)
-    out: Node = {}
-    for key_s in node:
-        out[key_s] = _lower_node(node[key_s], dispatch_mode=dispatch_mode, ctx=ctx)
+    out: Node = _empty_node()
+    for key_s, value_s in node.items():
+        out[key_s] = _lower_node(value_s, dispatch_mode=dispatch_mode, ctx=ctx)
     return out
 
 
@@ -1548,17 +1544,17 @@ def lower_east2_to_east3(
     target_language: str = "core",
 ) -> Node:
     """EAST2 Module を EAST3 へ lower する。"""
-    module_input: Node = {}
-    for key_s in east_module:
-        module_input[key_s] = east_module[key_s]
+    module_input: dict[str, JsonVal] = {}
+    for key_s, value_s in east_module.items():
+        module_input[key_s] = value_s
     # 1. Normalize source spans (col → col_offset, remove Module source_span)
     normalized = walk_normalize_spans(east_module)
     if not jv_is_dict(normalized):
         return module_input
     normalized_node: Node = jv_dict(normalized)
-    module_node: Node = {}
-    for key_s in normalized_node:
-        module_node[key_s] = normalized_node[key_s]
+    module_node: dict[str, JsonVal] = {}
+    for key_s, value_s in normalized_node.items():
+        module_node[key_s] = value_s
 
     meta_obj = module_node.get("meta")
     dispatch_mode = "native"
@@ -1597,9 +1593,9 @@ def lower_east2_to_east3(
             return module_input
         lowered_node = jv_dict(lowered)
 
-    module_out: Node = {}
-    for key_s in lowered_node:
-        module_out[key_s] = lowered_node[key_s]
+    module_out: Node = _empty_node()
+    for key_s, value_s in lowered_node.items():
+        module_out[key_s] = value_s
 
     # Post-lowering passes
     lower_yield_generators(module_out, ctx)
@@ -1633,11 +1629,11 @@ def lower_east2_to_east3(
         module_out["schema_version"] = 1
 
     mn = module_out.get("meta")
-    meta_norm: Node = {}
+    meta_norm: dict[str, JsonVal] = {}
     if jv_is_dict(mn):
         mn_dict: Node = jv_dict(mn)
-        for key_s in mn_dict:
-            meta_norm[key_s] = mn_dict[key_s]
+        for key_s, value_s in mn_dict.items():
+            meta_norm[key_s] = value_s
     meta_norm["dispatch_mode"] = dispatch_mode
     module_out["meta"] = meta_norm
     validation = validate_east3(module_out)

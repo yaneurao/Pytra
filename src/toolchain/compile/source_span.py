@@ -8,27 +8,21 @@ Removes Module-level source_span (which has null fields).
 
 from __future__ import annotations
 
-from pytra.typing import cast
-
-from toolchain.compile.jv import JsonVal, Node, jv_is_dict, jv_is_list
+from toolchain.compile.jv import JsonVal, Node, jv_is_dict, jv_is_list, jv_dict, jv_list, jv_str
 from toolchain.common.kinds import MODULE
 
 
 def normalize_source_span(span: JsonVal) -> JsonVal:
-    """Rename col → col_offset, end_col → end_col_offset in a source_span."""
-    if not isinstance(span, dict):
+    """Rename col -> col_offset, end_col -> end_col_offset in a source_span."""
+    if not jv_is_dict(span):
         return span
-    d: Node = span
-    out: Node = {}
-    for key in d.keys():
-        k = cast(str, key)
-        v = d[k]
+    d: Node = jv_dict(span)
+    out: dict[str, JsonVal] = {}
+    for k, v in d.items():
         if k == "col":
             out["col_offset"] = v
         elif k == "end_col":
             out["end_col_offset"] = v
-        elif k == "col_offset" or k == "end_col_offset":
-            out[k] = v
         else:
             out[k] = v
     return out
@@ -36,22 +30,19 @@ def normalize_source_span(span: JsonVal) -> JsonVal:
 
 def walk_normalize_spans(node: JsonVal) -> JsonVal:
     """Recursively rename source_span fields and remove Module source_span."""
-    if isinstance(node, list):
+    if jv_is_list(node):
         result: list[JsonVal] = []
-        for item in node:
+        for item in jv_list(node):
             result.append(walk_normalize_spans(item))
         return result
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return node
-    d: Node = node
-    kind = d.get("kind", "")
-    out: Node = {}
-    for key in d.keys():
-        k = cast(str, key)
-        v = d[k]
+    d: Node = jv_dict(node)
+    kind = jv_str(d.get("kind", ""))
+    out: dict[str, JsonVal] = {}
+    for k, v in d.items():
         if k == "source_span":
             if kind == MODULE:
-                # Remove Module-level source_span
                 continue
             out[k] = normalize_source_span(v)
         else:

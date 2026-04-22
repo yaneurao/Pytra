@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from toolchain.compile.jv import JsonVal, Node, jv_str, jv_int, jv_is_int
+from toolchain.compile.jv import JsonVal, Node, jv_str, jv_int, jv_is_int, jv_is_dict, jv_is_list, jv_dict, jv_list
 
 
 @dataclass
@@ -17,14 +17,15 @@ class ValidationResult:
 
 def _count_residual_for(node: JsonVal) -> int:
     count: int = 0
-    if isinstance(node, dict):
-        kind = jv_str(node.get("kind", ""))
+    if jv_is_dict(node):
+        node_dict: Node = jv_dict(node)
+        kind = jv_str(node_dict.get("kind", ""))
         if kind == "For" or kind == "ForRange":
             count += 1
-        for v in node.values():
-            count += _count_residual_for(v)
-    elif isinstance(node, list):
-        for item in node:
+        for _, value in node_dict.items():
+            count += _count_residual_for(value)
+    elif jv_is_list(node):
+        for item in jv_list(node):
             count += _count_residual_for(item)
     return count
 

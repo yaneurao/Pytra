@@ -18,16 +18,15 @@ _KNOWN_UNION_ALIASES: dict[str, str] = {
 
 
 def normalize_type_name(value: JsonVal) -> str:
-    """Normalize a type name string, returning 'unknown' for missing/empty."""
-    if isinstance(value, str):
-        t = value.strip()
-        if t != "":
-            return t
+    if value is None:
+        return "unknown"
+    t = str(value).strip()
+    if t != "":
+        return t
     return "unknown"
 
 
 def is_any_like_type(value: JsonVal) -> bool:
-    """Check if a type name is polymorphic/unknown (Any, object, etc.)."""
     t = normalize_type_name(value)
     if t == "Any" or t == "any" or t == "object" or t == "unknown" or t == "":
         return True
@@ -41,11 +40,6 @@ def is_any_like_type(value: JsonVal) -> bool:
 
 
 def split_generic_types(text: str) -> list[str]:
-    """Split comma-separated generic type parameters respecting nesting.
-
-    Handles both [] and <> as nesting delimiters.
-    Example: "int64, dict[str, int64]" → ["int64", "dict[str, int64]"]
-    """
     out: list[str] = []
     part = ""
     depth = 0
@@ -119,15 +113,6 @@ def select_union_member_type(union_type: JsonVal, member_type: JsonVal) -> str:
     if len(lanes) == 0:
         return normalized_member if normalize_known_type_alias(expanded_union) == normalized_member else ""
     for lane in lanes:
-        normalized_lane = normalize_known_type_alias(lane)
-        if normalized_lane == normalized_member:
-            return lane
-        if normalized_member in ("int", "int64") and normalized_lane in ("int", "int64"):
-            return lane
-        if normalized_member in ("float", "float64") and normalized_lane in ("float", "float64"):
-            return lane
+        if normalize_known_type_alias(lane) == normalized_member:
+            return normalized_member
     return ""
-
-
-def is_union_member_type(member_type: JsonVal, union_type: JsonVal) -> bool:
-    return select_union_member_type(union_type, member_type) != ""

@@ -46,6 +46,7 @@ from toolchain.link.type_id import is_builtin_exception_type_name
 @dataclass
 class CppEmitContext:
     module_id: str = ""
+    source_path: str = ""
     is_entry: bool = False
     indent_level: int = 0
     lines: list[str] = field(default_factory=list)

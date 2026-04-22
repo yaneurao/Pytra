@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from pytra.std import sys
 from pytra.std import json
+from pytra.types import int64
 from pytra.std import subprocess as py_subprocess
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
@@ -46,9 +47,14 @@ from toolchain.resolve.py.resolver import resolve_file
 def _repo_root() -> Path:
     """Return repository root from the current working directory.
 
-    Selfhost binaries run from repo root, so avoid relying on `__file__`.
+    Selfhost binaries may run from /workspace, so fall back to ./Pytra when present.
     """
-    return Path.cwd()
+    cwd = Path.cwd()
+    if cwd.joinpath("src").exists():
+        return cwd
+    if cwd.joinpath("Pytra").joinpath("src").exists():
+        return cwd.joinpath("Pytra")
+    return cwd
 
 
 def _unsupported_target_attr(module_name: str, attr_name: str) -> None:
@@ -117,7 +123,7 @@ def _copy_go_runtime_files(output_dir: Path) -> int:
     copied = 0
     for bucket in ["built_in", "std"]:
         for go_file in runtime_root.joinpath(bucket).glob("*.go"):
-            dst = output_dir.joinpath(go_file.name)
+            dst = output_dir.joinpath(_path_text_name(go_file))
             dst.write_text(go_file.read_text(encoding="utf-8"), encoding="utf-8")
             copied += 1
     output_dir.joinpath("go.mod").write_text(
@@ -139,11 +145,38 @@ def _copy_java_runtime_files(output_dir: Path) -> int:
         if not bucket_dir.exists():
             continue
         for java_file in bucket_dir.glob("*.java"):
-            dst = output_dir.joinpath(java_file.name)
+            dst = output_dir.joinpath(_path_text_name(java_file))
             dst.write_text(java_file.read_text(encoding="utf-8"), encoding="utf-8")
             copied += 1
     return copied
 
+
+
+def _path_text_name(path: Path) -> str:
+    text = str(path)
+    slash = text.rfind("/")
+    if slash >= 0:
+        return text[slash + 1:]
+    return text
+
+
+def _path_text_stem(path: Path) -> str:
+    name = _path_text_name(path)
+    dot = name.rfind(".")
+    if dot > 0:
+        return name[:dot]
+    return name
+
+
+def _ensure_parent_dir(path: Path) -> None:
+    text = str(path)
+    slash = text.rfind("/")
+    if slash < 0:
+        return
+    parent_text = text[:slash]
+    if parent_text == "":
+        return
+    Path(parent_text).mkdir(parents=True, exist_ok=True)
 
 
 def _module_source_path(module_id: str) -> Path:
@@ -164,6 +197,11 @@ def _copy_json_doc(doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
     return doc
 
 
+def _dump_json_doc(doc: JsonVal, indent: int64 | None = None) -> str:
+    key_sep = ":" if indent is None else ": "
+    return json._dump_json_value(doc, True, indent, ",", key_sep, 0)
+
+
 def _module_stem_from_source_path(source_path: str, fallback_input: str) -> str:
     if source_path != "" and "/src/toolchain/" in source_path:
         idx = source_path.index("/src/toolchain/")
@@ -176,11 +214,12 @@ def _module_stem_from_source_path(source_path: str, fallback_input: str) -> str:
         if rel.endswith(".py"):
             rel = rel[:-3]
         return rel.replace("/", ".")
-    return Path(fallback_input).stem
+    return _path_text_stem(Path(fallback_input))
 
 
 def _lower_cpp_doc(east2_doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
-    return cast(dict[str, JsonVal], lower_east2_to_east3(east2_doc, target_language="cpp"))
+    lowered_doc: dict[str, JsonVal] = lower_east2_to_east3(east2_doc, target_language="cpp")
+    return lowered_doc
 
 
 def _optimize_cpp_doc(east3_doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
@@ -256,32 +295,26 @@ def _collect_build_sources(inputs: list[str]) -> list[tuple[str, dict[str, JsonV
         if not current.exists():
             raise RuntimeError("file not found: " + current_key)
         east1_doc = parse_python_file(current_key)
-        if not isinstance(east1_doc, dict):
-            raise RuntimeError("parse failed: " + current_key)
-        typed_east1_doc: dict[str, JsonVal] = east1_doc
-        ordered.append((current_key, typed_east1_doc))
+        ordered.append((current_key, east1_doc))
         seen.add(current_key)
 
-        meta_raw = east1_doc.get("meta")
-        if not isinstance(meta_raw, dict):
+        meta = json.JsonObj(east1_doc).get_obj("meta")
+        if meta is None:
             continue
-        meta = cast(dict[str, JsonVal], meta_raw)
-        import_resolution_raw = meta.get("import_resolution")
-        if not isinstance(import_resolution_raw, dict):
+        import_resolution = meta.get_obj("import_resolution")
+        if import_resolution is None:
             continue
-        import_resolution = cast(dict[str, JsonVal], import_resolution_raw)
-        bindings_raw = import_resolution.get("bindings")
-        if not isinstance(bindings_raw, list):
+        bindings = import_resolution.get_arr("bindings")
+        if bindings is None:
             continue
-        bindings = cast(list[JsonVal], bindings_raw)
-        for binding in bindings:
-            if not isinstance(binding, dict):
+        for binding in bindings.raw:
+            binding_node = json.JsonValue(binding).as_obj()
+            if binding_node is None:
                 continue
-            binding_node = cast(dict[str, JsonVal], binding)
-            module_id_raw = binding_node.get("module_id", "")
-            if not isinstance(module_id_raw, str):
+            module_id_text_opt = binding_node.get_str("module_id")
+            if module_id_text_opt is None:
                 continue
-            module_id_text = cast(str, module_id_raw)
+            module_id_text = cast(str, module_id_text_opt)
             if module_id_text == "" or module_id_text.startswith("pytra."):
                 continue
             dep_path = _module_source_path(module_id_text)
@@ -298,7 +331,7 @@ def _collect_build_sources(inputs: list[str]) -> list[tuple[str, dict[str, JsonV
 
 def _default_east1_output_path(input_path: Path) -> Path:
     """a.py → work/tmp/east1/a.py.east1"""
-    return Path("work").joinpath("tmp").joinpath("east1").joinpath(input_path.name + ".east1")
+    return Path("work").joinpath("tmp").joinpath("east1").joinpath(_path_text_name(input_path) + ".east1")
 
 
 def _parse_one(input_path: Path, output_text: str, pretty: bool) -> int:
@@ -310,10 +343,11 @@ def _parse_one(input_path: Path, output_text: str, pretty: bool) -> int:
     east1_doc = parse_python_file(str(input_path))
     out_path = Path(output_text) if output_text != "" else _default_east1_output_path(input_path)
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    _ensure_parent_dir(out_path)
     indent = 2 if pretty else None
+    payload: JsonVal = east1_doc
     out_path.write_text(
-        json.dumps(east1_doc, ensure_ascii=False, indent=indent) + "\n",
+        _dump_json_doc(east1_doc, indent) + "\n",
         encoding="utf-8",
     )
     print("parsed: " + str(out_path))
@@ -383,7 +417,7 @@ def _resolve_one(input_path: Path, output_text: str, pretty: bool) -> int:
     if output_text != "":
         out_path = Path(output_text)
     else:
-        name = input_path.name
+        name = _path_text_name(input_path)
         if name.endswith(".py.east1"):
             base = name[:len(name) - len(".py.east1")]
         elif name.endswith(".east1"):
@@ -392,10 +426,11 @@ def _resolve_one(input_path: Path, output_text: str, pretty: bool) -> int:
             base = name
         out_path = Path("work").joinpath("tmp").joinpath("east2").joinpath(base + ".east2")
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    _ensure_parent_dir(out_path)
     indent = 2 if pretty else None
+    payload: JsonVal = result.east2_doc
     out_path.write_text(
-        json.dumps(result.east2_doc, ensure_ascii=False, indent=indent) + "\n",
+        _dump_json_doc(result.east2_doc, indent) + "\n",
         encoding="utf-8",
     )
     print("resolved: " + str(out_path))
@@ -459,7 +494,7 @@ def cmd_resolve(args: list[str]) -> int:
 
 def _default_east3_output_path(input_path: Path) -> Path:
     """a.east2 → work/tmp/east3/a.east3"""
-    name = input_path.name
+    name = _path_text_name(input_path)
     if name.endswith(".east2"):
         name = name[:-6] + ".east3"
     else:
@@ -474,19 +509,20 @@ def _compile_one(input_path: Path, output_text: str, pretty: bool) -> int:
         return 1
 
     east2_text = input_path.read_text(encoding="utf-8")
-    east2_doc = json.loads(east2_text).raw
-    if not isinstance(east2_doc, dict):
+    east2_obj = json.loads_obj(east2_text)
+    if east2_obj is None:
         print("error: invalid east2 document: " + str(input_path))
         return 1
 
-    typed_east2_doc: dict[str, JsonVal] = east2_doc
-    east3_doc = cast(dict[str, JsonVal], lower_east2_to_east3(typed_east2_doc, target_language="cpp"))
+    typed_east2_doc: dict[str, JsonVal] = east2_obj.raw
+    east3_doc = lower_east2_to_east3(typed_east2_doc, target_language="cpp")
     out_path = Path(output_text) if output_text != "" else _default_east3_output_path(input_path)
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    _ensure_parent_dir(out_path)
     indent = 2 if pretty else None
+    payload: JsonVal = east3_doc
     out_path.write_text(
-        json.dumps(east3_doc, ensure_ascii=False, indent=indent) + "\n",
+        _dump_json_doc(east3_doc, indent) + "\n",
         encoding="utf-8",
     )
     print("compiled: " + str(out_path))
@@ -556,12 +592,12 @@ def _optimize_one(
         return 1
 
     east3_text = input_path.read_text(encoding="utf-8")
-    east3_doc = json.loads(east3_text).raw
-    if not isinstance(east3_doc, dict):
+    east3_obj = json.loads_obj(east3_text)
+    if east3_obj is None:
         print("error: invalid east3 document: " + str(input_path))
         return 1
 
-    typed_east3_doc: dict[str, JsonVal] = east3_doc
+    typed_east3_doc: dict[str, JsonVal] = east3_obj.raw
     optimized_doc = optimize_east3_doc_only(
         typed_east3_doc,
         opt_level,
@@ -572,12 +608,13 @@ def _optimize_one(
     if output_text != "":
         out_path = Path(output_text)
     else:
-        out_path = Path("work").joinpath("tmp").joinpath("east3-opt").joinpath(input_path.name)
+        out_path = Path("work").joinpath("tmp").joinpath("east3-opt").joinpath(_path_text_name(input_path))
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
+    _ensure_parent_dir(out_path)
     indent = 2 if pretty else None
+    payload: JsonVal = optimized_doc
     out_path.write_text(
-        json.dumps(optimized_doc, ensure_ascii=False, indent=indent) + "\n",
+        _dump_json_doc(optimized_doc, indent) + "\n",
         encoding="utf-8",
     )
     print("optimized: " + str(out_path))
@@ -671,8 +708,9 @@ def _write_link_output(result: LinkResult, output_dir: Path, pretty: bool) -> in
 
     # Write manifest.json
     manifest_path = output_dir.joinpath("manifest.json")
+    manifest_payload: JsonVal = result.manifest
     manifest_path.write_text(
-        json.dumps(result.manifest, ensure_ascii=False, indent=indent) + "\n",
+        _dump_json_doc(result.manifest, indent) + "\n",
         encoding="utf-8",
     )
 
@@ -680,9 +718,10 @@ def _write_link_output(result: LinkResult, output_dir: Path, pretty: bool) -> in
     for module in result.linked_modules:
         rel_path = module.module_id.replace(".", "/") + ".east3.json"
         out_path = output_dir.joinpath("east3").joinpath(rel_path)
-        out_path.parent.mkdir(parents=True, exist_ok=True)
+        _ensure_parent_dir(out_path)
+        module_payload: JsonVal = module.east_doc
         out_path.write_text(
-            json.dumps(module.east_doc, ensure_ascii=False, indent=indent) + "\n",
+            _dump_json_doc(module.east_doc, indent) + "\n",
             encoding="utf-8",
         )
 
@@ -814,7 +853,7 @@ def cmd_emit(args: list[str]) -> int:
     manifest_path = Path(input_text).joinpath("manifest.json")
     if not manifest_path.exists():
         # Maybe the input IS the manifest.json directly
-        if Path(input_text).name == "manifest.json" and Path(input_text).exists():
+        if _path_text_name(Path(input_text)) == "manifest.json" and Path(input_text).exists():
             manifest_path = Path(input_text)
         else:
             print("error: manifest.json not found in: " + input_text)
@@ -856,7 +895,7 @@ def _copy_nim_runtime_files(output_dir: Path) -> int:
         if not bucket_dir.exists():
             continue
         for nim_file in bucket_dir.glob("*.nim"):
-            dst = output_dir.joinpath(nim_file.name)
+            dst = output_dir.joinpath(_path_text_name(nim_file))
             dst.write_text(nim_file.read_text(encoding="utf-8"), encoding="utf-8")
             copied += 1
     return copied
@@ -889,7 +928,7 @@ def _copy_ts_runtime_files(output_dir: Path) -> int:
         if not bucket_dir.exists():
             continue
         for ts_file in bucket_dir.glob("*.ts"):
-            dst = output_dir.joinpath(ts_file.name)
+            dst = output_dir.joinpath(_path_text_name(ts_file))
             dst.write_text(ts_file.read_text(encoding="utf-8"), encoding="utf-8")
             copied += 1
     return copied
@@ -1037,7 +1076,7 @@ def _build_pipeline(
     # 3. Compile
     east3_docs: list[tuple[str, dict[str, JsonVal]]] = []
     for inp, east2_doc in east2_docs:
-        compiled_doc = cast(dict[str, JsonVal], lower_east2_to_east3(east2_doc, target_language=lowering_target))
+        compiled_doc = lower_east2_to_east3(east2_doc, target_language=lowering_target)
         east3_docs.append((inp, compiled_doc))
     print("build: compiled " + str(len(east3_docs)) + " files")
 
@@ -1045,10 +1084,7 @@ def _build_pipeline(
     east3_opt_docs: list[tuple[str, dict[str, JsonVal]]] = []
     optimizer_debug_flags = _optimizer_debug_flags(opt_level, negative_index_mode, bounds_check_mode)
     for inp, east3_doc in east3_docs:
-        optimized_doc = cast(
-            dict[str, JsonVal],
-            optimize_east3_doc_only(east3_doc, opt_level, "", "", optimizer_debug_flags),
-        )
+        optimized_doc = optimize_east3_doc_only(east3_doc, opt_level, "", "", optimizer_debug_flags)
         east3_opt_docs.append((
             inp,
             optimized_doc,
@@ -1056,19 +1092,23 @@ def _build_pipeline(
     print("build: optimized " + str(len(east3_opt_docs)) + " files")
 
     # 5. Link — write east3-opt to temp files for link_modules
-    work_dir = Path("work").joinpath("tmp").joinpath("build_" + Path(inputs[0]).stem).resolve()
+    work_dir = Path("work").joinpath("tmp").joinpath("build_" + _path_text_stem(Path(inputs[0]))).resolve()
     east3_opt_dir = work_dir.joinpath("east3-opt")
     east3_opt_dir.mkdir(parents=True, exist_ok=True)
 
     east3_opt_paths: list[str] = []
     for inp, east3_opt_doc in east3_opt_docs:
         # Use source_path-derived name to avoid collisions (e.g. two types.py in different dirs)
-        source_path_val = east3_opt_doc.get("source_path", "")
-        source_path_text = source_path_val if isinstance(source_path_val, str) else ""
+        source_path_text_opt = json.JsonObj(east3_opt_doc).get_str("source_path")
+        if source_path_text_opt is None:
+            source_path_text = ""
+        else:
+            source_path_text = cast(str, source_path_text_opt)
         stem = _module_stem_from_source_path(source_path_text, inp)
         out_path = east3_opt_dir.joinpath(stem + ".east3")
+        east3_opt_payload: JsonVal = east3_opt_doc
         out_path.write_text(
-            json.dumps(east3_opt_doc, ensure_ascii=False, indent=2) + "\n",
+            _dump_json_doc(east3_opt_doc, 2) + "\n",
             encoding="utf-8",
         )
         east3_opt_paths.append(str(out_path.resolve()))

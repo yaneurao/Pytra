@@ -11,7 +11,16 @@ from pytra.std.pathlib import Path
 from pytra.std import json
 
 
-_REPO_ROOT = Path.cwd()
+def _repo_root() -> Path:
+    cwd = Path.cwd()
+    if cwd.joinpath("src").exists():
+        return cwd
+    if cwd.joinpath("Pytra").joinpath("src").exists():
+        return cwd.joinpath("Pytra")
+    return cwd
+
+
+_REPO_ROOT = _repo_root()
 _RUNTIME_EAST_ROOT = _REPO_ROOT.joinpath("src").joinpath("runtime").joinpath("east")
 
 _RUNTIME_MODULE_BUCKETS: dict[str, str] = {

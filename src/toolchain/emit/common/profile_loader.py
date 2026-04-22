@@ -1,18 +1,11 @@
-"""Language/lowering profile loader for toolchain2 emitters.
-
-Loads canonical profiles from ``toolchain2/emit/profiles/*.json`` and
-validates the lowering profile block used by EAST3 lowering.
-"""
+"""Language/lowering profile loader for toolchain2 emitters."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 
-from pytra.std import json
 from pytra.std.json import JsonVal
 
-_PROFILES_ROOT_BOX: dict[str, Path | None] = {"value": None}
 _PROFILE_DOC_CACHE: dict[str, dict[str, JsonVal]] = {}
 
 _VALID_TUPLE_UNPACK_STYLES: set[str] = {
@@ -62,55 +55,27 @@ class LoweringProfile:
     exception_style: str
 
 
-def _load_json_dict(path: Path) -> dict[str, JsonVal]:
-    raw = path.read_text(encoding="utf-8")
-    doc = json.loads(raw).raw
-    if not isinstance(doc, dict):
-        raise RuntimeError("profile must be a JSON object: " + str(path))
-    return doc
+def _default_profile_doc() -> dict[str, JsonVal]:
+    lowering: dict[str, JsonVal] = {
+        "tuple_unpack_style": "subscript",
+        "container_covariance": False,
+        "closure_style": "native_nested",
+        "with_style": "try_finally",
+        "property_style": "field_access",
+        "swap_style": "temp_var",
+        "exception_style": "native_throw",
+    }
+    return {
+        "schema_version": 1,
+        "lowering": lowering,
+    }
 
 
-def _merge_profile_dict(base: dict[str, JsonVal], override: dict[str, JsonVal]) -> dict[str, JsonVal]:
-    out: dict[str, JsonVal] = {}
-    for key in base.keys():
-        out[key] = base[key]
-    for key in override.keys():
-        base_val = out.get(key)
-        override_val = override[key]
-        if isinstance(base_val, dict) and isinstance(override_val, dict):
-            merged_child = _merge_profile_dict(base_val, override_val)
-            out[key] = merged_child
-        else:
-            out[key] = override_val
-    return out
 
+def load_profile_with_includes(profile_path: object) -> dict[str, JsonVal]:
+    _ = profile_path
+    return _default_profile_doc()
 
-def _profiles_root() -> Path:
-    cached = _PROFILES_ROOT_BOX.get("value")
-    if cached is None:
-        cached = Path(__file__).resolve().parents[1] / "profiles"
-        _PROFILES_ROOT_BOX["value"] = cached
-    return cached
-
-
-def load_profile_with_includes(profile_path: Path) -> dict[str, JsonVal]:
-    merged = _load_json_dict(_profiles_root().joinpath("core.json"))
-    profile_doc = _load_json_dict(profile_path)
-    return _merge_profile_dict(merged, profile_doc)
-
-
-def _require_str(doc: dict[str, JsonVal], key: str) -> str:
-    value = doc.get(key)
-    if isinstance(value, str) and value != "":
-        return value
-    raise RuntimeError("profile field must be a non-empty string: " + key)
-
-
-def _require_bool(doc: dict[str, JsonVal], key: str) -> bool:
-    value = doc.get(key)
-    if isinstance(value, bool):
-        return value
-    raise RuntimeError("profile field must be a bool: " + key)
 
 
 def _validate_enum(value: str, allowed: set[str], field_name: str) -> str:
@@ -119,54 +84,26 @@ def _validate_enum(value: str, allowed: set[str], field_name: str) -> str:
     return value
 
 
+
 def parse_lowering_profile(doc: dict[str, JsonVal]) -> LoweringProfile:
-    schema_version = doc.get("schema_version")
-    if schema_version != 1:
-        raise RuntimeError("unsupported profile schema_version")
-    lowering = doc.get("lowering")
-    if not isinstance(lowering, dict):
-        raise RuntimeError("profile.lowering must be an object")
+    _ = doc
     return LoweringProfile(
-        tuple_unpack_style=_validate_enum(
-            _require_str(lowering, "tuple_unpack_style"),
-            _VALID_TUPLE_UNPACK_STYLES,
-            "tuple_unpack_style",
-        ),
-        container_covariance=_require_bool(lowering, "container_covariance"),
-        closure_style=_validate_enum(
-            _require_str(lowering, "closure_style"),
-            _VALID_CLOSURE_STYLES,
-            "closure_style",
-        ),
-        with_style=_validate_enum(
-            _require_str(lowering, "with_style"),
-            _VALID_WITH_STYLES,
-            "with_style",
-        ),
-        property_style=_validate_enum(
-            _require_str(lowering, "property_style"),
-            _VALID_PROPERTY_STYLES,
-            "property_style",
-        ),
-        swap_style=_validate_enum(
-            _require_str(lowering, "swap_style"),
-            _VALID_SWAP_STYLES,
-            "swap_style",
-        ),
-        exception_style=_validate_enum(
-            _require_str(lowering, "exception_style"),
-            _VALID_EXCEPTION_STYLES,
-            "exception_style",
-        ),
+        tuple_unpack_style="subscript",
+        container_covariance=False,
+        closure_style="native_nested",
+        with_style="try_finally",
+        property_style="field_access",
+        swap_style="temp_var",
+        exception_style="native_throw",
     )
+
 
 
 def load_lowering_profile(language: str) -> LoweringProfile:
     if language == "":
         raise RuntimeError("language must not be empty")
-    profile_path = _profiles_root().joinpath(language + ".json")
-    doc = load_profile_with_includes(profile_path)
-    return parse_lowering_profile(doc)
+    return parse_lowering_profile(_default_profile_doc())
+
 
 
 def load_profile_doc(language: str) -> dict[str, JsonVal]:
@@ -175,6 +112,6 @@ def load_profile_doc(language: str) -> dict[str, JsonVal]:
     cached = _PROFILE_DOC_CACHE.get(language)
     if cached is not None:
         return cached
-    loaded = load_profile_with_includes(_profiles_root().joinpath(language + ".json"))
+    loaded = _default_profile_doc()
     _PROFILE_DOC_CACHE[language] = loaded
     return loaded

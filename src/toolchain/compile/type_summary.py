@@ -13,7 +13,7 @@ from __future__ import annotations
 from pytra.typing import cast
 
 from toolchain.compile.jv import JsonVal, Node, CompileContext
-from toolchain.compile.jv import jv_str, jv_dict, jv_list, jv_is_dict, deep_copy_json
+from toolchain.compile.jv import jv_str, jv_dict, jv_list, jv_is_dict, jv_is_list, deep_copy_json
 from toolchain.compile.jv import nd_kind, nd_get_str, nd_get_dict
 from toolchain.compile.jv import normalize_type_name
 from toolchain.common.kinds import (
@@ -64,9 +64,9 @@ _JSON_RECEIVER_PREFIXES: list[tuple[str, str]] = [
 
 def _copy_node(node: Node) -> Node:
     copied = deep_copy_json(node)
-    if isinstance(copied, dict):
-        return cast(dict[str, JsonVal], copied)
-    empty: Node = {}
+    if jv_is_dict(copied):
+        return jv_dict(copied)
+    empty: dict[str, JsonVal] = {}
     return empty
 
 
@@ -135,43 +135,52 @@ def _is_simple_identifier(text: str) -> bool:
 
 
 def _is_named_ellipsis(expr: JsonVal) -> bool:
-    if not isinstance(expr, dict):
+    if not jv_is_dict(expr):
         return False
-    d: Node = expr
-    return d.get("kind") == NAMED_TYPE and d.get("name") == "..."
+    d: Node = jv_dict(expr)
+    return jv_str(d.get("kind", "")) == NAMED_TYPE and jv_str(d.get("name", "")) == "..."
 
 
 def _is_homogeneous_tuple_ellipsis(expr: JsonVal) -> bool:
-    if not isinstance(expr, dict):
+    if not jv_is_dict(expr):
         return False
-    d: Node = expr
+    d: Node = jv_dict(expr)
     base = jv_str(d.get("base", ""))
-    if d.get("kind") != GENERIC_TYPE or base != "tuple":
+    if jv_str(d.get("kind", "")) != GENERIC_TYPE or base != "tuple":
         return False
     ts = jv_str(d.get("tuple_shape", ""))
     if ts == "homogeneous_ellipsis":
         return True
     args_obj = d.get("args")
-    if not isinstance(args_obj, list):
+    if not jv_is_list(args_obj):
         return False
-    al: list[JsonVal] = cast(list[JsonVal], args_obj)
-    return len(al) == 2 and _is_named_ellipsis(al[1])
+    al = jv_list(args_obj)
+    if len(al) != 2:
+        return False
+    idx = 0
+    second_items: list[JsonVal] = []
+    for item in al:
+        if idx == 1:
+            second_items.append(item)
+            break
+        idx += 1
+    return len(second_items) == 1 and _is_named_ellipsis(second_items[0])
 
 
 def _make_named_like(name: str) -> Node:
     if name == "Any" or name == "object" or name == "unknown":
-        dyn: Node = {}
+        dyn: dict[str, JsonVal] = {}
         dyn["kind"] = DYNAMIC_TYPE
         dyn["name"] = name
         return dyn
     if name == "JsonValue" or name == "JsonObj" or name == "JsonArr":
-        nominal: Node = {}
+        nominal: dict[str, JsonVal] = {}
         nominal["kind"] = NOMINAL_ADT_TYPE
         nominal["name"] = name
         nominal["adt_family"] = "json"
         nominal["variant_domain"] = "closed"
         return nominal
-    named: Node = {}
+    named: dict[str, JsonVal] = {}
     named["kind"] = NAMED_TYPE
     named["name"] = name
     return named
@@ -181,12 +190,12 @@ def _make_union_type_expr(options: list[Node]) -> Node:
     non_none: list[Node] = []
     has_none = False
     for option in options:
-        if option.get("kind") == NAMED_TYPE and option.get("name") == "None":
+        if ("" + jv_str(option.get("kind", ""))) == NAMED_TYPE and ("" + jv_str(option.get("name", ""))) == "None":
             has_none = True
         else:
             non_none.append(option)
     if has_none and len(non_none) == 1:
-        opt: Node = {}
+        opt: dict[str, JsonVal] = {}
         opt["kind"] = OPTIONAL_TYPE
         opt["inner"] = non_none[0]
         return opt
@@ -194,16 +203,16 @@ def _make_union_type_expr(options: list[Node]) -> Node:
     for item in non_none:
         union_opts.append(item)
     if has_none:
-        none_type: Node = {}
+        none_type: dict[str, JsonVal] = {}
         none_type["kind"] = NAMED_TYPE
         none_type["name"] = "None"
         union_opts.append(none_type)
     mode = "general"
     for opt_item in union_opts:
-        if isinstance(opt_item, dict) and opt_item.get("kind") == DYNAMIC_TYPE:
+        if jv_is_dict(opt_item) and nd_get_str(jv_dict(opt_item), "kind") == DYNAMIC_TYPE:
             mode = "dynamic"
             break
-    out: Node = {}
+    out: dict[str, JsonVal] = {}
     out["kind"] = UNION_TYPE
     out["union_mode"] = mode
     out["options"] = union_opts
@@ -213,7 +222,7 @@ def _make_union_type_expr(options: list[Node]) -> Node:
 def _parse_type_expr(raw: str) -> Node:
     txt = _strip_typing_prefix(_strip_quotes(raw))
     if txt == "":
-        unknown: Node = {}
+        unknown: dict[str, JsonVal] = {}
         unknown["kind"] = DYNAMIC_TYPE
         unknown["name"] = "unknown"
         return unknown
@@ -229,56 +238,56 @@ def _parse_type_expr(raw: str) -> Node:
         if head in _GENERIC_BASES:
             head = _GENERIC_BASES[head]
         inner = txt[lb + 1:-1].strip()
-        args = [_parse_type_expr(p) for p in _split_top_level(inner, ",")]
+        args: list[JsonVal] = []
+        for p in _split_top_level(inner, ","):
+            args.append(_parse_type_expr(p))
         if head == "Optional" and len(args) == 1:
-            opt: Node = {}
+            opt: dict[str, JsonVal] = {}
             opt["kind"] = OPTIONAL_TYPE
             opt["inner"] = args[0]
             return opt
         if head == "Union" and len(args) > 0:
             return _make_union_type_expr(args)
         if head == "tuple" and len(args) == 2 and _is_named_ellipsis(args[1]):
-            tuple_expr: Node = {}
+            tuple_expr: dict[str, JsonVal] = {}
             tuple_expr["kind"] = GENERIC_TYPE
             tuple_expr["base"] = head
-            tuple_expr["args"] = list(args)
+            tuple_expr["args"] = args
             tuple_expr["tuple_shape"] = "homogeneous_ellipsis"
             return tuple_expr
-        generic: Node = {}
+        generic: dict[str, JsonVal] = {}
         generic["kind"] = GENERIC_TYPE
         generic["base"] = head
-        generic["args"] = list(args)
+        generic["args"] = args
         return generic
     return _make_named_like(txt)
 
 
 def _type_expr_to_string(expr: JsonVal) -> str:
-    if not isinstance(expr, dict):
+    if not jv_is_dict(expr):
         return "unknown"
-    d: Node = expr
+    d: Node = jv_dict(expr)
     kind = jv_str(d.get("kind", ""))
     if kind == DYNAMIC_TYPE or kind == NAMED_TYPE or kind == NOMINAL_ADT_TYPE:
-        return jv_str(d.get("name", "unknown"))
+        return "" + jv_str(d.get("name", "unknown"))
     if kind == OPTIONAL_TYPE:
         inner = d.get("inner")
-        if isinstance(inner, dict):
+        if jv_is_dict(inner):
             return _type_expr_to_string(inner) + " | None"
         return "unknown | None"
     if kind == GENERIC_TYPE:
-        base: str = jv_str(d.get("base", "unknown"))
+        base = "" + jv_str(d.get("base", "unknown"))
         args_obj = d.get("args")
         parts: list[str] = []
-        if isinstance(args_obj, list):
-            args_list: list[JsonVal] = cast(list[JsonVal], args_obj)
-            for arg in args_list:
+        if jv_is_list(args_obj):
+            for arg in jv_list(args_obj):
                 parts.append(_type_expr_to_string(arg))
         return base + "[" + ",".join(parts) + "]"
     if kind == UNION_TYPE:
         opts_obj = d.get("options")
         opts: list[str] = []
-        if isinstance(opts_obj, list):
-            opts_list: list[JsonVal] = cast(list[JsonVal], opts_obj)
-            for opt in opts_list:
+        if jv_is_list(opts_obj):
+            for opt in jv_list(opts_obj):
                 opts.append(_type_expr_to_string(opt))
         return "|".join(opts)
     return "unknown"
@@ -289,22 +298,22 @@ def _type_expr_to_string(expr: JsonVal) -> str:
 # ---------------------------------------------------------------------------
 
 def _is_type_expr_payload(value: JsonVal) -> bool:
-    if not isinstance(value, dict):
+    if not jv_is_dict(value):
         return False
-    d: Node = value
-    return isinstance(d.get("kind"), str)
+    d: Node = jv_dict(value)
+    return jv_str(d.get("kind", "")) != ""
 
 
 def summarize_type_expr(expr: JsonVal) -> Node:
-    out: Node = {}
+    out: dict[str, JsonVal] = {}
     out["kind"] = "unknown"
     out["category"] = "unknown"
     out["mirror"] = "unknown"
     if not _is_type_expr_payload(expr):
         return out
-    if not isinstance(expr, dict):
+    if not jv_is_dict(expr):
         return out
-    d: Node = expr
+    d: Node = jv_dict(expr)
     kind = jv_str(d.get("kind", "unknown"))
     out["kind"] = kind
     out["mirror"] = _type_expr_to_string(d)
@@ -355,16 +364,18 @@ def summarize_type_expr(expr: JsonVal) -> Node:
         out["category"] = "homogeneous_tuple"
         out["tuple_shape"] = "homogeneous_ellipsis"
         args = d.get("args")
-        if isinstance(args, list):
-            args_list: list[JsonVal] = cast(list[JsonVal], args)
-            if len(args_list) >= 1 and isinstance(args_list[0], dict):
-                item_s = summarize_type_expr(args_list[0])
-                im = jv_str(item_s.get("mirror", "unknown"))
-                ic2 = jv_str(item_s.get("category", "unknown"))
-                if im != "" and im != "unknown":
-                    out["item_mirror"] = im
-                if ic2 != "" and ic2 != "unknown":
-                    out["item_category"] = ic2
+        if jv_is_list(args):
+            for arg0 in jv_list(args):
+                if not jv_is_dict(arg0):
+                    break
+                item_s = summarize_type_expr(arg0)
+                im_homo: str = "" + jv_str(item_s.get("mirror", "unknown"))
+                ic_homo: str = "" + jv_str(item_s.get("category", "unknown"))
+                if im_homo != "" and im_homo != "unknown":
+                    out["item_mirror"] = im_homo
+                if ic_homo != "" and ic_homo != "unknown":
+                    out["item_category"] = ic_homo
+                break
         return out
     if kind == NAMED_TYPE or kind == GENERIC_TYPE:
         out["category"] = "static"
@@ -373,10 +384,7 @@ def summarize_type_expr(expr: JsonVal) -> Node:
 
 
 def summarize_type_text(raw: JsonVal) -> Node:
-    if not isinstance(raw, str):
-        return summarize_type_expr(None)
-    s: str = raw
-    txt = s.strip()
+    txt = jv_str(raw).strip()
     if txt == "":
         return summarize_type_expr(None)
     return summarize_type_expr(_parse_type_expr(txt))
@@ -387,7 +395,7 @@ def summarize_type_text(raw: JsonVal) -> Node:
 # ---------------------------------------------------------------------------
 
 def unknown_type_summary() -> Node:
-    out: Node = {}
+    out: dict[str, JsonVal] = {}
     out["kind"] = "unknown"
     out["category"] = "unknown"
     out["mirror"] = "unknown"
@@ -405,17 +413,17 @@ def type_expr_summary_from_payload(ctx: CompileContext, type_expr: JsonVal, mirr
 
 
 def type_expr_summary_from_node(ctx: CompileContext, node: JsonVal) -> Node:
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return unknown_type_summary()
-    nd: Node = node
+    nd: Node = jv_dict(node)
     return type_expr_summary_from_payload(ctx, nd.get("type_expr"), nd.get("resolved_type"))
 
 
 def structured_type_expr_summary_from_node(node: JsonVal) -> Node:
     """ADT テーブル不要 — type_expr のみから要約。"""
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return unknown_type_summary()
-    nd: Node = node
+    nd: Node = jv_dict(node)
     summary = summarize_type_expr(nd.get("type_expr"))
     return _copy_node(summary)
 
@@ -426,12 +434,12 @@ def expr_type_summary(ctx: CompileContext, expr: JsonVal) -> Node:
 
 def expr_type_name(ctx: CompileContext, expr: JsonVal) -> str:
     summary = expr_type_summary(ctx, expr)
-    mirror = normalize_type_name(summary.get("mirror"))
+    mirror = "" + normalize_type_name(summary.get("mirror"))
     if mirror != "unknown":
         return mirror
-    if isinstance(expr, dict):
-        ed: Node = expr
-        return normalize_type_name(ed.get("resolved_type"))
+    if jv_is_dict(expr):
+        ed: Node = jv_dict(expr)
+        return "" + normalize_type_name(ed.get("resolved_type"))
     return "unknown"
 
 
@@ -440,12 +448,12 @@ def expr_type_name(ctx: CompileContext, expr: JsonVal) -> str:
 # ---------------------------------------------------------------------------
 
 def lookup_nominal_adt_decl(ctx: CompileContext, name: JsonVal) -> Node:
-    type_name: str = normalize_type_name(name)
+    type_name = "" + normalize_type_name(name)
     if type_name == "unknown":
-        empty: Node = {}
+        empty: dict[str, JsonVal] = {}
         return empty
     if type_name not in ctx.nominal_adt_table:
-        empty2: Node = {}
+        empty2: dict[str, JsonVal] = {}
         return empty2
     entry = ctx.nominal_adt_table[type_name]
     return _copy_node(entry)
@@ -455,31 +463,30 @@ def collect_nominal_adt_table(east_module: Node) -> dict[str, Node]:
     """Module body から nominal ADT 宣言を収集する (純粋関数)。"""
     out: dict[str, Node] = {}
     body_obj = east_module.get("body")
-    if not isinstance(body_obj, list):
+    if not jv_is_list(body_obj):
         return out
-    body: list[JsonVal] = cast(list[JsonVal], body_obj)
-    for item in body:
-        if not isinstance(item, dict):
+    for item in jv_list(body_obj):
+        if not jv_is_dict(item):
             continue
-        nd: Node = item
-        if nd.get("kind") != CLASS_DEF:
+        nd: Node = jv_dict(item)
+        if jv_str(nd.get("kind", "")) != CLASS_DEF:
             continue
         class_name = normalize_type_name(nd.get("name"))
         if class_name == "unknown":
             continue
         meta_obj = nd.get("meta")
-        if not isinstance(meta_obj, dict):
+        if not jv_is_dict(meta_obj):
             continue
-        meta: Node = cast(dict[str, JsonVal], meta_obj)
+        meta: Node = jv_dict(meta_obj)
         nom_obj = meta.get("nominal_adt_v1")
-        if not isinstance(nom_obj, dict):
+        if not jv_is_dict(nom_obj):
             continue
-        nominal: Node = cast(dict[str, JsonVal], nom_obj)
+        nominal: Node = jv_dict(nom_obj)
         role = jv_str(nominal.get("role", ""))
         family_name = jv_str(nominal.get("family_name", ""))
         if (role != "family" and role != "variant") or family_name == "":
             continue
-        entry: Node = {}
+        entry: dict[str, JsonVal] = {}
         entry["role"] = role
         entry["family_name"] = family_name
         vn = jv_str(nominal.get("variant_name", ""))
@@ -489,8 +496,8 @@ def collect_nominal_adt_table(east_module: Node) -> dict[str, Node]:
         if ps != "":
             entry["payload_style"] = ps
         ft_obj = nd.get("field_types")
-        if isinstance(ft_obj, dict):
-            ftd: Node = cast(dict[str, JsonVal], ft_obj)
+        if jv_is_dict(ft_obj):
+            ftd: Node = jv_dict(ft_obj)
             fts: dict[str, JsonVal] = {}
             for fn_raw, ft_raw in ftd.items():
                 fn = str(fn_raw).strip()
@@ -508,12 +515,7 @@ def collect_nominal_adt_table(east_module: Node) -> dict[str, Node]:
 
 def collect_nominal_adt_family_variants(ctx: CompileContext, family_name: str) -> list[str]:
     variants: list[str] = []
-    for type_name_raw in ctx.nominal_adt_table:
-        type_name = cast(str, type_name_raw)
-        entry = ctx.nominal_adt_table[type_name]
-        if not isinstance(entry, dict):
-            continue
-        entry_node: Node = cast(dict[str, JsonVal], entry)
+    for type_name, entry_node in ctx.nominal_adt_table.items():
         if jv_str(entry_node.get("role", "")) != "variant":
             continue
         if jv_str(entry_node.get("family_name", "")) != family_name:
@@ -524,7 +526,7 @@ def collect_nominal_adt_family_variants(ctx: CompileContext, family_name: str) -
 
 
 def make_nominal_adt_type_summary(name: str, family_name: str) -> Node:
-    out: Node = {}
+    out: dict[str, JsonVal] = {}
     out["kind"] = NOMINAL_ADT_TYPE
     out["category"] = "nominal_adt"
     out["mirror"] = name
@@ -536,7 +538,7 @@ def make_nominal_adt_type_summary(name: str, family_name: str) -> Node:
 
 def hydrate_nominal_adt_summary(ctx: CompileContext, summary: Node, mirror: JsonVal) -> Node:
     category = jv_str(summary.get("category", "unknown"))
-    summary_mirror: str = normalize_type_name(summary.get("mirror"))
+    summary_mirror = normalize_type_name(summary.get("mirror"))
     if summary_mirror == "unknown":
         summary_mirror = normalize_type_name(mirror)
     if category == "nominal_adt":
@@ -574,7 +576,7 @@ def set_type_expr_summary(node: Node, summary: Node) -> None:
     category = jv_str(summary.get("category", "unknown"))
     if category == "" or category == "unknown":
         return
-    payload: Node = {}
+    payload: dict[str, JsonVal] = {}
     payload["schema_version"] = 1
     for key, value in summary.items():
         skey = cast(str, key)
@@ -585,7 +587,7 @@ def set_type_expr_summary(node: Node, summary: Node) -> None:
 def bridge_lane_payload(target_summary: Node, value_summary: Node) -> Node:
     target_copy = _copy_node(target_summary)
     value_copy = _copy_node(value_summary)
-    out: Node = {}
+    out: dict[str, JsonVal] = {}
     out["schema_version"] = 1
     out["target"] = target_copy
     out["target_category"] = target_summary.get("category", "unknown")
@@ -602,13 +604,13 @@ def json_nominal_type_name(summary: Node) -> str:
     category = jv_str(summary.get("category", "unknown"))
     if category != "nominal_adt":
         return ""
-    family = jv_str(summary.get("nominal_adt_family", ""))
+    family = "" + jv_str(summary.get("nominal_adt_family", ""))
     if family != "json":
         return ""
-    nn = jv_str(summary.get("nominal_adt_name", ""))
+    nn = "" + jv_str(summary.get("nominal_adt_name", ""))
     if nn != "":
         return nn
-    mirror: str = normalize_type_name(summary.get("mirror"))
+    mirror = "" + normalize_type_name(summary.get("mirror"))
     if mirror == "JsonValue" or mirror == "JsonObj" or mirror == "JsonArr":
         return mirror
     return ""
@@ -625,11 +627,11 @@ def raise_json_contract_violation(semantic_tag: str, owner_summary: Node) -> Non
     expected = expected_json_receiver_type_name(semantic_tag)
     if expected == "":
         return
-    actual: str = json_nominal_type_name(owner_summary)
+    actual = json_nominal_type_name(owner_summary)
     if actual == expected:
         return
-    mirror: str = normalize_type_name(owner_summary.get("mirror"))
-    category: str = jv_str(owner_summary.get("category", "unknown"))
+    mirror = normalize_type_name(owner_summary.get("mirror"))
+    category = jv_str(owner_summary.get("category", "unknown"))
     actual_desc = actual if actual != "" else mirror
     if actual_desc == "":
         actual_desc = "unknown"
@@ -649,12 +651,12 @@ def raise_json_contract_violation(semantic_tag: str, owner_summary: Node) -> Non
 def representative_json_contract_metadata(ctx: CompileContext, call: Node, receiver_node: JsonVal) -> tuple[str, Node, Node]:
     result_summary = structured_type_expr_summary_from_node(call)
     receiver_summary = structured_type_expr_summary_from_node(receiver_node)
-    rc: str = jv_str(result_summary.get("category", "unknown"))
-    rf: str = jv_str(result_summary.get("nominal_adt_family", ""))
-    rn: str = jv_str(result_summary.get("nominal_adt_name", ""))
-    recc: str = jv_str(receiver_summary.get("category", "unknown"))
-    recf: str = jv_str(receiver_summary.get("nominal_adt_family", ""))
-    recn: str = jv_str(receiver_summary.get("nominal_adt_name", ""))
+    rc = jv_str(result_summary.get("category", "unknown"))
+    rf = jv_str(result_summary.get("nominal_adt_family", ""))
+    rn = jv_str(result_summary.get("nominal_adt_name", ""))
+    recc = jv_str(receiver_summary.get("category", "unknown"))
+    recf = jv_str(receiver_summary.get("nominal_adt_family", ""))
+    recn = jv_str(receiver_summary.get("nominal_adt_name", ""))
     if (
         rc == "optional"
         and rf == "json"
@@ -666,12 +668,12 @@ def representative_json_contract_metadata(ctx: CompileContext, call: Node, recei
         return ("type_expr", result_summary, receiver_summary)
     compat_result = type_expr_summary_from_node(ctx, call)
     compat_receiver = expr_type_summary(ctx, receiver_node)
-    crc: str = jv_str(compat_result.get("category", "unknown"))
-    crf: str = jv_str(compat_result.get("nominal_adt_family", ""))
-    crn: str = jv_str(compat_result.get("nominal_adt_name", ""))
-    crec: str = jv_str(compat_receiver.get("category", "unknown"))
-    crecf: str = jv_str(compat_receiver.get("nominal_adt_family", ""))
-    crecn: str = jv_str(compat_receiver.get("nominal_adt_name", ""))
+    crc = jv_str(compat_result.get("category", "unknown"))
+    crf = jv_str(compat_result.get("nominal_adt_family", ""))
+    crn = jv_str(compat_result.get("nominal_adt_name", ""))
+    crec = jv_str(compat_receiver.get("category", "unknown"))
+    crecf = jv_str(compat_receiver.get("nominal_adt_family", ""))
+    crecn = jv_str(compat_receiver.get("nominal_adt_name", ""))
     if (
         crc == "optional"
         and crf == "json"

@@ -13,6 +13,16 @@ from toolchain.parse.py.nodes import Module
 from toolchain.parse.py.parser import parse_python_source
 
 
+def _find_from(text: str, needle: str, start: int) -> int:
+    if start <= 0:
+        return text.find(needle)
+    suffix: str = text[start:]
+    pos: int = suffix.find(needle)
+    if pos < 0:
+        return -1
+    return start + pos
+
+
 def _bracket_depth_str_aware(text: str) -> int:
     """Count net bracket depth, ignoring strings and comments."""
     depth: int = 0
@@ -34,7 +44,7 @@ def _bracket_depth_str_aware(text: str) -> int:
         if ch == '"' or ch == "'":
             if i + 2 < n and text[i + 1] == ch and text[i + 2] == ch:
                 close: str = ch + ch + ch
-                end: int = text.find(close, i + 3)
+                end: int = _find_from(text, close, i + 3)
                 i = end + 3 if end >= 0 else n
                 continue
             in_str = ch
@@ -77,7 +87,7 @@ def _unclosed_triple_quote(line: str) -> str:
         if ch == "'" or ch == '"':
             if i + 2 < n and line[i + 1] == ch and line[i + 2] == ch:
                 tq: str = ch + ch + ch
-                end: int = line.find(tq, i + 3)
+                end: int = _find_from(line, tq, i + 3)
                 if end < 0:
                     return tq
                 i = end + 3
@@ -155,4 +165,5 @@ def parse_python_file_to_module(input_path: str) -> Module:
 def parse_python_file(input_path: str) -> dict[str, JsonVal]:
     """ファイルを読み込み、EAST1 ドキュメント (dict) を返す。"""
     module: Module = parse_python_file_to_module(input_path)
-    return module.to_jv()
+    doc: dict[str, JsonVal] = module.to_jv()
+    return doc

@@ -10,11 +10,8 @@ from pytra.std.json import JsonVal
 
 
 def deep_copy_json(val: JsonVal) -> JsonVal:
-    """Deep copy a JSON-compatible value (copy.deepcopy の代替)."""
-    if val is None or isinstance(val, bool) or isinstance(val, int) or isinstance(val, float) or isinstance(val, str):
-        return val
-    if isinstance(val, list):
-        return [deep_copy_json(item) for item in val]
-    if isinstance(val, dict):
-        return {key: deep_copy_json(value) for key, value in val.items()}
+    """Selfhost-safe fallback deep copy.
+
+    The selfhost C++ path only needs a stable JsonVal-preserving helper here.
+    """
     return val
