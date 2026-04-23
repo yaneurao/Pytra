@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from pytra.std.json import JsonVal
 
+from toolchain.compile.jv import jv_str, jv_is_dict, jv_is_list, jv_dict, jv_list
+
 from toolchain.link.import_maps import collect_import_modules
 from toolchain.link.import_maps import collect_import_symbols
 from toolchain.link.shared_types import LinkedModule
@@ -192,41 +194,50 @@ def is_builtin_exception_type_name(type_name: str) -> bool:
 
 
 def _safe_name(val: JsonVal) -> str:
-    if isinstance(val, str):
-        text = val.strip()
-        if text != "":
-            return text
+    text = ("" + jv_str(val)).strip()
+    if text != "":
+        return text
     return ""
 
 
 def _iter_class_defs(east_doc: JsonVal) -> list[dict[str, JsonVal]]:
     """Extract top-level ClassDef nodes from module body."""
-    if not isinstance(east_doc, dict):
-        return []
-    body_val = east_doc.get("body")
-    body = body_val if isinstance(body_val, list) else []
     out: list[dict[str, JsonVal]] = []
-    for item in body:
-        if isinstance(item, dict) and item.get("kind") == "ClassDef":
-            out.append(item)
+    if not jv_is_dict(east_doc):
+        return out
+    east_doc_dict: dict[str, JsonVal] = jv_dict(east_doc)
+    body_val = east_doc_dict.get("body")
+    if not jv_is_list(body_val):
+        return out
+    for item in jv_list(body_val):
+        if jv_is_dict(item):
+            item_dict: dict[str, JsonVal] = jv_dict(item)
+            if _safe_name(item_dict.get("kind")) == "ClassDef":
+                out.append(item_dict)
     return out
 
 
 def _decorators(class_def: dict[str, JsonVal]) -> list[str]:
     raw = class_def.get("decorators")
     out: list[str] = []
-    if isinstance(raw, list):
-        for item in raw:
-            if isinstance(item, str) and item.strip() != "":
-                out.append(item.strip())
+    if jv_is_list(raw):
+        for item in jv_list(raw):
+            text = _safe_name(item)
+            if text != "":
+                out.append(text)
     return out
 
 
 def _is_trait_class(class_def: dict[str, JsonVal]) -> bool:
     meta = class_def.get("meta")
-    if isinstance(meta, dict) and isinstance(meta.get("trait_v1"), dict):
-        return True
-    return "trait" in _decorators(class_def)
+    if jv_is_dict(meta):
+        meta_dict: dict[str, JsonVal] = jv_dict(meta)
+        if jv_is_dict(meta_dict.get("trait_v1")):
+            return True
+    for decorator in _decorators(class_def):
+        if decorator == "trait":
+            return True
+    return False
 
 
 def _input_invalid(message: str) -> RuntimeError:
@@ -241,8 +252,8 @@ def _iter_class_base_names(class_def: dict[str, JsonVal]) -> list[str]:
     """
     bases: list[str] = []
     bases_raw = class_def.get("bases")
-    if isinstance(bases_raw, list):
-        for item in bases_raw:
+    if jv_is_list(bases_raw):
+        for item in jv_list(bases_raw):
             name = _safe_name(item)
             if name != "":
                 bases.append(name)
@@ -259,9 +270,9 @@ def _resolve_declared_class_base_fqcn(
     fqcn: str,
     module_id: str,
     all_classes: set[str],
-    local_classes: JsonVal,
-    import_modules: JsonVal,
-    import_symbols: JsonVal,
+    local_classes: dict[str, str],
+    import_modules: dict[str, str],
+    import_symbols: dict[str, str],
 ) -> str:
     """Resolve a declared base class name to a fully-qualified class name (FQCN)."""
     name = base_name.strip()
@@ -271,36 +282,33 @@ def _resolve_declared_class_base_fqcn(
         return name
     if name in all_classes:
         return name
-    if isinstance(local_classes, dict) and name in local_classes:
+    if name in local_classes:
         local_fqcn = local_classes[name]
-        if isinstance(local_fqcn, str):
+        if local_fqcn != "":
             return local_fqcn
     # Check import symbols (binding_kind=symbol: "module_id::export_name")
-    imported_symbol = ""
-    if isinstance(import_symbols, dict) and name in import_symbols:
-        imported_symbol_val = import_symbols[name]
-        if isinstance(imported_symbol_val, str):
-            imported_symbol = imported_symbol_val.strip()
+    imported_symbol = import_symbols.get(name, "").strip()
     if imported_symbol != "" and "::" in imported_symbol:
-        pair = imported_symbol.split("::")
-        dep_module_id = pair[0] if len(pair) > 0 else ""
-        export_name = pair[1] if len(pair) > 1 else ""
-        export_name = export_name.strip()
-        if dep_module_id.strip() != "" and export_name != "":
-            return dep_module_id.strip() + "." + export_name
+        sep = imported_symbol.find("::")
+        dep_module_id = imported_symbol[:sep].strip()
+        export_name = imported_symbol[sep + 2:].strip()
+        if dep_module_id != "" and export_name != "":
+            return dep_module_id + "." + export_name
     # Check dotted name (e.g. module.ClassName)
     if "." in name:
-        dotted_parts = name.split(".")
-        if len(dotted_parts) >= 2:
-            owner_name = dotted_parts[0]
-            attr_name = dotted_parts[len(dotted_parts) - 1]
-            imported_module = ""
-            if isinstance(import_modules, dict) and owner_name in import_modules:
-                imported_module_val = import_modules[owner_name]
-                if isinstance(imported_module_val, str):
-                    imported_module = imported_module_val.strip()
-            if imported_module != "" and attr_name.strip() != "":
-                return imported_module + "." + attr_name.strip()
+        first_dot = name.find(".")
+        last_dot = -1
+        i = len(name) - 1
+        while i >= 0:
+            if name[i] == ".":
+                last_dot = i
+                break
+            i -= 1
+        owner_name = name[:first_dot]
+        attr_name = name[last_dot + 1:]
+        imported_module = import_modules.get(owner_name, "").strip()
+        if imported_module != "" and attr_name.strip() != "":
+            return imported_module + "." + attr_name.strip()
     # Fallback: assume local
     fqcn_candidate = module_id + "." + name
     if fqcn_candidate in all_classes:

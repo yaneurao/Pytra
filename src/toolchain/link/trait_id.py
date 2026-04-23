@@ -7,43 +7,53 @@ from __future__ import annotations
 
 from pytra.std.json import JsonVal
 
+from toolchain.compile.jv import jv_str, jv_is_dict, jv_is_list, jv_dict, jv_list
+
 from toolchain.link.import_maps import collect_import_maps
 from toolchain.link.shared_types import LinkedModule
 
 
 def _safe_str(val: JsonVal) -> str:
-    if isinstance(val, str):
-        text = val.strip()
-        if text != "":
-            return text
+    text = ("" + jv_str(val)).strip()
+    if text != "":
+        return text
     return ""
 
 
 def _iter_class_defs(east_doc: dict[str, JsonVal]) -> list[dict[str, JsonVal]]:
     body_val = east_doc.get("body")
-    body = body_val if isinstance(body_val, list) else []
     out: list[dict[str, JsonVal]] = []
-    for item in body:
-        if isinstance(item, dict) and item.get("kind") == "ClassDef":
-            out.append(item)
+    if not jv_is_list(body_val):
+        return out
+    for item in jv_list(body_val):
+        if jv_is_dict(item):
+            item_dict: dict[str, JsonVal] = jv_dict(item)
+            if _safe_str(item_dict.get("kind")) == "ClassDef":
+                out.append(item_dict)
     return out
 
 
 def _decorators(class_def: dict[str, JsonVal]) -> list[str]:
     out: list[str] = []
     raw = class_def.get("decorators")
-    if isinstance(raw, list):
-        for item in raw:
-            if isinstance(item, str):
-                out.append(item)
+    if jv_is_list(raw):
+        for item in jv_list(raw):
+            text = _safe_str(item)
+            if text != "":
+                out.append(text)
     return out
 
 
 def _is_trait(class_def: dict[str, JsonVal]) -> bool:
     meta = class_def.get("meta")
-    if isinstance(meta, dict) and isinstance(meta.get("trait_v1"), dict):
-        return True
-    return "trait" in _decorators(class_def)
+    if jv_is_dict(meta):
+        meta_dict: dict[str, JsonVal] = jv_dict(meta)
+        if jv_is_dict(meta_dict.get("trait_v1")):
+            return True
+    for decorator in _decorators(class_def):
+        if decorator == "trait":
+            return True
+    return False
 
 
 def _parse_implements(decorator: str) -> list[str]:
@@ -60,13 +70,15 @@ def _parse_implements(decorator: str) -> list[str]:
 
 def _trait_extends_names(class_def: dict[str, JsonVal]) -> list[str]:
     meta = class_def.get("meta")
-    if isinstance(meta, dict):
-        trait_meta = meta.get("trait_v1")
-        if isinstance(trait_meta, dict):
-            extends = trait_meta.get("extends_traits")
+    if jv_is_dict(meta):
+        meta_dict: dict[str, JsonVal] = jv_dict(meta)
+        trait_meta = meta_dict.get("trait_v1")
+        if jv_is_dict(trait_meta):
+            trait_meta_dict: dict[str, JsonVal] = jv_dict(trait_meta)
+            extends = trait_meta_dict.get("extends_traits")
             out: list[str] = []
-            if isinstance(extends, list):
-                for item in extends:
+            if jv_is_list(extends):
+                for item in jv_list(extends):
                     name = _safe_str(item)
                     if name != "":
                         out.append(name)
@@ -74,8 +86,8 @@ def _trait_extends_names(class_def: dict[str, JsonVal]) -> list[str]:
                 return out
     bases = class_def.get("bases")
     out2: list[str] = []
-    if isinstance(bases, list):
-        for item2 in bases:
+    if jv_is_list(bases):
+        for item2 in jv_list(bases):
             name2 = _safe_str(item2)
             if name2 != "":
                 out2.append(name2)
@@ -87,13 +99,15 @@ def _trait_extends_names(class_def: dict[str, JsonVal]) -> list[str]:
 
 def _implemented_trait_names(class_def: dict[str, JsonVal]) -> list[str]:
     meta = class_def.get("meta")
-    if isinstance(meta, dict):
-        impl_meta = meta.get("implements_v1")
-        if isinstance(impl_meta, dict):
-            traits = impl_meta.get("traits")
+    if jv_is_dict(meta):
+        meta_dict: dict[str, JsonVal] = jv_dict(meta)
+        impl_meta = meta_dict.get("implements_v1")
+        if jv_is_dict(impl_meta):
+            impl_meta_dict: dict[str, JsonVal] = jv_dict(impl_meta)
+            traits = impl_meta_dict.get("traits")
             out: list[str] = []
-            if isinstance(traits, list):
-                for item in traits:
+            if jv_is_list(traits):
+                for item in jv_list(traits):
                     name = _safe_str(item)
                     if name != "":
                         out.append(name)
@@ -127,13 +141,23 @@ def _resolve_trait_name(
         return local_traits[name]
     imported_symbol = import_symbols.get(name, "").strip()
     if imported_symbol != "" and "::" in imported_symbol:
-        dep_module_id, export_name = imported_symbol.split("::", 1)
-        if dep_module_id.strip() != "" and export_name.strip() != "":
-            candidate = dep_module_id.strip() + "." + export_name.strip()
+        sep = imported_symbol.find("::")
+        dep_module_id = imported_symbol[:sep].strip()
+        export_name = imported_symbol[sep + 2:].strip()
+        if dep_module_id != "" and export_name != "":
+            candidate = dep_module_id + "." + export_name
             if candidate in all_traits:
                 return candidate
     if "." in name:
-        owner_name, attr_name = name.rsplit(".", 1)
+        last_dot = -1
+        i = len(name) - 1
+        while i >= 0:
+            if name[i] == ".":
+                last_dot = i
+                break
+            i -= 1
+        owner_name = name[:last_dot]
+        attr_name = name[last_dot + 1:]
         imported_module = import_modules.get(owner_name, "").strip()
         if imported_module != "":
             candidate2 = imported_module + "." + attr_name.strip()
@@ -148,14 +172,15 @@ def _resolve_trait_name(
 def build_trait_implementation_map(modules: list[LinkedModule]) -> tuple[set[str], dict[str, set[str]]]:
     all_traits: set[str] = set()
     local_traits_by_module: dict[str, dict[str, str]] = {}
-    import_maps: dict[str, tuple[dict[str, str], dict[str, str]]] = {}
+    import_modules_by_module: dict[str, dict[str, str]] = {}
+    import_symbols_by_module: dict[str, dict[str, str]] = {}
     class_defs_by_module: dict[str, list[dict[str, JsonVal]]] = {}
 
     for module in modules:
         doc = module.east_doc
-        if not isinstance(doc, dict):
-            continue
-        import_maps[module.module_id] = collect_import_maps(doc)
+        import_modules_for_module, import_symbols_for_module = collect_import_maps(doc)
+        import_modules_by_module[module.module_id] = import_modules_for_module
+        import_symbols_by_module[module.module_id] = import_symbols_for_module
         class_defs = _iter_class_defs(doc)
         class_defs_by_module[module.module_id] = class_defs
         local_traits: dict[str, str] = {}
@@ -172,7 +197,8 @@ def build_trait_implementation_map(modules: list[LinkedModule]) -> tuple[set[str
 
     trait_bases: dict[str, list[str]] = {}
     for module in modules:
-        import_modules, import_symbols = import_maps.get(module.module_id, ({}, {}))
+        import_modules = import_modules_by_module.get(module.module_id, {})
+        import_symbols = import_symbols_by_module.get(module.module_id, {})
         local_traits = local_traits_by_module.get(module.module_id, {})
         class_defs = class_defs_by_module.get(module.module_id, [])
         for class_def in class_defs:
@@ -205,16 +231,20 @@ def build_trait_implementation_map(modules: list[LinkedModule]) -> tuple[set[str
             raise _input_invalid("trait inheritance cycle: " + " -> ".join(stack + [fqcn]))
         out: set[str] = {fqcn}
         for base_fqcn in trait_bases.get(fqcn, []):
-            out |= _trait_closure(base_fqcn, stack + [fqcn])
+            base_closure = _trait_closure(base_fqcn, stack + [fqcn])
+            for inherited_fqcn in base_closure:
+                out.add(inherited_fqcn)
         memo[fqcn] = out
         return out
 
     impls_by_type: dict[str, set[str]] = {}
+    empty_stack: list[str] = []
     for trait_fqcn in sorted(all_traits):
-        impls_by_type[trait_fqcn] = set(_trait_closure(trait_fqcn, []))
+        impls_by_type[trait_fqcn] = set(_trait_closure(trait_fqcn, empty_stack))
 
     for module in modules:
-        import_modules2, import_symbols2 = import_maps.get(module.module_id, ({}, {}))
+        import_modules2 = import_modules_by_module.get(module.module_id, {})
+        import_symbols2 = import_symbols_by_module.get(module.module_id, {})
         local_traits2 = local_traits_by_module.get(module.module_id, {})
         class_defs2 = class_defs_by_module.get(module.module_id, [])
         for class_def2 in class_defs2:
@@ -234,7 +264,9 @@ def build_trait_implementation_map(modules: list[LinkedModule]) -> tuple[set[str
                     import_modules=import_modules2,
                     import_symbols=import_symbols2,
                 )
-                trait_set |= _trait_closure(trait_fqcn, [])
+                impl_closure = _trait_closure(trait_fqcn, empty_stack)
+                for inherited_impl in impl_closure:
+                    trait_set.add(inherited_impl)
             if len(trait_set) > 0:
                 impls_by_type[fqcn2] = trait_set
 

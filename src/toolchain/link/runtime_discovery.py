@@ -278,59 +278,63 @@ def discover_runtime_modules(
 
         for east_path in list(result.keys()):
             east_doc = result[east_path]
-            if not isinstance(east_doc, dict):
-                continue
 
             # Scan meta.import_bindings
             meta_val = east_doc.get("meta")
-            if isinstance(meta_val, dict):
-                bindings_val = meta_val.get("import_bindings")
-                if isinstance(bindings_val, list):
-                    for binding in bindings_val:
-                        if not isinstance(binding, dict):
+            if jv_is_dict(meta_val):
+                meta = jv_dict(meta_val)
+                bindings_val = meta.get("import_bindings")
+                if jv_is_list(bindings_val):
+                    for binding_val in jv_list(bindings_val):
+                        if not jv_is_dict(binding_val):
                             continue
+                        binding = jv_dict(binding_val)
                         export_name = binding.get("export_name")
                         mod_id = binding.get("module_id")
+                        mod_id_text = "" + jv_str(mod_id)
+                        export_name_text = "" + jv_str(export_name)
                         if (
-                            isinstance(mod_id, str)
-                            and mod_id != ""
+                            mod_id_text != ""
                             and not (
-                                isinstance(export_name, str)
-                                and export_name != ""
-                                and _is_type_only_symbol_binding(mod_id, export_name, target=target)
+                                export_name_text != ""
+                                and _is_type_only_symbol_binding(mod_id_text, export_name_text, target=target)
                             )
                         ):
-                            _append_runtime_dep(new_deps, seen_paths, mod_id, required=True)
+                            _append_runtime_dep(new_deps, seen_paths, mod_id_text, required=True)
 
             # Scan body for Import/ImportFrom
             body_val = east_doc.get("body")
-            if isinstance(body_val, list):
-                for stmt in body_val:
-                    if not isinstance(stmt, dict):
+            if jv_is_list(body_val):
+                for stmt_val in jv_list(body_val):
+                    if not jv_is_dict(stmt_val):
                         continue
-                    kind = stmt.get("kind")
-                    if kind == "ImportFrom":
+                    stmt = jv_dict(stmt_val)
+                    kind_text = "" + jv_str(stmt.get("kind"))
+                    if kind_text == "ImportFrom":
                         mod = stmt.get("module")
-                        if isinstance(mod, str) and mod != "":
-                            names_val = stmt.get("names")
-                            if _import_from_is_type_only(mod, names_val, target=target):
+                        mod_text = "" + jv_str(mod)
+                        if mod_text != "":
+                            names_val: JsonVal = stmt.get("names")
+                            if _import_from_is_type_only(mod_text, names_val, target=target):
                                 continue
-                            _append_runtime_dep(new_deps, seen_paths, mod, required=True)
+                            _append_runtime_dep(new_deps, seen_paths, mod_text, required=True)
                             # Sub-module imports: from pytra.utils import png → pytra.utils.png
-                            if isinstance(names_val, list):
-                                for ent in names_val:
-                                    if isinstance(ent, dict):
-                                        sym = ent.get("name")
-                                        if isinstance(sym, str) and sym != "":
-                                            sub_mod = mod + "." + sym
+                            if jv_is_list(names_val):
+                                for ent_val in jv_list(names_val):
+                                    if jv_is_dict(ent_val):
+                                        ent: dict[str, JsonVal] = jv_dict(ent_val)
+                                        sym = "" + jv_str(ent.get("name"))
+                                        if sym != "":
+                                            sub_mod = mod_text + "." + sym
                                             _append_runtime_dep(new_deps, seen_paths, sub_mod, required=False)
-                    elif kind == "Import":
-                        names_val = stmt.get("names")
-                        if isinstance(names_val, list):
-                            for ent in names_val:
-                                if isinstance(ent, dict):
-                                    name_val = ent.get("name")
-                                    if isinstance(name_val, str):
+                    elif kind_text == "Import":
+                        names_val: JsonVal = stmt.get("names")
+                        if jv_is_list(names_val):
+                            for ent_val in jv_list(names_val):
+                                if jv_is_dict(ent_val):
+                                    ent: dict[str, JsonVal] = jv_dict(ent_val)
+                                    name_val = "" + jv_str(ent.get("name"))
+                                    if name_val != "":
                                         _append_runtime_dep(new_deps, seen_paths, name_val, required=True)
 
             # Detect implicit format_value dependency from f-string

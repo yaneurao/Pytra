@@ -1153,9 +1153,9 @@ def _resolve_receiver_class_fqcn(
         out: list[str] = []
         if imported_symbol == "" or "::" not in imported_symbol:
             return out
-        dep_module_id, export_name = imported_symbol.split("::", 1)
-        dep_module_id = dep_module_id.strip()
-        export_name = export_name.strip()
+        sep = imported_symbol.find("::")
+        dep_module_id = imported_symbol[:sep].strip()
+        export_name = imported_symbol[sep + 2:].strip()
         if dep_module_id == "" or export_name == "":
             return out
         out.append(dep_module_id + "." + export_name)
@@ -1415,8 +1415,10 @@ def _resolve_type_id_target(
         return local_fqcn
     imported_symbol = import_symbols.get(expected_name, "")
     if imported_symbol != "" and "::" in imported_symbol:
-        dep_module_id, export_name = imported_symbol.split("::", 1)
-        candidate = dep_module_id.strip() + "." + export_name.strip()
+        sep = imported_symbol.find("::")
+        dep_module_id = imported_symbol[:sep].strip()
+        export_name = imported_symbol[sep + 2:].strip()
+        candidate = dep_module_id + "." + export_name
         if candidate in type_id_table:
             return candidate
     if "." in expected_name:

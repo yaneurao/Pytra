@@ -9,6 +9,8 @@ from dataclasses import dataclass
 
 from pytra.std.json import JsonVal
 
+from toolchain.compile.jv import jv_is_dict, jv_dict
+
 
 @dataclass
 class LinkedModule:
@@ -52,9 +54,11 @@ def linked_module_kind(module: LinkedModule) -> str:
 def linked_module_mark_non_entry(module: LinkedModule) -> None:
     module.is_entry = False
     meta_val = module.east_doc.get("meta")
-    if not isinstance(meta_val, dict):
+    if not jv_is_dict(meta_val):
         return
-    emit_context_val = meta_val.get("emit_context")
-    if not isinstance(emit_context_val, dict):
+    meta: dict[str, JsonVal] = jv_dict(meta_val)
+    emit_context_val = meta.get("emit_context")
+    if not jv_is_dict(emit_context_val):
         return
-    emit_context_val["is_entry"] = False
+    emit_context: dict[str, JsonVal] = jv_dict(emit_context_val)
+    emit_context["is_entry"] = False
