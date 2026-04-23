@@ -19,6 +19,13 @@ from pytra.std.pathlib import Path
 from toolchain.resolve.py.type_norm import normalize_type
 
 
+def _split_once(text: str, sep: str) -> tuple[str, str]:
+    pos = text.find(sep)
+    if pos < 0:
+        return text, ""
+    return text[:pos], text[pos + len(sep):]
+
+
 def _split_source_signature_fields(signature: str) -> list[str]:
     parts: list[str] = []
     current = ""
@@ -58,14 +65,18 @@ def _parse_source_extern_kwargs(text: str) -> dict[str, str] | None:
             continue
         if part == "" or "=" not in part:
             continue
-        key, val = part.split("=", 1)
+        split_part = _split_once(part, "=")
+        key = split_part[0]
+        val = split_part[1]
         value = val.strip()
         if len(value) >= 2 and value[0] in ('"', "'") and value[-1] == value[0]:
             value = value[1:-1]
         result[key.strip()] = value
     tail = current.strip()
     if tail != "" and "=" in tail:
-        key, val = tail.split("=", 1)
+        split_tail = _split_once(tail, "=")
+        key = split_tail[0]
+        val = split_tail[1]
         value = val.strip()
         if len(value) >= 2 and value[0] in ('"', "'") and value[-1] == value[0]:
             value = value[1:-1]
@@ -78,7 +89,8 @@ def _parse_source_extern_kwargs(text: str) -> dict[str, str] | None:
 def _parse_source_extern_decorator(decorators: list[str]) -> ExternV2 | None:
     for decorator in decorators:
         deco = decorator.strip()
-        for prefix in ("extern(", "extern_fn(", "extern_class("):
+        prefixes: list[str] = ["extern(", "extern_fn(", "extern_class("]
+        for prefix in prefixes:
             if not deco.startswith(prefix) or not deco.endswith(")"):
                 continue
             parsed = _parse_source_extern_kwargs(deco[len(prefix):-1])
@@ -318,9 +330,9 @@ def _overlay_container_mutability_from_source(reg: BuiltinRegistry, source_path:
         if stripped.startswith("class ") and stripped.endswith(":"):
             class_name = stripped[len("class "):]
             if "(" in class_name:
-                class_name = class_name.split("(", 1)[0].strip()
+                class_name = _split_once(class_name, "(")[0].strip()
             if ":" in class_name:
-                class_name = class_name.split(":", 1)[0].strip()
+                class_name = _split_once(class_name, ":")[0].strip()
             current_class = class_name.strip()
             class_indent = indent
             pending_decorators = []
@@ -361,7 +373,9 @@ def _overlay_container_mutability_from_source(reg: BuiltinRegistry, source_path:
             if field_text == "":
                 continue
             if ":" in field_text:
-                name_part, type_part = field_text.split(":", 1)
+                field_split = _split_once(field_text, ":")
+                name_part = field_split[0]
+                type_part = field_split[1]
                 arg_name = name_part.strip()
                 arg_type = normalize_type(type_part.strip())
             else:
@@ -421,7 +435,7 @@ def _overlay_class_sigs_from_source(reg: BuiltinRegistry, source_path: Path) -> 
             class_name = header
             bases: list[str] = []
             if "(" in header and header.endswith(")"):
-                class_name = header.split("(", 1)[0].strip()
+                class_name = _split_once(header, "(")[0].strip()
                 inner = header[header.find("(") + 1:-1]
                 for part in inner.split(","):
                     base_name = part.strip()
@@ -482,7 +496,9 @@ def _overlay_class_sigs_from_source(reg: BuiltinRegistry, source_path: Path) -> 
             if field_text == "":
                 continue
             if ":" in field_text:
-                name_part, type_part = field_text.split(":", 1)
+                field_split = _split_once(field_text, ":")
+                name_part = field_split[0]
+                type_part = field_split[1]
                 arg_name = name_part.strip()
                 arg_type = normalize_type(type_part.strip())
             else:
@@ -666,7 +682,8 @@ def _merge_module_sig(dst: ModuleSig, src: ModuleSig) -> None:
 
 def _module_aliases(module_id: str) -> list[str]:
     aliases: list[str] = [module_id]
-    for prefix in ("pytra.std.", "pytra.utils.", "pytra.built_in."):
+    module_prefixes: list[str] = ["pytra.std.", "pytra.utils.", "pytra.built_in."]
+    for prefix in module_prefixes:
         if module_id.startswith(prefix):
             aliases.append(module_id[len(prefix):])
     return aliases
@@ -802,11 +819,12 @@ def load_builtin_registry(
 
     # Load stdlib modules
     if stdlib_dir is not None and stdlib_dir.exists():
-        for group, prefix in (
-            ("std", "pytra.std."),
-            ("utils", "pytra.utils."),
-            ("built_in", "pytra.built_in."),
-        ):
+        std_groups: list[str] = ["std", "utils", "built_in"]
+        std_prefixes: list[str] = ["pytra.std.", "pytra.utils.", "pytra.built_in."]
+        group_index = 0
+        while group_index < len(std_groups):
+            group = std_groups[group_index]
+            prefix = std_prefixes[group_index]
             for module_dir in _candidate_module_dirs(stdlib_dir, group):
                 module_files = sorted(module_dir.glob("*.east"), key=str) + sorted(module_dir.glob("*.east1"), key=str)
                 for module_file in module_files:
@@ -814,6 +832,7 @@ def load_builtin_registry(
                     canonical: str = prefix + mod_name
                     msig: ModuleSig = _load_module_sig(module_file, canonical)
                     _register_stdlib_module(reg, canonical, msig)
+            group_index += 1
 
     _retarget_string_method_runtime_modules(reg)
     if containers_source_path is None:

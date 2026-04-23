@@ -29,7 +29,7 @@ from toolchain.parse.py.nodes import (
     ExprBase, Name, Constant, BinOp, UnaryOp, BoolOp, Compare,
     Call, Attribute, Subscript, SliceExpr, IfExp, ListExpr, TupleExpr,
     SetExpr, DictExpr, ListComp, SetComp, DictComp, JoinedStr, FStringText, FormattedValue,
-    LambdaExpr, LambdaArg, Starred, JsonVal, expr_to_jv,
+    LambdaExpr, LambdaArg, Starred, JsonVal, expr_to_jv, stmt_to_jv,
     # Statements
     Import, ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Yield, Raise, Pass, Try, ExceptHandler,
     If, For, While, With, FunctionDef, ClassDef, TypeAlias, JsonVal,
@@ -967,7 +967,7 @@ class ExprParser:
             base = self._base(tok.start, tok.end)
             # f-string → JoinedStr
             if is_fstring:
-                fstr_span = self._span(tok.start, tok.end)
+                fstr_span: SourceSpan = self._span(tok.start, tok.end)
                 values = _parse_fstring_parts(inner, self.source_line, self.line_col_offset + tok.start, self.ctx, fstr_span)
                 return JoinedStr(base=base, values=values)
             return Constant(base=base, value=val_s)
@@ -1318,6 +1318,108 @@ def _parse_int_base(text: str, base: int) -> int:
     return value * sign
 
 
+def _leading_space_count(text: str) -> int:
+    i = 0
+    while i < len(text) and text[i] == " ":
+        i += 1
+    return i
+
+
+def _alias_local(alias: ImportAlias) -> str:
+    if alias.asname != "":
+        return "" + alias.asname
+    return "" + alias.name
+
+
+def _json_obj_str(obj: dict[str, JsonVal], key: str) -> str:
+    if key not in obj:
+        return ""
+    value = json.JsonValue(obj[key]).as_str()
+    if value is None:
+        return ""
+    return "" + value
+
+
+def _json_obj_int(obj: dict[str, JsonVal], key: str) -> int:
+    if key not in obj:
+        return 0
+    value = json.JsonValue(obj[key]).as_int()
+    if value is None:
+        return 0
+    return value
+
+
+def _stmt_end_lineno(stmt: JsonVal) -> int:
+    stmt_obj = json.JsonValue(stmt).as_obj()
+    if stmt_obj is None:
+        return 0
+    span_obj = stmt_obj.get_obj("source_span")
+    if span_obj is None:
+        return 0
+    return _json_obj_int(span_obj.raw, "end_lineno")
+
+
+def _stmt_end_col(stmt: JsonVal) -> int:
+    stmt_obj = json.JsonValue(stmt).as_obj()
+    if stmt_obj is None:
+        return 0
+    span_obj = stmt_obj.get_obj("source_span")
+    if span_obj is None:
+        return 0
+    return _json_obj_int(span_obj.raw, "end_col")
+
+
+def _endswith_assignment_operator_prefix(text: str) -> bool:
+    return (
+        text.endswith("!") or text.endswith("<") or text.endswith(">") or
+        text.endswith("+") or text.endswith("-") or text.endswith("*") or
+        text.endswith("/") or text.endswith("%") or text.endswith("&") or
+        text.endswith("|") or text.endswith("^")
+    )
+
+
+def _starts_with_compound_stmt_keyword(text: str) -> bool:
+    return (
+        text.startswith("if ") or text.startswith("elif ") or text.startswith("while ") or
+        text.startswith("for ") or text.startswith("def ") or text.startswith("class ") or
+        text.startswith("with ") or text.startswith("try:") or text.startswith("except ") or
+        text.startswith("return ") or text.startswith("raise ")
+    )
+
+
+def _find_substr_from(text: str, needle: str, start: int) -> int:
+    if needle == "":
+        return start
+    i = start
+    limit = len(text) - len(needle)
+    while i <= limit:
+        if text[i:i + len(needle)] == needle:
+            return i
+        i += 1
+    return -1
+
+
+def _rstrip_one_char(text: str, ch: str) -> str:
+    end = len(text)
+    while end > 0 and text[end - 1] == ch:
+        end -= 1
+    return text[:end]
+
+
+def _split_last_as(text: str) -> tuple[str, str]:
+    marker = " as "
+    marker_len = len(marker)
+    last = -1
+    i = 0
+    while i <= len(text) - marker_len:
+        if text[i:i + marker_len] == marker:
+            last = i
+        i += 1
+    if last < 0:
+        return text, ""
+    return text[:last], text[last + marker_len:]
+
+
 def _unescape_string(s: str) -> str:
     """基本的なエスケープシーケンスを処理する。"""
     out: list[str] = []
@@ -1495,7 +1597,7 @@ def _parse_module_body(
     while ln_no < total:
         ln = lines[ln_no]
         s = ln.strip()
-        indent = len(ln) - len(ln.lstrip(" ")) if s != "" else 0
+        indent = _leading_space_count(ln) if s != "" else 0
 
         # Blank line
         if s == "":
@@ -1549,7 +1651,7 @@ def _parse_module_body(
             (s_clean.startswith("'") and not s_clean.startswith("'''"))):
             # Check if it's a standalone string (expression statement)
             expr = _parse_expr_text(ctx, s_clean, ln_no + 1, indent, {})
-            span = make_span(ln_no + 1, indent, ln_no + 1, indent + len(s_clean))
+            span: SourceSpan = make_span(ln_no + 1, indent, ln_no + 1, indent + len(s_clean))
             body_items.append(ExprStmt(source_span=span, value=expr))
             ln_no += 1
             pending_trivia = []
@@ -1564,7 +1666,7 @@ def _parse_module_body(
                 part = part.strip()
                 if part == "":
                     continue
-                asname: Optional[str] = None
+                asname = ""
                 name = part
                 if " as " in part:
                     split = part.split(" as ")
@@ -1576,14 +1678,18 @@ def _parse_module_body(
             if mod in _TYPE_ONLY_IMPORT_MODULES:
                 if mod in ("typing", "pytra.typing"):
                     for alias in aliases:
-                        if alias.name not in _TYPE_MODULE_VALUE_EXPORTS:
+                        alias_name: str = "" + alias.name
+                        if alias_name not in _TYPE_MODULE_VALUE_EXPORTS:
                             continue
-                        local = alias.asname if alias.asname is not None else alias.name
-                        ctx.import_symbols[local] = {"module": mod, "name": alias.name}
+                        local: str = _alias_local(alias)
+                        symbol_info: dict[str, str] = {}
+                        symbol_info["module"] = mod
+                        symbol_info["name"] = alias_name
+                        ctx.import_symbols[local] = symbol_info
                         ctx.import_bindings.append(
                             {
                                 "module_id": mod,
-                                "export_name": alias.name,
+                                "export_name": alias_name,
                                 "local_name": local,
                                 "binding_kind": "symbol",
                                 "source_file": ctx.filename,
@@ -1593,31 +1699,31 @@ def _parse_module_body(
                         ctx.qualified_refs.append(
                             {
                                 "module_id": mod,
-                                "symbol": alias.name,
+                                "symbol": alias_name,
                                 "local_name": local,
                             }
                         )
                 ln_no += 1
                 skip_next_blanks = True
                 continue
-            span = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
-            stmt = ImportFrom(source_span=span, module=mod, names=aliases, level=0)
+            span: SourceSpan = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
+            stmt: ImportFrom = ImportFrom(source_span=span, module=mod, names=aliases, level=0)
             body_items.append(stmt)
             # Build import binding
             for alias in aliases:
-                local = alias.asname if alias.asname is not None else alias.name
-                binding: dict[str, JsonVal] = {
-                    "module_id": mod,
-                    "export_name": alias.name,
-                    "local_name": local,
-                    "binding_kind": "symbol",
-                    "source_file": ctx.filename,
-                    "source_line": ln_no + 1,
-                }
+                alias_name: str = "" + alias.name
+                local: str = _alias_local(alias)
+                binding: dict[str, JsonVal] = {}
+                binding["module_id"] = mod
+                binding["export_name"] = alias_name
+                binding["local_name"] = local
+                binding["binding_kind"] = "symbol"
+                binding["source_file"] = ctx.filename
+                binding["source_line"] = ln_no + 1
                 ctx.import_bindings.append(binding)
                 ctx.qualified_refs.append({
                     "module_id": mod,
-                    "symbol": alias.name,
+                    "symbol": alias_name,
                     "local_name": local,
                 })
             ln_no += 1
@@ -1634,7 +1740,7 @@ def _parse_module_body(
                 part = part.strip()
                 if part == "":
                     continue
-                asname_i: Optional[str] = None
+                asname_i = ""
                 name_i = part
                 if " as " in part:
                     split_i = part.split(" as ")
@@ -1642,21 +1748,21 @@ def _parse_module_body(
                     asname_i = split_i[1].strip()
                 imp_aliases.append(ImportAlias(name=name_i, asname=asname_i))
                 # Register module import
-                local_i = asname_i if asname_i is not None else name_i
+                local_i: str = asname_i if asname_i != "" else name_i
                 ctx.import_modules[local_i] = name_i
-            span = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
+            span: SourceSpan = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
             body_items.append(Import(source_span=span, names=imp_aliases))
             # Build import binding
             for alias in imp_aliases:
-                local = alias.asname if alias.asname is not None else alias.name
-                binding: dict[str, JsonVal] = {
-                    "module_id": alias.name,
-                    "export_name": "",
-                    "local_name": local,
-                    "binding_kind": "module",
-                    "source_file": ctx.filename,
-                    "source_line": ln_no + 1,
-                }
+                alias_name: str = "" + alias.name
+                local: str = _alias_local(alias)
+                binding: dict[str, JsonVal] = {}
+                binding["module_id"] = alias_name
+                binding["export_name"] = ""
+                binding["local_name"] = local
+                binding["binding_kind"] = "module"
+                binding["source_file"] = ctx.filename
+                binding["source_line"] = ln_no + 1
                 ctx.import_bindings.append(binding)
             ln_no += 1
             skip_next_blanks = True
@@ -1672,14 +1778,15 @@ def _parse_module_body(
             while ln_no < total:
                 gl = lines[ln_no]
                 gs = gl.strip()
-                gi = len(gl) - len(gl.lstrip(" ")) if gs != "" else 0
+                gi = _leading_space_count(gl) if gs != "" else 0
                 if gs != "" and gi == 0:
                     break
                 guard_lines.append(gl)
                 ln_no += 1
             # Parse main guard body
+            main_guard_name_types: dict[str, str] = {}
             main_guard_body.extend(
-                _parse_block_lines(ctx, guard_lines, {}, "main")
+                _parse_block_lines(ctx, guard_lines, main_guard_name_types, "main")
             )
             pending_trivia = []
             pending_comments = []
@@ -1704,11 +1811,22 @@ def _parse_module_body(
                 fn_stmt.decorators = list(pending_decorators)
                 pending_decorators = []
             if len(pending_extern_v2) > 0:
-                fn_stmt.node_meta = {"extern_v2": pending_extern_v2}
+                ev2_meta: dict[str, JsonVal] = {}
+                for ev2_key, ev2_value in pending_extern_v2.items():
+                    ev2_meta[ev2_key] = ev2_value
+                fn_meta: dict[str, JsonVal] = {}
+                fn_meta["extern_v2"] = ev2_meta
+                fn_stmt.node_meta = fn_meta
                 pending_extern_v2 = {}
             elif pending_runtime_ns != "":
-                fn_stmt.node_meta = {"extern_v2": _runtime_fn_extern_v2(
-                    pending_runtime_ns, fn_name, pending_runtime_symbol, pending_runtime_tag)}
+                runtime_ev2 = _runtime_fn_extern_v2(
+                    pending_runtime_ns, fn_name, pending_runtime_symbol, pending_runtime_tag)
+                runtime_ev2_meta: dict[str, JsonVal] = {}
+                for ev2_key2, ev2_value2 in runtime_ev2.items():
+                    runtime_ev2_meta[ev2_key2] = ev2_value2
+                fn_meta2: dict[str, JsonVal] = {}
+                fn_meta2["extern_v2"] = runtime_ev2_meta
+                fn_stmt.node_meta = fn_meta2
                 pending_runtime_ns = ""
                 pending_runtime_symbol = ""
                 pending_runtime_tag = ""
@@ -1737,14 +1855,21 @@ def _parse_module_body(
             pending_decorators = []
             cls_meta: dict[str, JsonVal] = {}
             if len(pending_extern_v2) > 0:
-                cls_meta["extern_v2"] = pending_extern_v2
+                cls_ev2_meta: dict[str, JsonVal] = {}
+                for cls_ev2_key, cls_ev2_value in pending_extern_v2.items():
+                    cls_ev2_meta[cls_ev2_key] = cls_ev2_value
+                cls_meta["extern_v2"] = cls_ev2_meta
                 pending_extern_v2 = {}
             if pending_runtime_ns != "":
-                cls_meta["runtime_v1"] = {
-                    "schema_version": 1,
-                    "runtime_ns": pending_runtime_ns,
-                }
-                cls_meta["extern_v2"] = _runtime_class_extern_v2(pending_runtime_ns, cls_name)
+                runtime_v1: dict[str, JsonVal] = {}
+                runtime_v1["schema_version"] = 1
+                runtime_v1["runtime_ns"] = pending_runtime_ns
+                cls_meta["runtime_v1"] = runtime_v1
+                cls_runtime_ev2 = _runtime_class_extern_v2(pending_runtime_ns, cls_name)
+                cls_runtime_ev2_meta: dict[str, JsonVal] = {}
+                for cls_ev2_key2, cls_ev2_value2 in cls_runtime_ev2.items():
+                    cls_runtime_ev2_meta[cls_ev2_key2] = cls_ev2_value2
+                cls_meta["extern_v2"] = cls_runtime_ev2_meta
                 pending_runtime_ns = ""
                 pending_runtime_symbol = ""
                 pending_runtime_tag = ""
@@ -1763,7 +1888,7 @@ def _parse_module_body(
         if type_alias_m is not None:
             ta_name = re.strip_group(type_alias_m, 1)
             ta_value = re.strip_group(type_alias_m, 2)
-            span = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
+            span: SourceSpan = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
             body_items.append(TypeAlias(source_span=span, name=ta_name, value=ta_value))
             ln_no += 1
             pending_trivia = []
@@ -1775,12 +1900,17 @@ def _parse_module_body(
         if tl_var != "":
             target = _make_attr_or_name_expr(tl_var, ln_no + 1, 0, ctx)
             val_expr = _parse_expr_text(ctx, tl_value, ln_no + 1, _find_expr_col(ctx, tl_value, ln_no + 1, 0), {})
-            span = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
+            span: SourceSpan = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
             ann_stmt = AnnAssign(source_span=span, target=target, annotation=tl_type, value=val_expr, declare=True)
             # Check for extern_var(...) / runtime_var(...) in value
             ev2 = _parse_extern_var_call(tl_value, tl_var)
             if ev2 is not None:
-                ann_stmt.node_meta = {"extern_v2": ev2}
+                ev2_meta: dict[str, JsonVal] = {}
+                for ev2_key, ev2_value in ev2.items():
+                    ev2_meta[ev2_key] = ev2_value
+                ann_meta: dict[str, JsonVal] = {}
+                ann_meta["extern_v2"] = ev2_meta
+                ann_stmt.node_meta = ann_meta
             if len(pending_trivia) > 0:
                 ann_stmt.leading_trivia = list(pending_trivia)
             if len(pending_comments) > 0:
@@ -1797,8 +1927,8 @@ def _parse_module_body(
         if tl_target != "":
             target = _parse_expr_text(ctx, tl_target, ln_no + 1, 0, {})
             val_expr = _parse_expr_text(ctx, tl_val_text, ln_no + 1, _find_expr_col(ctx, tl_val_text, ln_no + 1, 0), {})
-            span = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
-            is_declare = isinstance(target, Name)
+            span: SourceSpan = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
+            is_declare = str(expr_to_jv(target).get("kind", "")) == "Name"
             assign_stmt = Assign(source_span=span, target=target, value=val_expr, declare=is_declare)
             if len(pending_trivia) > 0:
                 assign_stmt.leading_trivia = list(pending_trivia)
@@ -1829,7 +1959,7 @@ def _collect_block(lines: list[str], start_ln: int, parent_indent: int) -> tuple
             block_lines.append(ln)
             ln_no += 1
             continue
-        indent = len(ln) - len(ln.lstrip(" "))
+        indent = _leading_space_count(ln)
         if indent <= parent_indent:
             break
         block_lines.append(ln)
@@ -1850,7 +1980,7 @@ def _parse_function_def(
     """関数定義をパースする。"""
     header_line = lines[start_ln]
     header = _strip_inline_comment(header_line.strip())
-    header_indent = len(header_line) - len(header_line.lstrip(" "))
+    header_indent = _leading_space_count(header_line)
 
     # Multi-line header: merge continuation lines
     merge_ln = start_ln
@@ -1874,8 +2004,8 @@ def _parse_function_def(
     name_types_empty: dict[str, str] = {}
     if args_text.strip() != "" and (args_text.strip() != "self" or class_name != ""):
         idx = 0
-        for param in _split_type_args_outer(args_text):
-            param = param.strip()
+        for raw_param in _split_type_args_outer(args_text):
+            param = raw_param.strip()
             if param == "" or param == "*":
                 continue
             # *args: capture vararg info, skip from regular args
@@ -1936,16 +2066,18 @@ def _parse_function_def(
 
     # Parse body with arg types in scope
     name_types: dict[str, str] = dict(arg_types)
-    body_stmts: list[JsonVal] = _parse_block_lines(ctx, block_lines, name_types, fn_name, start_hint=start_ln) if len(block_lines) > 0 else []
-
+    body_stmts: list[JsonVal] = []
+    if len(block_lines) > 0:
+        body_stmts = _parse_block_lines(ctx, block_lines, name_types, fn_name, start_hint=start_ln)
 
     # Extract docstring and remove from body
     docstring = _extract_docstring(block_lines)
-    if docstring is not None and len(body_stmts) > 0 and isinstance(body_stmts[0], ExprStmt):
-        # First statement is the docstring ExprStmt — remove it
-        first_val = body_stmts[0].value
-        if isinstance(first_val, Constant) and isinstance(first_val.value, str):
-            body_stmts = body_stmts[1:]
+    if docstring is not None and len(body_stmts) > 0:
+        first_stmt = stmt_to_jv(body_stmts[0])
+        if str(first_stmt.get("kind", "")) == "Expr":
+            first_value = expr_to_jv(first_stmt.get("value"))
+            if str(first_value.get("kind", "")) == "Constant" and json.JsonValue(first_value.get("value")).as_str() is not None:
+                body_stmts = body_stmts[1:]
 
     # Compute end span: 最終非空行の絶対行番号と行末位置
     end_lineno = start_ln + 1
@@ -1957,7 +2089,7 @@ def _parse_function_def(
                 end_col = len(bl.rstrip())
                 break
 
-    span = make_span(start_ln + 1, header_indent, end_lineno, end_col)
+    span: SourceSpan = make_span(start_ln + 1, header_indent, end_lineno, end_col)
 
     # Detect generator (yield in body)
     gen_flag = 0
@@ -1970,6 +2102,7 @@ def _parse_function_def(
         if gen_yield_type != "unknown":
             return_type = "list[" + gen_yield_type + "]"
 
+    renamed_symbols: dict[str, str] = {}
     fd = FunctionDef(
         source_span=span,
         name=fn_name,
@@ -1979,7 +2112,7 @@ def _parse_function_def(
         arg_defaults=arg_defaults,
         arg_index=arg_index,
         return_type=return_type,
-        renamed_symbols={},
+        renamed_symbols=renamed_symbols,
         docstring=docstring,
         body=body_stmts,
         is_generator=gen_flag,
@@ -1992,7 +2125,8 @@ def _parse_function_def(
     # Optional fields: クラスメソッドとトップレベル関数で異なる
     if class_name != "":
         # クラスメソッド: decorators のみ出力。arg_type_exprs/return_type_expr/leading は出力しない
-        fd.decorators = []
+        empty_decorators: list[str] = []
+        fd.decorators = empty_decorators
     else:
         # トップレベル関数
         fd.leading_comments = list(comments)
@@ -2003,21 +2137,37 @@ def _parse_function_def(
 
 def _has_yield(stmts: list[JsonVal]) -> bool:
     """ステートメントリストに yield が含まれるか再帰的にチェック。"""
-    for s in stmts:
-        if isinstance(s, Yield):
+    for stmt in stmts:
+        s = stmt_to_jv(stmt)
+        kind = str(s.get("kind", ""))
+        if kind == "Yield":
             return True
-        if isinstance(s, If):
-            if _has_yield(s.body) or _has_yield(s.orelse):
+        if kind == "If":
+            body = json.JsonValue(s.get("body")).as_arr()
+            orelse = json.JsonValue(s.get("orelse")).as_arr()
+            if body is not None and _has_yield(body.raw):
                 return True
-        if isinstance(s, (For, While)):
-            if _has_yield(s.body):
+            if orelse is not None and _has_yield(orelse.raw):
                 return True
-        if isinstance(s, Try):
-            if _has_yield(s.body) or _has_yield(s.finalbody):
+        if kind == "For" or kind == "While":
+            body = json.JsonValue(s.get("body")).as_arr()
+            if body is not None and _has_yield(body.raw):
                 return True
-            for h in s.handlers:
-                if _has_yield(h.body):
-                    return True
+        if kind == "Try":
+            body = json.JsonValue(s.get("body")).as_arr()
+            finalbody = json.JsonValue(s.get("finalbody")).as_arr()
+            if body is not None and _has_yield(body.raw):
+                return True
+            if finalbody is not None and _has_yield(finalbody.raw):
+                return True
+            handlers = json.JsonValue(s.get("handlers")).as_arr()
+            if handlers is not None:
+                for handler in handlers.raw:
+                    handler_obj = json.JsonValue(handler).as_obj()
+                    if handler_obj is not None:
+                        handler_body = json.JsonValue(handler_obj.raw.get("body")).as_arr()
+                        if handler_body is not None and _has_yield(handler_body.raw):
+                            return True
     return False
 
 
@@ -2040,9 +2190,9 @@ def _parse_class_def(
     if paren_pos > 0:
         paren_end = header.find(")")
         if paren_end > paren_pos:
-            base_name = header[paren_pos + 1:paren_end].strip()
-            if base_name == "":
-                base_name = None
+            parsed_base: str = header[paren_pos + 1:paren_end].strip()
+            if parsed_base != "":
+                base_name = parsed_base
     block_lines, end_ln = _collect_block(lines, start_ln + 1, 0)
     name_types: dict[str, str] = {}
     body_stmts = _parse_block_lines(ctx, block_lines, name_types, cls_name, start_hint=start_ln)
@@ -2055,41 +2205,88 @@ def _parse_class_def(
                 break
     if runtime_ns != "":
         for stmt in body_stmts:
-            if not isinstance(stmt, FunctionDef):
+            stmt_obj = json.JsonValue(stmt).as_obj()
+            if stmt_obj is None:
                 continue
-            if stmt.node_meta is None:
-                stmt.node_meta = {}
-            meta = stmt.node_meta
-            if not isinstance(meta, dict):
+            if _json_obj_str(stmt_obj.raw, "kind") != "FunctionDef":
                 continue
-            if "extern_v2" in meta:
+            method_name = _json_obj_str(stmt_obj.raw, "name")
+            if method_name == "":
                 continue
-            meta["extern_v2"] = _runtime_method_extern_v2(runtime_ns, cls_name, stmt.name)
+            meta_obj = stmt_obj.get_obj("meta")
+            meta_raw: dict[str, JsonVal] = {}
+            if meta_obj is not None:
+                meta_raw = meta_obj.raw
+            if "extern_v2" in meta_raw:
+                continue
+            method_ev2 = _runtime_method_extern_v2(runtime_ns, cls_name, method_name)
+            method_ev2_meta: dict[str, JsonVal] = {}
+            for method_ev2_key, method_ev2_value in method_ev2.items():
+                method_ev2_meta[method_ev2_key] = method_ev2_value
+            meta_raw["extern_v2"] = method_ev2_meta
+            stmt_obj.raw["meta"] = meta_raw
 
     # Collect field types from annotated assignments and __init__ self.attr assignments
     field_types: dict[str, str] = {}
     for stmt in body_stmts:
-        if isinstance(stmt, AnnAssign):
-            if isinstance(stmt.target, Name):
-                field_types[stmt.target.id] = stmt.annotation
+        stmt_obj2 = json.JsonValue(stmt).as_obj()
+        if stmt_obj2 is None:
+            continue
+        stmt_kind2 = _json_obj_str(stmt_obj2.raw, "kind")
+        if stmt_kind2 == "AnnAssign":
+            target_obj = stmt_obj2.get_obj("target")
+            ann = _json_obj_str(stmt_obj2.raw, "annotation")
+            if target_obj is not None and ann != "" and _json_obj_str(target_obj.raw, "kind") == "Name":
+                target_id = _json_obj_str(target_obj.raw, "id")
+                if target_id != "":
+                    field_types[target_id] = ann
         # Scan __init__ for self.attr assignments
-        if isinstance(stmt, FunctionDef) and stmt.original_name == "__init__":
-            for init_stmt in stmt.body:
-                if isinstance(init_stmt, AnnAssign) and isinstance(init_stmt.target, Attribute):
-                    if isinstance(init_stmt.target.value, Name) and init_stmt.target.value.id == "self":
-                        field_types[init_stmt.target.attr] = init_stmt.annotation
-                if isinstance(init_stmt, Assign) and isinstance(init_stmt.target, Attribute):
-                    if isinstance(init_stmt.target.value, Name) and init_stmt.target.value.id == "self":
-                        # Infer type from arg_types: try attr name, then RHS value name
-                        attr_name = init_stmt.target.attr
-                        ft = stmt.arg_types.get(attr_name, "unknown")
-                        if ft == "unknown" and isinstance(init_stmt.value, Name):
-                            ft = stmt.arg_types.get(init_stmt.value.id, "unknown")
-                        field_types[attr_name] = ft
+        if stmt_kind2 == "FunctionDef" and _json_obj_str(stmt_obj2.raw, "original_name") == "__init__":
+            init_body = stmt_obj2.get_arr("body")
+            arg_types_obj = stmt_obj2.get_obj("arg_types")
+            if init_body is None:
+                continue
+            for init_stmt in init_body.raw:
+                init_obj = json.JsonValue(init_stmt).as_obj()
+                if init_obj is None:
+                    continue
+                init_kind = _json_obj_str(init_obj.raw, "kind")
+                init_target = init_obj.get_obj("target")
+                if init_target is None or _json_obj_str(init_target.raw, "kind") != "Attribute":
+                    continue
+                target_value = init_target.get_obj("value")
+                if target_value is None or _json_obj_str(target_value.raw, "kind") != "Name" or _json_obj_str(target_value.raw, "id") != "self":
+                    continue
+                attr_name = _json_obj_str(init_target.raw, "attr")
+                if attr_name == "":
+                    continue
+                if init_kind == "AnnAssign":
+                    init_ann = _json_obj_str(init_obj.raw, "annotation")
+                    if init_ann != "":
+                        field_types[attr_name] = init_ann
+                if init_kind == "Assign":
+                    # Infer type from arg_types: try attr name, then RHS value name.
+                    ft = "unknown"
+                    if arg_types_obj is not None and attr_name in arg_types_obj.raw:
+                        attr_ft = json.JsonValue(arg_types_obj.raw[attr_name]).as_str()
+                        if attr_ft is not None:
+                            ft = attr_ft
+                    init_value = init_obj.get_obj("value")
+                    if ft == "unknown" and init_value is not None and _json_obj_str(init_value.raw, "kind") == "Name" and arg_types_obj is not None:
+                        value_id = _json_obj_str(init_value.raw, "id")
+                        if value_id != "" and value_id in arg_types_obj.raw:
+                            value_ft = json.JsonValue(arg_types_obj.raw[value_id]).as_str()
+                            if value_ft is not None:
+                                ft = value_ft
+                    field_types[attr_name] = ft
 
     # ClassDef span: end_lineno = _collect_block が返した end_ln (次のトップレベル行の前)
-    span = make_span(start_ln + 1, 0, end_ln, 0)
+    span: SourceSpan = make_span(start_ln + 1, 0, end_ln, 0)
 
+    class_decorators: list[str] = []
+    if decorators is not None:
+        for class_deco in decorators:
+            class_decorators.append(class_deco)
     cd = ClassDef(
         source_span=span,
         name=cls_name,
@@ -2098,7 +2295,7 @@ def _parse_class_def(
         body=body_stmts,
         dataclass_flag=is_dataclass,
         field_types=field_types,
-        decorators=list(decorators) if decorators is not None else None,
+        decorators=class_decorators,
     )
     # ClassDef: 最初の body item は常に出力、2番目以降は trivia がある場合のみ
     if force_leading or len(comments) > 0 or len(trivia) > 0:
@@ -2116,7 +2313,7 @@ def _parse_try_stmt(
     name_types: dict[str, str],
     abs_ln: int,
     indent: int,
-) -> tuple[Try, int]:
+) -> tuple[JsonVal, int]:
     """try/except/finally 文をパースする。"""
     # Collect try body
     try_lines, next_i = _collect_sub_block(block_lines, start_i + 1, indent)
@@ -2130,7 +2327,7 @@ def _parse_try_stmt(
     while next_i < len(block_lines):
         ln = block_lines[next_i]
         s = ln.strip()
-        ln_indent = len(ln) - len(ln.lstrip(" ")) if s != "" else 0
+        ln_indent = _leading_space_count(ln) if s != "" else 0
         if s == "" or s.startswith("#"):
             next_i += 1
             continue
@@ -2143,7 +2340,7 @@ def _parse_try_stmt(
             # Parse except clause
             m_exc_as = re.match(r"^except\s+(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", s)
             m_exc = re.match(r"^except\s+(.+?)\s*:\s*$", s)
-            exc_type_str: Optional[str] = None
+            exc_type_str = ""
             exc_name: Optional[str] = None
             if m_exc_as is not None:
                 exc_type_str = re.strip_group(m_exc_as, 1)
@@ -2153,11 +2350,11 @@ def _parse_try_stmt(
             elif s == "except:" or s.startswith("except:"):
                 pass  # bare except
             exc_type_expr: JsonVal = None
-            if exc_type_str is not None:
+            if exc_type_str != "":
                 exc_type_expr = _make_name_expr(exc_type_str, handler_abs_ln, indent + 7, ctx)
             handler_lines, next_i = _collect_sub_block(block_lines, next_i + 1, indent)
             handler_body = _parse_block_lines(ctx, handler_lines, name_types, "except")
-            span = make_span(handler_abs_ln, indent, handler_abs_ln, indent + len(s))
+            span: SourceSpan = make_span(handler_abs_ln, indent, handler_abs_ln, indent + len(s))
             handlers.append(ExceptHandler(
                 exc_type_expr=exc_type_expr,
                 name=exc_name,
@@ -2182,26 +2379,27 @@ def _parse_try_stmt(
     end_ln = abs_ln
     end_col = indent + 4
     if len(finalbody) > 0:
-        last = finalbody[-1]
-        if hasattr(last, 'source_span') and last.source_span.end_lineno is not None:
-            end_ln = last.source_span.end_lineno
-            end_col = last.source_span.end_col if last.source_span.end_col is not None else 0
+        last_end_ln = _stmt_end_lineno(finalbody[-1])
+        if last_end_ln > 0:
+            end_ln = last_end_ln
+            end_col = _stmt_end_col(finalbody[-1])
     elif len(handlers) > 0:
         last_h = handlers[-1]
         if len(last_h.body) > 0:
-            last = last_h.body[-1]
-            if hasattr(last, 'source_span') and last.source_span.end_lineno is not None:
-                end_ln = last.source_span.end_lineno
-                end_col = last.source_span.end_col if last.source_span.end_col is not None else 0
+            last_h_end_ln = _stmt_end_lineno(last_h.body[-1])
+            if last_h_end_ln > 0:
+                end_ln = last_h_end_ln
+                end_col = _stmt_end_col(last_h.body[-1])
 
-    span = make_span(abs_ln, indent, end_ln, end_col)
-    return Try(
+    span: SourceSpan = make_span(abs_ln, indent, end_ln, end_col)
+    try_node = Try(
         source_span=span,
         body=try_body,
         handlers=handlers,
         orelse=orelse,
         finalbody=finalbody,
-    ), next_i
+    )
+    return try_node.to_jv(), next_i
 
 
 def _merge_logical_lines(lines: list[str]) -> list[str]:
@@ -2233,7 +2431,7 @@ def _merge_logical_lines(lines: list[str]) -> list[str]:
                 if depth <= 0 and not explicit_cont:
                     break
             # Preserve original indentation
-            indent = len(ln) - len(ln.lstrip(" "))
+            indent = _leading_space_count(ln)
             merged.append(" " * indent + acc.lstrip())
         else:
             merged.append(ln)
@@ -2318,20 +2516,20 @@ def _parse_block_lines(
     pending_trivia: list[JsonVal] = []
     pending_comments: list[str] = []
     pending_decorators: list[str] = []
-    pending_block_extern_v2: Optional[dict[str, str]] = None
+    pending_block_extern_v2: dict[str, str] = {}
 
     # Determine block base indent
     base_indent = 0
     for bl in block_lines:
         s = bl.strip()
         if s != "" and not s.startswith("#"):
-            base_indent = len(bl) - len(bl.lstrip(" "))
+            base_indent = _leading_space_count(bl)
             break
 
     while i < total:
         ln = block_lines[i]
         s = ln.strip()
-        indent = len(ln) - len(ln.lstrip(" ")) if s != "" else 0
+        indent = _leading_space_count(ln) if s != "" else 0
 
         if s == "":
             pending_trivia.append(TriviaBlank(count=1).to_jv())
@@ -2371,8 +2569,8 @@ def _parse_block_lines(
             (s_clean.startswith('"') and not s_clean.startswith('"""')) or
             (s_clean.startswith("'") and not s_clean.startswith("'''"))):
             expr = _parse_expr_text(ctx, s_clean, abs_ln, indent, name_types)
-            span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
-            expr_stmt = ExprStmt(source_span=span, value=expr)
+            span: SourceSpan = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+            expr_stmt: ExprStmt = ExprStmt(source_span=span, value=expr)
             if len(pending_trivia) > 0:
                 expr_stmt.leading_trivia = list(pending_trivia)
             if len(pending_comments) > 0:
@@ -2391,7 +2589,7 @@ def _parse_block_lines(
                 part = part.strip()
                 if part == "":
                     continue
-                asname: Optional[str] = None
+                asname = ""
                 name = part
                 if " as " in part:
                     split = part.split(" as ")
@@ -2401,14 +2599,18 @@ def _parse_block_lines(
             if mod in _TYPE_ONLY_IMPORT_MODULES:
                 if mod in ("typing", "pytra.typing"):
                     for alias in aliases:
-                        if alias.name not in _TYPE_MODULE_VALUE_EXPORTS:
+                        alias_name: str = "" + alias.name
+                        if alias_name not in _TYPE_MODULE_VALUE_EXPORTS:
                             continue
-                        local = alias.asname if alias.asname is not None else alias.name
-                        ctx.import_symbols[local] = {"module": mod, "name": alias.name}
+                        local: str = _alias_local(alias)
+                        symbol_info: dict[str, str] = {}
+                        symbol_info["module"] = mod
+                        symbol_info["name"] = alias_name
+                        ctx.import_symbols[local] = symbol_info
                         ctx.import_bindings.append(
                             {
                                 "module_id": mod,
-                                "export_name": alias.name,
+                                "export_name": alias_name,
                                 "local_name": local,
                                 "binding_kind": "symbol",
                                 "source_file": ctx.filename,
@@ -2418,7 +2620,7 @@ def _parse_block_lines(
                         ctx.qualified_refs.append(
                             {
                                 "module_id": mod,
-                                "symbol": alias.name,
+                                "symbol": alias_name,
                                 "local_name": local,
                             }
                         )
@@ -2426,32 +2628,25 @@ def _parse_block_lines(
                 pending_trivia = []
                 pending_comments = []
                 continue
-            span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
-            stmt = ImportFrom(source_span=span, module=mod, names=aliases, level=0)
-            if len(pending_trivia) > 0:
-                stmt.leading_trivia = list(pending_trivia)
-            if len(pending_comments) > 0:
-                stmt.leading_comments = list(pending_comments)
-            stmts.append(stmt)
+            span: SourceSpan = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+            import_from_stmt: ImportFrom = ImportFrom(source_span=span, module=mod, names=aliases, level=0)
+            stmts.append(import_from_stmt)
             for alias in aliases:
-                local = alias.asname if alias.asname is not None else alias.name
-                ctx.import_bindings.append(
-                    {
-                        "module_id": mod,
-                        "export_name": alias.name,
-                        "local_name": local,
-                        "binding_kind": "symbol",
-                        "source_file": ctx.filename,
-                        "source_line": abs_ln,
-                    }
-                )
-                ctx.qualified_refs.append(
-                    {
-                        "module_id": mod,
-                        "symbol": alias.name,
-                        "local_name": local,
-                    }
-                )
+                alias_name: str = "" + alias.name
+                local: str = _alias_local(alias)
+                binding: dict[str, JsonVal] = {}
+                binding["module_id"] = mod
+                binding["export_name"] = alias_name
+                binding["local_name"] = local
+                binding["binding_kind"] = "symbol"
+                binding["source_file"] = ctx.filename
+                binding["source_line"] = abs_ln
+                ctx.import_bindings.append(binding)
+                qref: dict[str, JsonVal] = {}
+                qref["module_id"] = mod
+                qref["symbol"] = alias_name
+                qref["local_name"] = local
+                ctx.qualified_refs.append(qref)
             i += 1
             pending_trivia = []
             pending_comments = []
@@ -2466,34 +2661,29 @@ def _parse_block_lines(
                 part = part.strip()
                 if part == "":
                     continue
-                asname_i: Optional[str] = None
+                asname_i = ""
                 name_i = part
                 if " as " in part:
                     split_i = part.split(" as ")
                     name_i = split_i[0].strip()
                     asname_i = split_i[1].strip()
                 imp_aliases.append(ImportAlias(name=name_i, asname=asname_i))
-                local_i = asname_i if asname_i is not None else name_i
+                local_i: str = asname_i if asname_i != "" else name_i
                 ctx.import_modules[local_i] = name_i
-            span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
-            stmt = Import(source_span=span, names=imp_aliases)
-            if len(pending_trivia) > 0:
-                stmt.leading_trivia = list(pending_trivia)
-            if len(pending_comments) > 0:
-                stmt.leading_comments = list(pending_comments)
-            stmts.append(stmt)
+            span: SourceSpan = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+            import_stmt: Import = Import(source_span=span, names=imp_aliases)
+            stmts.append(import_stmt)
             for alias in imp_aliases:
-                local = alias.asname if alias.asname is not None else alias.name
-                ctx.import_bindings.append(
-                    {
-                        "module_id": alias.name,
-                        "export_name": "",
-                        "local_name": local,
-                        "binding_kind": "module",
-                        "source_file": ctx.filename,
-                        "source_line": abs_ln,
-                    }
-                )
+                alias_name: str = "" + alias.name
+                local: str = _alias_local(alias)
+                binding: dict[str, JsonVal] = {}
+                binding["module_id"] = alias_name
+                binding["export_name"] = ""
+                binding["local_name"] = local
+                binding["binding_kind"] = "module"
+                binding["source_file"] = ctx.filename
+                binding["source_line"] = abs_ln
+                ctx.import_bindings.append(binding)
             i += 1
             pending_trivia = []
             pending_comments = []
@@ -2501,13 +2691,13 @@ def _parse_block_lines(
 
         # return statement
         if s_clean == "return":
-            span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
-            ret_stmt = Return(source_span=span, value=None)
+            span: SourceSpan = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+            return_none_stmt: Return = Return(source_span=span, value=None)
             if len(pending_comments) > 0:
-                ret_stmt.leading_comments = list(pending_comments)
+                return_none_stmt.leading_comments = list(pending_comments)
             if len(pending_trivia) > 0:
-                ret_stmt.leading_trivia = list(pending_trivia)
-            stmts.append(ret_stmt)
+                return_none_stmt.leading_trivia = list(pending_trivia)
+            stmts.append(return_none_stmt)
             i += 1
             pending_trivia = []
             pending_comments = []
@@ -2516,13 +2706,13 @@ def _parse_block_lines(
             expr_text = s_clean[7:].strip()
             expr_col = _find_expr_col(ctx, expr_text, abs_ln, indent + 7)
             expr = _parse_tuple_or_expr(ctx, expr_text, abs_ln, expr_col, name_types)
-            span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
-            ret_stmt = Return(source_span=span, value=expr)
+            span: SourceSpan = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+            return_value_stmt: Return = Return(source_span=span, value=expr)
             if len(pending_comments) > 0:
-                ret_stmt.leading_comments = list(pending_comments)
+                return_value_stmt.leading_comments = list(pending_comments)
             if len(pending_trivia) > 0:
-                ret_stmt.leading_trivia = list(pending_trivia)
-            stmts.append(ret_stmt)
+                return_value_stmt.leading_trivia = list(pending_trivia)
+            stmts.append(return_value_stmt)
             i += 1
             pending_trivia = []
             pending_comments = []
@@ -2530,7 +2720,7 @@ def _parse_block_lines(
 
         # pass
         if s_clean == "pass":
-            span = make_span(abs_ln, 0, abs_ln, indent + 4)
+            span: SourceSpan = make_span(abs_ln, 0, abs_ln, indent + 4)
             stmts.append(Pass(source_span=span))
             i += 1
             pending_trivia = []
@@ -2548,7 +2738,7 @@ def _parse_block_lines(
         if s_clean.startswith("yield "):
             expr_text = s_clean[6:].strip()
             expr = _parse_expr_text(ctx, expr_text, abs_ln, _find_expr_col(ctx, expr_text, abs_ln, indent + 6), name_types)
-            span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+            span: SourceSpan = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
             stmts.append(Yield(source_span=span, value=expr))
             i += 1
             pending_trivia = []
@@ -2557,7 +2747,7 @@ def _parse_block_lines(
 
         # raise
         if s_clean == "raise":
-            span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+            span: SourceSpan = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
             stmts.append(Raise(source_span=span, exc=None, cause=None))
             i += 1
             pending_trivia = []
@@ -2565,7 +2755,7 @@ def _parse_block_lines(
             continue
         if s_clean.startswith("raise "):
             expr_text = s_clean[6:].strip()
-            cause_expr = None
+            cause_expr: JsonVal = None
             exc_text = expr_text
             exc_text, cause_text = _split_raise_from_outer(expr_text)
             if cause_text != "":
@@ -2580,7 +2770,7 @@ def _parse_block_lines(
                         name_types,
                     )
             expr = _parse_expr_text(ctx, exc_text, abs_ln, _find_expr_col(ctx, exc_text, abs_ln, indent + 6), name_types)
-            span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+            span: SourceSpan = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
             stmts.append(Raise(source_span=span, exc=expr, cause=cause_expr))
             i += 1
             pending_trivia = []
@@ -2630,11 +2820,16 @@ def _parse_block_lines(
                 fn_stmt.decorators = list(pending_decorators)
                 pending_decorators = []
             # Attach v2 extern metadata
-            if pending_block_extern_v2 is not None:
+            if len(pending_block_extern_v2) > 0:
                 ev2 = dict(pending_block_extern_v2)
                 ev2["kind"] = "method"
-                fn_stmt.node_meta = {"extern_v2": ev2}
-                pending_block_extern_v2 = None
+                ev2_meta: dict[str, JsonVal] = {}
+                for ev2_key, ev2_value in ev2.items():
+                    ev2_meta[ev2_key] = ev2_value
+                fn_meta: dict[str, JsonVal] = {}
+                fn_meta["extern_v2"] = ev2_meta
+                fn_stmt.node_meta = fn_meta
+                pending_block_extern_v2 = {}
             stmts.append(fn_stmt)
             # Skip block_lines that were consumed by _parse_function_def
             # fn_end_ln is 0-based file line index. Advance i past those lines.
@@ -2642,7 +2837,7 @@ def _parse_block_lines(
             while i < total:
                 bl_s = block_lines[i].strip()
                 if bl_s != "" and not bl_s.startswith("#"):
-                    bl_indent = len(block_lines[i]) - len(block_lines[i].lstrip(" "))
+                    bl_indent = _leading_space_count(block_lines[i])
                     if bl_indent <= indent:
                         break
                 i += 1
@@ -2665,22 +2860,19 @@ def _parse_block_lines(
             name_types[var_name] = resolved
             target: JsonVal = _make_attr_or_name_expr(var_name, abs_ln, indent, ctx)
             value = _parse_expr_text(ctx, value_text, abs_ln, _find_expr_col(ctx, value_text, abs_ln, indent + s_clean.index("=") + 2), name_types)
-            span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
-            ann_stmt = AnnAssign(
+            span: SourceSpan = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+            ann_value_stmt: AnnAssign = AnnAssign(
                 source_span=span,
                 target=target,
                 annotation=resolved,
-                
                 value=value,
-                
-                
                 declare=True,
             )
             if len(pending_trivia) > 0:
-                ann_stmt.leading_trivia = list(pending_trivia)
+                ann_value_stmt.leading_trivia = list(pending_trivia)
             if len(pending_comments) > 0:
-                ann_stmt.leading_comments = list(pending_comments)
-            stmts.append(ann_stmt)
+                ann_value_stmt.leading_comments = list(pending_comments)
+            stmts.append(ann_value_stmt)
             i += 1
             pending_trivia = []
             pending_comments = []
@@ -2696,22 +2888,19 @@ def _parse_block_lines(
                 resolved = ann_type
                 name_types[ann_var] = resolved
                 target = _make_attr_or_name_expr(ann_var, abs_ln, indent, ctx)
-                span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
-                ann_stmt = AnnAssign(
+                span: SourceSpan = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+                ann_only_stmt: AnnAssign = AnnAssign(
                     source_span=span,
                     target=target,
                     annotation=resolved,
-
                     value=None,
-
-
                     declare=True,
                 )
                 if len(pending_trivia) > 0:
-                    ann_stmt.leading_trivia = list(pending_trivia)
+                    ann_only_stmt.leading_trivia = list(pending_trivia)
                 if len(pending_comments) > 0:
-                    ann_stmt.leading_comments = list(pending_comments)
-                stmts.append(ann_stmt)
+                    ann_only_stmt.leading_comments = list(pending_comments)
+                stmts.append(ann_only_stmt)
                 i += 1
                 pending_trivia = []
                 pending_comments = []
@@ -2728,7 +2917,7 @@ def _parse_block_lines(
             }
             target = _parse_expr_text(ctx, target_text, abs_ln, _find_expr_col(ctx, target_text, abs_ln, indent), name_types)
             value = _parse_expr_text(ctx, value_text, abs_ln, _find_expr_col(ctx, value_text, abs_ln, indent + len(target_text) + len(op_text) + 2), name_types)
-            span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+            span: SourceSpan = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
             aug_stmt = AugAssign(
                 source_span=span,
                 target=target,
@@ -2756,7 +2945,7 @@ def _parse_block_lines(
                 if is_swap:
                     left = _parse_expr_text(ctx, lhs_parts[0], abs_ln, _find_expr_col(ctx, lhs_parts[0], abs_ln, indent), name_types)
                     right = _parse_expr_text(ctx, lhs_parts[1], abs_ln, _find_expr_col(ctx, lhs_parts[1], abs_ln, indent), name_types)
-                    span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+                    span: SourceSpan = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
                     stmts.append(Swap(source_span=span, left=left, right=right))
                     i += 1
                     pending_trivia = []
@@ -2765,7 +2954,7 @@ def _parse_block_lines(
                 # Tuple unpacking: a, b = expr
                 elements = [_parse_expr_text(ctx, p, abs_ln, _find_expr_col(ctx, p, abs_ln, indent), name_types) for p in lhs_parts]
                 target_col = _find_expr_col(ctx, lhs_text, abs_ln, indent)
-                target_span = make_span(abs_ln, target_col, abs_ln, target_col + len(lhs_text))
+                target_span: SourceSpan = make_span(abs_ln, target_col, abs_ln, target_col + len(lhs_text))
                 tuple_target = TupleExpr(base=ExprBase(source_span=target_span, repr_text=lhs_text), elements=elements)
                 rhs_parts = [p.strip() for p in _split_top_level_csv(rhs_text) if p.strip() != ""]
                 if len(rhs_parts) >= 2:
@@ -2774,17 +2963,17 @@ def _parse_block_lines(
                         for p in rhs_parts
                     ]
                     value_col = _find_expr_col(ctx, rhs_text, abs_ln, indent + len(lhs_text) + 3)
-                    value_span = make_span(abs_ln, value_col, abs_ln, value_col + len(rhs_text))
+                    value_span: SourceSpan = make_span(abs_ln, value_col, abs_ln, value_col + len(rhs_text))
                     value = TupleExpr(base=ExprBase(source_span=value_span, repr_text=rhs_text), elements=rhs_elements)
                 else:
                     value = _parse_expr_text(ctx, rhs_text, abs_ln, _find_expr_col(ctx, rhs_text, abs_ln, indent + len(lhs_text) + 3), name_types)
-                span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
-                assign_stmt = Assign(source_span=span, target=tuple_target, value=value, declare=False)
+                span: SourceSpan = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+                tuple_assign_stmt: Assign = Assign(source_span=span, target=tuple_target, value=value, declare=False)
                 if len(pending_trivia) > 0:
-                    assign_stmt.leading_trivia = list(pending_trivia)
+                    tuple_assign_stmt.leading_trivia = list(pending_trivia)
                 if len(pending_comments) > 0:
-                    assign_stmt.leading_comments = list(pending_comments)
-                stmts.append(assign_stmt)
+                    tuple_assign_stmt.leading_comments = list(pending_comments)
+                stmts.append(tuple_assign_stmt)
                 i += 1
                 pending_trivia = []
                 pending_comments = []
@@ -2794,25 +2983,24 @@ def _parse_block_lines(
         target_text, value_text = _parse_simple_assign(s_clean)
         if target_text != "":
             # Check it's not a comparison or augmented op
-            if not target_text.endswith(("!", "<", ">", "+", "-", "*", "/", "%", "&", "|", "^")):
+            if not _endswith_assignment_operator_prefix(target_text):
                 target = _parse_expr_text(ctx, target_text, abs_ln, _find_expr_col(ctx, target_text, abs_ln, indent), name_types)
                 value = _parse_assign_value(ctx, value_text, abs_ln, indent + len(target_text) + 3, name_types)
                 # EAST1: declare is always True for simple assignments
                 is_declare = True
                 
-                span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
-                assign_stmt = Assign(
+                span: SourceSpan = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+                simple_assign_stmt: Assign = Assign(
                     source_span=span,
                     target=target,
                     value=value,
-                    
                     declare=is_declare,
                 )
                 if len(pending_trivia) > 0:
-                    assign_stmt.leading_trivia = list(pending_trivia)
+                    simple_assign_stmt.leading_trivia = list(pending_trivia)
                 if len(pending_comments) > 0:
-                    assign_stmt.leading_comments = list(pending_comments)
-                stmts.append(assign_stmt)
+                    simple_assign_stmt.leading_comments = list(pending_comments)
+                stmts.append(simple_assign_stmt)
                 i += 1
                 pending_trivia = []
                 pending_comments = []
@@ -2820,8 +3008,8 @@ def _parse_block_lines(
 
         # Expression statement (e.g., function call)
         expr = _parse_expr_text(ctx, s_clean, abs_ln, indent, name_types)
-        span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
-        expr_stmt = ExprStmt(source_span=span, value=expr)
+        span: SourceSpan = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+        expr_stmt: ExprStmt = ExprStmt(source_span=span, value=expr)
         if len(pending_trivia) > 0:
             expr_stmt.leading_trivia = list(pending_trivia)
         if len(pending_comments) > 0:
@@ -2970,9 +3158,8 @@ def _try_parse_tuple_assign(s: str) -> tuple[str, str]:
     Returns (lhs_text, rhs_text) or ("", "") if not a tuple assign.
     """
     stripped = s.lstrip()
-    for keyword in ("if ", "elif ", "while ", "for ", "def ", "class ", "with ", "try:", "except ", "return ", "raise "):
-        if stripped.startswith(keyword):
-            return ("", "")
+    if _starts_with_compound_stmt_keyword(stripped):
+        return ("", "")
     # Find the top-level '=' that is not '==' and not inside brackets
     depth: int = 0
     eq_pos: int = -1
@@ -3037,7 +3224,7 @@ def _bracket_depth(text: str) -> int:
             if i + 2 < n and text[i+1] == ch and text[i+2] == ch:
                 # Triple-quoted string: skip to closing triple
                 close = ch * 3
-                end = text.find(close, i + 3)
+                end = _find_substr_from(text, close, i + 3)
                 if end >= 0:
                     i = end + 3
                 else:
@@ -3152,13 +3339,16 @@ def _is_wrapped_by_pair(text: str, open_ch: str, close_ch: str) -> bool:
     if len(text) < 2 or text[0] != open_ch or text[-1] != close_ch:
         return False
     depth = 0
-    for i, ch in enumerate(text):
+    i = 0
+    while i < len(text):
+        ch = text[i]
         if ch == open_ch:
             depth += 1
         elif ch == close_ch:
             depth -= 1
             if depth == 0 and i != len(text) - 1:
                 return False
+        i += 1
     return depth == 0
 
 
@@ -3166,7 +3356,7 @@ def _make_name_expr(name: str, line: int, col: int, ctx: ParseContext) -> Name:
     """Name ノードを生成する。"""
     # golden 準拠: 元の行テキスト内で名前の位置を検索
     actual_col = _find_expr_col(ctx, name, line, col)
-    span = make_span(line, actual_col, line, actual_col + len(name))
+    span: SourceSpan = make_span(line, actual_col, line, actual_col + len(name))
     base = ExprBase(source_span=span, repr_text=name)
     name_node = Name(base=base, id=name)
     return name_node
@@ -3192,7 +3382,7 @@ def _parse_tuple_or_expr(ctx: ParseContext, text: str, line: int, col: int, name
                 break
             elements.append(parser.parse_expr())
         if len(elements) > 1:
-            span = make_span(line, col, line, col + len(text))
+            span: SourceSpan = make_span(line, col, line, col + len(text))
             return TupleExpr(base=ExprBase(source_span=span, repr_text=text), elements=elements)
     return first
 
@@ -3203,10 +3393,10 @@ def _parse_assign_value(ctx: ParseContext, value_text: str, line: int, col_hint:
     col = _find_expr_col(ctx, value_text, line, col_hint)
     if vt.endswith(","):
         # Trailing comma = tuple: parse comma-separated elements
-        parts = [p.strip() for p in _split_type_args_outer(vt.rstrip(",")) if p.strip() != ""]
+        parts = [p.strip() for p in _split_type_args_outer(_rstrip_one_char(vt, ",")) if p.strip() != ""]
         elements = [_parse_expr_text(ctx, p, line, _find_expr_col(ctx, p, line, col), name_types) for p in parts]
-        repr_text = vt.rstrip(",") + ","
-        span = make_span(line, col, line, col + len(repr_text))
+        repr_text = _rstrip_one_char(vt, ",") + ","
+        span: SourceSpan = make_span(line, col, line, col + len(repr_text))
         return TupleExpr(base=ExprBase(source_span=span, repr_text=repr_text), elements=elements)
     return _parse_expr_text(ctx, vt, line, col, name_types)
 
@@ -3219,7 +3409,7 @@ def _make_attr_or_name_expr(text: str, line: int, col: int, ctx: ParseContext) -
         attr_name = parts[1]
         obj = _make_name_expr(obj_name, line, col, ctx)
         actual_col = _find_expr_col(ctx, text, line, col)
-        span = make_span(line, actual_col, line, actual_col + len(text))
+        span: SourceSpan = make_span(line, actual_col, line, actual_col + len(text))
         return Attribute(base=ExprBase(source_span=span, repr_text=text), value=obj, attr=attr_name)
     return _make_name_expr(text, line, col, ctx)
 
@@ -3242,12 +3432,12 @@ def _parse_for_stmt(
     ln = block_lines[start_i]
     s = _strip_inline_comment(ln.strip())
     header, inline_suite = _split_header_inline_suite(s)
-    indent = len(ln) - len(ln.lstrip(" "))
+    indent = _leading_space_count(ln)
     # Parse: for TARGET in ITER:
     target_name, iter_text = _parse_for_header(header)
     if target_name == "":
         # Fallback
-        span = make_span(abs_ln, indent, abs_ln, indent + len(s))
+        span: SourceSpan = make_span(abs_ln, indent, abs_ln, indent + len(s))
         dummy = _parse_expr_text(ctx, "None", abs_ln, indent, name_types)
         return ExprStmt(source_span=span, value=dummy), start_i + 1
 
@@ -3270,7 +3460,7 @@ def _parse_for_stmt(
                 end_col = len(bl.rstrip())
                 break
 
-    span = make_span(abs_ln, 0, end_ln, end_col)
+    span: SourceSpan = make_span(abs_ln, 0, end_ln, end_col)
 
     # EAST1: range() は変換しない。全て For ノード。
     iter_expr = _parse_expr_text(ctx, iter_text, abs_ln, _find_expr_col(ctx, iter_text, abs_ln, indent), name_types)
@@ -3281,12 +3471,13 @@ def _parse_for_stmt(
         target = _parse_tuple_or_expr(ctx, target_name, abs_ln, target_col, name_types)
     else:
         target = _make_name_expr(target_name, abs_ln, indent + 4, ctx)
+    empty_orelse: list[JsonVal] = []
     for_stmt = For(
         source_span=span,
         target=target,
         iter_expr=iter_expr,
         body=body_stmts,
-        orelse=[],
+        orelse=empty_orelse,
     )
     if len(trivia) > 0:
         for_stmt.leading_trivia = list(trivia)
@@ -3302,14 +3493,14 @@ def _parse_while_stmt(
     trivia: list[JsonVal],
     comments: list[str],
     abs_ln: int,
-) -> tuple[While, int]:
+) -> tuple[JsonVal, int]:
     """while 文をパースする。"""
     ln = block_lines[start_i]
     s = _strip_inline_comment(ln.strip())
     header, inline_suite = _split_header_inline_suite(s)
-    indent = len(ln) - len(ln.lstrip(" "))
+    indent = _leading_space_count(ln)
     # Parse: while COND:
-    cond_text = header[6:].rstrip(":").strip()
+    cond_text = _rstrip_one_char(header[6:], ":").strip()
     test = _parse_expr_text(ctx, cond_text, abs_ln, _find_expr_col(ctx, cond_text, abs_ln, indent + 6), name_types)
 
     sub_lines: list[str] = []
@@ -3329,8 +3520,10 @@ def _parse_while_stmt(
                 end_col = len(bl.rstrip())
                 break
 
-    span = make_span(abs_ln, indent, end_ln, end_col)
-    return While(source_span=span, test=test, body=body_stmts, orelse=[]), end_i
+    span: SourceSpan = make_span(abs_ln, indent, end_ln, end_col)
+    empty_while_orelse: list[JsonVal] = []
+    while_node = While(source_span=span, test=test, body=body_stmts, orelse=empty_while_orelse)
+    return while_node.to_jv(), end_i
 
 
 def _parse_with_stmt(
@@ -3342,20 +3535,20 @@ def _parse_with_stmt(
     trivia: list[JsonVal],
     comments: list[str],
     abs_ln: int,
-) -> tuple[With, int]:
+) -> tuple[JsonVal, int]:
     """with 文をパースする。with EXPR as VAR:"""
     ln = block_lines[start_i]
     s = _strip_inline_comment(ln.strip())
     header, inline_suite = _split_header_inline_suite(s)
-    indent = len(ln) - len(ln.lstrip(" "))
+    indent = _leading_space_count(ln)
     # Parse: with EXPR as VAR:
-    inner = header[5:].rstrip(":").strip()  # strip "with " prefix and trailing ":"
+    inner = _rstrip_one_char(header[5:], ":").strip()  # strip "with " prefix and trailing ":"
     var_name: str = ""
     ctx_text: str = inner
     if " as " in inner:
-        parts = inner.rsplit(" as ", 1)
-        ctx_text = parts[0].strip()
-        var_name = parts[1].strip()
+        as_split = _split_last_as(inner)
+        ctx_text = as_split[0].strip()
+        var_name = as_split[1].strip()
 
     context_expr = _parse_expr_text(ctx, ctx_text, abs_ln, _find_expr_col(ctx, ctx_text, abs_ln, indent + 5), name_types)
 
@@ -3376,9 +3569,9 @@ def _parse_with_stmt(
                 end_col = len(bl.rstrip())
                 break
 
-    span = make_span(abs_ln, indent, end_ln, end_col)
+    span: SourceSpan = make_span(abs_ln, indent, end_ln, end_col)
     with_node = With(source_span=span, context_expr=context_expr, var_name=var_name, body=body_stmts)
-    return with_node, end_i
+    return with_node.to_jv(), end_i
 
 
 def _parse_if_stmt(
@@ -3390,14 +3583,16 @@ def _parse_if_stmt(
     trivia: list[JsonVal],
     comments: list[str],
     abs_ln: int,
-) -> tuple[If, int]:
+) -> tuple[JsonVal, int]:
     """if/elif/else 文をパースする。"""
     ln = block_lines[start_i]
     s = _strip_inline_comment(ln.strip())
-    header, inline_suite = _split_header_inline_suite(s)
-    indent = len(ln) - len(ln.lstrip(" "))
+    header_suite = _split_header_inline_suite(s)
+    header = header_suite[0]
+    inline_suite = header_suite[1]
+    indent = _leading_space_count(ln)
     # Parse condition
-    cond_text = header[3:].rstrip(":").strip()
+    cond_text = _rstrip_one_char(header[3:], ":").strip()
     test = _parse_expr_text(ctx, cond_text, abs_ln, _find_expr_col(ctx, cond_text, abs_ln, indent + 3), name_types)
 
     # Collect then block
@@ -3406,7 +3601,9 @@ def _parse_if_stmt(
     if inline_suite != "":
         then_stmts = _parse_inline_suite(ctx, inline_suite, abs_ln, indent + 4, name_types, "if")
     else:
-        then_lines, next_i = _collect_sub_block(block_lines, start_i + 1, indent)
+        then_collect = _collect_sub_block(block_lines, start_i + 1, indent)
+        then_lines = then_collect[0]
+        next_i = then_collect[1]
         then_stmts = _parse_block_lines(ctx, then_lines, name_types, "if")
 
     # Check for elif / else
@@ -3414,33 +3611,37 @@ def _parse_if_stmt(
     if next_i < len(block_lines):
         next_ln = block_lines[next_i]
         next_s = next_ln.strip()
-        next_indent = len(next_ln) - len(next_ln.lstrip(" ")) if next_s != "" else 0
+        next_indent = _leading_space_count(next_ln) if next_s != "" else 0
         if next_indent == indent:
             if next_s.startswith("elif "):
                 # Convert elif to nested if
-                elif_stmt, next_i = _parse_elif_stmt(ctx, block_lines, next_i, indent, name_types, abs_ln)
+                elif_result = _parse_elif_stmt(ctx, block_lines, next_i, indent, name_types, abs_ln)
+                elif_stmt = elif_result[0]
+                next_i = elif_result[1]
                 orelse = [elif_stmt]
             elif next_s.startswith("else:") or next_s == "else:":
-                else_header, else_inline_suite = _split_header_inline_suite(_strip_inline_comment(next_s))
+                else_header_suite = _split_header_inline_suite(_strip_inline_comment(next_s))
+                else_header = else_header_suite[0]
+                else_inline_suite = else_header_suite[1]
                 if else_inline_suite != "":
                     orelse = _parse_inline_suite(
                         ctx, else_inline_suite, _find_abs_line(ctx.lines, next_ln, abs_ln - 1), indent + 4, name_types, "else"
                     )
                     next_i += 1
                 else:
-                    else_lines, next_i = _collect_sub_block(block_lines, next_i + 1, indent)
+                    else_collect = _collect_sub_block(block_lines, next_i + 1, indent)
+                    else_lines = else_collect[0]
+                    next_i = else_collect[1]
                     orelse = _parse_block_lines(ctx, else_lines, name_types, "else")
 
     end_ln = abs_ln
     end_col = indent + len(s)
     if len(orelse) > 0:
         last_stmt = orelse[-1]
-        if hasattr(last_stmt, "source_span"):
-            sp = last_stmt.source_span
-            if sp.end_lineno is not None:
-                end_ln = sp.end_lineno
-            if sp.end_col is not None:
-                end_col = sp.end_col
+        last_stmt_end_ln = _stmt_end_lineno(last_stmt)
+        if last_stmt_end_ln > 0:
+            end_ln = last_stmt_end_ln
+            end_col = _stmt_end_col(last_stmt)
     elif len(then_lines) > 0:
         for bl in reversed(then_lines):
             if bl.strip() != "":
@@ -3448,13 +3649,13 @@ def _parse_if_stmt(
                 end_col = len(bl.rstrip())
                 break
 
-    span = make_span(abs_ln, indent, end_ln, end_col)
+    span: SourceSpan = make_span(abs_ln, indent, end_ln, end_col)
     if_stmt = If(source_span=span, test=test, body=then_stmts, orelse=orelse)
     if len(trivia) > 0:
         if_stmt.leading_trivia = list(trivia)
     if len(comments) > 0:
         if_stmt.leading_comments = list(comments)
-    return if_stmt, next_i
+    return if_stmt.to_jv(), next_i
 
 
 def _parse_elif_stmt(
@@ -3464,15 +3665,17 @@ def _parse_elif_stmt(
     parent_indent: int,
     name_types: dict[str, str],
     line_hint: int,
-) -> tuple[If, int]:
+) -> tuple[JsonVal, int]:
     """elif 節を If ノードとしてパースする。"""
     ln = block_lines[start_i]
     s = _strip_inline_comment(ln.strip())
-    header, inline_suite = _split_header_inline_suite(s)
-    indent = len(ln) - len(ln.lstrip(" "))
+    header_suite = _split_header_inline_suite(s)
+    header = header_suite[0]
+    inline_suite = header_suite[1]
+    indent = _leading_space_count(ln)
     abs_ln = _find_abs_line(ctx.lines, ln, line_hint - 1)
 
-    cond_text = header[5:].rstrip(":").strip()
+    cond_text = _rstrip_one_char(header[5:], ":").strip()
     test = _parse_expr_text(ctx, cond_text, abs_ln, _find_expr_col(ctx, cond_text, abs_ln, indent + 5), name_types)
 
     then_lines: list[str] = []
@@ -3480,47 +3683,54 @@ def _parse_elif_stmt(
     if inline_suite != "":
         then_stmts = _parse_inline_suite(ctx, inline_suite, abs_ln, indent + 4, name_types, "elif")
     else:
-        then_lines, next_i = _collect_sub_block(block_lines, start_i + 1, indent)
+        then_collect = _collect_sub_block(block_lines, start_i + 1, indent)
+        then_lines = then_collect[0]
+        next_i = then_collect[1]
         then_stmts = _parse_block_lines(ctx, then_lines, name_types, "elif")
 
     orelse: list[JsonVal] = []
     if next_i < len(block_lines):
         next_ln = block_lines[next_i]
         next_s = next_ln.strip()
-        next_indent = len(next_ln) - len(next_ln.lstrip(" ")) if next_s != "" else 0
+        next_indent = _leading_space_count(next_ln) if next_s != "" else 0
         if next_indent == indent:
             if next_s.startswith("elif "):
-                elif_stmt, next_i = _parse_elif_stmt(ctx, block_lines, next_i, indent, name_types, abs_ln)
+                elif_result = _parse_elif_stmt(ctx, block_lines, next_i, indent, name_types, abs_ln)
+                elif_stmt = elif_result[0]
+                next_i = elif_result[1]
                 orelse = [elif_stmt]
             elif next_s.startswith("else:"):
-                else_header, else_inline_suite = _split_header_inline_suite(_strip_inline_comment(next_s))
+                else_header_suite = _split_header_inline_suite(_strip_inline_comment(next_s))
+                else_header = else_header_suite[0]
+                else_inline_suite = else_header_suite[1]
                 if else_inline_suite != "":
                     orelse = _parse_inline_suite(
                         ctx, else_inline_suite, _find_abs_line(ctx.lines, next_ln, abs_ln - 1), indent + 4, name_types, "else"
                     )
                     next_i += 1
                 else:
-                    else_lines, next_i = _collect_sub_block(block_lines, next_i + 1, indent)
+                    else_collect = _collect_sub_block(block_lines, next_i + 1, indent)
+                    else_lines = else_collect[0]
+                    next_i = else_collect[1]
                     orelse = _parse_block_lines(ctx, else_lines, name_types, "else")
 
     end_ln = abs_ln
     end_col = indent + len(s)
     if len(orelse) > 0:
         last_stmt = orelse[-1]
-        if hasattr(last_stmt, "source_span"):
-            sp = last_stmt.source_span
-            if sp.end_lineno is not None:
-                end_ln = sp.end_lineno
-            if sp.end_col is not None:
-                end_col = sp.end_col
+        last_stmt_end_ln = _stmt_end_lineno(last_stmt)
+        if last_stmt_end_ln > 0:
+            end_ln = last_stmt_end_ln
+            end_col = _stmt_end_col(last_stmt)
     elif len(then_lines) > 0:
         for bl in reversed(then_lines):
             if bl.strip() != "":
                 end_ln = _find_abs_line(ctx.lines, bl, abs_ln - 1)
                 end_col = len(bl.rstrip())
                 break
-    span = make_span(abs_ln, indent, end_ln, end_col)
-    return If(source_span=span, test=test, body=then_stmts, orelse=orelse), next_i
+    span: SourceSpan = make_span(abs_ln, indent, end_ln, end_col)
+    elif_node = If(source_span=span, test=test, body=then_stmts, orelse=orelse)
+    return elif_node.to_jv(), next_i
 
 
 def _collect_sub_block(block_lines: list[str], start_i: int, parent_indent: int) -> tuple[list[str], int]:
@@ -3535,7 +3745,7 @@ def _collect_sub_block(block_lines: list[str], start_i: int, parent_indent: int)
             result.append(ln)
             i += 1
             continue
-        indent = len(ln) - len(ln.lstrip(" "))
+        indent = _leading_space_count(ln)
         if indent <= parent_indent:
             break
         result.append(ln)
@@ -3555,27 +3765,37 @@ def _postprocess(ctx: ParseContext, body_items: list[JsonVal], renamed_symbols: 
     """Phase 3: 後処理（main リネーム）。"""
     # Rename main → __pytra_main
     for stmt in body_items:
-        if isinstance(stmt, FunctionDef) and stmt.name == "main":
+        stmt_obj = json.JsonValue(stmt).as_obj()
+        if stmt_obj is None:
+            continue
+        if _json_obj_str(stmt_obj.raw, "kind") == "FunctionDef" and _json_obj_str(stmt_obj.raw, "name") == "main":
             renamed_symbols["main"] = "__pytra_main"
-            stmt.name = "__pytra_main"
+            stmt_obj.raw["name"] = "__pytra_main"
 
 
 def _build_meta(ctx: ParseContext, qualified_refs: list[dict[str, JsonVal]]) -> dict[str, JsonVal]:
     """Module.meta を構築する (EAST1: 構文情報のみ、runtime 解決なし)。"""
     import_symbols_jv: dict[str, JsonVal] = {}
     for local, info in ctx.import_symbols.items():
-        import_symbols_jv[local] = dict(info)
+        info_jv: dict[str, JsonVal] = {}
+        for info_key, info_value in info.items():
+            info_jv[info_key] = info_value
+        import_symbols_jv[local] = info_jv
 
     import_resolution: dict[str, JsonVal] = {
         "bindings": list(ctx.import_bindings),
         "qualified_refs": list(qualified_refs),
     }
 
+    import_modules_jv: dict[str, JsonVal] = {}
+    for module_key, module_value in ctx.import_modules.items():
+        import_modules_jv[module_key] = module_value
+
     meta: dict[str, JsonVal] = {
         "import_resolution": import_resolution,
         "import_bindings": list(ctx.import_bindings),
         "qualified_symbol_refs": list(qualified_refs),
-        "import_modules": dict(ctx.import_modules),
+        "import_modules": import_modules_jv,
         "import_symbols": import_symbols_jv,
     }
     return meta

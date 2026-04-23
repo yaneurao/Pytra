@@ -72,9 +72,12 @@ TriviaNodeNode = Union[TriviaBlank, TriviaComment]
 @dataclass
 class ImportAlias:
     name: str
-    asname: Optional[str]
+    asname: str
     def to_jv(self) -> dict[str, JsonVal]:
-        return {"name": self.name, "asname": self.asname}
+        asname: JsonVal = None
+        if self.asname != "":
+            asname = self.asname
+        return {"name": self.name, "asname": asname}
 
 
 # ---------------------------------------------------------------------------

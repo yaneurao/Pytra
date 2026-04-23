@@ -106,8 +106,8 @@ def _emit_recursive_union_alias_decl(lines: list[str], node: dict[str, JsonVal])
             lines.append(
                 "    " + name + "(const " + set_obj + "& v) : base_type(" + variant_type + "(v)) {}"
             )
-    lines.append("    template <class T, class = decltype(::std::declval<T>().to_jv())>")
-    lines.append("    " + name + "(const T& v) : base_type(" + variant_type + "(v.to_jv())) {}")
+    lines.append("    template <class T, class = decltype(::std::declval<T&>().to_jv())>")
+    lines.append("    " + name + "(T v) : base_type(" + variant_type + "(v.to_jv())) {}")
     lines.append("};")
     lines.append(
         "static inline ::std::string py_to_string(const " + name + "& v) { return py_to_string(static_cast<const " + name + "::base_type&>(v)); }"
