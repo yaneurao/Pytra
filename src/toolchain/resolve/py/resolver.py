@@ -3137,35 +3137,29 @@ def _resolve_container_method_call(
     ret: str = method_sig.return_type
     if cls is not None:
         ret = _substitute_type_params(ret, receiver_type, cls)
-    ret = _ctx_normalize_type(ret, ctx)
+    ret = "" + _ctx_normalize_type(ret, ctx)
 
-    args_raw = expr.get("args")
-    if (
-        owner_base == "dict"
-        and method == "get"
-        and ret in ("object", "Obj", "Any")
-        and isinstance(args_raw, list)
-        and len(args_raw) >= 2
-        and isinstance(args_raw[1], dict)
-    ):
-        default_rt = _ctx_normalize_type(str(args_raw[1].get("resolved_type", "")), ctx)
-        if default_rt not in ("", "unknown", "object", "Obj", "Any"):
-            ret = default_rt
-            args_raw[1]["call_arg_type"] = ret
+    args_raw = _dict_get_arr(expr, "args")
+    if owner_base == "dict" and method == "get" and ret in ("object", "Obj", "Any") and len(args_raw) >= 2:
+        default_arg = _jv_obj(args_raw[1])
+        if len(default_arg) > 0:
+            default_rt = _ctx_normalize_type(_dict_get_str(default_arg, "resolved_type"), ctx)
+            if default_rt not in ("", "unknown", "object", "Obj", "Any"):
+                ret = default_rt
+                default_arg["call_arg_type"] = ret
 
     expr["resolved_type"] = ret
     func["resolved_type"] = "callable"
 
     # Runtime owner: the receiver expression
-    value = func.get("value")
-    if isinstance(value, dict) and method_sig.self_is_mutable:
+    value = _dict_get_obj(func, "value")
+    if len(value) > 0 and method_sig.self_is_mutable:
         value["borrow_kind"] = "mutable_ref"
-    if isinstance(value, dict):
+    if len(value) > 0:
         owner_copy: JsonVal = deep_copy_json(value)
         expr["runtime_owner"] = owner_copy
     if method_sig.self_is_mutable:
-        meta_val = expr.get("meta")
-        meta: dict[str, JsonVal] = meta_val if isinstance(meta_val, dict) else {}
+        meta: dict[str, JsonVal] = _dict_get_obj(expr, "meta")
         expr["meta"] = meta
         meta["mutates_receiver"] = True
 
