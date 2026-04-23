@@ -6,6 +6,8 @@ from dataclasses import dataclass
 
 from pytra.std.json import JsonVal
 
+from toolchain.compile.jv import jv_bool, jv_is_bool
+
 
 @dataclass
 class PassContext:
@@ -36,26 +38,26 @@ class East3OptimizerPass:
     min_opt_level: int = 1
 
     def run(self, east3_doc: dict[str, JsonVal], context: PassContext) -> PassResult:
-        _ = east3_doc
-        _ = context
         return make_pass_result()
 
 
 class PassManager:
     """Ordered pass manager."""
 
+    pass_items: list[East3OptimizerPass]
+
     def __init__(self, passes: list[East3OptimizerPass] | None = None) -> None:
         if passes is None:
-            self._passes: list[East3OptimizerPass] = []
+            self.pass_items: list[East3OptimizerPass] = []
         else:
-            self._passes = passes
+            self.pass_items = passes
 
     def add_pass(self, pass_obj: East3OptimizerPass) -> None:
-        self._passes.append(pass_obj)
+        self.pass_items.append(pass_obj)
 
     def passes(self) -> list[East3OptimizerPass]:
         out: list[East3OptimizerPass] = []
-        for pass_obj in self._passes:
+        for pass_obj in self.pass_items:
             out.append(pass_obj)
         return out
 
@@ -67,15 +69,15 @@ class PassManager:
         return default_enabled
 
     def run(self, east3_doc: dict[str, JsonVal], context: PassContext) -> dict[str, JsonVal]:
-        _ = east3_doc
-        _ = context
-        return {
-            "changed": False,
-            "change_count": 0,
-            "warnings": [],
-            "elapsed_ms": 0.0,
-            "trace": [],
-        }
+        warnings: list[JsonVal] = []
+        trace: list[JsonVal] = []
+        report: dict[str, JsonVal] = {}
+        report["changed"] = False
+        report["change_count"] = 0
+        report["warnings"] = warnings
+        report["elapsed_ms"] = 0.0
+        report["trace"] = trace
+        return report
 
 
 _DEFAULT_NON_ESCAPE_POLICY: dict[str, bool] = {
@@ -121,11 +123,12 @@ def normalize_non_escape_policy(raw: dict[str, JsonVal] | None) -> dict[str, boo
     if raw is None:
         return out
     for key in _DEFAULT_NON_ESCAPE_POLICY:
-        value = raw.get(key)
-        if value is True:
-            out[key] = True
-        elif value is False:
-            out[key] = False
+        raw_value: JsonVal = raw.get(key)
+        if jv_is_bool(raw_value):
+            if jv_bool(raw_value):
+                out[key] = True
+            else:
+                out[key] = False
     return out
 
 
@@ -273,8 +276,14 @@ def optimize_east3_document(
     disabled_list: list[str] = []
     for name in disabled:
         disabled_list.append(name)
-    report["enabled_passes"] = sorted(enabled_list)
-    report["disabled_passes"] = sorted(disabled_list)
+    enabled_json: list[JsonVal] = []
+    for enabled_name in sorted(enabled_list):
+        enabled_json.append(enabled_name)
+    disabled_json: list[JsonVal] = []
+    for disabled_name in sorted(disabled_list):
+        disabled_json.append(disabled_name)
+    report["enabled_passes"] = enabled_json
+    report["disabled_passes"] = disabled_json
     policy_out: dict[str, JsonVal] = {}
     for key, value in context.non_escape_policy.items():
         policy_out[key] = value
