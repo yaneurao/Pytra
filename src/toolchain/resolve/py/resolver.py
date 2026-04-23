@@ -19,6 +19,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from pytra.std import json
+from pytra.std import os_path as path
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
 from toolchain.common.jv import deep_copy_json
@@ -75,12 +76,62 @@ _BUILTIN_EXCEPTION_TYPE_NAMES: set[str] = {
 _BUILTIN_EXCEPTION_MODULE_ID = "pytra.built_in.error"
 
 
+def _jv_obj(value: JsonVal) -> dict[str, JsonVal]:
+    obj = json.JsonValue(value).as_obj()
+    if obj is None:
+        empty: dict[str, JsonVal] = {}
+        return empty
+    return obj.raw
+
+
+def _jv_str(value: JsonVal) -> str:
+    raw = json.JsonValue(value).as_str()
+    if raw is None:
+        return ""
+    return "" + raw
+
+
+def _jv_arr(value: JsonVal) -> list[JsonVal]:
+    arr = json.JsonValue(value).as_arr()
+    if arr is None:
+        empty: list[JsonVal] = []
+        return empty
+    return arr.raw
+
+
+def _dict_get_obj(obj: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
+    if key not in obj:
+        empty: dict[str, JsonVal] = {}
+        return empty
+    return _jv_obj(obj[key])
+
+
+def _dict_get_str(obj: dict[str, JsonVal], key: str) -> str:
+    if key not in obj:
+        return ""
+    return _jv_str(obj[key])
+
+
+def _dict_get_arr(obj: dict[str, JsonVal], key: str) -> list[JsonVal]:
+    if key not in obj:
+        empty: list[JsonVal] = []
+        return empty
+    return _jv_arr(obj[key])
+
+
+def _path_parent(base: Path) -> Path:
+    parent_text: str = path.dirname(str(base))
+    if parent_text == "":
+        parent_text = "."
+    return Path(parent_text)
+
+
 def _repo_root_from_cwd() -> Path:
     cur = Path(".").resolve()
     while True:
         if cur.joinpath("src").joinpath("pytra-cli.py").exists():
             return cur
-        parent = cur.parent
+        parent = _path_parent(cur)
         if str(parent) == str(cur):
             return Path(".").resolve()
         cur = parent
@@ -117,7 +168,7 @@ class Scope:
 
     def lookup_lambda(self, name: str) -> dict[str, JsonVal] | None:
         expr = self.lambda_vars.get(name)
-        if isinstance(expr, dict):
+        if expr is not None:
             return expr
         return None
 
@@ -162,8 +213,7 @@ class ResolveContext:
             if idx_path.exists():
                 text: str = idx_path.read_text(encoding="utf-8")
                 raw: JsonVal = json.loads(text).raw
-                if isinstance(raw, dict):
-                    return raw
+                return _jv_obj(raw)
         except Exception:
             pass
         empty: dict[str, JsonVal] = {}
@@ -171,41 +221,25 @@ class ResolveContext:
 
     def lookup_runtime_module_group(self, module_id: str) -> str:
         idx: dict[str, JsonVal] = self.load_runtime_index()
-        mods = idx.get("modules")
-        if not isinstance(mods, dict):
-            return ""
-        mod = mods.get(module_id)
-        if not isinstance(mod, dict):
-            return ""
-        grp = mod.get("runtime_group")
-        return str(grp) if isinstance(grp, str) else ""
+        mods: dict[str, JsonVal] = _dict_get_obj(idx, "modules")
+        mod: dict[str, JsonVal] = _dict_get_obj(mods, module_id)
+        return _dict_get_str(mod, "runtime_group")
 
     def lookup_runtime_symbol_doc(self, module_id: str, symbol: str) -> dict[str, JsonVal]:
         idx: dict[str, JsonVal] = self.load_runtime_index()
-        mods = idx.get("modules")
-        if not isinstance(mods, dict):
-            return {}
-        mod = mods.get(module_id)
-        if not isinstance(mod, dict):
-            return {}
-        syms = mod.get("symbols")
-        if not isinstance(syms, dict):
-            return {}
-        sym = syms.get(symbol)
-        if not isinstance(sym, dict):
-            return {}
+        mods: dict[str, JsonVal] = _dict_get_obj(idx, "modules")
+        mod: dict[str, JsonVal] = _dict_get_obj(mods, module_id)
+        syms: dict[str, JsonVal] = _dict_get_obj(mod, "symbols")
+        sym: dict[str, JsonVal] = _dict_get_obj(syms, symbol)
         return sym
 
     def lookup_adapter_kind(self, module_id: str, symbol: str) -> str:
         doc: dict[str, JsonVal] = self.lookup_runtime_symbol_doc(module_id, symbol)
-        ak = doc.get("call_adapter_kind")
-        return str(ak) if isinstance(ak, str) else ""
+        return _dict_get_str(doc, "call_adapter_kind")
 
     def runtime_module_exists(self, module_id: str) -> bool:
         idx: dict[str, JsonVal] = self.load_runtime_index()
-        mods = idx.get("modules")
-        if not isinstance(mods, dict):
-            return False
+        mods: dict[str, JsonVal] = _dict_get_obj(idx, "modules")
         return module_id in mods
 
     def canonical_module_id(self, module_id: str) -> str:
@@ -257,7 +291,7 @@ class ResolveContext:
 
 
 def _ctx_normalize_type(raw: str, ctx: ResolveContext) -> str:
-    return normalize_type(raw, ctx.type_aliases)
+    return "" + normalize_type(raw, ctx.type_aliases)
 
 
 def _ctx_make_type_expr(type_str: str, ctx: ResolveContext) -> dict[str, JsonVal]:
@@ -284,10 +318,12 @@ def _make_callable_type(param_types: list[str], return_type: str) -> str:
 def _parse_callable_signature(type_str: str, ctx: ResolveContext) -> tuple[list[str], str]:
     t: str = _ctx_normalize_type(type_str, ctx)
     if not t.startswith("callable[") or not t.endswith("]"):
-        return [], "unknown"
+        empty_params: list[str] = []
+        return empty_params, "unknown"
     inner: str = t[len("callable["):-1].strip()
     if inner == "":
-        return [], "unknown"
+        empty_params2: list[str] = []
+        return empty_params2, "unknown"
     if inner.startswith("["):
         depth: int = 0
         close_idx: int = -1
@@ -306,16 +342,23 @@ def _parse_callable_signature(type_str: str, ctx: ResolveContext) -> tuple[list[
             params_text: str = inner[1:close_idx].strip()
             return_text: str = inner[close_idx + 2:].strip()
             params: list[str] = extract_type_args("tuple[" + params_text + "]") if params_text != "" else []
-            return [normalize_type(param, ctx.type_aliases) for param in params], _ctx_normalize_type(return_text, ctx)
+            normalized_params: list[str] = []
+            for param in params:
+                normalized_params.append("" + normalize_type(param, ctx.type_aliases))
+            return normalized_params, _ctx_normalize_type(return_text, ctx)
     arrow_idx: int = inner.find("->")
     if arrow_idx >= 0:
         params_text2: str = inner[:arrow_idx].strip()
         return_text2: str = inner[arrow_idx + 2:].strip()
         params2: list[str] = []
         if params_text2 != "":
-            params2 = [normalize_type(part.strip(), ctx.type_aliases) for part in params_text2.split(",") if part.strip() != ""]
+            for part in params_text2.split(","):
+                part_text: str = part.strip()
+                if part_text != "":
+                    params2.append("" + normalize_type(part_text, ctx.type_aliases))
         return params2, _ctx_normalize_type(return_text2, ctx)
-    return [], _ctx_normalize_type(inner, ctx)
+    empty_params3: list[str] = []
+    return empty_params3, _ctx_normalize_type(inner, ctx)
 
 
 def _lookup_any_class(name: str, ctx: ResolveContext) -> ClassSig | None:
@@ -342,7 +385,7 @@ def _iter_class_hierarchy(name: str, ctx: ResolveContext) -> list[ClassSig]:
             continue
         out.append(cls_sig)
         for base in cls_sig.bases:
-            if isinstance(base, str) and base != "":
+            if base != "":
                 pending.append(base)
     return out
 
@@ -351,12 +394,12 @@ def _resolve_owner_base_type(value: dict[str, JsonVal], receiver_type: str, ctx:
     owner_base: str = extract_base_type(receiver_type)
     if owner_base != "type":
         return owner_base
-    type_object_of = value.get("type_object_of")
-    if isinstance(type_object_of, str) and type_object_of != "":
+    type_object_of: str = _dict_get_str(value, "type_object_of")
+    if type_object_of != "":
         return extract_base_type(type_object_of)
-    if value.get("kind") == "Name":
-        name = value.get("id")
-        if isinstance(name, str):
+    if _dict_get_str(value, "kind") == "Name":
+        name: str = _dict_get_str(value, "id")
+        if name != "":
             imp: dict[str, str] = ctx.import_symbols.get(name, {})
             module_id = imp.get("module", "")
             export_name = imp.get("name", "")
@@ -386,12 +429,12 @@ def _resolve_alias_direct_deps(type_text: str, alias_names: set[str]) -> list[st
 def _resolve_validate_type_alias_cycles(type_aliases: dict[str, str]) -> None:
     alias_names: set[str] = set()
     for alias_name in type_aliases.keys():
-        if isinstance(alias_name, str) and alias_name != "":
+        if alias_name != "":
             alias_names.add(alias_name)
     deps_map: dict[str, list[str]] = {}
     for alias_name in alias_names:
-        alias_value = type_aliases.get(alias_name, "")
-        deps_map[alias_name] = _resolve_alias_direct_deps(alias_value, alias_names) if isinstance(alias_value, str) else []
+        alias_value: str = type_aliases.get(alias_name, "")
+        deps_map[alias_name] = _resolve_alias_direct_deps(alias_value, alias_names)
 
     visiting: set[str] = set()
     visited: set[str] = set()
@@ -483,24 +526,24 @@ def _has_inherited_field(class_name: str, field_name: str, ctx: ResolveContext) 
         if field_name in base_sig.fields:
             return True
         for base in base_sig.bases:
-            if isinstance(base, str) and base != "":
+            if base != "":
                 pending.append(base)
     return False
 
 
 def _class_decorators(node: dict[str, JsonVal]) -> list[str]:
-    decorators_raw = node.get("decorators")
     decorators: list[str] = []
-    if isinstance(decorators_raw, list):
-        for item in decorators_raw:
-            if isinstance(item, str):
-                decorators.append(item)
+    for item in _dict_get_arr(node, "decorators"):
+        item_text: str = _jv_str(item)
+        if item_text != "":
+            decorators.append(item_text)
     return decorators
 
 
 def _parse_implements_decorator(decorator: str) -> list[str]:
     if not decorator.startswith("implements(") or not decorator.endswith(")"):
-        return []
+        empty_traits: list[str] = []
+        return empty_traits
     inner = decorator[len("implements("):-1]
     out: list[str] = []
     for part in inner.split(","):
@@ -548,7 +591,7 @@ def _collect_trait_methods(trait_name: str, ctx: ResolveContext) -> dict[str, li
                 out[method_name] = rows
             rows.append(method_sig)
         for base_name in trait_sig.bases:
-            if isinstance(base_name, str) and base_name != "":
+            if base_name != "":
                 pending.append(base_name)
     return out
 
@@ -565,8 +608,7 @@ def _resolve_trait_contracts(stmt: dict[str, JsonVal], class_name: str, ctx: Res
         for trait_name in parsed_traits:
             implements_traits.append(trait_name)
 
-    meta_val = stmt.get("meta")
-    meta: dict[str, JsonVal] = meta_val if isinstance(meta_val, dict) else {}
+    meta: dict[str, JsonVal] = _dict_get_obj(stmt, "meta")
     stmt["meta"] = meta
 
     if is_trait:
@@ -582,18 +624,19 @@ def _resolve_trait_contracts(stmt: dict[str, JsonVal], class_name: str, ctx: Res
                 raise RuntimeError("semantic_conflict: trait may only extend traits: " + class_name + " -> " + trait_base)
             extends_traits.append(trait_base)
         methods_meta: list[JsonVal] = []
-        body = stmt.get("body")
-        if isinstance(body, list):
-            for item in body:
-                if not isinstance(item, dict):
+        body = _dict_get_arr(stmt, "body")
+        if len(body) > 0:
+            for item_val in body:
+                item = _jv_obj(item_val)
+                if len(item) == 0:
                     continue
-                item_kind = str(item.get("kind", ""))
+                item_kind = _dict_get_str(item, "kind")
                 if item_kind == "FunctionDef":
-                    method_name = str(item.get("name", "")) if isinstance(item.get("name"), str) else ""
+                    method_name = _dict_get_str(item, "name")
                     if method_name == "":
                         continue
-                    method_body = item.get("body")
-                    if isinstance(method_body, list) and len(method_body) > 0:
+                    method_body = _dict_get_arr(item, "body")
+                    if len(method_body) > 0:
                         raise RuntimeError("unsupported_syntax: trait method body must be ellipsis-only: " + class_name + "." + method_name)
                     method_sig = cls_sig.methods.get(method_name)
                     if method_sig is None:
