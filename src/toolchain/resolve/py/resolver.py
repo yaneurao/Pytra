@@ -377,8 +377,8 @@ def _lookup_any_class(name: str, ctx: ResolveContext) -> ClassSig | None:
     return None
 
 
-def _iter_class_hierarchy(name: str, ctx: ResolveContext) -> list[ClassSig]:
-    out: list[ClassSig] = []
+def _iter_class_hierarchy(name: str, ctx: ResolveContext) -> list[str]:
+    out: list[str] = []
     pending: list[str] = []
     pending.append("" + extract_base_type(name))
     seen: set[str] = set()
@@ -390,7 +390,7 @@ def _iter_class_hierarchy(name: str, ctx: ResolveContext) -> list[ClassSig]:
         cls_sig: ClassSig | None = _lookup_any_class(cur, ctx)
         if cls_sig is None:
             continue
-        out.append(cls_sig)
+        out.append(cur)
         for base in cls_sig.bases:
             if base != "":
                 pending.append(base)
@@ -480,7 +480,10 @@ def _resolve_validate_type_alias_cycles(type_aliases: dict[str, str]) -> None:
 
 
 def _lookup_method_sig(owner_base: str, attr: str, ctx: ResolveContext) -> tuple[ClassSig | None, FuncSig | None]:
-    for cls_sig in _iter_class_hierarchy(owner_base, ctx):
+    for class_name in _iter_class_hierarchy(owner_base, ctx):
+        cls_sig: ClassSig | None = _lookup_any_class(class_name, ctx)
+        if cls_sig is None:
+            continue
         msig: FuncSig | None = cls_sig.methods.get(attr)
         if msig is not None:
             return cls_sig, msig
@@ -520,7 +523,11 @@ def _attach_stdlib_method_runtime_metadata(
     expr["runtime_call"] = runtime_call_name
     expr["runtime_module_id"] = runtime_module_id
     expr["runtime_symbol"] = runtime_symbol_name
-    adapter_doc: dict[str, JsonVal] = ctx.lookup_runtime_symbol_doc(runtime_module_id, runtime_symbol_name)
+    runtime_idx: dict[str, JsonVal] = ctx.load_runtime_index()
+    runtime_mods: dict[str, JsonVal] = _dict_get_obj(runtime_idx, "modules")
+    runtime_mod: dict[str, JsonVal] = _dict_get_obj(runtime_mods, runtime_module_id)
+    runtime_symbols: dict[str, JsonVal] = _dict_get_obj(runtime_mod, "symbols")
+    adapter_doc: dict[str, JsonVal] = _dict_get_obj(runtime_symbols, runtime_symbol_name)
     adapter: str = _dict_get_str(adapter_doc, "call_adapter_kind")
     if adapter != "":
         expr["runtime_call_adapter_kind"] = adapter
@@ -663,23 +670,21 @@ def _resolve_trait_contracts(stmt: dict[str, JsonVal], class_name: str, ctx: Res
                     if method_sig is None:
                         continue
                     params, ret = _trait_method_signature_tuple(method_sig)
-                    methods_meta.append(
-                        {
-                            "name": method_name,
-                            "args": list(method_sig.arg_names),
-                            "param_types": params,
-                            "return_type": ret,
-                        }
-                    )
+                    method_meta: dict[str, JsonVal] = {}
+                    method_meta["name"] = method_name
+                    method_meta["args"] = list(method_sig.arg_names)
+                    method_meta["param_types"] = params
+                    method_meta["return_type"] = ret
+                    methods_meta.append(method_meta)
                 elif item_kind in ("Expr", "Pass"):
                     continue
                 else:
                     raise RuntimeError("unsupported_syntax: trait body only allows method signatures: " + class_name)
-        meta["trait_v1"] = {
-            "schema_version": 1,
-            "methods": methods_meta,
-            "extends_traits": extends_traits,
-        }
+        trait_meta: dict[str, JsonVal] = {}
+        trait_meta["schema_version"] = 1
+        trait_meta["methods"] = methods_meta
+        trait_meta["extends_traits"] = extends_traits
+        meta["trait_v1"] = trait_meta
         return
 
     if len(implements_traits) == 0:
@@ -714,27 +719,27 @@ def _resolve_trait_contracts(stmt: dict[str, JsonVal], class_name: str, ctx: Res
                 method_impl_map[method_name] = rows
             rows.append(_build_trait_method_meta(trait_name, method_name))
 
-    body2 = stmt.get("body")
-    if isinstance(body2, list):
-        for item2 in body2:
-            if not isinstance(item2, dict) or item2.get("kind") != "FunctionDef":
+    body2 = _dict_get_arr(stmt, "body")
+    if len(body2) > 0:
+        for item2_val in body2:
+            item2 = _jv_obj(item2_val)
+            if len(item2) == 0 or _dict_get_str(item2, "kind") != "FunctionDef":
                 continue
-            method_name2 = str(item2.get("name", "")) if isinstance(item2.get("name"), str) else ""
+            method_name2 = _dict_get_str(item2, "name")
             impl_rows = method_impl_map.get(method_name2)
             if impl_rows is None or len(impl_rows) == 0:
                 continue
-            item_meta_val = item2.get("meta")
-            item_meta: dict[str, JsonVal] = item_meta_val if isinstance(item_meta_val, dict) else {}
+            item_meta: dict[str, JsonVal] = _dict_get_obj(item2, "meta")
             item2["meta"] = item_meta
             if len(impl_rows) == 1:
                 item_meta["trait_impl_v1"] = impl_rows[0]
             else:
                 item_meta["trait_impl_v1"] = impl_rows
 
-    meta["implements_v1"] = {
-        "schema_version": 1,
-        "traits": implements_traits,
-    }
+    implements_meta: dict[str, JsonVal] = {}
+    implements_meta["schema_version"] = 1
+    implements_meta["traits"] = implements_traits
+    meta["implements_v1"] = implements_meta
 
 
 def _default_collection_hint(param_type: str) -> str:
