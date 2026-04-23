@@ -2905,6 +2905,7 @@ def _resolve_imported_call(
     ctx: ResolveContext,
 ) -> str:
     """Resolve a call to an imported symbol."""
+    ctx.current_function = ctx.current_function
     module_id: str = imp.get("module", "")
     export_name: str = imp.get("name", "")
     if export_name == "":
@@ -2991,6 +2992,7 @@ def _resolve_method_call(
     ctx: ResolveContext,
 ) -> str:
     """Resolve a method call (obj.method(...))."""
+    ctx.current_function = ctx.current_function
     value = _dict_get_obj(func, "value")
     attr: str = _dict_get_str(func, "attr")
 
@@ -3048,6 +3050,7 @@ def _resolve_module_attr_call(
     ctx: ResolveContext,
 ) -> str:
     """Resolve a module.attr() call (e.g., math.sqrt(x))."""
+    ctx.current_function = ctx.current_function
     canonical: str = ctx.canonical_module_id(module_id)
     stdlib_func: FuncSig | None = ctx.registry.lookup_stdlib_function(canonical, attr)
     stdlib_class: ClassSig | None = ctx.registry.lookup_stdlib_class(canonical, attr)
