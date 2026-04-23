@@ -3475,29 +3475,29 @@ def _resolve_subscript(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 
 def _resolve_list(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    elems = expr.get("elements")
+    elems = _dict_get_arr(expr, "elements")
     elem_type: str = "unknown"
-    if isinstance(elems, list):
-        for e in elems:
-            if isinstance(e, dict):
-                t: str = _resolve_expr(e, ctx)
-                elem_type = _merge_literal_type(elem_type, t)
+    for elem_val in elems:
+        elem = _jv_obj(elem_val)
+        if len(elem) > 0:
+            t: str = _resolve_expr(elem, ctx)
+            elem_type = _merge_literal_type(elem_type, t)
     if elem_type != "unknown":
         result: str = "list[" + elem_type + "]"
     else:
         result = "list[unknown]"
-    if isinstance(elems, list):
-        target_base = extract_base_type(elem_type)
-        for e2 in elems:
-            if not isinstance(e2, dict):
-                continue
-            current = str(e2.get("resolved_type", ""))
-            current_base = extract_base_type(current)
-            if (
-                current in ("", "unknown", "list[unknown]", "set[unknown]", "dict[unknown,unknown]")
-                or (target_base != "" and current_base == target_base and ("[" not in current or "unknown" in current))
-            ):
-                e2["resolved_type"] = elem_type
+    target_base = extract_base_type(elem_type)
+    for elem2_val in elems:
+        elem2 = _jv_obj(elem2_val)
+        if len(elem2) == 0:
+            continue
+        current = _dict_get_str(elem2, "resolved_type")
+        current_base = extract_base_type(current)
+        if (
+            current in ("", "unknown", "list[unknown]", "set[unknown]", "dict[unknown,unknown]")
+            or (target_base != "" and current_base == target_base and ("[" not in current or "unknown" in current))
+        ):
+            elem2["resolved_type"] = elem_type
     expr["resolved_type"] = result
     return result
 
@@ -3506,64 +3506,64 @@ def _resolve_dict(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     kt: str = "unknown"
     vt: str = "unknown"
     # EAST1 uses "entries" format: [{key: ..., value: ...}, ...]
-    entries = expr.get("entries")
-    if isinstance(entries, list):
-        for entry in entries:
-            if isinstance(entry, dict):
-                key_node = entry.get("key")
-                val_node = entry.get("value")
-                if isinstance(key_node, dict):
-                    t: str = _resolve_expr(key_node, ctx)
-                    kt = _merge_literal_type(kt, t)
-                if isinstance(val_node, dict):
-                    t2: str = _resolve_expr(val_node, ctx)
-                    vt = _merge_literal_type(vt, t2)
+    entries = _dict_get_arr(expr, "entries")
+    if len(entries) > 0:
+        for entry_val in entries:
+            entry = _jv_obj(entry_val)
+            if len(entry) == 0:
+                continue
+            key_node = _dict_get_obj(entry, "key")
+            val_node = _dict_get_obj(entry, "value")
+            if len(key_node) > 0:
+                t: str = _resolve_expr(key_node, ctx)
+                kt = _merge_literal_type(kt, t)
+            if len(val_node) > 0:
+                t2: str = _resolve_expr(val_node, ctx)
+                vt = _merge_literal_type(vt, t2)
     else:
         # Fallback: separate keys/values arrays
-        keys = expr.get("keys")
-        values = expr.get("values")
-        if isinstance(keys, list):
-            for k in keys:
-                if isinstance(k, dict):
-                    t3: str = _resolve_expr(k, ctx)
-                    kt = _merge_literal_type(kt, t3)
-        if isinstance(values, list):
-            for v in values:
-                if isinstance(v, dict):
-                    t4: str = _resolve_expr(v, ctx)
-                    vt = _merge_literal_type(vt, t4)
+        keys = _dict_get_arr(expr, "keys")
+        values = _dict_get_arr(expr, "values")
+        for key_val in keys:
+            key_node2 = _jv_obj(key_val)
+            if len(key_node2) > 0:
+                t3: str = _resolve_expr(key_node2, ctx)
+                kt = _merge_literal_type(kt, t3)
+        for value_val in values:
+            val_node2 = _jv_obj(value_val)
+            if len(val_node2) > 0:
+                t4: str = _resolve_expr(val_node2, ctx)
+                vt = _merge_literal_type(vt, t4)
     result: str = "dict[" + kt + "," + vt + "]"
     expr["resolved_type"] = result
     return result
 
 
 def _node_dict_or_empty(value: JsonVal) -> dict[str, JsonVal]:
-    if isinstance(value, dict):
-        return value
-    return {}
+    return _jv_obj(value)
 
 
 def _resolve_set(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    elems = expr.get("elements")
+    elems = _dict_get_arr(expr, "elements")
     elem_type: str = "unknown"
-    if isinstance(elems, list):
-        for e in elems:
-            if isinstance(e, dict):
-                t: str = _resolve_expr(e, ctx)
-                elem_type = _merge_literal_type(elem_type, t)
+    for elem_val in elems:
+        elem = _jv_obj(elem_val)
+        if len(elem) > 0:
+            t: str = _resolve_expr(elem, ctx)
+            elem_type = _merge_literal_type(elem_type, t)
     result: str = "set[" + elem_type + "]"
     expr["resolved_type"] = result
     return result
 
 
 def _resolve_tuple(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    elems = expr.get("elements")
+    elems = _dict_get_arr(expr, "elements")
     types: list[str] = []
-    if isinstance(elems, list):
-        for e in elems:
-            if isinstance(e, dict):
-                t: str = _resolve_expr(e, ctx)
-                types.append(t)
+    for elem_val in elems:
+        elem = _jv_obj(elem_val)
+        if len(elem) > 0:
+            t: str = _resolve_expr(elem, ctx)
+            types.append(t)
     if len(types) > 0:
         result: str = "tuple[" + ", ".join(types) + "]"
     else:
@@ -3573,21 +3573,21 @@ def _resolve_tuple(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 
 def _resolve_ifexp(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    test = expr.get("test")
-    body = expr.get("body")
-    orelse = expr.get("orelse")
-    if isinstance(test, dict):
+    test = _dict_get_obj(expr, "test")
+    body = _dict_get_obj(expr, "body")
+    orelse = _dict_get_obj(expr, "orelse")
+    if len(test) > 0:
         _resolve_expr(test, ctx)
     bt: str = "unknown"
     ot: str = "unknown"
-    if isinstance(body, dict):
+    if len(body) > 0:
         bt = _resolve_expr(body, ctx)
-    if isinstance(orelse, dict):
+    if len(orelse) > 0:
         ot = _resolve_expr(orelse, ctx)
     merged, narrowed_body, narrowed_orelse = _narrow_ifexp_branch_type(test, body, orelse, bt, ot)
-    if isinstance(body, dict) and not _is_unknown_like_type(narrowed_body):
+    if len(body) > 0 and not _is_unknown_like_type(narrowed_body):
         body["resolved_type"] = narrowed_body
-    if isinstance(orelse, dict) and not _is_unknown_like_type(narrowed_orelse):
+    if len(orelse) > 0 and not _is_unknown_like_type(narrowed_orelse):
         orelse["resolved_type"] = narrowed_orelse
     merged_resolved = _merge_ifexp_result_type(narrowed_body, narrowed_orelse)
     if not _is_unknown_like_type(merged_resolved):
