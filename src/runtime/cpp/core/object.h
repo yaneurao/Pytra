@@ -123,6 +123,9 @@ struct Object {
     template<typename K, typename P = T>
     auto operator[](const K& key) const -> decltype(std::declval<const P&>().at(key)) { return (*ptr).at(key); }
 
+    template<typename V, typename P = T>
+    auto append(V&& value) -> decltype(std::declval<P&>().append(std::forward<V>(value))) { return ptr->append(std::forward<V>(value)); }
+
     template<typename P = T>
     auto keys() const -> decltype(std::declval<const P&>().keys()) { return ptr->keys(); }
     template<typename P = T>

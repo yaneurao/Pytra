@@ -24,7 +24,7 @@ from toolchain.link.dependencies import build_all_resolved_dependencies
 from toolchain.link.import_maps import collect_import_maps, collect_import_modules, collect_import_symbols
 from toolchain.link.expand_defaults import expand_cross_module_defaults
 from toolchain.resolve.py.type_norm import normalize_type
-from toolchain.compile.jv import jv_str, jv_is_dict, jv_is_list, jv_dict, jv_list, nd_get_dict, nd_get_list, nd_get_str
+from toolchain.compile.jv import jv_str, jv_int, jv_bool, jv_is_int, jv_is_dict, jv_is_list, jv_dict, jv_list, nd_get_dict, nd_get_list, nd_get_str
 
 
 # ---------------------------------------------------------------------------
@@ -1112,9 +1112,9 @@ def _collect_class_field_types(
                 continue
             typed_fields: dict[str, str] = {}
             for field_name in field_types.keys():
-                field_type = jv_str(field_types[field_name])
+                field_type = "" + jv_str(field_types[field_name])
                 if field_name != "" and field_type != "":
-                    typed_fields[field_name] = field_type
+                    typed_fields[field_name] = "" + field_type
             if len(typed_fields) > 0:
                 out[module.module_id + "." + name] = typed_fields
     return out
@@ -1162,17 +1162,26 @@ def _resolve_receiver_class_fqcn(
     imported_symbol = import_symbols.get(expected_name, "")
     for candidate in _import_symbol_candidates(imported_symbol):
         if candidate in class_storage_hints:
-            return candidate
+            return "" + candidate
     if "." in expected_name:
-        owner_name, attr_name = expected_name.rsplit(".", 1)
+        last_dot = -1
+        i = len(expected_name) - 1
+        while i >= 0:
+            if expected_name[i] == ".":
+                last_dot = i
+                break
+            i -= 1
+        owner_name = expected_name[:last_dot]
+        attr_name = expected_name[last_dot + 1:]
         imported_module = import_modules.get(owner_name, "")
         if imported_module != "":
-            candidates = [imported_module + "." + attr_name]
+            candidates: list[str] = []
+            candidates.append(imported_module + "." + attr_name)
             if "." not in imported_module:
                 candidates.append("pytra.std." + imported_module + "." + attr_name)
             for candidate2 in candidates:
                 if candidate2 in class_storage_hints:
-                    return candidate2
+                    return "" + candidate2
     candidate3 = module_id + "." + expected_name
     if candidate3 in class_storage_hints:
         return candidate3
@@ -1187,22 +1196,27 @@ def _attach_receiver_storage_hints(
         import_modules, import_symbols = _import_maps(doc)
         local_classes = _collect_local_class_names(doc, module.module_id)
         for node in _walk_nodes(doc):
-            kind = node.get("kind")
-            receiver_node: dict[str, JsonVal] | None = None
+            kind = _node_str(node, "kind")
+            receiver_node: dict[str, JsonVal] = {}
+            has_receiver = False
             if kind == "Attribute":
                 value = node.get("value")
-                if isinstance(value, dict):
-                    receiver_node = value
+                if jv_is_dict(value):
+                    receiver_node = jv_dict(value)
+                    has_receiver = True
             elif kind == "Call":
-                func = node.get("func")
-                if isinstance(func, dict) and func.get("kind") == "Attribute":
-                    value2 = func.get("value")
-                    if isinstance(value2, dict):
-                        receiver_node = value2
-            if receiver_node is None:
+                func_val = node.get("func")
+                if jv_is_dict(func_val):
+                    func = jv_dict(func_val)
+                    if _node_str(func, "kind") == "Attribute":
+                        value2 = func.get("value")
+                        if jv_is_dict(value2):
+                            receiver_node = jv_dict(value2)
+                            has_receiver = True
+            if not has_receiver:
                 continue
-            receiver_type = receiver_node.get("resolved_type")
-            if not isinstance(receiver_type, str) or receiver_type == "":
+            receiver_type = _node_str(receiver_node, "resolved_type")
+            if receiver_type == "":
                 continue
             fqcn = _resolve_receiver_class_fqcn(
                 receiver_type,
@@ -1213,8 +1227,8 @@ def _attach_receiver_storage_hints(
                 class_storage_hints=class_storage_hints,
             )
             if fqcn == "":
-                hint = receiver_node.get("resolved_storage_hint")
-                if isinstance(hint, str) and hint in ("ref", "value"):
+                hint = _node_str(receiver_node, "resolved_storage_hint")
+                if hint == "ref" or hint == "value":
                     node["receiver_storage_hint"] = hint
                 continue
             hint = class_storage_hints.get(fqcn, "")
@@ -1230,8 +1244,8 @@ def _attach_resolved_storage_hints(
         import_modules, import_symbols = _import_maps(doc)
         local_classes = _collect_local_class_names(doc, module.module_id)
         for node in _walk_nodes(doc):
-            resolved_type = node.get("resolved_type")
-            if not isinstance(resolved_type, str) or resolved_type == "":
+            resolved_type = _node_str(node, "resolved_type")
+            if resolved_type == "":
                 continue
             fqcn = _resolve_receiver_class_fqcn(
                 resolved_type,
@@ -1257,14 +1271,17 @@ def _attach_attribute_field_hints(
         import_modules, import_symbols = _import_maps(doc)
         local_classes = _collect_local_class_names(doc, module.module_id)
         for node in _walk_nodes(doc):
-            if node.get("kind") != "Attribute":
+            if _node_str(node, "kind") != "Attribute":
                 continue
             value = node.get("value")
-            attr = node.get("attr")
-            if not isinstance(value, dict) or not isinstance(attr, str) or attr == "":
+            if not jv_is_dict(value):
                 continue
-            receiver_type = value.get("resolved_type")
-            if not isinstance(receiver_type, str) or receiver_type == "":
+            value_dict = jv_dict(value)
+            attr = _node_str(node, "attr")
+            if attr == "":
+                continue
+            receiver_type = _node_str(value_dict, "resolved_type")
+            if receiver_type == "":
                 continue
             fqcn = _resolve_receiver_class_fqcn(
                 receiver_type,
@@ -1278,8 +1295,8 @@ def _attach_attribute_field_hints(
                 continue
             field_type = class_field_types.get(fqcn, {}).get(attr, "")
             if field_type != "":
-                current_rt = node.get("resolved_type")
-                if not isinstance(current_rt, str) or current_rt in ("", "unknown"):
+                current_rt = _node_str(node, "resolved_type")
+                if current_rt == "" or current_rt == "unknown":
                     node["resolved_type"] = field_type
                 field_fqcn = _resolve_receiver_class_fqcn(
                     field_type,
@@ -1300,26 +1317,25 @@ def _attach_runtime_iter_target_hints(
 ) -> None:
     for _, doc in copied_docs:
         for node in _walk_nodes(doc):
-            if node.get("kind") != "ForCore":
+            if _node_str(node, "kind") != "ForCore":
                 continue
-            iter_plan = node.get("iter_plan")
-            target_plan = node.get("target_plan")
-            if not isinstance(iter_plan, dict) or not isinstance(target_plan, dict):
+            iter_plan = nd_get_dict(node, "iter_plan")
+            target_plan = nd_get_dict(node, "target_plan")
+            if _node_str(iter_plan, "kind") != "RuntimeIterForPlan" or _node_str(target_plan, "kind") != "NameTarget":
                 continue
-            if iter_plan.get("kind") != "RuntimeIterForPlan" or target_plan.get("kind") != "NameTarget":
+            iter_expr = nd_get_dict(iter_plan, "iter_expr")
+            if len(iter_expr) == 0:
                 continue
-            iter_expr = iter_plan.get("iter_expr")
-            if not isinstance(iter_expr, dict):
+            iter_type = _node_str(iter_expr, "resolved_type")
+            if iter_type == "":
                 continue
-            iter_type = iter_expr.get("resolved_type")
-            if not isinstance(iter_type, str) or iter_type == "":
-                continue
-            if iter_expr.get("iter_element_type") in ("", "unknown", None):
+            iter_element_type = _node_str(iter_expr, "iter_element_type")
+            if iter_element_type == "" or iter_element_type == "unknown":
                 if iter_type.startswith("list[") and iter_type.endswith("]"):
                     iter_plan["iter_element_type"] = iter_type[5:-1]
-            target_type = target_plan.get("target_type")
-            elem_type = iter_plan.get("iter_element_type")
-            if (not isinstance(target_type, str) or target_type in ("", "unknown")) and isinstance(elem_type, str) and elem_type not in ("", "unknown"):
+            target_type = _node_str(target_plan, "target_type")
+            elem_type = _node_str(iter_plan, "iter_element_type")
+            if (target_type == "" or target_type == "unknown") and elem_type != "" and elem_type != "unknown":
                 target_plan["target_type"] = elem_type
 
 
@@ -1396,12 +1412,20 @@ def _resolve_type_id_target(
         if candidate in type_id_table:
             return candidate
     if "." in expected_name:
-        owner_name, attr_name = expected_name.rsplit(".", 1)
+        last_dot = -1
+        i = len(expected_name) - 1
+        while i >= 0:
+            if expected_name[i] == ".":
+                last_dot = i
+                break
+            i -= 1
+        owner_name = expected_name[:last_dot]
+        attr_name = expected_name[last_dot + 1:]
         imported_module = import_modules.get(owner_name, "")
         if imported_module != "":
             candidate2 = imported_module + "." + attr_name
             if candidate2 in type_id_table:
-                return candidate2
+                return "" + candidate2
     candidate3 = module_id + "." + expected_name
     if candidate3 in type_id_table:
         return candidate3
@@ -1409,31 +1433,39 @@ def _resolve_type_id_target(
 
 
 def _ensure_symbol_import(meta: dict[str, JsonVal], module_id: str, export_name: str, local_name: str) -> None:
-    bindings = meta.get("import_bindings")
-    if not isinstance(bindings, list):
-        bindings = []
+    bindings_val = meta.get("import_bindings")
+    bindings: list[JsonVal] = []
+    if jv_is_list(bindings_val):
+        bindings = jv_list(bindings_val)
+    else:
         meta["import_bindings"] = bindings
     exists = False
-    for binding in bindings:
-        if not isinstance(binding, dict):
+    for binding_val in bindings:
+        if not jv_is_dict(binding_val):
             continue
-        if binding.get("module_id") == module_id and binding.get("export_name") == export_name and binding.get("local_name") == local_name:
+        binding = jv_dict(binding_val)
+        if _node_str(binding, "module_id") == module_id and _node_str(binding, "export_name") == export_name and _node_str(binding, "local_name") == local_name:
             exists = True
             break
     if not exists:
-        bindings.append({
-            "module_id": module_id,
-            "runtime_module_id": module_id,
-            "export_name": export_name,
-            "local_name": local_name,
-            "binding_kind": "symbol",
-        })
+        binding2: dict[str, JsonVal] = {}
+        binding2["module_id"] = module_id
+        binding2["runtime_module_id"] = module_id
+        binding2["export_name"] = export_name
+        binding2["local_name"] = local_name
+        binding2["binding_kind"] = "symbol"
+        bindings.append(binding2)
 
-    import_symbols = meta.get("import_symbols")
-    if not isinstance(import_symbols, dict):
-        import_symbols = {}
+    import_symbols_val = meta.get("import_symbols")
+    import_symbols: dict[str, JsonVal] = {}
+    if jv_is_dict(import_symbols_val):
+        import_symbols = jv_dict(import_symbols_val)
+    else:
         meta["import_symbols"] = import_symbols
-    import_symbols[local_name] = {"module": module_id, "name": export_name}
+    symbol_info: dict[str, JsonVal] = {}
+    symbol_info["module"] = module_id
+    symbol_info["name"] = export_name
+    import_symbols[local_name] = symbol_info
 
 
 def _rewrite_type_id_isinstance(
@@ -1449,10 +1481,10 @@ def _rewrite_type_id_isinstance(
     local_classes = _collect_local_class_names(doc, module_id)
     meta = _ensure_meta(doc)
     for node in _walk_nodes(doc):
-        if node.get("kind") != "IsInstance":
+        if _node_str(node, "kind") != "IsInstance":
             continue
-        expected_name = node.get("expected_type_name")
-        if not isinstance(expected_name, str) or expected_name == "":
+        expected_name = _node_str(node, "expected_type_name")
+        if expected_name == "":
             continue
         target_fqcn = _resolve_type_id_target(
             expected_name,
@@ -1468,17 +1500,21 @@ def _rewrite_type_id_isinstance(
             pass
         const_name = _type_id_const_name(target_fqcn)
         value_node = node.get("value")
-        new_node: dict[str, JsonVal] = {
-            "kind": "Call",
-            "resolved_type": "bool",
-            "expected_type_name": target_fqcn,
-            "func": _make_name("pytra_isinstance", "callable"),
-            "args": [
-                {"kind": "ObjTypeId", "value": _copy_json(value_node), "resolved_type": "int64"},
-                _make_name(const_name, "int64"),
-            ],
-            "keywords": [],
-        }
+        obj_type_id: dict[str, JsonVal] = {}
+        obj_type_id["kind"] = "ObjTypeId"
+        obj_type_id["value"] = _copy_json(value_node)
+        obj_type_id["resolved_type"] = "int64"
+        args: list[JsonVal] = []
+        args.append(obj_type_id)
+        args.append(_make_name(const_name, "int64"))
+        keywords: list[JsonVal] = []
+        new_node: dict[str, JsonVal] = {}
+        new_node["kind"] = "Call"
+        new_node["resolved_type"] = "bool"
+        new_node["expected_type_name"] = target_fqcn
+        new_node["func"] = _make_name("pytra_isinstance", "callable")
+        new_node["args"] = args
+        new_node["keywords"] = keywords
         for key in list(node.keys()):
             node.pop(key, None)
         for key2, value2 in new_node.items():
@@ -1488,23 +1524,26 @@ def _rewrite_type_id_isinstance(
 
 
 def _rewrite_type_id_runtime_id_table(doc: dict[str, JsonVal]) -> None:
-    body = doc.get("body")
-    if not isinstance(body, list):
+    body = _node_list(doc, "body")
+    if len(body) == 0:
         return
     new_body: list[JsonVal] = []
     removed = False
     for stmt in body:
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             new_body.append(stmt)
             continue
-        kind = stmt.get("kind")
+        stmt_dict = jv_dict(stmt)
+        kind = _node_str(stmt_dict, "kind")
         if kind != "AnnAssign" and kind != "Assign":
             new_body.append(stmt)
             continue
-        target = stmt.get("target")
-        if isinstance(target, dict) and target.get("kind") == "Name" and target.get("id") == "id_table":
-            removed = True
-            continue
+        target = stmt_dict.get("target")
+        if jv_is_dict(target):
+            target_dict = jv_dict(target)
+            if _node_str(target_dict, "kind") == "Name" and _node_str(target_dict, "id") == "id_table":
+                removed = True
+                continue
         new_body.append(stmt)
     if removed:
         doc["body"] = new_body
@@ -1516,79 +1555,95 @@ def _build_type_id_table_helper_doc(
     dispatch_mode: str,
     type_info_table: dict[str, JsonVal],
 ) -> dict[str, JsonVal]:
-    rows: list[tuple[str, dict[str, int]]] = []
+    rows: list[dict[str, JsonVal]] = []
     for fqcn, raw_info in type_info_table.items():
-        if not isinstance(fqcn, str) or not isinstance(raw_info, dict):
+        if fqcn == "" or not jv_is_dict(raw_info):
             continue
-        id_val = raw_info.get("id")
-        entry = raw_info.get("entry")
-        exit_val = raw_info.get("exit")
-        if isinstance(id_val, int) and isinstance(entry, int) and isinstance(exit_val, int):
-            rows.append((fqcn, {"id": id_val, "entry": entry, "exit": exit_val}))
-    rows.sort(key=lambda item: item[1]["id"])
+        info_dict = jv_dict(raw_info)
+        id_val = info_dict.get("id")
+        entry = info_dict.get("entry")
+        exit_val = info_dict.get("exit")
+        if jv_is_int(id_val) and jv_is_int(entry) and jv_is_int(exit_val):
+            row_info: dict[str, JsonVal] = {}
+            row_info["fqcn"] = fqcn
+            row_info["id"] = id_val
+            row_info["entry"] = entry
+            row_info["exit"] = exit_val
+            rows.append(row_info)
+    rows.sort(key=lambda item: jv_int(item.get("id")))
 
-    body: list[dict[str, JsonVal]] = []
-    id_table_elements: list[dict[str, JsonVal]] = []
+    body: list[JsonVal] = []
+    id_table_elements: list[JsonVal] = []
     tid_index = 0
-    for fqcn, info in rows:
-        id_table_elements.append(_make_constant(info["entry"], "int64"))
-        id_table_elements.append(_make_constant(info["exit"] - 1, "int64"))
-        body.append({
-            "kind": "AnnAssign",
-            "target": _make_name(_type_id_const_name(fqcn), "int64"),
-            "annotation": "int64",
-            "declare": True,
-            "decl_type": "int64",
-            "value": _make_constant(tid_index, "int64"),
-        })
+    for info in rows:
+        fqcn = "" + jv_str(info.get("fqcn"))
+        entry_num = 0 + jv_int(info.get("entry"))
+        exit_num = 0 + jv_int(info.get("exit"))
+        id_table_elements.append(_make_constant(entry_num, "int64"))
+        id_table_elements.append(_make_constant(exit_num - 1, "int64"))
+        const_assign: dict[str, JsonVal] = {}
+        const_assign["kind"] = "AnnAssign"
+        const_assign["target"] = _make_name(_type_id_const_name(fqcn), "int64")
+        const_assign["annotation"] = "int64"
+        const_assign["declare"] = True
+        const_assign["decl_type"] = "int64"
+        const_assign["value"] = _make_constant(tid_index, "int64")
+        body.append(const_assign)
         tid_index += 1
 
-    body.insert(0, {
-        "kind": "AnnAssign",
-        "target": _make_name("id_table", "list[int64]"),
-        "annotation": "list[int64]",
-        "declare": True,
-        "decl_type": "list[int64]",
-        "value": _make_list(id_table_elements, "list[int64]"),
-    })
+    id_table_assign: dict[str, JsonVal] = {}
+    id_table_assign["kind"] = "AnnAssign"
+    id_table_assign["target"] = _make_name("id_table", "list[int64]")
+    id_table_assign["annotation"] = "list[int64]"
+    id_table_assign["declare"] = True
+    id_table_assign["decl_type"] = "list[int64]"
+    id_table_assign["value"] = _make_list(id_table_elements, "list[int64]")
+    body.insert(0, id_table_assign)
 
-    return {
-        "kind": "Module",
-        "east_stage": 3,
-        "schema_version": 1,
-        "source_path": TYPE_ID_TABLE_SOURCE_PATH,
-        "body": body,
-        "main_guard_body": [],
-        "meta": {
-            "module_id": TYPE_ID_TABLE_MODULE_ID,
-            "dispatch_mode": dispatch_mode,
-            "import_bindings": [],
-            "import_modules": {},
-            "import_symbols": {},
-            "synthetic_helper_v1": {
-                "helper_id": TYPE_ID_TABLE_HELPER_ID,
-                "owner_module_id": "",
-                "generated_by": "linked_optimizer",
-            },
-        },
-    }
+    synthetic_helper: dict[str, JsonVal] = {}
+    synthetic_helper["helper_id"] = TYPE_ID_TABLE_HELPER_ID
+    synthetic_helper["owner_module_id"] = ""
+    synthetic_helper["generated_by"] = "linked_optimizer"
+
+    import_bindings: list[JsonVal] = []
+    import_modules: dict[str, JsonVal] = {}
+    import_symbols: dict[str, JsonVal] = {}
+    meta: dict[str, JsonVal] = {}
+    meta["module_id"] = TYPE_ID_TABLE_MODULE_ID
+    meta["dispatch_mode"] = dispatch_mode
+    meta["import_bindings"] = import_bindings
+    meta["import_modules"] = import_modules
+    meta["import_symbols"] = import_symbols
+    meta["synthetic_helper_v1"] = synthetic_helper
+
+    main_guard_body: list[JsonVal] = []
+    doc: dict[str, JsonVal] = {}
+    doc["kind"] = "Module"
+    doc["east_stage"] = 3
+    doc["schema_version"] = 1
+    doc["source_path"] = TYPE_ID_TABLE_SOURCE_PATH
+    doc["body"] = body
+    doc["main_guard_body"] = main_guard_body
+    doc["meta"] = meta
+    return doc
 
 
 def _iter_declared_import_module_ids(doc: dict[str, JsonVal]) -> list[str]:
     meta_val = doc.get("meta")
-    if not isinstance(meta_val, dict):
+    if not jv_is_dict(meta_val):
         return []
+    meta = jv_dict(meta_val)
     out: list[str] = []
     seen: set[str] = set()
 
-    bindings = meta_val.get("import_bindings")
+    bindings = meta.get("import_bindings")
     saw_import_bindings = False
-    if isinstance(bindings, list):
+    if jv_is_list(bindings):
         saw_import_bindings = True
-        for binding in bindings:
-            if not isinstance(binding, dict):
+        for binding in jv_list(bindings):
+            if not jv_is_dict(binding):
                 continue
-            dep_id = _declared_import_dependency_module_id(binding)
+            dep_id = _declared_import_dependency_module_id(jv_dict(binding))
             if dep_id != "" and dep_id not in seen:
                 seen.add(dep_id)
                 out.append(dep_id)
@@ -1596,53 +1651,50 @@ def _iter_declared_import_module_ids(doc: dict[str, JsonVal]) -> list[str]:
     if saw_import_bindings:
         return out
 
-    import_modules = meta_val.get("import_modules")
-    if isinstance(import_modules, dict):
-        for value in import_modules.values():
-            if isinstance(value, str):
-                mid2 = value.strip()
-                if mid2 != "" and mid2 not in seen:
-                    seen.add(mid2)
-                    out.append(mid2)
+    import_modules = meta.get("import_modules")
+    if jv_is_dict(import_modules):
+        import_modules_dict = jv_dict(import_modules)
+        for key in import_modules_dict.keys():
+            mid2 = "" + jv_str(import_modules_dict.get(key)).strip()
+            if mid2 != "" and mid2 not in seen:
+                seen.add(mid2)
+                out.append(mid2)
 
-    import_symbols = meta_val.get("import_symbols")
-    if isinstance(import_symbols, dict):
-        for value2 in import_symbols.values():
-            if not isinstance(value2, dict):
+    import_symbols = meta.get("import_symbols")
+    if jv_is_dict(import_symbols):
+        import_symbols_dict = jv_dict(import_symbols)
+        for key2 in import_symbols_dict.keys():
+            value2 = import_symbols_dict.get(key2)
+            if not jv_is_dict(value2):
                 continue
-            module_id2 = value2.get("module")
-            if isinstance(module_id2, str):
-                mid3 = module_id2.strip()
-                if mid3 != "" and mid3 not in seen:
-                    seen.add(mid3)
-                    out.append(mid3)
+            module_id2 = jv_dict(value2).get("module")
+            mid3 = "" + jv_str(module_id2).strip()
+            if mid3 != "" and mid3 not in seen:
+                seen.add(mid3)
+                out.append(mid3)
 
     return out
 
 
 def _declared_import_dependency_module_id(binding: dict[str, JsonVal]) -> str:
-    runtime_module_id = binding.get("runtime_module_id")
-    module_id = binding.get("module_id")
-    host_only = binding.get("host_only") is True
-    binding_kind = binding.get("binding_kind")
-    resolved_kind = binding.get("resolved_binding_kind")
+    runtime_mid = "" + jv_str(binding.get("runtime_module_id")).strip()
+    module_id = "" + jv_str(binding.get("module_id")).strip()
+    host_only = jv_bool(binding.get("host_only"))
+    binding_kind = "" + jv_str(binding.get("binding_kind"))
+    resolved_kind = "" + jv_str(binding.get("resolved_binding_kind"))
 
-    if isinstance(runtime_module_id, str):
-        runtime_mid = runtime_module_id.strip()
-        if runtime_mid != "":
-            if host_only:
-                if (binding_kind == "module" or resolved_kind == "module") and runtime_mid.startswith("pytra."):
-                    return runtime_mid
-                return ""
-            return runtime_mid
+    if runtime_mid != "":
+        if host_only:
+            if (binding_kind == "module" or resolved_kind == "module") and runtime_mid.startswith("pytra."):
+                return runtime_mid
+            return ""
+        return runtime_mid
 
     if host_only:
         return ""
 
-    if isinstance(module_id, str):
-        mid = module_id.strip()
-        if mid != "":
-            return mid
+    if module_id != "":
+        return module_id
     return ""
 
 
@@ -1699,17 +1751,20 @@ _TYPE_MAP_KEYS: set[str] = {
 
 def _collect_module_type_aliases(doc: dict[str, JsonVal]) -> dict[str, str]:
     aliases: dict[str, str] = {}
-    body = doc.get("body")
-    if not isinstance(body, list):
+    body_val = doc.get("body")
+    if not jv_is_list(body_val):
         return aliases
-    for stmt in body:
-        if not isinstance(stmt, dict) or stmt.get("kind") != "TypeAlias":
+    for stmt in jv_list(body_val):
+        if not jv_is_dict(stmt):
             continue
-        name = stmt.get("name")
-        raw = stmt.get("value")
-        if not isinstance(raw, str) or raw == "":
-            raw = stmt.get("type_expr")
-        if isinstance(name, str) and name != "" and isinstance(raw, str) and raw != "":
+        stmt_dict = jv_dict(stmt)
+        if _node_str(stmt_dict, "kind") != "TypeAlias":
+            continue
+        name = "" + _node_str(stmt_dict, "name")
+        raw = "" + _node_str(stmt_dict, "value")
+        if raw == "":
+            raw = "" + _node_str(stmt_dict, "type_expr")
+        if name != "" and raw != "":
             aliases[name] = normalize_type(raw, aliases, {name})
     return aliases
 
