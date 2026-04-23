@@ -529,16 +529,16 @@ def _attach_stdlib_method_runtime_metadata(
             break
     if module_id == "":
         return
-    method_extern: ExternV2 | None = method_sig.extern_v2
+    method_extern_info: ExternV2 | None = method_sig.extern_v2
     runtime_call_name: str = owner_base + "." + attr
     runtime_symbol_name: str = runtime_call_name
     runtime_module_id: str = module_id
-    if method_extern is not None:
-        if method_extern.symbol != "":
-            runtime_call_name = method_extern.symbol
-            runtime_symbol_name = method_extern.symbol
-        if method_extern.module != "":
-            runtime_module_id = method_extern.module
+    if method_extern_info is not None:
+        if method_extern_info.symbol != "":
+            runtime_call_name = method_extern_info.symbol
+            runtime_symbol_name = method_extern_info.symbol
+        if method_extern_info.module != "":
+            runtime_module_id = method_extern_info.module
     expr["resolved_runtime_call"] = runtime_call_name
     expr["resolved_runtime_source"] = "stdlib_method"
     expr["runtime_call"] = runtime_call_name
@@ -552,8 +552,8 @@ def _attach_stdlib_method_runtime_metadata(
     adapter: str = _dict_get_str(adapter_doc, "call_adapter_kind")
     if adapter != "":
         expr["runtime_call_adapter_kind"] = adapter
-    if method_extern is not None and method_extern.tag != "":
-        expr["semantic_tag"] = method_extern.tag
+    if method_extern_info is not None and method_extern_info.tag != "":
+        expr["semantic_tag"] = method_extern_info.tag
     elif attr != "":
         expr["semantic_tag"] = "stdlib.method." + attr
 
@@ -2773,18 +2773,19 @@ def _resolve_builtin_call(
     if name == "open":
         _resolve_call_args(expr, ctx)
         resolved_open_type = "IOBase"
-        args = expr.get("args")
-        if isinstance(args, list) and len(args) >= 2:
-            mode_node = args[1]
-            if isinstance(mode_node, dict) and mode_node.get("kind") == "Constant":
-                mode_value = mode_node.get("value")
-                if isinstance(mode_value, str):
-                    if mode_value == "rb":
-                        resolved_open_type = "BufferedReader"
-                    elif mode_value == "wb" or mode_value == "ab":
-                        resolved_open_type = "BufferedWriter"
-                    elif mode_value in {"r", "w", "a"}:
-                        resolved_open_type = "TextIOWrapper"
+        args = _dict_get_arr(expr, "args")
+        if len(args) >= 2:
+            mode_node = _jv_obj(args[1])
+            if len(mode_node) > 0 and _dict_get_str(mode_node, "kind") == "Constant":
+                mode_value = ""
+                if "value" in mode_node:
+                    mode_value = _jv_str(mode_node["value"])
+                if mode_value == "rb":
+                    resolved_open_type = "BufferedReader"
+                elif mode_value == "wb" or mode_value == "ab":
+                    resolved_open_type = "BufferedWriter"
+                elif mode_value == "r" or mode_value == "w" or mode_value == "a":
+                    resolved_open_type = "TextIOWrapper"
         expr["resolved_type"] = resolved_open_type
         func["resolved_type"] = "callable"
         expr["lowered_kind"] = "BuiltinCall"
@@ -2809,11 +2810,11 @@ def _resolve_builtin_call(
             elif src_type.startswith("set[") and src_type.endswith("]"):
                 ret = "list[" + src_type[4:-1] + "]"
             elif src_type.startswith("tuple[") and src_type.endswith("]"):
-                parts = extract_type_args(src_type)
+                parts = list(extract_type_args(src_type))
                 if len(parts) > 0:
                     ret = "list[" + parts[0] + "]"
             elif src_type.startswith("dict[") and src_type.endswith("]"):
-                parts2 = extract_type_args(src_type)
+                parts2 = list(extract_type_args(src_type))
                 if len(parts2) >= 1:
                     ret = "list[" + parts2[0] + "]"
             elif src_type == "str":
@@ -2833,20 +2834,20 @@ def _resolve_builtin_call(
     func["resolved_type"] = "callable"
 
     # Add runtime metadata from extern_v2
-    extern: ExternV2 | None = sig.extern_v2 if sig is not None else None
+    extern_info: ExternV2 | None = sig.extern_v2 if sig is not None else None
 
     # isinstance/issubclass use TypePredicateCall lowered_kind
     if name == "isinstance":
         expr["lowered_kind"] = "TypePredicateCall"
         expr["predicate_kind"] = "isinstance"
-        if extern is not None:
-            expr["semantic_tag"] = extern.tag
+        if extern_info is not None:
+            expr["semantic_tag"] = extern_info.tag
         return ret
     if name == "issubclass":
         expr["lowered_kind"] = "TypePredicateCall"
         expr["predicate_kind"] = "issubclass"
-        if extern is not None:
-            expr["semantic_tag"] = extern.tag
+        if extern_info is not None:
+            expr["semantic_tag"] = extern_info.tag
         return ret
 
     expr["lowered_kind"] = "BuiltinCall"
@@ -2863,23 +2864,23 @@ def _resolve_builtin_call(
     elif name in ("int", "float", "bool") and len(arg_types) > 0 and arg_types[0] not in ("str", "unknown"):
         specialized_rc = "static_cast"
 
-    if extern is not None:
-        # runtime_call: prefer specialization, else extern.symbol
-        rc: str = specialized_rc if specialized_rc != "" else extern.symbol
+    if extern_info is not None:
+        # runtime_call: prefer specialization, else extern_info.symbol
+        rc: str = specialized_rc if specialized_rc != "" else extern_info.symbol
         expr["runtime_call"] = rc
-        expr["runtime_module_id"] = extern.module
-        expr["runtime_symbol"] = extern.symbol
+        expr["runtime_module_id"] = extern_info.module
+        expr["runtime_symbol"] = extern_info.symbol
         # Adapter kind from runtime index
-        adapter: str = ctx.lookup_adapter_kind(extern.module, extern.symbol)
+        adapter: str = ctx.lookup_adapter_kind(extern_info.module, extern_info.symbol)
         if adapter == "":
             adapter = "builtin"
         expr["runtime_call_adapter_kind"] = adapter
-        if extern.tag != "":
-            expr["semantic_tag"] = extern.tag
+        if extern_info.tag != "":
+            expr["semantic_tag"] = extern_info.tag
         if name == "float" and len(arg_types) == 0:
             expr["semantic_tag"] = "core.float_ctor"
         # Track implicit builtin module
-        ctx.used_builtin_modules.add(extern.module)
+        ctx.used_builtin_modules.add(extern_info.module)
     elif specialized_rc != "":
         expr["runtime_call"] = specialized_rc
     else:
@@ -2910,13 +2911,17 @@ def _resolve_imported_call(
         ret = _infer_cast_target_type(expr, ctx)
         expr["resolved_type"] = ret
         func["resolved_type"] = "callable"
-        args_raw = expr.get("args")
-        if ret != "unknown" and isinstance(args_raw, list):
-            if len(args_raw) >= 1 and isinstance(args_raw[0], dict):
-                args_raw[0]["resolved_type"] = ret
-                args_raw[0]["type_expr"] = _ctx_make_type_expr(ret, ctx)
-            if len(args_raw) >= 2 and isinstance(args_raw[1], dict):
-                args_raw[1]["call_arg_type"] = ret
+        args_raw = _dict_get_arr(expr, "args")
+        if ret != "unknown":
+            if len(args_raw) >= 1:
+                type_arg = _jv_obj(args_raw[0])
+                if len(type_arg) > 0:
+                    type_arg["resolved_type"] = ret
+                    type_arg["type_expr"] = _ctx_make_type_expr(ret, ctx)
+            if len(args_raw) >= 2:
+                value_arg = _jv_obj(args_raw[1])
+                if len(value_arg) > 0:
+                    value_arg["call_arg_type"] = ret
         return ret
     if module_id == "pytra.std" and export_name == "extern":
         ret = arg_types[0] if len(arg_types) > 0 else "unknown"
@@ -2981,20 +2986,19 @@ def _resolve_method_call(
     ctx: ResolveContext,
 ) -> str:
     """Resolve a method call (obj.method(...))."""
-    value = func.get("value")
-    attr_val = func.get("attr")
-    attr: str = str(attr_val) if isinstance(attr_val, str) else ""
+    value = _dict_get_obj(func, "value")
+    attr: str = _dict_get_str(func, "attr")
 
     # Resolve receiver
     receiver_type: str = "unknown"
-    if isinstance(value, dict):
+    if len(value) > 0:
         receiver_type = _resolve_expr(value, ctx)
 
     # Resolve arguments
     _resolve_call_args(expr, ctx)
 
     # Module attribute call (math.sqrt, os.path.join, etc.)
-    if isinstance(value, dict):
+    if len(value) > 0:
         mod_id = _resolve_module_expr_id(value, ctx)
         if mod_id != "":
             value["resolved_type"] = "module"
@@ -3042,11 +3046,11 @@ def _resolve_module_attr_call(
     canonical: str = ctx.canonical_module_id(module_id)
     stdlib_func: FuncSig | None = ctx.registry.lookup_stdlib_function(canonical, attr)
     stdlib_class: ClassSig | None = ctx.registry.lookup_stdlib_class(canonical, attr)
-    extern: ExternV2 | None = None
+    extern_info: ExternV2 | None = None
     if stdlib_func is not None:
-        extern = stdlib_func.extern_v2
+        extern_info = stdlib_func.extern_v2
     elif stdlib_class is not None:
-        extern = stdlib_class.extern_v2
+        extern_info = stdlib_class.extern_v2
 
     # Determine return type
     ret: str = "unknown"
@@ -3066,17 +3070,19 @@ def _resolve_module_attr_call(
     expr["resolved_type"] = ret
 
     # Runtime metadata from extern_v2
-    if extern is not None:
+    if extern_info is not None:
         expr["resolved_runtime_call"] = receiver_name + "." + attr
         expr["resolved_runtime_source"] = "module_attr"
-        expr["runtime_module_id"] = extern.module if extern.module != "" else canonical
-        expr["runtime_symbol"] = extern.symbol if extern.symbol != "" else attr
+        runtime_module_id = extern_info.module if extern_info.module != "" else canonical
+        runtime_symbol = extern_info.symbol if extern_info.symbol != "" else attr
+        expr["runtime_module_id"] = runtime_module_id
+        expr["runtime_symbol"] = runtime_symbol
         # Adapter kind from runtime index
-        adapter: str = ctx.lookup_adapter_kind(expr["runtime_module_id"], expr["runtime_symbol"])
+        adapter: str = ctx.lookup_adapter_kind(runtime_module_id, runtime_symbol)
         if adapter != "":
             expr["runtime_call_adapter_kind"] = adapter
-        if extern.tag != "":
-            expr["semantic_tag"] = extern.tag
+        if extern_info.tag != "":
+            expr["semantic_tag"] = extern_info.tag
     else:
         # Fallback for unresolved stdlib calls
         expr["resolved_runtime_call"] = receiver_name + "." + attr
@@ -3144,10 +3150,10 @@ def _resolve_container_method_call(
         meta["mutates_receiver"] = True
 
     # Runtime metadata from extern_v2 (正本)
-    method_extern: ExternV2 | None = method_sig.extern_v2
-    if method_extern is not None and method_extern.module != "":
-        mod = method_extern.module
-        runtime_call_name = method_extern.symbol
+    method_extern_info: ExternV2 | None = method_sig.extern_v2
+    if method_extern_info is not None and method_extern_info.module != "":
+        mod = method_extern_info.module
+        runtime_call_name = method_extern_info.symbol
     else:
         # Fallback: owner_base.method pattern
         mod = _default_container_module(owner_base)
@@ -3163,8 +3169,8 @@ def _resolve_container_method_call(
     adapter: str = "builtin"
     expr["runtime_call_adapter_kind"] = adapter
     # semantic_tag from extern_v2 or fallback
-    if method_extern is not None and method_extern.tag != "":
-        expr["semantic_tag"] = method_extern.tag
+    if method_extern_info is not None and method_extern_info.tag != "":
+        expr["semantic_tag"] = method_extern_info.tag
     else:
         expr["semantic_tag"] = "stdlib.method." + method
 
