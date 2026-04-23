@@ -3220,7 +3220,7 @@ def _substitute_type_params(ret_type: str, concrete_type: str, cls: ClassSig) ->
     if len(cls.template_params) == 0:
         return ret_type
 
-    type_args: list[str] = extract_type_args(concrete_type)
+    type_args: list[str] = list(extract_type_args(concrete_type))
     if len(type_args) == 0:
         return ret_type
 
@@ -3236,28 +3236,27 @@ def _substitute_type_params(ret_type: str, concrete_type: str, cls: ClassSig) ->
 def _substitute_arg_types(arg_types: dict[str, str], concrete_type: str, cls: ClassSig) -> dict[str, str]:
     substituted: dict[str, str] = {}
     for arg_name, arg_type in arg_types.items():
-        if isinstance(arg_name, str) and isinstance(arg_type, str):
-            substituted[arg_name] = _substitute_type_params(arg_type, concrete_type, cls)
+        substituted[arg_name] = _substitute_type_params(arg_type, concrete_type, cls)
     return substituted
 
 
 def _resolve_attribute(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    value = expr.get("value")
-    attr_val = expr.get("attr")
-    attr: str = str(attr_val) if isinstance(attr_val, str) else ""
+    ctx.current_function = ctx.current_function
+    value = _dict_get_obj(expr, "value")
+    attr: str = _dict_get_str(expr, "attr")
 
     receiver_type: str = "unknown"
-    if isinstance(value, dict):
+    if len(value) > 0:
         receiver_type = _resolve_expr(value, ctx)
 
-    if attr == "__name__" and isinstance(value, dict) and value.get("kind") == "Call":
-        func_node = value.get("func")
-        if isinstance(func_node, dict) and func_node.get("kind") == "Name" and func_node.get("id") == "type":
+    if attr == "__name__" and len(value) > 0 and _dict_get_str(value, "kind") == "Call":
+        func_node = _dict_get_obj(value, "func")
+        if len(func_node) > 0 and _dict_get_str(func_node, "kind") == "Name" and _dict_get_str(func_node, "id") == "type":
             expr["resolved_type"] = "str"
             return "str"
 
     # Module-level attribute access (e.g., math.pi, os.path)
-    if isinstance(value, dict):
+    if len(value) > 0:
         mod_id: str = _resolve_module_expr_id(value, ctx)
         if mod_id != "":
             canonical: str = ctx.canonical_module_id(mod_id)
@@ -3278,29 +3277,29 @@ def _resolve_attribute(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
             if len(sym_doc) > 0:
                 expr["runtime_module_id"] = canonical
                 expr["runtime_symbol"] = attr
-                dispatch = sym_doc.get("dispatch")
-                if isinstance(dispatch, str) and dispatch != "":
+                dispatch = _dict_get_str(sym_doc, "dispatch")
+                if dispatch != "":
                     expr["runtime_symbol_dispatch"] = dispatch
                 adapter = ctx.lookup_adapter_kind(canonical, attr)
                 if adapter != "":
                     expr["runtime_call_adapter_kind"] = adapter
-                semantic_tag = sym_doc.get("semantic_tag")
-                if isinstance(semantic_tag, str) and semantic_tag != "":
+                semantic_tag = _dict_get_str(sym_doc, "semantic_tag")
+                if semantic_tag != "":
                     expr["semantic_tag"] = semantic_tag
             return t
 
-    owner_base: str = _resolve_owner_base_type(value, receiver_type, ctx) if isinstance(value, dict) else ""
+    owner_base: str = _resolve_owner_base_type(value, receiver_type, ctx) if len(value) > 0 else ""
     for class_name in _iter_class_hierarchy(owner_base, ctx):
         cls_sig: ClassSig | None = _lookup_any_class(class_name, ctx)
         if cls_sig is None:
             continue
         if attr in cls_sig.fields:
-            field_type: str = _ctx_normalize_type(_substitute_type_params(cls_sig.fields[attr], receiver_type, cls_sig), ctx)
+            field_type: str = "" + _ctx_normalize_type(_substitute_type_params(cls_sig.fields[attr], receiver_type, cls_sig), ctx)
             expr["resolved_type"] = field_type
             return field_type
         property_sig: FuncSig | None = cls_sig.methods.get(attr)
         if property_sig is not None and "property" in property_sig.decorators:
-            prop_type: str = _ctx_normalize_type(_substitute_type_params(property_sig.return_type, receiver_type, cls_sig), ctx)
+            prop_type: str = "" + _ctx_normalize_type(_substitute_type_params(property_sig.return_type, receiver_type, cls_sig), ctx)
             expr["resolved_type"] = prop_type
             expr["attribute_access_kind"] = "property_getter"
             return prop_type
