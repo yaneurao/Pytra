@@ -2124,29 +2124,31 @@ def _resolve_expr(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 
 def _resolve_constant(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    val = expr.get("value")
+    val: JsonVal = None
+    if "value" in expr:
+        val = expr["value"]
     if val is None:
         t: str = "None"
-    elif isinstance(val, bool):
-        t = "bool"
-    elif isinstance(val, int):
-        t = "int64"
-    elif isinstance(val, float):
-        t = "float64"
-    elif isinstance(val, str):
-        t = "str"
     else:
-        t = "unknown"
+        value = json.JsonValue(val)
+        if value.as_bool() is not None:
+            t = "bool"
+        elif value.as_int() is not None:
+            t = "int64"
+        elif value.as_float() is not None:
+            t = "float64"
+        elif value.as_str() is not None:
+            t = "str"
+        else:
+            t = "unknown"
     expr["resolved_type"] = t
     return t
 
-
 def _resolve_name(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    name_val = expr.get("id")
-    name: str = str(name_val) if isinstance(name_val, str) else ""
+    name: str = _dict_get_str(expr, "id")
     if name in ctx.import_modules:
         expr["resolved_type"] = "module"
-        expr["runtime_module_id"] = ctx.canonical_module_id(ctx.import_modules.get(name, ""))
+        expr["runtime_module_id"] = ctx.import_modules.get(name, "")
         return "module"
     imp: dict[str, str] = ctx.import_symbols.get(name, {})
     if len(imp) > 0:
@@ -2162,7 +2164,6 @@ def _resolve_name(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
             expr["resolved_type"] = "callable"
             return "callable"
     t: str = ctx.scope.lookup(name)
-    # Class names are type objects in value position.
     if ctx.lookup_class(name) is not None:
         expr["resolved_type"] = "type"
         expr["type_object_of"] = name
@@ -2182,48 +2183,49 @@ def _resolve_name(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
             expr["resolved_type"] = "Callable"
             return "Callable"
     expr["resolved_type"] = t
-    # Borrow kind: readonly_ref for typed names (references to known variables)
-    # value for untyped (function names, unknown)
     if t != "unknown":
         expr["borrow_kind"] = "readonly_ref"
     return t
 
+def _numeric_cast_entry(on: str, from_type: str, to_type: str) -> dict[str, JsonVal]:
+    entry: dict[str, JsonVal] = {}
+    entry["on"] = on
+    entry["from"] = from_type
+    entry["to"] = to_type
+    entry["reason"] = "numeric_promotion"
+    return entry
+
 
 def _resolve_binop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    left = expr.get("left")
-    right = expr.get("right")
+    left = _dict_get_obj(expr, "left")
+    right = _dict_get_obj(expr, "right")
     lt: str = "unknown"
     rt: str = "unknown"
-    if isinstance(left, dict):
+    if len(left) > 0:
         lt = _resolve_expr(left, ctx)
-    if isinstance(right, dict):
+    if len(right) > 0:
         rt = _resolve_expr(right, ctx)
 
-    op_val = expr.get("op")
-    op: str = str(op_val) if isinstance(op_val, str) else ""
+    op: str = _dict_get_str(expr, "op")
 
-    # Determine result type
     result: str = _binop_result_type(lt, rt, op)
     expr["resolved_type"] = result
 
-    # Cast insertion for numeric promotion
-    casts = expr.get("casts")
-    if isinstance(casts, list):
+    casts = _dict_get_arr(expr, "casts")
+    if len(casts) > 0:
         if is_int_type(lt) and is_float_type(rt):
-            casts.append({"on": "left", "from": lt, "to": rt, "reason": "numeric_promotion"})
+            casts.append(_numeric_cast_entry("left", lt, rt))
         elif is_float_type(lt) and is_int_type(rt):
-            casts.append({"on": "right", "from": rt, "to": lt, "reason": "numeric_promotion"})
+            casts.append(_numeric_cast_entry("right", rt, lt))
         elif op == "Div" and is_int_type(lt) and is_int_type(rt):
-            # Division of ints: both need promotion to float64
-            casts.append({"on": "left", "from": lt, "to": "float64", "reason": "numeric_promotion"})
-            casts.append({"on": "right", "from": rt, "to": "float64", "reason": "numeric_promotion"})
+            casts.append(_numeric_cast_entry("left", lt, "float64"))
+            casts.append(_numeric_cast_entry("right", rt, "float64"))
         elif is_int_type(lt) and is_int_type(rt) and lt != rt:
-            # Integer size mismatch: promote smaller to larger
             promoted: str = _promote_int_types(lt, rt)
             if lt != promoted:
-                casts.append({"on": "left", "from": lt, "to": promoted, "reason": "numeric_promotion"})
+                casts.append(_numeric_cast_entry("left", lt, promoted))
             if rt != promoted:
-                casts.append({"on": "right", "from": rt, "to": promoted, "reason": "numeric_promotion"})
+                casts.append(_numeric_cast_entry("right", rt, promoted))
 
     return result
 
