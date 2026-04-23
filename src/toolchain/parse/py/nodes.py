@@ -96,7 +96,7 @@ class Comprehension:
     is_async: bool
     def to_jv(self) -> dict[str, JsonVal]:
         return {"target": expr_to_jv(self.target), "iter": expr_to_jv(self.iter_expr),
-                "ifs": [expr_to_jv(e) for e in self.ifs], "is_async": self.is_async}
+                "ifs": _expr_jv_list(self.ifs), "is_async": self.is_async}
 
 @dataclass
 class DictEntry:
@@ -123,6 +123,36 @@ def _expr_base_jv(e: ExprBase) -> dict[str, JsonVal]:
         "repr": e.repr_text,
     }
 
+def _expr_jv_list(values: list[JsonVal]) -> list[JsonVal]:
+    out: list[JsonVal] = []
+    for value in values:
+        out.append(expr_to_jv(value))
+    return out
+
+def _stmt_jv_list(values: list[JsonVal]) -> list[JsonVal]:
+    out: list[JsonVal] = []
+    for value in values:
+        out.append(stmt_to_jv(value))
+    return out
+
+def _str_jv_list(values: list[str]) -> list[JsonVal]:
+    out: list[JsonVal] = []
+    for value in values:
+        out.append(value)
+    return out
+
+def _str_dict_jv(values: dict[str, str]) -> dict[str, JsonVal]:
+    out: dict[str, JsonVal] = {}
+    for key, value in values.items():
+        out[key] = value
+    return out
+
+def _int_dict_jv(values: dict[str, int]) -> dict[str, JsonVal]:
+    out: dict[str, JsonVal] = {}
+    for key, value in values.items():
+        out[key] = value
+    return out
+
 
 # ---------------------------------------------------------------------------
 # Expression nodes
@@ -141,7 +171,7 @@ class Name:
 @dataclass
 class Constant:
     base: ExprBase
-    value: Union[int, float, str, bool]
+    value: JsonVal
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "Constant"}
         d.update(_expr_base_jv(self.base))
@@ -183,7 +213,7 @@ class BoolOp:
         d: dict[str, JsonVal] = {"kind": "BoolOp"}
         d.update(_expr_base_jv(self.base))
         d["op"] = self.op
-        d["values"] = [expr_to_jv(v) for v in self.values]
+        d["values"] = _expr_jv_list(self.values)
         return d
 
 @dataclass
@@ -196,8 +226,8 @@ class Compare:
         d: dict[str, JsonVal] = {"kind": "Compare"}
         d.update(_expr_base_jv(self.base))
         d["left"] = expr_to_jv(self.left)
-        d["ops"] = list(self.ops)
-        d["comparators"] = [expr_to_jv(c) for c in self.comparators]
+        d["ops"] = _str_jv_list(self.ops)
+        d["comparators"] = _expr_jv_list(self.comparators)
         return d
 
 @dataclass
@@ -210,8 +240,11 @@ class Call:
         d: dict[str, JsonVal] = {"kind": "Call"}
         d.update(_expr_base_jv(self.base))
         d["func"] = expr_to_jv(self.func)
-        d["args"] = [expr_to_jv(a) for a in self.args]
-        d["keywords"] = [kw.to_jv() for kw in self.keywords]
+        d["args"] = _expr_jv_list(self.args)
+        keywords: list[JsonVal] = []
+        for kw in self.keywords:
+            keywords.append(kw.to_jv())
+        d["keywords"] = keywords
         return d
 
 @dataclass
@@ -233,8 +266,8 @@ class Subscript:
     slice_expr: JsonVal
     is_slice: bool = False
     lowered_kind: Optional[str] = None
-    lower: Optional[JsonVal] = None
-    upper: Optional[JsonVal] = None
+    lower: JsonVal = None
+    upper: JsonVal = None
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "Subscript"}
         d.update(_expr_base_jv(self.base))
@@ -249,9 +282,9 @@ class Subscript:
 
 @dataclass
 class SliceExpr:
-    lower: Optional[JsonVal]
-    upper: Optional[JsonVal]
-    step: Optional[JsonVal]
+    lower: JsonVal
+    upper: JsonVal
+    step: JsonVal
     def to_jv(self) -> dict[str, JsonVal]:
         return {"kind": "Slice",
                 "lower": expr_to_jv(self.lower) if self.lower is not None else None,
@@ -279,7 +312,7 @@ class ListExpr:
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "List"}
         d.update(_expr_base_jv(self.base))
-        d["elements"] = [expr_to_jv(e) for e in self.elements]
+        d["elements"] = _expr_jv_list(self.elements)
         return d
 
 @dataclass
@@ -289,7 +322,7 @@ class TupleExpr:
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "Tuple"}
         d.update(_expr_base_jv(self.base))
-        d["elements"] = [expr_to_jv(e) for e in self.elements]
+        d["elements"] = _expr_jv_list(self.elements)
         return d
 
 @dataclass
@@ -299,7 +332,7 @@ class SetExpr:
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "Set"}
         d.update(_expr_base_jv(self.base))
-        d["elements"] = [expr_to_jv(e) for e in self.elements]
+        d["elements"] = _expr_jv_list(self.elements)
         return d
 
 @dataclass
@@ -307,15 +340,18 @@ class DictExpr:
     base: ExprBase
     keys: list[JsonVal]
     dict_values: list[JsonVal]
-    entries: Optional[list[DictEntry]] = None
+    entries: list[DictEntry] = field(default_factory=list)
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "Dict"}
         d.update(_expr_base_jv(self.base))
-        if self.entries is not None:
-            d["entries"] = [e.to_jv() for e in self.entries]
+        if len(self.entries) > 0:
+            entries: list[JsonVal] = []
+            for entry in self.entries:
+                entries.append(entry.to_jv())
+            d["entries"] = entries
         else:
-            d["keys"] = [expr_to_jv(k) for k in self.keys]
-            d["values"] = [expr_to_jv(v) for v in self.dict_values]
+            d["keys"] = _expr_jv_list(self.keys)
+            d["values"] = _expr_jv_list(self.dict_values)
         return d
 
 @dataclass
@@ -327,7 +363,10 @@ class ListComp:
         d: dict[str, JsonVal] = {"kind": "ListComp"}
         d.update(_expr_base_jv(self.base))
         d["elt"] = expr_to_jv(self.elt)
-        d["generators"] = [g.to_jv() for g in self.generators]
+        generators: list[JsonVal] = []
+        for gen in self.generators:
+            generators.append(gen.to_jv())
+        d["generators"] = generators
         return d
 
 @dataclass
@@ -357,13 +396,16 @@ class JoinedStr:
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "JoinedStr"}
         d.update(_expr_base_jv(self.base))
-        d["values"] = [v.to_jv() for v in self.values]
+        values: list[JsonVal] = []
+        for value in self.values:
+            values.append(value.to_jv())
+        d["values"] = values
         return d
 
 @dataclass
 class LambdaArg:
     name: str
-    default_expr: Optional[JsonVal] = None
+    default_expr: JsonVal = None
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "arg", "arg": self.name, "annotation": None}
         if self.default_expr is not None:
@@ -379,7 +421,10 @@ class LambdaExpr:
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "Lambda"}
         d.update(_expr_base_jv(self.base))
-        d["args"] = [a.to_jv() for a in self.args]
+        args: list[JsonVal] = []
+        for arg in self.args:
+            args.append(arg.to_jv())
+        d["args"] = args
         d["body"] = expr_to_jv(self.body)
         d["return_type"] = self.return_type
         return d
@@ -410,7 +455,10 @@ class SetComp:
         d: dict[str, JsonVal] = {"kind": "SetComp"}
         d.update(_expr_base_jv(self.base))
         d["elt"] = expr_to_jv(self.elt)
-        d["generators"] = [g.to_jv() for g in self.generators]
+        generators: list[JsonVal] = []
+        for gen in self.generators:
+            generators.append(gen.to_jv())
+        d["generators"] = generators
         return d
 
 @dataclass
@@ -424,7 +472,10 @@ class DictComp:
         d.update(_expr_base_jv(self.base))
         d["key"] = expr_to_jv(self.key)
         d["value"] = expr_to_jv(self.value)
-        d["generators"] = [g.to_jv() for g in self.generators]
+        generators: list[JsonVal] = []
+        for gen in self.generators:
+            generators.append(gen.to_jv())
+        d["generators"] = generators
         return d
 
 @dataclass
@@ -457,8 +508,11 @@ class Import:
     source_span: SourceSpan
     names: list[ImportAlias]
     def to_jv(self) -> dict[str, JsonVal]:
+        names: list[JsonVal] = []
+        for name in self.names:
+            names.append(name.to_jv())
         return {"kind": "Import", "source_span": self.source_span.to_jv(),
-                "names": [n.to_jv() for n in self.names]}
+                "names": names}
 
 @dataclass
 class ImportFrom:
@@ -467,19 +521,22 @@ class ImportFrom:
     names: list[ImportAlias]
     level: int
     def to_jv(self) -> dict[str, JsonVal]:
+        names: list[JsonVal] = []
+        for name in self.names:
+            names.append(name.to_jv())
         return {"kind": "ImportFrom", "source_span": self.source_span.to_jv(),
-                "module": self.module, "names": [n.to_jv() for n in self.names], "level": self.level}
+                "module": self.module, "names": names, "level": self.level}
 
 @dataclass
 class AnnAssign:
     source_span: SourceSpan
     target: JsonVal
     annotation: str
-    value: Optional[JsonVal]
+    value: JsonVal
     declare: bool
-    node_meta: Optional[dict[str, JsonVal]] = None
-    leading_trivia: Optional[list[JsonVal]] = None
-    leading_comments: Optional[list[str]] = None
+    node_meta: dict[str, JsonVal] = field(default_factory=dict)
+    leading_trivia: list[JsonVal] = field(default_factory=list)
+    leading_comments: list[str] = field(default_factory=list)
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {
             "kind": "AnnAssign", "source_span": self.source_span.to_jv(),
@@ -487,12 +544,15 @@ class AnnAssign:
             "value": expr_to_jv(self.value) if self.value is not None else None,
             "declare": self.declare,
         }
-        if self.node_meta is not None:
+        if len(self.node_meta) > 0:
             d["meta"] = dict(self.node_meta)
-        if self.leading_trivia is not None:
-            d["leading_trivia"] = [t.to_jv() for t in self.leading_trivia]
-        if self.leading_comments is not None:
-            d["leading_comments"] = list(self.leading_comments)
+        if len(self.leading_trivia) > 0:
+            leading_trivia: list[JsonVal] = []
+            for trivia in self.leading_trivia:
+                leading_trivia.append(trivia.to_jv())
+            d["leading_trivia"] = leading_trivia
+        if len(self.leading_comments) > 0:
+            d["leading_comments"] = _str_jv_list(self.leading_comments)
         return d
 
 @dataclass
@@ -501,18 +561,21 @@ class Assign:
     target: JsonVal
     value: JsonVal
     declare: bool
-    leading_trivia: Optional[list[JsonVal]] = None
-    leading_comments: Optional[list[str]] = None
+    leading_trivia: list[JsonVal] = field(default_factory=list)
+    leading_comments: list[str] = field(default_factory=list)
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {
             "kind": "Assign", "source_span": self.source_span.to_jv(),
             "target": expr_to_jv(self.target), "value": expr_to_jv(self.value),
             "declare": self.declare,
         }
-        if self.leading_trivia is not None:
-            d["leading_trivia"] = [t.to_jv() for t in self.leading_trivia]
-        if self.leading_comments is not None:
-            d["leading_comments"] = list(self.leading_comments)
+        if len(self.leading_trivia) > 0:
+            leading_trivia: list[JsonVal] = []
+            for trivia in self.leading_trivia:
+                leading_trivia.append(trivia.to_jv())
+            d["leading_trivia"] = leading_trivia
+        if len(self.leading_comments) > 0:
+            d["leading_comments"] = _str_jv_list(self.leading_comments)
         return d
 
 @dataclass
@@ -531,15 +594,18 @@ class AugAssign:
 class ExprStmt:
     source_span: SourceSpan
     value: JsonVal
-    leading_trivia: Optional[list[JsonVal]] = None
-    leading_comments: Optional[list[str]] = None
+    leading_trivia: list[JsonVal] = field(default_factory=list)
+    leading_comments: list[str] = field(default_factory=list)
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "Expr", "source_span": self.source_span.to_jv(),
                                   "value": expr_to_jv(self.value)}
-        if self.leading_trivia is not None:
-            d["leading_trivia"] = [t.to_jv() for t in self.leading_trivia]
-        if self.leading_comments is not None:
-            d["leading_comments"] = list(self.leading_comments)
+        if len(self.leading_trivia) > 0:
+            leading_trivia: list[JsonVal] = []
+            for trivia in self.leading_trivia:
+                leading_trivia.append(trivia.to_jv())
+            d["leading_trivia"] = leading_trivia
+        if len(self.leading_comments) > 0:
+            d["leading_comments"] = _str_jv_list(self.leading_comments)
         return d
 
 @dataclass
@@ -554,16 +620,19 @@ class Swap:
 @dataclass
 class Return:
     source_span: SourceSpan
-    value: Optional[JsonVal]
-    leading_trivia: Optional[list[JsonVal]] = None
-    leading_comments: Optional[list[str]] = None
+    value: JsonVal
+    leading_trivia: list[JsonVal] = field(default_factory=list)
+    leading_comments: list[str] = field(default_factory=list)
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "Return", "source_span": self.source_span.to_jv(),
                                   "value": expr_to_jv(self.value) if self.value is not None else None}
-        if self.leading_trivia is not None:
-            d["leading_trivia"] = [t.to_jv() for t in self.leading_trivia]
-        if self.leading_comments is not None:
-            d["leading_comments"] = list(self.leading_comments)
+        if len(self.leading_trivia) > 0:
+            leading_trivia: list[JsonVal] = []
+            for trivia in self.leading_trivia:
+                leading_trivia.append(trivia.to_jv())
+            d["leading_trivia"] = leading_trivia
+        if len(self.leading_comments) > 0:
+            d["leading_comments"] = _str_jv_list(self.leading_comments)
         return d
 
 @dataclass
@@ -577,8 +646,8 @@ class Yield:
 @dataclass
 class Raise:
     source_span: SourceSpan
-    exc: Optional[JsonVal]
-    cause: Optional[JsonVal]
+    exc: JsonVal
+    cause: JsonVal
     def to_jv(self) -> dict[str, JsonVal]:
         return {"kind": "Raise", "source_span": self.source_span.to_jv(),
                 "exc": expr_to_jv(self.exc) if self.exc is not None else None,
@@ -586,7 +655,7 @@ class Raise:
 
 @dataclass
 class ExceptHandler:
-    exc_type_expr: Optional[JsonVal]
+    exc_type_expr: JsonVal
     name: Optional[str]
     body: list[JsonVal]
     source_span: SourceSpan
@@ -594,7 +663,7 @@ class ExceptHandler:
         return {"kind": "ExceptHandler",
                 "type": expr_to_jv(self.exc_type_expr) if self.exc_type_expr is not None else None,
                 "name": self.name,
-                "body": [stmt_to_jv(s) for s in self.body]}
+                "body": _stmt_jv_list(self.body)}
 
 @dataclass
 class Try:
@@ -603,12 +672,17 @@ class Try:
     handlers: list[ExceptHandler]
     orelse: list[JsonVal]
     finalbody: list[JsonVal]
+    def _handlers_jv(self) -> list[JsonVal]:
+        handlers: list[JsonVal] = []
+        for handler in self.handlers:
+            handlers.append(handler.to_jv())
+        return handlers
     def to_jv(self) -> dict[str, JsonVal]:
         return {"kind": "Try", "source_span": self.source_span.to_jv(),
-                "body": [stmt_to_jv(s) for s in self.body],
-                "handlers": [h.to_jv() for h in self.handlers],
-                "orelse": [stmt_to_jv(s) for s in self.orelse],
-                "finalbody": [stmt_to_jv(s) for s in self.finalbody]}
+                "body": _stmt_jv_list(self.body),
+                "handlers": self._handlers_jv(),
+                "orelse": _stmt_jv_list(self.orelse),
+                "finalbody": _stmt_jv_list(self.finalbody)}
 
 @dataclass
 class Pass:
@@ -622,17 +696,20 @@ class If:
     test: JsonVal
     body: list[JsonVal]
     orelse: list[JsonVal]
-    leading_trivia: Optional[list[JsonVal]] = None
-    leading_comments: Optional[list[str]] = None
+    leading_trivia: list[JsonVal] = field(default_factory=list)
+    leading_comments: list[str] = field(default_factory=list)
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "If", "source_span": self.source_span.to_jv(),
                                   "test": expr_to_jv(self.test),
-                                  "body": [stmt_to_jv(s) for s in self.body],
-                                  "orelse": [stmt_to_jv(s) for s in self.orelse]}
-        if self.leading_trivia is not None:
-            d["leading_trivia"] = [t.to_jv() for t in self.leading_trivia]
-        if self.leading_comments is not None:
-            d["leading_comments"] = list(self.leading_comments)
+                                  "body": _stmt_jv_list(self.body),
+                                  "orelse": _stmt_jv_list(self.orelse)}
+        if len(self.leading_trivia) > 0:
+            leading_trivia: list[JsonVal] = []
+            for trivia in self.leading_trivia:
+                leading_trivia.append(trivia.to_jv())
+            d["leading_trivia"] = leading_trivia
+        if len(self.leading_comments) > 0:
+            d["leading_comments"] = _str_jv_list(self.leading_comments)
         return d
 
 @dataclass
@@ -642,15 +719,18 @@ class For:
     iter_expr: JsonVal  # JSON key: "iter"
     body: list[JsonVal]
     orelse: list[JsonVal]
-    leading_trivia: Optional[list[JsonVal]] = None
+    leading_trivia: list[JsonVal] = field(default_factory=list)
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "For", "source_span": self.source_span.to_jv(),
                                   "target": expr_to_jv(self.target),
                                   "iter": expr_to_jv(self.iter_expr),
-                                  "body": [stmt_to_jv(s) for s in self.body],
-                                  "orelse": [stmt_to_jv(s) for s in self.orelse]}
-        if self.leading_trivia is not None:
-            d["leading_trivia"] = [t.to_jv() for t in self.leading_trivia]
+                                  "body": _stmt_jv_list(self.body),
+                                  "orelse": _stmt_jv_list(self.orelse)}
+        if len(self.leading_trivia) > 0:
+            leading_trivia: list[JsonVal] = []
+            for trivia in self.leading_trivia:
+                leading_trivia.append(trivia.to_jv())
+            d["leading_trivia"] = leading_trivia
         return d
 
 @dataclass
@@ -662,8 +742,8 @@ class While:
     def to_jv(self) -> dict[str, JsonVal]:
         return {"kind": "While", "source_span": self.source_span.to_jv(),
                 "test": expr_to_jv(self.test),
-                "body": [stmt_to_jv(s) for s in self.body],
-                "orelse": [stmt_to_jv(s) for s in self.orelse]}
+                "body": _stmt_jv_list(self.body),
+                "orelse": _stmt_jv_list(self.orelse)}
 
 @dataclass
 class With:
@@ -675,7 +755,7 @@ class With:
         return {"kind": "With", "source_span": self.source_span.to_jv(),
                 "context_expr": expr_to_jv(self.context_expr),
                 "var_name": self.var_name,
-                "body": [stmt_to_jv(s) for s in self.body]}
+                "body": _stmt_jv_list(self.body)}
 
 @dataclass
 class FunctionDef:
@@ -694,32 +774,35 @@ class FunctionDef:
     yield_value_type: str
     vararg_name: Optional[str] = None
     vararg_type: Optional[str] = None
-    decorators: Optional[list[str]] = None
-    node_meta: Optional[dict[str, JsonVal]] = None
-    leading_trivia: Optional[list[JsonVal]] = None
-    leading_comments: Optional[list[str]] = None
+    decorators: list[str] = field(default_factory=list)
+    node_meta: dict[str, JsonVal] = field(default_factory=dict)
+    leading_trivia: list[JsonVal] = field(default_factory=list)
+    leading_comments: list[str] = field(default_factory=list)
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {
             "kind": "FunctionDef", "source_span": self.source_span.to_jv(),
             "name": self.name, "original_name": self.original_name,
-            "arg_types": dict(self.arg_types), "arg_order": list(self.arg_order),
-            "arg_defaults": dict(self.arg_defaults), "arg_index": dict(self.arg_index),
-            "return_type": self.return_type, "renamed_symbols": dict(self.renamed_symbols),
+            "arg_types": _str_dict_jv(self.arg_types), "arg_order": _str_jv_list(self.arg_order),
+            "arg_defaults": dict(self.arg_defaults), "arg_index": _int_dict_jv(self.arg_index),
+            "return_type": self.return_type, "renamed_symbols": _str_dict_jv(self.renamed_symbols),
             "docstring": self.docstring,
-            "body": [stmt_to_jv(s) for s in self.body],
+            "body": _stmt_jv_list(self.body),
             "is_generator": self.is_generator, "yield_value_type": self.yield_value_type,
         }
         if self.vararg_name is not None:
             d["vararg_name"] = self.vararg_name
             d["vararg_type"] = self.vararg_type if self.vararg_type is not None else "unknown"
-        if self.decorators is not None:
-            d["decorators"] = list(self.decorators)
-        if self.node_meta is not None:
+        if len(self.decorators) > 0:
+            d["decorators"] = _str_jv_list(self.decorators)
+        if len(self.node_meta) > 0:
             d["meta"] = dict(self.node_meta)
-        if self.leading_comments is not None:
-            d["leading_comments"] = list(self.leading_comments)
-        if self.leading_trivia is not None:
-            d["leading_trivia"] = [t.to_jv() for t in self.leading_trivia]
+        if len(self.leading_comments) > 0:
+            d["leading_comments"] = _str_jv_list(self.leading_comments)
+        if len(self.leading_trivia) > 0:
+            leading_trivia: list[JsonVal] = []
+            for trivia in self.leading_trivia:
+                leading_trivia.append(trivia.to_jv())
+            d["leading_trivia"] = leading_trivia
         return d
 
 @dataclass
@@ -731,26 +814,29 @@ class ClassDef:
     body: list[JsonVal]
     dataclass_flag: bool
     field_types: dict[str, str]
-    decorators: Optional[list[str]] = None
-    node_meta: Optional[dict[str, JsonVal]] = None
-    leading_trivia: Optional[list[JsonVal]] = None
-    leading_comments: Optional[list[str]] = None
+    decorators: list[str] = field(default_factory=list)
+    node_meta: dict[str, JsonVal] = field(default_factory=dict)
+    leading_trivia: list[JsonVal] = field(default_factory=list)
+    leading_comments: list[str] = field(default_factory=list)
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {
             "kind": "ClassDef", "source_span": self.source_span.to_jv(),
             "name": self.name, "original_name": self.original_name,
             "base": self.base, "dataclass": self.dataclass_flag,
-            "field_types": dict(self.field_types),
-            "body": [stmt_to_jv(s) for s in self.body],
+            "field_types": _str_dict_jv(self.field_types),
+            "body": _stmt_jv_list(self.body),
         }
-        if self.decorators is not None:
-            d["decorators"] = list(self.decorators)
-        if self.node_meta is not None:
+        if len(self.decorators) > 0:
+            d["decorators"] = _str_jv_list(self.decorators)
+        if len(self.node_meta) > 0:
             d["meta"] = dict(self.node_meta)
-        if self.leading_comments is not None:
-            d["leading_comments"] = list(self.leading_comments)
-        if self.leading_trivia is not None:
-            d["leading_trivia"] = [t.to_jv() for t in self.leading_trivia]
+        if len(self.leading_comments) > 0:
+            d["leading_comments"] = _str_jv_list(self.leading_comments)
+        if len(self.leading_trivia) > 0:
+            leading_trivia: list[JsonVal] = []
+            for trivia in self.leading_trivia:
+                leading_trivia.append(trivia.to_jv())
+            d["leading_trivia"] = leading_trivia
         return d
 
 
@@ -790,9 +876,9 @@ class Module:
         return {
             "kind": "Module", "source_path": self.source_path,
             "source_span": self.source_span.to_jv(),
-            "body": [stmt_to_jv(s) for s in self.body],
-            "main_guard_body": [stmt_to_jv(s) for s in self.main_guard_body],
-            "renamed_symbols": dict(self.renamed_symbols),
+            "body": _stmt_jv_list(self.body),
+            "main_guard_body": _stmt_jv_list(self.main_guard_body),
+            "renamed_symbols": _str_dict_jv(self.renamed_symbols),
             "meta": dict(self.meta),
             "east_stage": self.east_stage,
         }

@@ -681,7 +681,19 @@ def _note_runtime_symbol_include(ctx: CppEmitContext, symbol_name: str) -> None:
         ctx.includes_needed.add("built_in/string_ops_fwd.h")
 
 
+def _wrap_jsonval_node_expr(ctx: CppEmitContext, target_type: str, value_expr: str, value_node: JsonVal = None) -> str:
+    if target_type != "JsonVal" or not isinstance(value_node, dict):
+        return value_expr
+    source_type = normalize_cpp_nominal_adt_type(_effective_resolved_type(value_node))
+    if source_type in ctx.class_names and not value_expr.strip().endswith(".to_jv()"):
+        return "JsonVal(" + value_expr + ".to_jv())"
+    return value_expr
+
+
 def _wrap_expr_for_target_type(ctx: CppEmitContext, target_type: str, value_expr: str, value_node: JsonVal = None) -> str:
+    json_wrapped = _wrap_jsonval_node_expr(ctx, target_type, value_expr, value_node)
+    if json_wrapped != value_expr:
+        return json_wrapped
     if not is_container_resolved_type(target_type):
         # When assigning dict.get(no-default) to an optional variable, use py_dict_get_opt
         # so that missing keys produce an empty optional (None), not a zero-valued optional.
@@ -746,6 +758,11 @@ def _object_box_container_target(resolved_type: str) -> str:
 def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> str:
     if not isinstance(node, dict):
         return _emit_expr(ctx, node)
+    if target_type == "JsonVal":
+        value_expr = _emit_expr(ctx, node)
+        wrapped = _wrap_jsonval_node_expr(ctx, target_type, value_expr, node)
+        if wrapped != value_expr:
+            return wrapped
     node = _normalize_cpp_boundary_expr(ctx, node)
     node_kind = _str(node, "kind")
     if node_kind == "Box" and target_type not in ("Any", "Obj", "object"):
