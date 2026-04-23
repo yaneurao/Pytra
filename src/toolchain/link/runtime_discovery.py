@@ -9,6 +9,7 @@ from __future__ import annotations
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
 from pytra.std import json
+from toolchain.compile.jv import jv_str, jv_is_dict, jv_is_list, jv_dict, jv_list
 
 
 def _repo_root() -> Path:
@@ -92,8 +93,8 @@ def _sorted_strings(values: list[str]) -> list[str]:
 
 def resolve_runtime_module_rel_tail(module_id: str) -> str:
     """Resolve a runtime module_id to its shared runtime-relative path tail."""
-    override = _RUNTIME_ARTIFACT_OVERRIDES.get(module_id)
-    if isinstance(override, str) and override != "":
+    override = _RUNTIME_ARTIFACT_OVERRIDES.get(module_id, "")
+    if override != "":
         return override
     for prefix, bucket in _RUNTIME_MODULE_BUCKETS.items():
         if module_id.startswith(prefix):
@@ -101,9 +102,9 @@ def resolve_runtime_module_rel_tail(module_id: str) -> str:
             return bucket + "/" + name.replace(".", "/")
     if module_id != "" and "." not in module_id:
         bare_std = "std/" + module_id
-        east_path = _RUNTIME_EAST_ROOT / (bare_std + ".east")
-        cpp_header = _REPO_ROOT / "src" / "runtime" / "cpp" / (bare_std + ".h")
-        cpp_source = _REPO_ROOT / "src" / "runtime" / "cpp" / (bare_std + ".cpp")
+        east_path = _RUNTIME_EAST_ROOT.joinpath(bare_std + ".east")
+        cpp_header = _REPO_ROOT.joinpath("src").joinpath("runtime").joinpath("cpp").joinpath(bare_std + ".h")
+        cpp_source = _REPO_ROOT.joinpath("src").joinpath("runtime").joinpath("cpp").joinpath(bare_std + ".cpp")
         if east_path.exists() or cpp_header.exists() or cpp_source.exists():
             return bare_std
     return ""
@@ -113,7 +114,7 @@ def resolve_runtime_east_path(module_id: str) -> str:
     """Resolve a runtime module_id to its .east file path, or empty string."""
     rel = resolve_runtime_module_rel_tail(module_id)
     if rel != "" and not rel.startswith("core/"):
-        east_path = _RUNTIME_EAST_ROOT / (rel + ".east")
+        east_path = _RUNTIME_EAST_ROOT.joinpath(rel + ".east")
         if east_path.exists():
             return str(east_path)
     # Fallback: bare module name → pytra.std.X
@@ -150,16 +151,17 @@ def _resolve_runtime_dep_or_fail(module_id: str, *, required: bool = True) -> st
 
 def _has_format_spec(node: JsonVal) -> bool:
     """EAST ノードツリーに format_spec を持つ FormattedValue が含まれるか再帰検査。"""
-    if isinstance(node, dict):
-        if node.get("kind") == "FormattedValue":
-            fs = node.get("format_spec")
-            if isinstance(fs, str) and fs != "":
+    if jv_is_dict(node):
+        node_dict = jv_dict(node)
+        if jv_str(node_dict.get("kind")) == "FormattedValue":
+            fs = "" + jv_str(node_dict.get("format_spec"))
+            if fs != "":
                 return True
-        for v in node.values():
-            if _has_format_spec(v):
+        for key in node_dict.keys():
+            if _has_format_spec(node_dict.get(key)):
                 return True
-    elif isinstance(node, list):
-        for item in node:
+    elif jv_is_list(node):
+        for item in jv_list(node):
             if _has_format_spec(item):
                 return True
     return False

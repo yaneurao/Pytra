@@ -2005,9 +2005,7 @@ def link_modules(
     all_traits, trait_impls = trait_parts
 
     # 5. call graph 構築
-    call_graph_parts = build_call_graph(modules)
-    call_graph = call_graph_parts[0]
-    sccs = call_graph_parts[1]
+    call_graph, sccs = build_call_graph(modules)
 
     # 6. program_id 生成
     pid = _program_id(target, dispatch_mode, all_module_ids)
@@ -2075,9 +2073,7 @@ def link_modules(
             module_kind=module.module_kind,
         ))
 
-    dependency_parts = build_all_resolved_dependencies(linked_input_modules, target=target)
-    resolved_deps = dependency_parts[0]
-    user_deps = dependency_parts[1]
+    resolved_deps, user_deps = build_all_resolved_dependencies(linked_input_modules, target=target)
 
     # 10. 各 module に linked_program_v1 を注入
     linked_modules: list[LinkedModule] = []
