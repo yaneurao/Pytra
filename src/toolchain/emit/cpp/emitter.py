@@ -950,7 +950,7 @@ def _emit_dict_literal_for_target_type(
             continue
         key_expr = _emit_expr_as_type(ctx, entry.get("key"), key_type)
         value_expr = _emit_expr_as_type(ctx, entry.get("value"), value_type)
-        rendered.append("{" + key_expr + ", " + value_expr + "}")
+        rendered.append(plain_ct + "::value_type{" + key_expr + ", " + value_expr + "}")
     literal = plain_ct + "{" + ", ".join(rendered) + "}"
     return _wrap_container_value_expr(target_type, literal) if is_container_resolved_type(target_type) else literal
 
@@ -2573,7 +2573,7 @@ def _emit_dict_literal(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         parts = []
         for e in entries:
             if isinstance(e, dict):
-                parts.append("{" + _emit_expr(ctx, e.get("key")) + ", " + _emit_expr(ctx, e.get("value")) + "}")
+                parts.append(plain_ct + "::value_type{" + _emit_expr(ctx, e.get("key")) + ", " + _emit_expr(ctx, e.get("value")) + "}")
         literal = plain_ct + "{" + ", ".join(parts) + "}"
         return _wrap_container_value_expr(rt, literal) if is_container_resolved_type(rt) else literal
     literal = plain_ct + "{}"

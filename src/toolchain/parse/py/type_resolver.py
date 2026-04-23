@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Optional, Union
 
 from toolchain.common.types import split_generic_types
-from toolchain.parse.py.nodes import NamedType, GenericType, JsonVal, TypeExpr
+from pytra.std.json import JsonVal
 
 
 # デフォルト型エイリアス
@@ -103,20 +103,26 @@ def annotation_to_type_expr(
 ) -> dict[str, JsonVal]:
     """型注釈文字列を TypeExpr JsonVal ノードに変換する。"""
     resolved: str = resolve_type_annotation(ann, type_aliases)
-    return _parse_type_expr(resolved).to_jv()
+    return _parse_type_expr(resolved)
 
 
-def _parse_type_expr(text: str) -> TypeExpr:
-    """正規化済み型文字列を TypeExpr に変換する。"""
+def _parse_type_expr(text: str) -> dict[str, JsonVal]:
+    """正規化済み型文字列を TypeExpr JsonVal に変換する。"""
     text = text.strip()
     bracket_pos: int = text.find("[")
     if bracket_pos > 0 and text.endswith("]"):
         base: str = text[:bracket_pos].strip()
         inner: str = text[bracket_pos + 1 : -1].strip()
         arg_strs: list[str] = split_generic_types(inner)
-        arg_exprs: list[TypeExpr] = [_parse_type_expr(a) for a in arg_strs]
-        return GenericType(
-            base=base,
-            args=arg_exprs,
-        )
-    return NamedType(name=text)
+        arg_exprs: list[JsonVal] = []
+        for arg_text in arg_strs:
+            arg_exprs.append(_parse_type_expr(arg_text))
+        generic: dict[str, JsonVal] = {}
+        generic["kind"] = "GenericType"
+        generic["base"] = base
+        generic["args"] = arg_exprs
+        return generic
+    named: dict[str, JsonVal] = {}
+    named["kind"] = "NamedType"
+    named["name"] = text
+    return named
