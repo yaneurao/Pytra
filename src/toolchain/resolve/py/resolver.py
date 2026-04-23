@@ -3215,9 +3215,9 @@ def _default_container_module(owner_base: str) -> str:
     return ""
 
 
-def _substitute_type_params(ret_type: str, concrete_type: str, cls: ClassSig) -> str:
+def _substitute_type_params_with_names(ret_type: str, concrete_type: str, template_params: list[str]) -> str:
     """Substitute generic type parameters (T, K, V) with concrete types."""
-    if len(cls.template_params) == 0:
+    if len(template_params) == 0:
         return ret_type
 
     type_args: list[str] = list(extract_type_args(concrete_type))
@@ -3225,12 +3225,19 @@ def _substitute_type_params(ret_type: str, concrete_type: str, cls: ClassSig) ->
         return ret_type
 
     result: str = ret_type
-    for i in range(min(len(cls.template_params), len(type_args))):
-        param: str = cls.template_params[i]
-        arg: str = type_args[i]
+    limit = min(len(template_params), len(type_args))
+    idx = 0
+    while idx < limit:
+        param: str = template_params[idx]
+        arg: str = type_args[idx]
         result = result.replace(param, arg)
+        idx += 1
 
     return result
+
+
+def _substitute_type_params(ret_type: str, concrete_type: str, cls: ClassSig) -> str:
+    return _substitute_type_params_with_names(ret_type, concrete_type, cls.template_params)
 
 
 def _substitute_arg_types(arg_types: dict[str, str], concrete_type: str, cls: ClassSig) -> dict[str, str]:
@@ -3294,12 +3301,14 @@ def _resolve_attribute(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
         if cls_sig is None:
             continue
         if attr in cls_sig.fields:
-            field_type: str = "" + _ctx_normalize_type(_substitute_type_params(cls_sig.fields[attr], receiver_type, cls_sig), ctx)
+            field_type_raw = _substitute_type_params_with_names(cls_sig.fields[attr], receiver_type, cls_sig.template_params)
+            field_type: str = "" + _ctx_normalize_type(field_type_raw, ctx)
             expr["resolved_type"] = field_type
             return field_type
         property_sig: FuncSig | None = cls_sig.methods.get(attr)
         if property_sig is not None and "property" in property_sig.decorators:
-            prop_type: str = "" + _ctx_normalize_type(_substitute_type_params(property_sig.return_type, receiver_type, cls_sig), ctx)
+            prop_type_raw = _substitute_type_params_with_names(property_sig.return_type, receiver_type, cls_sig.template_params)
+            prop_type: str = "" + _ctx_normalize_type(prop_type_raw, ctx)
             expr["resolved_type"] = prop_type
             expr["attribute_access_kind"] = "property_getter"
             return prop_type
