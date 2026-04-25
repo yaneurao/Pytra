@@ -328,7 +328,9 @@ def build_runtime_import_map(
                 continue
 
         module_id_raw = binding_obj.get_str("runtime_module_id")
-        if module_id_raw is None or module_id_raw == "":
+        if module_id_raw is None:
+            module_id_raw = binding_obj.get_str("module_id")
+        elif module_id_raw == "":
             module_id_raw = binding_obj.get_str("module_id")
         if module_id_raw is None:
             continue
@@ -412,7 +414,7 @@ def build_runtime_import_map(
                     and not symbol_name.startswith(mapping.builtin_prefix)
                 ):
                     keep_prefixed = False
-                    if isinstance(module_id, str) and module_id != "" and "." not in module_id:
+                    if module_id != "" and "." not in module_id:
                         std_key = "pytra.std." + module_id + "." + symbol_name
                         keep_prefixed = std_key in mapping.calls
                     if not keep_prefixed:
@@ -426,14 +428,13 @@ def build_runtime_import_map(
                 resolved_symbol = resolve_runtime_symbol_name(symbol_name, mapping, module_id=module_id)
                 if (
                     resolved_symbol == mapping.builtin_prefix + symbol_name
-                    and isinstance(module_id, str)
                     and module_id != ""
                     and "." not in module_id
                 ):
                     std_key = "pytra.std." + module_id + "." + symbol_name
                     if std_key in mapping.calls:
                         mapped_std = mapping.calls[std_key]
-                        if isinstance(mapped_std, str) and mapped_std != "":
+                        if mapped_std != "":
                             resolved_symbol = mapped_std
                     else:
                         resolved_symbol = symbol_name

@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import field
 
+from pytra.std import json
 from pytra.std.json import JsonVal
 
 from toolchain.emit.common.profile_loader import load_profile_doc
@@ -23,6 +24,12 @@ class CommonRendererState:
 
 
 class CommonRenderer:
+    language: str
+    profile: dict[str, JsonVal]
+    state: CommonRendererState
+    _op_prec_table: dict[str, int]
+    _literal_nowrap_ranges: dict[str, tuple[int, int] | str]
+
     def __init__(self, language: str) -> None:
         self.language = language
         self.profile = load_profile_doc(language)
@@ -30,26 +37,30 @@ class CommonRenderer:
         self._op_prec_table: dict[str, int] = {}
         self._literal_nowrap_ranges: dict[str, tuple[int, int] | str] = {}
         operators = self.profile.get("operators")
-        precedence = operators.get("precedence") if isinstance(operators, dict) else None
-        if isinstance(precedence, dict):
-            for key, value in precedence.items():
-                if isinstance(key, str) and isinstance(value, int):
-                    self._op_prec_table[key] = value
+        operators_obj = json.JsonValue(operators).as_obj()
+        if operators_obj is not None:
+            precedence_obj = operators_obj.get_obj("precedence")
+            if precedence_obj is not None:
+                for key, value in precedence_obj.raw.items():
+                    value_int = json.JsonValue(value).as_int()
+                    if value_int is not None:
+                        self._op_prec_table[key] = value_int
         literal_nowrap = self.profile.get("literal_nowrap_ranges")
-        if isinstance(literal_nowrap, dict):
-            for key, value in literal_nowrap.items():
-                if not isinstance(key, str):
-                    continue
-                if value == "always":
-                    self._literal_nowrap_ranges[key] = "always"
-                    continue
-                if (
-                    isinstance(value, list)
-                    and len(value) == 2
-                    and isinstance(value[0], int)
-                    and isinstance(value[1], int)
-                ):
-                    self._literal_nowrap_ranges[key] = (value[0], value[1])
+        literal_nowrap_obj = json.JsonValue(literal_nowrap).as_obj()
+        if literal_nowrap_obj is not None:
+                for key, value in literal_nowrap_obj.raw.items():
+                    value_str = json.JsonValue(value).as_str()
+                    if value_str is not None:
+                        value_text: str = value_str
+                        if value_text == "always":
+                            self._literal_nowrap_ranges[key] = "always"
+                            continue
+                value_arr = json.JsonValue(value).as_arr()
+                if value_arr is not None and len(value_arr.raw) == 2:
+                    value0 = value_arr.get_int(0)
+                    value1 = value_arr.get_int(1)
+                    if value0 is not None and value1 is not None:
+                        self._literal_nowrap_ranges[key] = (value0, value1)
 
     # ------------------------------------------------------------------
     # profile helpers
@@ -306,9 +317,6 @@ class CommonRenderer:
 
     def exception_support_decl_lines(self) -> list[str]:
         return ["const " + self.bound_exception_record_type_name() + " = struct { msg: []const u8, line: i64 };"]
-
-    def active_exception_slot_names(self) -> tuple[str, str, str]:
-        raise RuntimeError("common renderer requires active exception slot names for " + self.language)
 
     def caught_exception_slot_names(self) -> tuple[str, str, str]:
         raise RuntimeError("common renderer requires caught exception slot names for " + self.language)
@@ -868,39 +876,6 @@ class CommonRenderer:
         self.emit_copy_exception_slot(
             self.active_exception_slot_names(),
             self.caught_exception_slot_names(),
-        )
-
-    def emit_raise_exception_state(
-        self,
-        exc_type_expr: str,
-        exc_msg_expr: str,
-        exc_line_expr: str,
-    ) -> None:
-        slot_type, slot_msg, slot_line = self.active_exception_slot_names()
-        self.emit_backend_line(slot_type + " = " + exc_type_expr + ";")
-        self.emit_backend_line(slot_msg + " = " + exc_msg_expr + ";")
-        self.emit_backend_line(slot_line + " = " + exc_line_expr + ";")
-
-    def render_inline_exception_state(
-        self,
-        exc_type_expr: str,
-        exc_msg_expr: str,
-        exc_line_expr: str,
-    ) -> str:
-        slot_type, slot_msg, slot_line = self.active_exception_slot_names()
-        return (
-            slot_type
-            + " = "
-            + exc_type_expr
-            + "; "
-            + slot_msg
-            + " = "
-            + exc_msg_expr
-            + "; "
-            + slot_line
-            + " = "
-            + exc_line_expr
-            + ";"
         )
 
     def render_break_with_value(self, block_label: str, value_expr: str) -> str:
