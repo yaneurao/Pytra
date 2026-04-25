@@ -173,6 +173,48 @@ def _json_str_dict(values: dict[str, str]) -> dict[str, JsonVal]:
     return out
 
 
+@dataclass
+class ImportResolutionBinding:
+    """Resolver-internal draft for import_resolution.bindings[] entries."""
+
+    payload: dict[str, JsonVal]
+
+    @classmethod
+    def from_jv(cls, binding: dict[str, JsonVal]) -> ImportResolutionBinding:
+        return cls(payload=dict(binding))
+
+    @classmethod
+    def implicit_builtin(
+        cls,
+        module_id: str,
+        source_file: str,
+        runtime_group: str,
+    ) -> ImportResolutionBinding:
+        return cls(
+            payload={
+                "module_id": module_id,
+                "export_name": "",
+                "local_name": module_id,
+                "binding_kind": "implicit_builtin",
+                "source_file": source_file,
+                "source_line": 0,
+                "source_module_id": module_id,
+                "source_binding_kind": "implicit_builtin",
+                "runtime_module_id": module_id,
+                "runtime_group": runtime_group,
+            }
+        )
+
+    def to_jv(self) -> dict[str, JsonVal]:
+        return dict(self.payload)
+
+    def str_value(self, key: str) -> str:
+        return _dict_get_str(self.payload, key)
+
+    def set_value(self, key: str, value: JsonVal) -> None:
+        self.payload[key] = value
+
+
 def _path_parent(base: Path) -> Path:
     parent_text: str = path.dirname(str(base))
     if parent_text == "":
@@ -5075,7 +5117,7 @@ def _build_import_resolution_meta(
         binding = _jv_obj(binding_val)
         if len(binding) > 0:
             enhanced_binding = _enhance_binding(binding, ctx)
-            enhanced.append(dict(enhanced_binding))
+            enhanced.append(enhanced_binding.to_jv())
     if len(enhanced) > 0:
         ir["bindings"] = enhanced
         bindings = enhanced
@@ -5103,19 +5145,12 @@ def _build_import_resolution_meta(
     final_bindings = _dict_get_arr(ir, "bindings")
     for mod in sorted(ctx.used_builtin_modules):
         if mod not in existing_modules:
-            imp_binding: dict[str, JsonVal] = {
-                "module_id": mod,
-                "export_name": "",
-                "local_name": mod,
-                "binding_kind": "implicit_builtin",
-                "source_file": ctx.source_file,
-                "source_line": 0,
-                "source_module_id": mod,
-                "source_binding_kind": "implicit_builtin",
-                "runtime_module_id": mod,
-                "runtime_group": ctx.lookup_runtime_module_group(mod),
-            }
-            final_bindings.append(dict(imp_binding))
+            imp_binding = ImportResolutionBinding.implicit_builtin(
+                module_id=mod,
+                source_file=ctx.source_file,
+                runtime_group=ctx.lookup_runtime_module_group(mod),
+            )
+            final_bindings.append(imp_binding.to_jv())
 
     compat_bindings: list[JsonVal] = []
     for binding_val3 in final_bindings:
@@ -5124,13 +5159,14 @@ def _build_import_resolution_meta(
             compat_bindings.append(dict(binding3))
     east1_meta["import_bindings"] = compat_bindings
 
-def _enhance_binding(binding: dict[str, JsonVal], ctx: ResolveContext) -> dict[str, JsonVal]:
+def _enhance_binding(binding: dict[str, JsonVal], ctx: ResolveContext) -> ImportResolutionBinding:
     """Enhance a single import binding with runtime resolution info."""
     ctx.current_function = ctx.current_function
-    module_id: str = _dict_get_str(binding, "module_id")
-    export_name: str = _dict_get_str(binding, "export_name")
-    binding_kind: str = _dict_get_str(binding, "binding_kind")
-    local_name: str = _dict_get_str(binding, "local_name")
+    out = ImportResolutionBinding.from_jv(binding)
+    module_id: str = out.str_value("module_id")
+    export_name: str = out.str_value("export_name")
+    binding_kind: str = out.str_value("binding_kind")
+    local_name: str = out.str_value("local_name")
 
     canonical: str = ctx.canonical_module_id(module_id)
     runtime_group: str = ctx.lookup_runtime_module_group(canonical)
@@ -5147,45 +5183,45 @@ def _enhance_binding(binding: dict[str, JsonVal], ctx: ResolveContext) -> dict[s
                 canonical = fallback_canonical
                 runtime_group = fallback_group
 
-    binding["source_module_id"] = module_id
-    binding["source_export_name"] = export_name
-    binding["source_binding_kind"] = binding_kind
-    binding["runtime_module_id"] = canonical
-    binding["runtime_group"] = runtime_group
+    out.set_value("source_module_id", module_id)
+    out.set_value("source_export_name", export_name)
+    out.set_value("source_binding_kind", binding_kind)
+    out.set_value("runtime_module_id", canonical)
+    out.set_value("runtime_group", runtime_group)
 
     if binding_kind == "module":
-        binding["resolved_binding_kind"] = "module"
-        binding["host_only"] = True
-        return binding
+        out.set_value("resolved_binding_kind", "module")
+        out.set_value("host_only", True)
+        return out
 
     promoted_module: str = ctx.import_modules.get(local_name, "")
     if promoted_module != "" and promoted_module != canonical:
-        binding["runtime_module_id"] = promoted_module
-        binding["runtime_group"] = ctx.lookup_runtime_module_group(promoted_module)
-        binding["resolved_binding_kind"] = "module"
-        binding["host_only"] = True
-        return binding
+        out.set_value("runtime_module_id", promoted_module)
+        out.set_value("runtime_group", ctx.lookup_runtime_module_group(promoted_module))
+        out.set_value("resolved_binding_kind", "module")
+        out.set_value("host_only", True)
+        return out
 
     if binding_kind == "implicit_builtin":
-        return binding
+        return out
 
     sym_doc: dict[str, JsonVal] = ctx.lookup_runtime_symbol_doc(canonical, export_name)
     if len(sym_doc) > 0:
-        binding["resolved_binding_kind"] = "symbol"
-        binding["runtime_symbol"] = export_name
+        out.set_value("resolved_binding_kind", "symbol")
+        out.set_value("runtime_symbol", export_name)
         kind_v = _dict_get_str(sym_doc, "kind")
         if kind_v != "":
-            binding["runtime_symbol_kind"] = kind_v
+            out.set_value("runtime_symbol_kind", kind_v)
         dispatch_v = _dict_get_str(sym_doc, "dispatch")
         if dispatch_v != "":
-            binding["runtime_symbol_dispatch"] = dispatch_v
+            out.set_value("runtime_symbol_dispatch", dispatch_v)
         stag_v = _dict_get_str(sym_doc, "semantic_tag")
         if stag_v != "":
-            binding["runtime_semantic_tag"] = stag_v
+            out.set_value("runtime_semantic_tag", stag_v)
         adapter_v = _dict_get_str(sym_doc, "call_adapter_kind")
         if adapter_v != "":
-            binding["runtime_call_adapter_kind"] = adapter_v
-    return binding
+            out.set_value("runtime_call_adapter_kind", adapter_v)
+    return out
 
 def _resolve_import_symbol_module_alias(
     module_id: str,
