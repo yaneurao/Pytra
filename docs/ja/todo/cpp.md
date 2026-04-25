@@ -56,7 +56,8 @@
 
 各 backend emitter は subprocess で独立起動する自己完結プログラム。pytra-cli.py 全体の selfhost とは切り離し、`toolchain.emit.cpp.cli` をエントリに単独で C++ build を通す。
 
-1. [ ] [ID: P1-EMITTER-SELFHOST-CPP-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target cpp -o work/selfhost/emit/cpp/` を実行し、変換が通るようにする
+1. [x] [ID: P1-EMITTER-SELFHOST-CPP-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target cpp -o work/selfhost/emit/cpp/` を実行し、変換が通るようにする
+   - 2026-04-25: `types.py` の top-level dict/set literal と標準 `re` 依存を selfhost-safe な builder/scanner に置換。`python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target cpp -o work/selfhost/emit/cpp/` が parse/resolve/compile/optimize/link と C++ emit まで通過。
 2. [ ] [ID: P1-EMITTER-SELFHOST-CPP-S2] 生成された C++ を `g++ -std=c++20 -O0` でコンパイルを通す（source 側の型注釈不整合を修正）
 3. [ ] [ID: P1-EMITTER-SELFHOST-CPP-S3] コンパイル済み emitter で既存 fixture の manifest を処理し、Python 版 emitter と parity 一致を確認する
 

@@ -9,11 +9,9 @@ toolchain2 C++ backend は `src/runtime/cpp/core/*` の公開 alias (`str`,
 
 from __future__ import annotations
 
-import re
-
 
 # mapping.json "types" テーブルの注入先。emitter 起動時に init_types_mapping() で設定する。
-_g_types: dict[str, str] = {}
+_g_types: dict[str, str] = dict()
 
 
 def init_types_mapping(types: dict[str, str]) -> None:
@@ -23,47 +21,53 @@ def init_types_mapping(types: dict[str, str]) -> None:
         _g_types[name] = mapped
 
 
-# フォールバック: mapping.json が空の場合に使うハードコード表。
-# 正本は src/runtime/cpp/mapping.json の "types" テーブル。
-_TYPE_MAP: dict[str, str] = {
-    "int": "int64",
-    "int8": "int8",
-    "int16": "int16",
-    "int32": "int32",
-    "int64": "int64",
-    "uint8": "uint8",
-    "uint16": "uint16",
-    "uint32": "uint32",
-    "uint64": "uint64",
-    "float": "float64",
-    "float32": "float32",
-    "float64": "float64",
-    "bool": "bool",
-    "str": "str",
-    "None": "void",
-    "none": "void",
-    "bytes": "bytes",
-    "bytearray": "bytearray",
-    "Any": "object",
-    "Obj": "object",
-    "object": "object",
-    "JsonVal": "JsonVal",
-    "Node": "Object<dict<str, JsonVal>>",
-    # toolchain.parse.py.nodes.TypeExpr = Union[NamedType, GenericType]
+def _build_type_map() -> dict[str, str]:
+    # フォールバック: mapping.json が空の場合に使うハードコード表。
+    # 正本は src/runtime/cpp/mapping.json の "types" テーブル。
+    out: dict[str, str] = dict()
+    out["int"] = "int64"
+    out["int8"] = "int8"
+    out["int16"] = "int16"
+    out["int32"] = "int32"
+    out["int64"] = "int64"
+    out["uint8"] = "uint8"
+    out["uint16"] = "uint16"
+    out["uint32"] = "uint32"
+    out["uint64"] = "uint64"
+    out["float"] = "float64"
+    out["float32"] = "float32"
+    out["float64"] = "float64"
+    out["bool"] = "bool"
+    out["str"] = "str"
+    out["None"] = "void"
+    out["none"] = "void"
+    out["bytes"] = "bytes"
+    out["bytearray"] = "bytearray"
+    out["Any"] = "object"
+    out["Obj"] = "object"
+    out["object"] = "object"
+    out["JsonVal"] = "JsonVal"
+    out["Node"] = "Object<dict<str, JsonVal>>"
+    # toolchain.parse.py.nodes.TypeExpr = Union[NamedType, GenericType].
     # The alias itself may be elided from EAST3, so emit its storage type directly.
-    "TypeExpr": "::std::variant<NamedType, GenericType>",
-    "Callable": "::std::function<object(object)>",
-}
+    out["TypeExpr"] = "::std::variant<NamedType, GenericType>"
+    out["Callable"] = "::std::function<object(object)>"
+    return out
 
 
-_CPP_ALIAS_UNION_EXPANSIONS: dict[str, str] = {
-    "JsonVal": "None | bool | int64 | float64 | str | list[JsonVal] | dict[str,JsonVal]",
-}
+def _build_cpp_alias_union_expansions() -> dict[str, str]:
+    out: dict[str, str] = dict()
+    out["JsonVal"] = "None | bool | int64 | float64 | str | list[JsonVal] | dict[str,JsonVal]"
+    return out
 
-_JSONVAL_EXPANDED_NORMS: set[str] = {
+
+_TYPE_MAP: dict[str, str] = _build_type_map()
+_CPP_ALIAS_UNION_EXPANSIONS: dict[str, str] = _build_cpp_alias_union_expansions()
+
+_JSONVAL_EXPANDED_NORMS: list[str] = [
     "None|bool|int64|float64|str|list[Any]|dict[str,Any]",
     "bool|int64|float64|str|list[Any]|dict[str,Any]|None",
-}
+]
 _JSONVAL_INNER_EXPANDED_NORM: str = "bool|int64|float64|str|list[Any]|dict[str,Any]"
 _JSONVAL_INNER_CANON: str = "bool | int64 | float64 | str | list[JsonVal] | dict[str,JsonVal]"
 
@@ -280,19 +284,19 @@ def cpp_zero_value(resolved_type: str, *, prefer_value_container: bool = False) 
 
 
 def _is_small_value_type(cpp_text: str) -> bool:
-    return cpp_text in {
-        "bool",
-        "int8",
-        "int16",
-        "int32",
-        "int64",
-        "uint8",
-        "uint16",
-        "uint32",
-        "uint64",
-        "float32",
-        "float64",
-    }
+    return (
+        cpp_text == "bool"
+        or cpp_text == "int8"
+        or cpp_text == "int16"
+        or cpp_text == "int32"
+        or cpp_text == "int64"
+        or cpp_text == "uint8"
+        or cpp_text == "uint16"
+        or cpp_text == "uint32"
+        or cpp_text == "uint64"
+        or cpp_text == "float32"
+        or cpp_text == "float64"
+    )
 
 
 def _split_generic_args(s: str) -> list[str]:
@@ -364,7 +368,48 @@ def _top_level_optional_inner(resolved_type: str) -> str:
     return ""
 
 
-_TYPE_TOKEN_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+def _is_type_token_start(ch: str) -> bool:
+    return ("A" <= ch <= "Z") or ("a" <= ch <= "z") or ch == "_"
+
+
+def _is_type_token_part(ch: str) -> bool:
+    return _is_type_token_start(ch) or ("0" <= ch <= "9")
+
+
+def _iter_type_tokens(text: str) -> list[str]:
+    out: list[str] = []
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if not _is_type_token_start(ch):
+            i += 1
+            continue
+        start = i
+        i += 1
+        while i < len(text) and _is_type_token_part(text[i]):
+            i += 1
+        out.append(text[start:i])
+    return out
+
+
+def _is_builtin_type_token(token: str) -> bool:
+    return (
+        token == "list"
+        or token == "dict"
+        or token == "set"
+        or token == "tuple"
+        or token == "Callable"
+        or token == "Iterator"
+        or token == "Iterable"
+        or token == "Optional"
+        or token == "None"
+        or token == "none"
+        or token == "object"
+        or token == "Any"
+        or token == "Obj"
+        or token == "unknown"
+        or token == "callable"
+    )
 
 
 def collect_cpp_type_vars(resolved_type: str) -> list[str]:
@@ -373,26 +418,10 @@ def collect_cpp_type_vars(resolved_type: str) -> list[str]:
         return []
     out: list[str] = []
     seen: set[str] = set()
-    for token in _TYPE_TOKEN_RE.findall(resolved_type):
+    for token in _iter_type_tokens(resolved_type):
         if token in _TYPE_MAP:
             continue
-        if token in {
-            "list",
-            "dict",
-            "set",
-            "tuple",
-            "Callable",
-            "Iterator",
-            "Iterable",
-            "Optional",
-            "None",
-            "none",
-            "object",
-            "Any",
-            "Obj",
-            "unknown",
-            "callable",
-        }:
+        if _is_builtin_type_token(token):
             continue
         if token.upper() != token:
             continue
