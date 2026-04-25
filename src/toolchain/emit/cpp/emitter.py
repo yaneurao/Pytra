@@ -2833,21 +2833,22 @@ def _emit_subscript_index(ctx: CppEmitContext, value: str, slice_node: JsonVal) 
         iv = json.JsonValue(slice_obj.raw.get("value")).as_int()
         if iv is not None and iv < 0:
             return "(" + size_expr + str(iv) + ")"
-    if isinstance(slice_node, dict) and _str(slice_node, "kind") == "UnaryOp" and _str(slice_node, "op") == "USub":
-        operand = _emit_expr(ctx, slice_node.get("operand"))
+    if slice_obj is not None and _str(slice_obj.raw, "kind") == "UnaryOp" and _str(slice_obj.raw, "op") == "USub":
+        operand_node: JsonVal = slice_obj.raw.get("operand")
+        operand = _emit_expr(ctx, operand_node)
         return "(" + size_expr + " - " + operand + ")"
     return idx
 
 
 def _subscript_access_hint(node: dict[str, JsonVal]) -> dict[str, JsonVal] | None:
     meta_obj = node.get("meta")
-    meta = meta_obj if isinstance(meta_obj, dict) else None
-    if meta is None:
+    meta_value = json.JsonValue(meta_obj).as_obj()
+    if meta_value is None:
         return None
-    hint_obj = meta.get("subscript_access_v1")
-    hint = hint_obj if isinstance(hint_obj, dict) else None
-    if hint is None:
+    hint_value = json.JsonValue(meta_value.raw.get("subscript_access_v1")).as_obj()
+    if hint_value is None:
         return None
+    hint = hint_value.raw
     if _str(hint, "schema_version") != "subscript_access_v1":
         return None
     negative_index = _str(hint, "negative_index")
