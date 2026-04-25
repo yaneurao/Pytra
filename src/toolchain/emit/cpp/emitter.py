@@ -2857,20 +2857,27 @@ def _subscript_access_hint(node: dict[str, JsonVal]) -> dict[str, JsonVal] | Non
         return None
     if bounds_check not in ("full", "off"):
         return None
-    return hint
+    out: dict[str, JsonVal] = {}
+    for key, value in hint.items():
+        out[key] = value
+    return out
 
 
 def _emit_direct_subscript_index(ctx: CppEmitContext, value: str, slice_node: JsonVal, negative_index: str) -> str:
     raw_idx = _emit_expr(ctx, slice_node)
     if negative_index != "normalize":
         return raw_idx
-    if isinstance(slice_node, dict):
-        kind = _str(slice_node, "kind")
+    slice_obj = json.JsonValue(slice_node).as_obj()
+    if slice_obj is not None:
+        slice_dict = slice_obj.raw
+        kind = _str(slice_dict, "kind")
         if kind == "Constant":
-            iv = slice_node.get("value")
-            if isinstance(iv, int) and not isinstance(iv, bool) and iv < 0:
+            iv_value: JsonVal = slice_dict.get("value")
+            iv = json.JsonValue(iv_value).as_int()
+            iv_bool = json.JsonValue(iv_value).as_bool()
+            if iv is not None and iv_bool is None and iv < 0:
                 return _emit_subscript_index(ctx, value, slice_node)
-        if kind == "UnaryOp" and _str(slice_node, "op") == "USub":
+        if kind == "UnaryOp" and _str(slice_dict, "op") == "USub":
             return _emit_subscript_index(ctx, value, slice_node)
     size_expr = "py_len(" + value + ")"
     return "((" + raw_idx + ") < 0 ? (" + size_expr + " + (" + raw_idx + ")) : (" + raw_idx + "))"
