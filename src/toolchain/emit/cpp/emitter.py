@@ -5213,19 +5213,26 @@ def _emit_cast_expr(ctx: CppEmitContext, target_node: JsonVal, value_node: JsonV
     target_name = _node_type_mirror(target_node)
     if target_name == "":
         target_name = _effective_resolved_type(target_node)
-    if target_name in ("", "unknown", "type", "callable") and isinstance(target_node, dict):
-        target_name = _str(target_node, "id")
+    target_obj = json.JsonValue(target_node).as_obj()
+    if target_name in ("", "unknown", "type", "callable") and target_obj is not None:
+        target_name = _str(target_obj.raw, "id")
         if target_name == "":
-            target_name = _str(target_node, "repr")
+            target_name = _str(target_obj.raw, "repr")
     value_type = _effective_resolved_type(value_node)
-    value_kind = _str(value_node, "kind") if isinstance(value_node, dict) else ""
-    if target_name not in ("", "unknown", "Any", "Obj", "object") and isinstance(value_node, dict) and _str(value_node, "kind") == "Box":
-        boxed_value = value_node.get("value")
-        if isinstance(boxed_value, dict):
-            return _emit_expr_as_type(ctx, boxed_value, target_name)
+    value_obj = json.JsonValue(value_node).as_obj()
+    value_dict: dict[str, JsonVal] = {}
+    if value_obj is not None:
+        value_dict = value_obj.raw
+    value_kind = _str(value_dict, "kind") if value_obj is not None else ""
+    has_concrete_target = target_name not in ("", "unknown", "Any", "Obj", "object")
+    if has_concrete_target and value_obj is not None and value_kind == "Box":
+        boxed_value = value_dict.get("value")
+        boxed_obj = json.JsonValue(boxed_value).as_obj()
+        if boxed_obj is not None:
+            return _emit_expr_as_type(ctx, boxed_obj.raw, target_name)
     if (
-        target_name not in ("", "unknown", "Any", "Obj", "object")
-        and isinstance(value_node, dict)
+        has_concrete_target
+        and value_obj is not None
         and value_kind in ("Name", "Attribute", "Subscript")
         and value_type == target_name
         and _optional_inner_type(_expanded_union_type(_expr_storage_type(ctx, value_node))) == ""
@@ -5233,8 +5240,8 @@ def _emit_cast_expr(ctx: CppEmitContext, target_node: JsonVal, value_node: JsonV
         and not _needs_object_cast(_expanded_union_type(_expr_storage_type(ctx, value_node)))
     ):
         return _emit_expr_as_type(ctx, value_node, target_name)
-    if value_kind in ("Name", "NameTarget") and isinstance(value_node, dict):
-        value_expr = _emit_name_storage(value_node)
+    if value_kind in ("Name", "NameTarget") and value_obj is not None:
+        value_expr = _emit_name_storage(value_dict)
     else:
         value_expr = _emit_expr(ctx, value_node)
     static_value_type = _expr_static_type(ctx, value_node)
@@ -5252,8 +5259,8 @@ def _emit_cast_expr(ctx: CppEmitContext, target_node: JsonVal, value_node: JsonV
     ):
         return value_expr
     if _optional_inner_type(union_storage_type) == target_name:
-        if value_kind == "Name" and isinstance(value_node, dict):
-            return "(*(" + _emit_name_storage(value_node) + "))"
+        if value_kind == "Name" and value_obj is not None:
+            return "(*(" + _emit_name_storage(value_dict) + "))"
         return "(*(" + value_expr + "))"
     if _has_variant_storage(storage_type):
         source_lane = _select_union_lane(union_storage_type, target_name)
@@ -5359,18 +5366,20 @@ def _load_container_value_locals(
     raw = _dict(hints, "container_value_locals_v1")
     out: dict[str, set[str]] = {}
     for scope_key, payload in raw.items():
-        if not isinstance(scope_key, str) or scope_key == "":
+        if scope_key == "":
             continue
-        if not isinstance(payload, dict):
+        payload_obj = json.JsonValue(payload).as_obj()
+        if payload_obj is None:
             continue
-        locals_raw = payload.get("locals")
-        if not isinstance(locals_raw, list):
+        locals_raw = payload_obj.raw.get("locals")
+        locals_arr = json.JsonValue(locals_raw).as_arr()
+        if locals_arr is None:
             continue
-        locals_out = {
-            name
-            for name in locals_raw
-            if isinstance(name, str) and name != ""
-        }
+        locals_out: set[str] = set()
+        for name in locals_arr.raw:
+            name_text = _json_str_value(name)
+            if name_text != "":
+                locals_out.add(name_text)
         if len(locals_out) > 0:
             out[scope_key] = locals_out
     return out
