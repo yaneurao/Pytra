@@ -49,6 +49,130 @@ class LinkResult:
     linked_modules: list[LinkedModule]
 
 
+@dataclass
+class EmitContextDraft:
+    module_id: str
+    is_entry: bool
+
+    def to_jv(self) -> dict[str, JsonVal]:
+        return {
+            "module_id": self.module_id,
+            "is_entry": self.is_entry,
+        }
+
+
+@dataclass
+class LinkedProgramMetaDraft:
+    program_id: str
+    module_id: str
+    entry_module_ids: list[str]
+    type_id_table: JsonVal
+    type_id_base_map: JsonVal
+    type_info_table: JsonVal
+    resolved_dependencies: list[JsonVal]
+    user_module_dependencies: list[JsonVal]
+
+    def to_jv(self) -> dict[str, JsonVal]:
+        non_escape_summary: dict[str, JsonVal] = {}
+        container_ownership_hints: dict[str, JsonVal] = {}
+        return {
+            "program_id": self.program_id,
+            "module_id": self.module_id,
+            "entry_modules": _str_list_json(self.entry_module_ids),
+            "type_id_resolved_v1": self.type_id_table,
+            "type_id_base_map_v1": self.type_id_base_map,
+            "type_info_table_v1": self.type_info_table,
+            "resolved_dependencies_v1": list(self.resolved_dependencies),
+            "user_module_dependencies_v1": list(self.user_module_dependencies),
+            "non_escape_summary": non_escape_summary,
+            "container_ownership_hints_v1": container_ownership_hints,
+        }
+
+
+@dataclass
+class ManifestModuleEntryDraft:
+    module_id: str
+    input_path: str
+    output_path: str
+    source_path: str
+    is_entry: bool
+    module_kind: str
+    helper_id: str = ""
+    owner_module_id: str = ""
+    generated_by: str = ""
+    include_owner_module_id: bool = False
+
+    def to_jv(self) -> dict[str, JsonVal]:
+        out: dict[str, JsonVal] = {
+            "module_id": self.module_id,
+            "input": self.input_path,
+            "output": self.output_path,
+            "source_path": self.source_path,
+            "is_entry": self.is_entry,
+            "module_kind": self.module_kind,
+        }
+        if self.helper_id != "":
+            out["helper_id"] = self.helper_id
+        if self.owner_module_id != "" or self.include_owner_module_id:
+            out["owner_module_id"] = self.owner_module_id
+        if self.generated_by != "":
+            out["generated_by"] = self.generated_by
+        return out
+
+
+@dataclass
+class LinkManifestGlobalDraft:
+    type_id_table: JsonVal
+    type_id_base_map: JsonVal
+    call_graph: JsonVal
+    sccs: list[JsonVal]
+
+    def to_jv(self) -> dict[str, JsonVal]:
+        non_escape_summary: dict[str, JsonVal] = {}
+        container_ownership_hints: dict[str, JsonVal] = {}
+        return {
+            "type_id_table": self.type_id_table,
+            "type_id_base_map": self.type_id_base_map,
+            "call_graph": self.call_graph,
+            "sccs": list(self.sccs),
+            "non_escape_summary": non_escape_summary,
+            "container_ownership_hints_v1": container_ownership_hints,
+        }
+
+
+@dataclass
+class LinkDiagnosticsDraft:
+    warnings: list[JsonVal]
+    errors: list[JsonVal]
+
+    def to_jv(self) -> dict[str, JsonVal]:
+        return {
+            "warnings": list(self.warnings),
+            "errors": list(self.errors),
+        }
+
+
+@dataclass
+class LinkManifestDraft:
+    target: str
+    dispatch_mode: str
+    entry_module_ids: list[str]
+    module_entries: list[JsonVal]
+    global_section: JsonVal
+    diagnostics: JsonVal
+
+    def to_jv(self) -> dict[str, JsonVal]:
+        return {
+            "schema": LINK_OUTPUT_SCHEMA,
+            "target": self.target,
+            "dispatch_mode": self.dispatch_mode,
+            "entry_modules": _str_list_json(self.entry_module_ids),
+            "modules": list(self.module_entries),
+            "global": self.global_section,
+            "diagnostics": self.diagnostics,
+        }
+
+
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -2091,25 +2215,21 @@ def link_modules(
         doc = row[1]
         _fold_trait_predicates(module.module_id, doc, all_traits, trait_impls)
         meta = _ensure_meta(doc)
-        emit_context: dict[str, JsonVal] = {}
-        emit_context["module_id"] = module.module_id
-        emit_context["is_entry"] = module.is_entry
-        meta["emit_context"] = emit_context
+        meta["emit_context"] = EmitContextDraft(
+            module_id=module.module_id,
+            is_entry=module.is_entry,
+        ).to_jv()
 
-        non_escape_summary: dict[str, JsonVal] = {}
-        container_ownership_hints: dict[str, JsonVal] = {}
-        linked_meta: dict[str, JsonVal] = {}
-        linked_meta["program_id"] = pid
-        linked_meta["module_id"] = module.module_id
-        linked_meta["entry_modules"] = _str_list_json(entry_module_ids)
-        linked_meta["type_id_resolved_v1"] = type_id_table
-        linked_meta["type_id_base_map_v1"] = type_id_base_map
-        linked_meta["type_info_table_v1"] = type_info_table
-        linked_meta["resolved_dependencies_v1"] = _dep_rows(resolved_deps, module.module_id)
-        linked_meta["user_module_dependencies_v1"] = _dep_rows(user_deps, module.module_id)
-        linked_meta["non_escape_summary"] = non_escape_summary
-        linked_meta["container_ownership_hints_v1"] = container_ownership_hints
-        meta["linked_program_v1"] = linked_meta
+        meta["linked_program_v1"] = LinkedProgramMetaDraft(
+            program_id=pid,
+            module_id=module.module_id,
+            entry_module_ids=entry_module_ids,
+            type_id_table=type_id_table,
+            type_id_base_map=type_id_base_map,
+            type_info_table=type_info_table,
+            resolved_dependencies=_dep_rows(resolved_deps, module.module_id),
+            user_module_dependencies=_dep_rows(user_deps, module.module_id),
+        ).to_jv()
         doc["meta"] = meta
 
         linked_modules.append(LinkedModule(
@@ -2121,26 +2241,29 @@ def link_modules(
             module_kind=module.module_kind,
         ))
 
-        me: dict[str, JsonVal] = {
-            "module_id": module.module_id,
-            "input": module.input_path,
-            "output": _linked_output_path(module.module_id),
-            "source_path": module.source_path,
-            "is_entry": module.is_entry,
-            "module_kind": module.module_kind,
-        }
+        helper_id = ""
+        owner_module_id = ""
+        generated_by = ""
+        include_owner_module_id = False
         helper_meta = meta.get("synthetic_helper_v1")
         if module.module_kind == "helper" and jv_is_dict(helper_meta):
+            include_owner_module_id = True
             helper_meta_dict = jv_dict(helper_meta)
             helper_id = "" + _node_str(helper_meta_dict, "helper_id")
             owner_module_id = "" + _node_str(helper_meta_dict, "owner_module_id")
             generated_by = "" + _node_str(helper_meta_dict, "generated_by")
-            if helper_id != "":
-                me["helper_id"] = helper_id
-            me["owner_module_id"] = owner_module_id
-            if generated_by != "":
-                me["generated_by"] = generated_by
-        module_entries.append(me)
+        module_entries.append(ManifestModuleEntryDraft(
+            module_id=module.module_id,
+            input_path=module.input_path,
+            output_path=_linked_output_path(module.module_id),
+            source_path=module.source_path,
+            is_entry=module.is_entry,
+            module_kind=module.module_kind,
+            helper_id=helper_id,
+            owner_module_id=owner_module_id,
+            generated_by=generated_by,
+            include_owner_module_id=include_owner_module_id,
+        ).to_jv())
 
     # 9. call_graph dict 変換
     cg_dict: dict[str, JsonVal] = {}
@@ -2158,30 +2281,24 @@ def link_modules(
         sccs_list.append(component_items)
 
     # 10. manifest (link-output.v1) 構築
-    global_non_escape_summary: dict[str, JsonVal] = {}
-    global_container_ownership_hints: dict[str, JsonVal] = {}
-    global_section: dict[str, JsonVal] = {}
-    global_section["type_id_table"] = type_id_table
-    global_section["type_id_base_map"] = type_id_base_map
-    global_section["call_graph"] = cg_dict
-    global_section["sccs"] = sccs_list
-    global_section["non_escape_summary"] = global_non_escape_summary
-    global_section["container_ownership_hints_v1"] = global_container_ownership_hints
-
+    global_section = LinkManifestGlobalDraft(
+        type_id_table=type_id_table,
+        type_id_base_map=type_id_base_map,
+        call_graph=cg_dict,
+        sccs=sccs_list,
+    ).to_jv()
     warnings: list[JsonVal] = []
     errors: list[JsonVal] = []
-    diagnostics: dict[str, JsonVal] = {}
-    diagnostics["warnings"] = warnings
-    diagnostics["errors"] = errors
+    diagnostics = LinkDiagnosticsDraft(warnings=warnings, errors=errors).to_jv()
 
-    manifest: dict[str, JsonVal] = {}
-    manifest["schema"] = LINK_OUTPUT_SCHEMA
-    manifest["target"] = target
-    manifest["dispatch_mode"] = dispatch_mode
-    manifest["entry_modules"] = _str_list_json(entry_module_ids)
-    manifest["modules"] = module_entries
-    manifest["global"] = global_section
-    manifest["diagnostics"] = diagnostics
+    manifest = LinkManifestDraft(
+        target=target,
+        dispatch_mode=dispatch_mode,
+        entry_module_ids=entry_module_ids,
+        module_entries=module_entries,
+        global_section=global_section,
+        diagnostics=diagnostics,
+    ).to_jv()
 
     return LinkResult(
         manifest=manifest,

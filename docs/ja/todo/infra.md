@@ -98,7 +98,8 @@ toolchain 内部で一時的なデータ受け渡しに `dict[str, JsonVal]` を
    - 2026-04-25: `resolver.py` の import resolution binding 拡張を `ImportResolutionBinding` 経由に変更。EAST 入力 accessor と最終 metadata JSON は従来どおり dict/list のまま維持。
 4. [x] [ID: P1-DATACLASS-DICT-S4] compile 層（`src/toolchain/compile/`）の @dataclass 化
    - 2026-04-25: `type_summary.py` の type summary payload builder を `TypeSummary` dataclass 経由に変更。追加で `lower.py` の target/iter plan draft を `TargetPlanDraft` / `RuntimeIterPlanDraft` / `StaticRangePlanDraft` に置換。EAST node builder と JSON accessor は非対象として維持。
-5. [ ] [ID: P1-DATACLASS-DICT-S5] link 層（`src/toolchain/link/`）の @dataclass 化
+5. [x] [ID: P1-DATACLASS-DICT-S5] link 層（`src/toolchain/link/`）の @dataclass 化
+   - 2026-04-25: `linker.py` の `linked_program_v1` / manifest module entry / manifest global / diagnostics を draft dataclass 経由で生成。`type_stubgen.py` などの synthetic EAST node builder は非対象として維持。
 
 ### 保留中タスク
 
