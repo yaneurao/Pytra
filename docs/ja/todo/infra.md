@@ -79,7 +79,8 @@
    - 2026-04-14: `spec-tools.md` / tutorial / `tools/README.md` / `sample/README*.md` を更新し、`runtime_parity_check.py` を fast-backed 正規エントリとして明記。
 4. [x] [ID: P1-PARITY-CONSOLIDATION-S4] fast 版を `runtime_parity_check.py` にリネームするか検討・実施する
    - 2026-04-14: 物理リネームは見送り。`runtime_parity_check.py` を fast 実装へ委譲する正規エントリにし、`runtime_parity_check_fast.py` は互換エイリアスとして維持する方針に決定。
-5. [ ] [ID: P1-PARITY-CONSOLIDATION-S5] 旧版削除とテスト整理
+5. [x] [ID: P1-PARITY-CONSOLIDATION-S5] 旧版削除とテスト整理
+   - 2026-04-25: `runtime_parity_check.py` を fast 実装へ委譲する薄い正規エントリに置換し、共有 helper を `runtime_parity_shared.py` へ分離。旧 subprocess 版の `build_targets` / `check_case` を削除し、CLI テストを fast 経路へ整理。
 6. [x] [ID: P1-PARITY-CONSOLIDATION-S6] `pytra-cli.py` の `_build_pipeline` で `target="js"` → `target_language="ts"` 変換を追加する
    - 2026-04-14: `_build_pipeline()` に lowering 用 `js -> ts` マッピングを追加。
 

@@ -31,6 +31,9 @@ from pathlib import Path
 
 # --- repo bootstrap ---
 ROOT = Path(__file__).resolve().parents[2]
+CHECK_DIR = Path(__file__).resolve().parent
+if str(CHECK_DIR) not in sys.path:
+    sys.path.insert(0, str(CHECK_DIR))
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
@@ -52,7 +55,7 @@ from toolchain.resolve.py.builtin_registry import load_builtin_registry  # type:
 from toolchain.resolve.py.resolver import resolve_east1_to_east2  # type: ignore
 
 # --- reuse existing parity infrastructure ---
-from runtime_parity_check import (  # type: ignore
+from runtime_parity_shared import (  # type: ignore
     FIXTURE_ROOT,
     SAMPLE_ROOT,
     STDLIB_ROOT,
@@ -1257,7 +1260,7 @@ def check_case(
             else:
                 profile = get_target_profile(target_name)
                 target_obj_needs = profile.runner_needs
-            from runtime_parity_check import Target
+            from runtime_parity_shared import Target
             dummy_target = Target(name=target_name, transpile_cmd="", run_cmd="", needs=target_obj_needs)
             if not can_run(dummy_target):
                 print(f"[SKIP] {case_stem}:{target_name} (missing toolchain)")
@@ -1401,7 +1404,7 @@ def main() -> int:
         return 1
 
     # Resolve case stems (reuse logic from runtime_parity_check)
-    from runtime_parity_check import resolve_case_stems
+    from runtime_parity_shared import resolve_case_stems
     stems, err = resolve_case_stems(args.cases, args.case_root, category=args.category)
     if err != "":
         print(f"[ERROR] {err}")
@@ -1480,7 +1483,7 @@ def main() -> int:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
-    from runtime_parity_check import _save_parity_results, _maybe_refresh_selfhost_python, _maybe_regenerate_progress  # type: ignore
+    from runtime_parity_shared import _save_parity_results, _maybe_refresh_selfhost_python, _maybe_regenerate_progress  # type: ignore
     _save_parity_results(records, args.case_root, enabled_targets)
     if args.case_root == "sample":
         _save_python_results(records, args.case_root)
