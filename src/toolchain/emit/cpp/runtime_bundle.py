@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
 
@@ -16,6 +18,23 @@ from toolchain.emit.cpp.types import collect_cpp_type_vars
 
 
 _RUNTIME_CPP_ROOT = Path(__file__).resolve().parents[3] / "runtime" / "cpp"
+
+
+@dataclass
+class RuntimeModuleArtifactDraft:
+    header_path: str = ""
+    source_path: str = ""
+
+    def as_tuple(self) -> tuple[str, str]:
+        return self.header_path, self.source_path
+
+    def emitted_count(self) -> int:
+        count = 0
+        if self.header_path != "":
+            count += 1
+        if self.source_path != "":
+            count += 1
+        return count
 
 
 def _is_extern_decorator_name(name: str) -> bool:
@@ -264,7 +283,7 @@ def emit_runtime_module_artifacts(
     if header_only_templates and cpp_text.strip() != "":
         header_text = _append_header_only_impls(header_text, cpp_text)
     header_path.write_text(header_text, encoding="utf-8")
-    return str(header_path), source_out
+    return RuntimeModuleArtifactDraft(header_path=str(header_path), source_path=source_out).as_tuple()
 
 
 def write_runtime_module_artifacts(
@@ -281,12 +300,7 @@ def write_runtime_module_artifacts(
         output_dir=output_dir,
         source_path=source_path,
     )
-    count = 0
-    if header_path != "":
-        count += 1
-    if source_out != "":
-        count += 1
-    return count
+    return RuntimeModuleArtifactDraft(header_path=header_path, source_path=source_out).emitted_count()
 
 
 def write_helper_module_artifacts(

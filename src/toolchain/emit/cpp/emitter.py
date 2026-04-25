@@ -76,6 +76,18 @@ class CppEmitContext:
     emit_class_decls: bool = True
 
 
+@dataclass
+class CppClassVarSpecDraft:
+    type_name: str
+    value: JsonVal = None
+
+    def to_jv(self) -> dict[str, JsonVal]:
+        out: dict[str, JsonVal] = {"type": self.type_name}
+        if isinstance(self.value, dict):
+            out["value"] = self.value
+        return out
+
+
 def _indent(ctx: CppEmitContext) -> str:
     return "    " * ctx.indent_level
 
@@ -4861,9 +4873,7 @@ def emit_cpp_module(
                         var_type = _str(class_stmt, "decl_type")
                         if var_type == "":
                             var_type = _str(class_stmt, "annotation")
-                        spec: dict[str, JsonVal] = {"type": var_type}
-                        spec["value"] = value
-                        class_vars[var_name] = spec
+                        class_vars[var_name] = CppClassVarSpecDraft(type_name=var_type, value=value).to_jv()
                     elif class_stmt_kind == "Assign" and not is_dataclass:
                         target = class_stmt.get("target")
                         var_name = _str(target, "id") if isinstance(target, dict) else ""
@@ -4873,10 +4883,7 @@ def emit_cpp_module(
                         var_type = _str(class_stmt, "decl_type")
                         if var_type == "" and isinstance(value, dict):
                             var_type = _str(value, "resolved_type")
-                        spec = {"type": var_type}
-                        if isinstance(value, dict):
-                            spec["value"] = value
-                        class_vars[var_name] = spec
+                        class_vars[var_name] = CppClassVarSpecDraft(type_name=var_type, value=value).to_jv()
     ctx.class_symbol_fqcns = _build_class_symbol_fqcn_map(meta, module_id, ctx.class_names, ctx.class_type_ids)
 
     # Emit body

@@ -102,7 +102,8 @@ toolchain 内部で一時的なデータ受け渡しに `dict[str, JsonVal]` を
    - 2026-04-25: `linker.py` の `linked_program_v1` / manifest module entry / manifest global / diagnostics を draft dataclass 経由で生成。`type_stubgen.py` などの synthetic EAST node builder は非対象として維持。
 6. [x] [ID: P1-DATACLASS-DICT-S6] emit/common/ の @dataclass 化（`common_renderer.py` 82箇所、`cli_runner.py` 9箇所、`profile_loader.py` 6箇所）
    - 2026-04-25: `profile_loader.py` の default profile doc を `LoweringProfileDocDraft` 経由に変更し、`cli_runner.py` の manifest module entry 取り込みを `ManifestModuleEntryDraft` に集約。`common_renderer.py` の EAST node 入力 dict は非対象として維持。
-7. [ ] [ID: P1-DATACLASS-DICT-S7] emit/cpp/ の @dataclass 化（`emitter.py` 116箇所、`header_gen.py` 18箇所、`runtime_bundle.py` 11箇所）
+7. [x] [ID: P1-DATACLASS-DICT-S7] emit/cpp/ の @dataclass 化（`emitter.py` 116箇所、`header_gen.py` 18箇所、`runtime_bundle.py` 11箇所）
+   - 2026-04-25: `runtime_bundle.py` の runtime artifact result、`header_gen.py` の include 行 draft、`emitter.py` の class variable spec を dataclass 経由に変更。EAST node 入力 dict と C++ AST 走査 helper は非対象として維持。
 
 ### 保留中タスク
 

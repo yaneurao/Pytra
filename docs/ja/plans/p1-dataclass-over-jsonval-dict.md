@@ -148,3 +148,5 @@ Phase 1（parse/resolve/compile/link）完了を受け、emitter 層にも同じ
 - 2026-04-25: S4 完了。`lower.py` の target/iter plan draft を `TargetPlanDraft` / `RuntimeIterPlanDraft` / `StaticRangePlanDraft` に置換した。compile 層に残る EAST node builder / JSON accessor は非対象として固定。
 - 2026-04-25: S5 完了。`linker.py` の `linked_program_v1` / manifest module entry / manifest global / diagnostics を draft dataclass 経由で生成する形に変更した。synthetic EAST node builder は非対象として維持。
 - 2026-04-25: Phase 2 追加。emitter 層（emit/common + emit/cpp を先行、残り15言語は各 backend 担当）の @dataclass 化タスクを S6/S7/S8 として追加。
+- 2026-04-25: S6 完了。`profile_loader.py` の default profile doc と `cli_runner.py` の manifest module entry 取り込みを draft dataclass 経由に変更した。`common_renderer.py` の EAST node 入力 dict は非対象として維持。
+- 2026-04-25: S7 完了。`runtime_bundle.py` の runtime artifact result、`header_gen.py` の include 行 draft、`emitter.py` の class variable spec を draft dataclass 経由に変更した。emit/cpp の EAST node 入力 dict と C++ AST 走査 helper は非対象として維持。

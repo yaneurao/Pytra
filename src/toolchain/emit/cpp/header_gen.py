@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import re
 
 from pytra.std.json import JsonVal
 
 from toolchain.emit.cpp.runtime_paths import collect_cpp_dependency_module_ids, cpp_include_for_module
 from toolchain.emit.cpp.types import cpp_param_decl, cpp_signature_type, collect_cpp_type_vars, cpp_alias_union_expansion
+
+
+@dataclass
+class CppIncludeDraft:
+    path: str
+
+    def to_line(self) -> str:
+        return '#include "' + self.path + '"'
 
 
 def _split_top_level_union(text: str) -> list[str]:
@@ -158,9 +167,9 @@ def build_cpp_header_from_east3(
         if include_path == "" or include_path in seen:
             continue
         seen.add(include_path)
-        lines.append('#include "' + include_path + '"')
+        lines.append(CppIncludeDraft(include_path).to_line())
     if native_header_include != "" and native_header_include not in seen:
-        lines.append('#include "' + native_header_include + '"')
+        lines.append(CppIncludeDraft(native_header_include).to_line())
     lines.append("")
 
     class_names: list[str] = []
