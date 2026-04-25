@@ -4725,7 +4725,12 @@ def _function_body_for_emit(
     owner = func_obj.raw.get("value")
     if not _is_zero_arg_super_call(owner):
         return body
-    return body[1:]
+    out: list[JsonVal] = []
+    idx = 1
+    while idx < len(body):
+        out.append(body[idx])
+        idx += 1
+    return out
 
 
 def _function_template_params(node: dict[str, JsonVal]) -> list[str]:
@@ -4758,14 +4763,15 @@ def _is_user_class_param_type(resolved_type: str) -> bool:
     """Return True if the type is a user-defined class (needs mutable C++ ref)."""
     if resolved_type in _BUILTIN_RESOLVED_TYPE_NAMES:
         return False
-    if is_container_resolved_type(resolved_type):
+    resolved_type_arg = resolved_type + ""
+    if is_container_resolved_type(resolved_type_arg):
         return False
     if resolved_type.startswith("tuple[") or resolved_type.startswith("callable["):
         return False
     if "|" in resolved_type:
         return False
     # Single uppercase letter = template parameter (A, B, T, etc.)
-    if len(resolved_type) == 1 and resolved_type.isupper():
+    if len(resolved_type) == 1 and resolved_type.upper() == resolved_type:
         return False
     return True
 
@@ -4831,7 +4837,7 @@ def _function_param_meta(node: dict[str, JsonVal], ctx: CppEmitContext | None = 
         arg_type_str = _json_str_value(arg_type)
         if arg_type_str == "":
             arg_type_str = "object"
-        arg_type_str = normalize_cpp_nominal_adt_type(arg_type_str)
+        arg_type_str = normalize_cpp_nominal_adt_type(arg_type_str) + ""
         inferred = _infer_callable_param_type(node, arg_name)
         if inferred != "":
             arg_type_str = inferred
@@ -4847,7 +4853,7 @@ def _function_param_meta(node: dict[str, JsonVal], ctx: CppEmitContext | None = 
         vararg_type_str = _json_str_value(vararg_type)
         if vararg_type_str == "":
             vararg_type_str = "object"
-        vararg_type_str = normalize_cpp_nominal_adt_type(vararg_type_str)
+        vararg_type_str = normalize_cpp_nominal_adt_type(vararg_type_str) + ""
         out.append((vararg_name_text, vararg_type_str, False))
     return out
 
@@ -4859,7 +4865,7 @@ def _type_uses_callable(resolved_type: str) -> bool:
 def _infer_callable_param_type(node: dict[str, JsonVal], param_name: str) -> str:
     arg_types = _dict(node, "arg_types")
     declared_obj = arg_types.get(param_name, "")
-    declared = declared_obj if isinstance(declared_obj, str) else ""
+    declared = _json_str_value(declared_obj)
     if not _type_uses_callable(declared):
         return ""
     inferred_arg = ""
@@ -4867,22 +4873,28 @@ def _infer_callable_param_type(node: dict[str, JsonVal], param_name: str) -> str
 
     def _visit(cur: JsonVal, parent: JsonVal = None, grandparent: JsonVal = None) -> None:
         nonlocal inferred_arg, inferred_ret
-        if isinstance(cur, dict):
-            if _str(cur, "kind") == "Call":
-                func = cur.get("func")
-                if isinstance(func, dict) and _str(func, "kind") == "Name" and _str(func, "id") == param_name:
-                    args = _list(cur, "args")
-                    if len(args) == 1 and isinstance(args[0], dict):
+        cur_obj = json.JsonValue(cur).as_obj()
+        if cur_obj is not None:
+            cur_dict = cur_obj.raw
+            if _str(cur_dict, "kind") == "Call":
+                func = cur_dict.get("func")
+                func_obj = json.JsonValue(func).as_obj()
+                if func_obj is not None and _str(func_obj.raw, "kind") == "Name" and _str(func_obj.raw, "id") == param_name:
+                    args = _list(cur_dict, "args")
+                    arg0_obj = json.JsonValue(args[0]).as_obj() if len(args) == 1 else None
+                    if arg0_obj is not None:
                         arg_type = _effective_resolved_type(args[0])
                         if arg_type not in ("", "unknown", "object", "Any", "Callable", "callable"):
                             inferred_arg = arg_type
-                    ret_type = _infer_callable_return_from_parent(cur, parent, grandparent, node)
+                    ret_type = _infer_callable_return_from_parent(cur_dict, parent, grandparent, node)
                     if ret_type not in ("", "unknown", "object", "Any", "Callable", "callable"):
                         inferred_ret = ret_type
-            for child in cur.values():
-                _visit(child, cur, parent)
-        elif isinstance(cur, list):
-            for child in cur:
+            for child in cur_dict.values():
+                _visit(child, cur_dict, parent)
+            return
+        cur_arr = json.JsonValue(cur).as_arr()
+        if cur_arr is not None:
+            for child in cur_arr.raw:
                 _visit(child, parent, grandparent)
 
     _visit(_list(node, "body"))
