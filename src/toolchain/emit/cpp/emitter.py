@@ -173,6 +173,28 @@ def _selfhost_cpp_signature_type(resolved_type: str) -> str:
     return resolved_type
 
 
+def _resolve_runtime_symbol_name_local(
+    symbol: str,
+    mapping: RuntimeMapping,
+    module_id: str = "",
+    resolved_runtime_call: str = "",
+    runtime_call: str = "",
+) -> str:
+    if resolved_runtime_call in mapping.calls:
+        return mapping.calls[resolved_runtime_call]
+    if runtime_call in mapping.calls:
+        return mapping.calls[runtime_call]
+    if module_id != "" and symbol != "":
+        fqcn = module_id + "." + symbol
+        if fqcn in mapping.calls:
+            return mapping.calls[fqcn]
+    if symbol == "":
+        return ""
+    if symbol.startswith(mapping.builtin_prefix):
+        return symbol[len(mapping.builtin_prefix):]
+    return mapping.builtin_prefix + symbol
+
+
 def _module_needs_error_header(node: JsonVal) -> bool:
     node_obj = json.JsonValue(node).as_obj()
     if node_obj is not None:
@@ -2729,8 +2751,14 @@ def _emit_attribute(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     runtime_symbol = _str(node, "runtime_symbol")
     runtime_symbol_dispatch = _str(node, "runtime_symbol_dispatch")
     owner_module = ctx.import_aliases.get(owner_id, "")
-    owner_class_vars = ctx.class_vars.get(owner_id, {})
-    if owner_id != "" and owner_class_vars.get(attr) is not None:
+    has_class_var = False
+    if owner_id != "":
+        for class_owner, class_var_map in ctx.class_vars.items():
+            if class_owner == owner_id:
+                for class_attr, _class_var_spec_value in class_var_map.items():
+                    if class_attr == attr:
+                        has_class_var = True
+    if has_class_var:
         return owner_id + "_" + attr
     if _is_type_owner(ctx, owner_node):
         return owner + "::" + attr
@@ -2759,12 +2787,12 @@ def _emit_attribute(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     ):
         if runtime_symbol == "":
             runtime_symbol = attr
-        return resolve_runtime_symbol_name(
+        return _resolve_runtime_symbol_name_local(
             runtime_symbol,
             ctx.mapping,
-            module_id=runtime_module_id,
-            resolved_runtime_call=_str(node, "resolved_runtime_call"),
-            runtime_call=_str(node, "runtime_call"),
+            runtime_module_id,
+            _str(node, "resolved_runtime_call"),
+            _str(node, "runtime_call"),
         )
     if owner == "this":
         expr = "this->" + attr
@@ -2775,25 +2803,35 @@ def _emit_attribute(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 
 
 def _class_var_spec(ctx: CppEmitContext, node: JsonVal) -> dict[str, JsonVal] | None:
-    if not isinstance(node, dict) or _str(node, "kind") != "Attribute":
+    node_obj = json.JsonValue(node).as_obj()
+    if node_obj is None:
         return None
-    owner_node = node.get("value")
-    if not isinstance(owner_node, dict):
+    node_dict = node_obj.raw
+    if _str(node_dict, "kind") != "Attribute":
         return None
-    owner_id = _str(owner_node, "id")
-    attr = _str(node, "attr")
+    owner_node: JsonVal = node_dict.get("value")
+    owner_obj = json.JsonValue(owner_node).as_obj()
+    if owner_obj is None:
+        return None
+    owner_id = _str(owner_obj.raw, "id")
+    attr = _str(node_dict, "attr")
     if owner_id == "" or attr == "":
         return None
-    spec = ctx.class_vars.get(owner_id, {}).get(attr)
-    return spec if isinstance(spec, dict) else None
+    for class_owner, class_var_map in ctx.class_vars.items():
+        if class_owner == owner_id:
+            for class_attr, spec in class_var_map.items():
+                if class_attr == attr:
+                    return spec
+    return None
 
 
 def _emit_subscript_index(ctx: CppEmitContext, value: str, slice_node: JsonVal) -> str:
     idx = _emit_expr(ctx, slice_node)
     size_expr = "py_len(" + value + ")"
-    if isinstance(slice_node, dict) and _str(slice_node, "kind") == "Constant":
-        iv = slice_node.get("value")
-        if isinstance(iv, int) and iv < 0:
+    slice_obj = json.JsonValue(slice_node).as_obj()
+    if slice_obj is not None and _str(slice_obj.raw, "kind") == "Constant":
+        iv = json.JsonValue(slice_obj.raw.get("value")).as_int()
+        if iv is not None and iv < 0:
             return "(" + size_expr + str(iv) + ")"
     if isinstance(slice_node, dict) and _str(slice_node, "kind") == "UnaryOp" and _str(slice_node, "op") == "USub":
         operand = _emit_expr(ctx, slice_node.get("operand"))
