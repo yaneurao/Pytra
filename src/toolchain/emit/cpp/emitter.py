@@ -4676,22 +4676,28 @@ def _constructor_init_list(ctx: CppEmitContext, node: dict[str, JsonVal], owner_
     if len(body) == 0:
         return ""
     first = body[0]
-    if not isinstance(first, dict) or _str(first, "kind") != "Expr":
+    first_obj = json.JsonValue(first).as_obj()
+    if first_obj is None or _str(first_obj.raw, "kind") != "Expr":
         return ""
-    value = first.get("value")
-    if not isinstance(value, dict) or _str(value, "kind") != "Call":
+    value = first_obj.raw.get("value")
+    value_obj = json.JsonValue(value).as_obj()
+    if value_obj is None or _str(value_obj.raw, "kind") != "Call":
         return ""
-    func = value.get("func")
-    if not isinstance(func, dict) or _str(func, "kind") != "Attribute" or _str(func, "attr") != "__init__":
+    func = value_obj.raw.get("func")
+    func_obj = json.JsonValue(func).as_obj()
+    if func_obj is None or _str(func_obj.raw, "kind") != "Attribute" or _str(func_obj.raw, "attr") != "__init__":
         return ""
-    owner = func.get("value")
+    owner = func_obj.raw.get("value")
     if not _is_zero_arg_super_call(owner):
         return ""
-    args = [_emit_expr(ctx, a) for a in _list(value, "args")]
-    keywords = _list(value, "keywords")
+    args: list[str] = []
+    for a in _list(value_obj.raw, "args"):
+        args.append(_emit_expr(ctx, a))
+    keywords = _list(value_obj.raw, "keywords")
     for kw in keywords:
-        if isinstance(kw, dict):
-            args.append(_emit_expr(ctx, kw.get("value")))
+        kw_obj = json.JsonValue(kw).as_obj()
+        if kw_obj is not None:
+            args.append(_emit_expr(ctx, kw_obj.raw.get("value")))
     return " : " + base_name + "(" + ", ".join(args) + ")"
 
 
@@ -4705,15 +4711,18 @@ def _function_body_for_emit(
     if init_list == "" or owner_name == "" or _str(node, "name") != "__init__" or len(body) == 0:
         return body
     first = body[0]
-    if not isinstance(first, dict) or _str(first, "kind") != "Expr":
+    first_obj = json.JsonValue(first).as_obj()
+    if first_obj is None or _str(first_obj.raw, "kind") != "Expr":
         return body
-    value = first.get("value")
-    if not isinstance(value, dict) or _str(value, "kind") != "Call":
+    value = first_obj.raw.get("value")
+    value_obj = json.JsonValue(value).as_obj()
+    if value_obj is None or _str(value_obj.raw, "kind") != "Call":
         return body
-    func = value.get("func")
-    if not isinstance(func, dict) or _str(func, "kind") != "Attribute" or _str(func, "attr") != "__init__":
+    func = value_obj.raw.get("func")
+    func_obj = json.JsonValue(func).as_obj()
+    if func_obj is None or _str(func_obj.raw, "kind") != "Attribute" or _str(func_obj.raw, "attr") != "__init__":
         return body
-    owner = func.get("value")
+    owner = func_obj.raw.get("value")
     if not _is_zero_arg_super_call(owner):
         return body
     return body[1:]
@@ -4771,23 +4780,30 @@ def _function_param_is_mutated_via_call(
     mutable_indexes = ctx.function_mutable_param_indexes
 
     def _walk(value: JsonVal) -> bool:
-        if isinstance(value, dict):
-            if _str(value, "kind") == "Call":
-                func = value.get("func")
-                callee_name = _str(func, "id") if isinstance(func, dict) else ""
+        value_obj = json.JsonValue(value).as_obj()
+        if value_obj is not None:
+            value_dict = value_obj.raw
+            if _str(value_dict, "kind") == "Call":
+                func = value_dict.get("func")
+                func_obj = json.JsonValue(func).as_obj()
+                callee_name = _str(func_obj.raw, "id") if func_obj is not None else ""
                 callee_mutable = mutable_indexes.get(callee_name, set())
                 if len(callee_mutable) > 0:
-                    for idx, arg in enumerate(_list(value, "args")):
+                    args = _list(value_dict, "args")
+                    for idx in range(len(args)):
+                        arg = args[idx]
                         if idx not in callee_mutable:
                             continue
-                        if isinstance(arg, dict) and _str(arg, "kind") == "Name" and _str(arg, "id") == arg_name:
+                        arg_obj = json.JsonValue(arg).as_obj()
+                        if arg_obj is not None and _str(arg_obj.raw, "kind") == "Name" and _str(arg_obj.raw, "id") == arg_name:
                             return True
-            for child in value.values():
+            for child in value_dict.values():
                 if _walk(child):
                     return True
             return False
-        if isinstance(value, list):
-            for item in value:
+        value_arr = json.JsonValue(value).as_arr()
+        if value_arr is not None:
+            for item in value_arr.raw:
                 if _walk(item):
                     return True
         return False
@@ -4801,10 +4817,10 @@ def _function_param_meta(node: dict[str, JsonVal], ctx: CppEmitContext | None = 
     arg_usage = _dict(node, "arg_usage")
     is_static = _has_decorator(node, "staticmethod")
     vararg_name_val = node.get("vararg_name")
-    vararg_name_str = vararg_name_val if isinstance(vararg_name_val, str) else ""
+    vararg_name_str = _json_str_value(vararg_name_val)
     out: list[tuple[str, str, bool]] = []
     for arg in arg_order:
-        arg_name = arg if isinstance(arg, str) else ""
+        arg_name = _json_str_value(arg)
         if arg_name == "":
             continue
         if arg_name == "self" and not is_static:
@@ -4812,7 +4828,9 @@ def _function_param_meta(node: dict[str, JsonVal], ctx: CppEmitContext | None = 
         if arg_name == vararg_name_str:
             continue
         arg_type = arg_types.get(arg_name, "")
-        arg_type_str = arg_type if isinstance(arg_type, str) else "object"
+        arg_type_str = _json_str_value(arg_type)
+        if arg_type_str == "":
+            arg_type_str = "object"
         arg_type_str = normalize_cpp_nominal_adt_type(arg_type_str)
         inferred = _infer_callable_param_type(node, arg_name)
         if inferred != "":
@@ -4823,11 +4841,14 @@ def _function_param_meta(node: dict[str, JsonVal], ctx: CppEmitContext | None = 
                           and arg_usage.get(arg_name) != "readonly"))
         out.append((arg_name, arg_type_str, is_mutable))
     vararg_name = node.get("vararg_name")
-    if isinstance(vararg_name, str) and vararg_name != "":
-        vararg_type = arg_types.get(vararg_name, "")
-        vararg_type_str = vararg_type if isinstance(vararg_type, str) else "object"
+    vararg_name_text = _json_str_value(vararg_name)
+    if vararg_name_text != "":
+        vararg_type = arg_types.get(vararg_name_text, "")
+        vararg_type_str = _json_str_value(vararg_type)
+        if vararg_type_str == "":
+            vararg_type_str = "object"
         vararg_type_str = normalize_cpp_nominal_adt_type(vararg_type_str)
-        out.append((vararg_name, vararg_type_str, False))
+        out.append((vararg_name_text, vararg_type_str, False))
     return out
 
 
