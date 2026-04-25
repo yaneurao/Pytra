@@ -21,12 +21,24 @@ class SourceSpan:
     end_col: Optional[int]
 
     def to_jv(self) -> dict[str, JsonVal]:
-        return {
-            "lineno": self.lineno,
-            "col": self.col,
-            "end_lineno": self.end_lineno,
-            "end_col": self.end_col,
-        }
+        out: dict[str, JsonVal] = {}
+        if self.lineno is None:
+            out["lineno"] = None
+        else:
+            out["lineno"] = int(self.lineno)
+        if self.col is None:
+            out["col"] = None
+        else:
+            out["col"] = int(self.col)
+        if self.end_lineno is None:
+            out["end_lineno"] = None
+        else:
+            out["end_lineno"] = int(self.end_lineno)
+        if self.end_col is None:
+            out["end_col"] = None
+        else:
+            out["end_col"] = int(self.end_col)
+        return out
 
 
 NULL_SPAN = SourceSpan(lineno=None, col=None, end_lineno=None, end_col=None)

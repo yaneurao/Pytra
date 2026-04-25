@@ -341,13 +341,17 @@ def _parse_one(input_path: Path, output_text: str, pretty: bool) -> int:
         return 1
 
     east1_doc = parse_python_file(str(input_path))
+    print("TRACE _parse_one:parsed")
     out_path = Path(output_text) if output_text != "" else _default_east1_output_path(input_path)
 
     _ensure_parent_dir(out_path)
     indent = 2 if pretty else None
     payload: JsonVal = east1_doc
+    print("TRACE _parse_one:dump")
+    dumped = _dump_json_doc(east1_doc, indent) + "\n"
+    print("TRACE _parse_one:write")
     out_path.write_text(
-        _dump_json_doc(east1_doc, indent) + "\n",
+        dumped,
         encoding="utf-8",
     )
     print("parsed: " + str(out_path))

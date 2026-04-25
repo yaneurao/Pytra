@@ -6,6 +6,7 @@ toolchain/ には依存しない。
 
 from __future__ import annotations
 
+from pytra.std import json
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
 
@@ -157,13 +158,24 @@ def _join_continuation_lines(source: str) -> str:
 
 def parse_python_file_to_module(input_path: str) -> Module:
     """ファイルを読み込み、EAST1 Module ノードを返す。"""
+    print("TRACE parse_python_file_to_module:read")
     source: str = Path(input_path).read_text(encoding="utf-8")
+    print("TRACE parse_python_file_to_module:join")
     source = _join_continuation_lines(source)
+    print("TRACE parse_python_file_to_module:parse")
     return parse_python_source(source, input_path)
 
 
 def parse_python_file(input_path: str) -> dict[str, JsonVal]:
     """ファイルを読み込み、EAST1 ドキュメント (dict) を返す。"""
+    print("TRACE parse_python_file:module")
     module: Module = parse_python_file_to_module(input_path)
-    doc: dict[str, JsonVal] = module.to_jv()
-    return doc
+    print("TRACE parse_python_file:to_jv")
+    raw_doc: JsonVal = module.to_jv()
+    print("TRACE parse_python_file:as_obj")
+    doc_obj = json.JsonValue(raw_doc).as_obj()
+    if doc_obj is None:
+        print("TRACE parse_python_file:none")
+        return {}
+    print("TRACE parse_python_file:done")
+    return doc_obj.raw

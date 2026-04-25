@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pytra.typing import cast
+from pytra.std import sys
 from pytra.types import int64
 
 type JsonVal = None | bool | int | float | str | list[JsonVal] | dict[str, JsonVal]
@@ -549,20 +550,36 @@ def _dump_json_value(
     key_sep: str,
     level: int,
 ) -> str:
+    sys.write_stderr("TRACE dump level=" + str(cast(int64, level)) + "\n")
     if v is None:
+        sys.write_stderr("TRACE dump none\n")
         return "null"
-    if isinstance(v, bool):
-        return "true" if v else "false"
-    if isinstance(v, int):
-        return str(cast(int64, v))
-    if isinstance(v, float):
-        return str(cast(float, v))
-    if isinstance(v, str):
-        return _escape_str(cast(str, v), ensure_ascii)
-    if isinstance(v, list):
-        return _dump_json_list(cast(list[JsonVal], v), ensure_ascii, indent, item_sep, key_sep, level)
-    if isinstance(v, dict):
-        return _dump_json_dict(cast(dict[str, JsonVal], v), ensure_ascii, indent, item_sep, key_sep, level)
+    value = JsonValue(v)
+    bool_v = value.as_bool()
+    if bool_v is not None:
+        sys.write_stderr("TRACE dump bool\n")
+        return "true" if bool_v else "false"
+    int_v = value.as_int()
+    if int_v is not None:
+        sys.write_stderr("TRACE dump int\n")
+        return str(cast(int64, int_v))
+    float_v = value.as_float()
+    if float_v is not None:
+        sys.write_stderr("TRACE dump float\n")
+        return str(cast(float, float_v))
+    str_v = value.as_str()
+    if str_v is not None:
+        sys.write_stderr("TRACE dump str\n")
+        return _escape_str(cast(str, str_v), ensure_ascii)
+    arr_v = value.as_arr()
+    if arr_v is not None:
+        sys.write_stderr("TRACE dump arr\n")
+        return _dump_json_list(arr_v.raw, ensure_ascii, indent, item_sep, key_sep, level)
+    obj_v = value.as_obj()
+    if obj_v is not None:
+        sys.write_stderr("TRACE dump obj\n")
+        return _dump_json_dict(obj_v.raw, ensure_ascii, indent, item_sep, key_sep, level)
+    sys.write_stderr("TRACE dump unsupported\n")
     raise TypeError("json.dumps unsupported type")
 
 

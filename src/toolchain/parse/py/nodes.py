@@ -853,12 +853,14 @@ class Module:
     renamed_symbols: dict[str, str]
     east_stage: int = 1
     def to_jv(self) -> dict[str, JsonVal]:
-        return {
-            "kind": "Module", "source_path": self.source_path,
-            "source_span": self.source_span.to_jv(),
-            "body": _stmt_jv_list(self.body),
-            "main_guard_body": _stmt_jv_list(self.main_guard_body),
-            "renamed_symbols": _str_dict_jv(self.renamed_symbols),
-            "meta": dict(self.meta),
-            "east_stage": self.east_stage,
-        }
+        d: dict[str, JsonVal] = {}
+        d["kind"] = "Module"
+        d["source_path"] = self.source_path
+        if not (self.source_span.lineno is None and self.source_span.col is None and self.source_span.end_lineno is None and self.source_span.end_col is None):
+            d["source_span"] = self.source_span.to_jv()
+        d["body"] = _stmt_jv_list(self.body)
+        d["main_guard_body"] = _stmt_jv_list(self.main_guard_body)
+        d["renamed_symbols"] = _str_dict_jv(self.renamed_symbols)
+        d["meta"] = dict(self.meta)
+        d["east_stage"] = self.east_stage
+        return d
