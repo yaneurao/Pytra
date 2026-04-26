@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-16
+最終更新: 2026-04-26
 
 ## 運用ルール
 
@@ -112,6 +112,42 @@
 1. [x] [ID: P0-CR-UNION-S1] CommonRenderer 相当の共通 type helper に union member 判定を実装する
 2. [x] [ID: P0-CR-UNION-S2] `list[Union].append(member)` で union 構成要素の場合に covariant copy をスキップするよう修正する
 3. [x] [ID: P0-CR-UNION-S3] C++ selfhost の `list[JsonVal].append(dict[str, JsonVal])` が単純格納に変換されることを確認する
+
+### P0-RESOLVE-FIELD-TYPES: __init__ の self.<field> 代入から ClassDef.field_types を埋める
+
+**発端**: selfhost で `alias_arg.py` 等の ClassDef.field_types が `{}` のまま C++ emitter に届き、struct ヘッダにメンバが出ずコンパイル失敗。
+
+**問題**: parser は `__init__` body の `self.attr = value` を走査して field_types を埋めようとするが、パラメータに型注釈がない場合や名前が一致しない場合は推論できず空のまま。resolver は既存の field_types を正規化するだけで、式の resolved_type からの補完をしない。
+
+**方針**: resolver の `_resolve_class` で `__init__` body を resolve した後に `self.attr = expr` を再走査し、field_types に未登録のフィールドを `expr.resolved_type` から補完する。parser 段階では型が未解決なので resolver でやるのが正道。
+
+1. [ ] [ID: P0-RESOLVE-FIELD-S1] resolver の `_resolve_class` で `__init__` body の `self.attr = expr` から field_types を補完する
+2. [ ] [ID: P0-RESOLVE-FIELD-S2] `alias_arg` fixture が field_types 付きで EAST3 を出力し、C++ parity PASS することを確認する
+3. [ ] [ID: P0-RESOLVE-FIELD-S3] `__init__` 以外のメソッドで self.attr に代入するケースの扱いを決める（v1 では __init__ のみ対象）
+
+### P0-CLASS-VAR-VS-FIELD: class 変数と instance field の metadata を分離する
+
+**発端**: `class_member.py` の `Counter.value: int = 0` が field_types に入り、C++ emitter が instance field としてヘッダに出力する一方、本体側では `Counter_value` グローバルとして出力して不一致。
+
+**問題**: EAST3 の ClassDef.field_types に class 変数と instance field が混在して入り、`class_storage_hint` だけでは区別できない。
+
+**方針**: field_types の各エントリに `"class_var"` / `"instance"` のフラグを追加するか、`class_var_types` を別フィールドとして分離する。spec-east.md §11 のクラス情報事前収集に追記が必要。
+
+1. [ ] [ID: P0-CLASSVAR-S1] ClassDef に `class_var_types` を追加し、class body の直接 `AnnAssign` を class_var、`__init__` 内の `self.attr` を instance field として分離する
+2. [ ] [ID: P0-CLASSVAR-S2] C++ emitter が class_var を static / グローバル変数として、instance field を struct メンバとして出力することを確認する
+3. [ ] [ID: P0-CLASSVAR-S3] `class_member` fixture が C++ parity PASS することを確認する
+
+### P1-LOWER-STARRED-EXPAND: Call.args 内の Starred を lower で展開する
+
+**発端**: `starred_call_tuple_basic.py` の `draw(*rgb)` が host C++ emit でも `unsupported_expr_kind: Starred` で落ちる。
+
+**問題**: lower.py は Starred ノードをそのまま EAST3 に通過させるが、C++ emitter（および他言語 emitter）は Starred を処理できない。EAST3 を backend-friendly IR にする方針に沿い、静的に展開可能な Starred は lower で引数に inline 展開すべき。
+
+**方針**: lower の Call 処理で、Starred の value が静的サイズの tuple 型のとき、tuple 要素数分の Subscript に展開する。動的サイズや不明型の場合は `unsupported_syntax` で fail-closed。
+
+1. [ ] [ID: P1-LOWER-STARRED-S1] lower.py の `_lower_call_expr` で Starred(tuple) を静的展開する
+2. [ ] [ID: P1-LOWER-STARRED-S2] validate_east3 に Starred 残留検出を追加する（For 残留検出と同様）
+3. [ ] [ID: P1-LOWER-STARRED-S3] `starred_call_tuple_basic` fixture が C++ parity PASS することを確認する
 
 ### P20-CPP-SELFHOST: C++ emitter で toolchain を C++ に変換し g++ build を通す
 
