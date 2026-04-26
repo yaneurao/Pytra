@@ -2431,17 +2431,38 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 return _emit_cast_expr(ctx, args[0], args[1])
             if fn == "isinstance" and len(args) >= 2:
                 expected_obj = json.JsonValue(args[1]).as_obj()
+                expected_names: list[str] = []
                 expected_name = ""
                 if expected_obj is not None:
-                    expected_name = _str(expected_obj.raw, "type_object_of")
-                    if expected_name == "":
-                        expected_name = _str(expected_obj.raw, "id")
-                isinstance_node: dict[str, JsonVal] = {}
-                isinstance_node["kind"] = "IsInstance"
-                isinstance_node["value"] = args[0]
-                isinstance_node["expected_type_name"] = expected_name
-                isinstance_node["resolved_type"] = "bool"
-                return _emit_isinstance(ctx, isinstance_node)
+                    if _str(expected_obj.raw, "kind") == "Tuple":
+                        for element in _list(expected_obj.raw, "elements"):
+                            element_obj = json.JsonValue(element).as_obj()
+                            if element_obj is None:
+                                continue
+                            element_name = _str(element_obj.raw, "type_object_of")
+                            if element_name == "":
+                                element_name = _str(element_obj.raw, "id")
+                            if element_name != "":
+                                expected_names.append(element_name)
+                    else:
+                        expected_name = _str(expected_obj.raw, "type_object_of")
+                        if expected_name == "":
+                            expected_name = _str(expected_obj.raw, "id")
+                if len(expected_names) == 0:
+                    expected_names.append(expected_name)
+                checks: list[str] = []
+                for name in expected_names:
+                    isinstance_node: dict[str, JsonVal] = {}
+                    isinstance_node["kind"] = "IsInstance"
+                    isinstance_node["value"] = args[0]
+                    isinstance_node["expected_type_name"] = name
+                    isinstance_node["resolved_type"] = "bool"
+                    checks.append(_emit_isinstance(ctx, isinstance_node))
+                if len(checks) == 0:
+                    return "false"
+                if len(checks) == 1:
+                    return checks[0]
+                return "(" + " || ".join(checks) + ")"
             if fn in ("bytearray", "bytes"):
                 a0: JsonVal = None
                 a0_obj = json.JsonValue(a0).as_obj()

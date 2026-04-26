@@ -4509,6 +4509,11 @@ def _apply_profile_stmt(
         bind_ctx_stmt["declare"] = True
         if context_type != "":
             bind_ctx_stmt["decl_type"] = context_type
+        context_kind = ""
+        if jv_is_dict(context_expr):
+            context_kind = "" + nd_get_str(context_expr, "kind")
+        if context_kind in ("Name", "Attribute", "Subscript"):
+            bind_ctx_stmt["bind_ref"] = True
         enter_type = _str(out_node, "with_enter_type")
         if enter_type == "":
             enter_type = context_type
@@ -4524,7 +4529,8 @@ def _apply_profile_stmt(
             semantic_tag=_str(out_node, "with_enter_semantic_tag"),
         )
         enter_stmt: Node
-        if var_name != "":
+        bind_enter_to_context = var_name != "" and context_type != "" and enter_type != "" and context_type == enter_type
+        if var_name != "" and not bind_enter_to_context:
             enter_stmt = _passes_empty_node()
             enter_stmt["kind"] = ASSIGN
             enter_stmt["target"] = _make_name_ref(var_name, enter_type)
@@ -4551,7 +4557,22 @@ def _apply_profile_stmt(
         )
         try_stmt: Node = _passes_empty_node()
         try_stmt["kind"] = TRY
-        try_stmt["body"] = out_node["body"]
+        if bind_enter_to_context:
+            with_assign: Node = _passes_empty_node()
+            with_assign["kind"] = ASSIGN
+            with_assign["target"] = _make_name_ref(var_name, enter_type)
+            with_assign["value"] = _make_name_ref(ctx_name, context_type)
+            with_assign["declare"] = True
+            with_assign["bind_ref"] = True
+            if enter_type != "":
+                with_assign["decl_type"] = enter_type
+            try_body: list[JsonVal] = _passes_empty_jv_list()
+            try_body.append(with_assign)
+            for body_stmt in _node_list(out_node, "body"):
+                try_body.append(body_stmt)
+            try_stmt["body"] = try_body
+        else:
+            try_stmt["body"] = out_node["body"]
         try_stmt["handlers"] = _passes_empty_jv_list()
         try_stmt["orelse"] = _passes_empty_jv_list()
         finalbody: list[JsonVal] = _passes_empty_jv_list()
