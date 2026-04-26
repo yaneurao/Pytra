@@ -2390,6 +2390,19 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             func_resolved_type = _effective_resolved_type(func)
             if fn == "cast" and len(args) >= 2:
                 return _emit_cast_expr(ctx, args[0], args[1])
+            if fn == "isinstance" and len(args) >= 2:
+                expected_obj = json.JsonValue(args[1]).as_obj()
+                expected_name = ""
+                if expected_obj is not None:
+                    expected_name = _str(expected_obj.raw, "type_object_of")
+                    if expected_name == "":
+                        expected_name = _str(expected_obj.raw, "id")
+                isinstance_node: dict[str, JsonVal] = {}
+                isinstance_node["kind"] = "IsInstance"
+                isinstance_node["value"] = args[0]
+                isinstance_node["expected_type_name"] = expected_name
+                isinstance_node["resolved_type"] = "bool"
+                return _emit_isinstance(ctx, isinstance_node)
             if fn in ("bytearray", "bytes"):
                 a0: JsonVal = None
                 a0_obj = json.JsonValue(a0).as_obj()
