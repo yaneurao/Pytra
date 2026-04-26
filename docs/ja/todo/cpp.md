@@ -172,4 +172,5 @@ S0〜S4 完了済み（[archive/20260402.md](archive/20260402.md) 参照）。
    - 2026-04-26: C++ emitter が `type.isinstance` の Call を既存 `_emit_isinstance` 経路へ通すよう修正し、selfhost C++ の `class_inherit_basic` / `is_instance` / `isinstance_user_class` が emit/run まで PASS。trait 系は別原因で未完了。
    - 2026-04-26: 空 `set[tuple[...]]` ctor の C++ 型名生成と `@property` getter 属性参照を修正し、host C++ parity と selfhost C++ emit/run の両方で `object_container_access` / `property_method_call` が PASS。S6 全体は未完了。
    - 2026-04-26: `dict[str, object].get(...)` を `str()` へ渡す動的 object 境界を `py_to_string` 経由に修正し、host C++ parity と selfhost C++ emit/run の両方で `typed_container_access` が PASS。S6 全体は未完了。
+   - 2026-04-26: list RHS の unpack 一時変数 `__tuple_unpack_*` を `std::get` に誤分類しないよう修正し、host C++ parity と selfhost C++ emit/run の両方で `tuple_unpack_variants` が PASS。S6 全体は未完了。
 3. [ ] [ID: P20-CPP-SELFHOST-S7] `run_selfhost_parity.py --selfhost-lang cpp --emit-target cpp --case-root sample` で sample parity が PASS することを確認する

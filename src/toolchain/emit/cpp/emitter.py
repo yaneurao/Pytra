@@ -3037,7 +3037,15 @@ def _emit_subscript(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         if iv is not None and iv >= 0:
             if value_type.startswith("tuple["):
                 return "::std::get<" + str(iv) + ">(" + value + ")"
-            if value_obj is not None and _str(value_dict, "kind") == "Name" and _str(value_dict, "id").startswith("__tuple_unpack_"):
+            if (
+                value_obj is not None
+                and _str(value_dict, "kind") == "Name"
+                and _str(value_dict, "id").startswith("__tuple_unpack_")
+                and not value_type.startswith("list[")
+                and not value_type.startswith("dict[")
+                and not value_type.startswith("set[")
+                and value_type not in ("bytes", "bytearray")
+            ):
                 return "::std::get<" + str(iv) + ">(" + value + ")"
     if value_type == "str":
         raw_idx = _emit_expr(ctx, sl)
