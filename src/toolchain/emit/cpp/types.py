@@ -70,6 +70,36 @@ _JSONVAL_EXPANDED_NORMS: list[str] = [
 ]
 _JSONVAL_INNER_EXPANDED_NORM: str = "bool|int64|float64|str|list[Any]|dict[str,Any]"
 _JSONVAL_INNER_CANON: str = "bool | int64 | float64 | str | list[JsonVal] | dict[str,JsonVal]"
+_SMALL_VALUE_TYPES: set[str] = {
+    "bool",
+    "int8",
+    "int16",
+    "int32",
+    "int64",
+    "uint8",
+    "uint16",
+    "uint32",
+    "uint64",
+    "float32",
+    "float64",
+}
+_BUILTIN_TYPE_TOKENS: set[str] = {
+    "list",
+    "dict",
+    "set",
+    "tuple",
+    "Callable",
+    "Iterator",
+    "Iterable",
+    "Optional",
+    "None",
+    "none",
+    "object",
+    "Any",
+    "Obj",
+    "unknown",
+    "callable",
+}
 
 
 def _norm_type_text(text: str) -> str:
@@ -106,63 +136,63 @@ def _cpp_variant_lane_type(resolved_type: str) -> str:
 
 
 def normalize_cpp_container_alias(resolved_type: str) -> str:
-    resolved_type = normalize_cpp_nominal_adt_type(resolved_type)
-    if resolved_type == "Node":
+    normalized = normalize_cpp_nominal_adt_type(resolved_type)
+    if normalized == "Node":
         return "dict[str,JsonVal]"
-    return resolved_type
+    return normalized
 
 
 def is_container_resolved_type(resolved_type: str) -> bool:
-    resolved_type = normalize_cpp_container_alias(resolved_type)
+    normalized = normalize_cpp_container_alias(resolved_type)
     return (
-        resolved_type.startswith("list[")
-        or resolved_type.startswith("dict[")
-        or resolved_type.startswith("set[")
+        normalized.startswith("list[")
+        or normalized.startswith("dict[")
+        or normalized.startswith("set[")
     )
 
 
 def cpp_container_value_type(resolved_type: str) -> str:
-    resolved_type = normalize_cpp_container_alias(resolved_type)
-    if resolved_type.startswith("list[") and resolved_type.endswith("]"):
-        inner = resolved_type[5:-1]
+    normalized = normalize_cpp_container_alias(resolved_type)
+    if normalized.startswith("list[") and normalized.endswith("]"):
+        inner = normalized[5:-1]
         return "list<" + cpp_signature_type(inner) + ">"
-    if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
-        inner = resolved_type[5:-1]
+    if normalized.startswith("dict[") and normalized.endswith("]"):
+        inner = normalized[5:-1]
         parts = _split_generic_args(inner)
         if len(parts) == 2:
             return "dict<" + cpp_signature_type(parts[0]) + ", " + cpp_signature_type(parts[1]) + ">"
-    if resolved_type.startswith("set[") and resolved_type.endswith("]"):
-        inner = resolved_type[4:-1]
+    if normalized.startswith("set[") and normalized.endswith("]"):
+        inner = normalized[4:-1]
         return "set<" + cpp_signature_type(inner) + ">"
     return ""
 
 
 def cpp_type(resolved_type: str, *, prefer_value_container: bool = False) -> str:
     """Convert an EAST3 resolved_type to a C++ type string."""
-    resolved_type = normalize_cpp_nominal_adt_type(resolved_type)
-    if resolved_type == "" or resolved_type == "unknown":
+    normalized = normalize_cpp_nominal_adt_type(resolved_type)
+    if normalized == "" or normalized == "unknown":
         return "auto"
 
     # mapping.json "types" テーブルを優先（P0-CPP-TYPEMAP-S3）
-    mapped = _g_types.get(resolved_type, "")
+    mapped = _g_types.get(normalized, "")
     if mapped == "":
-        mapped = _TYPE_MAP.get(resolved_type, "")
+        mapped = _TYPE_MAP.get(normalized, "")
     if mapped != "":
         return mapped
 
-    if resolved_type == "callable":
+    if normalized == "callable":
         return "::std::function<object(object)>"
 
     # list[T] / dict[K, V] / set[T]
-    container_value_type = cpp_container_value_type(resolved_type)
+    container_value_type = cpp_container_value_type(normalized)
     if container_value_type != "":
         if prefer_value_container:
             return container_value_type
         return "Object<" + container_value_type + ">"
 
     # tuple[A, B, ...]
-    if resolved_type.startswith("tuple[") and resolved_type.endswith("]"):
-        inner = resolved_type[6:-1]
+    if normalized.startswith("tuple[") and normalized.endswith("]"):
+        inner = normalized[6:-1]
         parts = _split_generic_args(inner)
         if len(parts) > 0:
             cpp_parts: list[str] = []
@@ -170,17 +200,17 @@ def cpp_type(resolved_type: str, *, prefer_value_container: bool = False) -> str
                 cpp_parts.append(cpp_type(p))
             return "::std::tuple<" + ", ".join(cpp_parts) + ">"
 
-    optional_inner = _top_level_optional_inner(resolved_type)
+    optional_inner = _top_level_optional_inner(normalized)
     if optional_inner != "":
         return "::std::optional<" + cpp_signature_type(optional_inner) + ">"
 
     # callable[[P1, P2, ...], RetType] / Callable[[...], RetType]
     #   → ::std::function<RetType(P1, P2, ...)>
     callable_inner = ""
-    if resolved_type.startswith("callable[") and resolved_type.endswith("]"):
-        callable_inner = resolved_type[9:-1]
-    elif resolved_type.startswith("Callable[") and resolved_type.endswith("]"):
-        callable_inner = resolved_type[9:-1]
+    if normalized.startswith("callable[") and normalized.endswith("]"):
+        callable_inner = normalized[9:-1]
+    elif normalized.startswith("Callable[") and normalized.endswith("]"):
+        callable_inner = normalized[9:-1]
     if callable_inner != "":
         parts = _split_generic_args(callable_inner)
         if len(parts) == 2:
@@ -198,8 +228,8 @@ def cpp_type(resolved_type: str, *, prefer_value_container: bool = False) -> str
                 cpp_ret = cpp_signature_type(ret_raw)
                 return "::std::function<" + cpp_ret + "(" + cpp_params + ")>"
 
-    if _is_top_level_union(resolved_type):
-        lanes = _split_top_level_union(resolved_type)
+    if _is_top_level_union(normalized):
+        lanes = _split_top_level_union(normalized)
         if len(lanes) > 0:
             non_none: list[str] = []
             for lane in lanes:
@@ -217,7 +247,7 @@ def cpp_type(resolved_type: str, *, prefer_value_container: bool = False) -> str
             return variant
 
     # User class → ClassName (by value or shared_ptr depending on context)
-    return resolved_type
+    return normalized
 
 
 def cpp_signature_type(resolved_type: str, *, prefer_value_container: bool = False) -> str:
@@ -225,21 +255,21 @@ def cpp_signature_type(resolved_type: str, *, prefer_value_container: bool = Fal
 
     `unknown` / general union は `auto` にせず fail-closed で `object` に倒す。
     """
-    resolved_type = normalize_cpp_nominal_adt_type(resolved_type)
-    if resolved_type == "" or resolved_type == "unknown":
+    normalized = normalize_cpp_nominal_adt_type(resolved_type)
+    if normalized == "" or normalized == "unknown":
         return "object"
-    if resolved_type == "Callable" or resolved_type == "callable":
+    if normalized == "Callable" or normalized == "callable":
         return "::std::function<object(object)>"
-    if resolved_type == "Any" or resolved_type == "Obj" or resolved_type == "object":
+    if normalized == "Any" or normalized == "Obj" or normalized == "object":
         return "object"
-    optional_inner = _top_level_optional_inner(resolved_type)
+    optional_inner = _top_level_optional_inner(normalized)
     if optional_inner != "":
         return "::std::optional<" + cpp_signature_type(
             optional_inner,
             prefer_value_container=prefer_value_container,
         ) + ">"
-    if _is_top_level_union(resolved_type):
-        lanes = _split_top_level_union(resolved_type)
+    if _is_top_level_union(normalized):
+        lanes = _split_top_level_union(normalized)
         if len(lanes) > 0:
             non_none: list[str] = []
             for lane in lanes:
@@ -255,7 +285,7 @@ def cpp_signature_type(resolved_type: str, *, prefer_value_container: bool = Fal
             if has_none:
                 return "::std::optional<" + variant + ">"
             return variant
-    return cpp_type(resolved_type, prefer_value_container=prefer_value_container)
+    return cpp_type(normalized, prefer_value_container=prefer_value_container)
 
 
 def cpp_param_decl(resolved_type: str, name: str, *, is_mutable: bool = False) -> str:
@@ -304,19 +334,7 @@ def cpp_zero_value(resolved_type: str, *, prefer_value_container: bool = False) 
 
 
 def _is_small_value_type(cpp_text: str) -> bool:
-    return (
-        cpp_text == "bool"
-        or cpp_text == "int8"
-        or cpp_text == "int16"
-        or cpp_text == "int32"
-        or cpp_text == "int64"
-        or cpp_text == "uint8"
-        or cpp_text == "uint16"
-        or cpp_text == "uint32"
-        or cpp_text == "uint64"
-        or cpp_text == "float32"
-        or cpp_text == "float64"
-    )
+    return cpp_text in _SMALL_VALUE_TYPES
 
 
 def _split_generic_args(s: str) -> list[str]:
@@ -416,23 +434,7 @@ def _iter_type_tokens(text: str) -> list[str]:
 
 
 def _is_builtin_type_token(token: str) -> bool:
-    return (
-        token == "list"
-        or token == "dict"
-        or token == "set"
-        or token == "tuple"
-        or token == "Callable"
-        or token == "Iterator"
-        or token == "Iterable"
-        or token == "Optional"
-        or token == "None"
-        or token == "none"
-        or token == "object"
-        or token == "Any"
-        or token == "Obj"
-        or token == "unknown"
-        or token == "callable"
-    )
+    return token in _BUILTIN_TYPE_TOKENS
 
 
 def collect_cpp_type_vars(resolved_type: str) -> list[str]:

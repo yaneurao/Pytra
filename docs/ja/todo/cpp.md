@@ -58,10 +58,11 @@
 
 1. [x] [ID: P1-EMITTER-SELFHOST-CPP-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target cpp -o work/selfhost/emit/cpp/` を実行し、変換が通るようにする
    - 2026-04-25: `types.py` の top-level dict/set literal と標準 `re` 依存を selfhost-safe な builder/scanner に置換。`python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target cpp -o work/selfhost/emit/cpp/` が parse/resolve/compile/optimize/link と C++ emit まで通過。
-2. [ ] [ID: P1-EMITTER-SELFHOST-CPP-S2] 生成された C++ を `g++ -std=c++20 -O0` でコンパイルを通す（source 側の型注釈不整合を修正）
+2. [x] [ID: P1-EMITTER-SELFHOST-CPP-S2] 生成された C++ を `g++ -std=c++20 -O0` でコンパイルを通す（source 側の型注釈不整合を修正）
 	   - 2026-04-25: `cli_runner.py` / `cpp/cli.py` / `code_emitter.py` の `JsonVal` に対する `isinstance` と optional 判定の一部を `JsonValue` accessor と段階的な `None` check に置換。`g++ -std=c++20 -O0 -fmax-errors=60` の次 blocker は `common_renderer` 生成ヘッダの重複宣言、class field 未生成、残りの `isinstance` lowering。
 	   - 2026-04-25: `common_renderer.py` の重複メソッド定義を整理し、C++ struct に必要な field annotation を追加。生成ヘッダの重複宣言と member 未生成は解消。次 blocker は `common_renderer` の profile helper 群に残る `JsonVal` `isinstance` lowering。
 	   - 2026-04-25: `common_renderer.py` の profile/with/exception/expr helper を `JsonValue` accessor と段階的な EAST node 構築へ寄せ、`cpp/cli.py` の selfhost entry 名衝突と `cli_runner.py` の positional 呼び出し互換性を修正。`header_gen.py` は `Callable[...]` で `<functional>` を出すよう補完。`g++` の次 blocker は `cpp/emitter.py` 先頭側に残る `isinstance` lowering と、`str`/`int64` 返却値への不要な `.unbox<T>()` 生成。
+	   - 2026-04-26: `types.py` の長大な `or` chain 生成を set membership に変更し、C++ helper の private symbol 衝突、header/definition の mutable/const 不一致、`std/subprocess.h` 欠落を修正。`python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target cpp -o work/selfhost/emit/cpp/` と、runtime 込みの `g++ -std=c++20 -O0 ... -o work/selfhost/emit/cpp/build/cpp_emitter_selfhost` が終了コード 0。残りは `_emit_expr_extension` などの non-void warning。
 3. [ ] [ID: P1-EMITTER-SELFHOST-CPP-S3] コンパイル済み emitter で既存 fixture の manifest を処理し、Python 版 emitter と parity 一致を確認する
 
 

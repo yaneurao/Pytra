@@ -228,7 +228,7 @@ def _type_id_decorators(class_def: dict[str, JsonVal]) -> list[str]:
     return out
 
 
-def _is_trait_class(class_def: dict[str, JsonVal]) -> bool:
+def _type_id_is_trait_class(class_def: dict[str, JsonVal]) -> bool:
     meta = class_def.get("meta")
     if jv_is_dict(meta):
         meta_dict: dict[str, JsonVal] = jv_dict(meta)
@@ -341,7 +341,7 @@ def build_type_id_table(
         class_defs = _iter_class_defs(module.east_doc)
         module_class_defs[current_module_id] = class_defs
         for class_def in class_defs:
-            if _is_trait_class(class_def):
+            if _type_id_is_trait_class(class_def):
                 continue
             class_name = _safe_name(class_def.get("name"))
             if class_name == "":
@@ -361,7 +361,7 @@ def build_type_id_table(
         import_symbols = collect_import_symbols(module.east_doc)
 
         for class_def in class_defs:
-            if _is_trait_class(class_def):
+            if _type_id_is_trait_class(class_def):
                 continue
             class_name = _safe_name(class_def.get("name"))
             if class_name == "":

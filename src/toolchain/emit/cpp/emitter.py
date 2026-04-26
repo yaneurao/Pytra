@@ -438,7 +438,8 @@ class _CppExprCommonRenderer(CommonRenderer):
         raise RuntimeError("cpp common renderer assign hook is not used in expr adapter")
 
     def render_expr_extension(self, node: dict[str, JsonVal]) -> str:
-        return _emit_expr_extension(self.ctx, node)
+        node_arg = node
+        return _emit_expr_extension(self.ctx, node_arg)
 
 
 
@@ -1415,33 +1416,33 @@ def _emit_static_type_id_expr(ctx: CppEmitContext, type_name: str) -> str:
 
 
 def _select_union_lane(union_type: str, target_type: str) -> str:
-    union_type = _expanded_union_type(union_type)
-    target_type = _expanded_union_type(target_type)
-    lanes = _split_top_level_union_type(union_type)
+    normalized_union_type = _expanded_union_type(union_type)
+    normalized_target_type = _expanded_union_type(target_type)
+    lanes = _split_top_level_union_type(normalized_union_type)
     for lane in lanes:
-        if lane == target_type:
+        if lane == normalized_target_type:
             return lane
-    if target_type in ("int", "int64"):
+    if normalized_target_type in ("int", "int64"):
         for lane in lanes:
             if lane in ("int", "int64"):
                 return lane
-    if target_type in ("float", "float64"):
+    if normalized_target_type in ("float", "float64"):
         for lane in lanes:
             if lane in ("float", "float64"):
                 return lane
-    if target_type == "dict" or target_type.startswith("dict["):
+    if normalized_target_type == "dict" or normalized_target_type.startswith("dict["):
         for lane in lanes:
             if lane.startswith("dict["):
                 return lane
-    if target_type == "list" or target_type.startswith("list["):
+    if normalized_target_type == "list" or normalized_target_type.startswith("list["):
         for lane in lanes:
             if lane.startswith("list["):
                 return lane
-    if target_type == "set" or target_type.startswith("set["):
+    if normalized_target_type == "set" or normalized_target_type.startswith("set["):
         for lane in lanes:
             if lane.startswith("set["):
                 return lane
-    selected = select_union_member_type(union_type, target_type)
+    selected = select_union_member_type(normalized_union_type, normalized_target_type)
     return selected + ""
 
 
@@ -1463,11 +1464,11 @@ def _unwrap_optional_variant(value_expr: str, union_type: str) -> str:
 
 
 def _emit_union_get_expr(value_expr: str, union_type: str, target_type: str) -> str:
-    union_type = _expanded_union_type(union_type)
-    target_type = _expanded_union_type(target_type)
-    if not (_is_top_level_union_type(union_type) or _has_variant_storage(union_type)):
+    normalized_union_type = _expanded_union_type(union_type)
+    normalized_target_type = _expanded_union_type(target_type)
+    if not (_is_top_level_union_type(normalized_union_type) or _has_variant_storage(normalized_union_type)):
         return value_expr
-    lane = _select_union_lane(union_type, target_type)
+    lane = _select_union_lane(normalized_union_type, normalized_target_type)
     if lane == "":
         return value_expr
     lane_copy = lane + ""
@@ -1475,7 +1476,7 @@ def _emit_union_get_expr(value_expr: str, union_type: str, target_type: str) -> 
     direct_prefix = "::std::get<" + lane_cpp + ">("
     if value_expr.startswith(direct_prefix):
         return value_expr
-    inner = _unwrap_optional_variant(value_expr, union_type)
+    inner = _unwrap_optional_variant(value_expr, normalized_union_type)
     if inner.startswith(direct_prefix):
         return inner
     return direct_prefix + inner + ")"
@@ -4844,7 +4845,8 @@ def _function_param_meta(node: dict[str, JsonVal], ctx: CppEmitContext | None = 
         inferred = _infer_callable_param_type(node, arg_name)
         if inferred != "":
             arg_type_str = inferred
-        is_mutable = (arg_usage.get(arg_name) == "reassigned"
+        is_mutable = (arg_name == "ctx"
+                      or arg_usage.get(arg_name) == "reassigned"
                       or _function_param_is_mutated_via_call(node, arg_name, ctx)
                       or (_is_user_class_param_type(arg_type_str)
                           and arg_usage.get(arg_name) != "readonly"))
@@ -5157,6 +5159,17 @@ def _node_mutates_self_fields(node: JsonVal) -> bool:
                 if owner_obj is not None and _str(owner_obj.raw, "kind") == "Name" and _str(owner_obj.raw, "id") == "self":
                     return True
         if kind == "Call":
+            for call_arg in _list(node_dict, "args"):
+                call_arg_obj = json.JsonValue(call_arg).as_obj()
+                if call_arg_obj is not None and _str(call_arg_obj.raw, "kind") == "Attribute":
+                    owner_obj = json.JsonValue(call_arg_obj.raw.get("value")).as_obj()
+                    if (
+                        owner_obj is not None
+                        and _str(owner_obj.raw, "kind") == "Name"
+                        and _str(owner_obj.raw, "id") == "self"
+                        and _str(call_arg_obj.raw, "attr") == "ctx"
+                    ):
+                        return True
             meta = node_dict.get("meta")
             meta_obj = json.JsonValue(meta).as_obj()
             if meta_obj is not None and json.JsonValue(meta_obj.raw.get("mutates_receiver")).as_bool() is True:

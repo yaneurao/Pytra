@@ -18,7 +18,7 @@ from toolchain.emit.cpp.runtime_paths import (
 from toolchain.emit.cpp.types import collect_cpp_type_vars
 
 
-_RUNTIME_CPP_ROOT = Path("src").joinpath("runtime").joinpath("cpp")
+_rb_RUNTIME_CPP_ROOT = Path("src").joinpath("runtime").joinpath("cpp")
 
 
 @dataclass
@@ -38,20 +38,20 @@ class RuntimeModuleArtifactDraft:
         return count
 
 
-def _is_extern_decorator_name(name: str) -> bool:
+def _rb_is_extern_decorator_name(name: str) -> bool:
     n = name.strip()
     return n == "extern" or n.endswith(".extern")
 
 
-def _is_extern_function_decl(stmt: dict[str, JsonVal]) -> bool:
-    if _str(stmt, "kind") != "FunctionDef":
+def _rb_is_extern_function_decl(stmt: dict[str, JsonVal]) -> bool:
+    if _rb_str(stmt, "kind") != "FunctionDef":
         return False
     decorators = stmt.get("decorators")
     decorators_arr = json.JsonValue(decorators).as_arr()
     if decorators_arr is not None:
         for decorator in decorators_arr.raw:
-            decorator_text = _json_str_value(decorator)
-            if decorator_text != "" and _is_extern_decorator_name(decorator_text):
+            decorator_text = _rb_json_str_value(decorator)
+            if decorator_text != "" and _rb_is_extern_decorator_name(decorator_text):
                 return True
     meta = stmt.get("meta")
     meta_obj = json.JsonValue(meta).as_obj()
@@ -60,40 +60,40 @@ def _is_extern_function_decl(stmt: dict[str, JsonVal]) -> bool:
     return False
 
 
-def _is_extern_call_expr(expr: JsonVal) -> bool:
+def _rb_is_extern_call_expr(expr: JsonVal) -> bool:
     expr_obj = json.JsonValue(expr).as_obj()
     if expr_obj is None:
         return False
     expr_dict = expr_obj.raw
-    if _str(expr_dict, "kind") != "Call":
+    if _rb_str(expr_dict, "kind") != "Call":
         return False
     func_obj = json.JsonValue(expr_dict.get("func")).as_obj()
     if func_obj is None:
         return False
     func = func_obj.raw
-    if _str(func, "kind") == "Name":
-        func_id = _str(func, "id")
-        return func_id != "" and _is_extern_decorator_name(func_id)
-    if _str(func, "kind") == "Attribute":
-        return _str(func, "attr") == "extern"
+    if _rb_str(func, "kind") == "Name":
+        func_id = _rb_str(func, "id")
+        return func_id != "" and _rb_is_extern_decorator_name(func_id)
+    if _rb_str(func, "kind") == "Attribute":
+        return _rb_str(func, "attr") == "extern"
     return False
 
 
-def _is_extern_variable_decl(stmt: dict[str, JsonVal]) -> bool:
-    kind = _str(stmt, "kind")
+def _rb_is_extern_variable_decl(stmt: dict[str, JsonVal]) -> bool:
+    kind = _rb_str(stmt, "kind")
     if kind not in ("Assign", "AnnAssign"):
         return False
-    return _is_extern_call_expr(stmt.get("value"))
+    return _rb_is_extern_call_expr(stmt.get("value"))
 
 
-def _strip_extern_decls_from_stmt(stmt: JsonVal) -> JsonVal:
+def _rb_strip_extern_decls_from_stmt(stmt: JsonVal) -> JsonVal:
     stmt_obj = json.JsonValue(stmt).as_obj()
     if stmt_obj is None:
         return stmt
     stmt_dict = stmt_obj.raw
-    if _is_extern_function_decl(stmt_dict) or _is_extern_variable_decl(stmt_dict):
+    if _rb_is_extern_function_decl(stmt_dict) or _rb_is_extern_variable_decl(stmt_dict):
         return None
-    kind = _str(stmt_dict, "kind")
+    kind = _rb_str(stmt_dict, "kind")
     copied: dict[str, JsonVal] = {}
     for key, value in stmt_dict.items():
         copied[key] = value
@@ -105,14 +105,14 @@ def _strip_extern_decls_from_stmt(stmt: JsonVal) -> JsonVal:
             items = body_arr.raw
         new_body: list[JsonVal] = []
         for child in items:
-            kept = _strip_extern_decls_from_stmt(child)
+            kept = _rb_strip_extern_decls_from_stmt(child)
             if kept is not None:
                 new_body.append(kept)
         copied["body"] = new_body
     return copied
 
 
-def _build_emit_doc_without_extern_decls(east_doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
+def _rb_build_emit_doc_without_extern_decls(east_doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
     copied: dict[str, JsonVal] = {}
     for key, value in east_doc.items():
         copied[key] = value
@@ -123,14 +123,14 @@ def _build_emit_doc_without_extern_decls(east_doc: dict[str, JsonVal]) -> dict[s
         items = body_arr.raw
     new_body: list[JsonVal] = []
     for stmt in items:
-        kept = _strip_extern_decls_from_stmt(stmt)
+        kept = _rb_strip_extern_decls_from_stmt(stmt)
         if kept is not None:
             new_body.append(kept)
     copied["body"] = new_body
     return copied
 
 
-def _has_cpp_emit_definitions(east_doc: dict[str, JsonVal]) -> bool:
+def _rb_has_cpp_emit_definitions(east_doc: dict[str, JsonVal]) -> bool:
     body = east_doc.get("body")
     body_arr = json.JsonValue(body).as_arr()
     items: list[JsonVal] = []
@@ -141,30 +141,30 @@ def _has_cpp_emit_definitions(east_doc: dict[str, JsonVal]) -> bool:
         if stmt_obj is None:
             continue
         stmt_dict = stmt_obj.raw
-        kind = _str(stmt_dict, "kind")
+        kind = _rb_str(stmt_dict, "kind")
         if kind in ("Import", "ImportFrom", "Pass"):
             continue
         if kind == "Expr":
             value_obj = json.JsonValue(stmt_dict.get("value")).as_obj()
-            if value_obj is not None and _str(value_obj.raw, "kind") == "Constant" and json.JsonValue(value_obj.raw.get("value")).as_str() is not None:
+            if value_obj is not None and _rb_str(value_obj.raw, "kind") == "Constant" and json.JsonValue(value_obj.raw.get("value")).as_str() is not None:
                 continue
         return True
     return False
 
 
-def _is_template_function_stmt(stmt: dict[str, JsonVal]) -> bool:
-    if _str(stmt, "kind") not in ("FunctionDef", "ClosureDef"):
+def _rb_is_template_function_stmt(stmt: dict[str, JsonVal]) -> bool:
+    if _rb_str(stmt, "kind") not in ("FunctionDef", "ClosureDef"):
         return False
-    arg_types = _dict(stmt, "arg_types")
+    arg_types = _rb_dict(stmt, "arg_types")
     for arg_type in arg_types.values():
-        arg_type_text = _json_str_value(arg_type)
+        arg_type_text = _rb_json_str_value(arg_type)
         if arg_type_text != "":
             if len(collect_cpp_type_vars(arg_type_text)) > 0:
                 return True
-    return len(collect_cpp_type_vars(_return_type(stmt))) > 0
+    return len(collect_cpp_type_vars(_rb_return_type(stmt))) > 0
 
 
-def _runtime_module_is_header_only_template_lane(east_doc: dict[str, JsonVal]) -> bool:
+def _rb_runtime_module_is_header_only_template_lane(east_doc: dict[str, JsonVal]) -> bool:
     body = east_doc.get("body")
     body_arr = json.JsonValue(body).as_arr()
     items: list[JsonVal] = []
@@ -176,30 +176,30 @@ def _runtime_module_is_header_only_template_lane(east_doc: dict[str, JsonVal]) -
         if stmt_obj is None:
             continue
         stmt_dict = stmt_obj.raw
-        kind = _str(stmt_dict, "kind")
+        kind = _rb_str(stmt_dict, "kind")
         if kind in ("Import", "ImportFrom", "Pass", "TypeAlias"):
             continue
         if kind == "Expr":
             value_obj = json.JsonValue(stmt_dict.get("value")).as_obj()
-            if value_obj is not None and _str(value_obj.raw, "kind") == "Constant" and json.JsonValue(value_obj.raw.get("value")).as_str() is not None:
+            if value_obj is not None and _rb_str(value_obj.raw, "kind") == "Constant" and json.JsonValue(value_obj.raw.get("value")).as_str() is not None:
                 continue
-        if not _is_template_function_stmt(stmt_dict):
+        if not _rb_is_template_function_stmt(stmt_dict):
             return False
         saw_template_fn = True
     return saw_template_fn
 
 
-def _return_type(node: dict[str, JsonVal]) -> str:
-    return_type = _json_str_value(node.get("return_type"))
+def _rb_return_type(node: dict[str, JsonVal]) -> str:
+    return_type = _rb_json_str_value(node.get("return_type"))
     if return_type != "":
         return return_type
-    returns = _json_str_value(node.get("returns"))
+    returns = _rb_json_str_value(node.get("returns"))
     if returns != "":
         return returns
     return "None"
 
 
-def _cpp_impl_body(cpp_text: str) -> str:
+def _rb_cpp_impl_body(cpp_text: str) -> str:
     marker = "// Generated by toolchain2/emit/cpp"
     idx = cpp_text.find(marker)
     if idx < 0:
@@ -208,8 +208,8 @@ def _cpp_impl_body(cpp_text: str) -> str:
     return body
 
 
-def _append_header_only_impls(header_text: str, cpp_text: str) -> str:
-    impl_body = _cpp_impl_body(cpp_text)
+def _rb_append_header_only_impls(header_text: str, cpp_text: str) -> str:
+    impl_body = _rb_cpp_impl_body(cpp_text)
     if impl_body == "":
         return header_text
     lines = header_text.splitlines()
@@ -233,7 +233,7 @@ def _append_header_only_impls(header_text: str, cpp_text: str) -> str:
     return "\n".join(new_lines) + "\n"
 
 
-def _inject_runtime_native_companion_include(header_text: str, module_id: str) -> str:
+def _rb_inject_runtime_native_companion_include(header_text: str, module_id: str) -> str:
     native_hdr = native_companion_header_path(module_id)
     if not native_hdr.exists():
         return header_text
@@ -288,7 +288,7 @@ def emit_runtime_module_artifacts(
     header_path = output_dir.joinpath(rel + ".h")
     header_path.parent.mkdir(parents=True, exist_ok=True)
 
-    emit_doc = _build_emit_doc_without_extern_decls(east_doc)
+    emit_doc = _rb_build_emit_doc_without_extern_decls(east_doc)
     meta_obj = json.JsonValue(emit_doc.get("meta")).as_obj()
     meta: dict[str, JsonVal] = {}
     if meta_obj is None:
@@ -302,14 +302,14 @@ def emit_runtime_module_artifacts(
         linked_dict["module_id"] = module_id
     else:
         linked_dict = linked_obj.raw
-        if _json_str_value(linked_dict.get("module_id")) == "":
+        if _rb_json_str_value(linked_dict.get("module_id")) == "":
             linked_dict["module_id"] = module_id
 
     cpp_text = ""
     source_out = ""
     has_native_companion = native_companion_header_path(module_id).exists() or native_companion_source_path(module_id).exists()
-    header_only_templates = _runtime_module_is_header_only_template_lane(emit_doc)
-    if (not has_native_companion) and _has_cpp_emit_definitions(emit_doc):
+    header_only_templates = _rb_runtime_module_is_header_only_template_lane(emit_doc)
+    if (not has_native_companion) and _rb_has_cpp_emit_definitions(emit_doc):
         cpp_text = emit_cpp_module(
             emit_doc,
             allow_runtime_module=True,
@@ -337,7 +337,7 @@ def emit_runtime_module_artifacts(
         prefer_native_header=native_include != "",
     )
     if header_only_templates and cpp_text.strip() != "":
-        header_text = _append_header_only_impls(header_text, cpp_text)
+        header_text = _rb_append_header_only_impls(header_text, cpp_text)
     header_path.write_text(header_text, encoding="utf-8")
     return RuntimeModuleArtifactDraft(header_path=str(header_path), source_path=source_out).as_tuple()
 
@@ -406,21 +406,21 @@ def write_user_module_artifacts(
     return 2
 
 
-def _str(node: dict[str, JsonVal], key: str) -> str:
+def _rb_str(node: dict[str, JsonVal], key: str) -> str:
     raw = json.JsonValue(node.get(key)).as_str()
     if raw is not None:
         return raw
     return ""
 
 
-def _json_str_value(value: JsonVal) -> str:
+def _rb_json_str_value(value: JsonVal) -> str:
     raw = json.JsonValue(value).as_str()
     if raw is not None:
         return raw
     return ""
 
 
-def _dict(node: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
+def _rb_dict(node: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
     raw = json.JsonValue(node.get(key)).as_obj()
     if raw is not None:
         return raw.raw

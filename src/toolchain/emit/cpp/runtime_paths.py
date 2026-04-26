@@ -12,9 +12,9 @@ from toolchain.link.runtime_discovery import is_runtime_namespace_module
 from toolchain.link.runtime_discovery import resolve_runtime_module_rel_tail
 
 
-_RUNTIME_CPP_ROOT = Path("src").joinpath("runtime").joinpath("cpp")
-_CPP_TYPE_ONLY_SYMBOL_KEYS: set[str] = set()
-_CPP_SKIP_MODULE_IDS: set[str] = {
+_rp_RUNTIME_CPP_ROOT = Path("src").joinpath("runtime").joinpath("cpp")
+_rp_CPP_TYPE_ONLY_SYMBOL_KEYS: set[str] = set()
+_rp_CPP_SKIP_MODULE_IDS: set[str] = {
     "abc",
     "readonly",
     "str",
@@ -26,7 +26,7 @@ def runtime_rel_tail_for_module(module_id: str) -> str:
 
 
 def cpp_include_for_module(module_id: str) -> str:
-    if module_id in _CPP_SKIP_MODULE_IDS:
+    if module_id in _rp_CPP_SKIP_MODULE_IDS:
         return ""
     if is_runtime_namespace_module(module_id) or is_type_only_dependency_module_id(module_id):
         return ""
@@ -48,21 +48,21 @@ def collect_cpp_dependency_module_ids(module_id: str, meta: dict[str, JsonVal]) 
     host-only Python modules like `os.path`.
     """
     dep_ids: list[str] = []
-    linked = _dict(meta, "linked_program_v1")
-    deps = _list(linked, "resolved_dependencies_v1")
+    linked = _rp_dict(meta, "linked_program_v1")
+    deps = _rp_list(linked, "resolved_dependencies_v1")
     for dep in deps:
-        dep_text = _json_str_value(dep)
+        dep_text = _rp_json_str_value(dep)
         if dep_text != "":
             dep_ids.append(dep_text)
-    bindings = _list(meta, "import_bindings")
+    bindings = _rp_list(meta, "import_bindings")
     for binding in bindings:
-        dep_id = _binding_cpp_dependency_module_id(binding)
+        dep_id = _rp_binding_cpp_dependency_module_id(binding)
         if dep_id != "":
             dep_ids.append(dep_id)
-    import_resolution = _dict(meta, "import_resolution")
-    resolution_bindings = _list(import_resolution, "bindings")
+    import_resolution = _rp_dict(meta, "import_resolution")
+    resolution_bindings = _rp_list(import_resolution, "bindings")
     for binding in resolution_bindings:
-        dep_id = _binding_cpp_dependency_module_id(binding)
+        dep_id = _rp_binding_cpp_dependency_module_id(binding)
         if dep_id != "":
             dep_ids.append(dep_id)
 
@@ -78,18 +78,18 @@ def collect_cpp_dependency_module_ids(module_id: str, meta: dict[str, JsonVal]) 
     return out
 
 
-def _binding_cpp_dependency_module_id(binding: JsonVal) -> str:
+def _rp_binding_cpp_dependency_module_id(binding: JsonVal) -> str:
     binding_obj = json.JsonValue(binding).as_obj()
     if binding_obj is None:
         return ""
     binding_dict = binding_obj.raw
-    module_id = _str(binding_dict, "module_id")
-    export_name = _str(binding_dict, "export_name")
-    if module_id != "" and export_name != "" and module_id + "|" + export_name in _CPP_TYPE_ONLY_SYMBOL_KEYS:
+    module_id = _rp_str(binding_dict, "module_id")
+    export_name = _rp_str(binding_dict, "export_name")
+    if module_id != "" and export_name != "" and module_id + "|" + export_name in _rp_CPP_TYPE_ONLY_SYMBOL_KEYS:
         return ""
-    runtime_module_id = _str(binding_dict, "runtime_module_id")
-    runtime_group = _str(binding_dict, "runtime_group")
-    host_only = _bool(binding_dict, "host_only")
+    runtime_module_id = _rp_str(binding_dict, "runtime_module_id")
+    runtime_group = _rp_str(binding_dict, "runtime_group")
+    host_only = _rp_bool(binding_dict, "host_only")
 
     if runtime_module_id != "":
         if host_only:
@@ -110,7 +110,7 @@ def native_companion_header_path(module_id: str) -> Path:
     rel = runtime_rel_tail_for_module(module_id)
     if rel == "":
         return Path("")
-    p = _RUNTIME_CPP_ROOT.joinpath(rel + ".h")
+    p = _rp_RUNTIME_CPP_ROOT.joinpath(rel + ".h")
     return p if p.exists() else Path("")
 
 
@@ -118,39 +118,39 @@ def native_companion_source_path(module_id: str) -> Path:
     rel = runtime_rel_tail_for_module(module_id)
     if rel == "":
         return Path("")
-    p = _RUNTIME_CPP_ROOT.joinpath(rel + ".cpp")
+    p = _rp_RUNTIME_CPP_ROOT.joinpath(rel + ".cpp")
     return p if p.exists() else Path("")
 
 
-def _str(node: dict[str, JsonVal], key: str) -> str:
+def _rp_str(node: dict[str, JsonVal], key: str) -> str:
     raw = json.JsonValue(node.get(key)).as_str()
     if raw is not None:
         return raw
     return ""
 
 
-def _bool(node: dict[str, JsonVal], key: str) -> bool:
+def _rp_bool(node: dict[str, JsonVal], key: str) -> bool:
     raw = json.JsonValue(node.get(key)).as_bool()
     if raw is not None:
         return raw
     return False
 
 
-def _json_str_value(value: JsonVal) -> str:
+def _rp_json_str_value(value: JsonVal) -> str:
     raw = json.JsonValue(value).as_str()
     if raw is not None:
         return raw
     return ""
 
 
-def _list(node: dict[str, JsonVal], key: str) -> list[JsonVal]:
+def _rp_list(node: dict[str, JsonVal], key: str) -> list[JsonVal]:
     raw = json.JsonValue(node.get(key)).as_arr()
     if raw is not None:
         return raw.raw
     return []
 
 
-def _dict(node: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
+def _rp_dict(node: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
     raw = json.JsonValue(node.get(key)).as_obj()
     if raw is not None:
         return raw.raw
