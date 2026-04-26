@@ -177,13 +177,21 @@ def build_cpp_header_from_east3(
     lines.append("")
 
     class_names: list[str] = []
+    enum_names: list[str] = []
     for stmt in stmts:
         stmt_obj = json.JsonValue(stmt).as_obj()
         if stmt_obj is None or _hg_str(stmt_obj.raw, "kind") != "ClassDef":
             continue
         name = _hg_str(stmt_obj.raw, "name")
-        if name != "":
+        base = _hg_str(stmt_obj.raw, "base")
+        if name != "" and base in ("Enum", "IntEnum", "IntFlag"):
+            enum_names.append(name)
+        elif name != "":
             class_names.append(name)
+    if len(enum_names) > 0:
+        for name in enum_names:
+            lines.append("enum class " + name + " : int64;")
+        lines.append("")
     if len(class_names) > 0:
         for name in class_names:
             lines.append("struct " + name + ";")
@@ -283,6 +291,10 @@ def _hg_emit_class_decl(lines: list[str], node: dict[str, JsonVal], mutable_para
         return
     base_specs: list[str] = []
     base = _hg_str(node, "base")
+    if base in ("Enum", "IntEnum", "IntFlag"):
+        lines.append("enum class " + name + " : int64;")
+        lines.append("")
+        return
     if base != "" and base != "object" and not _hg_bool(node, "is_trait"):
         base_specs.append("public " + base)
     trait_names = node.get("trait_names")

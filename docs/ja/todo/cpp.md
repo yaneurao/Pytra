@@ -168,4 +168,5 @@ S0〜S4 完了済み（[archive/20260402.md](archive/20260402.md) 参照）。
    - 2026-04-26: selfhost binary 内 C++ emitter の entry `set_argv(...)` を `sys` 依存時だけ出すよう修正し、代表 `add.py` は selfhost emit/run まで PASS。full fixture parity は `fixture_pass=115 / fixture_fail=46`。残りは `alias_arg` / `class_member` など host C++ emit でも compile 失敗する既存 C++ backend 問題と、`starred_call_tuple_basic` の selfhost `Starred` 未対応など。
    - 2026-04-26: full fixture parity は `fixture_pass=122 / fixture_fail=39` まで改善。追加で top-level `def main()` の C++ 実 entry 衝突と `enumerate(list[T])` lowering の壊れた range 変換を修正し、`class_body_pass` / `slice_basic` / `enumerate_basic` / `reversed_enumerate` は host C++ と selfhost C++ emit/run の両方で PASS。S6 全体は未完了。
    - 2026-04-26: 修正済み selfhost binary で full fixture parity を再実行し、`fixture_pass=134 / fixture_fail=27` を確認。S6 全体は未完了。
+   - 2026-04-26: C++ header generator の enum 前方宣言を `enum class <Name> : int64;` に揃え、selfhost C++ の `enum_basic` / `intenum_basic` / `intflag_basic` が emit/run まで PASS。S6 全体は未完了。
 3. [ ] [ID: P20-CPP-SELFHOST-S7] `run_selfhost_parity.py --selfhost-lang cpp --emit-target cpp --case-root sample` で sample parity が PASS することを確認する
