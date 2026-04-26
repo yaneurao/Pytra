@@ -126,4 +126,5 @@ S0〜S4 完了済み（[archive/20260402.md](archive/20260402.md) 参照）。
    - 2026-04-13: resolve narrowing / type alias / union member append の前提 TODO を先に消化。次は fresh selfhost build を再開する。
    - 2026-04-26: `src/pytra-cli.py` 全体を C++ emit し、`g++ -O0 -std=c++20` で runtime sources 11 件込みの selfhost binary `work/selfhost/bin/cpp` を link 成功。`./work/selfhost/bin/cpp --help` も終了コード 0。途中 blocker は `TargetPlanDraft` keyword lowering、`TypeSummary` str unbox、resolver の classmethod/tuple set/dict literal narrowing、常時 TRACE 出力を selfhost-safe に修正。
 2. [ ] [ID: P20-CPP-SELFHOST-S6] `run_selfhost_parity.py --selfhost-lang cpp --emit-target cpp --case-root fixture` で fixture parity が PASS することを確認する
+   - 2026-04-26: selfhost binary 内 C++ emitter の entry `set_argv(...)` を `sys` 依存時だけ出すよう修正し、代表 `add.py` は selfhost emit/run まで PASS。full fixture parity は `fixture_pass=115 / fixture_fail=46`。残りは `alias_arg` / `class_member` など host C++ emit でも compile 失敗する既存 C++ backend 問題と、`starred_call_tuple_basic` の selfhost `Starred` 未対応など。
 3. [ ] [ID: P20-CPP-SELFHOST-S7] `run_selfhost_parity.py --selfhost-lang cpp --emit-target cpp --case-root sample` で sample parity が PASS することを確認する

@@ -5599,6 +5599,7 @@ def emit_cpp_module(
                             var_type = _str(value_obj.raw, "resolved_type")
                         class_vars[var_name] = CppClassVarSpecDraft(type_name=var_type, value=value).to_jv()
     ctx.class_symbol_fqcns = _build_class_symbol_fqcn_map(meta, module_id, ctx.class_names, ctx.class_type_ids)
+    dep_ids = collect_cpp_dependency_module_ids(module_id, meta)
 
     # Emit body
     _emit_body(ctx, body)
@@ -5618,7 +5619,8 @@ def emit_cpp_module(
         _emit(ctx, "int main(int argc, char** argv) {")
         ctx.indent_level += 1
         _emit(ctx, "pytra_configure_from_argv(argc, argv);")
-        _emit(ctx, "set_argv(rc_list_from_value(py_runtime_argv()));")
+        if "pytra.std.sys" in dep_ids or "sys" in dep_ids:
+            _emit(ctx, "set_argv(rc_list_from_value(py_runtime_argv()));")
         if len(main_guard) > 0:
             _emit(ctx, "__pytra_main_guard();")
         _emit(ctx, "return 0;")
@@ -5626,8 +5628,6 @@ def emit_cpp_module(
         _emit(ctx, "}")
 
     # Build header
-    dep_ids = collect_cpp_dependency_module_ids(module_id, meta)
-
     for line in ctx.lines:
         if "::std::function<" in line:
             ctx.includes_needed.add("functional")
