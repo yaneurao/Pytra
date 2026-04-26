@@ -1557,6 +1557,27 @@ def _rewrite_multi_return_function_types(node: JsonVal) -> None:
 # enumerate lowering
 # ===========================================================================
 
+def _enumerate_tuple_value_type(type_name: str) -> str:
+    t = normalize_type_name(type_name)
+    if not t.startswith("tuple[") or not t.endswith("]"):
+        return "unknown"
+    inner = t[6:len(t) - 1]
+    depth = 0
+    idx = 0
+    while idx < len(inner):
+        ch = inner[idx:idx + 1]
+        if ch == "[":
+            depth += 1
+        elif ch == "]":
+            depth -= 1
+        elif ch == "," and depth == 0:
+            tail = inner[idx + 1:len(inner)].strip()
+            if tail == "":
+                return "unknown"
+            return tail + ""
+        idx += 1
+    return "unknown"
+
 def _try_lower_enum_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
     ip = stmt.get("iter_plan")
     if not jv_is_dict(ip):
@@ -1626,12 +1647,13 @@ def _try_lower_enum_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
     one["kind"] = CONSTANT
     one["value"] = 1
     one["resolved_type"] = "int64"
-    start_expr: Node = _passes_empty_node()
-    start_expr["kind"] = BIN_OP
-    start_expr["resolved_type"] = "int64"
-    start_expr["left"] = len_call
-    start_expr["op"] = "Sub"
-    start_expr["right"] = one
+    zero: Node = _passes_empty_node()
+    zero["kind"] = CONSTANT
+    zero["value"] = 0
+    zero["resolved_type"] = "int64"
+    start_expr: Node = zero
+    stop_expr: Node = len_call
+    step_expr: Node = one
     init_target: Node = _passes_empty_node()
     init_target["kind"] = NAME
     init_target["id"] = counter
@@ -1643,8 +1665,10 @@ def _try_lower_enum_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
     init["declare"] = True
     init["decl_type"] = "int64"
     nip: Node = _passes_empty_node()
-    for k, v in ip_node.items():
-        nip[k] = deep_copy_json(v)
+    nip["kind"] = STATIC_RANGE_FOR_PLAN
+    nip["start"] = start_expr
+    nip["stop"] = stop_expr
+    nip["step"] = step_expr
     ntp: Node = _passes_empty_node()
     ntp["kind"] = NAME_TARGET
     ntp["id"] = counter
@@ -1656,39 +1680,41 @@ def _try_lower_enum_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
     idx_target["id"] = v_name
     idx_target["resolved_type"] = v_type
     assign_idx["target"] = idx_target
-    idx_value: Node = _passes_empty_node()
-    idx_value["kind"] = SUBSCRIPT
-    idx_value["value"] = deep_copy_json(xs_node)
     idx_slice: Node = _passes_empty_node()
     idx_slice["kind"] = NAME
     idx_slice["id"] = counter
     idx_slice["resolved_type"] = "int64"
-    idx_value["slice"] = idx_slice
-    idx_value["resolved_type"] = v_type
-    assign_idx["value"] = idx_value
+    enum_item_type = _enumerate_tuple_value_type(v_type)
+    item_value: Node = _passes_empty_node()
+    item_value["kind"] = SUBSCRIPT
+    item_value["value"] = deep_copy_json(xs_node)
+    item_value["slice"] = idx_slice
+    item_value["resolved_type"] = enum_item_type
+    enum_index: Node = idx_slice
+    if len(jv_list(args_obj)) > 1 and jv_is_dict(jv_list(args_obj)[1]):
+        enum_index = _passes_empty_node()
+        enum_index["kind"] = BIN_OP
+        enum_index["resolved_type"] = "int64"
+        enum_index["left"] = deep_copy_json(jv_dict(jv_list(args_obj)[1]))
+        enum_index["op"] = "Add"
+        enum_index["right"] = idx_slice
+    tuple_value: Node = _passes_empty_node()
+    tuple_value["kind"] = TUPLE
+    tuple_elements: list[JsonVal] = _passes_empty_jv_list()
+    tuple_elements.append(enum_index)
+    tuple_elements.append(item_value)
+    tuple_value["elements"] = tuple_elements
+    tuple_value["resolved_type"] = v_type
+    assign_idx["value"] = tuple_value
     assign_idx["declare"] = True
     assign_idx["decl_type"] = v_type
-    increment_target: Node = _passes_empty_node()
-    increment_target["kind"] = NAME
-    increment_target["id"] = counter
-    increment_target["resolved_type"] = "int64"
-    increment_value: Node = _passes_empty_node()
-    increment_value["kind"] = CONSTANT
-    increment_value["value"] = 1
-    increment_value["resolved_type"] = "int64"
-    increment: Node = _passes_empty_node()
-    increment["kind"] = AUG_ASSIGN
-    increment["target"] = increment_target
-    increment["op"] = "Add"
-    increment["value"] = increment_value
     nb: list[JsonVal] = _passes_empty_jv_list()
     nb.append(assign_idx)
     for item in body_list:
         nb.append(item)
-    nb.append(increment)
     nf: Node = _passes_empty_node()
     nf["kind"] = FOR_CORE
-    nf["iter_mode"] = stmt.get("iter_mode", "runtime_protocol")
+    nf["iter_mode"] = "static_fastpath"
     nf["iter_plan"] = nip
     nf["target_plan"] = ntp
     nf["body"] = nb

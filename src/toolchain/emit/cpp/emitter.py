@@ -4684,7 +4684,8 @@ def _function_signature(
     owner_is_trait: bool = False,
     declaration_only: bool = False,
 ) -> str:
-    name = _safe_cpp_ident(_str(node, "name"))
+    raw_name = _str(node, "name")
+    name = "__pytra_main" if owner_name == "" and raw_name == "main" else _safe_cpp_ident(raw_name)
     if name == "":
         return ""
     is_static = _has_decorator(node, "staticmethod")

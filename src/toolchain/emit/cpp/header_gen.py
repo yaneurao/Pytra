@@ -238,7 +238,8 @@ def _hg_function_decl(
     owner_name: str = "",
     in_class: bool = False,
 ) -> str:
-    name = _hg_safe_cpp_ident(_hg_str(node, "name"))
+    raw_name = _hg_str(node, "name")
+    name = "__pytra_main" if owner_name == "" and raw_name == "main" else _hg_safe_cpp_ident(raw_name)
     if name == "":
         return ""
     params = _hg_function_params(node, mutable_param_indexes)
