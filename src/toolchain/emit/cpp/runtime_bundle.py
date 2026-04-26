@@ -371,7 +371,7 @@ def write_helper_module_artifacts(
     header_path = output_dir.joinpath(rel_header_path)
     cpp_path.parent.mkdir(parents=True, exist_ok=True)
     header_path.parent.mkdir(parents=True, exist_ok=True)
-    cpp_text = emit_cpp_module(east_doc, self_header=rel_header_path)
+    cpp_text = emit_cpp_module(east_doc, False, rel_header_path)
     header_text = build_cpp_header_from_east3(
         module_id,
         east_doc,
@@ -390,7 +390,7 @@ def write_user_module_artifacts(
 ) -> int:
     """Write user module source/header and return emitted file count."""
     rel_header_path = module_id.replace(".", "/") + ".h"
-    cpp_text = emit_cpp_module(east_doc, self_header=rel_header_path)
+    cpp_text = emit_cpp_module(east_doc, False, rel_header_path)
     if cpp_text.strip() == "":
         return 0
     cpp_path = output_dir.joinpath(module_id.replace(".", "_") + ".cpp")

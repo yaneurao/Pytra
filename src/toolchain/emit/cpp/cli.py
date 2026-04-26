@@ -59,4 +59,5 @@ def _emit_cpp_direct(east_doc: dict[str, JsonVal], output_dir: Path) -> int:
 if __name__ == "__main__":
     import sys
     cli_argv: list[str] | None = sys.argv[1:]
-    raise SystemExit(run_emit_cli(None, cli_argv, "", None, _emit_cpp_direct))
+    if run_emit_cli(None, cli_argv, "", None, _emit_cpp_direct) != 0:
+        raise RuntimeError("emit failed")

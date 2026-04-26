@@ -63,7 +63,8 @@
 	   - 2026-04-25: `common_renderer.py` の重複メソッド定義を整理し、C++ struct に必要な field annotation を追加。生成ヘッダの重複宣言と member 未生成は解消。次 blocker は `common_renderer` の profile helper 群に残る `JsonVal` `isinstance` lowering。
 	   - 2026-04-25: `common_renderer.py` の profile/with/exception/expr helper を `JsonValue` accessor と段階的な EAST node 構築へ寄せ、`cpp/cli.py` の selfhost entry 名衝突と `cli_runner.py` の positional 呼び出し互換性を修正。`header_gen.py` は `Callable[...]` で `<functional>` を出すよう補完。`g++` の次 blocker は `cpp/emitter.py` 先頭側に残る `isinstance` lowering と、`str`/`int64` 返却値への不要な `.unbox<T>()` 生成。
 	   - 2026-04-26: `types.py` の長大な `or` chain 生成を set membership に変更し、C++ helper の private symbol 衝突、header/definition の mutable/const 不一致、`std/subprocess.h` 欠落を修正。`python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target cpp -o work/selfhost/emit/cpp/` と、runtime 込みの `g++ -std=c++20 -O0 ... -o work/selfhost/emit/cpp/build/cpp_emitter_selfhost` が終了コード 0。残りは `_emit_expr_extension` などの non-void warning。
-3. [ ] [ID: P1-EMITTER-SELFHOST-CPP-S3] コンパイル済み emitter で既存 fixture の manifest を処理し、Python 版 emitter と parity 一致を確認する
+3. [x] [ID: P1-EMITTER-SELFHOST-CPP-S3] コンパイル済み emitter で既存 fixture の manifest を処理し、Python 版 emitter と parity 一致を確認する
+   - 2026-04-26: `test/fixture/source/py/core/assign.py` の linked manifest をコンパイル済み `work/selfhost/emit/cpp/build/cpp_emitter_selfhost` に渡し、Python 版 emitter 出力との `diff -ru` が終了コード 0。途中で見つかった `CppEmitContext` / `CommonRendererState` の default_factory 未初期化、共通 renderer の非 virtual dispatch 依存、`JsonVal is not None` 判定、`self_header` keyword lowering 依存を修正。
 
 
 ### P0-RESOLVE-ISINSTANCE-NARROWING: union 型に対する isinstance narrowing を修正する

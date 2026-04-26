@@ -34,11 +34,9 @@ class CommonRenderer:
 
     def __init__(self, language: str = "") -> None:
         self.language = language
-        if language == "":
-            self.profile = {}
-        else:
-            self.profile = load_profile_doc(language)
+        self.profile = {}
         self.state = CommonRendererState()
+        self.state.lines = []
         self._op_prec_table: dict[str, int] = {}
         self._literal_nowrap_always: dict[str, bool] = {}
         self._literal_nowrap_ranges: dict[str, tuple[int, int]] = {}

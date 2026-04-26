@@ -281,21 +281,65 @@ class _CppStmtCommonRenderer(CommonRenderer):
 
     def emit_stmt(self, node: JsonVal) -> None:
         self._mutation_count += 1
-        kind = self._str(node, "kind")
-        if kind in ("Expr", "Return", "Assign", "AnnAssign", "Pass", "comment", "blank", "If", "While", "Raise", "Try", "With"):
-            stmt = node
-            super().emit_stmt(stmt)
-            self.ctx.indent_level = self.state.indent_level + 0
-            return
         node_obj = json.JsonValue(node).as_obj()
-        if node_obj is not None:
-            self.emit_stmt_extension(node_obj.raw)
+        if node_obj is None:
+            return
+        node_dict = node_obj.raw
+        kind = self._str(node_dict, "kind")
+        if kind == "Expr":
+            self.emit_expr_stmt(node_dict)
+        elif kind == "Return":
+            self.emit_return_stmt(node_dict)
+        elif kind == "Assign" or kind == "AnnAssign":
+            self.emit_assign_stmt(node_dict)
+        elif kind == "Pass":
+            self._emit(";")
+        elif kind == "comment":
+            text = self._str(node_dict, "text")
+            if text != "":
+                self._emit("// " + text)
+        elif kind == "blank":
+            self._emit("")
+        elif kind == "If":
+            self.ctx.indent_level = self.state.indent_level + 0
+            self._emit("if (" + _emit_condition_expr(self.ctx, node_dict.get("test")) + ") {")
+            self.state.indent_level += 1
+            self.ctx.indent_level = self.state.indent_level + 0
+            self.emit_body(self._list(node_dict, "body"))
+            self.state.indent_level -= 1
+            self.ctx.indent_level = self.state.indent_level + 0
+            orelse = self._list(node_dict, "orelse")
+            if len(orelse) > 0:
+                self._emit("} else {")
+                self.state.indent_level += 1
+                self.ctx.indent_level = self.state.indent_level + 0
+                self.emit_body(orelse)
+                self.state.indent_level -= 1
+                self.ctx.indent_level = self.state.indent_level + 0
+            self._emit("}")
+        elif kind == "While":
+            self.ctx.indent_level = self.state.indent_level + 0
+            self._emit("while (" + _emit_condition_expr(self.ctx, node_dict.get("test")) + ") {")
+            self.state.indent_level += 1
+            self.ctx.indent_level = self.state.indent_level + 0
+            self.emit_body(self._list(node_dict, "body"))
+            self.state.indent_level -= 1
+            self.ctx.indent_level = self.state.indent_level + 0
+            self._emit("}")
+        elif kind == "Raise":
+            self.emit_raise_stmt(node_dict)
+        elif kind == "Try":
+            self.emit_try_stmt(node_dict)
+        else:
+            self.emit_stmt_extension(node_dict)
+        self.ctx.indent_level = self.state.indent_level + 0
 
     def emit_body(self, body: list[JsonVal]) -> None:
         self._mutation_count += 1
         _push_local_scope(self.ctx)
         try:
-            super().emit_body(body)
+            for stmt in body:
+                self.emit_stmt(stmt)
         finally:
             _pop_local_scope(self.ctx)
 
@@ -1697,13 +1741,23 @@ def _qualify_runtime_call_symbol(symbol_name: str) -> str:
 def _emit_expr(ctx: CppEmitContext, node: JsonVal) -> str:
     node_obj = json.JsonValue(node).as_obj()
     if node_obj is None:
-        _emit_fail(ctx, "invalid_expr", "expected dict expression node")
+        _emit_fail(ctx, "invalid_expr", ctx.current_function_scope + ": " + py_repr(node))
         return ""
     node_dict = node_obj.raw
-    renderer = _CppExprCommonRenderer(ctx)
-    node_arg: JsonVal = node_dict
-    rendered = renderer.render_expr(node_arg)
-    return rendered + ""
+    kind = _str(node_dict, "kind")
+    if kind == "Name":
+        return _emit_name(ctx, node_dict)
+    if kind == "Constant":
+        return _emit_constant(ctx, node_dict)
+    if kind == "BinOp":
+        return _emit_binop(ctx, node_dict)
+    if kind == "UnaryOp":
+        return _emit_unaryop(ctx, node_dict)
+    if kind == "Compare":
+        return _emit_compare(ctx, node_dict)
+    if kind == "BoolOp":
+        return _emit_boolop(ctx, node_dict)
+    return _emit_expr_extension(ctx, node_dict)
 
 
 def _normalize_cpp_boundary_expr(ctx: CppEmitContext, node: JsonVal) -> JsonVal:
@@ -1967,6 +2021,9 @@ def _emit_compare(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         comp: JsonVal = None
         if i < len(comparators):
             comp = comparators[i]
+        if comp is None:
+            _emit_fail(ctx, "invalid_compare", py_repr(node))
+            return ""
         right = _emit_expr(ctx, comp)
         prev_type = _expr_static_type(ctx, prev_node)
         comp_type = _expr_static_type(ctx, comp)
@@ -4057,9 +4114,13 @@ def _emit_for_core(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
         if t_name == "_" or (target_plan_obj is not None and _bool(target_plan_dict, "unused")):
             t_name = _next_temp(ctx, "__discard")
         if ip_kind in ("StaticRangeForPlan", "RuntimeIterForPlan"):
-            if iter_plan_dict.get("start") is not None or iter_plan_dict.get("stop") is not None:
-                start = _emit_expr(ctx, iter_plan_dict.get("start")) if iter_plan_dict.get("start") else "0"
-                stop = _emit_expr(ctx, iter_plan_dict.get("stop")) if iter_plan_dict.get("stop") else "0"
+            start_node = iter_plan_dict.get("start")
+            stop_node = iter_plan_dict.get("stop")
+            start_obj = json.JsonValue(start_node).as_obj()
+            stop_obj = json.JsonValue(stop_node).as_obj()
+            if start_obj is not None or stop_obj is not None:
+                start = _emit_expr(ctx, start_node) if start_obj is not None else "0"
+                stop = _emit_expr(ctx, stop_node) if stop_obj is not None else "0"
                 step = "1"
                 target_type = _str(target_plan_dict, "target_type") if target_plan_obj is not None else ""
                 step_node = iter_plan_dict.get("step")
@@ -4080,7 +4141,8 @@ def _emit_for_core(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
                         if sv2_int is not None and sv2_int > 0:
                             neg = True
                     step = _emit_expr(ctx, step_node)
-                elif step_node is not None: step = _emit_expr(ctx, step_node)
+                elif step_obj is not None:
+                    step = _emit_expr(ctx, step_node)
                 cmp = " > " if neg else " < "
                 decl = ""
                 if t_name not in ctx.var_types:
@@ -5427,6 +5489,25 @@ def emit_cpp_module(
     if should_skip_module(module_id, mapping) and not allow_runtime_module: return ""
 
     ctx = CppEmitContext()
+    ctx.lines = []
+    ctx.includes_needed = set()
+    ctx.var_types = {}
+    ctx.class_names = set()
+    ctx.class_field_types = {}
+    ctx.class_vars = {}
+    ctx.class_bases = {}
+    ctx.enum_kinds = {}
+    ctx.class_type_ids = {}
+    ctx.class_type_info = {}
+    ctx.class_symbol_fqcns = {}
+    ctx.function_mutable_param_indexes = {}
+    ctx.function_defs = {}
+    ctx.current_value_container_locals = set()
+    ctx.runtime_imports = {}
+    ctx.import_aliases = {}
+    ctx.container_value_locals_by_scope = {}
+    ctx.value_container_vars = set()
+    ctx.visible_local_scopes = []
     ctx.module_id = module_id
     ctx.is_entry = _bool(emit_ctx_meta, "is_entry") if len(emit_ctx_meta) > 0 else False
     ctx.mapping = mapping
@@ -5452,7 +5533,6 @@ def emit_cpp_module(
 
     body = _list(east3_doc, "body")
     main_guard = _list(east3_doc, "main_guard_body")
-    ctx.function_mutable_param_indexes = {}
     _collect_function_mutable_param_indexes(body, ctx.function_mutable_param_indexes)
     _collect_function_mutable_param_indexes(main_guard, ctx.function_mutable_param_indexes)
 
