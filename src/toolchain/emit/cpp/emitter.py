@@ -2299,18 +2299,26 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         return _emit_builtin_call(ctx, node)
     func_name = _str(func_dict, "id") if func_obj is not None and _str(func_dict, "kind") == "Name" else ""
     expected_arg_types: list[str] = []
+    call_sig: dict[str, JsonVal] = {}
     if func_name != "":
         if func_name in ctx.function_defs:
-            expected_arg_types = [arg_type for _, arg_type, _ in _function_param_meta(ctx.function_defs[func_name], ctx)]
+            call_sig = ctx.function_defs[func_name]
+            expected_arg_types = [arg_type for _, arg_type, _ in _function_param_meta(call_sig, ctx)]
     method_sig = _dict(node, "method_signature_v1")
     if len(expected_arg_types) == 0 and len(method_sig) > 0:
+        call_sig = method_sig
         expected_arg_types = [arg_type for _, arg_type, _ in _function_param_meta(method_sig, ctx)]
     elif len(expected_arg_types) == 0:
         function_sig = _dict(node, "function_signature_v1")
         if len(function_sig) > 0:
+            call_sig = function_sig
             expected_arg_types = [arg_type for _, arg_type, _ in _function_param_meta(function_sig, ctx)]
+    vararg_fixed_count, vararg_elem_type = _function_vararg_call_info(call_sig)
     arg_strs: list[str] = []
-    for index in range(len(args)):
+    arg_render_count = len(args)
+    if vararg_elem_type != "":
+        arg_render_count = min(len(args), vararg_fixed_count)
+    for index in range(arg_render_count):
         a = args[index]
         expected_type = expected_arg_types[index] if index < len(expected_arg_types) else ""
         a_obj = json.JsonValue(a).as_obj()
@@ -2364,6 +2372,11 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             arg_strs.append(_emit_expr_as_type(ctx, a, expected_type))
         else:
             arg_strs.append(_emit_expr(ctx, a))
+    if vararg_elem_type != "":
+        list_type = "list[" + vararg_elem_type + "]"
+        value_ct = cpp_type(list_type, prefer_value_container=True)
+        elems = [_emit_expr_as_type(ctx, args[index], vararg_elem_type) for index in range(vararg_fixed_count, len(args))]
+        arg_strs.append(_wrap_container_value_expr(list_type, value_ct + "{" + ", ".join(elems) + "}"))
     keywords = _list(node, "keywords")
     keyword_strs: list[str] = []
     for kw in keywords:
@@ -5163,13 +5176,39 @@ def _function_param_meta(node: dict[str, JsonVal], ctx: CppEmitContext | None = 
     vararg_name = node.get("vararg_name")
     vararg_name_text = _json_str_value(vararg_name)
     if vararg_name_text != "":
-        vararg_type = arg_types.get(vararg_name_text, "")
-        vararg_type_str = _json_str_value(vararg_type)
+        vararg_type_str = _str(node, "vararg_type")
+        if vararg_type_str == "":
+            vararg_type = arg_types.get(vararg_name_text, "")
+            vararg_type_str = _json_str_value(vararg_type)
         if vararg_type_str == "":
             vararg_type_str = "object"
         vararg_type_str = normalize_cpp_nominal_adt_type(vararg_type_str) + ""
-        out.append((vararg_name_text, vararg_type_str, False))
+        out.append((vararg_name_text, "list[" + vararg_type_str + "]", False))
     return out
+
+
+def _function_vararg_call_info(node: dict[str, JsonVal]) -> tuple[int, str]:
+    vararg_name_text = _json_str_value(node.get("vararg_name"))
+    if vararg_name_text == "":
+        return (0, "")
+    arg_order = _list(node, "arg_order")
+    fixed_count = 0
+    is_static = _has_decorator(node, "staticmethod")
+    for arg in arg_order:
+        arg_name = _json_str_value(arg)
+        if arg_name == "" or arg_name == vararg_name_text:
+            continue
+        if arg_name == "self" and not is_static:
+            continue
+        fixed_count += 1
+    vararg_type_str = _str(node, "vararg_type")
+    if vararg_type_str == "":
+        arg_types = _dict(node, "arg_types")
+        vararg_type = arg_types.get(vararg_name_text, "")
+        vararg_type_str = _json_str_value(vararg_type)
+    if vararg_type_str == "":
+        vararg_type_str = "object"
+    return (fixed_count, normalize_cpp_nominal_adt_type(vararg_type_str) + "")
 
 
 def _type_uses_callable(resolved_type: str) -> bool:

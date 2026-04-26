@@ -178,4 +178,5 @@ S0〜S4 完了済み（[archive/20260402.md](archive/20260402.md) 参照）。
    - 2026-04-26: `isinstance(x, (A, B))` を C++ emitter で単一型判定の OR に展開し、with lowering の context/as 変数を C++ で参照束縛できる形に修正。host C++ parity と selfhost C++ emit/run の両方で `isinstance_tuple_check` / `with_context_manager` が PASS。S6 全体は未完了。
    - 2026-04-26: narrowing 後の union Name / subscript / for iterable で C++ variant lane を取り出すよう修正し、`is None`/`isinstance` 判定は storage 全体を見るよう補正。host C++ parity と selfhost C++ emit/run の両方で `isinstance_chain_narrowing` / `isinstance_union_narrowing` が PASS。S6 全体は未完了。
    - 2026-04-27: C++ emitter で `Path / rhs` を `Path::joinpath(rhs)` に直接変換し、try-finally lowering 後の `AnnAssign` を try 外へ事前宣言するよう修正。host C++ parity と selfhost C++ emit/run の両方で `with_statement` が PASS。S6 全体は未完了。
+   - 2026-04-27: C++ emitter で typed varargs を `list[T]` パラメータとして受け、呼び出し側の余剰引数を `list[T]{...}` に pack するよう修正。host C++ parity と selfhost C++ emit/run の両方で `ok_typed_varargs_representative` が PASS。S6 全体は未完了。
 3. [ ] [ID: P20-CPP-SELFHOST-S7] `run_selfhost_parity.py --selfhost-lang cpp --emit-target cpp --case-root sample` で sample parity が PASS することを確認する
