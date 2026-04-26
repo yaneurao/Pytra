@@ -404,6 +404,18 @@ class _CppStmtCommonRenderer(CommonRenderer):
             raise RuntimeError("try/except/else is not supported in common renderer")
         body = self._list(node, "body")
         handlers = self._list(node, "handlers")
+        if len(self._list(node, "finalbody")) > 0:
+            for name, resolved_type in _collect_try_hoisted_ann_names(self.ctx, body):
+                if _is_local_visible(self.ctx, name):
+                    continue
+                storage_type = resolved_type if resolved_type != "" else self.ctx.var_types.get(name, "")
+                _register_local_storage(self.ctx, name, storage_type)
+                _declare_local_visible(self.ctx, name)
+                self.ctx.indent_level = self.state.indent_level + 0
+                if _cpp_type_is_unknownish(storage_type):
+                    self._emit("auto " + name + " = " + _decl_cpp_zero_value(self.ctx, storage_type, name) + ";")
+                else:
+                    self._emit(_decl_cpp_type(self.ctx, storage_type, name) + " " + name + " = " + _decl_cpp_zero_value(self.ctx, storage_type, name) + ";")
         self.emit_try_setup(node)
         if len(handlers) == 0:
             self.emit_body(body)
@@ -1989,6 +2001,8 @@ def _emit_binop(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     right_type = _effective_resolved_type(node.get("right"))
     op = _str(node, "op")
     rt = _str(node, "resolved_type")
+    if op == "Div" and left_type == "Path":
+        return left + ".joinpath(" + right + ")"
     # Apply casts
     for cast in _list(node, "casts"):
         cast_obj = json.JsonValue(cast).as_obj()
@@ -4810,6 +4824,40 @@ def _collect_with_hoisted_names(ctx: CppEmitContext, body: list[JsonVal]) -> lis
                 walk(_list(raw_stmt_dict, "body"))
                 walk(_list(raw_stmt_dict, "orelse"))
                 walk(_list(raw_stmt_dict, "finalbody"))
+                for handler in _list(raw_stmt_dict, "handlers"):
+                    handler_obj = json.JsonValue(handler).as_obj()
+                    if handler_obj is not None:
+                        walk(_list(handler_obj.raw, "body"))
+
+    walk(body)
+    return out
+
+
+def _collect_try_hoisted_ann_names(ctx: CppEmitContext, body: list[JsonVal]) -> list[tuple[str, str]]:
+    out: list[tuple[str, str]] = []
+    seen: set[str] = set()
+
+    def add_name(name: str, resolved_type: str) -> None:
+        if name == "" or name in seen:
+            return
+        seen.add(name)
+        out.append((name, resolved_type))
+
+    def walk(stmts: list[JsonVal]) -> None:
+        for raw_stmt in stmts:
+            raw_stmt_obj = json.JsonValue(raw_stmt).as_obj()
+            if raw_stmt_obj is None:
+                continue
+            raw_stmt_dict = raw_stmt_obj.raw
+            kind = _str(raw_stmt_dict, "kind")
+            if kind == "AnnAssign":
+                target = raw_stmt_dict.get("target")
+                target_obj = json.JsonValue(target).as_obj()
+                if target_obj is not None and _str(target_obj.raw, "kind") in ("Name", "NameTarget"):
+                    add_name(_str(target_obj.raw, "id"), _str(raw_stmt_dict, "decl_type"))
+            elif kind in ("If", "While", "With", "Try", "ForCore"):
+                walk(_list(raw_stmt_dict, "body"))
+                walk(_list(raw_stmt_dict, "orelse"))
                 for handler in _list(raw_stmt_dict, "handlers"):
                     handler_obj = json.JsonValue(handler).as_obj()
                     if handler_obj is not None:
