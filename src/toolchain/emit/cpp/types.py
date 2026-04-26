@@ -323,7 +323,9 @@ def _split_generic_args(s: str) -> list[str]:
     parts: list[str] = []
     depth = 0
     current: list[str] = []
-    for ch in s:
+    i = 0
+    while i < len(s):
+        ch = s[i:i + 1]
         if ch == "[" or ch == "<":
             depth += 1
             current.append(ch)
@@ -335,6 +337,7 @@ def _split_generic_args(s: str) -> list[str]:
             current = []
         else:
             current.append(ch)
+        i += 1
     tail = "".join(current).strip()
     if tail != "":
         parts.append(tail)
@@ -347,13 +350,13 @@ def _split_top_level_union(resolved_type: str) -> list[str]:
     current: list[str] = []
     i = 0
     while i < len(resolved_type):
-        ch = resolved_type[i]
-        if ch in "[<(":
+        ch = resolved_type[i:i + 1]
+        if ch == "[" or ch == "<" or ch == "(":
             depth += 1
             current.append(ch)
             i += 1
             continue
-        if ch in "]>)":
+        if ch == "]" or ch == ">" or ch == ")":
             depth -= 1
             current.append(ch)
             i += 1
@@ -400,13 +403,13 @@ def _iter_type_tokens(text: str) -> list[str]:
     out: list[str] = []
     i = 0
     while i < len(text):
-        ch = text[i]
+        ch = text[i:i + 1]
         if not _is_type_token_start(ch):
             i += 1
             continue
         start = i
         i += 1
-        while i < len(text) and _is_type_token_part(text[i]):
+        while i < len(text) and _is_type_token_part(text[i:i + 1]):
             i += 1
         out.append(text[start:i])
     return out
