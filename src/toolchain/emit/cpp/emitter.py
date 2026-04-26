@@ -2399,6 +2399,11 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             # (covers cases where the resolver left resolved_type="unknown" on the call node).
             owner_static_type = _expr_static_type(ctx, owner_node)
             _static_owner_type = normalize_cpp_container_alias(owner_static_type)
+            if _is_top_level_union_type(_static_owner_type):
+                _dict_lane = _select_union_lane(_static_owner_type, "dict")
+                if _dict_lane != "":
+                    owner = _emit_union_get_expr(owner, _static_owner_type, _dict_lane)
+                    _static_owner_type = normalize_cpp_container_alias(_dict_lane)
             if _static_owner_type != "" and _static_owner_type != "unknown":
                 _type_attr_key = _static_owner_type + "." + attr
                 _fallback_name: str = _resolve_runtime_call_local(_type_attr_key, attr, adapter, ctx.mapping)

@@ -174,4 +174,5 @@ S0〜S4 完了済み（[archive/20260402.md](archive/20260402.md) 参照）。
    - 2026-04-26: `dict[str, object].get(...)` を `str()` へ渡す動的 object 境界を `py_to_string` 経由に修正し、host C++ parity と selfhost C++ emit/run の両方で `typed_container_access` が PASS。S6 全体は未完了。
    - 2026-04-26: list RHS の unpack 一時変数 `__tuple_unpack_*` を `std::get` に誤分類しないよう修正し、host C++ parity と selfhost C++ emit/run の両方で `tuple_unpack_variants` が PASS。S6 全体は未完了。
    - 2026-04-26: `py_assert_eq` の expected 側空 `[]` を actual 側の `list[T]` lane で出すよう修正し、host C++ parity と selfhost C++ emit/run の両方で `reversed_basic` / `sorted_set` が PASS。S6 全体は未完了。
+   - 2026-04-26: union の dict lane に対する `.items()` 呼び出しを C++ emitter 側で lane 取得して `py_dict_items` に写像するよう修正し、host C++ parity と selfhost C++ emit/run の両方で `union_basic` / `union_dict_items` が PASS。S6 全体は未完了。
 3. [ ] [ID: P20-CPP-SELFHOST-S7] `run_selfhost_parity.py --selfhost-lang cpp --emit-target cpp --case-root sample` で sample parity が PASS することを確認する
