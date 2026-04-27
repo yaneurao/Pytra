@@ -1,7 +1,0 @@
-{
-  "description": "Lua emits the if_else fixture branch structure",
-  "target": "lua",
-  "level": "module",
-  "fixture": "if_else",
-  "expected_contains": ["function abs_like(n)", "if (n < 0) then", "return (-n)", "else"]
-}

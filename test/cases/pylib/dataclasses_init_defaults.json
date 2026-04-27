@@ -1,8 +1,0 @@
-{
-  "description": "dataclass init applies defaults",
-  "case": "dataclasses_init_defaults",
-  "assertions": [
-    {"path": "x", "equals": 1},
-    {"path": "y", "equals": 0}
-  ]
-}

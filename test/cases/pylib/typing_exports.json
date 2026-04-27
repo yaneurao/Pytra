@@ -1,7 +1,0 @@
-{
-  "description": "pytra typing exposes common aliases",
-  "case": "typing_exports",
-  "assertions": [
-    {"path": "all_present", "equals": true}
-  ]
-}

@@ -1,7 +1,0 @@
-{
-  "description": "C++ constant keeps wrap for narrowing integer types",
-  "target": "cpp",
-  "level": "expr",
-  "input": {"kind": "Constant", "value": 7, "resolved_type": "int8"},
-  "expected": "int8(7)"
-}

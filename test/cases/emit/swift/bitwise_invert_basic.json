@@ -1,7 +1,0 @@
-{
-  "description": "Swift emits bitwise invert for the representative fixture",
-  "target": "swift",
-  "level": "module",
-  "fixture": "bitwise_invert_basic",
-  "expected_contains": ["~y"]
-}

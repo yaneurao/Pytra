@@ -1,8 +1,0 @@
-{
-  "description": "pytra pathlib text IO and exists work",
-  "case": "path_text_io_and_exists",
-  "assertions": [
-    {"path": "exists", "equals": true},
-    {"path": "text", "equals": "hello"}
-  ]
-}

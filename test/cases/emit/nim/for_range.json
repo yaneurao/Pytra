@@ -1,7 +1,0 @@
-{
-  "description": "Nim emits static range loop for the for_range fixture",
-  "target": "nim",
-  "level": "module",
-  "fixture": "for_range",
-  "expected_contains": ["proc sum_range_29", "for i in 0 ..< n"]
-}

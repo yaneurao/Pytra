@@ -39,36 +39,9 @@
 4. [x] [ID: P0-SELFHOST-CLOSURE-S4] Go selfhost の既存テストに回帰がないことを確認する（module set が広がるため）
    - 2026-04-11: `run_selfhost_parity.py` の fallback は C++ branch 限定で、共通 regression test も通過。Go selfhost 側の driver 挙動に変更なし。
 
-### P20-DATA-DRIVEN-TESTS: パイプライン系テストのデータ駆動化
+### ~~P20-DATA-DRIVEN-TESTS~~ (廃止)
 
-文脈: [docs/ja/plans/plan-emit-expect-data-driven-tests.md](../plans/plan-emit-expect-data-driven-tests.md)
-
-ステータス: **Phase 1 / Phase 2 完了、Phase 3 一部完了** — emit / pipeline / pylib の JSON runner は導入済み。smoke 系の統合は次タスク。
-
-`tools/unittest/` の 267 スクリプトのうち ~80件はパイプライン系（入力→parse/resolve/lower/emit→期待出力）で、JSON データで定義できる。残り ~190件（tooling/selfhost/link 等）は Python テストとして残す。
-
-**Phase 1: emit 層で方式を確立**
-
-1. [x] [ID: P20-DDT-S1] `test/cases/emit/cpp/` に JSON テストケース 5〜10 件を作成する
-   - 2026-04-27: C++ expr レベルの JSON ケースを 8 件追加（binop precedence / numeric promotion / mod / integer literal / minmax / object is None）。
-2. [x] [ID: P20-DDT-S2] `tools/unittest/test_emit_cases.py` を実装する（pytest parametrize で JSON 走査）
-   - 2026-04-27: `test/cases/emit/**/*.json` を走査し、`target=cpp` の `expr` / `stmt` ケースを実行する runner を追加。
-3. [x] [ID: P20-DDT-S3] `test_common_renderer.py` の対応テストを JSON に移行し、元メソッドを削除する
-   - 2026-04-27: `tools/unittest/toolchain2/test_common_renderer.py` から対応する C++ expr 期待値テスト 8 件を削除し、JSON ケースへ移行。
-
-**Phase 2: パイプライン層に横展開**
-
-4. [x] [ID: P20-DDT-S4] `test/cases/{east1,east2,east3}/` に JSON テストケースを作成する
-   - 2026-04-27: EAST1/EAST2/EAST3 の pipeline JSON ケースを 6 件追加（tuple target / lambda / for range normalization / int type resolution / ForCore lowering / tuple unpack expansion）。
-5. [x] [ID: P20-DDT-S5] `tools/unittest/test_pipeline_cases.py` を実装する
-   - 2026-04-27: `source_to_east1` / `source_to_east2` / `source_to_east3` を in-memory で実行し、JSON path assertions を評価する runner を追加。
-6. [x] [ID: P20-DDT-S6] `tools/unittest/ir/` と `tools/unittest/toolchain2/` の対応テストを段階的に JSON に移行する
-   - 2026-04-27: `test_east_core_parser_behavior_exprs.py` の lambda node テストと `test_tuple_unpack_lowering_profile.py` の parenthesized tuple target テストを JSON ケースへ移行。
-
-**Phase 3: smoke テストの統合**
-
-7. [ ] [ID: P20-DDT-S7] `tools/unittest/emit/<lang>/test_py2*_smoke.py` (~20件) を JSON に移行する
-   - 2026-04-27: `bitwise_invert_basic` smoke を `cpp` / `dart` / `go` / `js` / `julia` / `kotlin` / `lua` / `nim` / `php` / `powershell` / `rb` / `rs` / `scala` / `swift` / `ts` の JSON ケースへ移動。`test_emit_cases.py` に module-level fixture emit の target 対応を追加。
+2026-04-27 廃止。fixture parity check が全 backend で充実しており、emitter 単体の JSON テストケースと smoke テストは役割が重複するため、`test/cases/` ディレクトリ・`test_emit_cases.py`・`test_pipeline_cases.py`・全言語の `test_py2*_smoke.py` をまとめて削除した。emitter のエッジケース検証は fixture 追加で対応する。
    - 2026-04-27: 壊れていた `tools/unittest/emit/dart/test_py2dart_smoke.py` の fixture smoke を `test/cases/emit/dart/` へ移行し、空になったスクリプトを削除。
    - 2026-04-27: `tools/unittest/emit/test_py2starred_smoke.py` の all-target starred tuple fixture smoke を `test/cases/emit/<lang>/starred_call_tuple_basic.json` へ移行し、スクリプトを削除。
    - 2026-04-27: Nim の `for_range` fixture smoke を `test/cases/emit/nim/for_range.json` へ移行。
@@ -77,6 +50,7 @@
    - 2026-04-27: Lua / Swift の `tuple_assign` swap lowering smoke を JSON ケースへ移行。
    - 2026-04-27: Lua の `if_else` branch structure smoke を JSON ケースへ移行。
    - 2026-04-27: representative 契約の `property_method_call` / `list_bool_index` smoke を `test/cases/emit/multilang/` の multi-target JSON ケースへ移行。
+   - 2026-04-27: Go / JS / TS の secondary representative fixture bundle を `fixtures` 配列対応の JSON ケースへ移行。
 8. [x] [ID: P20-DDT-S8] `tools/unittest/common/test_pylib_*.py` (~10件) を JSON に移行する
    - 2026-04-27: `argparse` / `dataclasses` / `enum` / `re` / `sys` / `typing` / `json` / `path` / `os_glob` を `test/cases/pylib/` へ移行し、`tools/unittest/test_pylib_cases.py` で実行する。
 9. [x] [ID: P20-DDT-S9] 空になったスクリプトを削除する

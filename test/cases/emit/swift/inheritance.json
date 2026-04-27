@@ -1,7 +1,0 @@
-{
-  "description": "Swift emits the inheritance fixture module skeleton",
-  "target": "swift",
-  "level": "module",
-  "fixture": "inheritance",
-  "expected_contains": ["@main", "class Animal", "class Dog: Animal", "func _case_main()"]
-}

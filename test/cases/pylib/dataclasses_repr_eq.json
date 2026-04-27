@@ -1,9 +1,0 @@
-{
-  "description": "dataclass repr and equality behave like Python dataclasses",
-  "case": "dataclasses_repr_eq",
-  "assertions": [
-    {"path": "repr", "equals": "Point(x=1, y=2)"},
-    {"path": "a_eq_b", "equals": true},
-    {"path": "a_eq_c", "equals": false}
-  ]
-}

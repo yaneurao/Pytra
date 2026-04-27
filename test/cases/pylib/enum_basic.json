@@ -1,8 +1,0 @@
-{
-  "description": "pytra Enum equality basics",
-  "case": "enum_basic",
-  "assertions": [
-    {"path": "red_eq_red", "equals": true},
-    {"path": "red_eq_blue", "equals": false}
-  ]
-}

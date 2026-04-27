@@ -1,8 +1,0 @@
-{
-  "description": "pytra sys argv/path setters update module globals",
-  "case": "sys_setters",
-  "assertions": [
-    {"path": "argv", "equals": ["a", "b"]},
-    {"path": "path", "equals": ["x"]}
-  ]
-}

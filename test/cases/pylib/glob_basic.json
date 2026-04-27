@@ -1,8 +1,0 @@
-{
-  "description": "pytra glob finds matching files",
-  "case": "glob_basic",
-  "assertions": [
-    {"path": "count", "equals": 1},
-    {"path": "first_endswith", "equals": true}
-  ]
-}

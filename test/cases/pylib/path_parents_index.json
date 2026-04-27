@@ -1,8 +1,0 @@
-{
-  "description": "pytra pathlib parents supports indexing",
-  "case": "path_parents_index",
-  "assertions": [
-    {"path": "parent0", "equals": "a/b/c"},
-    {"path": "parent1", "equals": "a/b"}
-  ]
-}

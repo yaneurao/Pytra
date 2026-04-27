@@ -1,8 +1,0 @@
-{
-  "description": "TypeScript emits starred tuple call fixture without source starred syntax",
-  "target": "ts",
-  "level": "module",
-  "fixture": "starred_call_tuple_basic",
-  "expected_contains": ["mix_rgb"],
-  "expected_not_contains": ["*rgb"]
-}

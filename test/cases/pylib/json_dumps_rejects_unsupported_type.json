@@ -1,7 +1,0 @@
-{
-  "description": "pytra json dumps rejects unsupported values",
-  "case": "json_dumps_rejects_unsupported_type",
-  "assertions": [
-    {"path": "raises_type_error", "equals": true}
-  ]
-}

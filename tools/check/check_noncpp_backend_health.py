@@ -14,7 +14,6 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SMOKE_PYTHONPATH = "src:.:tools/unittest"
 FAMILY_ORDER: tuple[str, ...] = ("wave1", "wave2", "wave3")
 
 
@@ -22,7 +21,6 @@ FAMILY_ORDER: tuple[str, ...] = ("wave1", "wave2", "wave3")
 class TargetSpec:
     target: str
     family: str
-    smoke_rel: str
     transpile_extra_flags: tuple[str, ...] = ()
 
 
@@ -37,8 +35,6 @@ class TargetHealth:
     target: str
     family: str
     static_contract: str
-    common_smoke: str
-    target_smoke: str
     transpile: str
     parity: str
     primary_failure: str
@@ -57,29 +53,19 @@ class FamilyHealth:
 
 
 TARGET_SPECS: dict[str, TargetSpec] = {
-    "rs": TargetSpec("rs", "wave1", "tools/unittest/emit/rs/test_py2rs_smoke.py"),
-    "cs": TargetSpec("cs", "wave1", "tools/unittest/emit/cs/test_py2cs_smoke.py"),
-    "js": TargetSpec(
-        "js",
-        "wave1",
-        "tools/unittest/emit/js/test_py2js_smoke.py",
-        ("--skip-east3-contract-tests",),
-    ),
-    "ts": TargetSpec(
-        "ts",
-        "wave1",
-        "tools/unittest/emit/ts/test_py2ts_smoke.py",
-        ("--skip-east3-contract-tests",),
-    ),
-    "go": TargetSpec("go", "wave2", "tools/unittest/emit/go/test_py2go_smoke.py"),
-    "java": TargetSpec("java", "wave2", "tools/unittest/emit/java/test_py2java_smoke.py"),
-    "kotlin": TargetSpec("kotlin", "wave2", "tools/unittest/emit/kotlin/test_py2kotlin_smoke.py"),
-    "swift": TargetSpec("swift", "wave2", "tools/unittest/emit/swift/test_py2swift_smoke.py"),
-    "scala": TargetSpec("scala", "wave2", "tools/unittest/emit/scala/test_py2scala_smoke.py"),
-    "ruby": TargetSpec("ruby", "wave3", "tools/unittest/emit/rb/test_py2rb_smoke.py"),
-    "lua": TargetSpec("lua", "wave3", "tools/unittest/emit/lua/test_py2lua_smoke.py"),
-    "php": TargetSpec("php", "wave3", "tools/unittest/emit/php/test_py2php_smoke.py"),
-    "nim": TargetSpec("nim", "wave3", "tools/unittest/emit/nim/test_py2nim_smoke.py"),
+    "rs": TargetSpec("rs", "wave1"),
+    "cs": TargetSpec("cs", "wave1"),
+    "js": TargetSpec("js", "wave1", ("--skip-east3-contract-tests",)),
+    "ts": TargetSpec("ts", "wave1", ("--skip-east3-contract-tests",)),
+    "go": TargetSpec("go", "wave2"),
+    "java": TargetSpec("java", "wave2"),
+    "kotlin": TargetSpec("kotlin", "wave2"),
+    "swift": TargetSpec("swift", "wave2"),
+    "scala": TargetSpec("scala", "wave2"),
+    "ruby": TargetSpec("ruby", "wave3"),
+    "lua": TargetSpec("lua", "wave3"),
+    "php": TargetSpec("php", "wave3"),
+    "nim": TargetSpec("nim", "wave3"),
 }
 
 FAMILY_TARGETS: dict[str, tuple[str, ...]] = {
@@ -116,39 +102,6 @@ def _run_command(cmd: list[str], *, env: dict[str, str] | None = None) -> StepRe
 
 def _run_static_contract() -> StepResult:
     return _run_command(["python3", "tools/check/check_noncpp_east3_contract.py", "--skip-transpile"])
-
-
-def _run_common_smoke() -> StepResult:
-    return _run_command(
-        [
-            "python3",
-            "-m",
-            "unittest",
-            "discover",
-            "-s",
-            "tools/unittest/common",
-            "-p",
-            "test_py2x_smoke*.py",
-        ],
-        env={"PYTHONPATH": SMOKE_PYTHONPATH},
-    )
-
-
-def _run_target_smoke(spec: TargetSpec) -> StepResult:
-    smoke_path = Path(spec.smoke_rel)
-    return _run_command(
-        [
-            "python3",
-            "-m",
-            "unittest",
-            "discover",
-            "-s",
-            str(smoke_path.parent),
-            "-p",
-            smoke_path.name,
-        ],
-        env={"PYTHONPATH": SMOKE_PYTHONPATH},
-    )
 
 
 def _run_target_transpile(spec: TargetSpec) -> StepResult:
@@ -231,13 +184,11 @@ def _run_target_parity(spec: TargetSpec) -> StepResult:
         return result
 
 
-def _blocked_health(spec: TargetSpec, *, primary_failure: str, detail: str, static_status: str, common_status: str) -> TargetHealth:
+def _blocked_health(spec: TargetSpec, *, primary_failure: str, detail: str, static_status: str) -> TargetHealth:
     return TargetHealth(
         target=spec.target,
         family=spec.family,
         static_contract=static_status,
-        common_smoke=common_status,
-        target_smoke="blocked",
         transpile="blocked",
         parity="blocked",
         primary_failure=primary_failure,
@@ -247,7 +198,6 @@ def _blocked_health(spec: TargetSpec, *, primary_failure: str, detail: str, stat
 
 def collect_target_health(specs: list[TargetSpec], *, skip_parity: bool) -> list[TargetHealth]:
     static_result = _run_static_contract()
-    common_result = _run_common_smoke() if static_result.status == "pass" else StepResult("blocked", "")
     health_rows: list[TargetHealth] = []
     for spec in specs:
         if static_result.status != "pass":
@@ -257,35 +207,6 @@ def collect_target_health(specs: list[TargetSpec], *, skip_parity: bool) -> list
                     primary_failure="static_contract_fail",
                     detail=static_result.detail,
                     static_status="fail",
-                    common_status="blocked",
-                )
-            )
-            continue
-        if common_result.status != "pass":
-            health_rows.append(
-                _blocked_health(
-                    spec,
-                    primary_failure="common_smoke_fail",
-                    detail=common_result.detail,
-                    static_status="pass",
-                    common_status="fail",
-                )
-            )
-            continue
-
-        smoke_result = _run_target_smoke(spec)
-        if smoke_result.status != "pass":
-            health_rows.append(
-                TargetHealth(
-                    target=spec.target,
-                    family=spec.family,
-                    static_contract="pass",
-                    common_smoke="pass",
-                    target_smoke="fail",
-                    transpile="blocked",
-                    parity="blocked",
-                    primary_failure="target_smoke_fail",
-                    detail=smoke_result.detail,
                 )
             )
             continue
@@ -297,8 +218,6 @@ def collect_target_health(specs: list[TargetSpec], *, skip_parity: bool) -> list
                     target=spec.target,
                     family=spec.family,
                     static_contract="pass",
-                    common_smoke="pass",
-                    target_smoke="pass",
                     transpile="fail",
                     parity="blocked",
                     primary_failure="transpile_fail",
@@ -313,8 +232,6 @@ def collect_target_health(specs: list[TargetSpec], *, skip_parity: bool) -> list
                     target=spec.target,
                     family=spec.family,
                     static_contract="pass",
-                    common_smoke="pass",
-                    target_smoke="pass",
                     transpile="pass",
                     parity="skipped",
                     primary_failure="ok",
@@ -335,8 +252,6 @@ def collect_target_health(specs: list[TargetSpec], *, skip_parity: bool) -> list
                 target=spec.target,
                 family=spec.family,
                 static_contract="pass",
-                common_smoke="pass",
-                target_smoke="pass",
                 transpile="pass",
                 parity=parity_status,
                 primary_failure=primary_failure,
@@ -347,159 +262,72 @@ def collect_target_health(specs: list[TargetSpec], *, skip_parity: bool) -> list
 
 
 def summarize_families(health_rows: list[TargetHealth]) -> list[FamilyHealth]:
-    rows_by_family: dict[str, list[TargetHealth]] = {name: [] for name in FAMILY_ORDER}
+    by_family: dict[str, list[TargetHealth]] = {}
     for row in health_rows:
-        rows_by_family.setdefault(row.family, []).append(row)
-
-    out: list[FamilyHealth] = []
+        by_family.setdefault(row.family, []).append(row)
+    summaries: list[FamilyHealth] = []
     for family in FAMILY_ORDER:
-        rows = rows_by_family.get(family, [])
-        if len(rows) == 0:
-            continue
-        ok_targets = sum(1 for row in rows if row.primary_failure == "ok")
-        toolchain_missing_targets = sum(
-            1 for row in rows if row.primary_failure == "toolchain_missing"
-        )
-        broken_rows = [
-            row
-            for row in rows
-            if row.primary_failure not in ("ok", "toolchain_missing")
-        ]
-        primary_failures = tuple(sorted({row.primary_failure for row in broken_rows}))
-        out.append(
-            FamilyHealth(
-                family=family,
-                status="broken" if len(broken_rows) > 0 else "green",
-                total_targets=len(rows),
-                ok_targets=ok_targets,
-                toolchain_missing_targets=toolchain_missing_targets,
-                broken_targets=len(broken_rows),
-                primary_failures=primary_failures,
-            )
-        )
-    return out
-
-
-def _resolve_selected_specs(*, family_args: list[str], targets_arg: str) -> list[TargetSpec]:
-    if targets_arg.strip() != "":
-        names = [item.strip() for item in targets_arg.split(",") if item.strip() != ""]
-    else:
-        families = family_args if len(family_args) > 0 else ["all"]
-        if "all" in families:
-            names = [name for family in FAMILY_ORDER for name in FAMILY_TARGETS[family]]
-        else:
-            seen: set[str] = set()
-            names = []
-            for family in FAMILY_ORDER:
-                if family not in families:
-                    continue
-                for name in FAMILY_TARGETS[family]:
-                    if name in seen:
-                        continue
-                    seen.add(name)
-                    names.append(name)
-    unknown = [name for name in names if name not in TARGET_SPECS]
-    if len(unknown) > 0:
-        raise ValueError("unknown targets: " + ",".join(sorted(unknown)))
-    return [TARGET_SPECS[name] for name in names]
+        rows = by_family.get(family, [])
+        total = len(rows)
+        ok = sum(1 for r in rows if r.primary_failure == "ok")
+        tm = sum(1 for r in rows if r.primary_failure == "toolchain_missing")
+        broken = total - ok - tm
+        fails = tuple(r.primary_failure for r in rows if r.primary_failure not in ("ok", "toolchain_missing"))
+        status = "ok" if broken == 0 else "fail"
+        summaries.append(FamilyHealth(family, status, total, ok, tm, broken, fails))
+    return summaries
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="aggregate non-cpp backend health gates by family")
-    ap.add_argument(
-        "--family",
-        action="append",
-        choices=("all",) + FAMILY_ORDER,
-        default=[],
-        help="family to inspect (default: all)",
-    )
-    ap.add_argument(
-        "--targets",
-        default="",
-        help="comma separated explicit target ids (overrides --family)",
-    )
-    ap.add_argument(
-        "--skip-parity",
-        action="store_true",
-        help="stop after transpile gate and skip parity execution",
-    )
-    ap.add_argument(
-        "--summary-json",
-        default="",
-        help="optional path to write machine-readable health summary",
-    )
-    args = ap.parse_args()
+    parser = argparse.ArgumentParser(description="Non-C++ backend health checker")
+    parser.add_argument("--target", action="append", help="Limit to specific target(s)")
+    parser.add_argument("--family", action="append", help="Limit to specific family(ies)")
+    parser.add_argument("--skip-parity", action="store_true")
+    parser.add_argument("--json", action="store_true")
+    parser.add_argument("--help-targets", action="store_true")
+    args = parser.parse_args()
 
-    try:
-        specs = _resolve_selected_specs(family_args=args.family, targets_arg=args.targets)
-    except ValueError as exc:
-        print("[FAIL]", str(exc))
-        return 2
+    if args.help_targets:
+        for name, spec in TARGET_SPECS.items():
+            print(f"{name:10s} {spec.family}")
+        return 0
 
-    rows = collect_target_health(specs, skip_parity=args.skip_parity)
-    family_rows = summarize_families(rows)
+    specs: list[TargetSpec] = []
+    if args.target:
+        for t in args.target:
+            if t in TARGET_SPECS:
+                specs.append(TARGET_SPECS[t])
+    elif args.family:
+        for fam in args.family:
+            for t in FAMILY_TARGETS.get(fam, ()):
+                specs.append(TARGET_SPECS[t])
+    else:
+        for fam in FAMILY_ORDER:
+            for t in FAMILY_TARGETS[fam]:
+                specs.append(TARGET_SPECS[t])
 
-    for row in rows:
-        print(
-            "TARGET "
-            + f"{row.target} family={row.family} "
-            + f"static={row.static_contract} common={row.common_smoke} "
-            + f"smoke={row.target_smoke} transpile={row.transpile} parity={row.parity} "
-            + f"primary={row.primary_failure}"
-        )
-        if row.detail != "":
-            print(f"  detail: {row.detail}")
+    health_rows = collect_target_health(specs, skip_parity=args.skip_parity)
+    families = summarize_families(health_rows)
 
-    for family in family_rows:
-        failures = ",".join(family.primary_failures) if len(family.primary_failures) > 0 else "-"
-        print(
-            "FAMILY "
-            + f"{family.family} status={family.status} total={family.total_targets} "
-            + f"ok={family.ok_targets} toolchain_missing={family.toolchain_missing_targets} "
-            + f"broken={family.broken_targets} primary_failures={failures}"
-        )
+    if args.json:
+        out = {
+            "targets": [asdict(h) for h in health_rows],
+            "families": [asdict(f) for f in families],
+        }
+        print(json.dumps(out, indent=2))
+    else:
+        for row in health_rows:
+            icon = "OK" if row.primary_failure == "ok" else ("SKIP" if row.primary_failure == "toolchain_missing" else "FAIL")
+            print(f"  [{icon}] {row.target:10s} static={row.static_contract} transpile={row.transpile} parity={row.parity}")
+            if row.primary_failure not in ("ok", "toolchain_missing"):
+                print(f"           {row.detail}")
+        print()
+        for fam in families:
+            icon = "OK" if fam.status == "ok" else "FAIL"
+            print(f"[{icon}] {fam.family}: {fam.ok_targets}/{fam.total_targets} ok, {fam.toolchain_missing_targets} toolchain_missing, {fam.broken_targets} broken")
 
-    broken_targets = sum(
-        1 for row in rows if row.primary_failure not in ("ok", "toolchain_missing")
-    )
-    toolchain_missing_targets = sum(1 for row in rows if row.primary_failure == "toolchain_missing")
-    print(
-        "SUMMARY "
-        + f"targets={len(rows)} broken={broken_targets} "
-        + f"toolchain_missing={toolchain_missing_targets} "
-        + f"families={len(family_rows)}"
-    )
-
-    if args.summary_json != "":
-        out_path = Path(args.summary_json)
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(
-            json.dumps(
-                {
-                    "targets": [asdict(row) for row in rows],
-                    "families": [
-                        {
-                            "family": row.family,
-                            "status": row.status,
-                            "total_targets": row.total_targets,
-                            "ok_targets": row.ok_targets,
-                            "toolchain_missing_targets": row.toolchain_missing_targets,
-                            "broken_targets": row.broken_targets,
-                            "primary_failures": list(row.primary_failures),
-                        }
-                        for row in family_rows
-                    ],
-                    "broken_targets": broken_targets,
-                    "toolchain_missing_targets": toolchain_missing_targets,
-                },
-                ensure_ascii=False,
-                indent=2,
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-
-    return 0 if broken_targets == 0 else 1
+    any_fail = any(f.status != "ok" for f in families)
+    return 1 if any_fail else 0
 
 
 if __name__ == "__main__":

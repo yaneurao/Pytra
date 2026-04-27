@@ -1,8 +1,0 @@
-{
-  "description": "pytra json typed root helpers reject mismatched shapes",
-  "case": "json_loads_obj_rejects_shape_mismatch",
-  "assertions": [
-    {"path": "obj_is_none", "equals": true},
-    {"path": "arr_is_none", "equals": true}
-  ]
-}

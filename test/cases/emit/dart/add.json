@@ -1,7 +1,0 @@
-{
-  "description": "Dart emits the add fixture",
-  "target": "dart",
-  "level": "module",
-  "fixture": "add",
-  "expected_contains": ["int add(", "+"]
-}

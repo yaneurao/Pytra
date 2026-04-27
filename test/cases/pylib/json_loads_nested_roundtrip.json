@@ -1,7 +1,0 @@
-{
-  "description": "pytra json roundtrips nested structures",
-  "case": "json_loads_nested_roundtrip",
-  "assertions": [
-    {"path": "roundtrip", "equals": true}
-  ]
-}

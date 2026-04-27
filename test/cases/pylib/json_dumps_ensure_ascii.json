@@ -1,8 +1,0 @@
-{
-  "description": "pytra json dumps supports ensure_ascii",
-  "case": "json_dumps_ensure_ascii",
-  "assertions": [
-    {"path": "ascii_has_escape", "equals": true},
-    {"path": "utf8_has_char", "equals": true}
-  ]
-}

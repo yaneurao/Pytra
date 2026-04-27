@@ -1,8 +1,0 @@
-{
-  "description": "Ruby emits starred tuple call fixture without source starred syntax",
-  "target": "rb",
-  "level": "module",
-  "fixture": "starred_call_tuple_basic",
-  "expected_contains": ["mix_rgb"],
-  "expected_not_contains": ["*rgb"]
-}

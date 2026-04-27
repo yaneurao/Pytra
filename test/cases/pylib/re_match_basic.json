@@ -1,8 +1,0 @@
-{
-  "description": "pytra re captures match groups",
-  "case": "re_match_basic",
-  "assertions": [
-    {"path": "group1", "equals": "x"},
-    {"path": "group2", "equals": "1"}
-  ]
-}

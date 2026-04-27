@@ -1,8 +1,0 @@
-{
-  "description": "pytra json loads rejects invalid inputs",
-  "case": "json_loads_rejects_invalid_inputs",
-  "assertions": [
-    {"path": "rejected", "equals": 10},
-    {"path": "total", "equals": 10}
-  ]
-}

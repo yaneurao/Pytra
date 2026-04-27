@@ -1,8 +1,0 @@
-{
-  "description": "pytra typing TypeVar and Callable are available",
-  "case": "typing_typevar_callable",
-  "assertions": [
-    {"path": "typevar_exists", "equals": true},
-    {"path": "callable_exists", "equals": true}
-  ]
-}

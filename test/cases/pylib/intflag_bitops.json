@@ -1,9 +1,0 @@
-{
-  "description": "pytra IntFlag bit operations preserve values",
-  "case": "intflag_bitops",
-  "assertions": [
-    {"path": "rw", "equals": 3},
-    {"path": "rw_and_write", "equals": 2},
-    {"path": "rw_xor_write", "equals": 1}
-  ]
-}

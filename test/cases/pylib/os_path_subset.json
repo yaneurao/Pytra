@@ -1,9 +1,0 @@
-{
-  "description": "pytra os.path subset handles basename and splitext",
-  "case": "os_path_subset",
-  "assertions": [
-    {"path": "basename", "equals": "b.txt"},
-    {"path": "root_ok", "equals": true},
-    {"path": "ext", "equals": ".txt"}
-  ]
-}

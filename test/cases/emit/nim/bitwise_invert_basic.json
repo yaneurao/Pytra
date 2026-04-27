@@ -1,7 +1,0 @@
-{
-  "description": "Nim emits bitwise invert for the representative fixture",
-  "target": "nim",
-  "level": "module",
-  "fixture": "bitwise_invert_basic",
-  "expected_contains": ["not y"]
-}

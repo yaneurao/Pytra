@@ -1,7 +1,0 @@
-{
-  "description": "Lua lowers tuple assignment swap via a temporary",
-  "target": "lua",
-  "level": "module",
-  "fixture": "tuple_assign",
-  "expected_contains": ["local __swap_1 = x", "local __swap_2 = y", "x = __swap_2", "y = __swap_1"]
-}

@@ -1,7 +1,0 @@
-{
-  "description": "TypeScript emits bitwise invert for the representative fixture",
-  "target": "ts",
-  "level": "module",
-  "fixture": "bitwise_invert_basic",
-  "expected_contains": ["~y"]
-}

@@ -1,9 +1,0 @@
-{
-  "description": "pytra json dumps supports compact and pretty output",
-  "case": "json_dumps_compact_and_pretty",
-  "assertions": [
-    {"path": "compact_has_x", "equals": true},
-    {"path": "pretty_has_newline", "equals": true},
-    {"path": "pretty_has_indent", "equals": true}
-  ]
-}

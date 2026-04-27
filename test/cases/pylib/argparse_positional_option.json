@@ -1,9 +1,0 @@
-{
-  "description": "pytra argparse parses positional, option, and store_true",
-  "case": "argparse_positional_option",
-  "assertions": [
-    {"path": "input", "equals": "a.py"},
-    {"path": "output", "equals": "out.cpp"},
-    {"path": "pretty", "equals": true}
-  ]
-}

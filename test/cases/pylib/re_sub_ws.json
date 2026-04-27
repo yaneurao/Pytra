@@ -1,7 +1,0 @@
-{
-  "description": "pytra re sub replaces whitespace runs",
-  "case": "re_sub_ws",
-  "assertions": [
-    {"path": "out", "equals": "a b c"}
-  ]
-}
