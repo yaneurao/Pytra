@@ -1,0 +1,7 @@
+{
+  "description": "Dart emits the if_else fixture",
+  "target": "dart",
+  "level": "module",
+  "fixture": "if_else",
+  "expected_contains": ["if (", "} else {"]
+}

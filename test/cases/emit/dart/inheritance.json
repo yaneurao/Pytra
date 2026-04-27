@@ -1,0 +1,7 @@
+{
+  "description": "Dart emits the inheritance fixture",
+  "target": "dart",
+  "level": "module",
+  "fixture": "inheritance",
+  "expected_contains": ["class ", "extends"]
+}

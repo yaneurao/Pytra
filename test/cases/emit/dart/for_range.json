@@ -1,0 +1,7 @@
+{
+  "description": "Dart emits the for_range fixture",
+  "target": "dart",
+  "level": "module",
+  "fixture": "for_range",
+  "expected_contains": ["for (var"]
+}
