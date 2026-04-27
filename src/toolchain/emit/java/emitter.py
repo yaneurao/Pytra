@@ -980,6 +980,11 @@ def _emit_expr_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if kind == "List":
         elements = [_emit_expr(ctx, elem) for elem in _list(node, "elements")]
         if len(elements) == 0:
+            call_arg_type = _str(node, "call_arg_type")
+            if call_arg_type.startswith("set[") and call_arg_type.endswith("]"):
+                return "new ArrayList<" + _java_ref_type(call_arg_type[4:-1], ctx.mapping.types) + ">()"
+            if call_arg_type.startswith("list[") and call_arg_type.endswith("]"):
+                return "new ArrayList<" + _java_ref_type(call_arg_type[5:-1], ctx.mapping.types) + ">()"
             resolved_type = _str(node, "resolved_type")
             if resolved_type.startswith("list[") and resolved_type.endswith("]"):
                 return "new ArrayList<" + _java_ref_type(resolved_type[5:-1], ctx.mapping.types) + ">()"
