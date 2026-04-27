@@ -11,6 +11,7 @@ from pytra.std.pathlib import Path
 from toolchain.emit.cpp.emitter import emit_cpp_module
 from toolchain.emit.cpp.header_gen import build_cpp_header_from_east3
 from toolchain.emit.cpp.runtime_paths import (
+    cpp_user_header_for_module,
     runtime_rel_tail_for_module,
     native_companion_header_path,
     native_companion_source_path,
@@ -389,7 +390,7 @@ def write_user_module_artifacts(
     output_dir: Path,
 ) -> int:
     """Write user module source/header and return emitted file count."""
-    rel_header_path = module_id.replace(".", "/") + ".h"
+    rel_header_path = cpp_user_header_for_module(module_id)
     cpp_text = emit_cpp_module(east_doc, False, rel_header_path)
     if cpp_text.strip() == "":
         return 0

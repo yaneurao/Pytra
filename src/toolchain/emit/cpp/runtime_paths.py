@@ -36,8 +36,14 @@ def cpp_include_for_module(module_id: str) -> str:
     if is_runtime_internal_helper_module(module_id):
         return ""
     if module_id != "":
-        return module_id.replace(".", "/") + ".h"
+        return cpp_user_header_for_module(module_id)
     return ""
+
+
+def cpp_user_header_for_module(module_id: str) -> str:
+    if module_id == "":
+        return ""
+    return "__pytra_user/" + module_id.replace(".", "/") + ".h"
 
 
 def collect_cpp_dependency_module_ids(module_id: str, meta: dict[str, JsonVal]) -> list[str]:

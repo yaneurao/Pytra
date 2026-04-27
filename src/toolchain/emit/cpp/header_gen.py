@@ -245,6 +245,7 @@ def _hg_function_decl(
     *,
     owner_name: str = "",
     in_class: bool = False,
+    owner_is_trait: bool = False,
 ) -> str:
     raw_name = _hg_str(node, "name")
     name = "__pytra_main" if owner_name == "" and raw_name == "main" else _hg_safe_cpp_ident(raw_name)
@@ -260,12 +261,16 @@ def _hg_function_decl(
     suffix = ""
     if owner_name != "" and not in_class:
         prefix = owner_name + "::"
-    if owner_name != "" and _hg_has_decorator(node, "staticmethod") and in_class:
+    if owner_is_trait and owner_name != "" and not _hg_has_decorator(node, "staticmethod") and in_class:
+        static_prefix = "virtual "
+    elif owner_name != "" and _hg_has_decorator(node, "staticmethod") and in_class:
         static_prefix = "static "
     self_mutates = _hg_function_self_mutates(node) or _hg_node_mutates_class_storage(node.get("body"), owner_name)
     if owner_name != "" and not _hg_has_decorator(node, "staticmethod") and name != "__init__" and not self_mutates:
         suffix = " const"
     signature = static_prefix + ret + " " + prefix + name + "(" + ", ".join(params) + ")" + suffix
+    if owner_is_trait and owner_name != "" and in_class and not _hg_has_decorator(node, "staticmethod"):
+        signature += " = 0"
     template_prefix = _hg_function_template_prefix(node)
     if template_prefix != "":
         return template_prefix + "\n" + signature
@@ -291,11 +296,12 @@ def _hg_emit_class_decl(lines: list[str], node: dict[str, JsonVal], mutable_para
         return
     base_specs: list[str] = []
     base = _hg_str(node, "base")
+    is_trait = _hg_is_trait_class(node)
     if base in ("Enum", "IntEnum", "IntFlag"):
         lines.append("enum class " + name + " : int64;")
         lines.append("")
         return
-    if base != "" and base != "object" and not _hg_bool(node, "is_trait"):
+    if base != "" and base != "object" and not is_trait:
         base_specs.append("public " + base)
     trait_names = node.get("trait_names")
     trait_names_arr = json.JsonValue(trait_names).as_arr()
@@ -304,6 +310,10 @@ def _hg_emit_class_decl(lines: list[str], node: dict[str, JsonVal], mutable_para
             trait_text = _hg_json_str_value(trait_name)
             if trait_text != "":
                 base_specs.append("virtual public " + trait_text)
+    for trait_text in _hg_trait_simple_names(node):
+        base_spec = "virtual public " + trait_text
+        if base_spec not in base_specs:
+            base_specs.append(base_spec)
     header = "struct " + name
     if len(base_specs) > 0:
         header += " : " + ", ".join(base_specs)
@@ -320,7 +330,7 @@ def _hg_emit_class_decl(lines: list[str], node: dict[str, JsonVal], mutable_para
         child_obj = json.JsonValue(child).as_obj()
         if child_obj is None or _hg_str(child_obj.raw, "kind") not in ("FunctionDef", "ClosureDef"):
             continue
-        sig = _hg_function_decl(child_obj.raw, owner_name=name, in_class=True, mutable_param_indexes=mutable_param_indexes)
+        sig = _hg_function_decl(child_obj.raw, owner_name=name, in_class=True, owner_is_trait=is_trait, mutable_param_indexes=mutable_param_indexes)
         if sig != "":
             lines.append("    " + sig + ";")
     lines.append("};")
@@ -337,9 +347,12 @@ def _hg_function_params(
     defaults = _hg_dict(node, "arg_defaults")
     usage = _hg_dict(node, "arg_usage")
     is_static = _hg_has_decorator(node, "staticmethod")
+    vararg_name = _hg_str(node, "vararg_name")
     for arg in order:
         arg_text = _hg_json_str_value(arg)
         if arg_text == "":
+            continue
+        if arg_text == vararg_name and vararg_name != "":
             continue
         if arg_text == "self" and not is_static:
             continue
@@ -365,6 +378,13 @@ def _hg_function_params(
             if default_text != "":
                 text += " = " + default_text
         params.append(text)
+    if vararg_name != "":
+        vararg_type = _hg_str(node, "vararg_type")
+        if vararg_type == "":
+            vararg_type = _hg_json_str_value(types.get(vararg_name))
+        if vararg_type == "":
+            vararg_type = "object"
+        params.append(cpp_param_decl("list[" + vararg_type + "]", _hg_safe_cpp_ident(vararg_name), is_mutable=False))
     return params
 
 
@@ -498,6 +518,40 @@ def _hg_function_template_params(node: dict[str, JsonVal]) -> list[str]:
         if type_var not in seen:
             seen.add(type_var)
             out.append(type_var)
+    vararg_type = _hg_str(node, "vararg_type")
+    if vararg_type == "":
+        vararg_name = _hg_str(node, "vararg_name")
+        if vararg_name != "":
+            vararg_type = _hg_json_str_value(arg_types.get(vararg_name))
+    for type_var in collect_cpp_type_vars(vararg_type):
+        if type_var not in seen:
+            seen.add(type_var)
+            out.append(type_var)
+    return out
+
+
+def _hg_is_trait_class(node: dict[str, JsonVal]) -> bool:
+    meta = _hg_dict(node, "meta")
+    if len(_hg_dict(meta, "trait_v1")) > 0:
+        return True
+    return _hg_bool(node, "is_trait") or _hg_has_decorator(node, "trait")
+
+
+def _hg_trait_simple_names(node: dict[str, JsonVal]) -> list[str]:
+    meta = _hg_dict(node, "meta")
+    if _hg_is_trait_class(node):
+        trait_meta = _hg_dict(meta, "trait_v1")
+        traits = _hg_list(trait_meta, "extends_traits")
+    else:
+        implements = _hg_dict(meta, "implements_v1")
+        traits = _hg_list(implements, "traits")
+    out: list[str] = []
+    for item in traits:
+        item_text = _hg_json_str_value(item)
+        if item_text == "":
+            continue
+        parts = item_text.split(".")
+        out.append(parts[len(parts) - 1])
     return out
 
 

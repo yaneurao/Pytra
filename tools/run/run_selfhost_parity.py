@@ -634,6 +634,19 @@ def run_compiled_selfhost(
                     (work / "sample" / "out").mkdir(parents=True, exist_ok=True)
 
                 _purge_case_artifacts(work, case_stem)
+                is_emit_only = case_stem.startswith("eo_")
+                if is_emit_only:
+                    out_dir = work / "selfhost" / emit_target
+                    ok, err = _transpile_via_selfhost_binary(
+                        selfhost_bin, emit_target, case_path, out_dir)
+                    if not ok:
+                        print(f"[FAIL] {case_stem}:{emit_target}: selfhost transpile: {err}")
+                        all_counts[case_root][1] += 1
+                        continue
+                    print(f"[OK] {case_stem}:{emit_target} (emit-only)")
+                    all_counts[case_root][0] += 1
+                    continue
+
                 py_cmd = f"python {shlex.quote(case_path.as_posix())}"
                 py_env = {"PYTHONPATH": "src"}
                 py = _shell(py_cmd, cwd=work, env=py_env, timeout_sec=timeout_sec)
