@@ -1314,7 +1314,7 @@ class ScalaRenderer(CommonRenderer):
                 union_dict_owner = "|" in owner_type and any(part == "dict" or part.startswith("dict[") for part in owner_union_lanes)
                 dynamic_dict_owner = owner_type in ("JsonVal", "Any", "object", "unknown", "pytra.std.json.JsonVal", "pytra_std_json.JsonVal") or union_dict_owner
                 if dynamic_dict_owner and (resolved_method == self._mapping_call("dict.get") or attr == "get") and len(arg_nodes) == 1:
-                    return "__pytra_as_dict(" + owner_expr + ").get(" + self._emit_expr(arg_nodes[0]) + ")"
+                    return "__pytra_as_dict(" + owner_expr + ").getOrElse(" + self._emit_expr(arg_nodes[0]) + ", null)"
                 if dynamic_dict_owner and (resolved_method == self._mapping_call("dict.get") or attr == "get") and len(arg_nodes) == 2:
                     expr = "__pytra_as_dict(" + owner_expr + ").getOrElse(" + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
                     result_type = self._str(node, "resolved_type")
@@ -1365,10 +1365,10 @@ class ScalaRenderer(CommonRenderer):
                         return "(" + owner_expr + ".nonEmpty && " + owner_expr + ".forall(_.isWhitespace))"
                     if resolved_method == self._mapping_call("str.isdigit") and len(arg_nodes) == 0:
                         return "__pytra_isdigit(" + owner_expr + ")"
-                if (owner_type.startswith("dict[") or owner_type == "dict") and resolved_method == self._mapping_call("dict.get") and len(arg_nodes) == 1:
+                if (owner_type.startswith("dict[") or owner_type == "dict") and (resolved_method == self._mapping_call("dict.get") or attr == "get") and len(arg_nodes) == 1:
                     expr = "__pytra_as_dict(" + owner_expr + ").getOrElse(" + self._emit_expr(arg_nodes[0]) + ", null)"
                     return expr
-                if (owner_type.startswith("dict[") or owner_type == "dict") and resolved_method == self._mapping_call("dict.get") and len(arg_nodes) == 2:
+                if (owner_type.startswith("dict[") or owner_type == "dict") and (resolved_method == self._mapping_call("dict.get") or attr == "get") and len(arg_nodes) == 2:
                     result_type = self._str(node, "resolved_type")
                     expr = "__pytra_as_dict(" + owner_expr + ").getOrElse(" + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
                     default_node = arg_nodes[1]
