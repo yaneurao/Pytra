@@ -70,7 +70,9 @@
 7. [ ] [ID: P20-DDT-S7] `tools/unittest/emit/<lang>/test_py2*_smoke.py` (~20件) を JSON に移行する
    - 2026-04-27: 先行移行として `go` / `js` / `ts` / `rs` の `bitwise_invert_basic` smoke を `test/cases/emit/<lang>/bitwise_invert_basic.json` へ移動。`test_emit_cases.py` に module-level fixture emit を追加。
 8. [ ] [ID: P20-DDT-S8] `tools/unittest/common/test_pylib_*.py` (~10件) を JSON に移行する
+   - 2026-04-27: `argparse` / `dataclasses` / `enum` / `re` / `sys` / `typing` を `test/cases/pylib/` へ移行し、`tools/unittest/test_pylib_cases.py` を追加。I/O を伴う `json` / `path` / `os_glob` は未移行。
 9. [ ] [ID: P20-DDT-S9] 空になったスクリプトを削除する
+   - 2026-04-27: 上記 6 モジュールの空になった `test_pylib_*.py` を削除。
 
 ### P1-PARITY-CONSOLIDATION: runtime_parity_check.py を fast 版に統合する
 

@@ -1,0 +1,8 @@
+{
+  "description": "pytra re import regex requires whitespace after keyword",
+  "case": "re_import_regex",
+  "assertions": [
+    {"path": "import_os_matches", "equals": true},
+    {"path": "import_modules_matches", "equals": false}
+  ]
+}

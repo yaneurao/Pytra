@@ -1,0 +1,8 @@
+{
+  "description": "pytra IntEnum compares and converts to int",
+  "case": "intenum_basic",
+  "assertions": [
+    {"path": "ok_eq_zero", "equals": true},
+    {"path": "error_int", "equals": 1}
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "description": "pytra argparse parses choices",
+  "case": "argparse_choices",
+  "assertions": [
+    {"path": "mode", "equals": "b"}
+  ]
+}

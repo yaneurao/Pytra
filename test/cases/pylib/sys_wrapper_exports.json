@@ -1,0 +1,10 @@
+{
+  "description": "pytra sys wrapper exports process state",
+  "case": "sys_wrapper_exports",
+  "assertions": [
+    {"path": "argv_is_list", "equals": true},
+    {"path": "stderr_exists", "equals": true},
+    {"path": "stdout_exists", "equals": true},
+    {"path": "path_is_list", "equals": true}
+  ]
+}

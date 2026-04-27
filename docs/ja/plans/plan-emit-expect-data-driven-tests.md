@@ -192,3 +192,5 @@ Phase 1 着手済み。
 - 2026-04-27: [ID: P20-DDT-S5] `tools/unittest/test_pipeline_cases.py` を追加。ソース文字列から EAST1/EAST2/EAST3 を in-memory で生成し、JSON path assertion を評価する。
 - 2026-04-27: [ID: P20-DDT-S6] `tools/unittest/ir/test_east_core_parser_behavior_exprs.py` と `tools/unittest/toolchain2/test_tuple_unpack_lowering_profile.py` から対応テスト 2 件を JSON ケースへ移行。
 - 2026-04-27: [ID: P20-DDT-S7] 先行移行として `go` / `js` / `ts` / `rs` の `bitwise_invert_basic` smoke を `test/cases/emit/<lang>/bitwise_invert_basic.json` へ移動し、`test_emit_cases.py` に module-level fixture emit を追加。
+- 2026-04-27: [ID: P20-DDT-S8] `argparse` / `dataclasses` / `enum` / `re` / `sys` / `typing` の pylib テストを `test/cases/pylib/` へ移行し、`tools/unittest/test_pylib_cases.py` を追加。I/O 系の `json` / `path` / `os_glob` は未移行。
+- 2026-04-27: [ID: P20-DDT-S9] 空になった `test_pylib_argparse.py` / `test_pylib_dataclasses.py` / `test_pylib_enum.py` / `test_pylib_re.py` / `test_pylib_sys.py` / `test_pylib_typing.py` を削除。

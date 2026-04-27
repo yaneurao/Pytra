@@ -1,0 +1,8 @@
+{
+  "description": "dataclass exception subclass stores fields",
+  "case": "dataclasses_exception_subclass",
+  "assertions": [
+    {"path": "category", "equals": "kind"},
+    {"path": "summary", "equals": "message"}
+  ]
+}
