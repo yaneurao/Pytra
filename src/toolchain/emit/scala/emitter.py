@@ -1310,20 +1310,22 @@ class ScalaRenderer(CommonRenderer):
                     if self._module_namespace_expr(owner_module_id) != "":
                         first_arg = self._emit_expr(arg_nodes[0]) if len(arg_nodes) > 0 else "\"error\""
                         return "{ val __pytra_obj = new " + _safe_scala_ident(attr) + "(); __pytra_obj.__init__(" + first_arg + "); __pytra_obj }"
-                dynamic_dict_owner = owner_type in ("JsonVal", "Any", "object", "unknown", "pytra.std.json.JsonVal", "pytra_std_json.JsonVal")
-                if dynamic_dict_owner and resolved_method == self._mapping_call("dict.get") and len(arg_nodes) == 1:
+                owner_union_lanes = [part.strip() for part in owner_type.split("|")]
+                union_dict_owner = any(part == "dict" or part.startswith("dict[") for part in owner_union_lanes)
+                dynamic_dict_owner = owner_type in ("JsonVal", "Any", "object", "unknown", "pytra.std.json.JsonVal", "pytra_std_json.JsonVal") or union_dict_owner
+                if dynamic_dict_owner and (resolved_method == self._mapping_call("dict.get") or attr == "get") and len(arg_nodes) == 1:
                     return "__pytra_as_dict(" + owner_expr + ").get(" + self._emit_expr(arg_nodes[0]) + ")"
-                if dynamic_dict_owner and resolved_method == self._mapping_call("dict.get") and len(arg_nodes) == 2:
+                if dynamic_dict_owner and (resolved_method == self._mapping_call("dict.get") or attr == "get") and len(arg_nodes) == 2:
                     expr = "__pytra_as_dict(" + owner_expr + ").getOrElse(" + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
                     result_type = self._str(node, "resolved_type")
                     if result_type not in ("", "unknown", "Any", "object", "JsonVal"):
                         return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
                     return expr
-                if dynamic_dict_owner and resolved_method == self._mapping_call("dict.items") and len(arg_nodes) == 0:
+                if dynamic_dict_owner and (resolved_method == self._mapping_call("dict.items") or attr == "items") and len(arg_nodes) == 0:
                     return "__pytra_dict_items(__pytra_as_dict(" + owner_expr + "))"
-                if dynamic_dict_owner and resolved_method == self._mapping_call("dict.keys") and len(arg_nodes) == 0:
+                if dynamic_dict_owner and (resolved_method == self._mapping_call("dict.keys") or attr == "keys") and len(arg_nodes) == 0:
                     return "__pytra_dict_keys(__pytra_as_dict(" + owner_expr + "))"
-                if dynamic_dict_owner and resolved_method == self._mapping_call("dict.values") and len(arg_nodes) == 0:
+                if dynamic_dict_owner and (resolved_method == self._mapping_call("dict.values") or attr == "values") and len(arg_nodes) == 0:
                     return "__pytra_dict_values(__pytra_as_dict(" + owner_expr + "))"
                 if owner_type in ("str", "string"):
                     if resolved_method == self._mapping_call("str.join") and len(arg_nodes) == 1:
