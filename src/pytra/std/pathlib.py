@@ -14,7 +14,7 @@ class Path:
 
     def __init__(self, value: str | "Path") -> None:
         if isinstance(value, Path):
-            self._value = cast(Path, value)._value
+            self._value = str(value)
         else:
             self._value = cast(str, value)
 
@@ -29,7 +29,7 @@ class Path:
 
     def __truediv__(self, rhs: str | "Path") -> "Path":
         if isinstance(rhs, Path):
-            return Path(path.join(self._value, cast(Path, rhs)._value))
+            return Path(path.join(self._value, str(rhs)))
         return Path(path.join(self._value, cast(str, rhs)))
 
     @property
@@ -77,7 +77,7 @@ class Path:
 
     def relative_to(self, other: str | "Path") -> "Path":
         if isinstance(other, Path):
-            base: str = cast(Path, other)._value
+            base: str = str(other)
         else:
             base = cast(str, other)
         self_abs: str = path.abspath(self._value)
@@ -102,7 +102,7 @@ class Path:
             return
         if exist_ok and path.exists(self._value):
             return
-        os.mkdir(self._value)
+        os.mkdir(self._value, exist_ok=False)
 
     def read_text(self, encoding: str = "utf-8") -> str:
         with open(self._value, "r", encoding=encoding) as f:
@@ -116,7 +116,7 @@ class Path:
         result: str = self._value
         for part in parts:
             if isinstance(part, Path):
-                result = path.join(result, cast(Path, part)._value)
+                result = path.join(result, str(part))
             else:
                 result = path.join(result, cast(str, part))
         return Path(result)

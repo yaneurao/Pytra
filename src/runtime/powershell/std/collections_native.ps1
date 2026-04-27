@@ -21,6 +21,11 @@ function deque_popleft {
     return ,$val
 }
 
+function deque_append {
+    param($self, [object]$item)
+    $self.__data__.AddLast($item)
+}
+
 function deque_appendleft {
     param($self, [object]$item)
     $self.__data__.AddFirst($item)

@@ -853,6 +853,12 @@ func __pytra_py_reversed_object(_ v: Any?) -> [Any] {
     return __pytra_reversed(v)
 }
 
+func pytralist(_ v: Any?) -> [Any] {
+    if let list = v as? [Any] { return list }
+    if let s = v as? String { return s.map { String($0) as Any } }
+    return []
+}
+
 func __pytra_sorted(_ v: Any?) -> [Any] {
     if let list = v as? [Any] {
         return list.sorted {

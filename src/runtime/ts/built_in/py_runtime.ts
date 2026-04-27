@@ -589,6 +589,20 @@ class _GrowBytes {
     this._d[this._n++] = v & 255;
     return this._n;
   }
+  pop(): number | undefined {
+    if (this._n === 0) return undefined;
+    const value = this._d[this._n - 1];
+    this._n -= 1;
+    return value;
+  }
+  splice(start: number, deleteCount?: number, ...items: number[]): number[] {
+    const cur = Array.from(this._d.subarray(0, this._n), (item) => item & 255);
+    const removed = cur.splice(start, deleteCount ?? (cur.length - start), ...items.map((item) => item & 255));
+    this._d = new Uint8Array(Math.max(16, cur.length));
+    this._d.set(cur);
+    this._n = cur.length;
+    return removed;
+  }
   [Symbol.iterator]() { return this._d.subarray(0, this._n).values(); }
   slice(start?: number, end?: number): number[] {
     return Array.from(this._d.subarray(0, this._n).slice(start, end), (item) => item & 255);

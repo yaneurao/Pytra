@@ -339,6 +339,8 @@ def nim_zero_value(resolved_type: str) -> str:
         return "init" + nt + "()"
     if nt.startswith("HashSet["):
         return "init" + nt + "()"
+    if nt.startswith("(") and nt.endswith(")"):
+        return "default(" + nt + ")"
     if nt in ("int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64"):
         return "0"
     if nt in ("float64", "float32"):

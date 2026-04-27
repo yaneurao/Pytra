@@ -477,6 +477,9 @@ proc py_reversed*[T](items: seq[T]): seq[T] =
   copy.reverse()
   return copy
 
+proc py_reversed_object*[T](items: seq[T]): seq[T] = py_reversed(items)
+proc py_list_ctor*[T](items: seq[T]): seq[T] = items
+
 proc py_enumerate*[T](items: seq[T]): seq[(int, T)] =
   var result_seq: seq[(int, T)] = @[]
   var i = 0
@@ -524,16 +527,17 @@ proc py_mod*[T: int64 | float64](a, b: T): T =
 # ---------------------------------------------------------------------------
 # Range iterator
 # ---------------------------------------------------------------------------
-iterator py_range*(start: int, stop: int, step: int): int =
+proc py_range*(start: int, stop: int, step: int): seq[int64] =
+  result = @[]
   if step != 0:
     var i = start
     if step > 0:
       while i < stop:
-        yield i
+        result.add(int64(i))
         i += step
     else:
       while i > stop:
-        yield i
+        result.add(int64(i))
         i += step
 
 # ---------------------------------------------------------------------------
@@ -563,6 +567,12 @@ proc py_assert_eq*[T](a, b: T, msg: string = ""): bool =
   if a != b:
     let detail = if msg != "": msg & ": " else: ""
     raise newException(AssertionDefect, detail & "assertion failed: " & $a & " != " & $b)
+  return true
+
+proc py_assert_eq*[A, B](a: seq[A], b: seq[B], msg: string = ""): bool =
+  if py_to_string(a) != py_to_string(b):
+    let detail = if msg != "": msg & ": " else: ""
+    raise newException(AssertionDefect, detail & "assertion failed: " & py_to_string(a) & " != " & py_to_string(b))
   return true
 
 proc py_assert_eq*[T](a: PyObj, b: T, msg: string = ""): bool =

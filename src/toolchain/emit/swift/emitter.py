@@ -755,6 +755,8 @@ def _swift_type(type_name: Any, *, allow_void: bool) -> str:
         return "Any"
     if len(ts3) == 1 and ts3.isupper():
         return "Any"
+    if ts3 in {"Callable", "callable"}:
+        return "() -> Void"
     callable_parts = _callable_signature_parts(ts3)
     if callable_parts is not None:
         arg_types, ret_type = callable_parts
@@ -2337,6 +2339,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if len(args) == 0:
             return '"Any"'
         return "__pytra_type_name(" + _render_expr(args[0]) + ")"
+    if callee_name == "isinstance" and len(args) == 2:
+        return _render_isinstance_check(_render_expr(args[0]), args[1])
     if callee_name in {"index", "__pytra_index"} and len(args) == 2:
         first_any = args[0]
         first_type = first_any.get("resolved_type") if isinstance(first_any, dict) else ""
@@ -3061,7 +3065,7 @@ def _function_params(fn: dict[str, Any], *, drop_self: bool, use_any: bool = Fal
         if isinstance(vararg_name_any, str) and raw_name == vararg_name_any:
             vararg_type_any = fn.get("vararg_type")
             elem_type = _swift_type(vararg_type_any, allow_void=False)
-            original_type = "[" + elem_type + "]" if elem_type != "Any" else "[Any]"
+            original_type = elem_type + "..." if elem_type != "" else "Any..."
         param_type = "Any" if use_any else original_type
         if i in inout_positions:
             param_type = "inout " + param_type

@@ -158,6 +158,8 @@ class KotlinRenderer(CommonRenderer):
         return prefix + str(self._tmp_counter)
 
     def _render_type(self, resolved_type: str) -> str:
+        if resolved_type in ("JsonVal", "__pytra_JsonVal"):
+            return "Any?"
         if self._is_path_type(resolved_type):
             return self._path_type_name()
         if resolved_type == "Obj":
@@ -399,6 +401,10 @@ class KotlinRenderer(CommonRenderer):
                             continue
                         if name == "":
                             self.import_modules[local_name] = mod
+                            continue
+                        std_mod = "pytra.std." + mod if "." not in mod else ""
+                        if std_mod != "" and std_mod + "." + name in self.mapping.calls:
+                            self.runtime_imports[local_name] = self.mapping.calls[std_mod + "." + name]
                             continue
                         if should_skip_module(mod, self.mapping) or should_skip_module(mod + "." + name, self.mapping):
                             resolved = self.mapping.calls.get(mod + "." + name, "")
@@ -1267,6 +1273,8 @@ class KotlinRenderer(CommonRenderer):
             value_code = self._emit_expr(node.get("value"))
             target = self._str(node, "target")
             resolved_type = self._str(node, "resolved_type")
+            if self._callable_type(target) != "" or self._callable_type(resolved_type) != "":
+                return value_code
             if target == "str":
                 return "__pytra_str(" + value_code + ")"
             if target == "bool":
@@ -1307,6 +1315,16 @@ class KotlinRenderer(CommonRenderer):
             runtime_module_id = self._str(node, "runtime_module_id")
             runtime_symbol = self._str(node, "runtime_symbol")
             runtime_adapter = self._str(node, "runtime_call_adapter_kind")
+            if runtime_module_id == "pytra.std.math" and runtime_symbol != "":
+                args = self._emit_call_parts(self._list(node, "args")) + self._emit_keyword_parts(self._list(node, "keywords"))
+                if runtime_symbol == "pi":
+                    return "math_native_pi()"
+                if runtime_symbol == "e":
+                    return "math_native_e()"
+                return "math_native_" + _safe_kotlin_ident(runtime_symbol) + "(" + ", ".join(args) + ")"
+            if runtime_module_id == "pytra.std.time" and runtime_symbol != "":
+                args = self._emit_call_parts(self._list(node, "args")) + self._emit_keyword_parts(self._list(node, "keywords"))
+                return "time_native_" + _safe_kotlin_ident(runtime_symbol) + "(" + ", ".join(args) + ")"
             if runtime_adapter == "extern_delegate" and runtime_module_id != "" and runtime_symbol != "":
                 args = self._emit_call_parts(self._list(node, "args")) + self._emit_keyword_parts(self._list(node, "keywords"))
                 if runtime_module_id == "pytra.std.math":
@@ -1360,7 +1378,7 @@ class KotlinRenderer(CommonRenderer):
                         if resolved != "":
                             call_parts = self._emit_call_parts(arg_nodes) + self._emit_keyword_parts(keyword_nodes)
                             return resolved + "(" + ", ".join(call_parts) + ")"
-                dynamic_dict_owner = owner_type in ("JsonVal", "Any", "object", "unknown", "pytra.std.json.JsonVal", "pytra_std_json.JsonVal")
+                dynamic_dict_owner = owner_type in ("JsonVal", "Any", "object", "unknown", "pytra.std.json.JsonVal", "pytra_std_json.JsonVal") or "dict[" in owner_type
                 if owner_expr == "pytra_built_in_error" and self._is_exception_name(attr):
                     first_arg = self._emit_expr(arg_nodes[0]) if len(arg_nodes) > 0 else "\"error\""
                     return "RuntimeException(" + first_arg + ".toString())"
@@ -1479,6 +1497,18 @@ class KotlinRenderer(CommonRenderer):
                         return owner_expr + ".remove(" + self._emit_expr(arg_nodes[0]) + ")"
             if isinstance(func, dict) and self._str(func, "kind") == "Name":
                 func_id = self._str(func, "id")
+                if func_id == "isinstance":
+                    call_args = self._list(node, "args")
+                    if len(call_args) >= 2 and isinstance(call_args[1], dict):
+                        type_name = self._str(call_args[1], "id")
+                        if type_name == "":
+                            type_name = self._str(call_args[1], "type_object_of")
+                        if type_name == "":
+                            type_name = self._str(call_args[1], "repr")
+                        if type_name != "":
+                            if type_name in ("dict", "list", "set", "tuple", "str", "int", "int64", "float", "float64", "bool"):
+                                return "__pytra_is_instance(" + self._emit_expr(call_args[0]) + ", " + self._quote_string(type_name) + ")"
+                            return "(" + self._emit_expr(call_args[0]) + " is " + _safe_kotlin_ident(type_name) + ")"
                 mapped = self.mapping.calls.get(func_id)
                 node_runtime_symbol = self._str(node, "runtime_symbol")
                 node_runtime_call = self._str(node, "runtime_call")
@@ -1556,6 +1586,13 @@ class KotlinRenderer(CommonRenderer):
                 tmp_name = "__pytraObj"
                 return "run { val " + tmp_name + " = " + bare_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
             raw_args = self._list(node, "args")
+            if func_name == "__pytra_list":
+                rendered_list_args = self._emit_call_parts(raw_args)
+                list_type = self._str(node, "resolved_type")
+                type_arg = "Any?"
+                if list_type.startswith("list[") and list_type.endswith("]"):
+                    type_arg = self._render_type(list_type[5:-1])
+                return "__pytra_list<" + type_arg + ">(" + (rendered_list_args[0] if len(rendered_list_args) > 0 else "null") + ")"
             if isinstance(func, dict) and self._str(func, "kind") == "Name":
                 func_id = self._str(func, "id")
                 vararg_info = self.module_function_varargs.get(func_id)
@@ -1655,7 +1692,7 @@ class KotlinRenderer(CommonRenderer):
                     obj_node = right_node if left_is_none else left_node
                     obj_expr = self._emit_expr(obj_node) if isinstance(obj_node, dict) else (right if left_is_none else left)
                     if isinstance(obj_node, dict) and self._str(obj_node, "kind") == "Name":
-                        obj_expr = self._safe_ident(self._str(obj_node, "id"))
+                        obj_expr = _safe_kotlin_ident(self._str(obj_node, "id"))
                     op_text = "==" if op in {"Eq", "Is"} else "!="
                     return obj_expr + " " + op_text + " null"
                 if op == "Eq":

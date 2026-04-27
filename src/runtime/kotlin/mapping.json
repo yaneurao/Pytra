@@ -90,6 +90,7 @@
     "ArgumentParser": "ArgumentParser",
     "Namespace": "Namespace",
     "ArgValue": "Any?",
+    "JsonVal": "Any?",
     "JsonValue": "JsonValue",
     "JsonArr": "JsonArr",
     "JsonObj": "JsonObj"

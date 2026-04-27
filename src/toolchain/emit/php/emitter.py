@@ -851,6 +851,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     spread_arg = ""
     if isinstance(func, dict) and _str(func, "kind") == "Name":
         fn_id = _str(func, "id")
+        if fn_id == "isinstance" and len(args) >= 2 and isinstance(args[0], dict) and isinstance(args[1], dict):
+            type_node = args[1]
+            type_name = _str(type_node, "id")
+            if type_name == "":
+                type_name = _str(type_node, "repr")
+            return _emit_isinstance(ctx, {"kind": "IsInstance", "value": args[0], "expected_type_name": type_name})
         if fn_id in ctx.vararg_functions and len(args) >= 1:
             packed_arg = args[-1]
             if isinstance(packed_arg, dict) and _str(packed_arg, "kind") in ("List", "Tuple"):
@@ -1102,13 +1108,13 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         # String methods that take self as first arg → PHP string function
         owner_rt = _str(owner_val, "resolved_type") if isinstance(owner_val, dict) else ""
         owner_method_key = ""
-        if owner_rt.startswith("list[") or owner_rt in ("list", "bytes", "bytearray"):
+        if owner_rt.startswith("list[") or "list[" in owner_rt or owner_rt in ("list", "bytes", "bytearray"):
             owner_method_key = ("bytearray." if owner_rt == "bytearray" else "list.") + attr
-        elif owner_rt.startswith("dict[") or owner_rt == "dict":
+        elif owner_rt.startswith("dict[") or "dict[" in owner_rt or owner_rt == "dict":
             owner_method_key = "dict." + attr
         elif owner_rt in ("str", "string"):
             owner_method_key = "str." + attr
-        elif owner_rt.startswith("set[") or owner_rt == "set":
+        elif owner_rt.startswith("set[") or "set[" in owner_rt or owner_rt == "set":
             owner_method_key = "set." + attr
 
         if owner_method_key != "":

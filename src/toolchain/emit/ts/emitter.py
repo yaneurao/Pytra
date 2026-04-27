@@ -558,6 +558,18 @@ def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 tn_str = tn if isinstance(tn, str) else ""
                 checks.append(_isinstance_ts_check(obj, obj_rt, tn_str))
             return "(" + " || ".join(checks) + ")"
+    methods: list[str] = []
+    current_trait = type_name
+    while current_trait != "":
+        for method_name in ctx.class_instance_methods.get(current_trait, {}).keys():
+            if method_name != "__init__" and method_name not in methods:
+                methods.append(method_name)
+        current_trait = ctx.class_bases.get(current_trait, "")
+    if len(methods) > 0:
+        checks = ["(" + obj + " != null)"]
+        for method_name in methods:
+            checks.append("(typeof (" + obj + " as any)." + _safe_ts_ident(method_name) + " === 'function')" if not ctx.strip_types else "(typeof " + obj + "." + _safe_ts_ident(method_name) + " === 'function')")
+        return "(" + " && ".join(checks) + ")"
     return _isinstance_ts_check(obj, obj_rt, type_name)
 
 
@@ -634,13 +646,13 @@ def _resolve_runtime_call_name(ctx: EmitContext, node: dict[str, JsonVal], func:
 
 def _owner_runtime_mapping_key(owner_rt: str, attr: str) -> str:
     rt = owner_rt
-    if rt.startswith("list["):
+    if rt.startswith("list[") or "list[" in rt:
         return "list." + attr
     if rt in ("list", "bytes", "bytearray"):
         return "list." + attr if rt == "list" else rt + "." + attr
-    if rt.startswith("dict[") or rt == "dict":
+    if rt.startswith("dict[") or "dict[" in rt or rt == "dict":
         return "dict." + attr
-    if rt.startswith("set[") or rt == "set":
+    if rt.startswith("set[") or "set[" in rt or rt == "set":
         return "set." + attr
     if rt in ("str", "string"):
         return "str." + attr
@@ -653,7 +665,7 @@ def _expand_owner_mapped_call(ctx: EmitContext, mapped: str, owner_code: str, ar
     if mapped == "__LIST_POP__":
         if len(arg_strs) >= 1:
             return owner_code + ".splice(" + arg_strs[0] + ", 1)[0]"
-        return owner_code + ".pop()"
+        return owner_code + ".pop()!" if not ctx.strip_types else owner_code + ".pop()"
     if mapped == "__LIST_CLEAR__":
         return owner_code + ".splice(0)"
     if mapped == "__LIST_COPY__":
@@ -814,7 +826,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 if len(builtin_arg_strs) >= 2:
                     return owner + ".splice(" + builtin_arg_strs[1] + ", 1)[0]"
-                return owner + ".pop()"
+                return owner + ".pop()!" if not ctx.strip_types else owner + ".pop()"
             if fn_name == "__LIST_CLEAR__":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 return owner + ".splice(0)"
@@ -826,6 +838,24 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 values = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "[]"
                 return "pyextend(" + owner + ", " + values + ")"
+            if fn_name == "__LIST_SORT__":
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
+                return owner + ".sort()"
+            if fn_name == "__LIST_REVERSE__":
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
+                return owner + ".reverse()"
+            if fn_name == "__DICT_CLEAR__":
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
+                return owner + ".clear()"
+            if fn_name == "__DICT_POP__" and len(builtin_arg_strs) >= 2:
+                return "pypop(" + builtin_arg_strs[0] + ", " + builtin_arg_strs[1] + ")"
+            if fn_name == "__DICT_SETDEFAULT__" and len(builtin_arg_strs) >= 3:
+                return "pysetdefault(" + builtin_arg_strs[0] + ", " + builtin_arg_strs[1] + ", " + builtin_arg_strs[2] + ")"
+            if fn_name == "__SET_CLEAR__":
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
+                return owner + ".clear()"
+            if fn_name == "py_reversed_object" and len(builtin_arg_strs) >= 1:
+                return "Array.from(" + builtin_arg_strs[0] + ").reverse()"
             if fn_name == "__DICT_GET__":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 key = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "null"
@@ -951,6 +981,28 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             semantic_tag = _str(node, "semantic_tag")
             call_rt = _str(node, "resolved_type")
             func_rt = _str(func, "resolved_type")
+
+            if fn_id == "isinstance" and len(args) >= 2:
+                type_arg = args[1] if isinstance(args[1], dict) else None
+                type_name = _str(type_arg, "id") if isinstance(type_arg, dict) else ""
+                if type_name == "":
+                    type_name = _str(type_arg, "repr") if isinstance(type_arg, dict) else ""
+                return _emit_isinstance(ctx, {
+                    "kind": "IsInstance",
+                    "value": args[0],
+                    "expected_type_name": type_name,
+                    "expected_type_id": {"kind": "Name", "id": type_name},
+                })
+            if fn_id == "py_reversed_object" and len(all_arg_strs) >= 1:
+                return "Array.from(" + all_arg_strs[0] + ").reverse()"
+            if fn_id == "__LIST_SORT__" and len(all_arg_strs) >= 1:
+                return all_arg_strs[0] + ".sort()"
+            if fn_id == "__LIST_REVERSE__" and len(all_arg_strs) >= 1:
+                return all_arg_strs[0] + ".reverse()"
+            if fn_id == "__DICT_CLEAR__" and len(all_arg_strs) >= 1:
+                return all_arg_strs[0] + ".clear()"
+            if fn_id == "__SET_CLEAR__" and len(all_arg_strs) >= 1:
+                return all_arg_strs[0] + ".clear()"
 
             if fn_id in ("__init__", "py__init__") and len(args) >= 1:
                 first_arg = args[0]

@@ -144,9 +144,11 @@ function __pytra_bytearray {
         # Empty bytearray: return List for .Add() / .AddRange() support
         return ,([System.Collections.Generic.List[object]]::new())
     }
-    # Non-empty fixed-size bytearray: use int[] for 8x faster allocation and indexed writes
-    # (vs List.Add(0) × n which is 75ms/57K elements in PS1)
-    return ,([int[]]::new($count))
+    $result = [System.Collections.Generic.List[object]]::new()
+    for ($i = 0; $i -lt $count; $i++) {
+        [void]$result.Add(0)
+    }
+    return ,$result
 }
 
 function __pytra_bytes {
@@ -242,7 +244,10 @@ function __pytra_set_key {
 function __pytra_set {
     param([object[]]$values)
     $result = @{}
-    foreach ($item in $values) {
+    $all_values = @()
+    if ($values -ne $null) { $all_values += @($values) }
+    if ($args -ne $null) { $all_values += @($args) }
+    foreach ($item in $all_values) {
         $result[(__pytra_set_key $item)] = $true
     }
     return $result
@@ -530,7 +535,7 @@ function __pytra_str_slice {
 
 function __pytra_reversed {
     param([object]$value)
-    if ($value -eq $null) { return @() }
+    if ($value -eq $null) { return ,@() }
     if ($value -is [string]) {
         $chars = $value.ToCharArray()
         [array]::Reverse($chars)
@@ -538,7 +543,7 @@ function __pytra_reversed {
     }
     $copy = @($value)
     [array]::Reverse($copy)
-    return $copy
+    return ,$copy
 }
 
 function __pytra_zip {
@@ -650,8 +655,13 @@ function __pytra_type_check {
             if (Test-Path variable:__pytra_bases) {
                 $base = $__pytra_bases[$current]
             }
-            if ($base -eq $null -or $base -eq "" -or $base -eq $current) { break }
-            $current = $base
+            if ($base -eq $null -or $base -eq "") { break }
+            $bases = @($base)
+            foreach ($candidate in $bases) {
+                if ($candidate -eq $type_name) { return $true }
+                if ($candidate -ne $current -and (__pytra_type_check @{"__type__" = $candidate} $type_name)) { return $true }
+            }
+            break
         }
     }
     return $false
@@ -756,9 +766,13 @@ function __pytra_list_sort {
 
 function __pytra_sorted {
     param([object]$value)
-    $arr = @($value)
+    if ($value -is [System.Collections.IDictionary]) {
+        $arr = @($value.Keys)
+    } else {
+        $arr = @($value)
+    }
     [array]::Sort($arr)
-    return ,$arr
+    return ,(__pytra_mklist @arr)
 }
 
 function __pytra_list_reverse {
@@ -809,15 +823,15 @@ function __pytra_str_lstrip {
 }
 
 function __pytra_str_startswith {
-    param([object]$s, [object]$prefix) return [string]$s.StartsWith([string]$prefix)
+    param([object]$s, [object]$prefix) return ([string]$s).StartsWith([string]$prefix)
 }
 
 function __pytra_str_endswith {
-    param([object]$s, [object]$suffix) return [string]$s.EndsWith([string]$suffix)
+    param([object]$s, [object]$suffix) return ([string]$s).EndsWith([string]$suffix)
 }
 
 function __pytra_str_replace {
-    param([object]$s, [object]$old, [object]$new_) return [string]$s.Replace([string]$old, [string]$new_)
+    param([object]$s, [object]$old, [object]$new_) return ([string]$s).Replace([string]$old, [string]$new_)
 }
 
 function __pytra_str_find {
@@ -991,6 +1005,21 @@ function __pytra_set_remove {
     $k = (__pytra_set_key $value)
     if (-not $set_.ContainsKey($k)) { throw "KeyError: $value" }
     [void]$set_.Remove($k)
+}
+
+function __pytra_set_update {
+    param([object]$set_, [object]$values)
+    if ($set_ -eq $null -or $values -eq $null) { return $set_ }
+    if ($values -is [System.Collections.IDictionary]) {
+        foreach ($k in $values.Keys) {
+            $set_[(__pytra_set_key $k)] = $true
+        }
+        return $set_
+    }
+    foreach ($item in $values) {
+        $set_[(__pytra_set_key $item)] = $true
+    }
+    return $set_
 }
 
 # ---------------------------------------------------------------------------

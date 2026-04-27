@@ -344,6 +344,12 @@ bool pytraStrIsalnum(String s) {
   return true;
 }
 
+List<dynamic> pytraReversed(dynamic v) {
+  if (v is String) return v.split('').reversed.toList();
+  if (v is Iterable) return List<dynamic>.from(v).reversed.toList();
+  return <dynamic>[];
+}
+
 int pytraStrCount(String s, String needle) {
   if (needle.isEmpty) return s.length + 1;
   var count = 0;

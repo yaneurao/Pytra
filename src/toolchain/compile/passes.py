@@ -4806,6 +4806,11 @@ def _is_self_attr(node: Node) -> bool:
     return nd_get_str(value_node, "kind") == NAME and nd_get_str(value_node, "id") == "self"
 
 def _node_mutates(node: JsonVal) -> bool:
+    if jv_is_list(node):
+        for item in jv_list(node):
+            if _node_mutates(item):
+                return True
+        return False
     if not jv_is_dict(node):
         return False
     node_obj: Node = jv_dict(node)

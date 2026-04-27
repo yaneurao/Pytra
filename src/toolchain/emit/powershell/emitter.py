@@ -155,6 +155,26 @@ _UNARYOP_MAP: dict[str, str] = {
 }
 
 
+def _static_pod_isinstance(value_type: str, expected_type: str) -> str:
+    pod_types = {
+        "bool", "str", "string",
+        "int", "int64", "int32", "int16", "int8",
+        "uint64", "uint32", "uint16", "uint8",
+        "float", "float64", "float32",
+    }
+    if value_type not in pod_types or expected_type not in pod_types:
+        return ""
+    def _norm(t: str) -> str:
+        if t == "int":
+            return "int64"
+        if t == "float":
+            return "float64"
+        if t == "string":
+            return "str"
+        return t
+    return "$true" if _norm(value_type) == _norm(expected_type) else "$false"
+
+
 def _render_lvalue(ctx: EmitContext, expr: JsonVal) -> str:
     """Render left-hand side (assignment target)."""
     if not isinstance(expr, dict):
@@ -245,8 +265,14 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
 
     if kind == "BinOp":
         op = _gs(expr, "op")
-        left = _render_expr(ctx, expr.get("left"))
-        right = _render_expr(ctx, expr.get("right"))
+        left_node = expr.get("left")
+        right_node = expr.get("right")
+        left = _render_expr(ctx, left_node)
+        right = _render_expr(ctx, right_node)
+        left_rt = _gs(left_node, "resolved_type") if isinstance(left_node, dict) else ""
+        right_rt = _gs(right_node, "resolved_type") if isinstance(right_node, dict) else ""
+        if op == "Div" and left_rt in ("Path", "PyPath", "pytra.std.pathlib.Path") and right_rt in ("str", "string"):
+            return "(Path_joinpath " + left + " " + right + ")"
         if op == "Pow":
             return "[Math]::Pow(" + left + ", " + right + ")"
         if op == "FloorDiv":
@@ -453,9 +479,9 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
         if len(elements) == 0:
             elements = _gl(expr, "elts")
         if len(elements) == 0:
-            return "@{}"
-        parts2: list[str] = [_render_expr(ctx, e) + " = $true" for e in elements]
-        return "@{" + "; ".join(parts2) + "}"
+            return "(__pytra_set)"
+        rendered = [_render_expr(ctx, e) for e in elements]
+        return "(__pytra_set " + " ".join(rendered) + ")"
 
     if kind == "Dict":
         keys = _gl(expr, "keys")
@@ -636,6 +662,10 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
         value_node2 = expr.get("value")
         type_name = _gs(expr, "expected_type_name")
         if type_name != "":
+            value_type = _gs(value_node2, "resolved_type") if isinstance(value_node2, dict) else ""
+            static_check = _static_pod_isinstance(value_type, type_name)
+            if static_check != "":
+                return static_check
             isinstance_fn = ctx.mapping.calls.get("py_isinstance", "__pytra_type_check")
             return "(" + isinstance_fn + " " + _render_expr(ctx, value_node2) + ' "' + type_name + '")'
         return "$true"
@@ -741,6 +771,12 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
     if isinstance(func, dict):
         fk = _gs(func, "kind")
 
+        if fk in ("Cast", "Unbox", "Box"):
+            fn_expr = _render_expr(ctx, func.get("value"))
+            if len(rendered_args) == 0:
+                return "(& " + fn_expr + ")"
+            return "(& " + fn_expr + " " + " ".join(rendered_args) + ")"
+
         if fk == "Name":
             fn_name_raw = _gs(func, "id")
             fn_name = ctx.renamed_symbols.get(fn_name_raw, fn_name_raw)
@@ -787,7 +823,35 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
             if fn_name in ("sum", "py_sum"):
                 return "(__pytra_sum " + " ".join(rendered_args) + ")" if len(rendered_args) > 0 else "0"
             if fn_name == "isinstance":
-                return "$true"
+                if len(args) >= 2:
+                    type_arg = args[1]
+                    if isinstance(type_arg, dict) and _gs(type_arg, "kind") == "Tuple":
+                        checks: list[str] = []
+                        for elem in _gl(type_arg, "elements"):
+                            elem_type = _gs(elem, "id") if isinstance(elem, dict) else ""
+                            if elem_type == "" and isinstance(elem, dict):
+                                elem_type = _gs(elem, "repr")
+                            if elem_type != "":
+                                value_type = _gs(args[0], "resolved_type") if len(args) >= 1 and isinstance(args[0], dict) else ""
+                                static_check = _static_pod_isinstance(value_type, elem_type)
+                                if static_check != "":
+                                    checks.append("(" + static_check + ")")
+                                else:
+                                    isinstance_fn = ctx.mapping.calls.get("py_isinstance", "__pytra_type_check")
+                                    checks.append("(" + isinstance_fn + " " + rendered_args[0] + " " + ps1_string_literal(elem_type) + ")")
+                        return "(" + " -or ".join(checks) + ")" if len(checks) > 0 else "$false"
+                    type_name = _gs(type_arg, "id") if isinstance(type_arg, dict) else ""
+                    if type_name == "" and isinstance(type_arg, dict) and _gs(type_arg, "kind") == "Constant":
+                        raw_type_name = type_arg.get("value")
+                        type_name = raw_type_name if isinstance(raw_type_name, str) else ""
+                    if type_name != "":
+                        value_type = _gs(args[0], "resolved_type") if len(args) >= 1 and isinstance(args[0], dict) else ""
+                        static_check = _static_pod_isinstance(value_type, type_name)
+                        if static_check != "":
+                            return static_check
+                        isinstance_fn = ctx.mapping.calls.get("py_isinstance", "__pytra_type_check")
+                        return "(" + isinstance_fn + " " + rendered_args[0] + " " + ps1_string_literal(type_name) + ")"
+                return "$false"
             if fn_name in ("cast", "typing.cast"):
                 return rendered_args[1] if len(rendered_args) >= 2 else "$null"
             if fn_name == "extern":
@@ -921,6 +985,12 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
                 runtime_keys_attr.append(runtime_module_id + "." + runtime_symbol)
             if owner_type != "":
                 runtime_keys_attr.append(owner_type + "." + raw_attr)
+                if "dict[" in owner_type:
+                    runtime_keys_attr.append("dict." + raw_attr)
+                if "list[" in owner_type:
+                    runtime_keys_attr.append("list." + raw_attr)
+                if "set[" in owner_type:
+                    runtime_keys_attr.append("set." + raw_attr)
             mapped_runtime_attr = ""
             for key in runtime_keys_attr:
                 maybe = ctx.mapping.calls.get(key, "")
@@ -928,6 +998,14 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
                     mapped_runtime_attr = maybe
                     break
             if mapped_runtime_attr != "":
+                if owner_name in ctx.import_alias_map:
+                    if mapped_runtime_attr.startswith("[Math]::"):
+                        if mapped_runtime_attr.endswith("::PI") or mapped_runtime_attr.endswith("::E"):
+                            return "(" + mapped_runtime_attr + ")"
+                        return "(" + mapped_runtime_attr + "(" + ", ".join(rendered_args) + "))"
+                    if len(rendered_args) == 0:
+                        return "(" + mapped_runtime_attr + ")"
+                    return "(" + mapped_runtime_attr + " " + " ".join(rendered_args) + ")"
                 if mapped_runtime_attr.startswith("__pytra_str_"):
                     if len(rendered_args) == 0:
                         return "(" + mapped_runtime_attr + " " + owner + ")"
@@ -1534,6 +1612,7 @@ def _emit_function_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) 
     arg_order = _gl(stmt, "arg_order")
     arg_defaults = _gd(stmt, "arg_defaults")
     arg_types_raw = _gd(stmt, "arg_types")
+    vararg_name = _gs(stmt, "vararg_name")
 
     # Register callable-typed params as lambda vars
     for aname, atype in arg_types_raw.items():
@@ -1544,6 +1623,8 @@ def _emit_function_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) 
     if len(arg_order) > 0:
         for arg_name in arg_order:
             if not isinstance(arg_name, str):
+                continue
+            if vararg_name != "" and arg_name == vararg_name:
                 continue
             safe_a = "$" + _safe(arg_name, "_p")
             default = arg_defaults.get(arg_name)
@@ -1556,6 +1637,8 @@ def _emit_function_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) 
             if isinstance(extra_name, str) and extra_name != "self" and extra_name not in arg_order:
                 safe_ea = "$" + _safe(extra_name, "_p")
                 ps_params.append(safe_ea + " = $null")
+        if vararg_name != "":
+            ps_params.append("[Parameter(ValueFromRemainingArguments=$true)] [object[]]$" + _safe(vararg_name, "_p"))
     else:
         params = _gl(stmt, "params")
         if len(params) == 0:
@@ -1752,13 +1835,25 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
             }:
                 class_names.add(local)
 
-    class_bases: dict[str, str] = {}
+    class_bases_multi: dict[str, list[str]] = {}
     for node in body:
         if isinstance(node, dict) and _gs(node, "kind") == "ClassDef":
             cn = _gs(node, "name")
             base = _gs(node, "base")
             if cn != "" and base != "":
-                class_bases[cn] = base
+                class_bases_multi.setdefault(cn, []).append(base)
+            for dec in _gl(node, "decorators"):
+                if isinstance(dec, str) and dec.startswith("implements(") and dec.endswith(")"):
+                    inner = dec[len("implements("):-1]
+                    for trait_name in inner.split(","):
+                        trait_name = trait_name.strip()
+                        if cn != "" and trait_name != "":
+                            class_bases_multi.setdefault(cn, []).append(trait_name)
+    class_bases: dict[str, str] = {
+        child: bases[0]
+        for child, bases in class_bases_multi.items()
+        if len(bases) > 0
+    }
 
     class_method_names: dict[str, set[str]] = {}
     for node in body:
@@ -1823,7 +1918,7 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
             cn = _gs(node, "name")
             if cn != "" and "trait" in _gl(node, "decorators"):
                 trait_class_names.add(cn)
-    base_class_set: set[str] = set(class_bases.values())
+    base_class_set: set[str] = {base for bases in class_bases_multi.values() for base in bases}
     leaf_classes: set[str] = class_names - base_class_set - trait_class_names
 
     ctx = EmitContext(
@@ -1863,8 +1958,17 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
     # py_format_value is provided by py_runtime.ps1 — no extra dot-source needed
 
     # Emit __pytra_bases for isinstance inheritance chain
-    if len(class_bases) > 0:
-        parts4 = ['"' + child + '" = "' + base + '"' for child, base in class_bases.items()]
+    if len(class_bases_multi) > 0:
+        parts4: list[str] = []
+        for child, bases in class_bases_multi.items():
+            unique_bases: list[str] = []
+            for base in bases:
+                if base not in unique_bases:
+                    unique_bases.append(base)
+            if len(unique_bases) == 1:
+                parts4.append('"' + child + '" = "' + unique_bases[0] + '"')
+            else:
+                parts4.append('"' + child + '" = @(' + ", ".join('"' + base + '"' for base in unique_bases) + ')')
         lines.append("$__pytra_bases = @{" + "; ".join(parts4) + "}")
         lines.append("")
 

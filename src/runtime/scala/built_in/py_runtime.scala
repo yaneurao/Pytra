@@ -883,6 +883,9 @@ def __pytra_reversed(v: Any): mutable.ArrayBuffer[Any] = {
 
 def reversed(v: Any): mutable.ArrayBuffer[Any] = __pytra_reversed(v)
 
+def __pytra_list[T](v: Any): mutable.ArrayBuffer[T] =
+    mutable.ArrayBuffer.from(__pytra_as_list(v).map(_.asInstanceOf[T]))
+
 def __pytra_contains(container: Any, value: Any): Boolean = {
     val needle = __pytra_str(value)
     container match {
@@ -1211,6 +1214,9 @@ def pyMathCeil(v: Any): Double = scala.math.ceil(__pytra_float(v))
 def pyMathPow(a: Any, b: Any): Double = scala.math.pow(__pytra_float(a), __pytra_float(b))
 def pyMathPi(): Double = scala.math.Pi
 def pyMathE(): Double = scala.math.E
+def __pytra_sqrt(v: Any): Double = pyMathSqrt(v)
+def __pytra_sin(v: Any): Double = pyMathSin(v)
+def __pytra_cos(v: Any): Double = pyMathCos(v)
 def __pytra_tan(v: Any): Double = pyMathTan(v)
 def __pytra_exp(v: Any): Double = pyMathExp(v)
 def __pytra_log(v: Any): Double = pyMathLog(v)

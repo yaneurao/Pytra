@@ -686,6 +686,8 @@ def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if type_name == "":
             type_name = _str(type_node, "repr")
     if type_name == "":
+        type_name = _str(node, "expected_type_name")
+    if type_name == "":
         type_name = _str(node, "type_name")
     if type_name == "":
         expected_node = node.get("expected_type_id")
@@ -841,6 +843,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 builtin_name = _str(func, "repr")
     if builtin_name == "cast":
         return _emit_cast_call(ctx, node, args)
+    if builtin_name == "isinstance" and len(args) >= 2 and isinstance(args[0], dict) and isinstance(args[1], dict):
+        type_node = args[1]
+        type_name = _str(type_node, "id")
+        if type_name == "":
+            type_name = _str(type_node, "repr")
+        return _emit_isinstance(ctx, {"kind": "IsInstance", "value": args[0], "expected_type_name": type_name})
     if semantic_tag == "core.bytearray_ctor":
         if len(args) >= 1:
             return "__pytra_bytearray(" + _emit_expr(ctx, args[0]) + ")"
@@ -1086,7 +1094,9 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return "(" + func_code + ").call(" + ", ".join(arg_strs5) + ")"
     if isinstance(func, dict):
         func_rt = _str(func, "resolved_type")
-        if func_rt == "callable" or func_rt.startswith("callable["):
+        if func_rt in ("callable", "Callable") or func_rt.startswith("callable[") or func_rt.startswith("Callable["):
+            return func_code + ".call(" + ", ".join(arg_strs5) + ")"
+        if _str(func, "kind") == "Unbox" and _str(func, "target").lower() == "callable":
             return func_code + ".call(" + ", ".join(arg_strs5) + ")"
         if _str(func, "kind") == "Name":
             func_name = _str(func, "id")
@@ -1141,11 +1151,11 @@ def _emit_method_call(
     runtime_key = ""
     if owner_type == "str":
         runtime_key = "str." + attr
-    elif owner_type == "dict" or owner_type.startswith("dict["):
+    elif owner_type == "dict" or owner_type.startswith("dict[") or "dict[" in owner_type:
         runtime_key = "dict." + attr
-    elif owner_type == "set" or owner_type.startswith("set["):
+    elif owner_type == "set" or owner_type.startswith("set[") or "set[" in owner_type:
         runtime_key = "set." + attr
-    elif owner_type == "list" or owner_type.startswith("list[") or owner_type == "bytearray" or owner_type == "bytes":
+    elif owner_type == "list" or owner_type.startswith("list[") or "list[" in owner_type or owner_type == "bytearray" or owner_type == "bytes":
         runtime_key = "list." + attr
     builtin_args_strs = [owner_code] + arg_strs
     if isinstance(owner_node, dict):
@@ -1177,7 +1187,7 @@ def _emit_method_call(
     if mapped == "__DICT_GET__":
         return _emit_dict_get_strs(builtin_args_strs)
     if mapped == "__DICT_ITEMS__":
-        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "items")
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "to_a")
     if mapped == "__DICT_KEYS__":
         return _emit_method_call_on_first_arg_strs(builtin_args_strs, "keys")
     if mapped == "__DICT_VALUES__":

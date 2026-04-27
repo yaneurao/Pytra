@@ -252,6 +252,34 @@ final class PyRuntime {
         throw new RuntimeException("reversed() unsupported type");
     }
 
+    @SuppressWarnings("unchecked")
+    static <T> T[] __pytra_py_reversed_object(Object value) {
+        ArrayList<Object> items = pyReversed(value);
+        Class<?> component = Object.class;
+        for (Object item : items) {
+            if (item != null) {
+                component = item.getClass();
+                if (item instanceof Byte || item instanceof Short || item instanceof Integer || item instanceof Long) {
+                    component = Long.class;
+                } else if (item instanceof Float || item instanceof Double) {
+                    component = Double.class;
+                }
+                break;
+            }
+        }
+        Object array = java.lang.reflect.Array.newInstance(component, items.size());
+        for (int i = 0; i < items.size(); i++) {
+            Object item = items.get(i);
+            if (component == Long.class && item instanceof Number) {
+                item = ((Number) item).longValue();
+            } else if (component == Double.class && item instanceof Number) {
+                item = ((Number) item).doubleValue();
+            }
+            java.lang.reflect.Array.set(array, i, item);
+        }
+        return (T[]) array;
+    }
+
     static ArrayList<Object> pyEnumerate(Object value) {
         return pyEnumerate(value, 0L);
     }

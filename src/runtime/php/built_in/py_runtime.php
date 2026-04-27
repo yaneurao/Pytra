@@ -781,6 +781,19 @@ function __pytra_range(...$args): array {
     return $out;
 }
 
+function __pytra_py_reversed_object($value): array {
+    if (is_array($value)) {
+        return array_reverse(array_values($value));
+    }
+    if ($value instanceof \Traversable) {
+        return array_reverse(iterator_to_array($value, false));
+    }
+    if (is_string($value)) {
+        return array_reverse(preg_split('//u', $value, -1, PREG_SPLIT_NO_EMPTY) ?: []);
+    }
+    return [];
+}
+
 function __pytra_makedirs($path, $exist_ok = false): void {
     $path_s = (string)$path;
     if ($path_s === '') {

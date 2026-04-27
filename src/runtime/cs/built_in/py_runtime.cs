@@ -888,6 +888,13 @@ namespace Pytra.CsModule
             return outv;
         }
 
+        public static List<T> py_reversed_object<T>(IEnumerable<T> source)
+        {
+            var outv = new List<T>(source ?? new List<T>());
+            outv.Reverse();
+            return outv;
+        }
+
         public static void py_set_update<T>(HashSet<T> target, object values)
         {
             if (target == null || values == null)
@@ -974,6 +981,10 @@ namespace Pytra.CsModule
             {
                 int idx = NormalizeIndex(Convert.ToInt64(indexLike), list.Count);
                 return list[idx];
+            }
+            if (source is IDictionary dict)
+            {
+                return dict[indexLike];
             }
             if (source is Array array)
             {
@@ -1199,6 +1210,16 @@ namespace Pytra.CsModule
         {
             var outv = new List<object[]>();
             foreach (KeyValuePair<K, V> item in source)
+            {
+                outv.Add(new object[] { item.Key, item.Value });
+            }
+            return outv;
+        }
+
+        public static List<object[]> py_dict_items(System.Collections.IDictionary source)
+        {
+            var outv = new List<object[]>();
+            foreach (System.Collections.DictionaryEntry item in source)
             {
                 outv.Add(new object[] { item.Key, item.Value });
             }

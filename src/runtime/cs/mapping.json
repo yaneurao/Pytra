@@ -24,6 +24,7 @@
     "set.update": "py_runtime.py_set_update",
     "pytra.std.time.perf_counter": "time_native.perf_counter",
     "pytra.std.math.sqrt": "math_native.sqrt",
+    "pytra.std.math.fabs": "math_native.fabs",
     "pytra.std.math.sin": "math_native.sin",
     "pytra.std.math.cos": "math_native.cos",
     "pytra.std.math.tan": "math_native.tan",
@@ -111,7 +112,8 @@
     "IOBase": "PyFile",
     "TextIOWrapper": "PyFile",
     "BufferedReader": "PyFile",
-    "BufferedWriter": "PyFile"
+    "BufferedWriter": "PyFile",
+    "deque": "Collections.deque"
   },
   "skip_modules": [
     "pytra.built_in.",

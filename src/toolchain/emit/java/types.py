@@ -85,6 +85,8 @@ def _java_ref_type(resolved_type: str, type_map: dict[str, str] | None = None) -
         return "Boolean"
     if resolved_type == "str":
         return "String"
+    if resolved_type in ("Callable", "callable"):
+        return "Runnable"
     if resolved_type in ("None", "none", "Any", "Obj", "object", "unknown", "JsonVal"):
         return "Object"
     if resolved_type == "Node":
@@ -128,6 +130,8 @@ def java_type(resolved_type: str, type_map: dict[str, str] | None = None, *, all
         return "boolean"
     if resolved_type == "str":
         return "String"
+    if resolved_type in ("Callable", "callable"):
+        return "Runnable"
     if resolved_type in ("Any", "Obj", "object", "unknown", "JsonVal"):
         return "Object"
     if resolved_type == "Node":

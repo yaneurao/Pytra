@@ -121,6 +121,17 @@ function py_assert_stdout(_expected, fn)
     return true
 end
 
+function __LIST_CTOR__(value)
+    if value === nothing
+        return []
+    end
+    return collect(value)
+end
+
+function reversed(value)
+    return reverse(value)
+end
+
 function __pytra_str(v)
     if v === nothing
         return "None"

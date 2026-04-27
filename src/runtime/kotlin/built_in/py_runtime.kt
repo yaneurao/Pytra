@@ -887,6 +887,24 @@ fun __pytra_list_concat(a: Any?, b: Any?): MutableList<Any?> {
     return out
 }
 
+fun __pytra_reversed(v: Any?): MutableList<Any?> {
+    val items = __pytra_as_list(v)
+    val out = mutableListOf<Any?>()
+    var i = items.size - 1
+    while (i >= 0) {
+        out.add(items[i])
+        i -= 1
+    }
+    return out
+}
+
+@Suppress("UNCHECKED_CAST")
+fun <T> __pytra_list(v: Any?): MutableList<T> {
+    val out = mutableListOf<T>()
+    for (item in __pytra_as_list(v)) out.add(item as T)
+    return out
+}
+
 fun __pytra_enumerate(v: Any?): MutableList<Any?> {
     val items = __pytra_as_list(v)
     val out = mutableListOf<Any?>()
@@ -1083,6 +1101,15 @@ fun pyMathCeil(v: Any?): Double { return kotlin.math.ceil(__pytra_float(v)) }
 fun pyMathPow(a: Any?, b: Any?): Double { return __pytra_float(a).pow(__pytra_float(b)) }
 fun pyMathPi(): Double { return Math.PI }
 fun pyMathE(): Double { return Math.E }
+fun __pytra_sqrt(v: Any?): Double { return pyMathSqrt(v) }
+fun __pytra_sin(v: Any?): Double { return pyMathSin(v) }
+fun __pytra_cos(v: Any?): Double { return pyMathCos(v) }
+fun __pytra_tan(v: Any?): Double { return pyMathTan(v) }
+fun __pytra_exp(v: Any?): Double { return pyMathExp(v) }
+fun __pytra_log(v: Any?): Double { return pyMathLog(v) }
+fun __pytra_fabs(v: Any?): Double { return pyMathFabs(v) }
+fun __pytra_ceil(v: Any?): Double { return pyMathCeil(v) }
+fun __pytra_pow(a: Any?, b: Any?): Double { return pyMathPow(a, b) }
 
 fun __pytra_is_int(v: Any?): Boolean {
     return (v is Long) || (v is Int)

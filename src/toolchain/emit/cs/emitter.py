@@ -145,6 +145,7 @@ def _module_mapping_candidates(module_id: str) -> list[str]:
     out: list[str] = []
     for candidate in (
         module_id,
+        PYTRA_STD_MODULE_PREFIX + module_id if "." not in module_id and not module_id.startswith(PYTRA_STD_MODULE_PREFIX) else "",
         module_id[len(PYTRA_STD_MODULE_PREFIX):] if module_id.startswith(PYTRA_STD_MODULE_PREFIX) else "",
         module_id[len(PYTRA_BUILTIN_MODULE_PREFIX):] if module_id.startswith(PYTRA_BUILTIN_MODULE_PREFIX) else "",
         module_id.split(".")[-1],
@@ -511,7 +512,7 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     safe_ident = _safe_name(ctx, ident)
     resolved_type = _str(node, "resolved_type")
     known_type = ctx.var_types.get(safe_ident, "")
-    if _is_dynamic_resolved_type(known_type) and not _is_dynamic_resolved_type(resolved_type):
+    if (("|" in known_type) or _is_dynamic_resolved_type(known_type)) and not _is_dynamic_resolved_type(resolved_type):
         return _coerce_dynamic_expr(ctx, safe_ident, resolved_type)
     return safe_ident
 
@@ -603,8 +604,12 @@ def _render_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     owner_node = node.get("value")
     owner = _emit_expr(ctx, owner_node)
     owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+    owner_storage_type = ""
     if owner_type == "" and isinstance(owner_node, dict) and _str(owner_node, "kind") == "Name":
-        owner_type = ctx.var_types.get(_safe_name(ctx, _str(owner_node, "id")), "")
+        owner_storage_type = ctx.var_types.get(_safe_name(ctx, _str(owner_node, "id")), "")
+        owner_type = owner_storage_type
+    elif isinstance(owner_node, dict) and _str(owner_node, "kind") == "Name":
+        owner_storage_type = ctx.var_types.get(_safe_name(ctx, _str(owner_node, "id")), "")
     result_type = _str(node, "resolved_type")
     slice_node = node.get("slice")
     if isinstance(slice_node, dict) and _str(slice_node, "kind") == "Slice":
@@ -619,6 +624,8 @@ def _render_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if result_type not in ("", "str"):
             return "((" + _render_type(ctx, result_type) + ")py_runtime.py_ord(" + text_expr + "))"
         return text_expr
+    if owner_storage_type in ("object", "Obj", "Any", "unknown") or "|" in owner_storage_type:
+        return "py_runtime.py_get(" + owner + ", " + index + ")"
     if owner_type.startswith("list[") or owner_type in ("bytes", "bytearray"):
         return "py_runtime.py_get(" + owner + ", " + index + ")"
     if owner_type in ("tuple", "object[]") or owner_type.startswith("tuple[") or owner_type.endswith("[]"):
@@ -870,13 +877,16 @@ def _container_method_call(
             return "py_runtime.py_pop(" + owner_expr + ")"
         if list_marker == "py_runtime.clear":
             return "py_runtime.clear(" + owner_expr + ")"
-    if owner_type.startswith("dict["):
+    if owner_type.startswith("dict[") or "dict[" in owner_type:
+        dict_owner = owner_expr if owner_type.startswith("dict[") else "((System.Collections.IDictionary)" + owner_expr + ")"
         if dict_marker == "py_runtime.get" and len(args) >= 1:
             default_expr = args[1] if len(args) > 1 else "null"
             temp_name = _next_temp(ctx, "__dict_value")
-            return "(" + owner_expr + ".TryGetValue(" + args[0] + ", out var " + temp_name + ") ? " + temp_name + " : " + default_expr + ")"
+            if owner_type.startswith("dict["):
+                return "(" + owner_expr + ".TryGetValue(" + args[0] + ", out var " + temp_name + ") ? " + temp_name + " : " + default_expr + ")"
+            return "(" + dict_owner + ".Contains(" + args[0] + ") ? " + dict_owner + "[" + args[0] + "] : " + default_expr + ")"
         if dict_marker == "py_runtime.py_dict_items":
-            return "py_runtime.py_dict_items(" + owner_expr + ")"
+            return "py_runtime.py_dict_items(" + dict_owner + ")"
         if dict_marker == "py_runtime.py_dict_keys":
             key_type = "object"
             inner = owner_type[5:-1].strip()
@@ -945,6 +955,8 @@ def _emit_builtin_ctor(ctx: EmitContext, func_name: str, node: dict[str, JsonVal
     if func_name == "list":
         if len(args) == 0:
             return "new " + target_type + "()"
+        if target_type == "object":
+            return args[0]
         return "new " + target_type + "(" + args[0] + ")"
     if func_name == "dict":
         if len(args) == 0:
@@ -1084,6 +1096,30 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return container_call
     if isinstance(func, dict) and _str(func, "kind") == "Name":
         func_name = _str(func, "id")
+        if func_name == "isinstance":
+            raw_args = _list(node, "args")
+            if len(raw_args) >= 2 and len(args) >= 1:
+                expected_type = ""
+                type_node = raw_args[1]
+                if isinstance(type_node, dict):
+                    if _str(type_node, "kind") == "Tuple":
+                        checks: list[str] = []
+                        for elem in _list(type_node, "elements"):
+                            elem_type = _str(elem, "id") if isinstance(elem, dict) else ""
+                            if elem_type == "" and isinstance(elem, dict):
+                                elem_type = _str(elem, "repr")
+                            if elem_type != "":
+                                rendered = _emit_builtin_isinstance_expr(ctx, "((object)(" + args[0] + "))", elem_type)
+                                if rendered != "":
+                                    checks.append(rendered)
+                        return "(" + " || ".join(checks) + ")" if len(checks) > 0 else "false"
+                    expected_type = _str(type_node, "id")
+                    if expected_type == "":
+                        expected_type = _str(type_node, "repr")
+                    if expected_type == "":
+                        expected_type = _str(type_node, "expected_type_name")
+                if expected_type != "":
+                    return _emit_builtin_isinstance_expr(ctx, "((object)(" + args[0] + "))", expected_type)
         if func_name in ctx.module_function_names and func_name not in ctx.import_alias_modules:
             qualified = _module_class_name(ctx.module_id) + "." + _safe_name(ctx, func_name)
             return _maybe_cast_dynamic_call(ctx, node, qualified + "(" + ", ".join(call_parts) + ")")
@@ -1096,6 +1132,19 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 resolved_call = resolve_runtime_call(runtime_call, builtin_name, adapter, ctx.mapping)
         if resolved_call == "__CAST__":
             return _render_cast_expr(ctx, node, args)
+        runtime_module_id = _str(node, "runtime_module_id")
+        runtime_symbol = _str(node, "runtime_symbol")
+        if runtime_module_id.startswith(PYTRA_STD_MODULE_PREFIX) and runtime_symbol != "":
+            mapped_runtime = _resolve_runtime_symbol_expr(
+                ctx.mapping,
+                source_module_id=runtime_module_id,
+                runtime_module_id=runtime_module_id,
+                symbol_name=runtime_symbol,
+            )
+            if mapped_runtime != "":
+                if _str(node, "resolved_type") == runtime_symbol or _str(func, "resolved_type") == "type":
+                    return "new " + mapped_runtime + "(" + ", ".join(call_parts) + ")"
+                return _maybe_cast_dynamic_call(ctx, node, mapped_runtime + "(" + ", ".join(call_parts) + ")")
         if resolved_call != "" and not resolved_call.startswith("__"):
             return _maybe_cast_dynamic_call(ctx, node, resolved_call + "(" + ", ".join(call_parts) + ")")
         if func_name == "cast":
@@ -1137,12 +1186,28 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             owner_call = _container_method_call(ctx, owner_expr, owner_type, func_name, args)
             if owner_call != "":
                 return _maybe_cast_dynamic_call(ctx, node, owner_call)
+        local_callee_type = ctx.var_types.get(_safe_name(ctx, func_name), "")
+        if (
+            local_callee_type == "callable"
+            or local_callee_type == "Callable"
+            or "callable[" in local_callee_type
+            or "Callable[" in local_callee_type
+            or local_callee_type.startswith("callable[")
+            or local_callee_type.startswith("Callable[")
+        ):
+            return _maybe_cast_dynamic_call(ctx, node, _safe_name(ctx, func_name) + "(" + ", ".join(call_parts) + ")")
         runtime_fallback = resolve_runtime_symbol_name(func_name, ctx.mapping, module_id="pytra.core.py_runtime")
         if isinstance(runtime_fallback, str) and "." in runtime_fallback:
             return _maybe_cast_dynamic_call(ctx, node, runtime_fallback + "(" + ", ".join(call_parts) + ")")
     if isinstance(func, dict) and _str(func, "kind") == "Lambda":
         delegate_type = _render_type(ctx, _str(func, "resolved_type"))
         return "((" + delegate_type + ")(" + _emit_expr(ctx, func) + "))(" + ", ".join(call_parts) + ")"
+    if isinstance(func, dict) and _str(func, "kind") == "Unbox":
+        value = func.get("value")
+        if isinstance(value, dict) and _str(value, "kind") == "Name":
+            target = _str(func, "target")
+            if target == "Callable" or target == "callable" or "callable" in target.lower():
+                return _safe_name(ctx, _str(value, "id")) + "(" + ", ".join(call_parts) + ")"
     resolved = ""
     if runtime_call != "" or adapter != "":
         resolved = resolve_runtime_call(runtime_call, builtin_name, adapter, ctx.mapping)
@@ -1220,8 +1285,14 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         right = _emit_expr(ctx, node.get("right"))
         return "py_runtime.py_floordiv(" + left + ", " + right + ")"
     if op == "Div":
-        left = _emit_expr(ctx, node.get("left"))
-        right = _emit_expr(ctx, node.get("right"))
+        left_node = node.get("left")
+        right_node = node.get("right")
+        left = _emit_expr(ctx, left_node)
+        right = _emit_expr(ctx, right_node)
+        left_rt = _str(left_node, "resolved_type") if isinstance(left_node, dict) else ""
+        right_rt = _str(right_node, "resolved_type") if isinstance(right_node, dict) else ""
+        if left_rt in ("Path", "PyPath", "pytra.std.pathlib.Path") and right_rt in ("str", "string"):
+            return left + ".__truediv__(" + right + ")"
         if _str(node, "resolved_type") == "float32":
             return "(((float)(" + left + ")) / (" + right + "))"
         return "(((double)(" + left + ")) / (" + right + "))"
@@ -1464,7 +1535,17 @@ def _emit_unbox(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 def _emit_isinstance_expr(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     value_expr = _emit_expr(ctx, node.get("value"))
     boxed_expr = "((object)(" + value_expr + "))"
-    expected_type = _expected_type_name(node.get("expected_type_id"))
+    expected_node = node.get("expected_type_id")
+    if isinstance(expected_node, dict) and _str(expected_node, "kind") == "Tuple":
+        checks: list[str] = []
+        for elem in _list(expected_node, "elements"):
+            elem_type = _expected_type_name(elem)
+            if elem_type != "":
+                rendered = _emit_builtin_isinstance_expr(ctx, boxed_expr, elem_type)
+                if rendered != "":
+                    checks.append(rendered)
+        return "(" + " || ".join(checks) + ")" if len(checks) > 0 else "false"
+    expected_type = _expected_type_name(expected_node)
     if expected_type == "":
         expected_type = _str(node, "expected_type_name")
     if expected_type == "":
@@ -1795,6 +1876,11 @@ def _emit_for_each(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     iter_expr = _emit_expr(ctx, iter_node)
     if isinstance(iter_node, dict) and _str(iter_node, "resolved_type").startswith("dict["):
         iter_expr = iter_expr + ".Keys"
+    if isinstance(iter_node, dict) and _str(iter_node, "kind") == "Name":
+        iter_storage_type = ctx.var_types.get(_safe_name(ctx, _str(iter_node, "id")), "")
+        iter_resolved_type = _str(iter_node, "resolved_type")
+        if "|" in iter_storage_type and (iter_resolved_type.startswith("list[") or iter_resolved_type == "list" or "|" in iter_resolved_type):
+            iter_expr = "(System.Collections.IEnumerable)" + iter_expr
     target_type = _iter_target_decl_type(ctx, target_node, iter_node)
     target_kind = _str(target_node, "kind") if isinstance(target_node, dict) else ""
     loop_name = target
@@ -1979,7 +2065,7 @@ def _emit_function(ctx: EmitContext, node: dict[str, JsonVal], *, force_public: 
         if is_cs_path_type(ctx.current_class_name) and _str(node, "name") == "joinpath":
             params.append("params object[] " + safe_vararg)
         else:
-            params.append(_render_type(ctx, vararg_list_type) + " " + safe_vararg)
+            params.append("params " + _render_type(ctx, vararg_type) + "[] " + safe_vararg)
     decorators = _decorators(node)
     is_staticmethod = "staticmethod" in decorators or "classmethod" in decorators
     modifiers: list[str] = []
@@ -2016,6 +2102,11 @@ def _emit_function(ctx: EmitContext, node: dict[str, JsonVal], *, force_public: 
     ctx.indent_level += 1
     for init_line in param_initializers:
         ctx.lines.append("    " * ctx.indent_level + init_line)
+    for stmt in body:
+        if isinstance(stmt, dict) and _str(stmt, "kind") in ("FunctionDef", "ClosureDef"):
+            nested_name = _safe_name(ctx, _str(stmt, "name"))
+            if nested_name != "":
+                ctx.var_types[nested_name] = "callable"
     _emit_stmt_list(ctx, body)
     ctx.indent_level -= 1
     ctx.lines.append(indent + "}")

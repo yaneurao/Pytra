@@ -315,7 +315,7 @@ def _ident(name: str) -> str:
 def _owner_type_runtime_prefix(owner_type: str) -> str:
     if owner_type.startswith("list["):
         return "list"
-    if owner_type.startswith("dict["):
+    if owner_type.startswith("dict[") or "dict[" in owner_type:
         return "dict"
     if owner_type.startswith("set["):
         return "set"
@@ -374,6 +374,9 @@ def _attribute_call_supported(node: dict[str, JsonVal], func: dict[str, JsonVal]
     runtime_call = _str(node, "resolved_runtime_call")
     if runtime_call == "":
         runtime_call = _str(node, "runtime_call")
+    owner_type = _str(owner, "resolved_type") if isinstance(owner, dict) else ""
+    if runtime_call == "" and _str(func, "attr") in {"items", "keys", "values", "get"} and "dict[" in owner_type:
+        runtime_call = "dict." + _str(func, "attr")
     if not _expr_supported(owner):
         return False
     if not all(_expr_supported(arg) for arg in _list(node, "args")):
@@ -1321,6 +1324,14 @@ class JuliaSubsetRenderer:
         attr_call = self._render_attribute_call_maybe(node, func_node)
         if attr_call != "":
             return attr_call
+        if isinstance(func_node, dict) and _str(func_node, "kind") == "Name" and _str(func_node, "id") == "isinstance":
+            args0 = _list(node, "args")
+            if len(args0) >= 2:
+                return self._render_isinstance_expr({
+                    "kind": "IsInstance",
+                    "value": args0[0],
+                    "expected_type_id": args0[1],
+                })
         func = self._render_expr(func_node)
         args = [self._render_expr(arg) for arg in _list(node, "args")]
         runtime_call, builtin_name, use_mapped_runtime = self._resolve_call_runtime_target(node, func_node)
@@ -1609,7 +1620,7 @@ class JuliaSubsetRenderer:
         args = [_ident(arg) for arg in _list(node, "arg_order") if isinstance(arg, str)]
         vararg_name = node.get("vararg_name")
         if isinstance(vararg_name, str) and vararg_name != "":
-            args.append(_ident(vararg_name))
+            args.append(_ident(vararg_name) + "...")
         self._emit("function " + name + "(" + ", ".join(args) + ")")
         self.indent_level += 1
         self.local_names_stack.append(set(args))

@@ -717,8 +717,6 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return "__pytra_bytearray(" + arg_strs[0] + ")"
         return "__pytra_bytearray()"
     if semantic_tag == "core.bytes_ctor":
-        if copy_elision_safe:
-            return "__pytra_bytes_alias(" + arg_strs[0] + ")"
         if len(arg_strs) >= 1:
             return "__pytra_bytes(" + arg_strs[0] + ")"
         return "__pytra_bytes()"
@@ -787,9 +785,6 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if call_name == "__PANIC__":
         msg = arg_strs[0] if len(arg_strs) > 0 else '"error"'
         return 'error(' + msg + ')'
-
-    if call_name == "__pytra_bytes" and copy_elision_safe:
-        return "__pytra_bytes_alias(" + arg_strs[0] + ")"
 
     if call_name == "__pytra_len" and len(args) >= 1:
         arg0 = args[0]
@@ -984,6 +979,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
         # Try mapping by bare function name
         if call_name == "" and func_id != "":
+            if func_id == "isinstance" and len(args) >= 2 and isinstance(args[0], dict) and isinstance(args[1], dict):
+                type_node = args[1]
+                type_name = _str(type_node, "id")
+                if type_name == "":
+                    type_name = _str(type_node, "repr")
+                return _emit_isinstance_expr(ctx, {"kind": "IsInstance", "value": args[0], "expected_type_name": type_name})
             if func_id == LUA_PYTRA_ISINSTANCE_NAME:
                 linked = _emit_linked_type_id_isinstance(ctx, args)
                 if linked is not None:
@@ -995,8 +996,6 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if mapped == "__PANIC__":
                     msg = arg_strs[0] if len(arg_strs) > 0 else '"error"'
                     return "error(" + msg + ")"
-                if mapped == "__pytra_bytes" and copy_elision_safe:
-                    return "__pytra_bytes_alias(" + arg_strs[0] + ")"
                 return mapped + "(" + ", ".join(arg_strs) + ")"
 
         callee = _emit_expr(ctx, func_node)
@@ -2356,6 +2355,11 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             vararg_name = _str(vararg_raw, "arg")
         elif isinstance(vararg_raw, str):
             vararg_name = vararg_raw
+    if vararg_name == "":
+        direct_vararg = _str(node, "vararg_name")
+        if direct_vararg != "":
+            is_vararg = True
+            vararg_name = direct_vararg
 
     # Collect argument names from arg_order (EAST3 format)
     arg_order = _list(node, "arg_order")
@@ -2365,6 +2369,8 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             if isinstance(a, str):
                 if a == "self":
                     continue
+                if is_vararg and a == vararg_name:
+                    continue
                 arg_names.append(_lua_symbol_name(ctx, a))
     arg_types = _dict(node, "arg_types")
     if len(arg_types) > 0:
@@ -2372,6 +2378,8 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             if a == "self":
                 continue
             safe_a = _lua_symbol_name(ctx, a)
+            if is_vararg and a == vararg_name:
+                continue
             if safe_a not in arg_names:
                 arg_names.append(safe_a)
     if len(arg_names) == 0:

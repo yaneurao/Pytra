@@ -1441,6 +1441,10 @@ func py_reversed[T any](seq *PyList[T]) *PyList[T] {
 	return &PyList[T]{items: out}
 }
 
+func py_reversed_object[T any](seq *PyList[T]) *PyList[T] {
+	return py_reversed(seq)
+}
+
 func py_sorted[T any](seq *PyList[T]) *PyList[T] {
 	out := make([]T, len(seq.items))
 	copy(out, seq.items)

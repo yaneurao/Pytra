@@ -229,9 +229,10 @@ def _is_dynamic_type(resolved_type: str) -> bool:
 
 def _java_type_in_ctx(ctx: EmitContext, resolved_type: str, *, allow_void: bool = False) -> str:
     if resolved_type in ("Callable", "callable"):
-        return "Object"
-    if _parse_callable_type(resolved_type) is not None:
-        return _safe_java_ident(resolved_type)
+        return "Runnable"
+    normalized_callable = _normalized_callable_type(resolved_type)
+    if normalized_callable != "":
+        return _safe_java_ident(normalized_callable)
     if resolved_type in ctx.enum_like_names:
         return "long"
     if resolved_type in ctx.class_names or resolved_type in ctx.class_bases:
@@ -561,9 +562,9 @@ def _emit_container_method_call(ctx: EmitContext, owner_node: JsonVal, arg_strs:
                     return _emit_cast_expr(ctx, call_type, popped)
                 return popped
             return fn_name + "(" + ", ".join([owner] + arg_strs) + ")"
-    if _is_dict_type(owner_type) or _is_dynamic_type(owner_type):
+    if _is_dict_type(owner_type) or _is_dynamic_type(owner_type) or "dict[" in owner_type:
         attr = _str(_unwrap_node(node.get("func")), "attr")
-        if _is_dict_type(owner_type) or _is_dynamic_type(owner_type):
+        if _is_dict_type(owner_type) or _is_dynamic_type(owner_type) or "dict[" in owner_type:
             owner_access = "((java.util.Map<?, ?>) (" + owner + "))"
         if attr == "get":
             if len(arg_strs) >= 2:
@@ -768,6 +769,12 @@ class _JavaStmtRenderer(CommonRenderer):
         if not isinstance(exc, dict):
             return self.ctx.current_exc_var
         return _emit_expr(self.ctx, exc)
+
+    def emit_bare_raise_stmt(self, node: dict[str, JsonVal]) -> None:
+        current = self.ctx.current_exc_var
+        if current == "":
+            current = "new RuntimeException()"
+        self._emit_stmt_line("throw " + current)
 
     def render_except_open(self, handler: dict[str, JsonVal]) -> str:
         name = _str(handler, "name")
@@ -1247,6 +1254,11 @@ def _emit_builtin_placeholder(ctx: EmitContext, fn_name: str, all_arg_strs: list
 
 def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     func = node.get("func")
+    while isinstance(func, dict) and _str(func, "kind") in ("Box", "Unbox"):
+        inner = func.get("value")
+        if not isinstance(inner, dict):
+            break
+        func = inner
     args = _list(node, "args")
     keywords = _list(node, "keywords")
     arg_strs = [_emit_expr(ctx, arg) for arg in args]
@@ -1361,6 +1373,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return _emit_attribute(ctx, func) + "(" + ", ".join(call_arg_strs) + ")"
         if func_kind == "Name":
             fn_id = _str(func, "id")
+            if fn_id == "isinstance" and len(args) == 2:
+                return _emit_expr(ctx, {
+                    "kind": "IsInstance",
+                    "value": args[0],
+                    "expected_type_id": args[1],
+                })
             vararg_type = ctx.function_varargs.get(fn_id, "")
             if vararg_type != "" and len(args) >= 1:
                 last_arg = args[-1]

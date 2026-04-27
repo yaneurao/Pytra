@@ -622,6 +622,10 @@ def __pytra_reversed(v)
   return __pytra_as_list(v).reverse
 end
 
+def __pytra_py_reversed_object(v)
+  __pytra_reversed(v)
+end
+
 # Python dict/str/list method shims via monkey-patching
 class Hash
   def items

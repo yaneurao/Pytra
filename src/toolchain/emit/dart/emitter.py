@@ -503,6 +503,8 @@ class DartNativeEmitter:
         self._needs_io_import = False
         self._class_field_types: dict[str, dict[str, str]] = {}
         self._function_return_types: dict[str, str] = {}
+        self._function_varargs: dict[str, str] = {}
+        self._function_vararg_fixed_counts: dict[str, int] = {}
         # emit_context (injected by emit_all_modules)
         meta_any = east_doc.get("meta")
         meta = meta_any if isinstance(meta_any, dict) else {}
@@ -609,7 +611,7 @@ class DartNativeEmitter:
             candidates.append("str." + attr)
         if owner_type == "deque":
             candidates.append("deque." + attr)
-        if owner_type.startswith("dict[") or owner_type == "dict":
+        if owner_type.startswith("dict[") or owner_type == "dict" or "dict[" in owner_type:
             candidates.append("dict." + attr)
         if owner_type.startswith("set[") or owner_type == "set":
             candidates.append("set." + attr)
@@ -648,6 +650,10 @@ class DartNativeEmitter:
             if len(rendered_args) == 0:
                 return "''"
             return "pytraStr(" + rendered_args[0] + ")"
+        if mapped == "__CAST__":
+            if len(rendered_args) == 0:
+                return "null"
+            return rendered_args[0]
         if mapped == "__SUM__":
             if len(rendered_args) == 0:
                 return "0"
@@ -666,6 +672,10 @@ class DartNativeEmitter:
             if len(rendered_args) == 0:
                 return "[]"
             return "(List.from(" + rendered_args[0] + ")..sort())"
+        if mapped == "__REVERSED__":
+            if len(rendered_args) == 0:
+                return "[]"
+            return "pytraReversed(" + rendered_args[0] + ")"
         if mapped == "__LIST_CTOR__":
             if len(rendered_args) == 0:
                 return "[]"
@@ -815,6 +825,8 @@ class DartNativeEmitter:
             return "pytraStrCount(" + owner + ", " + rendered_args[0] + ")"
         if mapped == "__STR_INDEX__" and len(rendered_args) >= 1:
             return "pytraStrIndex(" + owner + ", " + rendered_args[0] + ")"
+        if mapped in {"pytraStrIsdigit", "pytraStrIsalpha", "pytraStrIsalnum", "pytraStrIsspace"} and len(rendered_args) == 0:
+            return mapped + "(" + owner + ")"
         if mapped.startswith("__"):
             return mapped + "(" + ", ".join(all_args) + ")"
         return ""
@@ -1366,6 +1378,8 @@ class DartNativeEmitter:
         self._module_aliases = {}
         self.function_names = set()
         self._function_return_types = {}
+        self._function_varargs = {}
+        self._function_vararg_fixed_counts = {}
         self._class_field_types = {}
         self._class_method_names: dict[str, set[str]] = {}  # cls_name → method names
         self._toplevel_fn_conflicts: set[str] = set()  # function names shadowed by class methods
@@ -1412,6 +1426,12 @@ class DartNativeEmitter:
             if kind == "FunctionDef":
                 fn_name = _safe_ident(stmt.get("name"), "fn")
                 self.function_names.add(fn_name)
+                vararg_name = stmt.get("vararg_name")
+                if isinstance(vararg_name, str) and vararg_name.strip() != "":
+                    self._function_varargs[fn_name] = vararg_name.strip()
+                    arg_order_any = stmt.get("arg_order")
+                    arg_order = arg_order_any if isinstance(arg_order_any, list) else []
+                    self._function_vararg_fixed_counts[fn_name] = len(arg_order)
                 rt = stmt.get("return_type")
                 if isinstance(rt, str) and rt.strip() != "":
                     self._function_return_types[fn_name] = rt.strip()
@@ -2068,6 +2088,8 @@ class DartNativeEmitter:
 
     def _fn_emit_name(self, name: str) -> str:
         """Return the Dart name for a top-level function, avoiding class method conflicts."""
+        if name == "main":
+            return "_pytra_user_main"
         if name in self._toplevel_fn_conflicts:
             return "_pytra_top_" + name
         return name
@@ -2690,7 +2712,11 @@ class DartNativeEmitter:
             # List + List → use spread to avoid Dart type mismatch (List<int> + List<dynamic>)
             if op_raw == "Add" and (self._is_list_expr(left_node) or self._is_list_expr(right_node)):
                 return "[..." + left + ", ..." + right + "]"
-            return "(" + left + " " + op + " " + right + ")"
+            expr = "(" + left + " " + op + " " + right + ")"
+            resolved_type = ed.get("resolved_type")
+            if isinstance(resolved_type, str) and resolved_type in {"int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"}:
+                return "pytraInt(" + expr + ")"
+            return expr
         if kind == "UnaryOp":
             operand = self._render_expr(ed.get("operand"))
             op = str(ed.get("op"))
@@ -2978,6 +3004,18 @@ class DartNativeEmitter:
         if isinstance(func_any, dict) and func_any.get("kind") == "Name":
             raw_fn_name = func_any.get("id") if isinstance(func_any.get("id"), str) else ""
             fn_name = _safe_ident(raw_fn_name, "fn")
+            if raw_fn_name == "reversed" and len(rendered_args) == 1:
+                return "pytraReversed(" + rendered_args[0] + ")"
+            if raw_fn_name == "isinstance" and len(args) == 2:
+                return self._render_expr({
+                    "kind": "IsInstance",
+                    "value": args[0],
+                    "expected_type_id": args[1],
+                })
+            if raw_fn_name in {"str", "py_to_string"} and len(args) == 1:
+                arg_type = self._lookup_expr_type(args[0])
+                if arg_type.startswith("tuple["):
+                    return "pytraTupleStr(pytraTupleView(" + rendered_args[0] + "))"
             ctor_expr = self._expand_core_ctor(semantic_tag, rendered_args)
             if ctor_expr != "":
                 return ctor_expr
@@ -2994,6 +3032,13 @@ class DartNativeEmitter:
                 return mapped_name + "(" + ", ".join(rendered_args) + ")"
             if fn_name in self.class_names:
                 return fn_name + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
+            if fn_name in self._function_varargs and len(args) > 0:
+                fixed_count = self._function_vararg_fixed_counts.get(fn_name, max(0, len(args) - 1))
+                vararg_values = rendered_args[fixed_count:]
+                call_args = rendered_args[:fixed_count] + ["[" + ", ".join(vararg_values) + "]"]
+                return fn_name + "(" + ", ".join(call_args + kw_values_in_order) + ")"
+            if raw_fn_name == "main" and fn_name in self.function_names:
+                return "_pytra_user_main(" + ", ".join(rendered_args + kw_values_in_order) + ")"
             # Use alias if calling a top-level function that conflicts with a class method name
             if fn_name in self._toplevel_fn_conflicts and fn_name in self.function_names:
                 return "_pytra_top_" + fn_name + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"

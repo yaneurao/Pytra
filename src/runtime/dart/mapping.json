@@ -15,6 +15,8 @@
     "bool": "__BOOL__",
     "py_range": "__RANGE__",
     "py_sorted": "__SORTED__",
+    "py_reversed_object": "__REVERSED__",
+    "reversed": "__REVERSED__",
     "sum": "__SUM__",
     "zip": "__ZIP__",
     "list.append": "__LIST_APPEND__",

@@ -386,6 +386,12 @@ impl<T: PyStringify> PyStringify for Box<T> {
         (**self).py_stringify()
     }
 }
+
+impl PyStringify for Box<dyn std::any::Any> {
+    fn py_stringify(&self) -> String {
+        "None".to_string()
+    }
+}
 impl<T: PyStringify> PyStringify for Rc<RefCell<T>> {
     fn py_stringify(&self) -> String {
         self.borrow().py_stringify()
@@ -742,6 +748,38 @@ pub fn py_reversed<T: Clone>(items: &PyList<T>) -> PyList<T> {
     PyList::<T>::from_vec(v)
 }
 
+pub fn py_reversed_object<T: Clone>(items: PyList<T>) -> PyList<T> {
+    py_reversed(&items)
+}
+
+pub fn py_range1(stop: i64) -> PyList<i64> {
+    py_range3(0, stop, 1)
+}
+
+pub fn py_range2(start: i64, stop: i64) -> PyList<i64> {
+    py_range3(start, stop, 1)
+}
+
+pub fn py_range3(start: i64, stop: i64, step: i64) -> PyList<i64> {
+    let mut out = Vec::new();
+    if step == 0 {
+        return PyList::from_vec(out);
+    }
+    let mut cur = start;
+    if step > 0 {
+        while cur < stop {
+            out.push(cur);
+            cur += step;
+        }
+    } else {
+        while cur > stop {
+            out.push(cur);
+            cur += step;
+        }
+    }
+    PyList::from_vec(out)
+}
+
 pub fn py_sum<T>(items: PyList<T>) -> T
 where
     T: std::iter::Sum<T> + Clone,
@@ -1004,6 +1042,13 @@ impl PyAny {
         match self {
             PyAny::Dict(d) => d.get(key),
             _ => None,
+        }
+    }
+
+    pub fn items(&self) -> PyList<(String, PyAny)> {
+        match self {
+            PyAny::Dict(d) => PyList::from_vec(d.iter().map(|(k, v)| (k.clone(), v.clone())).collect()),
+            _ => PyList::new(),
         }
     }
 }
