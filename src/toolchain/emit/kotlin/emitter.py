@@ -1416,6 +1416,8 @@ class KotlinRenderer(CommonRenderer):
                         return "__pytra_isdigit(" + owner_expr + ")"
                     if resolved_method == self._mapping_call("str.isalnum") and len(arg_nodes) == 0:
                         return "__pytra_isalnum(" + owner_expr + ")"
+                    if attr == "isspace" and len(arg_nodes) == 0:
+                        return "(" + owner_expr + ".isNotEmpty() && " + owner_expr + ".all { it.isWhitespace() })"
                     if attr == "upper" and len(arg_nodes) == 0:
                         return "__pytra_upper(" + owner_expr + ")"
                     if attr == "lower" and len(arg_nodes) == 0:

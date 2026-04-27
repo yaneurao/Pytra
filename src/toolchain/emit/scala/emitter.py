@@ -1346,6 +1346,8 @@ class ScalaRenderer(CommonRenderer):
                         return "__pytra_rfind(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
                     if resolved_method == self._mapping_call("str.isalnum") and len(arg_nodes) == 0:
                         return "__pytra_isalnum(" + owner_expr + ")"
+                    if self._str(func, "attr") == "isspace" and len(arg_nodes) == 0:
+                        return "(" + owner_expr + ".nonEmpty && " + owner_expr + ".forall(_.isWhitespace))"
                     if resolved_method == self._mapping_call("str.isdigit") and len(arg_nodes) == 0:
                         return "__pytra_isdigit(" + owner_expr + ")"
                 if (owner_type.startswith("dict[") or owner_type == "dict") and resolved_method == self._mapping_call("dict.get") and len(arg_nodes) == 1:
