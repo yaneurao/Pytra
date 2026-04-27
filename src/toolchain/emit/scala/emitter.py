@@ -1054,6 +1054,8 @@ class ScalaRenderer(CommonRenderer):
             if ident in self.module_function_names and callable_type != "":
                 return _safe_scala_ident(ident)
             rendered = _safe_scala_ident(ident)
+            if resolved_type in self.enum_like_classes:
+                return rendered
             rendered_type = scala_type(resolved_type)
             if resolved_type not in ("", "unknown", "Any", "object") and rendered_type != "Any":
                 return rendered + ".asInstanceOf[" + rendered_type + "]"
@@ -1188,6 +1190,8 @@ class ScalaRenderer(CommonRenderer):
                 return value_code
             if target == "bool":
                 return "__pytra_truthy(" + value_code + ")"
+            if target in self.enum_like_classes or resolved_type in self.enum_like_classes:
+                return "__pytra_int(" + value_code + ")"
             if target in ("int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"):
                 return "__pytra_int(" + value_code + ")"
             if target in ("float", "float32", "float64"):
