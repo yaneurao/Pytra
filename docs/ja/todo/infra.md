@@ -43,7 +43,7 @@
 
 文脈: [docs/ja/plans/plan-emit-expect-data-driven-tests.md](../plans/plan-emit-expect-data-driven-tests.md)
 
-ステータス: **保留中** — 既存テストが他 agent により変更中のため、安定してから Phase 1 に着手する。
+ステータス: **Phase 1 / Phase 2 完了、Phase 3 未着手** — emit / pipeline の JSON runner は導入済み。smoke / pylib 系の統合は次タスク。
 
 `tools/unittest/` の 267 スクリプトのうち ~80件はパイプライン系（入力→parse/resolve/lower/emit→期待出力）で、JSON データで定義できる。残り ~190件（tooling/selfhost/link 等）は Python テストとして残す。
 
