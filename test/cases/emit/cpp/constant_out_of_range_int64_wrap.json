@@ -1,0 +1,7 @@
+{
+  "description": "C++ constant keeps wrap for out-of-range int64 literals",
+  "target": "cpp",
+  "level": "expr",
+  "input": {"kind": "Constant", "value": 2147483648, "resolved_type": "int64"},
+  "expected": "2147483648"
+}

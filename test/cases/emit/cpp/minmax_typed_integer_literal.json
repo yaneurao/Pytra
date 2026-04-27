@@ -1,0 +1,18 @@
+{
+  "description": "C++ min/max renders through the builtin helper",
+  "target": "cpp",
+  "level": "expr",
+  "input": {
+    "kind": "Call",
+    "lowered_kind": "BuiltinCall",
+    "builtin_name": "max",
+    "runtime_call": "max",
+    "resolved_type": "int64",
+    "args": [
+      {"kind": "Constant", "value": 0, "resolved_type": "int64"},
+      {"kind": "Name", "id": "v", "resolved_type": "int64"}
+    ],
+    "func": {"kind": "Name", "id": "max"}
+  },
+  "expected": "__pytra_max(0, v)"
+}

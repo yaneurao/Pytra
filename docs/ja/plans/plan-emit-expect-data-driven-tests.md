@@ -183,4 +183,8 @@ tools/unittest/       # ~190件の Python テスト（残存）
 
 ## ステータス
 
-保留中。既存テストが他 agent により変更中のため、安定してから Phase 1 に着手する。
+Phase 1 着手済み。
+
+- 2026-04-27: [ID: P20-DDT-S1] `test/cases/emit/cpp/` に C++ expr レベル JSON ケース 8 件を追加。
+- 2026-04-27: [ID: P20-DDT-S2] `tools/unittest/test_emit_cases.py` を追加。`pytest` がある環境では parametrize、最小ローカル環境では `unittest` fallback で同じ JSON ケースを実行する。
+- 2026-04-27: [ID: P20-DDT-S3] `tools/unittest/toolchain2/test_common_renderer.py` から対応する C++ expr 期待値テスト 8 件を削除し、JSON ケースへ移行。

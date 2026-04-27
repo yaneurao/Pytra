@@ -49,9 +49,12 @@
 
 **Phase 1: emit 層で方式を確立**
 
-1. [ ] [ID: P20-DDT-S1] `test/cases/emit/cpp/` に JSON テストケース 5〜10 件を作成する
-2. [ ] [ID: P20-DDT-S2] `tools/unittest/test_emit_cases.py` を実装する（pytest parametrize で JSON 走査）
-3. [ ] [ID: P20-DDT-S3] `test_common_renderer.py` の対応テストを JSON に移行し、元メソッドを削除する
+1. [x] [ID: P20-DDT-S1] `test/cases/emit/cpp/` に JSON テストケース 5〜10 件を作成する
+   - 2026-04-27: C++ expr レベルの JSON ケースを 8 件追加（binop precedence / numeric promotion / mod / integer literal / minmax / object is None）。
+2. [x] [ID: P20-DDT-S2] `tools/unittest/test_emit_cases.py` を実装する（pytest parametrize で JSON 走査）
+   - 2026-04-27: `test/cases/emit/**/*.json` を走査し、`target=cpp` の `expr` / `stmt` ケースを実行する runner を追加。
+3. [x] [ID: P20-DDT-S3] `test_common_renderer.py` の対応テストを JSON に移行し、元メソッドを削除する
+   - 2026-04-27: `tools/unittest/toolchain2/test_common_renderer.py` から対応する C++ expr 期待値テスト 8 件を削除し、JSON ケースへ移行。
 
 **Phase 2: パイプライン層に横展開**
 
