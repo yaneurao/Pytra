@@ -1269,7 +1269,7 @@ class ScalaRenderer(CommonRenderer):
                     if self._module_namespace_expr(owner_module_id) != "":
                         first_arg = self._emit_expr(arg_nodes[0]) if len(arg_nodes) > 0 else "\"error\""
                         return "{ val __pytra_obj = new " + _safe_scala_ident(attr) + "(); __pytra_obj.__init__(" + first_arg + "); __pytra_obj }"
-                dynamic_dict_owner = owner_type in ("JsonVal", "Any", "object", "unknown", "pytra.std.json.JsonVal", "pytra_std_json.JsonVal") or "dict[" in owner_type
+                dynamic_dict_owner = owner_type in ("JsonVal", "Any", "object", "unknown", "pytra.std.json.JsonVal", "pytra_std_json.JsonVal")
                 if dynamic_dict_owner and resolved_method == self._mapping_call("dict.get") and len(arg_nodes) == 1:
                     return "__pytra_as_dict(" + owner_expr + ").get(" + self._emit_expr(arg_nodes[0]) + ")"
                 if dynamic_dict_owner and resolved_method == self._mapping_call("dict.get") and len(arg_nodes) == 2:
@@ -1440,6 +1440,11 @@ class ScalaRenderer(CommonRenderer):
                     return "__pytra_sum(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ").asInstanceOf[" + scala_type(self._str(node, "resolved_type")) + "]"
                 if func_id == "zip":
                     return "__pytra_zip(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ")"
+                if self._is_exception_name(func_id):
+                    ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
+                    class_name = _safe_scala_ident(func_id)
+                    tmp_name = "__pytra_obj"
+                    return "{ val " + tmp_name + " = new " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
                 if resolved == "" and (func_id in self.module_class_names or (call_result_type != "" and call_result_type == func_id)):
                     ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
                     if func_name != "" and (func_name.startswith("__pytra_") or "." in func_name):
@@ -1449,11 +1454,6 @@ class ScalaRenderer(CommonRenderer):
                     if self.class_has_init.get(func_id, True):
                         return "{ val " + tmp_name + " = new " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
                     return "new " + class_name + "(" + ", ".join(ctor_args) + ")"
-                if self._is_exception_name(func_id):
-                    ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
-                    class_name = _safe_scala_ident(func_id)
-                    tmp_name = "__pytra_obj"
-                    return "{ val " + tmp_name + " = new " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
             func_leaf = func_name.rsplit(".", 1)[-1]
             if self._is_exception_name(func_leaf):
                 bare_name = _safe_scala_ident(func_leaf)

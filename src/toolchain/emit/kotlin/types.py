@@ -115,6 +115,8 @@ def kotlin_zero_value(resolved_type: str) -> str:
     kt = kotlin_type(resolved_type)
     if resolved_type.startswith("list["):
         return "mutableListOf()"
+    if resolved_type == "tuple" or resolved_type.startswith("tuple["):
+        return "mutableListOf()"
     if resolved_type.startswith("set["):
         return "linkedSetOf()"
     if resolved_type.startswith("dict["):
