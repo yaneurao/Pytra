@@ -70,6 +70,7 @@
 7. [ ] [ID: P20-DDT-S7] `tools/unittest/emit/<lang>/test_py2*_smoke.py` (~20件) を JSON に移行する
    - 2026-04-27: `bitwise_invert_basic` smoke を `cpp` / `dart` / `go` / `js` / `julia` / `kotlin` / `lua` / `nim` / `php` / `powershell` / `rb` / `rs` / `scala` / `swift` / `ts` の JSON ケースへ移動。`test_emit_cases.py` に module-level fixture emit の target 対応を追加。
    - 2026-04-27: 壊れていた `tools/unittest/emit/dart/test_py2dart_smoke.py` の fixture smoke を `test/cases/emit/dart/` へ移行し、空になったスクリプトを削除。
+   - 2026-04-27: `tools/unittest/emit/test_py2starred_smoke.py` の all-target starred tuple fixture smoke を `test/cases/emit/<lang>/starred_call_tuple_basic.json` へ移行し、スクリプトを削除。
 8. [x] [ID: P20-DDT-S8] `tools/unittest/common/test_pylib_*.py` (~10件) を JSON に移行する
    - 2026-04-27: `argparse` / `dataclasses` / `enum` / `re` / `sys` / `typing` / `json` / `path` / `os_glob` を `test/cases/pylib/` へ移行し、`tools/unittest/test_pylib_cases.py` で実行する。
 9. [x] [ID: P20-DDT-S9] 空になったスクリプトを削除する

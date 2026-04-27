@@ -1,0 +1,8 @@
+{
+  "description": "Go emits starred tuple call fixture without source starred syntax",
+  "target": "go",
+  "level": "module",
+  "fixture": "starred_call_tuple_basic",
+  "expected_contains": ["mix_rgb"],
+  "expected_not_contains": ["*rgb"]
+}

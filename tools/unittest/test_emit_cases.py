@@ -19,9 +19,11 @@ from toolchain.emit.cpp.emitter import CppEmitContext
 from toolchain.emit.cpp.emitter import _emit_expr as emit_cpp_expr
 from toolchain.emit.cpp.emitter import _emit_stmt as emit_cpp_stmt
 from toolchain.emit.cpp.emitter import emit_cpp_module
+from toolchain.emit.cs.emitter import emit_cs_module
 from toolchain.emit.dart.emitter import emit_dart_module
 from toolchain.compile.lower import lower_east2_to_east3
 from toolchain.emit.go.emitter import emit_go_module
+from toolchain.emit.java.emitter import emit_java_module
 from toolchain.emit.julia.emitter import emit_julia_module
 from toolchain.emit.kotlin.emitter import emit_kotlin_module
 from toolchain.emit.lua.emitter import emit_lua_module
@@ -123,10 +125,14 @@ def _emit_module_case(target: str, case: dict[str, Any]) -> str:
     east3 = _build_east3_from_source(source, source_path, target)
     if target == "cpp":
         return emit_cpp_module(east3)
+    if target == "cs":
+        return emit_cs_module(east3)
     if target == "dart":
         return emit_dart_module(east3)
     if target == "go":
         return emit_go_module(east3)
+    if target == "java":
+        return emit_java_module(east3)
     if target == "julia":
         return emit_julia_module(east3)
     if target == "kotlin":
