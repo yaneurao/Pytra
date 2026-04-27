@@ -1493,6 +1493,10 @@ class ScalaRenderer(CommonRenderer):
                     return "__pytra_sum(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ").asInstanceOf[" + scala_type(self._str(node, "resolved_type")) + "]"
                 if func_id == "zip":
                     return "__pytra_zip(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ")"
+                if func_id == "bool" or (node_runtime_call == "static_cast" and node_runtime_symbol == "bool"):
+                    args_for_bool = self._list(node, "args")
+                    if len(args_for_bool) >= 1:
+                        return "__pytra_truthy(" + self._emit_expr(args_for_bool[0]) + ")"
                 if self._is_exception_name(func_id):
                     ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
                     class_name = _safe_scala_ident(func_id)
