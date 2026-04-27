@@ -86,14 +86,6 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_ruby_native_emitter_skeleton_handles_module_function_class(self) -> None:
-        fixture = find_fixture_case("inheritance")
-        east = load_east(fixture, parser_backend="self_hosted")
-        ruby = transpile_to_ruby_native(east)
-        self.assertIn("class Animal", ruby)
-        self.assertIn("class Dog < Animal", ruby)
-        self.assertIn("def _case_main()", ruby)
-
     def test_tuple_assign_fixture_lowers_swap_via_temp_for_ruby(self) -> None:
         fixture = find_fixture_case("tuple_assign")
         east = load_east(fixture, parser_backend="self_hosted")

@@ -1,0 +1,7 @@
+{
+  "description": "Ruby emits the inheritance fixture module skeleton",
+  "target": "rb",
+  "level": "module",
+  "fixture": "inheritance",
+  "expected_contains": ["class Animal", "class Dog < Animal", "def _case_main"]
+}

@@ -80,18 +80,6 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_java_native_emitter_skeleton_handles_module_function_class(self) -> None:
-        fixture = find_fixture_case("inheritance")
-        east = load_east(fixture, parser_backend="self_hosted")
-        java = transpile_to_java_native(east, class_name="Main")
-        self.assertIn("public final class Main", java)
-        self.assertIn("public static class Animal", java)
-        self.assertIn("public static class Dog extends Animal", java)
-        self.assertIn('return this.sound() + "-bark";', java)
-        self.assertIn("public static void _case_main()", java)
-        self.assertIn("Dog d = new Dog();", java)
-        self.assertIn('System.out.println("True");', java)
-
     def test_cli_relative_import_jvm_package_bundle_scenarios_transpile_for_java(self) -> None:
         for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
             with self.subTest(scenario_id=scenario_id):

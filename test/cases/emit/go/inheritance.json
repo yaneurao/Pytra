@@ -1,0 +1,8 @@
+{
+  "description": "Go emits the inheritance fixture module skeleton",
+  "target": "go",
+  "level": "module",
+  "fixture": "inheritance",
+  "expected_contains": ["package main", "type Animal struct {", "type Dog struct {", "func _case_main()"],
+  "expected_not_contains": ["    \"math\"", "var _ = math.Pi"]
+}

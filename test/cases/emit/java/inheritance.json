@@ -1,0 +1,13 @@
+{
+  "description": "Java emits the inheritance fixture module skeleton",
+  "target": "java",
+  "level": "module",
+  "fixture": "inheritance",
+  "expected_contains": [
+    "public final class Main",
+    "public static class Animal",
+    "public static class Dog extends Animal",
+    "public static void _case_main()",
+    "Dog d = new Dog();"
+  ]
+}

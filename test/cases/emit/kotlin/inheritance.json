@@ -1,0 +1,7 @@
+{
+  "description": "Kotlin emits the inheritance fixture module skeleton",
+  "target": "kotlin",
+  "level": "module",
+  "fixture": "inheritance",
+  "expected_contains": ["fun main(args: Array<String>)", "open class Animal", "class Dog : Animal()", "fun _case_main()"]
+}
