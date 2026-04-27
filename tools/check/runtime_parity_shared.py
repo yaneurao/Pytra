@@ -474,7 +474,11 @@ def _save_parity_results(records: list[CheckRecord], case_root: str, targets: se
                 entry["detail"] = rec.detail
             if rec.elapsed_sec is not None:
                 entry["elapsed_sec"] = round(rec.elapsed_sec, 3)
-            results[rec.case_stem] = entry
+            # Normalize stem: strip category prefix (e.g. "collections/reversed_basic" → "reversed_basic")
+            stem_key = rec.case_stem
+            if "/" in stem_key:
+                stem_key = stem_key.rsplit("/", 1)[-1]
+            results[stem_key] = entry
 
         curr_pass = sum(1 for v in results.values() if isinstance(v, dict) and v.get("category") == "ok")
 
