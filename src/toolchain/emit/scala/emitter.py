@@ -1072,7 +1072,7 @@ class ScalaRenderer(CommonRenderer):
                 owner_id = self._str(owner_node, "id")
                 module_id = self.import_alias_modules.get(owner_id, "")
                 attr = _safe_scala_ident(self._str(node, "attr"))
-                if owner_id in self.module_class_names:
+                if owner_id in self.module_class_names or owner_id in self.enum_like_classes:
                     return _safe_scala_ident(owner_id) + "." + attr
                 if self._module_namespace_expr(module_id) != "" and self._is_exception_name(attr):
                     return attr
