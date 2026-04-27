@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-16
+最終更新: 2026-04-27
 
 ## 運用ルール
 
@@ -27,6 +27,15 @@
 - mapping.json 仕様: `docs/ja/spec/spec-runtime-mapping.md`
 
 ## 未完了タスク
+
+### P0-DART-FIXTURE-PARITY-161: Dart fixture parity を 161/161 に揃える
+
+文脈: [docs/ja/plans/p0-fixture-parity-161.md](../plans/p0-fixture-parity-161.md)
+
+現状: 148/161 PASS。FAIL: `collections/reversed_basic`, `oop/trait_basic`, `oop/trait_with_inheritance`, `signature/ok_typed_varargs_representative`, `strings/str_methods_extended`, `typing/int8`, `typing/integer_promotion`, `typing/isinstance_pod_exact`, `typing/str_repr_containers`, `typing/union_return_errorcheck`。未実行: `control/for_tuple_iter`, `typing/for_over_return_value`, `typing/nullable_dict_field`。
+
+1. [ ] [ID: P0-FIX161-DART-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets dart --case-root fixture` で確定し、fail なら分類へ追加する
+2. [ ] [ID: P0-FIX161-DART-S2] reversed / trait / typed varargs / string methods / int promotion / isinstance / union runtime の fail を解消し、Dart fixture parity 161/161 PASS を確認する
 
 ### P1-EMITTER-SELFHOST-DART: emit/dart/cli.py を単独で selfhost C++ build に通す
 

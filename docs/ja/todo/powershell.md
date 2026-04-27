@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-16
+最終更新: 2026-04-27
 
 ## 運用ルール
 
@@ -29,6 +29,15 @@
 
 ## 未完了タスク
 
+### P0-PS1-FIXTURE-PARITY-161: PowerShell fixture parity を 161/161 に揃える
+
+文脈: [docs/ja/plans/p0-fixture-parity-161.md](../plans/p0-fixture-parity-161.md)
+
+現状: 153/161 PASS。FAIL は未確定で、未実行: `collections/reversed_basic`, `collections/set_update`, `collections/sorted_set`, `control/for_tuple_iter`, `typing/for_over_return_value`, `typing/isinstance_chain_narrowing`, `typing/isinstance_union_narrowing`, `typing/nullable_dict_field`。
+
+1. [ ] [ID: P0-FIX161-PS1-S1] 未実行 8 件を `runtime_parity_check_fast.py --targets ps1 --case-root fixture` で確定する
+2. [ ] [ID: P0-FIX161-PS1-S2] fail した collection / isinstance narrowing ケースを修正し、PowerShell fixture parity 161/161 PASS を確認する
+
 ### P1-EMITTER-SELFHOST-PS1: emit/powershell/cli.py を単独で selfhost C++ build に通す
 
 文脈: [docs/ja/plans/p1-emitter-selfhost-per-backend.md](../plans/p1-emitter-selfhost-per-backend.md)
@@ -47,4 +56,3 @@
 対象: `bytes_copy_semantics`, `negative_index_comprehensive`, `negative_index_out_of_range`, `callable_optional_none`, `str_find_index`, `eo_extern_opaque_basic`(emit-only), `math_extended`(stdlib), `os_glob_extended`(stdlib)
 
 1. [ ] [ID: P0-PS1-NEWFIX-S1] 上記 fixture/stdlib の parity を確認する（対象 fixture のみ実行）
-

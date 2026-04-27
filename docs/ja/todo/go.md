@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-16
+最終更新: 2026-04-27
 
 ## 運用ルール
 
@@ -19,6 +19,15 @@
 - **[emitter 実装ガイドライン](../spec/spec-emitter-guide.md)を必ず読むこと。** parity check ツール、禁止事項、mapping.json の使い方が書いてある。
 
 ## 未完了タスク
+
+### P0-GO-FIXTURE-PARITY-161: Go fixture parity を 161/161 に揃える
+
+文脈: [docs/ja/plans/p0-fixture-parity-161.md](../plans/p0-fixture-parity-161.md)
+
+現状: 154/161 PASS。FAIL: `collections/reversed_basic`, `signature/ok_typed_varargs_representative`, `typing/isinstance_union_narrowing`, `typing/optional_none`。未実行: `control/for_tuple_iter`, `typing/for_over_return_value`, `typing/nullable_dict_field`。
+
+1. [ ] [ID: P0-FIX161-GO-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets go --case-root fixture` で確定し、fail なら分類へ追加する
+2. [ ] [ID: P0-FIX161-GO-S2] reversed / typed varargs / union narrowing / optional の fail を解消し、Go fixture parity 161/161 PASS を確認する
 
 ### P1-EMITTER-SELFHOST-GO: emit/go/cli.py を単独で selfhost C++ build に通す
 

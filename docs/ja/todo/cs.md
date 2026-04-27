@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-16
+最終更新: 2026-04-27
 
 ## 運用ルール
 
@@ -28,6 +28,15 @@
 - mapping.json 仕様: `docs/ja/spec/spec-runtime-mapping.md`
 
 ## 未完了タスク
+
+### P0-CS-FIXTURE-PARITY-161: C# fixture parity を 161/161 に揃える
+
+文脈: [docs/ja/plans/p0-fixture-parity-161.md](../plans/p0-fixture-parity-161.md)
+
+現状: 135/161 PASS。FAIL: `collections/iterable`, `collections/reversed_basic`, `collections/slice_basic`, `control/nested_closure_def`, `control/yield_generator_min`, `core/class_body_pass`, `core/class_tuple_assign`, `core/lambda_as_arg`, `core/lambda_basic`, `core/lambda_capture_multiargs`, `core/lambda_ifexp`, `core/lambda_local_state`, `core/obj_attr_space`, `core/pass_through_comment`, `imports/bom_from_import`, `imports/from_import_symbols`, `imports/from_pytra_std_import_math`, `imports/type_ignore_from_import`, `signature/ok_lambda_default`, `typing/callable_higher_order`, `typing/callable_optional_none`, `typing/int8`, `typing/tuple_unpack_variants`。未実行: `control/for_tuple_iter`, `typing/for_over_return_value`, `typing/nullable_dict_field`。
+
+1. [ ] [ID: P0-FIX161-CS-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets cs --case-root fixture` で確定し、fail なら分類へ追加する
+2. [ ] [ID: P0-FIX161-CS-S2] lambda/closure、tuple unpack、import wiring、callable、int8、collection 系 fail を解消し、C# fixture parity 161/161 PASS を確認する
 
 ### P1-EMITTER-SELFHOST-CS: emit/cs/cli.py を単独で selfhost C++ build に通す
 

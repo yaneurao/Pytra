@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-16
+最終更新: 2026-04-27
 
 ## 運用ルール
 
@@ -27,6 +27,15 @@
 - mapping.json 仕様: `docs/ja/spec/spec-runtime-mapping.md`
 
 ## 未完了タスク
+
+### P0-SWIFT-FIXTURE-PARITY-161: Swift fixture parity を 161/161 に揃える
+
+文脈: [docs/ja/plans/p0-fixture-parity-161.md](../plans/p0-fixture-parity-161.md)
+
+現状: 153/161 PASS。FAIL: `collections/reversed_basic`, `oop/trait_basic`, `oop/trait_with_inheritance`, `signature/ok_typed_varargs_representative`, `typing/isinstance_union_narrowing`。未実行: `control/for_tuple_iter`, `typing/for_over_return_value`, `typing/nullable_dict_field`。
+
+1. [ ] [ID: P0-FIX161-SWIFT-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets swift --case-root fixture` で確定し、fail なら分類へ追加する
+2. [ ] [ID: P0-FIX161-SWIFT-S2] reversed / trait / typed varargs / union narrowing の fail を解消し、Swift fixture parity 161/161 PASS を確認する
 
 ### P1-EMITTER-SELFHOST-SWIFT: emit/swift/cli.py を単独で selfhost C++ build に通す
 

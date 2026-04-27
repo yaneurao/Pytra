@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-16
+最終更新: 2026-04-27
 
 ## 運用ルール
 
@@ -28,6 +28,15 @@
 - mapping.json 仕様: `docs/ja/spec/spec-runtime-mapping.md`
 
 ## 未完了タスク
+
+### P0-PHP-FIXTURE-PARITY-161: PHP fixture parity を 161/161 に揃える
+
+文脈: [docs/ja/plans/p0-fixture-parity-161.md](../plans/p0-fixture-parity-161.md)
+
+現状: 154/161 PASS。FAIL: `collections/reversed_basic`, `oop/trait_basic`, `oop/trait_with_inheritance`, `signature/ok_typed_varargs_representative`。未実行: `control/for_tuple_iter`, `typing/for_over_return_value`, `typing/nullable_dict_field`。
+
+1. [ ] [ID: P0-FIX161-PHP-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets php --case-root fixture` で確定し、fail なら分類へ追加する
+2. [ ] [ID: P0-FIX161-PHP-S2] reversed / trait / typed varargs の fail を解消し、PHP fixture parity 161/161 PASS を確認する
 
 ### P1-EMITTER-SELFHOST-PHP: emit/php/cli.py を単独で selfhost C++ build に通す
 
