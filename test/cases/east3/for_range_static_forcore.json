@@ -1,0 +1,11 @@
+{
+  "description": "lower converts ForRange into ForCore with StaticRangeForPlan",
+  "pipeline": "source_to_east3",
+  "input": "def f() -> None:\n    for i in range(3):\n        pass\n",
+  "assertions": [
+    {"path": "east_stage", "equals": 3},
+    {"path": "body[0].body[0].kind", "equals": "ForCore"},
+    {"path": "body[0].body[0].iter_plan.kind", "equals": "StaticRangeForPlan"},
+    {"path": "body[0].body[0].target_plan.id", "equals": "i"}
+  ]
+}

@@ -188,3 +188,6 @@ Phase 1 着手済み。
 - 2026-04-27: [ID: P20-DDT-S1] `test/cases/emit/cpp/` に C++ expr レベル JSON ケース 8 件を追加。
 - 2026-04-27: [ID: P20-DDT-S2] `tools/unittest/test_emit_cases.py` を追加。`pytest` がある環境では parametrize、最小ローカル環境では `unittest` fallback で同じ JSON ケースを実行する。
 - 2026-04-27: [ID: P20-DDT-S3] `tools/unittest/toolchain2/test_common_renderer.py` から対応する C++ expr 期待値テスト 8 件を削除し、JSON ケースへ移行。
+- 2026-04-27: [ID: P20-DDT-S4] `test/cases/{east1,east2,east3}/` に pipeline JSON ケース 6 件を追加。
+- 2026-04-27: [ID: P20-DDT-S5] `tools/unittest/test_pipeline_cases.py` を追加。ソース文字列から EAST1/EAST2/EAST3 を in-memory で生成し、JSON path assertion を評価する。
+- 2026-04-27: [ID: P20-DDT-S6] `tools/unittest/ir/test_east_core_parser_behavior_exprs.py` と `tools/unittest/toolchain2/test_tuple_unpack_lowering_profile.py` から対応テスト 2 件を JSON ケースへ移行。

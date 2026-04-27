@@ -58,9 +58,12 @@
 
 **Phase 2: パイプライン層に横展開**
 
-4. [ ] [ID: P20-DDT-S4] `test/cases/{east1,east2,east3}/` に JSON テストケースを作成する
-5. [ ] [ID: P20-DDT-S5] `tools/unittest/test_pipeline_cases.py` を実装する
-6. [ ] [ID: P20-DDT-S6] `tools/unittest/ir/` と `tools/unittest/toolchain2/` の対応テストを段階的に JSON に移行する
+4. [x] [ID: P20-DDT-S4] `test/cases/{east1,east2,east3}/` に JSON テストケースを作成する
+   - 2026-04-27: EAST1/EAST2/EAST3 の pipeline JSON ケースを 6 件追加（tuple target / lambda / for range normalization / int type resolution / ForCore lowering / tuple unpack expansion）。
+5. [x] [ID: P20-DDT-S5] `tools/unittest/test_pipeline_cases.py` を実装する
+   - 2026-04-27: `source_to_east1` / `source_to_east2` / `source_to_east3` を in-memory で実行し、JSON path assertions を評価する runner を追加。
+6. [x] [ID: P20-DDT-S6] `tools/unittest/ir/` と `tools/unittest/toolchain2/` の対応テストを段階的に JSON に移行する
+   - 2026-04-27: `test_east_core_parser_behavior_exprs.py` の lambda node テストと `test_tuple_unpack_lowering_profile.py` の parenthesized tuple target テストを JSON ケースへ移行。
 
 **Phase 3: smoke テストの統合**
 

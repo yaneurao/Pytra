@@ -56,18 +56,6 @@ def main() -> list[int]:
         self.assertEqual(iter_node.get("stop", {}).get("value"), 3)
         self.assertEqual(iter_node.get("step", {}).get("value"), 1)
 
-    def test_lambda_expression_builds_lambda_node(self) -> None:
-        src = """
-def main() -> None:
-    fn = lambda x: x + 1
-"""
-        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
-        lambdas = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Lambda"]
-        self.assertEqual(len(lambdas), 1)
-        lam = lambdas[0]
-        self.assertEqual([arg.get("arg") for arg in lam.get("args", [])], ["x"])
-        self.assertEqual(lam.get("body", {}).get("kind"), "BinOp")
-
     def test_fstring_builds_joinedstr_and_formatted_value_nodes(self) -> None:
         src = """
 def main(name: str) -> str:

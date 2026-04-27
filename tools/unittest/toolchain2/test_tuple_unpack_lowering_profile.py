@@ -41,20 +41,6 @@ def _build_east3(source: str, *, target_language: str) -> dict:
 
 
 class TupleUnpackLoweringProfileTests(unittest.TestCase):
-    def test_parser_accepts_parenthesized_tuple_target(self) -> None:
-        east1 = parse_python_source(
-            """
-def f() -> None:
-    (x, y, z) = (1, 2, 3)
-""",
-            "<mem>",
-        ).to_jv()
-        fn = next(node for node in east1.get("body", []) if node.get("kind") == "FunctionDef")
-        stmt = fn["body"][0]
-        self.assertEqual(stmt.get("kind"), "Assign")
-        self.assertEqual(stmt.get("target", {}).get("kind"), "Tuple")
-        self.assertEqual([elem.get("id") for elem in stmt["target"].get("elements", [])], ["x", "y", "z"])
-
     def test_parser_accepts_bracketed_tuple_target(self) -> None:
         east1 = parse_python_source(
             """

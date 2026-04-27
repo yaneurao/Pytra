@@ -1,0 +1,11 @@
+{
+  "description": "parser keeps parenthesized tuple assignment target as Tuple",
+  "pipeline": "source_to_east1",
+  "input": "def f() -> None:\n    (x, y) = (1, 2)\n",
+  "assertions": [
+    {"path": "body[0].body[0].kind", "equals": "Assign"},
+    {"path": "body[0].body[0].target.kind", "equals": "Tuple"},
+    {"path": "body[0].body[0].target.elements[0].id", "equals": "x"},
+    {"path": "body[0].body[0].target.elements[1].id", "equals": "y"}
+  ]
+}

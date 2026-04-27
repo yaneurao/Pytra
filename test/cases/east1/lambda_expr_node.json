@@ -1,0 +1,10 @@
+{
+  "description": "parser builds Lambda expression nodes",
+  "pipeline": "source_to_east1",
+  "input": "def f() -> None:\n    fn = lambda x: x + 1\n",
+  "assertions": [
+    {"path": "body[0].body[0].value.kind", "equals": "Lambda"},
+    {"path": "body[0].body[0].value.args[0].arg", "equals": "x"},
+    {"path": "body[0].body[0].value.body.kind", "equals": "BinOp"}
+  ]
+}
