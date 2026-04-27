@@ -1301,7 +1301,11 @@ class ScalaRenderer(CommonRenderer):
                 if dynamic_dict_owner and resolved_method == self._mapping_call("dict.get") and len(arg_nodes) == 1:
                     return "__pytra_as_dict(" + owner_expr + ").get(" + self._emit_expr(arg_nodes[0]) + ")"
                 if dynamic_dict_owner and resolved_method == self._mapping_call("dict.get") and len(arg_nodes) == 2:
-                    return "__pytra_as_dict(" + owner_expr + ").getOrElse(" + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
+                    expr = "__pytra_as_dict(" + owner_expr + ").getOrElse(" + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
+                    result_type = self._str(node, "resolved_type")
+                    if result_type not in ("", "unknown", "Any", "object", "JsonVal"):
+                        return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
+                    return expr
                 if dynamic_dict_owner and resolved_method == self._mapping_call("dict.items") and len(arg_nodes) == 0:
                     return "__pytra_dict_items(__pytra_as_dict(" + owner_expr + "))"
                 if dynamic_dict_owner and resolved_method == self._mapping_call("dict.keys") and len(arg_nodes) == 0:
