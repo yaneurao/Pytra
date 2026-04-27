@@ -43,6 +43,8 @@ class ScalaRenderer(CommonRenderer):
         self.enum_like_classes: set[str] = set()
         self.current_class_base: str | None = None
         self.class_has_init: dict[str, bool] = {}
+        self.class_without_init: set[str] = set()
+        self.exception_class_names: set[str] = set()
         self.local_decl_stack: list[set[str]] = []
         self.local_type_stack: list[dict[str, str]] = []
         self._tmp_counter = 0
@@ -56,7 +58,7 @@ class ScalaRenderer(CommonRenderer):
         return expr if isinstance(expr, str) else ""
 
     def _is_exception_name(self, name: str) -> bool:
-        return name in self.mapping.exception_types or name in self.module_class_names
+        return name in self.mapping.exception_types or name in self.exception_class_names
 
     def _exception_class_name(self, name: str) -> str:
         if name == "":
@@ -374,18 +376,24 @@ class ScalaRenderer(CommonRenderer):
             if isinstance(stmt, dict) and self._str(stmt, "kind") == "ClassDef" and self._str(stmt, "base") in ("IntEnum", "IntFlag")
         }
         self.class_has_init = {}
+        self.class_without_init = set()
+        self.exception_class_names = set()
         self.class_property_names = {}
         self.class_method_names = {}
         for stmt in self._list(east3_doc, "body"):
             if not isinstance(stmt, dict) or self._str(stmt, "kind") != "ClassDef":
                 continue
             class_name = self._str(stmt, "name")
+            if self._str(stmt, "base") in self.mapping.exception_types:
+                self.exception_class_names.add(class_name)
             self.class_has_init[class_name] = any(
                 isinstance(item, dict)
                 and self._str(item, "kind") in ("FunctionDef", "ClosureDef")
                 and self._str(item, "name") == "__init__"
                 for item in self._list(stmt, "body")
             )
+            if not self.class_has_init[class_name]:
+                self.class_without_init.add(class_name)
             methods: set[str] = set()
             props: set[str] = set()
             for item in self._list(stmt, "body"):
@@ -1225,6 +1233,16 @@ class ScalaRenderer(CommonRenderer):
                 if runtime_module_id == "pytra.std.time":
                     return "time_native." + _safe_scala_ident(runtime_symbol) + "(" + ", ".join(args) + ")"
             func = node.get("func")
+            if isinstance(func, dict) and self._str(func, "kind") == "Name":
+                early_func_id = self._str(func, "id")
+                early_result_type = self._str(node, "resolved_type")
+                if early_func_id != "" and not self._is_exception_name(early_func_id) and early_result_type == early_func_id and (early_func_id in self.module_class_names or early_func_id[:1].isupper()):
+                    ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
+                    class_name = _safe_scala_ident(early_func_id)
+                    if early_func_id in self.class_without_init or not self.class_has_init.get(early_func_id, False):
+                        return "new " + class_name + "(" + ", ".join(ctor_args) + ")"
+                    tmp_name = "__pytra_obj"
+                    return "{ val " + tmp_name + " = new " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
             func_name = self._emit_expr(func)
             func_is_named_function = False
             func_resolved_type = self._str(func, "resolved_type") if isinstance(func, dict) else ""
@@ -1405,13 +1423,32 @@ class ScalaRenderer(CommonRenderer):
                 if func_id == "isinstance":
                     call_args = self._list(node, "args")
                     if len(call_args) >= 2 and isinstance(call_args[1], dict):
+                        type_node = call_args[1]
+                        if self._str(type_node, "kind") == "Tuple":
+                            checks: list[str] = []
+                            for elem in self._list(type_node, "elements"):
+                                if not isinstance(elem, dict):
+                                    continue
+                                elem_name = self._str(elem, "id") or self._str(elem, "type_object_of") or self._str(elem, "repr")
+                                if elem_name == "":
+                                    continue
+                                if elem_name in ("dict", "list", "set", "tuple", "str", "int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "float", "float32", "float64", "bool"):
+                                    checks.append("__pytra_is_instance(" + self._emit_expr(call_args[0]) + ", " + self._quote_string(elem_name) + ")")
+                                else:
+                                    checks.append(self._emit_expr(call_args[0]) + ".isInstanceOf[" + _safe_scala_ident(elem_name) + "]")
+                            if len(checks) > 0:
+                                return "(" + " || ".join(checks) + ")"
                         type_name = self._str(call_args[1], "id")
                         if type_name == "":
                             type_name = self._str(call_args[1], "type_object_of")
                         if type_name == "":
                             type_name = self._str(call_args[1], "repr")
                         if type_name != "":
-                            if type_name in ("dict", "list", "set", "tuple", "str", "int", "int64", "float", "float64", "bool"):
+                            pod_types = {"int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "float32", "float64"}
+                            actual_type = self._str(call_args[0], "resolved_type") if isinstance(call_args[0], dict) else ""
+                            if type_name in pod_types and actual_type in pod_types:
+                                return "true" if actual_type == type_name else "false"
+                            if type_name in ("dict", "list", "set", "tuple", "str", "int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "float", "float32", "float64", "bool"):
                                 return "__pytra_is_instance(" + self._emit_expr(call_args[0]) + ", " + self._quote_string(type_name) + ")"
                             return self._emit_expr(call_args[0]) + ".isInstanceOf[" + _safe_scala_ident(type_name) + "]"
                 node_runtime_symbol = self._str(node, "runtime_symbol")
@@ -1455,16 +1492,26 @@ class ScalaRenderer(CommonRenderer):
                     class_name = _safe_scala_ident(func_id)
                     tmp_name = "__pytra_obj"
                     return "{ val " + tmp_name + " = new " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
-                if resolved == "" and (func_id in self.module_class_names or (call_result_type != "" and call_result_type == func_id)):
+                if func_id in self.module_class_names or (call_result_type != "" and call_result_type == func_id):
                     ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
                     if func_name != "" and (func_name.startswith("__pytra_") or "." in func_name):
                         return func_name + "(" + ", ".join(ctor_args) + ")"
                     class_name = _safe_scala_ident(func_id)
                     tmp_name = "__pytra_obj"
-                    if self.class_has_init.get(func_id, True):
+                    if func_id in self.class_without_init:
+                        return "new " + class_name + "(" + ", ".join(ctor_args) + ")"
+                    if self.class_has_init.get(func_id, False):
                         return "{ val " + tmp_name + " = new " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
                     return "new " + class_name + "(" + ", ".join(ctor_args) + ")"
             func_leaf = func_name.rsplit(".", 1)[-1]
+            if func_leaf in self.module_class_names:
+                ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
+                if func_leaf in self.class_without_init:
+                    return "new " + func_leaf + "(" + ", ".join(ctor_args) + ")"
+                if self.class_has_init.get(func_leaf, False):
+                    tmp_name = "__pytra_obj"
+                    return "{ val " + tmp_name + " = new " + func_leaf + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
+                return "new " + func_leaf + "(" + ", ".join(ctor_args) + ")"
             if self._is_exception_name(func_leaf):
                 bare_name = _safe_scala_ident(func_leaf)
                 ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]

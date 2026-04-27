@@ -1510,13 +1510,32 @@ class KotlinRenderer(CommonRenderer):
                 if func_id == "isinstance":
                     call_args = self._list(node, "args")
                     if len(call_args) >= 2 and isinstance(call_args[1], dict):
+                        type_node = call_args[1]
+                        if self._str(type_node, "kind") == "Tuple":
+                            checks: list[str] = []
+                            for elem in self._list(type_node, "elements"):
+                                if not isinstance(elem, dict):
+                                    continue
+                                elem_name = self._str(elem, "id") or self._str(elem, "type_object_of") or self._str(elem, "repr")
+                                if elem_name == "":
+                                    continue
+                                if elem_name in ("dict", "list", "set", "tuple", "str", "int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "float", "float32", "float64", "bool"):
+                                    checks.append("__pytra_is_instance(" + self._emit_expr(call_args[0]) + ", " + self._quote_string(elem_name) + ")")
+                                else:
+                                    checks.append("((" + self._emit_expr(call_args[0]) + " as Any?) is " + _safe_kotlin_ident(elem_name) + ")")
+                            if len(checks) > 0:
+                                return "(" + " || ".join(checks) + ")"
                         type_name = self._str(call_args[1], "id")
                         if type_name == "":
                             type_name = self._str(call_args[1], "type_object_of")
                         if type_name == "":
                             type_name = self._str(call_args[1], "repr")
                         if type_name != "":
-                            if type_name in ("dict", "list", "set", "tuple", "str", "int", "int64", "float", "float64", "bool"):
+                            pod_types = {"int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "float32", "float64"}
+                            actual_type = self._str(call_args[0], "resolved_type") if isinstance(call_args[0], dict) else ""
+                            if type_name in pod_types and actual_type in pod_types:
+                                return "true" if actual_type == type_name else "false"
+                            if type_name in ("dict", "list", "set", "tuple", "str", "int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "float", "float32", "float64", "bool"):
                                 return "__pytra_is_instance(" + self._emit_expr(call_args[0]) + ", " + self._quote_string(type_name) + ")"
                             return "((" + self._emit_expr(call_args[0]) + " as Any?) is " + _safe_kotlin_ident(type_name) + ")"
                 mapped = self.mapping.calls.get(func_id)
