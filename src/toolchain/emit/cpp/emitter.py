@@ -4227,7 +4227,7 @@ def _emit_assign(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
                 _emit(ctx, "auto " + name + " = " + val_code + ";")
             else:
                 ct = _decl_cpp_type(ctx, dt, name)
-                if _bool(node, "bind_ref"):
+                if _bool(node, "bind_ref") or _assign_value_binds_ref(value):
                     _emit(ctx, ct + "& " + name + " = " + val_code + ";")
                 else:
                     _emit(ctx, ct + " " + name + " = " + val_code + ";")
@@ -4878,6 +4878,19 @@ def _collect_try_hoisted_ann_names(ctx: CppEmitContext, body: list[JsonVal]) -> 
 
     walk(body)
     return out
+
+
+def _assign_value_binds_ref(value: JsonVal) -> bool:
+    value_obj = json.JsonValue(value).as_obj()
+    if value_obj is None:
+        return False
+    value_dict = value_obj.raw
+    if _str(value_dict, "kind") != "Call":
+        return False
+    func_obj = json.JsonValue(value_dict.get("func")).as_obj()
+    if func_obj is not None and _str(func_obj.raw, "kind") == "Attribute" and _str(func_obj.raw, "attr") == "__enter__":
+        return True
+    return _str(value_dict, "semantic_tag") == "dunder.enter"
 
 
 def _emit_function_def_impl(ctx: CppEmitContext, node: dict[str, JsonVal], owner_name: str = "") -> None:
