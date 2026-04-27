@@ -1,0 +1,7 @@
+{
+  "description": "Swift lowers tuple assignment swap via a temporary",
+  "target": "swift",
+  "level": "module",
+  "fixture": "tuple_assign",
+  "expected_contains": ["var __swap_", "x = y", "y = __swap_"]
+}

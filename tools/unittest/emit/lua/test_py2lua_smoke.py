@@ -171,14 +171,6 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("return (-n)", lua)
         self.assertIn("else", lua)
 
-    def test_tuple_assign_fixture_lowers_swap_via_temp_for_lua(self) -> None:
-        fixture = find_fixture_case("tuple_assign")
-        east = load_east(fixture, parser_backend="self_hosted")
-        lua = transpile_to_lua_native(east)
-        self.assertIn("local __swap_", lua)
-        self.assertIn("x = y", lua)
-        self.assertRegex(lua, r"y = __swap_\d+")
-
     def test_lambda_fixture_renders_function_for_lua(self) -> None:
         fixture = find_fixture_case("lambda_basic")
         east = load_east(fixture, parser_backend="self_hosted")

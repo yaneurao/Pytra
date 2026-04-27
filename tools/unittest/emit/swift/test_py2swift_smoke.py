@@ -147,14 +147,6 @@ class Py2SwiftSmokeTest(unittest.TestCase):
                 swift = transpile_to_swift_native(east)
                 self.assertTrue(swift.strip())
 
-    def test_tuple_assign_fixture_lowers_swap_via_temp_for_swift(self) -> None:
-        fixture = find_fixture_case("tuple_assign")
-        east = load_east(fixture, parser_backend="self_hosted")
-        swift = transpile_to_swift_native(east)
-        self.assertIn("var __swap_", swift)
-        self.assertIn("x = y", swift)
-        self.assertRegex(swift, r"y = __swap_\d+")
-
     def test_module_leading_comments_are_emitted(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")
