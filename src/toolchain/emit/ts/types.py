@@ -7,7 +7,7 @@ from __future__ import annotations
 
 
 # EAST3 resolved_type → TypeScript type
-_TYPE_MAP: dict[str, str] = {
+_TS_TYPE_MAP: dict[str, str] = {
     "int": "number",
     "byte": "number",
     "int8": "number",
@@ -66,7 +66,7 @@ _TS_KEYWORDS: set[str] = {
     "undefined", "unique", "unknown",
 }
 
-TS_BUILTIN_RUNTIME_SYMBOLS: tuple[str, ...] = (
+TS_BUILTIN_RUNTIME_SYMBOLS: list[str] = [
     "PY_TYPE_NONE", "PY_TYPE_BOOL", "PY_TYPE_NUMBER", "PY_TYPE_STRING",
     "PY_TYPE_ARRAY", "PY_TYPE_MAP", "PY_TYPE_SET", "PY_TYPE_OBJECT",
     "PYTRA_TRUTHY", "PYTRA_TRY_LEN", "PYTRA_STR",
@@ -107,15 +107,15 @@ TS_BUILTIN_RUNTIME_SYMBOLS: tuple[str, ...] = (
     "pyTuple", "pyTupleToString",
     "dict", "list", "set_", "field", "___",
     "__file__",
-)
+]
 
-TS_BUILTIN_EXCEPTION_NAMES: frozenset[str] = frozenset((
+TS_BUILTIN_EXCEPTION_NAMES: set[str] = {
     "Exception", "BaseException", "RuntimeError", "ValueError",
     "TypeError", "IndexError", "KeyError", "StopIteration",
     "AttributeError", "NameError", "NotImplementedError",
     "OverflowError", "ZeroDivisionError", "AssertionError",
     "OSError", "IOError", "FileNotFoundError", "PermissionError",
-))
+}
 
 TS_BUILTIN_EXCEPTION_MAP: dict[str, str] = {
     "Exception": "Error",
@@ -187,15 +187,16 @@ def _split_generic_args(s: str) -> list[str]:
 
 def _parse_callable_signature(resolved_type: str) -> tuple[list[str], str]:
     """Parse a callable[...] or Callable[...] resolved type into (params, return_type)."""
+    empty_params: list[str] = []
     if not (
         (resolved_type.startswith("callable[") or resolved_type.startswith("Callable["))
         and resolved_type.endswith("]")
     ):
-        return ([], "unknown")
+        return (empty_params, "unknown")
     prefix_len = len("Callable[") if resolved_type.startswith("Callable[") else len("callable[")
     inner = resolved_type[prefix_len:-1].strip()
     if inner == "":
-        return ([], "unknown")
+        return (empty_params, "unknown")
     if inner.startswith("["):
         depth = 0
         close_idx = -1
@@ -228,7 +229,7 @@ def _parse_callable_signature(resolved_type: str) -> tuple[list[str], str]:
                 if item != "":
                     params2.append(item)
         return (params2, ret_text2 if ret_text2 != "" else "unknown")
-    return ([], inner)
+    return (empty_params, inner)
 
 
 def _needs_array_group(type_expr: str) -> bool:
@@ -255,7 +256,7 @@ def ts_type(resolved_type: str, *, for_return: bool = False) -> str:
     """
     if resolved_type == "" or resolved_type == "unknown":
         return "any"
-    if len(resolved_type) == 1 and resolved_type.isupper():
+    if len(resolved_type) == 1 and resolved_type.upper() == resolved_type and resolved_type.lower() != resolved_type:
         return "any"
 
     # Callable types
@@ -271,11 +272,14 @@ def ts_type(resolved_type: str, *, for_return: bool = False) -> str:
     if resolved_type.startswith("multi_return[") and resolved_type.endswith("]"):
         inner = resolved_type[len("multi_return["):-1]
         parts = _split_generic_args(inner)
-        return "[" + ", ".join(ts_type(p) for p in parts) + "]"
+        rendered_parts: list[str] = []
+        for part in parts:
+            rendered_parts.append(ts_type(part))
+        return "[" + ", ".join(rendered_parts) + "]"
 
     # Direct mapping
-    if resolved_type in _TYPE_MAP:
-        mapped = _TYPE_MAP[resolved_type]
+    if resolved_type in _TS_TYPE_MAP:
+        mapped = _TS_TYPE_MAP[resolved_type]
         if resolved_type == "None" and not for_return:
             return "null"
         return mapped

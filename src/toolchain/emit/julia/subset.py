@@ -14,7 +14,6 @@ from pytra.std.json import JsonVal
 from toolchain.emit.common.code_emitter import RuntimeMapping
 from toolchain.emit.common.code_emitter import build_import_alias_map
 from toolchain.emit.common.code_emitter import build_runtime_import_map
-from toolchain.emit.common.code_emitter import resolve_runtime_call
 from toolchain.emit.common.code_emitter import should_skip_module
 
 
@@ -92,6 +91,25 @@ def _str(node: dict[str, JsonVal], key: str) -> str:
     return ""
 
 
+def _json_str(value: JsonVal) -> str:
+    if isinstance(value, str):
+        text: str = value
+        return text
+    return ""
+
+
+def _json_is_str(value: JsonVal) -> bool:
+    return isinstance(value, str)
+
+
+def _bool(node: dict[str, JsonVal], key: str) -> bool:
+    value = node.get(key)
+    if isinstance(value, bool):
+        flag: bool = value
+        return flag
+    return False
+
+
 def _list(node: dict[str, JsonVal], key: str) -> list[JsonVal]:
     value = node.get(key)
     if isinstance(value, list):
@@ -108,8 +126,8 @@ def _render_keyword_suffix(render_value: Callable[[JsonVal], str], keywords: lis
         return ""
     parts: list[str] = []
     for item in keywords:
-        arg = item.get("arg")
-        if not isinstance(arg, str) or arg == "":
+        arg = _str(item, "arg")
+        if arg == "":
             continue
         parts.append(arg + "=" + render_value(item.get("value")))
     if len(parts) == 0:
@@ -118,11 +136,26 @@ def _render_keyword_suffix(render_value: Callable[[JsonVal], str], keywords: lis
 
 
 def _function_arg_order(node: dict[str, JsonVal]) -> list[str]:
-    return [arg for arg in _list(node, "arg_order") if isinstance(arg, str)]
+    out: list[str] = []
+    for arg in _list(node, "arg_order"):
+        if isinstance(arg, str):
+            out.append(arg)
+    return out
 
 
 def _function_decorators(node: dict[str, JsonVal]) -> set[str]:
-    return {value for value in _list(node, "decorators") if isinstance(value, str)}
+    out: set[str] = set()
+    for value in _list(node, "decorators"):
+        if isinstance(value, str):
+            out.add(value)
+    return out
+
+
+def _has_decorator(node: dict[str, JsonVal], name: str) -> bool:
+    for value in _list(node, "decorators"):
+        if _json_str(value) == name:
+            return True
+    return False
 
 
 def _is_init_function(node: dict[str, JsonVal]) -> bool:
@@ -130,11 +163,11 @@ def _is_init_function(node: dict[str, JsonVal]) -> bool:
 
 
 def _is_static_method(node: dict[str, JsonVal]) -> bool:
-    return "staticmethod" in _function_decorators(node)
+    return _has_decorator(node, "staticmethod")
 
 
 def _is_property_method(node: dict[str, JsonVal]) -> bool:
-    return "property" in _function_decorators(node)
+    return _has_decorator(node, "property")
 
 
 def _find_init_function(node: dict[str, JsonVal]) -> dict[str, JsonVal] | None:
@@ -148,11 +181,17 @@ def _ctor_arg_order(node: dict[str, JsonVal]) -> list[str]:
     init_fn = _find_init_function(node)
     if init_fn is None:
         return []
-    return _function_arg_order(init_fn)[1:]
+    args = _function_arg_order(init_fn)
+    out: list[str] = []
+    index = 1
+    while index < len(args):
+        out.append(args[index])
+        index += 1
+    return out
 
 
-def _dataclass_ctor_fields(node: dict[str, JsonVal]) -> list[tuple[str, JsonVal | None]]:
-    fields: list[tuple[str, JsonVal | None]] = []
+def _dataclass_ctor_fields(node: dict[str, JsonVal]) -> list[tuple[str, bool, JsonVal]]:
+    fields: list[tuple[str, bool, JsonVal]] = []
     for stmt in _list(node, "body"):
         if not isinstance(stmt, dict) or _str(stmt, "kind") != "AnnAssign":
             continue
@@ -163,7 +202,10 @@ def _dataclass_ctor_fields(node: dict[str, JsonVal]) -> list[tuple[str, JsonVal 
         if name == "":
             continue
         value = stmt.get("value")
-        fields.append((name, value if isinstance(value, dict) else None))
+        if isinstance(value, dict):
+            fields.append((name, True, value))
+        else:
+            fields.append((name, False, JsonVal()))
     return fields
 
 
@@ -178,7 +220,17 @@ def _class_member_bucket(node: dict[str, JsonVal]) -> str:
 
 
 def _method_call_args(arg_order: list[str]) -> list[str]:
-    return [_ident(arg) for arg in arg_order]
+    out: list[str] = []
+    for arg in arg_order:
+        out.append(_ident(arg))
+    return out
+
+
+def _set_contains_str(items: set[str], value: str) -> bool:
+    for item in items:
+        if item == value:
+            return True
+    return False
 
 
 def _is_init_name(name: str) -> bool:
@@ -205,7 +257,86 @@ def _declared_field_names(node: dict[str, JsonVal]) -> list[str]:
     field_types = node.get("field_types")
     if not isinstance(field_types, dict):
         return []
-    return [name for name in field_types.keys() if isinstance(name, str)]
+    out: list[str] = []
+    for name in field_types.keys():
+        out.append(name)
+    return out
+
+
+def _all_expr_supported(items: list[JsonVal]) -> bool:
+    for item in items:
+        if not _expr_supported(item):
+            return False
+    return True
+
+
+def _all_stmt_supported(items: list[JsonVal]) -> bool:
+    for item in items:
+        if not _stmt_supported(item):
+            return False
+    return True
+
+
+def _all_handlers_supported(items: list[JsonVal]) -> bool:
+    for item in items:
+        if not _except_handler_supported(item):
+            return False
+    return True
+
+
+def _all_assign_targets_supported(items: list[JsonVal]) -> bool:
+    for item in items:
+        if not _assign_target_supported(item):
+            return False
+    return True
+
+
+def _all_method_body_supported(items: list[JsonVal]) -> bool:
+    for item in items:
+        if not _method_body_supported(item):
+            return False
+    return True
+
+
+def _all_named_imports_supported(items: list[JsonVal]) -> bool:
+    for item in items:
+        if not isinstance(item, dict) or _str(item, "name") == "":
+            return False
+    return True
+
+
+def _all_name_nodes(items: list[JsonVal]) -> bool:
+    for item in items:
+        if not isinstance(item, dict) or _str(item, "kind") != "Name":
+            return False
+    return True
+
+
+def _all_lambda_args_supported(items: list[JsonVal]) -> bool:
+    for item in items:
+        if not isinstance(item, dict) or _str(item, "arg") == "":
+            return False
+    return True
+
+
+def _all_dict_entries_supported(items: list[JsonVal]) -> bool:
+    for item in items:
+        if not isinstance(item, dict):
+            return False
+        if not _expr_supported(item.get("key")) or not _expr_supported(item.get("value")):
+            return False
+    return True
+
+
+def _all_keywords_supported(items: list[JsonVal]) -> bool:
+    for item in items:
+        if not isinstance(item, dict):
+            return False
+        if _str(item, "arg") == "":
+            return False
+        if not _expr_supported(item.get("value")):
+            return False
+    return True
 
 
 def _pass_only_class_body(body: list[JsonVal]) -> bool:
@@ -213,18 +344,18 @@ def _pass_only_class_body(body: list[JsonVal]) -> bool:
 
 
 def _method_body_supported(node: JsonVal) -> bool:
-    return isinstance(node, dict) and _str(node, "kind") == "FunctionDef" and all(
-        _stmt_supported(inner) for inner in _list(node, "body")
-    )
+    if not isinstance(node, dict) or _str(node, "kind") != "FunctionDef":
+        return False
+    return _all_stmt_supported(_list(node, "body"))
 
 
 def _exception_ctor_stmt_supported(stmt: dict[str, JsonVal], instance_arg: str) -> bool:
     kind = _str(stmt, "kind")
     if kind == "Expr":
         value = stmt.get("value")
-        return isinstance(value, dict) and _str(value, "kind") == "Call" and all(
-            _expr_supported(arg) for arg in _list(value, "args")
-        )
+        if not isinstance(value, dict) or _str(value, "kind") != "Call":
+            return False
+        return _all_expr_supported(_list(value, "args"))
     if kind not in {"Assign", "AnnAssign"}:
         return False
     target = stmt.get("target")
@@ -242,7 +373,7 @@ def _simple_class_supported(node: dict[str, JsonVal]) -> bool:
         return True
     if _pass_only_class_body(body):
         return True
-    return all(_method_body_supported(stmt) for stmt in body)
+    return _all_method_body_supported(body)
 
 
 def _exception_class_supported(node: dict[str, JsonVal]) -> bool:
@@ -250,7 +381,8 @@ def _exception_class_supported(node: dict[str, JsonVal]) -> bool:
     if base_name == "":
         return False
     body = _list(node, "body")
-    init_fn: dict[str, JsonVal] | None = None
+    init_seen = False
+    init_fn: dict[str, JsonVal] = {}
     for stmt in body:
         if not isinstance(stmt, dict):
             return False
@@ -261,12 +393,13 @@ def _exception_class_supported(node: dict[str, JsonVal]) -> bool:
                 return False
             continue
         if _is_init_function(stmt):
-            if init_fn is not None:
+            if init_seen:
                 return False
+            init_seen = True
             init_fn = stmt
             continue
         return False
-    if init_fn is None:
+    if not init_seen:
         return False
     args = _function_arg_order(init_fn)
     if len(args) < 2:
@@ -284,12 +417,12 @@ def _except_handler_supported(node: JsonVal) -> bool:
     type_node = node.get("type")
     if type_node is not None and (not isinstance(type_node, dict) or _str(type_node, "kind") != "Name"):
         return False
-    return all(_stmt_supported(stmt) for stmt in _list(node, "body"))
+    return _all_stmt_supported(_list(node, "body"))
 
 
 def _importfrom_supported(module_name: str, names: list[JsonVal]) -> bool:
     _ = module_name
-    return all(isinstance(item, dict) and _str(item, "name") != "" for item in names)
+    return _all_named_imports_supported(names)
 
 
 def _assign_target_supported(node: JsonVal) -> bool:
@@ -302,7 +435,7 @@ def _assign_target_supported(node: JsonVal) -> bool:
         return _expr_supported(node.get("value")) and _expr_supported(node.get("slice"))
     if kind in {"Tuple", "List"}:
         elements = _list(node, "elements")
-        return len(elements) > 0 and all(_assign_target_supported(item) for item in elements)
+        return len(elements) > 0 and _all_assign_targets_supported(elements)
     return False
 
 
@@ -329,7 +462,7 @@ def _is_io_owner_type(owner_type: str) -> bool:
 
 
 def _import_supported(names: list[JsonVal]) -> bool:
-    return all(isinstance(item, dict) and _str(item, "name") != "" for item in names)
+    return _all_named_imports_supported(names)
 
 
 def _comp_generator_supported(node: dict[str, JsonVal]) -> bool:
@@ -341,18 +474,18 @@ def _comp_generator_supported(node: dict[str, JsonVal]) -> bool:
         pass
     elif target_kind in {"Tuple", "List"}:
         elements = _list(target, "elements")
-        if len(elements) == 0 or not all(isinstance(item, dict) and _str(item, "kind") == "Name" for item in elements):
+        if len(elements) == 0 or not _all_name_nodes(elements):
             return False
     else:
         return False
-    return _expr_supported(node.get("iter")) and all(_expr_supported(item) for item in _list(node, "ifs"))
+    return _expr_supported(node.get("iter")) and _all_expr_supported(_list(node, "ifs"))
 
 
 def _isinstance_expected_name(node: dict[str, JsonVal]) -> str:
     expected_any = node.get("expected_type_id")
     if isinstance(expected_any, dict) and _str(expected_any, "kind") == "Name":
-        expected_id = expected_any.get("id")
-        if isinstance(expected_id, str) and expected_id != "":
+        expected_id = _str(expected_any, "id")
+        if expected_id != "":
             return expected_id
     expected_name = node.get("expected_type_name")
     if isinstance(expected_name, str):
@@ -378,12 +511,7 @@ def _isinstance_expected_names(node: dict[str, JsonVal]) -> list[str]:
 
 
 def _call_keywords_supported(keywords: list[JsonVal]) -> bool:
-    return all(
-        isinstance(item, dict)
-        and isinstance(item.get("arg"), str)
-        and _expr_supported(item.get("value"))
-        for item in keywords
-    )
+    return _all_keywords_supported(keywords)
 
 
 def _attribute_call_supported(node: dict[str, JsonVal], func: dict[str, JsonVal], keywords: list[JsonVal]) -> bool:
@@ -396,7 +524,7 @@ def _attribute_call_supported(node: dict[str, JsonVal], func: dict[str, JsonVal]
         runtime_call = "dict." + _str(func, "attr")
     if not _expr_supported(owner):
         return False
-    if not all(_expr_supported(arg) for arg in _list(node, "args")):
+    if not _all_expr_supported(_list(node, "args")):
         return False
     if not _call_keywords_supported(keywords):
         return False
@@ -412,24 +540,19 @@ def _expr_supported(node: JsonVal) -> bool:
     if kind == "FormattedValue":
         return _expr_supported(node.get("value"))
     if kind == "JoinedStr":
-        return all(_expr_supported(item) for item in _list(node, "values"))
+        return _all_expr_supported(_list(node, "values"))
     if kind == "ObjStr":
         return _expr_supported(node.get("value"))
     if kind == "Attribute":
         return _expr_supported(node.get("value"))
     if kind == "List":
-        return all(_expr_supported(item) for item in _list(node, "elements"))
+        return _all_expr_supported(_list(node, "elements"))
     if kind == "Tuple":
-        return all(_expr_supported(item) for item in _list(node, "elements"))
+        return _all_expr_supported(_list(node, "elements"))
     if kind == "Dict":
-        return all(
-            isinstance(item, dict)
-            and _expr_supported(item.get("key"))
-            and _expr_supported(item.get("value"))
-            for item in _list(node, "entries")
-        )
+        return _all_dict_entries_supported(_list(node, "entries"))
     if kind == "Set":
-        return all(_expr_supported(item) for item in _list(node, "elements"))
+        return _all_expr_supported(_list(node, "elements"))
     if kind == "ListComp":
         generators = _list(node, "generators")
         return len(generators) == 1 and isinstance(generators[0], dict) and _expr_supported(node.get("elt")) and _comp_generator_supported(generators[0])
@@ -442,7 +565,7 @@ def _expr_supported(node: JsonVal) -> bool:
     if kind == "BinOp":
         return _str(node, "op") in _BINOP_TEXT and _expr_supported(node.get("left")) and _expr_supported(node.get("right"))
     if kind == "BoolOp":
-        return _str(node, "op") in {"And", "Or"} and all(_expr_supported(item) for item in _list(node, "values"))
+        return _str(node, "op") in {"And", "Or"} and _all_expr_supported(_list(node, "values"))
     if kind == "Compare":
         ops = _list(node, "ops")
         comparators = _list(node, "comparators")
@@ -458,7 +581,7 @@ def _expr_supported(node: JsonVal) -> bool:
         return _expr_supported(node.get("value")) and _isinstance_expected_name(node) != ""
     if kind == "Lambda":
         args = _list(node, "args")
-        return all(isinstance(arg, dict) and isinstance(arg.get("arg"), str) for arg in args) and _expr_supported(node.get("body"))
+        return _all_lambda_args_supported(args) and _expr_supported(node.get("body"))
     if kind == "Call":
         func = node.get("func")
         keywords = _list(node, "keywords")
@@ -466,7 +589,7 @@ def _expr_supported(node: JsonVal) -> bool:
             return _attribute_call_supported(node, func, keywords)
         return (
             _expr_supported(node.get("func"))
-            and all(_expr_supported(arg) for arg in _list(node, "args"))
+            and _all_expr_supported(_list(node, "args"))
             and _call_keywords_supported(keywords)
         )
     if kind in {"Box", "Unbox"}:
@@ -554,19 +677,15 @@ def _stmt_supported(node: JsonVal) -> bool:
             return isinstance(owner, dict) and _str(owner, "kind") == "Name"
         return False
     if kind == "If":
-        return _expr_supported(node.get("test")) and all(_stmt_supported(stmt) for stmt in _list(node, "body")) and all(
-            _stmt_supported(stmt) for stmt in _list(node, "orelse")
-        )
+        return _expr_supported(node.get("test")) and _all_stmt_supported(_list(node, "body")) and _all_stmt_supported(_list(node, "orelse"))
     if kind == "While":
-        return _expr_supported(node.get("test")) and all(_stmt_supported(stmt) for stmt in _list(node, "body")) and all(
-            _stmt_supported(stmt) for stmt in _list(node, "orelse")
-        )
+        return _expr_supported(node.get("test")) and _all_stmt_supported(_list(node, "body")) and _all_stmt_supported(_list(node, "orelse"))
     if kind == "Try":
         return (
-            all(_stmt_supported(stmt) for stmt in _list(node, "body"))
-            and all(_except_handler_supported(handler) for handler in _list(node, "handlers"))
+            _all_stmt_supported(_list(node, "body"))
+            and _all_handlers_supported(_list(node, "handlers"))
             and len(_list(node, "orelse")) == 0
-            and all(_stmt_supported(stmt) for stmt in _list(node, "finalbody"))
+            and _all_stmt_supported(_list(node, "finalbody"))
         )
     if kind == "ForCore":
         target_plan = node.get("target_plan")
@@ -581,18 +700,18 @@ def _stmt_supported(node: JsonVal) -> bool:
                 _expr_supported(iter_plan.get("start"))
                 and _expr_supported(iter_plan.get("stop"))
                 and _expr_supported(iter_plan.get("step"))
-                and all(_stmt_supported(stmt) for stmt in _list(node, "body"))
-                and all(_stmt_supported(stmt) for stmt in _list(node, "orelse"))
+                and _all_stmt_supported(_list(node, "body"))
+                and _all_stmt_supported(_list(node, "orelse"))
             )
         if iter_kind == "RuntimeIterForPlan":
             return (
                 _expr_supported(iter_plan.get("iter_expr"))
-                and all(_stmt_supported(stmt) for stmt in _list(node, "body"))
-                and all(_stmt_supported(stmt) for stmt in _list(node, "orelse"))
+                and _all_stmt_supported(_list(node, "body"))
+                and _all_stmt_supported(_list(node, "orelse"))
             )
         return False
     if kind == "FunctionDef":
-        return all(_stmt_supported(stmt) for stmt in _list(node, "body"))
+        return _all_stmt_supported(_list(node, "body"))
     if kind == "TypeAlias":
         return True
     if kind == "ClassDef":
@@ -603,26 +722,51 @@ def _stmt_supported(node: JsonVal) -> bool:
 def can_render_module_natively(east3_doc: dict[str, JsonVal]) -> bool:
     body = _list(east3_doc, "body")
     main_guard_body = _list(east3_doc, "main_guard_body")
-    exception_base_names = {
-        _str(stmt, "base")
-        for stmt in body
-        if isinstance(stmt, dict) and _str(stmt, "kind") == "ClassDef" and _exception_class_supported(stmt)
-    }
+    exception_base_names: set[str] = set()
+    for item in body:
+        if isinstance(item, dict) and _str(item, "kind") == "ClassDef" and _exception_class_supported(item):
+            exception_base_names.add(_str(item, "base"))
     for stmt in body:
         if not isinstance(stmt, dict) or _str(stmt, "kind") != "ClassDef":
             continue
         if _str(stmt, "name") in exception_base_names and _str(stmt, "base") == "":
             return False
-    return all(_stmt_supported(stmt) for stmt in body) and all(_stmt_supported(stmt) for stmt in main_guard_body)
+    return _all_stmt_supported(body) and _all_stmt_supported(main_guard_body)
 
 
 class JuliaSubsetRenderer:
+    lines: list[str]
+    indent_level: int
+    tmp_counter: int
+    mapping: RuntimeMapping
+    meta: dict[str, JsonVal]
+    function_names: set[str]
+    class_names: set[str]
+    exception_class_names: set[str]
+    class_base_names: dict[str, str]
+    class_subclasses: dict[str, set[str]]
+    class_direct_field_names: dict[str, list[str]]
+    class_all_field_names: dict[str, list[str]]
+    class_method_names: dict[str, set[str]]
+    class_property_names: dict[str, set[str]]
+    class_static_method_names: dict[str, set[str]]
+    current_class_name: str
+    local_names_stack: list[set[str]]
+    import_alias_modules: dict[str, str]
+    runtime_imports: dict[str, str]
+    emitted_native_files: set[str]
+
     def __init__(self, mapping: RuntimeMapping | None = None, meta: dict[str, JsonVal] | None = None) -> None:
         self.lines: list[str] = []
         self.indent_level = 0
         self.tmp_counter = 0
-        self.mapping = mapping if mapping is not None else RuntimeMapping()
-        self.meta = meta if isinstance(meta, dict) else {}
+        self.mapping = RuntimeMapping()
+        if mapping is not None:
+            self.mapping = mapping
+        empty_meta: dict[str, JsonVal] = {}
+        self.meta = empty_meta
+        if meta is not None:
+            self.meta = meta
         self.function_names: set[str] = set()
         self.class_names: set[str] = set()
         self.exception_class_names: set[str] = set()
@@ -643,7 +787,8 @@ class JuliaSubsetRenderer:
         return self.class_base_names.get(class_name, "")
 
     def _has_subclasses(self, class_name: str) -> bool:
-        return len(self.class_subclasses.get(class_name, set())) > 0
+        empty: set[str] = set()
+        return len(self.class_subclasses.get(class_name, empty)) > 0
 
     def _uses_abstract_backing(self, class_name: str) -> bool:
         return self._base_name(class_name) != "" or self._has_subclasses(class_name)
@@ -668,8 +813,10 @@ class JuliaSubsetRenderer:
         return is_static, arg_order, args
 
     def _resolve_exception_base_type(self, base_name: str) -> str:
-        base_type = self.mapping.predicate_types.get(base_name, "")
-        if base_type == "" and base_name in self.exception_class_names:
+        base_type = ""
+        if base_name in self.mapping.predicate_types:
+            base_type = self.mapping.predicate_types[base_name]
+        if base_type == "" and _set_contains_str(self.exception_class_names, base_name):
             return base_name
         return base_type
 
@@ -680,12 +827,14 @@ class JuliaSubsetRenderer:
             visiting = set()
         if class_name in visiting:
             return []
-        visiting = set(visiting)
-        visiting.add(class_name)
+        next_visiting: set[str] = set()
+        for name in visiting:
+            next_visiting.add(name)
+        next_visiting.add(class_name)
         out: list[str] = []
         base_name = self._base_name(class_name)
         if base_name != "":
-            for field_name in self._collect_field_names(base_name, visiting):
+            for field_name in self._collect_field_names(base_name, next_visiting):
                 if field_name not in out:
                     out.append(field_name)
         for field_name in self.class_direct_field_names.get(class_name, []):
@@ -699,8 +848,14 @@ class JuliaSubsetRenderer:
 
     def _current_local_names(self) -> set[str]:
         if len(self.local_names_stack) == 0:
-            return set()
+            empty: set[str] = set()
+            return empty
         return self.local_names_stack[-1]
+
+    def _add_current_local_name(self, name: str) -> None:
+        if len(self.local_names_stack) == 0:
+            return
+        self.local_names_stack[-1].add(name)
 
     def _emit(self, line: str) -> None:
         self.lines.append(self._indent() + line)
@@ -717,10 +872,16 @@ class JuliaSubsetRenderer:
             if native_file == "" or native_file in self.emitted_native_files:
                 continue
             self.emitted_native_files.add(native_file)
-            parts = [part for part in native_file.split("/") if part != ""]
+            parts: list[str] = []
+            for part in native_file.split("/"):
+                if part != "":
+                    parts.append(part)
             if len(parts) == 0:
                 continue
-            join_parts = ', '.join(_quote_string(part) for part in parts)
+            quoted_parts: list[str] = []
+            for part in parts:
+                quoted_parts.append(_quote_string(part))
+            join_parts = ', '.join(quoted_parts)
             self._emit("include(joinpath(@__DIR__, " + join_parts + "))")
 
     def _emit_runtime_binding(self, local_name: str, resolved_name: str) -> None:
@@ -737,7 +898,18 @@ class JuliaSubsetRenderer:
         self._emit(_ident(local_name) + " = " + expr)
 
     def _resolve_subset_runtime_call(self, runtime_call: str, adapter_kind: str, builtin_name: str) -> str:
-        mapped_runtime = resolve_runtime_call(runtime_call, builtin_name, adapter_kind, self.mapping)
+        mapped_runtime = ""
+        if runtime_call in self.mapping.calls:
+            mapped_runtime = self.mapping.calls[runtime_call]
+        elif adapter_kind == "builtin" and runtime_call != "" and "." not in runtime_call:
+            if self.mapping.builtin_prefix != "" and runtime_call.startswith(self.mapping.builtin_prefix):
+                mapped_runtime = runtime_call
+            else:
+                mapped_runtime = self.mapping.builtin_prefix + runtime_call
+        elif adapter_kind == "extern" and runtime_call != "" and "." not in runtime_call:
+            mapped_runtime = runtime_call
+        elif builtin_name != "" and builtin_name in self.mapping.calls:
+            mapped_runtime = self.mapping.calls[builtin_name]
         if mapped_runtime == "":
             return ""
         if runtime_call not in self.mapping.calls and builtin_name not in self.mapping.calls:
@@ -755,17 +927,23 @@ class JuliaSubsetRenderer:
         result_type: str,
         builtin_name: str = "",
         source_type: str = "",
-        keywords: list[dict[str, JsonVal]] | None = None,
+        keywords: list[dict[str, JsonVal]] = [],
     ) -> str:
-        kw_items = keywords if isinstance(keywords, list) else []
-        kw_suffix = _render_keyword_suffix(self._render_expr, kw_items)
+        kw_suffix_parts: list[str] = []
+        for item in keywords:
+            arg = _str(item, "arg")
+            if arg != "":
+                kw_suffix_parts.append(arg + "=" + self._render_expr(item.get("value")))
+        kw_suffix = ""
+        if len(kw_suffix_parts) > 0:
+            kw_suffix = "; " + ", ".join(kw_suffix_parts)
         if mapped == "":
             return ""
         if mapped == "__CAST__":
             return self._render_static_cast_call(builtin_name, result_type, args, source_type)
         if mapped == "__MAKEDIRS__":
-            if len(args) == 1 and len(kw_items) == 1 and kw_items[0].get("arg") == "exist_ok":
-                return "__OsNative.makedirs(" + args[0] + ", " + self._render_expr(kw_items[0].get("value")) + ")"
+            if len(args) == 1 and len(keywords) == 1 and _str(keywords[0], "arg") == "exist_ok":
+                return "__OsNative.makedirs(" + args[0] + ", " + self._render_expr(keywords[0].get("value")) + ")"
             return ""
         scalar_expr = self._render_scalar_runtime_call(mapped, args)
         if scalar_expr != "":
@@ -921,14 +1099,21 @@ class JuliaSubsetRenderer:
             return ""
         owner_node = node.get("func")
         source_type = ""
-        keywords = [item for item in _list(node, "keywords") if isinstance(item, dict)]
+        keywords: list[dict[str, JsonVal]] = []
+        for item in _list(node, "keywords"):
+            if isinstance(item, dict):
+                keywords.append(item)
         if isinstance(owner_node, dict) and _str(owner_node, "kind") == "Attribute":
             value_node = owner_node.get("value")
             if isinstance(value_node, dict):
                 source_type = _str(value_node, "resolved_type")
+        call_args: list[str] = []
+        call_args.append(owner)
+        for arg in args:
+            call_args.append(arg)
         return self._render_mapped_runtime_call(
             mapped,
-            [owner] + args,
+            call_args,
             _str(node, "resolved_type"),
             source_type=source_type,
             keywords=keywords,
@@ -945,7 +1130,9 @@ class JuliaSubsetRenderer:
             return "__pytra_truthy(" + args[0] + ")"
         if builtin_name == "str" or result_type in {"str", "string"}:
             return "__pytra_str(" + args[0] + ")"
-        target_type = self.mapping.types.get(result_type, "")
+        target_type = ""
+        if result_type in self.mapping.types:
+            target_type = self.mapping.types[result_type]
         if target_type != "":
             return target_type + "(" + args[0] + ")"
         return ""
@@ -957,7 +1144,8 @@ class JuliaSubsetRenderer:
         if base_name == "":
             return ""
         if _is_init_name(attr):
-            pieces = ["__pytra_base = __pytra_new_" + base_name + "(" + ", ".join(args) + ")"]
+            pieces: list[str] = []
+            pieces.append("__pytra_base = __pytra_new_" + base_name + "(" + ", ".join(args) + ")")
             for field_name in self._collect_field_names(base_name):
                 pieces.append("self." + field_name + " = __pytra_base." + field_name)
             pieces.append("nothing")
@@ -975,10 +1163,12 @@ class JuliaSubsetRenderer:
     ) -> str:
         if len(keywords) != 0:
             return ""
-        if attr in self.class_static_method_names.get(owner_name, set()):
+        empty_set: set[str] = set()
+        if _set_contains_str(self.class_static_method_names.get(owner_name, empty_set), attr):
             return _ident(attr) + "(" + ", ".join(args) + ")"
-        if attr in self.class_method_names.get(owner_type, set()):
-            call_args = [owner]
+        if _set_contains_str(self.class_method_names.get(owner_type, empty_set), attr):
+            call_args: list[str] = []
+            call_args.append(owner)
             call_args.extend(args)
             return _ident(attr) + "(" + ", ".join(call_args) + ")"
         return ""
@@ -1081,9 +1271,9 @@ class JuliaSubsetRenderer:
         return ""
 
     def _render_constructor_call(self, func: str, args: list[str]) -> str:
-        if func in self.exception_class_names:
+        if _set_contains_str(self.exception_class_names, func):
             return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
-        if func in self.class_names:
+        if _set_contains_str(self.class_names, func):
             return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
         if func == "bytearray":
             if len(args) == 0:
@@ -1105,8 +1295,13 @@ class JuliaSubsetRenderer:
         owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
         attr = _str(func_node, "attr")
         owner_name = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
-        args = [self._render_expr(arg) for arg in _list(node, "args")]
-        keywords = [item for item in _list(node, "keywords") if isinstance(item, dict)]
+        args: list[str] = []
+        for arg in _list(node, "args"):
+            args.append(self._render_expr(arg))
+        keywords: list[dict[str, JsonVal]] = []
+        for item in _list(node, "keywords"):
+            if isinstance(item, dict):
+                keywords.append(item)
         return self._render_attribute_call(node, owner_node, owner, owner_type, owner_name, attr, args, keywords)
 
     def _resolve_call_runtime_target(self, node: dict[str, JsonVal], func_node: JsonVal) -> tuple[str, str, str]:
@@ -1128,12 +1323,15 @@ class JuliaSubsetRenderer:
         value = self._render_expr(node.get("value"))
         checks: list[str] = []
         for expected_name in _isinstance_expected_names(node):
-            mapped = self.mapping.predicate_types.get(expected_name, "")
+            mapped = ""
+            if expected_name in self.mapping.predicate_types:
+                mapped = self.mapping.predicate_types[expected_name]
             if mapped == "":
-                mapped = self.mapping.types.get(expected_name, "")
+                if expected_name in self.mapping.types:
+                    mapped = self.mapping.types[expected_name]
             if mapped != "":
                 checks.append("(isa(" + value + ", " + mapped + "))")
-            elif expected_name in self.class_names or expected_name in self.exception_class_names:
+            elif _set_contains_str(self.class_names, expected_name) or _set_contains_str(self.exception_class_names, expected_name):
                 checks.append("(isa(" + value + ", " + expected_name + "))")
         if len(checks) > 0:
             return "(" + " || ".join(checks) + ")"
@@ -1155,8 +1353,12 @@ class JuliaSubsetRenderer:
                 return owner + "[(" + lower_text + " + 1):end]"
             return owner + "[(" + lower_text + " + 1):" + upper_text + "]"
         index = self._render_expr(slice_node)
-        union_lanes = [part.strip() for part in owner_type.split("|")]
-        if owner_type.startswith("dict[") or any(part.startswith("dict[") for part in union_lanes):
+        has_dict_lane = owner_type.startswith("dict[")
+        if not has_dict_lane:
+            for part in owner_type.split("|"):
+                if part.strip().startswith("dict["):
+                    has_dict_lane = True
+        if has_dict_lane:
             return owner + "[" + index + "]"
         if owner_type == "str":
             return "string(" + owner + "[__pytra_idx(__pytra_int(" + index + "), length(" + owner + "))])"
@@ -1169,14 +1371,18 @@ class JuliaSubsetRenderer:
                 return "nothing"
             if isinstance(value, bool):
                 return "true" if value else "false"
-            if isinstance(value, str):
-                return _quote_string(value)
+            if _json_is_str(value):
+                return _quote_string(_json_str(value))
             return str(value)
         if kind == "List":
-            elems = [self._render_expr(item) for item in _list(node, "elements")]
+            elems: list[str] = []
+            for item in _list(node, "elements"):
+                elems.append(self._render_expr(item))
             return "[" + ", ".join(elems) + "]"
         if kind == "Tuple":
-            elems = [self._render_expr(item) for item in _list(node, "elements")]
+            elems: list[str] = []
+            for item in _list(node, "elements"):
+                elems.append(self._render_expr(item))
             if len(elems) == 1:
                 return "(" + elems[0] + ",)"
             return "(" + ", ".join(elems) + ")"
@@ -1187,25 +1393,30 @@ class JuliaSubsetRenderer:
                     parts.append(self._render_expr(item.get("key")) + " => " + self._render_expr(item.get("value")))
             return "Dict(" + ", ".join(parts) + ")"
         if kind == "Set":
-            elems = [self._render_expr(item) for item in _list(node, "elements")]
+            elems: list[str] = []
+            for item in _list(node, "elements"):
+                elems.append(self._render_expr(item))
             return "Set([" + ", ".join(elems) + "])"
         if kind == "ListComp":
             generator = _list(node, "generators")[0]
-            assert isinstance(generator, dict)
+            if not isinstance(generator, dict):
+                raise RuntimeError("julia subset: comprehension generator must be dict")
             elt = self._render_expr(node.get("elt"))
             loop_var = self._render_comp_target(generator.get("target"))
             iter_expr = self._render_comp_iter(generator.get("iter"))
             return "[" + elt + " for " + loop_var + " in " + iter_expr + self._render_comp_if_suffix(generator) + "]"
         if kind == "SetComp":
             generator = _list(node, "generators")[0]
-            assert isinstance(generator, dict)
+            if not isinstance(generator, dict):
+                raise RuntimeError("julia subset: comprehension generator must be dict")
             elt = self._render_expr(node.get("elt"))
             loop_var = self._render_comp_target(generator.get("target"))
             iter_expr = self._render_comp_iter(generator.get("iter"))
             return "Set([" + elt + " for " + loop_var + " in " + iter_expr + self._render_comp_if_suffix(generator) + "])"
         if kind == "DictComp":
             generator = _list(node, "generators")[0]
-            assert isinstance(generator, dict)
+            if not isinstance(generator, dict):
+                raise RuntimeError("julia subset: comprehension generator must be dict")
             key_expr = self._render_expr(node.get("key"))
             value_expr = self._render_expr(node.get("value"))
             loop_var = self._render_comp_target(generator.get("target"))
@@ -1283,11 +1494,11 @@ class JuliaSubsetRenderer:
             orelse = self._render_expr(node.get("orelse"))
             return "(__pytra_truthy(" + test + ") ? " + body + " : " + orelse + ")"
         if kind == "Lambda":
-            args = []
+            args: list[str] = []
             for arg in _list(node, "args"):
                 if isinstance(arg, dict):
-                    name = arg.get("arg")
-                    if isinstance(name, str):
+                    name = _str(arg, "arg")
+                    if name != "":
                         args.append(name)
             body = self._render_expr(node.get("body"))
             return "((" + ", ".join(args) + ") -> " + body + ")"
@@ -1296,7 +1507,7 @@ class JuliaSubsetRenderer:
     def _render_simple_expr(self, node: dict[str, JsonVal], kind: str) -> str:
         if kind == "Name":
             name = _str(node, "id")
-            if name == "main" and "__pytra_main" in self.function_names:
+            if name == "main" and _set_contains_str(self.function_names, "__pytra_main"):
                 return "__pytra_main"
             return _ident(name)
         if kind == "Attribute":
@@ -1317,24 +1528,31 @@ class JuliaSubsetRenderer:
             attr = _str(node, "attr")
             if isinstance(owner_node, dict) and _str(owner_node, "kind") == "Name":
                 owner_name = _str(owner_node, "id")
-                if attr in self.class_static_method_names.get(owner_name, set()):
+                empty_static_methods: set[str] = set()
+                if _set_contains_str(self.class_static_method_names.get(owner_name, empty_static_methods), attr):
                     return _ident(attr)
-            if attr in self.class_property_names.get(owner_type, set()):
+            empty_properties: set[str] = set()
+            if _set_contains_str(self.class_property_names.get(owner_type, empty_properties), attr):
                 return _ident(attr) + "(" + owner + ")"
             return owner + "." + attr
         if kind == "FormattedValue":
-            format_spec = node.get("format_spec")
-            if isinstance(format_spec, str) and format_spec != "":
+            format_spec = _str(node, "format_spec")
+            if format_spec != "":
                 return "__pytra_format(" + self._render_expr(node.get("value")) + ", " + _quote_string(format_spec) + ")"
             return "string(" + self._render_expr(node.get("value")) + ")"
         if kind == "JoinedStr":
             values = _list(node, "values")
             if len(values) == 0:
                 return '""'
-            parts = [self._render_expr(item) for item in values]
+            parts: list[str] = []
+            for item in values:
+                parts.append(self._render_expr(item))
             expr = parts[0]
-            for part in parts[1:]:
+            index = 1
+            while index < len(parts):
+                part = parts[index]
                 expr = "(" + expr + " * " + part + ")"
+                index += 1
             return expr
         if kind == "ObjStr":
             return "string(" + self._render_expr(node.get("value")) + ")"
@@ -1354,7 +1572,9 @@ class JuliaSubsetRenderer:
                     "expected_type_id": args0[1],
                 })
         func = self._render_expr(func_node)
-        args = [self._render_expr(arg) for arg in _list(node, "args")]
+        args: list[str] = []
+        for arg in _list(node, "args"):
+            args.append(self._render_expr(arg))
         runtime_call, builtin_name, use_mapped_runtime = self._resolve_call_runtime_target(node, func_node)
         result_type = _str(node, "resolved_type")
         source_type = ""
@@ -1490,7 +1710,9 @@ class JuliaSubsetRenderer:
         return iter_expr
 
     def _render_comp_if_suffix(self, generator: dict[str, JsonVal]) -> str:
-        conditions = [self._render_expr(item) for item in _list(generator, "ifs")]
+        conditions: list[str] = []
+        for item in _list(generator, "ifs"):
+            conditions.append(self._render_expr(item))
         if len(conditions) == 0:
             return ""
         return " if " + " && ".join(conditions)
@@ -1541,7 +1763,7 @@ class JuliaSubsetRenderer:
             self._emit_assign_target(target, self._render_expr(node.get("value")))
             return
         target_name = _ident(_str(target, "id"))
-        self._current_local_names().add(target_name)
+        self._add_current_local_name(target_name)
         self._emit(target_name + " = " + self._render_expr(node.get("value")))
 
     def _emit_multi_assign_stmt(self, node: dict[str, JsonVal]) -> None:
@@ -1599,7 +1821,7 @@ class JuliaSubsetRenderer:
                 self._emit(owner + "." + attr + " = " + self._render_expr(value))
             return
         target_name = _ident(_str(target, "id"))
-        self._current_local_names().add(target_name)
+        self._add_current_local_name(target_name)
         if value is None:
             self._emit(target_name + " = nothing")
         else:
@@ -1638,9 +1860,13 @@ class JuliaSubsetRenderer:
 
     def _emit_function_stmt(self, node: dict[str, JsonVal]) -> None:
         name = _ident(_str(node, "name"))
-        args = [_ident(arg) for arg in _list(node, "arg_order") if isinstance(arg, str)]
-        vararg_name = node.get("vararg_name")
-        if isinstance(vararg_name, str) and vararg_name != "":
+        args: list[str] = []
+        for arg in _list(node, "arg_order"):
+            arg_name = _json_str(arg)
+            if arg_name != "":
+                args.append(_ident(arg_name))
+        vararg_name = _str(node, "vararg_name")
+        if vararg_name != "":
             args.append(_ident(vararg_name) + "...")
         self._emit("function " + name + "(" + ", ".join(args) + ")")
         self.indent_level += 1
@@ -1681,7 +1907,9 @@ class JuliaSubsetRenderer:
                 continue
             type_node = handler.get("type")
             type_name = self._render_expr(type_node) if isinstance(type_node, dict) else ""
-            mapped_type_name = self.mapping.predicate_types.get(type_name, "")
+            mapped_type_name = ""
+            if type_name in self.mapping.predicate_types:
+                mapped_type_name = self.mapping.predicate_types[type_name]
             if mapped_type_name != "":
                 type_name = mapped_type_name
             if type_name == "PytraIndexError":
@@ -1693,8 +1921,8 @@ class JuliaSubsetRenderer:
             else:
                 self._emit("elseif " + cond)
             self.indent_level += 1
-            bound_name = handler.get("name")
-            if isinstance(bound_name, str) and bound_name != "":
+            bound_name = _str(handler, "name")
+            if bound_name != "":
                 self._emit(bound_name + " = " + err_name)
             for stmt in _list(handler, "body"):
                 self._emit_stmt(stmt)
@@ -1766,24 +1994,32 @@ class JuliaSubsetRenderer:
 
     def _emit_class_ctor(self, node: dict[str, JsonVal], class_name: str, impl_name: str, field_names: list[str]) -> None:
         init_fn = _find_init_function(node)
-        if init_fn is None and node.get("dataclass") is True:
+        if init_fn is None and _bool(node, "dataclass"):
             dataclass_fields = _dataclass_ctor_fields(node)
             ctor_args: list[str] = []
-            for field_name, default_value in dataclass_fields:
-                if default_value is None:
-                    ctor_args.append(_ident(field_name))
-                else:
+            for field_name, has_default, default_value in dataclass_fields:
+                if has_default:
                     ctor_args.append(_ident(field_name) + "=" + self._render_expr(default_value))
+                else:
+                    ctor_args.append(_ident(field_name))
             self._emit_new_ctor_header(class_name, ctor_args)
-            ctor_init_args = ", ".join("nothing" for _ in field_names)
+            ctor_init_parts: list[str] = []
+            for _field_name in field_names:
+                ctor_init_parts.append("nothing")
+            ctor_init_args = ", ".join(ctor_init_parts)
             self._emit("self = " + impl_name + "(" + ctor_init_args + ")")
-            for field_name, _default_value in dataclass_fields:
+            for field_name, _has_default, _default_value in dataclass_fields:
                 self._emit("self." + field_name + " = " + _ident(field_name))
             self._emit_ctor_return_self()
             return
-        ctor_args = [_ident(arg) for arg in _ctor_arg_order(node)]
+        ctor_args: list[str] = []
+        for arg in _ctor_arg_order(node):
+            ctor_args.append(_ident(arg))
         self._emit_new_ctor_header(class_name, ctor_args)
-        ctor_init_args = ", ".join("nothing" for _ in field_names)
+        ctor_init_parts: list[str] = []
+        for _field_name in field_names:
+            ctor_init_parts.append("nothing")
+        ctor_init_args = ", ".join(ctor_init_parts)
         self._emit("self = " + impl_name + "(" + ctor_init_args + ")")
         if init_fn is not None:
             self._emit_class_scoped_block(class_name, _list(init_fn, "body"))
@@ -1816,7 +2052,7 @@ class JuliaSubsetRenderer:
             self._emit("nothing")
             return True
         if kind == "VarDecl":
-            self._current_local_names().add(_str(node, "name"))
+            self._add_current_local_name(_str(node, "name"))
             self._emit(_ident(_str(node, "name")) + " = nothing")
             return True
         if kind == "Raise":
@@ -1880,7 +2116,9 @@ class JuliaSubsetRenderer:
 
     def _emit_with(self, node: dict[str, JsonVal]) -> None:
         body = _list(node, "body")
-        hoisted = self._collect_try_hoisted_names({"kind": "Try", "body": body, "handlers": [], "finalbody": []})
+        empty_body: list[JsonVal] = []
+        empty_handlers: list[JsonVal] = []
+        hoisted = self._collect_try_hoisted_names_from_parts(body, empty_body, empty_handlers)
         current_locals = self._current_local_names()
         for name in hoisted:
             if name in current_locals:
@@ -1895,22 +2133,17 @@ class JuliaSubsetRenderer:
         current_locals.add(var_name)
         context_expr = node.get("context_expr")
         self._emit(ctx_name + " = " + self._render_expr(context_expr))
-        self._emit(var_name + " = " + self._render_expr({
-            "kind": "Call",
-            "func": {
-                "kind": "Attribute",
-                "value": {"kind": "Name", "id": ctx_name, "resolved_type": _str(context_expr, "resolved_type") if isinstance(context_expr, dict) else ""},
-                "attr": "__enter__",
-                "resolved_type": "callable",
-            },
-            "args": [],
-            "keywords": [],
-            "resolved_type": _str(node, "with_enter_type"),
-            "resolved_runtime_call": _str(node, "with_enter_runtime_call"),
-            "runtime_call": _str(node, "with_enter_runtime_call"),
-            "runtime_symbol": _str(node, "with_enter_runtime_symbol"),
-            "runtime_module_id": _str(node, "with_enter_runtime_module_id"),
-        }))
+        no_keywords: list[dict[str, JsonVal]] = []
+        enter_args: list[str] = []
+        enter_args.append(ctx_name)
+        enter_runtime = _str(node, "with_enter_runtime_call")
+        enter_mapped = self._resolve_subset_runtime_call(enter_runtime, "", "")
+        enter_expr = ""
+        if enter_mapped != "":
+            enter_expr = self._render_mapped_runtime_call(enter_mapped, enter_args, _str(node, "with_enter_type"), keywords=no_keywords)
+        if enter_expr == "":
+            enter_expr = ctx_name + ".__enter__()"
+        self._emit(var_name + " = " + enter_expr)
         self._emit("try")
         self.indent_level += 1
         for stmt in body:
@@ -1918,26 +2151,19 @@ class JuliaSubsetRenderer:
         self.indent_level -= 1
         self._emit("finally")
         self.indent_level += 1
-        self._emit(self._render_expr({
-            "kind": "Call",
-            "func": {
-                "kind": "Attribute",
-                "value": {"kind": "Name", "id": ctx_name, "resolved_type": _str(context_expr, "resolved_type") if isinstance(context_expr, dict) else ""},
-                "attr": "__exit__",
-                "resolved_type": "callable",
-            },
-            "args": [
-                {"kind": "Constant", "value": None, "resolved_type": "None"},
-                {"kind": "Constant", "value": None, "resolved_type": "None"},
-                {"kind": "Constant", "value": None, "resolved_type": "None"},
-            ],
-            "keywords": [],
-            "resolved_type": "None",
-            "resolved_runtime_call": _str(node, "with_exit_runtime_call"),
-            "runtime_call": _str(node, "with_exit_runtime_call"),
-            "runtime_symbol": _str(node, "with_exit_runtime_symbol"),
-            "runtime_module_id": _str(node, "with_exit_runtime_module_id"),
-        }))
+        exit_args: list[str] = []
+        exit_args.append(ctx_name)
+        exit_args.append("nothing")
+        exit_args.append("nothing")
+        exit_args.append("nothing")
+        exit_runtime = _str(node, "with_exit_runtime_call")
+        exit_mapped = self._resolve_subset_runtime_call(exit_runtime, "", "")
+        exit_expr = ""
+        if exit_mapped != "":
+            exit_expr = self._render_mapped_runtime_call(exit_mapped, exit_args, "None", keywords=no_keywords)
+        if exit_expr == "":
+            exit_expr = ctx_name + ".__exit__(nothing, nothing, nothing)"
+        self._emit(exit_expr)
         self.indent_level -= 1
         self._emit("end")
 
@@ -1963,6 +2189,14 @@ class JuliaSubsetRenderer:
         self._emit("end")
 
     def _collect_try_hoisted_names(self, node: dict[str, JsonVal]) -> list[str]:
+        return self._collect_try_hoisted_names_from_parts(_list(node, "body"), _list(node, "finalbody"), _list(node, "handlers"))
+
+    def _collect_try_hoisted_names_from_parts(
+        self,
+        body: list[JsonVal],
+        finalbody: list[JsonVal],
+        handlers: list[JsonVal],
+    ) -> list[str]:
         out: list[str] = []
         seen: set[str] = set()
 
@@ -1997,9 +2231,9 @@ class JuliaSubsetRenderer:
                         if isinstance(handler, dict):
                             walk(_list(handler, "body"))
 
-        walk(_list(node, "body"))
-        walk(_list(node, "finalbody"))
-        for handler in _list(node, "handlers"):
+        walk(body)
+        walk(finalbody)
+        for handler in handlers:
             if isinstance(handler, dict):
                 walk(_list(handler, "body"))
         return out
@@ -2046,7 +2280,8 @@ class JuliaSubsetRenderer:
         self._emit("__pytra_exception_message(e::" + class_name + ") = string(e.__pytra_message)")
 
     def _emit_exception_struct(self, class_name: str, base_type: str, field_names: list[str]) -> None:
-        all_fields: list[str] = ["__pytra_message"]
+        all_fields: list[str] = []
+        all_fields.append("__pytra_message")
         for name in field_names:
             all_fields.append(name)
         self._emit_mutable_struct(class_name, base_type, all_fields)
@@ -2067,7 +2302,10 @@ class JuliaSubsetRenderer:
             raise ValueError("julia subset: exception class missing __init__: " + class_name)
         args = _ctor_arg_order(node)
         self._emit_new_ctor_header(class_name, args)
-        ctor_args = ['""'] + ["nothing" for _ in field_names]
+        ctor_args: list[str] = []
+        ctor_args.append('""')
+        for _field_name in field_names:
+            ctor_args.append("nothing")
         self._emit("self = " + class_name + "(" + ", ".join(ctor_args) + ")")
         self._emit_exception_ctor_body(init_fn)
         self._emit_ctor_return_self()
@@ -2099,15 +2337,26 @@ class JuliaSubsetRenderer:
             base_name = _str(stmt, "base")
             self.class_base_names[class_name] = base_name
             if base_name != "":
-                self.class_subclasses.setdefault(base_name, set()).add(class_name)
+                if base_name not in self.class_subclasses:
+                    empty_children: set[str] = set()
+                    self.class_subclasses[base_name] = empty_children
+                self.class_subclasses[base_name].add(class_name)
             self.class_direct_field_names[class_name] = _declared_field_names(stmt)
             methods, properties, static_methods = self._collect_class_member_sets(stmt)
-            inherited_methods = set(methods)
-            inherited_properties = set(properties)
+            inherited_methods: set[str] = set()
+            for method_name in methods:
+                inherited_methods.add(method_name)
+            inherited_properties: set[str] = set()
+            for property_name in properties:
+                inherited_properties.add(property_name)
             walk_base = base_name
             while walk_base != "":
-                inherited_methods |= self.class_method_names.get(walk_base, set())
-                inherited_properties |= self.class_property_names.get(walk_base, set())
+                empty_methods: set[str] = set()
+                for method_name in self.class_method_names.get(walk_base, empty_methods):
+                    inherited_methods.add(method_name)
+                empty_properties: set[str] = set()
+                for property_name in self.class_property_names.get(walk_base, empty_properties):
+                    inherited_properties.add(property_name)
                 walk_base = self.class_base_names.get(walk_base, "")
             self.class_method_names[class_name] = inherited_methods
             self.class_property_names[class_name] = inherited_properties
@@ -2145,19 +2394,29 @@ class JuliaSubsetRenderer:
         self.indent_level = 0
         self.tmp_counter = 0
         meta = east3_doc.get("meta")
-        self.meta = meta if isinstance(meta, dict) else {}
+        empty_meta: dict[str, JsonVal] = {}
+        self.meta = empty_meta
+        if isinstance(meta, dict):
+            self.meta = meta
         self.import_alias_modules = build_import_alias_map(self.meta)
         self.runtime_imports = build_runtime_import_map(self.meta, self.mapping)
         self.emitted_native_files = set()
         self.function_names = self._collect_top_level_names(east3_doc, "FunctionDef")
         self.class_names = self._collect_top_level_names(east3_doc, "ClassDef")
-        self.class_base_names = {}
-        self.class_subclasses = {}
-        self.class_direct_field_names = {}
-        self.class_all_field_names = {}
-        self.class_method_names = {}
-        self.class_property_names = {}
-        self.class_static_method_names = {}
+        empty_base_names: dict[str, str] = {}
+        self.class_base_names = empty_base_names
+        empty_subclasses: dict[str, set[str]] = {}
+        self.class_subclasses = empty_subclasses
+        empty_direct_field_names: dict[str, list[str]] = {}
+        self.class_direct_field_names = empty_direct_field_names
+        empty_all_field_names: dict[str, list[str]] = {}
+        self.class_all_field_names = empty_all_field_names
+        empty_method_names: dict[str, set[str]] = {}
+        self.class_method_names = empty_method_names
+        empty_property_names: dict[str, set[str]] = {}
+        self.class_property_names = empty_property_names
+        empty_static_method_names: dict[str, set[str]] = {}
+        self.class_static_method_names = empty_static_method_names
         self.current_class_name = ""
         self._populate_class_metadata(east3_doc)
         self.exception_class_names = self._collect_top_level_names(east3_doc, "ClassDef", _exception_class_supported)

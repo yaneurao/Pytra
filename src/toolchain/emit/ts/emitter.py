@@ -19,9 +19,8 @@ from toolchain.emit.ts.types import (
     TS_BUILTIN_RUNTIME_SYMBOLS, TS_BUILTIN_EXCEPTION_NAMES, TS_BUILTIN_EXCEPTION_MAP,
 )
 from toolchain.emit.common.code_emitter import (
-    RuntimeMapping, load_runtime_mapping, resolve_runtime_call,
+    RuntimeMapping, load_runtime_mapping,
     should_skip_module, build_import_alias_map, build_runtime_import_map,
-    resolve_runtime_symbol_name,
 )
 from toolchain.emit.common.common_renderer import CommonRenderer
 from toolchain.link.expand_defaults import expand_cross_module_defaults
@@ -142,16 +141,55 @@ def _dict(node: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
     return {}
 
 
+def _as_dict(value: JsonVal) -> dict[str, JsonVal]:
+    if isinstance(value, dict):
+        return value
+    return {}
+
+
+def _decorators(node: dict[str, JsonVal]) -> list[str]:
+    decorators: list[str] = []
+    for value in _list(node, "decorators"):
+        if isinstance(value, str):
+            decorators.append(value)
+    return decorators
+
+
+def _strip_tuple_name(name: str) -> str:
+    start = 0
+    end = len(name)
+    while start < end and name[start] in ("(", ")", " ", "\t"):
+        start += 1
+    while end > start and name[end - 1] in ("(", ")", " ", "\t"):
+        end -= 1
+    return name[start:end]
+
+
+def _last_dot_part(value: str) -> str:
+    idx = value.rfind(".")
+    if idx < 0:
+        return value
+    return value[idx + 1:]
+
+
+def _starts_with_dict_type(value: str) -> bool:
+    return value.startswith("dict[")
+
+
+def _starts_with_list_type(value: str) -> bool:
+    return value.startswith("list[")
+
+
 def _ts_symbol_name(ctx: EmitContext, name: str) -> str:
     """Return safe TS identifier, applying renamed_symbols and 'self'→'this'."""
     if name == "self":
         return "this"
     # Strip parentheses from names like "(had_local" or "value)" from tuple syntax
-    name = name.strip("() \t")
-    renamed = ctx.renamed_symbols.get(name, "")
+    cleaned = _strip_tuple_name(name)
+    renamed = ctx.renamed_symbols.get(cleaned, "")
     if renamed != "":
         return _safe_ts_ident(renamed)
-    return _safe_ts_ident(name)
+    return _safe_ts_ident(cleaned)
 
 
 def _type_annotation(ctx: EmitContext, resolved_type: str, *, for_return: bool = False) -> str:
@@ -214,7 +252,8 @@ def _emit_expr(ctx: EmitContext, node: JsonVal) -> str:
     if not isinstance(node, dict):
         return "null"
     renderer = _TsExprRenderer(ctx)
-    return renderer.render_expr(node)
+    expr_node: JsonVal = node
+    return renderer.render_expr(expr_node)
 
 
 def _emit_constant(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -224,8 +263,9 @@ def _emit_constant(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, str):
+        text = _str(node, "value")
         escaped: str = (
-            value.replace("\\", "\\\\")
+            text.replace("\\", "\\\\")
             .replace('"', '\\"')
             .replace("\n", "\\n")
             .replace("\r", "\\r")
@@ -271,12 +311,13 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if runtime_symbol == "":
                     runtime_symbol = attr
                 # Try module-qualified key first: e.g. "math.pi"
-                mod_short = mod_id.rsplit(".", 1)[-1]
+                mod_short = _last_dot_part(mod_id)
                 qualified_key = mod_short + "." + runtime_symbol
                 if qualified_key in ctx.mapping.calls:
                     return ctx.mapping.calls[qualified_key]
-                resolved = resolve_runtime_symbol_name(runtime_symbol, ctx.mapping, module_id=mod_id)
-                return resolved
+                if runtime_symbol.startswith(ctx.mapping.builtin_prefix):
+                    return runtime_symbol[len(ctx.mapping.builtin_prefix):]
+                return ctx.mapping.builtin_prefix + runtime_symbol
     owner = _emit_expr(ctx, owner_node)
     return owner + "." + attr
 
@@ -293,14 +334,26 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         upper_code = _emit_expr(ctx, upper) if isinstance(upper, dict) else "undefined"
         return owner + ".slice(" + lower_code + ", " + upper_code + ")"
     # For dicts/Maps: use .get() instead of []
-    union_lanes = [part.strip() for part in owner_rt.split("|")]
-    is_dict_type = owner_rt.startswith("dict[") or owner_rt == "dict" or any(part.startswith("dict[") for part in union_lanes)
+    union_lanes: list[str] = []
+    for part_raw in owner_rt.split("|"):
+        union_lanes.append(part_raw.strip())
+    is_dict_type = owner_rt.startswith("dict[") or owner_rt == "dict"
+    if not is_dict_type:
+        for part in union_lanes:
+            if _starts_with_dict_type(part):
+                is_dict_type = True
+                break
     if is_dict_type and isinstance(slice_node, dict):
         slice_code = _emit_expr(ctx, slice_node)
         out = owner + ".get(" + slice_code + ")"
         return out if ctx.strip_types else out + "!"
     # For lists/strings: handle negative constant indices (Python arr[-1] → JS arr[arr.length - 1])
-    is_array_like = (owner_rt.startswith("list[") or owner_rt in ("list", "str", "string", "bytes", "bytearray") or any(part.startswith("list[") for part in union_lanes))
+    is_array_like = owner_rt.startswith("list[") or owner_rt in ("list", "str", "string", "bytes", "bytearray")
+    if not is_array_like:
+        for part in union_lanes:
+            if _starts_with_list_type(part):
+                is_array_like = True
+                break
     if is_array_like and isinstance(slice_node, dict):
         neg_val = _get_negative_int_literal(slice_node)
         if neg_val is not None:
@@ -375,12 +428,14 @@ def _emit_dict_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         values = _list(node, "values")
         for idx, key in enumerate(keys):
             kc = _emit_expr(ctx, key)
-            val_node = values[idx] if idx < len(values) else None
-            vc = _emit_expr(ctx, val_node) if val_node is not None else "null"
-            if isinstance(val_node, dict):
-                vrt = _str(val_node, "resolved_type")
-                if vrt:
-                    value_rts.add(vrt)
+            vc = "null"
+            if idx < len(values):
+                val_node = values[idx]
+                vc = _emit_expr(ctx, val_node)
+                if isinstance(val_node, dict):
+                    vrt = _str(val_node, "resolved_type")
+                    if vrt:
+                        value_rts.add(vrt)
             pairs.append("[" + kc + ", " + vc + "]")
     if ctx.strip_types or rt == "":
         return "new Map([" + ", ".join(pairs) + "])"
@@ -510,7 +565,7 @@ for _pod_numeric_type in [
     "float32", "float64", "int", "float", "number", "byte",
 ]:
     _POD_NUMERIC_TYPES_VALUES.add(_pod_numeric_type)
-_POD_NUMERIC_TYPES: frozenset[str] = frozenset(_POD_NUMERIC_TYPES_VALUES)
+_POD_NUMERIC_TYPES: set[str] = _POD_NUMERIC_TYPES_VALUES
 
 
 def _isinstance_ts_check(obj: str, obj_rt: str, type_name: str) -> str:
@@ -639,7 +694,15 @@ def _resolve_runtime_call_name(ctx: EmitContext, node: dict[str, JsonVal], func:
         runtime_call = resolved_runtime_call
     if runtime_call == "" and isinstance(func, dict):
         runtime_call = _str(func, "runtime_call")
-    name = resolve_runtime_call(runtime_call, builtin_name, adapter_kind, ctx.mapping)
+    name = ""
+    if runtime_call != "" and runtime_call in ctx.mapping.calls:
+        name = ctx.mapping.calls[runtime_call]
+    if name == "" and builtin_name != "" and builtin_name in ctx.mapping.calls:
+        name = ctx.mapping.calls[builtin_name]
+    if name == "" and adapter_kind == "method":
+        method_key = "method." + builtin_name
+        if method_key in ctx.mapping.calls:
+            name = ctx.mapping.calls[method_key]
     if name == "" and "." not in runtime_call:
         name = runtime_call
     return name
@@ -759,8 +822,15 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if has_vararg_list:
         vararg_list_node = args[-1]
         elems = _list(vararg_list_node, "elements")
-        elem_strs = [_emit_expr(ctx, e) for e in elems]
-        arg_strs = arg_strs[:-1] + elem_strs
+        expanded_arg_strs: list[str] = []
+        keep_count = len(arg_strs) - 1
+        keep_idx = 0
+        while keep_idx < keep_count:
+            expanded_arg_strs.append(arg_strs[keep_idx])
+            keep_idx += 1
+        for e in elems:
+            expanded_arg_strs.append(_emit_expr(ctx, e))
+        arg_strs = expanded_arg_strs
     all_arg_strs = arg_strs + kw_strs
 
     # BuiltinCall: runtime function
@@ -780,13 +850,13 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if len(all_arg_strs) >= 1:
                 return "Array.from(" + all_arg_strs[0] + ")"
             if not ctx.strip_types and rt.startswith("list[") and rt.endswith("]"):
-                elem_type = ts_type(rt[5:-1])
+                elem_type: str = ts_type(rt[5:-1])
                 return "<" + ts_array_type(elem_type) + ">[]"
             return "[]"
         if semantic_tag == "core.set_ctor":
             rt = _str(node, "resolved_type")
             if not ctx.strip_types and rt.startswith("set[") and rt.endswith("]"):
-                elem_type = ts_type(rt[4:-1])
+                elem_type: str = ts_type(rt[4:-1])
                 return "new Set<" + elem_type + ">([" + ", ".join(all_arg_strs) + "])"
             return "new Set([" + ", ".join(all_arg_strs) + "])"
         if semantic_tag == "error.raise_ctor":
@@ -806,7 +876,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if len(all_arg_strs) >= 1:
                     return "Array.from(" + all_arg_strs[0] + ")"
                 if not ctx.strip_types and rt.startswith("list[") and rt.endswith("]"):
-                    elem_type = ts_type(rt[5:-1])
+                    elem_type: str = ts_type(rt[5:-1])
                     return "<" + ts_array_type(elem_type) + ">[]"
                 return "[]"
             if fn_name == "__TUPLE_CTOR__":
@@ -814,7 +884,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if fn_name == "__SET_CTOR__":
                 rt = _str(node, "resolved_type")
                 if not ctx.strip_types and rt.startswith("set[") and rt.endswith("]"):
-                    elem_type = ts_type(rt[4:-1])
+                    elem_type: str = ts_type(rt[4:-1])
                     return "new Set<" + elem_type + ">([" + ", ".join(all_arg_strs) + "])"
                 return "new Set([" + ", ".join(all_arg_strs) + "])"
             if fn_name == "__LIST_APPEND__":
@@ -860,8 +930,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if fn_name == "__DICT_GET__":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 key = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "null"
-                default = builtin_arg_strs[2] if len(builtin_arg_strs) >= 3 else "null"
-                return "(" + owner + ".get(" + key + ") ?? " + default + ")"
+                default_val = builtin_arg_strs[2] if len(builtin_arg_strs) >= 3 else "null"
+                return "(" + owner + ".get(" + key + ") ?? " + default_val + ")"
             if fn_name == "__DICT_ITEMS__":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 return owner + ".entries()"
@@ -984,8 +1054,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             func_rt = _str(func, "resolved_type")
 
             if fn_id == "isinstance" and len(args) >= 2:
-                type_arg = args[1] if isinstance(args[1], dict) else None
-                if isinstance(type_arg, dict) and _str(type_arg, "kind") == "Tuple":
+                if not isinstance(args[1], dict):
+                    return "false"
+                type_arg = args[1]
+                if _str(type_arg, "kind") == "Tuple":
                     type_names: list[str] = []
                     for element in _list(type_arg, "elements"):
                         if not isinstance(element, dict):
@@ -995,20 +1067,20 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                             item_name = _str(element, "id")
                         if item_name != "":
                             type_names.append(item_name)
-                    return _emit_isinstance(ctx, {
-                        "kind": "IsInstance",
-                        "value": args[0],
-                        "type_names": type_names,
-                    })
-                type_name = _str(type_arg, "id") if isinstance(type_arg, dict) else ""
+                    obj_code = _emit_expr(ctx, args[0])
+                    obj_rt = _str(args[0], "resolved_type") if isinstance(args[0], dict) else ""
+                    checks: list[str] = []
+                    for candidate_name in type_names:
+                        checks.append(_isinstance_ts_check(obj_code, obj_rt, candidate_name))
+                    return "(" + " || ".join(checks) + ")"
+                type_name = _str(type_arg, "id")
                 if type_name == "":
-                    type_name = _str(type_arg, "repr") if isinstance(type_arg, dict) else ""
-                return _emit_isinstance(ctx, {
-                    "kind": "IsInstance",
-                    "value": args[0],
-                    "expected_type_name": type_name,
-                    "expected_type_id": {"kind": "Name", "id": type_name},
-                })
+                    type_name = _str(type_arg, "repr")
+                isinstance_node2: dict[str, JsonVal] = {}
+                isinstance_node2["kind"] = "IsInstance"
+                isinstance_node2["value"] = args[0]
+                isinstance_node2["expected_type_name"] = type_name
+                return _emit_isinstance(ctx, isinstance_node2)
             if fn_id == "py_reversed_object" and len(all_arg_strs) >= 1:
                 return "Array.from(" + all_arg_strs[0] + ").reverse()"
             if fn_id == "__LIST_SORT__" and len(all_arg_strs) >= 1:
@@ -1025,7 +1097,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if isinstance(first_arg, dict) and _str(first_arg, "kind") == "Call":
                     super_func = first_arg.get("func")
                     if isinstance(super_func, dict) and _str(super_func, "id") == "super":
-                        return "super(" + ", ".join(all_arg_strs[1:]) + ")"
+                        super_args: list[str] = []
+                        super_idx = 1
+                        while super_idx < len(all_arg_strs):
+                            super_args.append(all_arg_strs[super_idx])
+                            super_idx += 1
+                        return "super(" + ", ".join(super_args) + ")"
 
             # cast(type_arg, value) → (value as TypeScriptType)
             # Python's cast() is a no-op at runtime; emit as a TS type assertion.
@@ -1035,7 +1112,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     type_arg = args[0]
                     type_str = _str(type_arg, "resolved_type") if isinstance(type_arg, dict) else ""
                     ts_t = ts_type(type_str) if type_str else ""
-                    if ts_t and ts_t != "any":
+                    if ts_t != "" and ts_t != "any":
                         return "(" + val_code + " as " + ts_t + ")"
                 return val_code
 
@@ -1092,7 +1169,11 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 adapter_kind = _str(node, "runtime_call_adapter_kind")
                 if adapter_kind == "":
                     adapter_kind = "builtin"
-                name = resolve_runtime_call(runtime_call, fn_id, adapter_kind, ctx.mapping)
+                name = ""
+                if runtime_call in ctx.mapping.calls:
+                    name = ctx.mapping.calls[runtime_call]
+                if name == "" and fn_id in ctx.mapping.calls:
+                    name = ctx.mapping.calls[fn_id]
                 if name != "" and name != "__CAST__":
                     if name == "pyIsInstance":
                         linked_isinstance = _emit_linked_type_id_isinstance(ctx, args)
@@ -1262,8 +1343,13 @@ def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     current_left = left
     current_left_rt = left_rt
     for idx, comparator in enumerate(comparators):
-        op_obj = ops[idx] if idx < len(ops) else None
-        op_name = op_obj if isinstance(op_obj, str) else _str(op_obj, "kind") if isinstance(op_obj, dict) else ""
+        op_name = ""
+        if idx < len(ops):
+            op_obj = ops[idx]
+            if isinstance(op_obj, str):
+                op_name = op_obj
+            elif isinstance(op_obj, dict):
+                op_name = _str(op_obj, "kind")
         op_text = _OP_MAP.get(op_name, op_name)
         right_node = comparator
         right = _emit_expr(ctx, right_node)
@@ -1428,13 +1514,6 @@ class _TsStmtRenderer(CommonRenderer):
         self.state.indent_level = self.ctx.indent_level
 
     def emit_stmt(self, node: JsonVal) -> None:
-        _COMMON_KINDS: set[str] = {"Expr", "Return", "Assign", "AnnAssign", "Pass", "Raise", "Try", "comment", "blank", "If", "While"}
-        if isinstance(node, dict):
-            kind = self._str(node, "kind")
-            if kind in _COMMON_KINDS:
-                super().emit_stmt(node)
-                self.ctx.indent_level = self.state.indent_level
-                return
         if isinstance(node, dict):
             self.emit_stmt_extension(node)
 
@@ -1449,9 +1528,46 @@ def _emit_common_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> bool:
     kind = _str(node, "kind")
     if kind not in _COMMON_KINDS:
         return False
-    renderer = _TsStmtRenderer(ctx)
-    renderer.emit_stmt(node)
-    ctx.indent_level = renderer.state.indent_level
+    if kind == "Expr":
+        _emit_expr_stmt(ctx, node)
+    elif kind == "Return":
+        _emit_return(ctx, node)
+    elif kind == "Assign":
+        _emit_assign(ctx, node)
+    elif kind == "AnnAssign":
+        _emit_ann_assign(ctx, node)
+    elif kind == "Pass":
+        _emit(ctx, ";")
+    elif kind == "Raise":
+        _emit_raise(ctx, node)
+    elif kind == "Try":
+        _emit_try(ctx, node)
+    elif kind == "comment":
+        text = _str(node, "text")
+        if text != "":
+            _emit(ctx, "// " + text)
+    elif kind == "blank":
+        _emit_blank(ctx)
+    elif kind == "If":
+        test = _ts_condition_expr(ctx, node.get("test"))
+        _emit(ctx, "if (" + test + ") {")
+        ctx.indent_level += 1
+        _emit_body(ctx, _list(node, "body"))
+        ctx.indent_level -= 1
+        orelse = _list(node, "orelse")
+        if len(orelse) > 0:
+            _emit(ctx, "} else {")
+            ctx.indent_level += 1
+            _emit_body(ctx, orelse)
+            ctx.indent_level -= 1
+        _emit(ctx, "}")
+    elif kind == "While":
+        test = _ts_condition_expr(ctx, node.get("test"))
+        _emit(ctx, "while (" + test + ") {")
+        ctx.indent_level += 1
+        _emit_body(ctx, _list(node, "body"))
+        ctx.indent_level -= 1
+        _emit(ctx, "}")
     return True
 
 
@@ -1524,7 +1640,7 @@ def _emit_expr_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     raise RuntimeError("unsupported_expr_kind_ts: " + kind)
 
 
-def _comp_iter_code(ctx: EmitContext, gen: dict) -> str:
+def _comp_iter_code(ctx: EmitContext, gen: dict[str, JsonVal]) -> str:
     """Emit the iterable for a comprehension generator, wrapping strings with Array.from."""
     iter_node = gen.get("iter")
     iter_code = _emit_expr(ctx, iter_node)
@@ -1534,14 +1650,17 @@ def _comp_iter_code(ctx: EmitContext, gen: dict) -> str:
     return iter_code
 
 
-def _comp_filter_code(ctx: EmitContext, gen: dict, iter_code: str) -> str:
+def _comp_filter_code(ctx: EmitContext, gen: dict[str, JsonVal], iter_code: str) -> str:
     """Apply ifs filter to an iterable expression."""
     ifs = gen.get("ifs")
     if not isinstance(ifs, list) or len(ifs) == 0:
         return iter_code
     target_node = gen.get("target")
     target_code = _emit_binding_pattern(target_node)
-    filter_parts = [_emit_expr(ctx, cond) for cond in ifs if isinstance(cond, dict)]
+    filter_parts: list[str] = []
+    for cond in ifs:
+        if isinstance(cond, dict):
+            filter_parts.append(_emit_expr(ctx, cond))
     if not filter_parts:
         return iter_code
     filter_expr = " && ".join(filter_parts)
@@ -1683,37 +1802,38 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, export_prefix + "let " + name + ann + " = " + zero + ";")
 
 
-_PY_TO_TS_TYPE_NAME: dict[str, str] = {}
-_PY_TO_TS_TYPE_NAME["None"] = "null"
-_PY_TO_TS_TYPE_NAME["none"] = "null"
-_PY_TO_TS_TYPE_NAME["bool"] = "boolean"
-_PY_TO_TS_TYPE_NAME["int"] = "number"
-_PY_TO_TS_TYPE_NAME["int64"] = "number"
-_PY_TO_TS_TYPE_NAME["int32"] = "number"
-_PY_TO_TS_TYPE_NAME["float"] = "number"
-_PY_TO_TS_TYPE_NAME["float32"] = "number"
-_PY_TO_TS_TYPE_NAME["float64"] = "number"
-_PY_TO_TS_TYPE_NAME["str"] = "string"
-_PY_TO_TS_TYPE_NAME["string"] = "string"
-_PY_TO_TS_TYPE_NAME["bytes"] = "number[]"
-_PY_TO_TS_TYPE_NAME["bytearray"] = "number[]"
-_PY_TO_TS_TYPE_NAME["TextIOWrapper"] = "any"
-_PY_TO_TS_TYPE_NAME["IOBase"] = "any"
-_PY_TO_TS_TYPE_NAME["BufferedReader"] = "any"
-_PY_TO_TS_TYPE_NAME["BufferedWriter"] = "any"
-_PY_TO_TS_TYPE_NAME["any"] = "any"
-_PY_TO_TS_TYPE_NAME["Any"] = "any"
-_PY_TO_TS_TYPE_NAME["object"] = "any"
+def _init_py_to_ts_type_name() -> dict[str, str]:
+    names: dict[str, str] = {}
+    names["None"] = "null"
+    names["none"] = "null"
+    names["bool"] = "boolean"
+    names["int"] = "number"
+    names["int64"] = "number"
+    names["int32"] = "number"
+    names["float"] = "number"
+    names["float32"] = "number"
+    names["float64"] = "number"
+    names["str"] = "string"
+    names["string"] = "string"
+    names["bytes"] = "number[]"
+    names["bytearray"] = "number[]"
+    names["TextIOWrapper"] = "any"
+    names["IOBase"] = "any"
+    names["BufferedReader"] = "any"
+    names["BufferedWriter"] = "any"
+    names["any"] = "any"
+    names["Any"] = "any"
+    names["object"] = "any"
+    return names
+
+
+_PY_TO_TS_TYPE_NAME: dict[str, str] = _init_py_to_ts_type_name()
 
 
 def _py_type_name_to_ts(name: str) -> str:
     """Convert a Python type name to TypeScript type."""
     if name in _PY_TO_TS_TYPE_NAME:
         return _PY_TO_TS_TYPE_NAME[name]
-    # Try ts_type conversion for compound types
-    converted = ts_type(name)
-    if converted and converted != "any":
-        return converted
     return _safe_ts_ident(name)
 
 
@@ -1731,7 +1851,7 @@ def _elem_to_ts_type(elem: JsonVal) -> str:
     if elem_kind == "Subscript" and (elem_rt == "type" or elem_rt in ("unknown", "")):
         raw = _str(elem, "repr")
         return _py_type_name_to_ts(raw) if raw else "any"
-    if elem_rt and elem_rt not in ("unknown",):
+    if elem_rt != "" and elem_rt != "unknown":
         return _py_type_name_to_ts(elem_rt)
     raw = _str(elem, "id") or _str(elem, "repr")
     return _py_type_name_to_ts(raw) if raw else "any"
@@ -1781,10 +1901,10 @@ def _container_type_alias(value_node: JsonVal) -> str | None:
     if base_id not in ("dict", "list", "set", "tuple"):
         return None
     rt = _str(value_node, "resolved_type")
-    if rt and rt not in ("unknown", ""):
+    if rt != "" and rt != "unknown":
         return ts_type(rt)
     repr_str = _str(value_node, "repr")
-    if repr_str:
+    if repr_str != "":
         return ts_type(repr_str)
     return None
 
@@ -1798,9 +1918,8 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     if len(targets) == 0:
         return
 
-    target_node = targets[0]
-
-    if isinstance(target_node, dict):
+    target_node = _as_dict(targets[0])
+    if len(target_node) > 0:
         t_kind = _str(target_node, "kind")
         if t_kind in ("Name", "NameTarget"):
             name_raw = _str(target_node, "id")
@@ -1838,7 +1957,7 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                     return
                 # Detect dict[K,V] / list[T] / set[T] type alias → emit as TS type
                 ts_alias = _container_type_alias(value)
-                if ts_alias and ts_alias not in ("any", ""):
+                if ts_alias is not None and ts_alias not in ("any", ""):
                     export_kw = ""
                     if is_top_level_public:
                         export_kw = "export "
@@ -1940,14 +2059,15 @@ def _emit_raise(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     if exc is None:
         exc = node.get("value")
     if exc is not None and isinstance(exc, dict):
-        exc_code = _emit_expr(ctx, exc)
-        exc_type = _str(exc, "resolved_type")
+        exc_node = _as_dict(exc)
+        exc_code = _emit_expr(ctx, exc_node)
+        exc_type = _str(exc_node, "resolved_type")
         # If it looks like a constructor call, wrap in new ExcType(...)
-        if _str(exc, "kind") == "Call":
-            func = exc.get("func")
+        if _str(exc_node, "kind") == "Call":
+            func = exc_node.get("func")
             func_name = _str(func, "id") if isinstance(func, dict) else ""
             if _is_exception_type_name(ctx, func_name):
-                args = _list(exc, "args")
+                args = _list(exc_node, "args")
                 arg_strs = [_emit_expr(ctx, a) for a in args]
                 if func_name in ctx.class_names:
                     # User-defined exception: use its actual constructor
@@ -1966,7 +2086,7 @@ def _emit_raise(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, "throw new Error(\"unknown error\");")
 
 
-def _collect_nested_assigns(stmts: list[JsonVal], out: list[tuple[str, dict]]) -> None:
+def _collect_nested_assigns(stmts: list[JsonVal], out: list[tuple[str, dict[str, JsonVal]]]) -> None:
     """Recursively collect (name_raw, assign_node) from all nested block bodies.
 
     Python variables are function-scoped, but TypeScript `let` is block-scoped.
@@ -1999,45 +2119,49 @@ def _collect_nested_assigns(stmts: list[JsonVal], out: list[tuple[str, dict]]) -
         # ClassDef: inner vars are class scope — skip
 
 
-def _collect_assigns_from_block(stmts: list[JsonVal], out: list[tuple[str, dict]]) -> None:
+def _collect_assigns_from_block(stmts: list[JsonVal], out: list[tuple[str, dict[str, JsonVal]]]) -> None:
     """Collect (name_raw, assign_node) pairs from direct Assign/VarDecl nodes in stmts, then recurse."""
     for stmt in stmts:
         if not isinstance(stmt, dict):
             continue
-        kind = _str(stmt, "kind")
+        stmt_node = stmt
+        kind = _str(stmt_node, "kind")
         if kind in ("Assign", "AnnAssign"):
-            targets = _list(stmt, "targets")
-            target_single = stmt.get("target")
+            targets = _list(stmt_node, "targets")
+            target_single = stmt_node.get("target")
             if len(targets) == 0 and isinstance(target_single, dict):
-                targets = [target_single]
+                single_targets: list[JsonVal] = []
+                single_targets.append(target_single)
+                targets = single_targets
             for t in targets:
                 if not isinstance(t, dict):
                     continue
                 t_kind = _str(t, "kind")
                 if t_kind in ("Name", "NameTarget"):
                     name_raw = _str(t, "id") or _str(t, "repr")
-                    if name_raw:
-                        out.append((name_raw, stmt))
+                    if name_raw != "":
+                        out.append((name_raw, stmt_node))
                 elif t_kind == "Tuple":
                     # Tuple unpacking: fwd_x, fwd_y, fwd_z = normalize(...)
                     for elem in _list(t, "elements"):
                         if isinstance(elem, dict) and _str(elem, "kind") in ("Name", "NameTarget"):
                             name_raw = _str(elem, "id") or _str(elem, "repr")
-                            if name_raw:
+                            if name_raw != "":
                                 out.append((name_raw, elem))
         elif kind == "VarDecl":
-            name_raw = _str(stmt, "name")
-            if name_raw:
-                out.append((name_raw, stmt))
+            name_raw = _str(stmt_node, "name")
+            if name_raw != "":
+                out.append((name_raw, stmt_node))
         elif kind in ("TupleUnpack", "MultiAssign"):
-            for t in _list(stmt, "targets"):
+            for t in _list(stmt_node, "targets"):
                 if isinstance(t, dict) and _str(t, "kind") in ("Name", "NameTarget"):
                     name_raw = _str(t, "id") or _str(t, "repr")
-                    if name_raw:
+                    if name_raw != "":
                         # Store the target node as the "stmt" so we can get its type
                         out.append((name_raw, t))
         # Recurse into nested blocks
-        _collect_nested_assigns([stmt], out)
+        nested_stmts: list[JsonVal] = [stmt_node]
+        _collect_nested_assigns(nested_stmts, out)
 
 
 def _hoist_nested_declarations(ctx: EmitContext, body: list[JsonVal]) -> None:
@@ -2046,11 +2170,13 @@ def _hoist_nested_declarations(ctx: EmitContext, body: list[JsonVal]) -> None:
     Emits `let varname: type;` for each such variable before the body starts,
     and registers them in ctx.var_types so _emit_assign won't re-declare them.
     """
-    collected: list[tuple[str, dict]] = []
+    collected: list[tuple[str, dict[str, JsonVal]]] = []
     _collect_nested_assigns(body, collected)
 
     seen: set[str] = set()
-    for name_raw, stmt in collected:
+    for collected_item in collected:
+        name_raw = collected_item[0]
+        stmt = collected_item[1]
         name = _ts_symbol_name(ctx, name_raw)
         if name in ctx.var_types or name in seen or name == "_":
             continue
@@ -2072,12 +2198,21 @@ def _hoist_nested_declarations(ctx: EmitContext, body: list[JsonVal]) -> None:
             target_single = stmt.get("target")
             targets = _list(stmt, "targets")
             if len(targets) == 0 and isinstance(target_single, dict):
-                targets = [target_single]
-            t = next((x for x in targets if isinstance(x, dict) and
-                       (_str(x, "id") == name_raw or _str(x, "repr") == name_raw)), None)
+                single_targets: list[JsonVal] = [target_single]
+                targets = single_targets
+            matched_target: dict[str, JsonVal] = {}
+            for target_candidate in targets:
+                candidate = _as_dict(target_candidate)
+                if len(candidate) == 0:
+                    continue
+                candidate_id = _str(candidate, "id")
+                candidate_repr = _str(candidate, "repr")
+                if candidate_id == name_raw or candidate_repr == name_raw:
+                    matched_target = candidate
+                    break
             decl_type = _str(stmt, "decl_type")
-            if decl_type in ("", "unknown") and isinstance(t, dict):
-                decl_type = _str(t, "resolved_type")
+            if decl_type in ("", "unknown") and len(matched_target) > 0:
+                decl_type = _str(matched_target, "resolved_type")
         ctx.var_types[name] = decl_type
         ann = _type_annotation(ctx, decl_type)
         _emit(ctx, "let " + name + ann + ";")
@@ -2195,7 +2330,13 @@ def _map_builtin_exception(name: str) -> str:
     For isinstance checks, TypeError matches only TypeError; Error matches all.
     We use the most specific JS type to preserve semantics.
     """
-    return TS_BUILTIN_EXCEPTION_MAP.get(name, _safe_ts_ident(name))
+    if name == "TypeError":
+        return "TypeError"
+    if name == "IndexError" or name == "OverflowError" or name == "RecursionError":
+        return "RangeError"
+    if name in TS_BUILTIN_EXCEPTION_NAMES:
+        return "Error"
+    return _safe_ts_ident(name)
 
 
 def _emit_var_decl(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
@@ -2364,7 +2505,11 @@ def _emit_static_range_for_plan(
         kind = _str(sn, "kind")
         if kind == "Constant":
             v = sn.get("value")
-            return isinstance(v, (int, float)) and v < 0
+            if isinstance(v, int) and not isinstance(v, bool):
+                return v < 0
+            if isinstance(v, float):
+                return v < 0.0
+            return False
         if kind == "UnaryOp" and _str(sn, "op") == "USub":
             return True
         return False
@@ -2426,10 +2571,12 @@ def _emit_with(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         items = [node]
     body = _list(node, "body")
 
-    collected: list[tuple[str, dict]] = []
+    collected: list[tuple[str, dict[str, JsonVal]]] = []
     _collect_assigns_from_block(body, collected)
     seen: set[str] = set()
-    for name_raw, stmt in collected:
+    for collected_item in collected:
+        name_raw = collected_item[0]
+        stmt = collected_item[1]
         name = _ts_symbol_name(ctx, name_raw)
         if name in ctx.var_types or name in seen or name == "_":
             continue
@@ -2449,8 +2596,9 @@ def _emit_with(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         _emit(ctx, "let " + name + ann + ";")
 
     ctx_vars: list[tuple[str, str, str]] = []
-    for item in items:
-        if not isinstance(item, dict):
+    for item_val in items:
+        item = _as_dict(item_val)
+        if len(item) == 0:
             continue
         ctx_expr = item.get("context_expr")
         if not isinstance(ctx_expr, dict):
@@ -2483,8 +2631,12 @@ def _emit_with(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     ctx.indent_level -= 1
     _emit(ctx, "} finally {")
     ctx.indent_level += 1
-    for ctx_tmp, _, _ in reversed(ctx_vars):
+    reversed_idx = len(ctx_vars) - 1
+    while reversed_idx >= 0:
+        ctx_var_item = ctx_vars[reversed_idx]
+        ctx_tmp = ctx_var_item[0]
         _emit(ctx, ctx_tmp + ".__exit__(null, null, null);")
+        reversed_idx -= 1
     ctx.indent_level -= 1
     _emit(ctx, "}")
 
@@ -2582,7 +2734,7 @@ def _emit_import_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         for nm in names:
             if not isinstance(nm, dict):
                 continue
-            name = _str(nm, "name").strip("() \t")
+            name = _strip_tuple_name(_str(nm, "name"))
             asname = _str(nm, "asname")
             if name == "" or name == "*":
                 continue
@@ -2622,7 +2774,8 @@ def _emit_import_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             if should_skip_module(name, ctx.mapping):
                 continue
             mod_path = _module_id_to_path(name)
-            local = _safe_ts_ident(asname if asname != "" else name.rsplit(".", 1)[-1])
+            local_name = asname if asname != "" else _last_dot_part(name)
+            local = _safe_ts_ident(local_name)
             js_ext = ".js" if ctx.strip_types else ""
             _emit(ctx, "import * as " + local + " from \"" + mod_path + js_ext + "\";")
 
@@ -2646,12 +2799,12 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     arg_order = _list(node, "arg_order")
     return_type = _str(node, "return_type")
     body = _list(node, "body")
-    decorators = _list(node, "decorators")
+    decorators = _decorators(node)
     is_closure = _str(node, "kind") == "ClosureDef"
 
     # Skip extern declarations
     for d in decorators:
-        if isinstance(d, str) and d == "extern":
+        if d == "extern":
             return
 
     # When return_type is "None" (resolver default), check if body actually returns a value.
@@ -2662,7 +2815,7 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 val = stmt.get("value")
                 if isinstance(val, dict):
                     actual_rt = _str(val, "resolved_type")
-                    if actual_rt and actual_rt not in ("None", "none", "void", "unknown", ""):
+                    if actual_rt != "" and actual_rt not in ("None", "none", "void", "unknown"):
                         return_type = actual_rt
                         break
 
@@ -2670,13 +2823,12 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     is_classmethod = False
     is_property = False
     for d in decorators:
-        if isinstance(d, str):
-            if d == "staticmethod":
-                is_staticmethod = True
-            elif d == "classmethod":
-                is_classmethod = True
-            elif d == "property":
-                is_property = True
+        if d == "staticmethod":
+            is_staticmethod = True
+        elif d == "classmethod":
+            is_classmethod = True
+        elif d == "property":
+            is_property = True
 
     # Translate Python special method names to TypeScript equivalents
     if name == "__init__" and ctx.current_class != "":
@@ -2757,12 +2909,23 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 if isinstance(value, dict):
                     if _str(value, "special_form") == "super":
                         return True
-                    return any(has_super_call_node(child) for child in value.values() if isinstance(child, (dict, list)))
+                    for child in value.values():
+                        if isinstance(child, dict) or isinstance(child, list):
+                            if has_super_call_node(child):
+                                return True
+                    return False
                 if isinstance(value, list):
-                    return any(has_super_call_node(child) for child in value)
+                    for child in value:
+                        if has_super_call_node(child):
+                            return True
+                    return False
                 return False
 
-            has_super_call = any(has_super_call_node(s) for s in body)
+            has_super_call = False
+            for s in body:
+                if has_super_call_node(s):
+                    has_super_call = True
+                    break
             if not has_super_call:
                 _emit(ctx, "super();")
     # Pre-declare variables first-assigned inside nested blocks (Python is function-scoped,
@@ -2841,16 +3004,20 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         if sk not in ("FunctionDef", "ClosureDef"):
             continue
         mname = _str(stmt, "name")
-        decorators = _list(stmt, "decorators")
+        decorators = _decorators(stmt)
         is_static = False
         for d in decorators:
-            if isinstance(d, str) and d == "staticmethod":
+            if d == "staticmethod":
                 is_static = True
                 break
         if is_static:
-            ctx.class_static_methods.setdefault(name, set()).add(mname)
+            if name not in ctx.class_static_methods:
+                ctx.class_static_methods[name] = set()
+            ctx.class_static_methods[name].add(mname)
         else:
-            ctx.class_instance_methods.setdefault(name, {})[mname] = stmt
+            if name not in ctx.class_instance_methods:
+                ctx.class_instance_methods[name] = {}
+            ctx.class_instance_methods[name][mname] = stmt
 
     # Save class context
     saved_class = ctx.current_class
@@ -2909,10 +3076,11 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             _emit_blank(ctx)
 
     # Check if body has an explicit __init__ method
-    has_init = any(
-        isinstance(s, dict) and _str(s, "kind") in ("FunctionDef", "ClosureDef") and _str(s, "name") == "__init__"
-        for s in body
-    )
+    has_init = False
+    for s in body:
+        if isinstance(s, dict) and _str(s, "kind") in ("FunctionDef", "ClosureDef") and _str(s, "name") == "__init__":
+            has_init = True
+            break
 
     # Emit body (methods, AnnAssign at class level)
     for stmt in body:
@@ -3097,11 +3265,12 @@ def emit_ts_module(east3_doc: dict[str, JsonVal], *, strip_types: bool = False) 
     if module_id == "":
         module_id = _str(meta, "module_id")
     lp = _dict(meta, "linked_program_v1")
-    if module_id == "" and lp:
+    if module_id == "" and len(lp) > 0:
         module_id = _str(lp, "module_id")
 
     if module_id != "":
-        expand_cross_module_defaults([east3_doc])
+        modules_for_defaults: list[JsonVal] = [east3_doc]
+        expand_cross_module_defaults(modules_for_defaults)
 
     # Load runtime mapping
     mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "ts" / "mapping.json"
@@ -3121,15 +3290,15 @@ def emit_ts_module(east3_doc: dict[str, JsonVal], *, strip_types: bool = False) 
 
     is_type_id_table = (module_id == "pytra.built_in.type_id_table")
 
-    ctx = EmitContext(
-        module_id=module_id,
-        source_path=_str(east3_doc, "source_path"),
-        is_entry=_bool(emit_ctx_meta, "is_entry") if emit_ctx_meta else False,
-        strip_types=strip_types,
-        mapping=mapping,
-        renamed_symbols=renamed_symbols,
-        is_type_id_table=is_type_id_table,
-    )
+    ctx = EmitContext()
+    ctx.module_id = module_id
+    ctx.source_path = _str(east3_doc, "source_path")
+    if len(emit_ctx_meta) > 0:
+        ctx.is_entry = _bool(emit_ctx_meta, "is_entry")
+    ctx.strip_types = strip_types
+    ctx.mapping = mapping
+    ctx.renamed_symbols = renamed_symbols
+    ctx.is_type_id_table = is_type_id_table
 
     body = _list(east3_doc, "body")
     main_guard = _list(east3_doc, "main_guard_body")
@@ -3144,7 +3313,7 @@ def emit_ts_module(east3_doc: dict[str, JsonVal], *, strip_types: bool = False) 
             if isinstance(type_id_val, int):
                 ctx.exception_type_ids[fqcn] = type_id_val
                 ctx.class_type_ids[fqcn] = type_id_val
-                ctx.tid_const_types[_tid_const_name(fqcn)] = fqcn.rsplit(".", 1)[-1]
+                ctx.tid_const_types[_tid_const_name(fqcn)] = _last_dot_part(fqcn)
 
     ctx.import_alias_modules = build_import_alias_map(meta)
     ctx.runtime_imports = build_runtime_import_map(meta, mapping)

@@ -34,7 +34,10 @@ class CommonRenderer:
 
     def __init__(self, language: str = "") -> None:
         self.language = language
-        self.profile = load_profile_doc(language) if language != "" else {}
+        if language != "":
+            self.profile = load_profile_doc(language)
+        else:
+            self.profile = {}
         self.state = CommonRendererState()
         self.state.lines = []
         self._op_prec_table: dict[str, int] = {}

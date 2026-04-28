@@ -202,7 +202,10 @@ def run_emit_cli(
         argv_list = []
     else:
         argv_list = argv
-    input_text, output_dir_text, file_ext = _parse_args(argv_list)
+    parsed_args: tuple[str, str, str] = _parse_args(argv_list)
+    input_text = parsed_args[0]
+    output_dir_text = parsed_args[1]
+    file_ext = parsed_args[2]
 
     use_direct = direct_emit_fn is not None
     if not use_direct:

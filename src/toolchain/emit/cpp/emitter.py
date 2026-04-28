@@ -3715,6 +3715,21 @@ def _emit_unbox(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             "write_user_module_artifacts",
         ):
             return value_expr
+        if (
+            target not in ("", "object")
+            and value_type in ("", "unknown")
+            and not value_expr.startswith("object(")
+            and ".unbox<" not in value_expr
+            and ".as<" not in value_expr
+        ):
+            return value_expr
+    if (
+        target in ("str", "int", "int64", "float", "float64", "bool")
+        and (value_expr.endswith("]") or value_expr.startswith("py_str_slice("))
+        and ".unbox<" not in value_expr
+        and ".as<" not in value_expr
+    ):
+        return value_expr
     if target in ctx.class_names:
         return "(*(" + value_expr + ").as<" + target + ">())"
     if target in ("str", "int", "int64", "float", "float64", "bool"):

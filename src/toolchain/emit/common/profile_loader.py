@@ -146,13 +146,8 @@ def _merge_profile_docs(base: dict[str, JsonVal], override: dict[str, JsonVal]) 
 
 
 
-def load_profile_with_includes(profile_path: object) -> dict[str, JsonVal]:
-    if isinstance(profile_path, Path):
-        path = profile_path
-    elif isinstance(profile_path, str):
-        path = Path(profile_path)
-    else:
-        path = Path(str(profile_path))
+def load_profile_with_includes(profile_path: Path) -> dict[str, JsonVal]:
+    path = profile_path
     core_path = _profile_root() / "core.json"
     core_doc = _read_profile_doc(core_path)
     lang_doc = _read_profile_doc(path)

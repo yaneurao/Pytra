@@ -7,7 +7,7 @@ from __future__ import annotations
 
 
 # EAST3 resolved_type -> Nim type
-_TYPE_MAP: dict[str, str] = {
+_NIM_TYPE_MAP: dict[str, str] = {
     "int": "int64",
     "byte": "uint8",
     "int8": "int8",
@@ -140,6 +140,26 @@ def _split_generic_args(s: str) -> list[str]:
     return parts
 
 
+def _strip_type_wrappers(value: str) -> str:
+    start = 0
+    end = len(value)
+    while start < end and value[start] in ("(", ")", " ", "\t"):
+        start += 1
+    while end > start and value[end - 1] in ("(", ")", " ", "\t"):
+        end -= 1
+    return value[start:end]
+
+
+def _starts_with_container_type(value: str) -> bool:
+    return (
+        value.startswith("list[")
+        or value.startswith("dict[")
+        or value.startswith("set[")
+        or value.startswith("tuple[")
+        or value.startswith("deque[")
+    )
+
+
 def _is_unionish_type_spec(resolved_type: str) -> bool:
     resolved_type = resolved_type.strip()
     return "|" in resolved_type
@@ -170,14 +190,14 @@ def _split_union_options(resolved_type: str) -> list[str]:
 
 
 def union_options(resolved_type: str) -> list[str]:
-    return _split_union_options(resolved_type.strip("() \t"))
+    return _split_union_options(_strip_type_wrappers(resolved_type))
 
 
 def is_general_union_type(resolved_type: str) -> bool:
-    resolved_type = resolved_type.strip("() \t")
-    if "|" not in resolved_type:
+    rt = _strip_type_wrappers(resolved_type)
+    if "|" not in rt:
         return False
-    options = union_options(resolved_type)
+    options = union_options(rt)
     if len(options) <= 1:
         return False
     non_none_options = [option for option in options if option != "None"]
@@ -190,16 +210,16 @@ def is_general_union_type(resolved_type: str) -> bool:
 
 
 def _union_name_part(type_spec: str) -> str:
-    resolved_type = type_spec.strip("() \t")
-    if resolved_type in _TYPE_MAP:
-        mapped = _TYPE_MAP[resolved_type].replace("[", "_").replace("]", "").replace(", ", "_").replace(",", "_")
+    rt = _strip_type_wrappers(type_spec)
+    if rt in _NIM_TYPE_MAP:
+        mapped = _NIM_TYPE_MAP[rt].replace("[", "_").replace("]", "").replace(", ", "_").replace(",", "_")
         return _safe_nim_ident(mapped)
-    if resolved_type.startswith(("list[", "dict[", "set[", "tuple[", "deque[")) and resolved_type.endswith("]"):
-        head = resolved_type.split("[", 1)[0]
-        inner = resolved_type[len(head) + 1:-1]
+    if _starts_with_container_type(rt) and rt.endswith("]"):
+        head = rt.split("[", 1)[0]
+        inner = rt[len(head) + 1:-1]
         parts = [_union_name_part(p) for p in _split_generic_args(inner)]
         return _safe_nim_ident(head + "_" + "_".join(parts))
-    return _safe_nim_ident(resolved_type)
+    return _safe_nim_ident(rt)
 
 
 def nim_union_type_name(resolved_type: str) -> str:
@@ -210,17 +230,17 @@ def nim_union_type_name(resolved_type: str) -> str:
 
 def nim_type(resolved_type: str, *, for_return: bool = False) -> str:
     """Convert an EAST3 resolved_type to a Nim type string."""
-    resolved_type = resolved_type.strip("() \t")
-    if resolved_type.startswith("[") and resolved_type.endswith("]"):
-        resolved_type = resolved_type[1:-1].strip()
-    if resolved_type == "" or resolved_type == "unknown":
+    rt = _strip_type_wrappers(resolved_type)
+    if rt.startswith("[") and rt.endswith("]"):
+        rt = rt[1:-1].strip()
+    if rt == "" or rt == "unknown":
         return "PyObj"
-    if is_general_union_type(resolved_type):
-        return nim_union_type_name(resolved_type)
+    if is_general_union_type(rt):
+        return nim_union_type_name(rt)
 
     # callable[...]
-    if resolved_type.startswith("callable[") and resolved_type.endswith("]"):
-        inner = resolved_type[9:-1]
+    if rt.startswith("callable[") and rt.endswith("]"):
+        inner = rt[9:-1]
         if inner.startswith("[],"):
             ret_type = nim_type(inner[3:].strip(), for_return=True)
             if ret_type == "void":
@@ -248,21 +268,21 @@ def nim_type(resolved_type: str, *, for_return: bool = False) -> str:
         return "proc(" + ", ".join(param_parts) + "): " + ret_type
 
     # multi_return[...]
-    if resolved_type.startswith("multi_return[") and resolved_type.endswith("]"):
-        inner = resolved_type[13:-1]
+    if rt.startswith("multi_return[") and rt.endswith("]"):
+        inner = rt[13:-1]
         parts = _split_generic_args(inner)
         return "(" + ", ".join(nim_type(p) for p in parts) + ")"
 
     # Direct mapping
-    if resolved_type in _TYPE_MAP:
-        mapped = _TYPE_MAP[resolved_type]
-        if resolved_type == "None" and not for_return:
+    if rt in _NIM_TYPE_MAP:
+        mapped = _NIM_TYPE_MAP[rt]
+        if rt == "None" and not for_return:
             return "void"
         return mapped
 
     # list[T] -> seq[T]
-    if resolved_type.startswith("list[") and resolved_type.endswith("]"):
-        inner = resolved_type[5:-1]
+    if rt.startswith("list[") and rt.endswith("]"):
+        inner = rt[5:-1]
         if is_general_union_type(inner):
             return "seq[" + nim_union_type_name(inner) + "]"
         if _is_unionish_type_spec(inner):
@@ -270,8 +290,8 @@ def nim_type(resolved_type: str, *, for_return: bool = False) -> str:
         return "seq[" + nim_type(inner) + "]"
 
     # dict[K, V] -> Table[K, V]
-    if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
-        inner = resolved_type[5:-1]
+    if rt.startswith("dict[") and rt.endswith("]"):
+        inner = rt[5:-1]
         parts = _split_generic_args(inner)
         if len(parts) == 2:
             key_type = nim_union_type_name(parts[0]) if is_general_union_type(parts[0]) else ("PyObj" if _is_unionish_type_spec(parts[0]) else nim_type(parts[0]))
@@ -280,8 +300,8 @@ def nim_type(resolved_type: str, *, for_return: bool = False) -> str:
         return "Table[string, PyObj]"
 
     # set[T] -> HashSet[T]
-    if resolved_type.startswith("set[") and resolved_type.endswith("]"):
-        inner = resolved_type[4:-1]
+    if rt.startswith("set[") and rt.endswith("]"):
+        inner = rt[4:-1]
         if is_general_union_type(inner):
             return "HashSet[" + nim_union_type_name(inner) + "]"
         if _is_unionish_type_spec(inner):
@@ -289,14 +309,14 @@ def nim_type(resolved_type: str, *, for_return: bool = False) -> str:
         return "HashSet[" + nim_type(inner) + "]"
 
     # tuple[A, B, ...] -> (A, B, ...)
-    if resolved_type.startswith("tuple[") and resolved_type.endswith("]"):
-        inner = resolved_type[6:-1]
+    if rt.startswith("tuple[") and rt.endswith("]"):
+        inner = rt[6:-1]
         parts = _split_generic_args(inner)
         return "(" + ", ".join(nim_type(p) for p in parts) + ")"
 
     # deque[T] -> seq[T]
-    if resolved_type.startswith("deque[") and resolved_type.endswith("]"):
-        inner = resolved_type[6:-1]
+    if rt.startswith("deque[") and rt.endswith("]"):
+        inner = rt[6:-1]
         if is_general_union_type(inner):
             return "seq[" + nim_union_type_name(inner) + "]"
         if _is_unionish_type_spec(inner):
@@ -304,8 +324,8 @@ def nim_type(resolved_type: str, *, for_return: bool = False) -> str:
         return "seq[" + nim_type(inner) + "]"
 
     # Optional: T | None -> Option[T] ... but for simplicity in Nim we can use ptr-like nil
-    if resolved_type.endswith(" | None") or resolved_type.endswith("|None"):
-        inner = resolved_type[:-7] if resolved_type.endswith(" | None") else resolved_type[:-5]
+    if rt.endswith(" | None") or rt.endswith("|None"):
+        inner = rt[:-7] if rt.endswith(" | None") else rt[:-5]
         inner_nim = nim_type(inner)
         # ref types are already nullable in Nim
         if (
@@ -319,15 +339,15 @@ def nim_type(resolved_type: str, *, for_return: bool = False) -> str:
         return "PyObj"
 
     # Union type
-    if "|" in resolved_type:
-        parts = union_options(resolved_type)
+    if "|" in rt:
+        parts = union_options(rt)
         if len(parts) > 1:
-            if is_general_union_type(resolved_type):
-                return nim_union_type_name(resolved_type)
+            if is_general_union_type(rt):
+                return nim_union_type_name(rt)
             return "PyObj"
 
     # User class -> ClassName
-    return _safe_nim_ident(resolved_type)
+    return _safe_nim_ident(rt)
 
 
 def nim_zero_value(resolved_type: str) -> str:

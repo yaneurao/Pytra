@@ -14,6 +14,34 @@ from pytra.std.pathlib import Path
 from toolchain.emit.ts.emitter import emit_ts_module
 
 
+def _jv_obj(value: JsonVal) -> dict[str, JsonVal]:
+    if isinstance(value, dict):
+        obj: dict[str, JsonVal] = value
+        return obj
+    return {}
+
+
+def _jv_list(value: JsonVal) -> list[JsonVal]:
+    if isinstance(value, list):
+        items: list[JsonVal] = value
+        return items
+    return []
+
+
+def _jv_str(value: JsonVal) -> str:
+    if isinstance(value, str):
+        text: str = value
+        return text
+    return ""
+
+
+def _jv_bool(value: JsonVal) -> bool:
+    if isinstance(value, bool):
+        flag: bool = value
+        return flag
+    return False
+
+
 def _parse_args(argv: list[str]) -> tuple[str, str, str]:
     """Parse CLI arguments. Returns (input_path, output_dir, file_ext)."""
     input_text: str = ""
@@ -47,59 +75,62 @@ def _load_linked_modules(manifest_path: Path) -> list[dict[str, JsonVal]]:
     """Load linked modules from a manifest.json file."""
     manifest_text: str = manifest_path.read_text(encoding="utf-8")
     manifest_doc: JsonVal = json.loads(manifest_text).raw
-    if not isinstance(manifest_doc, dict):
+    typed_manifest = _jv_obj(manifest_doc)
+    if len(typed_manifest) == 0:
         raise RuntimeError("manifest root must be object: " + str(manifest_path))
-    typed_manifest: dict[str, JsonVal] = manifest_doc
-    modules_raw: JsonVal = typed_manifest.get("modules", [])
-    if not isinstance(modules_raw, list):
+    modules_raw: JsonVal = typed_manifest.get("modules")
+    modules = _jv_list(modules_raw)
+    if len(modules) == 0:
         raise RuntimeError("manifest.modules must be list")
     manifest_dir: Path = manifest_path.parent
     result: list[dict[str, JsonVal]] = []
-    for index, entry in enumerate(modules_raw):
-        if not isinstance(entry, dict):
+    for index, entry in enumerate(modules):
+        typed_entry = _jv_obj(entry)
+        if len(typed_entry) == 0:
             raise RuntimeError("manifest.modules[" + str(index) + "] must be object")
-        typed_entry: dict[str, JsonVal] = entry
-        output_rel: JsonVal = typed_entry.get("output")
-        if not isinstance(output_rel, str) or output_rel == "":
+        output_rel = _jv_str(typed_entry.get("output"))
+        if output_rel == "":
             raise RuntimeError("manifest.modules[" + str(index) + "].output must be non-empty string")
         east_path: Path = manifest_dir.joinpath(output_rel)
         east_text: str = east_path.read_text(encoding="utf-8")
         east_doc: JsonVal = json.loads(east_text).raw
-        if not isinstance(east_doc, dict):
+        typed_east = _jv_obj(east_doc)
+        if len(typed_east) == 0:
             raise RuntimeError("linked EAST root must be object: " + str(east_path))
-        typed_east: dict[str, JsonVal] = east_doc
-        meta: JsonVal = typed_east.get("meta")
-        if not isinstance(meta, dict):
-            meta = {}
-            typed_east["meta"] = meta
-        typed_meta: dict[str, JsonVal] = meta
-        module_id: JsonVal = typed_entry.get("module_id")
-        if isinstance(module_id, str):
+        typed_meta = _jv_obj(typed_east.get("meta"))
+        if len(typed_meta) == 0:
+            empty_meta: dict[str, JsonVal] = {}
+            typed_meta = empty_meta
+            typed_east["meta"] = typed_meta
+        module_id = _jv_str(typed_entry.get("module_id"))
+        if module_id != "":
             typed_meta["_cli_module_id"] = module_id
-        module_kind: JsonVal = typed_entry.get("module_kind")
-        if isinstance(module_kind, str):
+        module_kind = _jv_str(typed_entry.get("module_kind"))
+        if module_kind != "":
             typed_meta["_cli_module_kind"] = module_kind
-        is_entry: JsonVal = typed_entry.get("is_entry")
-        if isinstance(is_entry, bool):
+        is_entry = _jv_bool(typed_entry.get("is_entry"))
+        if is_entry:
             typed_meta["_cli_is_entry"] = is_entry
-        source_path: JsonVal = typed_entry.get("source_path")
-        if isinstance(source_path, str):
+        source_path = _jv_str(typed_entry.get("source_path"))
+        if source_path != "":
             typed_meta["_cli_source_path"] = source_path
         result.append(typed_east)
     return result
 
 
 def _module_id_from_doc(east_doc: dict[str, JsonVal], fallback_index: int) -> str:
-    meta: JsonVal = east_doc.get("meta")
-    if isinstance(meta, dict):
-        mid: JsonVal = meta.get("_cli_module_id")
-        if isinstance(mid, str) and mid != "":
-            return mid
+    meta = _jv_obj(east_doc.get("meta"))
+    mid = _jv_str(meta.get("_cli_module_id"))
+    if mid != "":
+        return mid
     return "module_" + str(fallback_index)
 
 
 def main(argv: list[str]) -> int:
-    input_text, output_dir_text, file_ext = _parse_args(argv)
+    parsed_args: tuple[str, str, str] = _parse_args(argv)
+    input_text = parsed_args[0]
+    output_dir_text = parsed_args[1]
+    file_ext = parsed_args[2]
     if file_ext == "":
         file_ext = ".ts"
     if input_text == "":
@@ -133,4 +164,9 @@ def main(argv: list[str]) -> int:
 
 if __name__ == "__main__":
     import sys
-    raise SystemExit(main(sys.argv[1:]))
+    cli_argv: list[str] = []
+    arg_index = 1
+    while arg_index < len(sys.argv):
+        cli_argv.append(sys.argv[arg_index])
+        arg_index += 1
+    raise SystemExit(main(cli_argv))

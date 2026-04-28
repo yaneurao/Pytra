@@ -24,14 +24,11 @@ class JuliaRenderer(CommonRenderer):
     public entrypoint.
     """
 
+    mapping: RuntimeMapping
     def __init__(self) -> None:
         super().__init__("julia")
         mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "julia" / "mapping.json"
         self.mapping = load_runtime_mapping(mapping_path)
-        self.rewriter = JuliaBootstrapRewriter()
-        self.legacy_bridge = JuliaLegacyEmitterBridge(self.mapping)
-
-    mapping: RuntimeMapping
 
     def _module_id_from_doc(self, east3_doc: dict[str, JsonVal]) -> str:
         return module_id_from_doc(east3_doc)
@@ -40,7 +37,8 @@ class JuliaRenderer(CommonRenderer):
         return prepare_module_for_emit(east3_doc)
 
     def _rewrite_legacy_compatible_doc(self, east3_doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
-        return self.rewriter.rewrite_document(east3_doc)
+        rewriter = JuliaBootstrapRewriter()
+        return rewriter.rewrite_document(east3_doc)
 
     def _render_native_module(self, east3_doc: dict[str, JsonVal]) -> str:
         meta = east3_doc.get("meta")
@@ -48,7 +46,8 @@ class JuliaRenderer(CommonRenderer):
         return JuliaSubsetRenderer(self.mapping, subset_meta).render_module(east3_doc)
 
     def _render_legacy_module(self, east3_doc: dict[str, JsonVal]) -> str:
-        return self.legacy_bridge.emit_module(east3_doc)
+        legacy_bridge = JuliaLegacyEmitterBridge(self.mapping)
+        return legacy_bridge.emit_module(east3_doc)
 
     def emit_module(self, east3_doc: dict[str, JsonVal]) -> str:
         return self.render_module(east3_doc)
