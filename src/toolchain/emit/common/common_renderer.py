@@ -34,10 +34,7 @@ class CommonRenderer:
 
     def __init__(self, language: str = "") -> None:
         self.language = language
-        if language != "":
-            self.profile = load_profile_doc(language)
-        else:
-            self.profile = {}
+        self.profile = {}
         self.state = CommonRendererState()
         self.state.lines = []
         self._op_prec_table: dict[str, int] = {}
@@ -380,7 +377,7 @@ class CommonRenderer:
         return ["const " + self.bound_exception_record_type_name() + " = struct { msg: []const u8, line: i64 };"]
 
     def caught_exception_slot_names(self) -> tuple[str, str, str]:
-        raise RuntimeError("common renderer requires caught exception slot names for " + self.language)
+        return ("", "", "")
 
     def active_exception_type_slot_name(self) -> str:
         exc_type, _exc_msg, _exc_line = self.active_exception_slot_names()
@@ -390,7 +387,7 @@ class CommonRenderer:
         return self.active_exception_type_slot_name() + " != null"
 
     def bound_exception_record_type_name(self) -> str:
-        raise RuntimeError("common renderer requires bound exception record type name for " + self.language)
+        return ""
 
     def render_bound_exception_value(self, msg_expr: str, line_expr: str) -> str:
         return (
@@ -415,13 +412,13 @@ class CommonRenderer:
         return self._str(node, "id")
 
     def render_attribute(self, node: dict[str, JsonVal]) -> str:
-        raise RuntimeError("common renderer requires attribute override for " + self.language)
+        return ""
 
     def render_call(self, node: dict[str, JsonVal]) -> str:
-        raise RuntimeError("common renderer requires call override for " + self.language)
+        return ""
 
     def render_assign_stmt(self, node: dict[str, JsonVal]) -> str:
-        raise RuntimeError("common renderer requires assign override for " + self.language)
+        return ""
 
     def render_condition_expr(self, node: JsonVal) -> str:
         node_value: JsonVal = node
@@ -448,22 +445,22 @@ class CommonRenderer:
         self._emit_stmt_line(line)
 
     def render_raise_value(self, node: dict[str, JsonVal]) -> str:
-        raise RuntimeError("common renderer requires raise override for " + self.language)
+        return ""
 
     def render_except_open(self, handler: dict[str, JsonVal]) -> str:
-        raise RuntimeError("common renderer requires except override for " + self.language)
+        return ""
 
     def emit_try_setup(self, node: dict[str, JsonVal]) -> None:
-        return None
+        return
 
     def emit_try_teardown(self, node: dict[str, JsonVal]) -> None:
-        return None
+        return
 
     def emit_try_handler_body(self, handler: dict[str, JsonVal]) -> None:
         self.emit_body(self._list(handler, "body"))
 
     def emit_exception_handler_binding_prelude(self, handler: dict[str, JsonVal]) -> None:
-        return None
+        return
 
     def emit_exception_handler_prelude(self, handler: dict[str, JsonVal]) -> None:
         if self._exception_style() == "manual_exception_slot":
@@ -471,11 +468,13 @@ class CommonRenderer:
         self.emit_exception_handler_binding_prelude(handler)
 
     def emit_exception_handler_capture(self) -> None:
+        caught_type, caught_msg, caught_line = self.caught_exception_slot_names()
+        active_type, active_msg, active_line = self.active_exception_slot_names()
         self.emit_copy_exception_slot(
-            self.caught_exception_slot_names(),
-            self.active_exception_slot_names(),
+            (caught_type, caught_msg, caught_line),
+            (active_type, active_msg, active_line),
         )
-        self.emit_clear_exception_slot(self.active_exception_slot_names())
+        self.emit_clear_exception_slot((active_type, active_msg, active_line))
 
     def emit_copy_exception_slot(
         self,
@@ -528,7 +527,7 @@ class CommonRenderer:
         )
 
     def emit_exception_handler_binding_teardown(self, handler: dict[str, JsonVal]) -> None:
-        return None
+        return
 
     def emit_exception_handler_teardown(self, handler: dict[str, JsonVal]) -> None:
         self.emit_exception_handler_binding_teardown(handler)
@@ -579,10 +578,10 @@ class CommonRenderer:
         caught_expr: str,
         is_first: bool,
     ) -> str:
-        raise RuntimeError("common renderer requires user exception handler open override for " + self.language)
+        return ""
 
     def emit_string_exception_binding(self, caught_expr: str, target_name: str) -> None:
-        return None
+        return
 
     def render_string_exception_handler_else_open(self) -> str:
         return "} else {"
@@ -591,43 +590,43 @@ class CommonRenderer:
         return "}"
 
     def render_try_success_arm(self, ok_binding: str, returns_value: bool) -> str:
-        raise RuntimeError("common renderer requires try success arm override for " + self.language)
+        return ""
 
     def render_try_error_arm_open(self, err_binding: str, borrowed: bool = False) -> str:
-        raise RuntimeError("common renderer requires try error arm hook for " + self.language)
+        return ""
 
     def render_try_error_arm_close(self) -> str:
         return "}"
 
     def render_try_match_open(self, result_name: str) -> str:
-        raise RuntimeError("common renderer requires try match open hook for " + self.language)
+        return ""
 
     def render_try_match_close(self) -> str:
-        raise RuntimeError("common renderer requires try match close hook for " + self.language)
+        return ""
 
     def emit_try_capture(self, result_name: str, body: list[JsonVal]) -> None:
-        raise RuntimeError("common renderer requires try capture hook for " + self.language)
+        return
 
     def render_try_capture_open(self, result_name: str) -> str:
-        raise RuntimeError("common renderer requires try capture open hook for " + self.language)
+        return ""
 
     def render_try_capture_close(self) -> str:
-        raise RuntimeError("common renderer requires try capture close hook for " + self.language)
+        return ""
 
     def render_try_rethrow_fallback(self, result_name: str, err_binding: str) -> str:
-        raise RuntimeError("common renderer requires try rethrow fallback hook for " + self.language)
+        return ""
 
     def render_resume_unwind(self, err_binding: str) -> str:
-        raise RuntimeError("common renderer requires rethrow hook for " + self.language)
+        return ""
 
     def render_panic_any(self, value_expr: str) -> str:
-        raise RuntimeError("common renderer requires panic_any hook for " + self.language)
+        return ""
 
     def render_panic_message(self, message_expr: str) -> str:
-        raise RuntimeError("common renderer requires panic message hook for " + self.language)
+        return ""
 
     def render_panic_literal(self, message: str) -> str:
-        raise RuntimeError("common renderer requires panic literal hook for " + self.language)
+        return ""
 
     def render_exception_dispatch_condition(self, caught_type_expr: str) -> str:
         return ""
@@ -639,7 +638,7 @@ class CommonRenderer:
         return "}"
 
     def render_exception_dispatch_state_init_stmt(self, handled_name: str) -> str:
-        raise RuntimeError("common renderer requires exception dispatch state init stmt for " + self.language)
+        return ""
 
     def emit_exception_dispatch_state_init(self, handled_name: str) -> None:
         self.emit_backend_line(self.render_exception_dispatch_state_init_stmt(handled_name))
@@ -686,7 +685,7 @@ class CommonRenderer:
         return ctx_name
 
     def resolve_with_context_capture(self, context_expr: JsonVal) -> tuple[str, str, str]:
-        raise RuntimeError("common renderer requires with context capture resolver for " + self.language)
+        return ("", "", "")
 
     def next_bounds_checked_index_names(self) -> tuple[str, str, str]:
         return (
@@ -773,7 +772,7 @@ class CommonRenderer:
         handled_name: str,
         caught_type_expr: str,
     ) -> str:
-        raise RuntimeError("common renderer requires exception handler guard condition hook for " + self.language)
+        return ""
 
     def render_exception_handler_guard_close(self, handler: dict[str, JsonVal]) -> str:
         return "}"
@@ -796,7 +795,7 @@ class CommonRenderer:
         return user_handlers, other_handlers
 
     def render_exception_handler_mark_handled_stmt(self, handled_name: str) -> str:
-        raise RuntimeError("common renderer requires exception handled stmt for " + self.language)
+        return ""
 
     def emit_exception_handler_mark_handled(self, handled_name: str) -> None:
         self.emit_backend_line(self.render_exception_handler_mark_handled_stmt(handled_name))
@@ -883,10 +882,10 @@ class CommonRenderer:
         return self._syntax_text("block_close", "}")
 
     def render_break_to_label(self, block_label: str) -> str:
-        raise RuntimeError("common renderer requires label-break hook for " + self.language)
+        return ""
 
     def render_break_to_label_value(self, block_label: str, value_expr: str) -> str:
-        raise RuntimeError("common renderer requires labeled break-value hook for " + self.language)
+        return ""
 
     def render_try_break(self, try_label: str) -> str:
         return self.render_break_to_label(try_label)
@@ -915,12 +914,14 @@ class CommonRenderer:
         self.emit_backend_line(self.render_raise_propagation_stmt(try_label, return_stmt))
 
     def render_raise_propagation_stmt(self, try_label: str, return_stmt: str) -> str:
-        raise RuntimeError("common renderer requires raise propagation stmt for " + self.language)
+        return ""
 
     def emit_bare_raise_restore(self) -> None:
+        active_type, active_msg, active_line = self.active_exception_slot_names()
+        caught_type, caught_msg, caught_line = self.caught_exception_slot_names()
         self.emit_copy_exception_slot(
-            self.active_exception_slot_names(),
-            self.caught_exception_slot_names(),
+            (active_type, active_msg, active_line),
+            (caught_type, caught_msg, caught_line),
         )
 
     def render_break_with_value(self, block_label: str, value_expr: str) -> str:
@@ -1266,10 +1267,10 @@ class CommonRenderer:
         enter_name: str,
         enter_type: str,
     ) -> None:
-        return None
+        return
 
     def render_with_fallback_enter_stmt(self, target_name: str, target_type: str) -> str:
-        raise RuntimeError("common renderer requires with fallback enter stmt for " + self.language)
+        return ""
 
     def emit_with_fallback_enter(self, target_name: str, target_type: str) -> None:
         self.emit_backend_line(self.render_with_fallback_enter_stmt(target_name, target_type))
@@ -1403,22 +1404,22 @@ class CommonRenderer:
         enter_target_type: str,
         exit_runtime_call: str,
         exit_runtime_symbol: str,
-    ) -> tuple[str, str, str, str, str, str]:
-        return (
+    ) -> list[str]:
+        return [
             ctx_name,
             bound_name,
             source_type,
             enter_target_type,
             exit_runtime_call,
             exit_runtime_symbol,
-        )
+        ]
 
     def emit_with_item(
         self,
         item: dict[str, JsonVal],
         declared_names: set[str],
         type_map: dict[str, str],
-    ) -> tuple[str, str, str, str, str, str] | None:
+    ) -> list[str] | None:
         context_expr = item.get("context_expr")
         context_obj = json.JsonValue(context_expr).as_obj()
         if context_obj is None:
@@ -1462,12 +1463,12 @@ class CommonRenderer:
         items: list[JsonVal],
         declared_names: set[str],
         type_map: dict[str, str],
-    ) -> list[tuple[str, str, str, str, str, str]]:
+    ) -> list[list[str]]:
         if len(declared_names) < 0:
             declared_names.add("")
         if len(type_map) < 0:
             type_map[""] = ""
-        entries: list[tuple[str, str, str, str, str, str]] = []
+        entries: list[list[str]] = []
         for item in items:
             item_obj = json.JsonValue(item).as_obj()
             if item_obj is None:
@@ -1479,9 +1480,15 @@ class CommonRenderer:
 
     def emit_with_exit_actions(
         self,
-        entries: list[tuple[str, str, str, str, str, str]],
+        entries: list[list[str]],
     ) -> None:
-        for ctx_name, bound_name, source_type, target_type, exit_runtime_call, exit_runtime_symbol in reversed(entries):
+        for entry in reversed(entries):
+            ctx_name: str = entry[0]
+            bound_name: str = entry[1]
+            source_type: str = entry[2]
+            target_type: str = entry[3]
+            exit_runtime_call: str = entry[4]
+            exit_runtime_symbol: str = entry[5]
             target_name = self.select_with_exit_target(ctx_name, bound_name)
             self.emit_with_exit_action(
                 target_name,
@@ -1497,13 +1504,13 @@ class CommonRenderer:
         declared_names: set[str],
         type_map: dict[str, str],
     ) -> None:
-        raise RuntimeError("common renderer requires hoisted with binding hook for " + self.language)
+        return
 
     def emit_with_capture_body(self, with_result: str, body: list[JsonVal]) -> None:
-        raise RuntimeError("common renderer requires with capture body hook for " + self.language)
+        return
 
     def emit_with_resume_unwind(self, with_result: str, with_err: str) -> None:
-        raise RuntimeError("common renderer requires with resume unwind hook for " + self.language)
+        return
 
     def emit_custom_with_stmt(
         self,

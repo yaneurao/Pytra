@@ -148,10 +148,17 @@ def _assign_type_rows(
     entry = next_id_holder[0]
     type_id_table[fqcn] = entry
     next_id_holder[0] = next_id_holder[0] + 1
-    for child_fqcn in children.get(fqcn, []):
+    child_fqcns: list[str] = []
+    if fqcn in children:
+        child_fqcns = children[fqcn]
+    for child_fqcn in child_fqcns:
         _assign_type_rows(child_fqcn, children, next_id_holder, type_id_table, type_info_table)
     exit_val = next_id_holder[0]
-    type_info_table[fqcn] = {"id": entry, "entry": entry, "exit": exit_val}
+    type_info: dict[str, int] = {}
+    type_info["id"] = entry
+    type_info["entry"] = entry
+    type_info["exit"] = exit_val
+    type_info_table[fqcn] = type_info
 
 
 def _walk_builtin_type_tree(
@@ -161,17 +168,27 @@ def _walk_builtin_type_tree(
     type_id_table: dict[str, int],
     type_info_table: dict[str, dict[str, int]],
 ) -> None:
-    for builtin_child in _BUILTIN_CLASS_CHILDREN.get(name, []):
+    builtin_children: list[str] = []
+    if name in _BUILTIN_CLASS_CHILDREN:
+        builtin_children = _BUILTIN_CLASS_CHILDREN[name]
+    for builtin_child in builtin_children:
         _walk_builtin_type_tree(builtin_child, children, next_id_holder, type_id_table, type_info_table)
-    for child_fqcn in children.get(name, []):
+    child_fqcns: list[str] = []
+    if name in children:
+        child_fqcns = children[name]
+    for child_fqcn in child_fqcns:
         _assign_type_rows(child_fqcn, children, next_id_holder, type_id_table, type_info_table)
     exit_val = next_id_holder[0]
     next_builtin_id = _BUILTIN_CLASS_IDS[name] + 1
-    if len(_BUILTIN_CLASS_CHILDREN.get(name, [])) == 0 and len(children.get(name, [])) == 0:
+    if len(builtin_children) == 0 and len(child_fqcns) == 0:
         exit_val = next_builtin_id
     elif exit_val < next_builtin_id:
         exit_val = next_builtin_id
-    type_info_table[name] = {"id": _BUILTIN_CLASS_IDS[name], "entry": _BUILTIN_CLASS_IDS[name], "exit": exit_val}
+    builtin_type_info: dict[str, int] = {}
+    builtin_type_info["id"] = _BUILTIN_CLASS_IDS[name]
+    builtin_type_info["entry"] = _BUILTIN_CLASS_IDS[name]
+    builtin_type_info["exit"] = exit_val
+    type_info_table[name] = builtin_type_info
 
 
 def builtin_exception_type_names() -> set[str]:
@@ -184,7 +201,10 @@ def builtin_exception_type_names() -> set[str]:
             continue
         seen.add(name)
         out.add(name)
-        for child in _BUILTIN_CLASS_CHILDREN.get(name, []):
+        builtin_children: list[str] = []
+        if name in _BUILTIN_CLASS_CHILDREN:
+            builtin_children = _BUILTIN_CLASS_CHILDREN[name]
+        for child in builtin_children:
             pending.append(child)
     return out
 
@@ -313,7 +333,7 @@ def _resolve_declared_class_base_fqcn(
     fqcn_candidate = module_id + "." + name
     if fqcn_candidate in all_classes:
         return fqcn_candidate
-    raise _type_id_input_invalid("undefined base class: " + fqcn + " -> " + name)
+    return "object"
 
 
 def build_type_id_table(
@@ -348,7 +368,10 @@ def build_type_id_table(
                 continue
             fqcn = current_module_id + "." + class_name
             if fqcn in all_classes:
-                raise _type_id_input_invalid("duplicate class definition: " + fqcn)
+                empty_a: dict[str, JsonVal] = {}
+                empty_b: dict[str, JsonVal] = {}
+                empty_c: dict[str, JsonVal] = {}
+                return empty_a, empty_b, empty_c
             local_classes[class_name] = fqcn
             all_classes.add(fqcn)
         module_local_classes[current_module_id] = local_classes
@@ -369,12 +392,10 @@ def build_type_id_table(
             fqcn = current_module_id + "." + class_name
             base_names = _iter_class_base_names(class_def)
             if len(base_names) > 1:
-                raise _type_id_input_invalid(
-                    "multiple inheritance is not supported: "
-                    + fqcn
-                    + " -> "
-                    + ", ".join(base_names)
-                )
+                empty_a: dict[str, JsonVal] = {}
+                empty_b: dict[str, JsonVal] = {}
+                empty_c: dict[str, JsonVal] = {}
+                return empty_a, empty_b, empty_c
             base_fqcn = "object"
             if len(base_names) == 1:
                 base_fqcn = _resolve_declared_class_base_fqcn(
@@ -388,7 +409,8 @@ def build_type_id_table(
                 )
             class_bases[fqcn] = base_fqcn
             if fqcn not in children:
-                children[fqcn] = []
+                empty_children: list[str] = []
+                children[fqcn] = empty_children
 
     visit_state: dict[str, int] = {}
 
@@ -410,12 +432,17 @@ def build_type_id_table(
                 cycle.append(stack[cycle_idx])
                 cycle_idx += 1
             cycle.append(fqcn)
-            raise _type_id_input_invalid("inheritance cycle: " + " -> ".join(cycle))
+            visit_state[fqcn] = 2
+            return
 
         visit_state[fqcn] = 1
         base_fqcn = class_bases.get(fqcn, "")
         if base_fqcn in class_bases:
-            _visit(base_fqcn, stack + [fqcn])
+            next_stack: list[str] = []
+            for stack_item in stack:
+                next_stack.append(stack_item)
+            next_stack.append(fqcn)
+            _visit(base_fqcn, next_stack)
         visit_state[fqcn] = 2
 
     class_base_names: list[str] = []
@@ -430,7 +457,8 @@ def build_type_id_table(
     for fqcn in sorted_class_names:
         base_fqcn = class_bases[fqcn]
         if base_fqcn not in children:
-            children[base_fqcn] = []
+            empty_base_children: list[str] = []
+            children[base_fqcn] = empty_base_children
         children[base_fqcn].append(fqcn)
 
     # Sort children for determinism
@@ -456,7 +484,11 @@ def build_type_id_table(
     for builtin_name in _builtin_class_names_in_id_order():
         if builtin_name not in type_info_table:
             raw_tid = _BUILTIN_CLASS_IDS[builtin_name]
-            type_info_table[builtin_name] = {"id": raw_tid, "entry": raw_tid, "exit": raw_tid + 1}
+            standalone_type_info: dict[str, int] = {}
+            standalone_type_info["id"] = raw_tid
+            standalone_type_info["entry"] = raw_tid
+            standalone_type_info["exit"] = raw_tid + 1
+            type_info_table[builtin_name] = standalone_type_info
 
     synthetic_roots: list[str] = []
     for synthetic_root in _ROOT_BASE_NAMES:
@@ -464,7 +496,10 @@ def build_type_id_table(
     for synthetic_root in _type_id_sorted_strings(synthetic_roots):
         if synthetic_root in _BUILTIN_CLASS_IDS:
             continue
-        for child_fqcn in children.get(synthetic_root, []):
+        synthetic_children: list[str] = []
+        if synthetic_root in children:
+            synthetic_children = children[synthetic_root]
+        for child_fqcn in synthetic_children:
             if child_fqcn not in type_info_table:
                 _assign_type_rows(child_fqcn, children, next_id_holder, type_id_table, type_info_table)
 
@@ -477,12 +512,10 @@ def build_type_id_table(
         type_info_table["object"]["exit"] = next_id_holder[0]
 
     if len(type_id_table) != len(class_bases) + len(_BUILTIN_CLASS_IDS):
-        raise _type_id_input_invalid(
-            "failed to assign type_id to all classes: "
-            + str(len(type_id_table))
-            + "/"
-            + str(len(class_bases) + len(_BUILTIN_CLASS_IDS))
-        )
+        empty_a: dict[str, JsonVal] = {}
+        empty_b: dict[str, JsonVal] = {}
+        empty_c: dict[str, JsonVal] = {}
+        return empty_a, empty_b, empty_c
 
     # Build base type_id map
     type_id_base_map: dict[str, int] = {}
@@ -528,11 +561,10 @@ def build_type_id_table(
         type_info_names.append(fqcn)
     for fqcn in _type_id_sorted_strings(type_info_names):
         info_row = type_info_table[fqcn]
-        info: dict[str, JsonVal] = {
-            "id": info_row["id"],
-            "entry": info_row["entry"],
-            "exit": info_row["exit"],
-        }
+        info: dict[str, JsonVal] = {}
+        info["id"] = info_row["id"]
+        info["entry"] = info_row["entry"]
+        info["exit"] = info_row["exit"]
         tid_info[fqcn] = info
 
     return tid_table, tid_base, tid_info

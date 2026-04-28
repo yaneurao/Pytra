@@ -19,6 +19,12 @@ type PyList[T any] struct {
 }
 
 func (*PyList[T]) __pytra_is_list() {}
+func (p *PyList[T]) __len__() int64 {
+	if p == nil {
+		return 0
+	}
+	return int64(len(p.items))
+}
 
 type pyListView interface {
 	pyListLen() int
@@ -58,8 +64,34 @@ func py_tuple_key(value any) string {
 }
 
 func py_list_any(items any) *PyList[any] {
+	if items == nil {
+		return NewPyList[any]()
+	}
+	if direct, ok := items.(*PyList[any]); ok {
+		return direct
+	}
+	if view, ok := items.(pyListView); ok {
+		out := NewPyList[any]()
+		out.items = make([]any, view.pyListLen())
+		for i := 0; i < view.pyListLen(); i++ {
+			out.items[i] = view.pyListItemAny(i)
+		}
+		return out
+	}
 	out := NewPyList[any]()
 	rv := goreflect.ValueOf(items)
+	for rv.IsValid() && rv.Kind() == goreflect.Interface {
+		rv = rv.Elem()
+	}
+	if rv.IsValid() && rv.Kind() == goreflect.Pointer && !rv.IsNil() {
+		elem := rv.Elem()
+		if elem.IsValid() && elem.Kind() == goreflect.Struct {
+			itemsField := elem.FieldByName("items")
+			if itemsField.IsValid() && itemsField.CanInterface() {
+				rv = itemsField
+			}
+		}
+	}
 	if !rv.IsValid() || (rv.Kind() != goreflect.Slice && rv.Kind() != goreflect.Array) {
 		return out
 	}
@@ -121,8 +153,26 @@ func py_to_list_typed[T any](items any) *PyList[T] {
 }
 
 func py_dict_string_any(items any) *PyDict[string, any] {
+	if items == nil {
+		return NewPyDict[string, any]()
+	}
+	if direct, ok := items.(*PyDict[string, any]); ok {
+		return direct
+	}
 	out := NewPyDict[string, any]()
 	rv := goreflect.ValueOf(items)
+	for rv.IsValid() && rv.Kind() == goreflect.Interface {
+		rv = rv.Elem()
+	}
+	if rv.IsValid() && rv.Kind() == goreflect.Pointer && !rv.IsNil() {
+		elem := rv.Elem()
+		if elem.IsValid() && elem.Kind() == goreflect.Struct {
+			itemsField := elem.FieldByName("items")
+			if itemsField.IsValid() && itemsField.Kind() == goreflect.Map {
+				rv = itemsField
+			}
+		}
+	}
 	if !rv.IsValid() || rv.Kind() != goreflect.Map {
 		return out
 	}
@@ -138,6 +188,22 @@ func py_extend[T any](dst *PyList[T], src *PyList[T]) {
 		return
 	}
 	dst.items = append(dst.items, src.items...)
+}
+
+func py_list_insert[T any](list *PyList[T], index int64, value T) {
+	if list == nil {
+		return
+	}
+	if index < 0 {
+		index = 0
+	}
+	if index > int64(len(list.items)) {
+		index = int64(len(list.items))
+	}
+	i := int(index)
+	list.items = append(list.items, value)
+	copy(list.items[i+1:], list.items[i:])
+	list.items[i] = value
 }
 
 func (p *PyList[T]) pyListLen() int {
@@ -188,7 +254,22 @@ type PyDict[K comparable, V any] struct {
 }
 
 func (*PyDict[K, V]) __pytra_is_dict() {}
+func (d *PyDict[K, V]) __len__() int64 {
+	if d == nil {
+		return 0
+	}
+	return int64(len(d.items))
+}
 func (d *PyDict[K, V]) pyDictItemsAny() any { return d.items }
+func (d *PyDict[K, V]) get(key K, fallback V) V {
+	if d == nil {
+		return fallback
+	}
+	if value, ok := d.items[key]; ok {
+		return value
+	}
+	return fallback
+}
 func (d *PyDict[K, V]) __str__() string {
 	if d == nil {
 		return "{}"
@@ -200,10 +281,15 @@ func NewPyDict[K comparable, V any]() *PyDict[K, V] {
 	return &PyDict[K, V]{items: map[K]V{}}
 }
 
-func PyDictFromMap[K comparable, V any](items map[K]V) *PyDict[K, V] {
-	out := make(map[K]V, len(items))
-	for k, v := range items {
-		out[k] = v
+func PyDictFromMap[K comparable, V any](items any) *PyDict[K, V] {
+	if direct, ok := items.(*PyDict[K, V]); ok {
+		return direct
+	}
+	out := map[K]V{}
+	if typed, ok := items.(map[K]V); ok {
+		for k, v := range typed {
+			out[k] = v
+		}
 	}
 	return &PyDict[K, V]{items: out}
 }
@@ -238,6 +324,12 @@ type PySet[T comparable] struct {
 }
 
 func (*PySet[T]) __pytra_is_set() {}
+func (s *PySet[T]) __len__() int64 {
+	if s == nil {
+		return 0
+	}
+	return int64(len(s.items))
+}
 func (s *PySet[T]) pySetItemsAny() any {
 	if s == nil {
 		return map[T]struct{}{}
@@ -255,10 +347,15 @@ func NewPySet[T comparable]() *PySet[T] {
 	return &PySet[T]{items: map[T]struct{}{}}
 }
 
-func PySetFromMap[T comparable](items map[T]struct{}) *PySet[T] {
-	out := make(map[T]struct{}, len(items))
-	for k := range items {
-		out[k] = struct{}{}
+func PySetFromMap[T comparable](items any) *PySet[T] {
+	if direct, ok := items.(*PySet[T]); ok {
+		return direct
+	}
+	out := map[T]struct{}{}
+	if typed, ok := items.(map[T]struct{}); ok {
+		for k := range typed {
+			out[k] = struct{}{}
+		}
 	}
 	return &PySet[T]{items: out}
 }
@@ -1585,6 +1682,18 @@ func py_dict_values(m any) []any {
 }
 
 func py_iter(v any) []any {
+	if list, ok := v.(pyListView); ok {
+		out := make([]any, list.pyListLen())
+		for i := 0; i < list.pyListLen(); i++ {
+			out[i] = list.pyListItemAny(i)
+		}
+		return out
+	}
+	if dict, ok := v.(pyDictAccessor); ok {
+		v = dict.pyDictItemsAny()
+	} else if set, ok := v.(pySetAccessor); ok {
+		v = set.pySetItemsAny()
+	}
 	rv := goreflect.ValueOf(v)
 	if !rv.IsValid() {
 		return []any{}
@@ -1594,6 +1703,12 @@ func py_iter(v any) []any {
 			return []any{}
 		}
 		rv = rv.Elem()
+	}
+	if rv.Kind() == goreflect.Struct {
+		itemsField := rv.FieldByName("items")
+		if itemsField.IsValid() && itemsField.CanInterface() {
+			rv = itemsField
+		}
 	}
 	switch rv.Kind() {
 	case goreflect.Slice, goreflect.Array:

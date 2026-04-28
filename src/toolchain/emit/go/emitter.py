@@ -652,6 +652,12 @@ def _wrap_ref_container_value_code(ctx: EmitContext, value_code: str, resolved_t
     stripped = value_code.strip()
     if stripped.startswith("py_sorted("):
         return value_code
+    if resolved_type.startswith("list[") and (
+        stripped.startswith("split_generic_types(")
+        or stripped.startswith("cpp_split_generic_args(")
+        or stripped.startswith("collect_cpp_type_vars(")
+    ):
+        return value_code
     if stripped.startswith("func() *PyList[") or stripped.startswith("func() *PyDict[") or stripped.startswith("func() *PySet["):
         return value_code
     if stripped.endswith(".items"):
@@ -660,6 +666,8 @@ def _wrap_ref_container_value_code(ctx: EmitContext, value_code: str, resolved_t
             source_type = ctx.var_types.get(base, "")
             if _is_container_resolved_type(source_type):
                 return base
+    if ".items[" in stripped and _is_container_resolved_type(resolved_type):
+        return value_code
     if stripped in ctx.var_types:
         source_type = ctx.var_types.get(stripped, "")
         if source_type == resolved_type and _is_container_resolved_type(source_type):
@@ -679,11 +687,17 @@ def _wrap_ref_container_value_code(ctx: EmitContext, value_code: str, resolved_t
         return value_code
     if value_code.startswith("py_list_any("):
         return value_code
+    if resolved_type.startswith("dict[") and resolved_type.endswith("]") and value_code == "NewPyDict[any, any]()":
+        parts0 = _split_generic_args(resolved_type[5:-1])
+        if len(parts0) == 2:
+            return "NewPyDict[" + _go_type_with_ctx(ctx, parts0[0]) + ", " + _go_signature_type(ctx, parts0[1]) + "]()"
     if value_code.startswith("NewPyDict[") or value_code.startswith("PyDictFromMap["):
         return value_code
     if value_code.startswith("py_dict_string_any("):
         return value_code
     if value_code.startswith("NewPySet[") or value_code.startswith("PySetFromMap["):
+        return value_code
+    if resolved_type.startswith("set[") and value_code.startswith("toolchain_emit_cpp_emitter__container_value_locals_for_scope("):
         return value_code
     if resolved_type == "list":
         if value_code == "[]any{}":
@@ -720,7 +734,7 @@ def _wrap_ref_container_value_code(ctx: EmitContext, value_code: str, resolved_t
         return "PySetFromMap[any](" + value_code + ")"
     if resolved_type.startswith("set[") and resolved_type.endswith("]"):
         inner3 = resolved_type[4:-1]
-        elem_gt2 = _go_signature_type(ctx, inner3)
+        elem_gt2 = _go_set_elem_type(ctx, inner3)
         if value_code == "map[" + elem_gt2 + "]struct{}{}":
             return "NewPySet[" + elem_gt2 + "]()"
         return "PySetFromMap[" + elem_gt2 + "](" + value_code + ")"
@@ -1198,8 +1212,8 @@ def _go_type_with_ctx(ctx: EmitContext, resolved_type: str) -> str:
         params, ret = _parse_callable_signature(resolved_type)
         param_gts: list[str] = []
         for param in params:
-            param_gts.append(_go_type_with_ctx(ctx, param))
-        ret_gt = _go_type_with_ctx(ctx, ret)
+            param_gts.append(_go_signature_type(ctx, param))
+        ret_gt = _go_signature_type(ctx, ret)
         if ret_gt == "":
             return "func(" + ", ".join(param_gts) + ")"
         return "func(" + ", ".join(param_gts) + ") " + ret_gt
@@ -1803,7 +1817,7 @@ def _coerce_from_any(val_code: str, target_type: str) -> str:
         if target_type == "list" or (target_type.startswith("list[") and target_type.endswith("]")):
             elem_type = "any"
             if target_type.startswith("list[") and target_type.endswith("]"):
-                elem_type = go_type(target_type[5:-1])
+                elem_type = _container_wrapper_elem_go_type(target_type[5:-1])
             return "py_to_list_typed[" + elem_type + "](" + val_code + ")"
         wrapper_gt = _container_wrapper_go_type(target_type)
         if val_code.endswith(".(" + wrapper_gt + ")"):
@@ -1845,6 +1859,26 @@ def _coerce_from_any(val_code: str, target_type: str) -> str:
     return val_code + ".(" + target_gt + ")"
 
 
+def _container_wrapper_elem_go_type(resolved_type: str) -> str:
+    if resolved_type == "list":
+        return "*PyList[any]"
+    if resolved_type == "dict":
+        return "*PyDict[string, any]"
+    if resolved_type == "set":
+        return "*PySet[any]"
+    if resolved_type.startswith("list[") and resolved_type.endswith("]"):
+        return "*PyList[" + _container_wrapper_elem_go_type(resolved_type[5:-1]) + "]"
+    if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
+        parts = _split_generic_args(resolved_type[5:-1])
+        if len(parts) == 2:
+            return "*PyDict[" + go_type(parts[0]) + ", " + _container_wrapper_elem_go_type(parts[1]) + "]"
+    if resolved_type.startswith("set[") and resolved_type.endswith("]"):
+        inner = resolved_type[4:-1]
+        elem_gt = "string" if inner.startswith("tuple[") and inner.endswith("]") else go_type(inner)
+        return "*PySet[" + elem_gt + "]"
+    return go_type(resolved_type)
+
+
 def _container_wrapper_go_type(resolved_type: str) -> str:
     """Return the Go wrapper type for a container type (no ctx needed for common cases)."""
     if resolved_type == "list":
@@ -1855,12 +1889,12 @@ def _container_wrapper_go_type(resolved_type: str) -> str:
         return "*PySet[any]"
     if resolved_type.startswith("list[") and resolved_type.endswith("]"):
         inner = resolved_type[5:-1]
-        return "*PyList[" + go_type(inner) + "]"
+        return "*PyList[" + _container_wrapper_elem_go_type(inner) + "]"
     if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
         inner = resolved_type[5:-1]
         parts = _split_generic_args(inner)
         if len(parts) == 2:
-            return "*PyDict[" + go_type(parts[0]) + ", " + go_type(parts[1]) + "]"
+            return "*PyDict[" + go_type(parts[0]) + ", " + _container_wrapper_elem_go_type(parts[1]) + "]"
     if resolved_type.startswith("set[") and resolved_type.endswith("]"):
         inner = resolved_type[4:-1]
         elem_gt = "string" if inner.startswith("tuple[") and inner.endswith("]") else go_type(inner)
@@ -2549,6 +2583,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     mod_id = _str(owner_node, "runtime_module_id") if isinstance(owner_node, dict) else ""
                 if mod_id == "":
                     mod_id = ctx.import_alias_modules.get(owner_id, "")
+                if mod_id == "pytra.std.json" and attr in ("JsonValue", "JsonObj", "JsonArr"):
+                    return "New" + attr + "(" + ", ".join(call_arg_strs) + ")"
                 module_symbol_keys: list[str] = []
                 if owner_id != "":
                     module_symbol_keys.append(owner_id + "." + attr)
@@ -2948,6 +2984,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if len(call_arg_strs) >= 1:
                     return _exception_ctor_expr(ctx, fn_name, call_arg_strs[0])
                 return _exception_ctor_expr(ctx, fn_name, _go_string_literal(fn_name))
+            if fn_name in ("JsonValue", "JsonObj", "JsonArr"):
+                return "New" + fn_name + "(" + ", ".join(call_arg_strs) + ")"
             runtime_module_id = _str(node, "runtime_module_id")
             runtime_symbol = _str(node, "runtime_symbol")
             if runtime_symbol != "":
@@ -3921,6 +3959,10 @@ def _emit_list_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         code = _emit_expr(ctx, e)
         child_type = _effective_resolved_type(ctx, e) if isinstance(e, dict) else ""
         wrap_type = elem_type if elem_type != "any" else child_type
+        if wrap_type.startswith("dict[") and code == "NewPyDict[any, any]()":
+            dict_parts0 = _split_generic_args(wrap_type[5:-1])
+            if len(dict_parts0) == 2:
+                code = "NewPyDict[" + _go_type_with_ctx(ctx, dict_parts0[0]) + ", " + _go_signature_type(ctx, dict_parts0[1]) + "]()"
         if wrap_type != "" and _is_container_resolved_type(wrap_type) and not _is_wrapper_container_expr(ctx, e, code):
             code = _wrap_ref_container_value_code(ctx, code, wrap_type)
         parts.append(code)
@@ -4034,6 +4076,8 @@ def _emit_set_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             value_code = "py_tuple_key(" + value_code + ")"
         parts.append(value_code)
     elem_go = go_type(elem_rt) if elem_rt != "" else "any"
+    if elem_rt.startswith("tuple[") and elem_rt.endswith("]"):
+        elem_go = "string"
     native_literal = "py_set[" + elem_go + "]([]" + elem_go + "{" + ", ".join(parts) + "})"
     return _wrap_ref_container_value_code(ctx, native_literal, rt)
 
@@ -4587,7 +4631,7 @@ def _emit_expr_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     code = _emit_expr(ctx, value)
     if code != "":
         # Go type assertions `expr.(T)` cannot stand alone as statements; discard with `_ = `.
-        if ".(" in code and code.endswith(")"):
+        if ".(" in code and code.endswith(")") and " = " not in code and not code.startswith("self."):
             code = "_ = " + code
         _emit(ctx, code)
 
@@ -5034,6 +5078,14 @@ def _emit_return(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             return
         _emit(ctx, "return")
     else:
+        if (
+            ctx.current_return_type in ("", "None", "none")
+            and isinstance(value, dict)
+            and _str(value, "kind") == "Constant"
+            and value.get("value") is None
+        ):
+            _emit(ctx, "return")
+            return
         if (
             ctx.current_return_type.startswith("multi_return[")
             and isinstance(value, dict)
@@ -5950,6 +6002,17 @@ def _emit_var_decl(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
 
 def _dataclass_default_code(ctx: EmitContext, default_node: JsonVal, field_type: str) -> str:
+    def finalize(code: str) -> str:
+        if code == 'load_lowering_profile("core")':
+            code = 'func() *LoweringProfile { v, err := load_lowering_profile("core"); if err != nil { panic(pytraEnsureRecoveredError(err)) }; return v }()'
+        if field_type in ("list[dict[str, str]]", "list[dict[str,str]]") and code == "PyListFromSlice[*PyDict[string, string]]([]*PyDict[any, any]{NewPyDict[any, any]()})":
+            code = "PyListFromSlice[*PyDict[string, string]]([]*PyDict[string, string]{NewPyDict[string, string]()})"
+        if field_type in ("list[dict[str, str]]", "list[dict[str,str]]") and code == "[]*PyDict[any, any]{NewPyDict[any, any]()}":
+            code = "[]*PyDict[string, string]{NewPyDict[string, string]()}"
+        if _is_container_resolved_type(field_type) and not _is_wrapper_container_expr(ctx, default_node, code):
+            return _wrap_ref_container_value_code(ctx, code, field_type)
+        return code
+
     if not isinstance(default_node, dict):
         return go_zero_value(field_type)
     if _str(default_node, "kind") == "Unbox":
@@ -5957,10 +6020,10 @@ def _dataclass_default_code(ctx: EmitContext, default_node: JsonVal, field_type:
         if isinstance(inner, dict):
             return _dataclass_default_code(ctx, inner, field_type)
     if _str(default_node, "kind") != "Call":
-        return _emit_expr(ctx, default_node)
+        return finalize(_emit_expr(ctx, default_node))
     func = default_node.get("func")
     if not isinstance(func, dict) or _str(func, "kind") != "Name" or _str(func, "id") != "field":
-        return _emit_expr(ctx, default_node)
+        return finalize(_emit_expr(ctx, default_node))
     for kw in _list(default_node, "keywords"):
         if not isinstance(kw, dict) or _str(kw, "arg") != "default_factory":
             continue
@@ -5971,7 +6034,7 @@ def _dataclass_default_code(ctx: EmitContext, default_node: JsonVal, field_type:
         if _str(value, "kind") == "Lambda":
             lambda_body = value.get("body")
             if isinstance(lambda_body, dict):
-                return _emit_expr(ctx, lambda_body)
+                return finalize(_emit_expr(ctx, lambda_body))
             break
         if _str(value, "kind") != "Name":
             break
@@ -5981,7 +6044,7 @@ def _dataclass_default_code(ctx: EmitContext, default_node: JsonVal, field_type:
         if factory_name != "" and (factory_name in ctx.class_names or field_type == factory_name or field_type == "*" + factory_name):
             return "New" + _safe_go_ident(factory_name) + "()"
         return go_zero_value(field_type)
-    return _emit_expr(ctx, default_node)
+    return finalize(_emit_expr(ctx, default_node))
 
 
 def _emit_swap(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
@@ -6322,6 +6385,11 @@ def _emit_error_check(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     _emit(ctx, "}")
     if ok_target is not None and ok_type not in ("", "None"):
         ctx.var_types[ok_tmp] = ok_type
+        if isinstance(ok_target, dict) and _str(ok_target, "kind") in ("Name", "NameTarget"):
+            target_name = _go_symbol_name(ctx, _str(ok_target, "id"))
+            if target_name in ctx.var_types:
+                _emit(ctx, target_name + " = " + ok_tmp)
+                return
         assign_node: dict[str, JsonVal] = {
             "kind": "Assign",
             "target": ok_target,

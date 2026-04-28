@@ -152,9 +152,9 @@ def _resolve_runtime_dep_or_fail(module_id: str, *, required: bool = True) -> st
 def _has_format_spec(node: JsonVal) -> bool:
     """EAST ノードツリーに format_spec を持つ FormattedValue が含まれるか再帰検査。"""
     if jv_is_dict(node):
-        node_dict = jv_dict(node)
+        node_dict: dict[str, JsonVal] = jv_dict(node)
         if jv_str(node_dict.get("kind")) == "FormattedValue":
-            fs = "" + jv_str(node_dict.get("format_spec"))
+            fs: str = "" + jv_str(node_dict.get("format_spec"))
             if fs != "":
                 return True
         for key in node_dict.keys():
@@ -206,14 +206,15 @@ def _is_type_only_symbol_binding(module_id: str, export_name: str, *, target: st
 def _import_from_is_type_only(module_id: str, names_val: JsonVal, *, target: str = "") -> bool:
     if not jv_is_list(names_val):
         return False
-    names = jv_list(names_val)
+    names: list[JsonVal] = jv_list(names_val)
     if len(names) == 0:
         return False
     saw_symbol = False
     for ent in names:
         if not jv_is_dict(ent):
             return False
-        sym = "" + jv_str(jv_dict(ent).get("name"))
+        ent_node: dict[str, JsonVal] = jv_dict(ent)
+        sym: str = "" + jv_str(ent_node.get("name"))
         if sym == "":
             return False
         saw_symbol = True
@@ -231,8 +232,8 @@ def _runtime_discovery_scan_runtime_refs(node: JsonVal, out: set[str], *, includ
     if not jv_is_dict(node):
         return
 
-    node_dict = jv_dict(node)
-    kind = "" + jv_str(node_dict.get("kind"))
+    node_dict: dict[str, JsonVal] = jv_dict(node)
+    kind: str = "" + jv_str(node_dict.get("kind"))
     runtime_module_id = _normalized_runtime_module_id(node_dict)
     if kind != "" and runtime_module_id != "":
         out.add(runtime_module_id)
@@ -240,7 +241,7 @@ def _runtime_discovery_scan_runtime_refs(node: JsonVal, out: set[str], *, includ
         out.add("pytra.built_in.type_id")
 
     for key in node_dict.keys():
-        value = node_dict.get(key)
+        value: JsonVal = node_dict.get(key)
         if jv_is_dict(value) or jv_is_list(value):
             _runtime_discovery_scan_runtime_refs(value, out, include_type_id_runtime=include_type_id_runtime)
 
@@ -282,17 +283,17 @@ def discover_runtime_modules(
             # Scan meta.import_bindings
             meta_val = east_doc.get("meta")
             if jv_is_dict(meta_val):
-                meta = jv_dict(meta_val)
-                bindings_val = meta.get("import_bindings")
+                meta: dict[str, JsonVal] = jv_dict(meta_val)
+                bindings_val: JsonVal = meta.get("import_bindings")
                 if jv_is_list(bindings_val):
                     for binding_val in jv_list(bindings_val):
                         if not jv_is_dict(binding_val):
                             continue
-                        binding = jv_dict(binding_val)
-                        export_name = binding.get("export_name")
-                        mod_id = binding.get("module_id")
-                        mod_id_text = "" + jv_str(mod_id)
-                        export_name_text = "" + jv_str(export_name)
+                        binding: dict[str, JsonVal] = jv_dict(binding_val)
+                        export_name: JsonVal = binding.get("export_name")
+                        mod_id: JsonVal = binding.get("module_id")
+                        mod_id_text: str = "" + jv_str(mod_id)
+                        export_name_text: str = "" + jv_str(export_name)
                         if (
                             mod_id_text != ""
                             and not (
@@ -308,8 +309,8 @@ def discover_runtime_modules(
                 for stmt_val in jv_list(body_val):
                     if not jv_is_dict(stmt_val):
                         continue
-                    stmt = jv_dict(stmt_val)
-                    kind_text = "" + jv_str(stmt.get("kind"))
+                    stmt: dict[str, JsonVal] = jv_dict(stmt_val)
+                    kind_text: str = "" + jv_str(stmt.get("kind"))
                     if kind_text == "ImportFrom":
                         mod = stmt.get("module")
                         mod_text = "" + jv_str(mod)
@@ -323,7 +324,7 @@ def discover_runtime_modules(
                                 for ent_val in jv_list(names_val):
                                     if jv_is_dict(ent_val):
                                         ent: dict[str, JsonVal] = jv_dict(ent_val)
-                                        sym = "" + jv_str(ent.get("name"))
+                                        sym: str = "" + jv_str(ent.get("name"))
                                         if sym != "":
                                             sub_mod = mod_text + "." + sym
                                             _append_runtime_dep(new_deps, seen_paths, sub_mod, required=False)
@@ -333,7 +334,7 @@ def discover_runtime_modules(
                             for ent_val in jv_list(names_val):
                                 if jv_is_dict(ent_val):
                                     ent: dict[str, JsonVal] = jv_dict(ent_val)
-                                    name_val = "" + jv_str(ent.get("name"))
+                                    name_val: str = "" + jv_str(ent.get("name"))
                                     if name_val != "":
                                         _append_runtime_dep(new_deps, seen_paths, name_val, required=True)
 
@@ -349,7 +350,10 @@ def discover_runtime_modules(
                 embedded_runtime_refs,
                 include_type_id_runtime=(target != "cpp"),
             )
-            runtime_refs_sorted = _runtime_discovery_sorted_strings(list(embedded_runtime_refs))
+            runtime_refs: list[str] = []
+            for runtime_ref in embedded_runtime_refs:
+                runtime_refs.append(runtime_ref)
+            runtime_refs_sorted = _runtime_discovery_sorted_strings(runtime_refs)
             for runtime_module_id in runtime_refs_sorted:
                 _append_runtime_dep(new_deps, seen_paths, runtime_module_id, required=True)
 
@@ -357,7 +361,7 @@ def discover_runtime_modules(
             if path_str in seen_paths:
                 continue
             seen_paths.add(path_str)
-            doc = _load_east_file(path_str)
+            doc: dict[str, JsonVal] = _load_east_file(path_str)
             result[path_str] = doc
             changed = True
 

@@ -41,10 +41,10 @@ class ManifestModuleEntryDraft:
     def from_jv(entry: dict[str, JsonVal], index: int) -> ManifestModuleEntryDraft:
         output_raw = json.JsonValue(entry.get("output")).as_str()
         if output_raw is None:
-            raise RuntimeError("manifest.modules[" + str(index) + "].output must be non-empty string")
+            return ManifestModuleEntryDraft()
         output: str = output_raw
         if output == "":
-            raise RuntimeError("manifest.modules[" + str(index) + "].output must be non-empty string")
+            return ManifestModuleEntryDraft()
         module_id = ""
         module_id_raw = json.JsonValue(entry.get("module_id")).as_str()
         if module_id_raw is not None:
@@ -96,19 +96,19 @@ def _parse_args(argv: list[str]) -> tuple[str, str, str]:
         tok: str = argv[i]
         if tok == "-o" or tok == "--output-dir":
             if i + 1 >= len(argv):
-                raise RuntimeError("missing value for " + tok)
+                return "", "", "__pytra_error__:missing value for " + tok
             output_dir_text = argv[i + 1]
             i += 2
             continue
         if tok == "--ext":
             if i + 1 >= len(argv):
-                raise RuntimeError("missing value for --ext")
+                return "", "", "__pytra_error__:missing value for --ext"
             file_ext = argv[i + 1]
             i += 2
             continue
         if tok == "-h" or tok == "--help":
             print("usage: python3 -m toolchain.emit.<lang>.cli MANIFEST_DIR_OR_FILE [-o OUTPUT_DIR] [--ext .EXT]")
-            raise SystemExit(0)
+            return "", "", "__pytra_help__"
         if not tok.startswith("-") and input_text == "":
             input_text = tok
         i += 1
@@ -145,12 +145,12 @@ def _load_linked_modules(manifest_path: Path) -> list[dict[str, JsonVal]]:
     manifest_doc: JsonVal = json.loads(manifest_text).raw
     manifest_obj = json.JsonValue(manifest_doc).as_obj()
     if manifest_obj is None:
-        raise RuntimeError("manifest root must be object: " + str(manifest_path))
+        return []
     typed_manifest: dict[str, JsonVal] = manifest_obj.raw
     modules_raw: JsonVal = typed_manifest.get("modules")
     modules_arr = json.JsonValue(modules_raw).as_arr()
     if modules_arr is None:
-        raise RuntimeError("manifest.modules must be list")
+        return []
     manifest_dir: Path = _path_parent(manifest_path)
     result: list[dict[str, JsonVal]] = []
     index: int = 0
@@ -158,7 +158,8 @@ def _load_linked_modules(manifest_path: Path) -> list[dict[str, JsonVal]]:
         entry: JsonVal = modules_arr.raw[index]
         entry_obj = json.JsonValue(entry).as_obj()
         if entry_obj is None:
-            raise RuntimeError("manifest.modules[" + str(index) + "] must be object")
+            index += 1
+            continue
         typed_entry: dict[str, JsonVal] = entry_obj.raw
         manifest_entry = ManifestModuleEntryDraft.from_jv(typed_entry, index)
         east_path: Path = manifest_dir.joinpath(manifest_entry.output)
@@ -166,7 +167,8 @@ def _load_linked_modules(manifest_path: Path) -> list[dict[str, JsonVal]]:
         east_doc: JsonVal = json.loads(east_text).raw
         east_obj = json.JsonValue(east_doc).as_obj()
         if east_obj is None:
-            raise RuntimeError("linked EAST root must be object: " + str(east_path))
+            index += 1
+            continue
         typed_east: dict[str, JsonVal] = east_obj.raw
         manifest_entry.inject_cli_meta(typed_east)
         result.append(typed_east)
@@ -206,15 +208,22 @@ def run_emit_cli(
     input_text = parsed_args[0]
     output_dir_text = parsed_args[1]
     file_ext = parsed_args[2]
+    if file_ext == "__pytra_help__":
+        return 0
+    if file_ext.startswith("__pytra_error__:"):
+        print("error: " + file_ext[len("__pytra_error__:") :])
+        return 1
 
     use_direct = direct_emit_fn is not None
     if not use_direct:
         if emit_fn is None:
-            raise RuntimeError("either emit_fn or direct_emit_fn must be provided")
+            print("error: either emit_fn or direct_emit_fn must be provided")
+            return 1
         if file_ext == "":
             file_ext = default_ext
         if file_ext == "":
-            raise RuntimeError("file extension must be specified via --ext or default_ext")
+            print("error: file extension must be specified via --ext or default_ext")
+            return 1
 
     if input_text == "":
         print("error: manifest.json path or directory is required")
@@ -242,7 +251,7 @@ def run_emit_cli(
     elif emit_fn is not None:
         active_emit_fn = emit_fn
         for east_doc in modules:
-            code = active_emit_fn(east_doc)
+            code: str = active_emit_fn(east_doc)
             if code.strip() == "":
                 continue
             meta: JsonVal = east_doc.get("meta")

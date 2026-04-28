@@ -55,6 +55,14 @@ func NewPath(s string) *Path {
 	return &Path{_path: s}
 }
 
+func Path_cwd() *Path {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return NewPath("")
+	}
+	return NewPath(cwd)
+}
+
 func (p *Path) __pytra_is_Path() {}
 
 func (p *Path) String() string {

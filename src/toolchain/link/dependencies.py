@@ -97,12 +97,12 @@ def _normalized_runtime_module_id(node: JsonVal) -> str:
     if not jv_is_dict(node):
         return ""
     node_map: dict[str, JsonVal] = jv_dict(node)
-    runtime_module_id = nd_get_str(node_map, "runtime_module_id")
+    runtime_module_id: str = nd_get_str(node_map, "runtime_module_id")
     if runtime_module_id == "":
         return ""
     if runtime_module_id == "pytra.core.str":
-        runtime_symbol = nd_get_str(node_map, "runtime_symbol")
-        runtime_call = nd_get_str(node_map, "runtime_call")
+        runtime_symbol: str = nd_get_str(node_map, "runtime_symbol")
+        runtime_call: str = nd_get_str(node_map, "runtime_call")
         if runtime_symbol in _DEPENDENCIES_STRING_OP_RUNTIME_SYMBOLS or runtime_call in _DEPENDENCIES_STRING_OP_RUNTIME_SYMBOLS:
             return "pytra.built_in.string_ops"
     return "" + runtime_module_id
@@ -115,12 +115,12 @@ def _binding_dependency_module_id(binding: JsonVal) -> str:
         return ""
 
     binding_node: dict[str, JsonVal] = jv_dict(binding)
-    runtime_module_id = nd_get_str(binding_node, "runtime_module_id")
-    runtime_group = nd_get_str(binding_node, "runtime_group")
-    module_id = nd_get_str(binding_node, "module_id")
-    host_only = nd_get_bool(binding_node, "host_only")
-    binding_kind = nd_get_str(binding_node, "binding_kind")
-    resolved_binding_kind = nd_get_str(binding_node, "resolved_binding_kind")
+    runtime_module_id: str = nd_get_str(binding_node, "runtime_module_id")
+    runtime_group: str = nd_get_str(binding_node, "runtime_group")
+    module_id: str = nd_get_str(binding_node, "module_id")
+    host_only: bool = nd_get_bool(binding_node, "host_only")
+    binding_kind: str = nd_get_str(binding_node, "binding_kind")
+    resolved_binding_kind: str = nd_get_str(binding_node, "resolved_binding_kind")
 
     if runtime_module_id != "":
         if is_type_only_dependency_module_id(runtime_module_id):
@@ -156,9 +156,9 @@ def _build_resolved_dependencies(
     meta_val = east_doc.get("meta")
     if not jv_is_dict(meta_val):
         return deps
-    meta_node = jv_dict(meta_val)
+    meta_node: dict[str, JsonVal] = jv_dict(meta_val)
 
-    bindings = nd_get_list(meta_node, "import_bindings")
+    bindings: list[JsonVal] = nd_get_list(meta_node, "import_bindings")
     saw_import_bindings = len(bindings) != 0
     for binding in bindings:
         mod_id = _binding_dependency_module_id(binding)
@@ -183,19 +183,20 @@ def _build_resolved_dependencies(
             for stmt in jv_list(body_val):
                 if not jv_is_dict(stmt):
                     continue
-                stmt_node = jv_dict(stmt)
-                kind = nd_get_str(stmt_node, "kind")
+                stmt_node: dict[str, JsonVal] = jv_dict(stmt)
+                kind: str = nd_get_str(stmt_node, "kind")
                 if kind == "ImportFrom":
-                    mod = nd_get_str(stmt_node, "module")
+                    mod: str = nd_get_str(stmt_node, "module")
                     if mod.strip() != "" and mod not in seen:
                         seen.add(mod)
                         deps.append(mod)
                 elif kind == "Import":
-                    names = nd_get_list(stmt_node, "names")
+                    names: list[JsonVal] = nd_get_list(stmt_node, "names")
                     for ent in names:
                         if not jv_is_dict(ent):
                             continue
-                        name = nd_get_str(jv_dict(ent), "name")
+                        ent_node: dict[str, JsonVal] = jv_dict(ent)
+                        name: str = nd_get_str(ent_node, "name")
                         if name.strip() != "" and name not in seen:
                             seen.add(name)
                             deps.append(name)

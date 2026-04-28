@@ -226,6 +226,6 @@ def load_profile_doc(language: str) -> dict[str, JsonVal]:
     cached = _PROFILE_DOC_CACHE.get(language)
     if cached is not None:
         return cached
-    loaded = load_profile_with_includes(_profile_root() / (language + ".json"))
+    loaded: dict[str, JsonVal] = load_profile_with_includes(_profile_root() / (language + ".json"))
     _PROFILE_DOC_CACHE[language] = loaded
     return loaded

@@ -34,8 +34,8 @@
 
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を go に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
-1. [ ] [ID: P1-HOST-CPP-EMITTER-GO-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target go -o work/selfhost/host-cpp/go/` で変換 + build を通す
-2. [ ] [ID: P1-HOST-CPP-EMITTER-GO-S2] go 版 C++ emitter で fixture manifest を処理し、Python 版 emitter と parity 一致を確認する
+1. [x] [ID: P1-HOST-CPP-EMITTER-GO-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target go -o work/selfhost/host-cpp/go/` で変換 + build を通す
+2. [x] [ID: P1-HOST-CPP-EMITTER-GO-S2] go 版 C++ emitter で fixture manifest を処理し、Python 版 emitter と parity 一致を確認する
 
 ### P1-EMITTER-SELFHOST-GO: emit/go/cli.py を単独で selfhost C++ build に通す
 

@@ -13,15 +13,15 @@ from toolchain.compile.jv import jv_str, jv_is_dict, jv_dict, nd_get_dict, nd_ge
 def collect_import_modules(east_doc: dict[str, JsonVal]) -> dict[str, str]:
     """Extract meta.import_modules from EAST3 meta."""
     import_modules: dict[str, str] = {}
-    meta = nd_get_dict(east_doc, "meta")
+    meta: dict[str, JsonVal] = nd_get_dict(east_doc, "meta")
     if len(meta) == 0:
         return import_modules
-    im_map = nd_get_dict(meta, "import_modules")
+    im_map: dict[str, JsonVal] = nd_get_dict(meta, "import_modules")
     if len(im_map) == 0:
         return import_modules
     for alias in im_map.keys():
-        mod_val = im_map[alias]
-        mod_id = jv_str(mod_val)
+        mod_val: JsonVal = im_map[alias]
+        mod_id: str = jv_str(mod_val)
         if alias != "" and mod_id != "":
             import_modules[alias] = "" + mod_id
     return import_modules
@@ -30,19 +30,19 @@ def collect_import_modules(east_doc: dict[str, JsonVal]) -> dict[str, str]:
 def collect_import_symbols(east_doc: dict[str, JsonVal]) -> dict[str, str]:
     """Extract meta.import_symbols from EAST3 meta."""
     import_symbols: dict[str, str] = {}
-    meta = nd_get_dict(east_doc, "meta")
+    meta: dict[str, JsonVal] = nd_get_dict(east_doc, "meta")
     if len(meta) == 0:
         return import_symbols
-    is_map = nd_get_dict(meta, "import_symbols")
+    is_map: dict[str, JsonVal] = nd_get_dict(meta, "import_symbols")
     if len(is_map) == 0:
         return import_symbols
     for alias in is_map.keys():
-        info_val = is_map[alias]
+        info_val: JsonVal = is_map[alias]
         if not jv_is_dict(info_val):
             continue
-        info = jv_dict(info_val)
-        mod = nd_get_str(info, "module")
-        name = nd_get_str(info, "name")
+        info: dict[str, JsonVal] = jv_dict(info_val)
+        mod: str = nd_get_str(info, "module")
+        name: str = nd_get_str(info, "name")
         if alias != "" and mod != "" and name != "":
             import_symbols[alias] = mod + "::" + name
     return import_symbols

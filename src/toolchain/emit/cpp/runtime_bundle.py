@@ -213,7 +213,7 @@ def _rb_append_header_only_impls(header_text: str, cpp_text: str) -> str:
     impl_body = _rb_cpp_impl_body(cpp_text)
     if impl_body == "":
         return header_text
-    lines = header_text.splitlines()
+    lines: list[str] = header_text.split("\n")
     insert_at = len(lines)
     i = 0
     for line in lines:
@@ -235,7 +235,7 @@ def _rb_append_header_only_impls(header_text: str, cpp_text: str) -> str:
 
 
 def _rb_inject_runtime_native_companion_include(header_text: str, module_id: str) -> str:
-    native_hdr = native_companion_header_path(module_id)
+    native_hdr: Path = native_companion_header_path(module_id)
     if not native_hdr.exists():
         return header_text
     rel = str(native_hdr).replace("\\", "/")
@@ -244,7 +244,7 @@ def _rb_inject_runtime_native_companion_include(header_text: str, module_id: str
     include_line = '#include "' + rel + '"'
     if include_line in header_text:
         return header_text
-    lines = header_text.splitlines()
+    lines: list[str] = header_text.split("\n")
     insert_at = len(lines)
     i = 0
     for line in lines:
@@ -282,7 +282,7 @@ def emit_runtime_module_artifacts(
     Returns `(header_path, source_path)` as strings; `source_path` may be empty
     for header-only modules.
     """
-    rel = runtime_rel_tail_for_module(module_id)
+    rel: str = runtime_rel_tail_for_module(module_id)
     if rel == "":
         return "", ""
 
@@ -306,9 +306,11 @@ def emit_runtime_module_artifacts(
         if _rb_json_str_value(linked_dict.get("module_id")) == "":
             linked_dict["module_id"] = module_id
 
-    cpp_text = ""
-    source_out = ""
-    has_native_companion = native_companion_header_path(module_id).exists() or native_companion_source_path(module_id).exists()
+    cpp_text: str = ""
+    source_out: str = ""
+    native_header_path: Path = native_companion_header_path(module_id)
+    native_source_path: Path = native_companion_source_path(module_id)
+    has_native_companion = native_header_path.exists() or native_source_path.exists()
     header_only_templates = _rb_runtime_module_is_header_only_template_lane(emit_doc)
     if (not has_native_companion) and _rb_has_cpp_emit_definitions(emit_doc):
         cpp_text = emit_cpp_module(
@@ -323,19 +325,19 @@ def emit_runtime_module_artifacts(
             source_out = str(source_path_out)
 
     native_include = ""
-    native_header = native_companion_header_path(module_id)
+    native_header: Path = native_header_path
     if native_header.exists():
         # Use path relative to src/ so the generated #include resolves via -I src_dir
         # rather than self-shadowing via -I emit_dir (which takes search precedence).
         native_include = str(native_header).replace("\\", "/")
         if native_include.startswith("src/"):
             native_include = native_include[4:]
-    header_text = build_cpp_header_from_east3(
+    header_text: str = build_cpp_header_from_east3(
         module_id,
         east_doc,
-        rel_header_path=rel + ".h",
-        native_header_include=native_include,
-        prefer_native_header=native_include != "",
+        rel + ".h",
+        native_include,
+        native_include != "",
     )
     if header_only_templates and cpp_text.strip() != "":
         header_text = _rb_append_header_only_impls(header_text, cpp_text)
@@ -372,11 +374,13 @@ def write_helper_module_artifacts(
     header_path = output_dir.joinpath(rel_header_path)
     cpp_path.parent.mkdir(parents=True, exist_ok=True)
     header_path.parent.mkdir(parents=True, exist_ok=True)
-    cpp_text = emit_cpp_module(east_doc, False, rel_header_path)
-    header_text = build_cpp_header_from_east3(
+    cpp_text: str = emit_cpp_module(east_doc, False, rel_header_path)
+    header_text: str = build_cpp_header_from_east3(
         module_id,
         east_doc,
-        rel_header_path=rel_header_path,
+        rel_header_path,
+        "",
+        False,
     )
     cpp_path.write_text(cpp_text, encoding="utf-8")
     header_path.write_text(header_text, encoding="utf-8")
@@ -390,17 +394,19 @@ def write_user_module_artifacts(
     output_dir: Path,
 ) -> int:
     """Write user module source/header and return emitted file count."""
-    rel_header_path = cpp_user_header_for_module(module_id)
-    cpp_text = emit_cpp_module(east_doc, False, rel_header_path)
+    rel_header_path: str = cpp_user_header_for_module(module_id)
+    cpp_text: str = emit_cpp_module(east_doc, False, rel_header_path)
     if cpp_text.strip() == "":
         return 0
     cpp_path = output_dir.joinpath(module_id.replace(".", "_") + ".cpp")
     header_path = output_dir.joinpath(rel_header_path)
     header_path.parent.mkdir(parents=True, exist_ok=True)
-    header_text = build_cpp_header_from_east3(
+    header_text: str = build_cpp_header_from_east3(
         module_id,
         east_doc,
-        rel_header_path=rel_header_path,
+        rel_header_path,
+        "",
+        False,
     )
     cpp_path.write_text(cpp_text, encoding="utf-8")
     header_path.write_text(header_text, encoding="utf-8")

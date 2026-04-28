@@ -9,7 +9,14 @@ import pytra.std.json as json
 from pytra.std.json import JsonVal
 
 from toolchain.emit.cpp.runtime_paths import collect_cpp_dependency_module_ids, cpp_include_for_module
-from toolchain.emit.cpp.types import cpp_param_decl, cpp_signature_type, collect_cpp_type_vars, cpp_alias_union_expansion, is_container_resolved_type
+from toolchain.emit.cpp.types import (
+    cpp_param_decl,
+    cpp_param_decl_mut,
+    cpp_signature_type,
+    collect_cpp_type_vars,
+    cpp_alias_union_expansion,
+    is_container_resolved_type,
+)
 
 
 @dataclass
@@ -130,7 +137,6 @@ def _hg_emit_recursive_union_alias_decl(lines: list[str], node: dict[str, JsonVa
 def build_cpp_header_from_east3(
     module_id: str,
     east_doc: dict[str, JsonVal],
-    *,
     rel_header_path: str,
     native_header_include: str = "",
     prefer_native_header: bool = False,
@@ -168,11 +174,12 @@ def build_cpp_header_from_east3(
         ])
         return "\n".join(lines)
 
-    for dep_id in dep_ids:
+    for dep_id_raw in dep_ids:
+        dep_id = str(dep_id_raw)
         dep_text = str(dep_id)
         if dep_id == "" or dep_text == "None" or dep_text == "undefined":
             continue
-        include_path = cpp_include_for_module(dep_id)
+        include_path: str = cpp_include_for_module(dep_id)
         include_text = str(include_path)
         if include_path == "" or include_text == "None" or include_text == "undefined" or include_path in seen:
             continue
@@ -261,7 +268,7 @@ def _hg_function_decl(
     if name == "__init__" and owner_name != "":
         return owner_name + "(" + ", ".join(params) + ")"
     return_type = _hg_return_type(node)
-    ret = cpp_signature_type(return_type)
+    ret: str = cpp_signature_type(return_type)
     prefix = ""
     static_prefix = ""
     suffix = ""
@@ -376,11 +383,11 @@ def _hg_function_params(
             or _hg_function_param_is_mutated_via_call(node, arg_text, mutable_param_indexes)
             or (_hg_is_user_class_param_type(resolved_type) and usage_text != "readonly")
         )
-        text = cpp_param_decl(resolved_type, _hg_safe_cpp_ident(arg_text), is_mutable=mutable_arg)
+        text: str = cpp_param_decl_mut(resolved_type, _hg_safe_cpp_ident(arg_text), mutable_arg)
         default_node = defaults.get(arg_text)
         default_obj = json.JsonValue(default_node).as_obj()
         if default_obj is not None:
-            default_text = _hg_render_default_expr(default_obj.raw)
+            default_text: str = _hg_render_default_expr(default_obj.raw)
             if default_text != "":
                 text += " = " + default_text
         params.append(text)
@@ -390,7 +397,7 @@ def _hg_function_params(
             vararg_type = _hg_json_str_value(types.get(vararg_name))
         if vararg_type == "":
             vararg_type = "object"
-        params.append(cpp_param_decl("list[" + vararg_type + "]", _hg_safe_cpp_ident(vararg_name), is_mutable=False))
+        params.append(cpp_param_decl_mut("list[" + vararg_type + "]", _hg_safe_cpp_ident(vararg_name), False))
     return params
 
 
@@ -516,11 +523,13 @@ def _hg_function_template_params(node: dict[str, JsonVal]) -> list[str]:
     for arg_type in arg_types.values():
         arg_type_text = _hg_json_str_value(arg_type)
         if arg_type_text != "":
-            for type_var in collect_cpp_type_vars(arg_type_text):
+            arg_type_vars: list[str] = collect_cpp_type_vars(arg_type_text)
+            for type_var in arg_type_vars:
                 if type_var not in seen:
                     seen.add(type_var)
                     out.append(type_var)
-    for type_var in collect_cpp_type_vars(_hg_return_type(node)):
+    return_type_vars: list[str] = collect_cpp_type_vars(_hg_return_type(node))
+    for type_var in return_type_vars:
         if type_var not in seen:
             seen.add(type_var)
             out.append(type_var)
@@ -529,7 +538,8 @@ def _hg_function_template_params(node: dict[str, JsonVal]) -> list[str]:
         vararg_name = _hg_str(node, "vararg_name")
         if vararg_name != "":
             vararg_type = _hg_json_str_value(arg_types.get(vararg_name))
-    for type_var in collect_cpp_type_vars(vararg_type):
+    vararg_type_vars: list[str] = collect_cpp_type_vars(vararg_type)
+    for type_var in vararg_type_vars:
         if type_var not in seen:
             seen.add(type_var)
             out.append(type_var)
@@ -788,7 +798,7 @@ _hg_CPP_RESERVED_WORDS: set[str] = {
 def _hg_safe_cpp_ident(name: str) -> str:
     if name == "":
         return ""
-    safe = re.sub(r"[^0-9A-Za-z_]", "_", name)
+    safe = re.sub(r"[^0-9A-Za-z_]", "_", name, 0)
     if safe != "" and safe[0].isdigit():
         safe = "_" + safe
     if safe in _hg_CPP_RESERVED_WORDS:

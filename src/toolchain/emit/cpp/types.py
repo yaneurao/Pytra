@@ -167,7 +167,11 @@ def cpp_container_value_type(resolved_type: str) -> str:
     return ""
 
 
-def cpp_type(resolved_type: str, *, prefer_value_container: bool = False) -> str:
+def cpp_type(resolved_type: str) -> str:
+    return cpp_type_pref(resolved_type, False)
+
+
+def cpp_type_pref(resolved_type: str, prefer_value_container: bool = False) -> str:
     """Convert an EAST3 resolved_type to a C++ type string."""
     normalized = normalize_cpp_nominal_adt_type(resolved_type)
     if normalized == "" or normalized == "unknown":
@@ -193,7 +197,7 @@ def cpp_type(resolved_type: str, *, prefer_value_container: bool = False) -> str
     # tuple[A, B, ...]
     if normalized.startswith("tuple[") and normalized.endswith("]"):
         inner = normalized[6:-1]
-        parts = _split_generic_args(inner)
+        parts: list[str] = _split_generic_args(inner)
         if len(parts) > 0:
             cpp_parts: list[str] = []
             for p in parts:
@@ -250,7 +254,11 @@ def cpp_type(resolved_type: str, *, prefer_value_container: bool = False) -> str
     return normalized
 
 
-def cpp_signature_type(resolved_type: str, *, prefer_value_container: bool = False) -> str:
+def cpp_signature_type(resolved_type: str) -> str:
+    return cpp_signature_type_pref(resolved_type, False)
+
+
+def cpp_signature_type_pref(resolved_type: str, prefer_value_container: bool = False) -> str:
     """Type text for declarations/signatures.
 
     `unknown` / general union は `auto` にせず fail-closed で `object` に倒す。
@@ -264,9 +272,9 @@ def cpp_signature_type(resolved_type: str, *, prefer_value_container: bool = Fal
         return "object"
     optional_inner = _top_level_optional_inner(normalized)
     if optional_inner != "":
-        return "::std::optional<" + cpp_signature_type(
+        return "::std::optional<" + cpp_signature_type_pref(
             optional_inner,
-            prefer_value_container=prefer_value_container,
+            prefer_value_container,
         ) + ">"
     if _is_top_level_union(normalized):
         lanes = _split_top_level_union(normalized)
@@ -285,10 +293,14 @@ def cpp_signature_type(resolved_type: str, *, prefer_value_container: bool = Fal
             if has_none:
                 return "::std::optional<" + variant + ">"
             return variant
-    return cpp_type(normalized, prefer_value_container=prefer_value_container)
+    return cpp_type_pref(normalized, prefer_value_container)
 
 
-def cpp_param_decl(resolved_type: str, name: str, *, is_mutable: bool = False) -> str:
+def cpp_param_decl(resolved_type: str, name: str) -> str:
+    return cpp_param_decl_mut(resolved_type, name, False)
+
+
+def cpp_param_decl_mut(resolved_type: str, name: str, is_mutable: bool = False) -> str:
     """Render a function parameter declaration."""
     ct = cpp_signature_type(resolved_type)
     if _is_small_value_type(ct):
@@ -300,7 +312,11 @@ def cpp_param_decl(resolved_type: str, name: str, *, is_mutable: bool = False) -
     return "const " + ct + "& " + name
 
 
-def cpp_zero_value(resolved_type: str, *, prefer_value_container: bool = False) -> str:
+def cpp_zero_value(resolved_type: str) -> str:
+    return cpp_zero_value_pref(resolved_type, False)
+
+
+def cpp_zero_value_pref(resolved_type: str, prefer_value_container: bool = False) -> str:
     if is_container_resolved_type(resolved_type):
         container_value_type = cpp_container_value_type(resolved_type)
         if prefer_value_container:
@@ -323,7 +339,7 @@ def cpp_zero_value(resolved_type: str, *, prefer_value_container: bool = False) 
             inner = resolved_type[4:-1]
             return "rc_set_new<" + cpp_signature_type(inner) + ">()"
 
-    ct = cpp_signature_type(resolved_type, prefer_value_container=prefer_value_container)
+    ct = cpp_signature_type_pref(resolved_type, prefer_value_container)
     if ct == "void":
         return ""
     if ct == "object":
@@ -360,6 +376,10 @@ def _split_generic_args(s: str) -> list[str]:
     if tail != "":
         parts.append(tail)
     return parts
+
+
+def cpp_split_generic_args(s: str) -> list[str]:
+    return _split_generic_args(s)
 
 
 def _split_top_level_union(resolved_type: str) -> list[str]:
@@ -407,6 +427,10 @@ def _top_level_optional_inner(resolved_type: str) -> str:
     if parts[1] == "None" or parts[1] == "none":
         return parts[0]
     return ""
+
+
+def cpp_top_level_optional_inner(resolved_type: str) -> str:
+    return _top_level_optional_inner(resolved_type)
 
 
 def _is_type_token_start(ch: str) -> bool:
