@@ -38,6 +38,14 @@
 1. [x] [ID: P0-FIX161-RUBY-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets ruby --case-root fixture` で確定し、fail なら分類へ追加する
 2. [x] [ID: P0-FIX161-RUBY-S2] reversed / typed varargs / callable optional の fail を解消し、Ruby fixture parity 161/161 PASS を確認する
 
+
+### P1-HOST-CPP-EMITTER-RUBY: C++ emitter を ruby で host する
+
+C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を ruby に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
+
+1. [ ] [ID: P1-HOST-CPP-EMITTER-RUBY-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target ruby -o work/selfhost/host-cpp/ruby/` で変換 + build を通す
+2. [ ] [ID: P1-HOST-CPP-EMITTER-RUBY-S2] ruby 版 C++ emitter で fixture manifest を処理し、Python 版 emitter と parity 一致を確認する
+
 ### P1-EMITTER-SELFHOST-RUBY: emit/ruby/cli.py を単独で selfhost C++ build に通す
 
 文脈: [docs/ja/plans/p1-emitter-selfhost-per-backend.md](../plans/p1-emitter-selfhost-per-backend.md)

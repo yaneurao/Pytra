@@ -50,6 +50,18 @@
 2. [x] [ID: P0-FIX161-SCALA-S1] Scala の未実行 3 件と既知 fail 19 件を修正し、Scala fixture parity 161/161 PASS を確認する
 3. [x] [ID: P0-FIX161-KOTLIN-S1] Kotlin の未実行 3 件と既知 fail 17 件を修正し、Kotlin fixture parity 161/161 PASS を確認する
 
+
+### P1-HOST-CPP-EMITTER-JVM: C++ emitter を Java / Scala / Kotlin で host する
+
+C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を各 JVM 言語に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
+
+1. [ ] [ID: P1-HOST-CPP-EMITTER-JAVA-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target java -o work/selfhost/host-cpp/java/` で変換 + javac build を通す
+2. [ ] [ID: P1-HOST-CPP-EMITTER-JAVA-S2] Java 版 C++ emitter で fixture manifest を処理し、Python 版と parity 一致を確認する
+3. [ ] [ID: P1-HOST-CPP-EMITTER-SCALA-S1] `--target scala` で変換 + scalac build を通す
+4. [ ] [ID: P1-HOST-CPP-EMITTER-SCALA-S2] Scala 版 C++ emitter で parity 確認
+5. [ ] [ID: P1-HOST-CPP-EMITTER-KOTLIN-S1] `--target kotlin` で変換 + kotlinc build を通す
+6. [ ] [ID: P1-HOST-CPP-EMITTER-KOTLIN-S2] Kotlin 版 C++ emitter で parity 確認
+
 ### P1-EMITTER-SELFHOST-JAVA: emit/java/cli.py を単独で selfhost C++ build に通す
 
 文脈: [docs/ja/plans/p1-emitter-selfhost-per-backend.md](../plans/p1-emitter-selfhost-per-backend.md)

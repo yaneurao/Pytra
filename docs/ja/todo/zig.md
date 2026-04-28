@@ -37,6 +37,14 @@
 1. [x] [ID: P0-FIX161-ZIG-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets zig --case-root fixture` で確定し、fail なら分類へ追加する
 2. [x] [ID: P0-FIX161-ZIG-S2] exception_style profile mismatch、finally、typed varargs、bytearray、callable optional、isinstance、union の fail を解消し、Zig fixture parity 161/161 PASS を確認する
 
+
+### P1-HOST-CPP-EMITTER-ZIG: C++ emitter を zig で host する
+
+C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を zig に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
+
+1. [ ] [ID: P1-HOST-CPP-EMITTER-ZIG-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target zig -o work/selfhost/host-cpp/zig/` で変換 + build を通す
+2. [ ] [ID: P1-HOST-CPP-EMITTER-ZIG-S2] zig 版 C++ emitter で fixture manifest を処理し、Python 版 emitter と parity 一致を確認する
+
 ### P1-EMITTER-SELFHOST-ZIG: emit/zig/cli.py を単独で selfhost C++ build に通す
 
 文脈: [docs/ja/plans/p1-emitter-selfhost-per-backend.md](../plans/p1-emitter-selfhost-per-backend.md)

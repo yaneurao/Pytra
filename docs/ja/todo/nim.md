@@ -37,6 +37,14 @@
 1. [x] [ID: P0-FIX161-NIM-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets nim --case-root fixture` で確定し、fail なら分類へ追加する
 2. [x] [ID: P0-FIX161-NIM-S2] collection / trait / typed varargs / string methods / isinstance / union / tuple / typed container の fail を解消し、Nim fixture parity 161/161 PASS を確認する
 
+
+### P1-HOST-CPP-EMITTER-NIM: C++ emitter を nim で host する
+
+C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を nim に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
+
+1. [ ] [ID: P1-HOST-CPP-EMITTER-NIM-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target nim -o work/selfhost/host-cpp/nim/` で変換 + build を通す
+2. [ ] [ID: P1-HOST-CPP-EMITTER-NIM-S2] nim 版 C++ emitter で fixture manifest を処理し、Python 版 emitter と parity 一致を確認する
+
 ### P1-EMITTER-SELFHOST-NIM: emit/nim/cli.py を単独で selfhost C++ build に通す
 
 文脈: [docs/ja/plans/p1-emitter-selfhost-per-backend.md](../plans/p1-emitter-selfhost-per-backend.md)

@@ -37,6 +37,14 @@
 1. [x] [ID: P0-FIX161-SWIFT-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets swift --case-root fixture` で確定し、fail なら分類へ追加する
 2. [x] [ID: P0-FIX161-SWIFT-S2] reversed / trait / typed varargs / union narrowing の fail を解消し、Swift fixture parity 161/161 PASS を確認する
 
+
+### P1-HOST-CPP-EMITTER-SWIFT: C++ emitter を swift で host する
+
+C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を swift に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
+
+1. [ ] [ID: P1-HOST-CPP-EMITTER-SWIFT-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target swift -o work/selfhost/host-cpp/swift/` で変換 + build を通す
+2. [ ] [ID: P1-HOST-CPP-EMITTER-SWIFT-S2] swift 版 C++ emitter で fixture manifest を処理し、Python 版 emitter と parity 一致を確認する
+
 ### P1-EMITTER-SELFHOST-SWIFT: emit/swift/cli.py を単独で selfhost C++ build に通す
 
 文脈: [docs/ja/plans/p1-emitter-selfhost-per-backend.md](../plans/p1-emitter-selfhost-per-backend.md)
