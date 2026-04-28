@@ -117,6 +117,43 @@ def _constant_default(value: JsonVal, resolved_type: str) -> dict[str, JsonVal]:
     return out
 
 
+def _init_emit_context_containers(ctx: EmitContext) -> None:
+    ctx.lines = []
+    ctx.imports_needed = set()
+    ctx.var_types = {}
+    ctx.var_decl_depth = {}
+    ctx.runtime_imports = {}
+    ctx.import_alias_modules = {}
+    ctx.class_names = set()
+    ctx.trait_names = set()
+    ctx.class_bases = {}
+    ctx.class_property_methods = {}
+    ctx.class_static_methods = {}
+    ctx.class_instance_methods = {}
+    ctx.class_vars = {}
+    ctx.class_fields = {}
+    ctx.enum_bases = {}
+    ctx.enum_members = {}
+    ctx.function_signatures = {}
+    ctx.function_return_types = {}
+    ctx.method_signatures = {}
+    ctx.class_init_signatures = {}
+    ctx.list_alias_vars = set()
+    ctx.bytearray_mutating_funcs = {}
+    ctx.module_private_symbols = set()
+    ctx.exception_type_bounds = {}
+    ctx.exception_type_ids = {}
+    ctx.class_type_ids = {}
+    ctx.current_value_container_locals = set()
+    ctx.container_value_locals_by_scope = {}
+    ctx.ref_container_locals = set()
+    ctx.go_vararg_params = set()
+    ctx.union_type_aliases = set()
+    ctx.builtin_exc_bounds = {}
+    ctx.builtin_exc_ctor_types = set()
+    ctx.known_method_signatures = {}
+
+
 def _argparse_add_argument_sig() -> dict[str, JsonVal]:
     sig: dict[str, JsonVal] = {}
     arg_order: list[JsonVal] = []
@@ -1309,6 +1346,25 @@ def _jv_get(node: JsonVal, key: str) -> JsonVal:
 def _jv_is_none_value(node: JsonVal) -> bool:
     if isinstance(node, dict):
         return node.get("value") is None
+    if isinstance(node, list):
+        return False
+    if isinstance(node, str):
+        return False
+    if isinstance(node, bool):
+        return False
+    if isinstance(node, int):
+        return False
+    if isinstance(node, float):
+        return False
+    if node is None:
+        return True
+    return True
+
+
+def _jv_bool_value(node: JsonVal) -> bool:
+    if isinstance(node, bool):
+        value: bool = node
+        return value
     return False
 
 
@@ -1480,7 +1536,10 @@ def _emit_constant(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if val is None:
         return "nil"
     if isinstance(val, bool):
-        return "true" if val else "false"
+        bool_val = _jv_bool_value(val)
+        if bool_val:
+            return "true"
+        return "false"
     if isinstance(val, int):
         if rt in ("float64", "float32", "float"):
             return str(float(val))
@@ -2721,13 +2780,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                                         continue
                                 kw_code = _wrap_optional_value_code(ctx, kw_code, expected_type2, kw_node)
                         adjusted_args.append(kw_code)
-                if (
-                    isinstance(sig_vararg, dict)
-                    and _str(sig_vararg, "vararg_name") != ""
-                    and len(args) > 0
-                    and len(sig_order) > 0
-                    and len(args) >= len(sig_order)
-                ):
+                can_spread_vararg = False
+                if can_spread_vararg:
                     spread_index = len(args) - 1
                     if 0 <= spread_index < len(adjusted_args):
                         last_arg: JsonVal = args[spread_index]
@@ -4417,6 +4471,10 @@ def _emit_stmt(ctx: EmitContext, node: JsonVal) -> None:
         _emit_aug_assign(ctx, node)
     elif kind == "ForCore":
         _emit_for_core(ctx, node)
+    elif kind == "If":
+        _emit_if(ctx, node)
+    elif kind == "While":
+        _emit_while(ctx, node)
     elif kind == "RuntimeIterForPlan":
         _emit_runtime_iter_for(ctx, node)
     elif kind == "StaticRangeForPlan":
@@ -4459,6 +4517,41 @@ def _emit_stmt(ctx: EmitContext, node: JsonVal) -> None:
         _emit_blank(ctx)
     else:
         raise RuntimeError("unsupported_stmt_kind: " + kind)
+
+
+def _emit_condition_expr(ctx: EmitContext, node: JsonVal) -> str:
+    if isinstance(node, dict):
+        rt = _effective_resolved_type(ctx, node)
+        rendered = _emit_expr(ctx, node)
+        if rt.startswith("list[") or rt.startswith("dict[") or rt.startswith("set[") or rt in ("str", "bytes", "bytearray"):
+            rendered = _wrapper_container_storage_expr(ctx, node, rendered)
+            return "len(" + rendered + ") > 0"
+        if rt == "bool":
+            return rendered
+        return "py_truthy(" + rendered + ")"
+    return "false"
+
+
+def _emit_if(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
+    _emit(ctx, "if " + _emit_condition_expr(ctx, node.get("test")) + " {")
+    ctx.indent_level += 1
+    _emit_body(ctx, _list(node, "body"))
+    ctx.indent_level -= 1
+    orelse = _list(node, "orelse")
+    if len(orelse) > 0:
+        _emit(ctx, "} else {")
+        ctx.indent_level += 1
+        _emit_body(ctx, orelse)
+        ctx.indent_level -= 1
+    _emit(ctx, "}")
+
+
+def _emit_while(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
+    _emit(ctx, "for " + _emit_condition_expr(ctx, node.get("test")) + " {")
+    ctx.indent_level += 1
+    _emit_body(ctx, _list(node, "body"))
+    ctx.indent_level -= 1
+    _emit(ctx, "}")
 
 
 def _emit_body(ctx: EmitContext, body: list[JsonVal]) -> None:
@@ -5027,7 +5120,9 @@ def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             return
         if ip_kind == "RuntimeIterForPlan":
             # Check if this is a range (has start/stop) or a collection iter (has iter_expr)
-            if iter_plan.get("start") is not None or iter_plan.get("stop") is not None:
+            iter_start = iter_plan.get("start")
+            iter_stop = iter_plan.get("stop")
+            if not _jv_is_none_value(iter_start) or not _jv_is_none_value(iter_stop):
                 _emit_range_for(ctx, t_name, t_type, iter_plan, body)
             else:
                 # Collection iterator: for _, item := range collection
@@ -5149,8 +5244,12 @@ def _emit_range_for(
     stop = plan.get("stop")
     step = plan.get("step")
 
-    s_code = _emit_expr(ctx, start) if start is not None else "0"
-    e_code = _emit_expr(ctx, stop) if stop is not None else "0"
+    s_code = "0"
+    if not _jv_is_none_value(start):
+        s_code = _emit_expr(ctx, start)
+    e_code = "0"
+    if not _jv_is_none_value(stop):
+        e_code = _emit_expr(ctx, stop)
 
     # Determine step
     step_code = "1"
@@ -5160,7 +5259,7 @@ def _emit_range_for(
         if isinstance(sv, int):
             step_code = str(sv)
             step_negative = sv < 0
-    elif step is not None:
+    elif not _jv_is_none_value(step):
         step_code = _emit_expr(ctx, step)
         stripped_step = step_code.strip()
         if stripped_step.startswith("-") or stripped_step.startswith("(-"):
@@ -6620,7 +6719,7 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
         expand_cross_module_defaults(modules_with_ids)
 
     # Load runtime mapping
-    mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "go" / "mapping.json"
+    mapping_path = Path("src").joinpath("runtime").joinpath("go").joinpath("mapping.json")
     mapping = load_runtime_mapping(mapping_path)
 
     # Skip modules provided by hand-written native files.
@@ -6632,6 +6731,7 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
         return ""
 
     ctx = EmitContext()
+    _init_emit_context_containers(ctx)
     ctx.module_id = module_id
     ctx.source_path = _str(east3_doc, "source_path")
     if len(emit_ctx_meta) > 0:
