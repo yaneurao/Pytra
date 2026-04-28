@@ -26,6 +26,7 @@ type PyFloatObj* = ref object of PyObj
 type RuntimeError* = object of CatchableError
 type TypeError* = object of CatchableError
 type IndexError* = object of CatchableError
+type SystemExit* = object of CatchableError
 type PyPath* = string
 type PyFile* = File
 

@@ -43,6 +43,7 @@
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を nim に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
 1. [ ] [ID: P1-HOST-CPP-EMITTER-NIM-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target nim -o work/selfhost/host-cpp/nim/` で変換 + build を通す
+   - 2026-04-28: host C++ emitter の Nim emit は `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target nim -o work/selfhost/host-cpp/nim/` で 20 ファイル生成まで到達。`nim c --out:work/selfhost/host-cpp/nim/emitter_cpp_nim work/selfhost/host-cpp/nim/toolchain_emit_cpp_cli.nim` は dataclass constructor ordering / keyword args / `SystemExit` / `Path.read_text(encoding=...)` を修正後、`json.loads(...).raw` が `JsonNode` のまま `PyObj` に入らない箇所で停止中。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-NIM-S2] nim 版 C++ emitter で fixture manifest を処理し、Python 版 emitter と parity 一致を確認する
 
 ### P1-EMITTER-SELFHOST-NIM: emit/nim/cli.py を単独で selfhost C++ build に通す

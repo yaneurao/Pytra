@@ -1921,6 +1921,11 @@ def _expected_arg_type_at(ctx: EmitContext, func_node: JsonVal, idx: int) -> str
 def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     func_node = node.get("func")
     args = _list(node, "args")
+    for kw in _list(node, "keywords"):
+        if isinstance(kw, dict):
+            kw_value = kw.get("value")
+            if kw_value is not None:
+                args.append(kw_value)
     builtin_name = _str(node, "builtin_name")
 
     def _render_call_arg(arg: JsonVal, expected_type: str = "") -> str:
@@ -2710,6 +2715,8 @@ def _emit_constructor(ctx: EmitContext, class_name: str, args: list[JsonVal]) ->
     # Builtin exception classes
     if _is_exception_type_name(ctx, class_name):
         msg = arg_strs[0] if len(arg_strs) > 0 else _nim_string(class_name)
+        if class_name == "SystemExit" and len(arg_strs) > 0:
+            msg = "py_to_string(" + msg + ")"
         exc_type = _nim_exception_type_name(ctx, class_name)
         if exc_type == "":
             exc_type = "CatchableError"
@@ -4048,6 +4055,8 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             if isinstance(stmt, dict) and _str(stmt, "kind") in ("FunctionDef", "ClosureDef") and _str(stmt, "name") == "__init__":
                 _emit_init_as_constructor(ctx, stmt, name, fields)
                 break
+    else:
+        _emit_default_constructor(ctx, name, fields, field_defaults)
 
     # Emit methods (skip __init__)
     for stmt in body:
@@ -4065,9 +4074,6 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             _emit_function_def(ctx, stmt)
         elif sk in ("comment", "blank"):
             _emit_stmt(ctx, stmt)
-
-    if not has_init:
-        _emit_default_constructor(ctx, name, fields, field_defaults)
 
     ctx.current_class = saved_class
     ctx.current_base_class = saved_base

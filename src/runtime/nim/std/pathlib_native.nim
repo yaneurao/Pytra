@@ -37,3 +37,7 @@ proc write_text*(path: PyPath, text: string): int =
 
 proc read_text*(path: PyPath): string =
   readFile(path)
+
+proc read_text*(path: PyPath, encoding: string): string =
+  discard encoding
+  readFile(path)

@@ -167,6 +167,7 @@
     "IndexError",
     "KeyError",
     "StopIteration",
+    "SystemExit",
     "AttributeError",
     "NameError",
     "NotImplementedError",
