@@ -34,8 +34,8 @@
 
 現状: 142/161 PASS。FAIL: `collections/list_repeat`, `collections/nested_types`, `collections/reversed_basic`, `collections/sorted_basic`, `oop/trait_basic`, `oop/trait_with_inheritance`, `signature/ok_typed_varargs_representative`, `strings/str_methods_extended`, `typing/isinstance_chain_narrowing`, `typing/isinstance_union_narrowing`, `typing/object_container_access`, `typing/tuple_unpack_variants`, `typing/type_alias_pep695`, `typing/typed_container_access`, `typing/union_basic`, `typing/union_list_mixed`。未実行: `control/for_tuple_iter`, `typing/for_over_return_value`, `typing/nullable_dict_field`。
 
-1. [ ] [ID: P0-FIX161-NIM-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets nim --case-root fixture` で確定し、fail なら分類へ追加する
-2. [ ] [ID: P0-FIX161-NIM-S2] collection / trait / typed varargs / string methods / isinstance / union / tuple / typed container の fail を解消し、Nim fixture parity 161/161 PASS を確認する
+1. [x] [ID: P0-FIX161-NIM-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets nim --case-root fixture` で確定し、fail なら分類へ追加する
+2. [x] [ID: P0-FIX161-NIM-S2] collection / trait / typed varargs / string methods / isinstance / union / tuple / typed container の fail を解消し、Nim fixture parity 161/161 PASS を確認する
 
 ### P1-EMITTER-SELFHOST-NIM: emit/nim/cli.py を単独で selfhost C++ build に通す
 

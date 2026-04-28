@@ -46,9 +46,9 @@
 
 現状: Java 152/161、Scala 139/161、Kotlin 141/161 PASS。共通未実行: `control/for_tuple_iter`, `typing/for_over_return_value`, `typing/nullable_dict_field`。Java FAIL: `collections/reversed_basic`, `control/exception_bare_reraise`, `oop/trait_basic`, `oop/trait_with_inheritance`, `signature/ok_typed_varargs_representative`, `typing/callable_optional_none`。Scala/Kotlin は import wiring、trait、optional/isinstance/union、string methods、`eo_extern_opaque_basic` などが追加で fail。
 
-1. [ ] [ID: P0-FIX161-JAVA-S1] Java の未実行 3 件と既知 fail 6 件を修正し、Java fixture parity 161/161 PASS を確認する
-2. [ ] [ID: P0-FIX161-SCALA-S1] Scala の未実行 3 件と既知 fail 19 件を修正し、Scala fixture parity 161/161 PASS を確認する
-3. [ ] [ID: P0-FIX161-KOTLIN-S1] Kotlin の未実行 3 件と既知 fail 17 件を修正し、Kotlin fixture parity 161/161 PASS を確認する
+1. [x] [ID: P0-FIX161-JAVA-S1] Java の未実行 3 件と既知 fail 6 件を修正し、Java fixture parity 161/161 PASS を確認する
+2. [x] [ID: P0-FIX161-SCALA-S1] Scala の未実行 3 件と既知 fail 19 件を修正し、Scala fixture parity 161/161 PASS を確認する
+3. [x] [ID: P0-FIX161-KOTLIN-S1] Kotlin の未実行 3 件と既知 fail 17 件を修正し、Kotlin fixture parity 161/161 PASS を確認する
 
 ### P1-EMITTER-SELFHOST-JAVA: emit/java/cli.py を単独で selfhost C++ build に通す
 

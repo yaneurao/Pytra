@@ -35,8 +35,8 @@
 
 現状: 154/161 PASS。FAIL: `collections/reversed_basic`, `oop/trait_basic`, `oop/trait_with_inheritance`, `signature/ok_typed_varargs_representative`。未実行: `control/for_tuple_iter`, `typing/for_over_return_value`, `typing/nullable_dict_field`。
 
-1. [ ] [ID: P0-FIX161-PHP-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets php --case-root fixture` で確定し、fail なら分類へ追加する
-2. [ ] [ID: P0-FIX161-PHP-S2] reversed / trait / typed varargs の fail を解消し、PHP fixture parity 161/161 PASS を確認する
+1. [x] [ID: P0-FIX161-PHP-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets php --case-root fixture` で確定し、fail なら分類へ追加する
+2. [x] [ID: P0-FIX161-PHP-S2] reversed / trait / typed varargs の fail を解消し、PHP fixture parity 161/161 PASS を確認する
 
 ### P1-EMITTER-SELFHOST-PHP: emit/php/cli.py を単独で selfhost C++ build に通す
 

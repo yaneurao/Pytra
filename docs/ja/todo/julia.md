@@ -34,8 +34,8 @@
 
 現状: 156/161 PASS。FAIL: `collections/reversed_basic`, `signature/ok_typed_varargs_representative`。未実行: `control/for_tuple_iter`, `typing/for_over_return_value`, `typing/nullable_dict_field`。
 
-1. [ ] [ID: P0-FIX161-JULIA-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets julia --case-root fixture` で確定し、fail なら分類へ追加する
-2. [ ] [ID: P0-FIX161-JULIA-S2] reversed / typed varargs の fail を解消し、Julia fixture parity 161/161 PASS を確認する
+1. [x] [ID: P0-FIX161-JULIA-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets julia --case-root fixture` で確定し、fail なら分類へ追加する
+2. [x] [ID: P0-FIX161-JULIA-S2] reversed / typed varargs の fail を解消し、Julia fixture parity 161/161 PASS を確認する
 
 ### P1-EMITTER-SELFHOST-JULIA: emit/julia/cli.py を単独で selfhost C++ build に通す
 

@@ -34,8 +34,8 @@
 
 現状: 157/161 PASS。FAIL: `typing/bytes_copy_semantics`。未実行: `control/for_tuple_iter`, `typing/for_over_return_value`, `typing/nullable_dict_field`。
 
-1. [ ] [ID: P0-FIX161-LUA-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets lua --case-root fixture` で確定し、fail なら分類へ追加する
-2. [ ] [ID: P0-FIX161-LUA-S2] `bytes_copy_semantics` と追加 fail を解消し、Lua fixture parity 161/161 PASS を確認する
+1. [x] [ID: P0-FIX161-LUA-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets lua --case-root fixture` で確定し、fail なら分類へ追加する
+2. [x] [ID: P0-FIX161-LUA-S2] `bytes_copy_semantics` と追加 fail を解消し、Lua fixture parity 161/161 PASS を確認する
 
 ### P1-EMITTER-SELFHOST-LUA: emit/lua/cli.py を単独で selfhost C++ build に通す
 

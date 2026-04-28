@@ -34,8 +34,8 @@
 
 現状: 150/161 PASS。FAIL: `control/finally`, `signature/ok_typed_varargs_representative`, `typing/bytearray_basic`, `typing/callable_optional_none`, `typing/isinstance_narrowing`, `typing/isinstance_union_narrowing`, `typing/union_basic`, `typing/union_dict_items`。未実行: `control/for_tuple_iter`, `typing/for_over_return_value`, `typing/nullable_dict_field`。spot check では `exception_style` profile mismatch も観測済み。
 
-1. [ ] [ID: P0-FIX161-ZIG-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets zig --case-root fixture` で確定し、fail なら分類へ追加する
-2. [ ] [ID: P0-FIX161-ZIG-S2] exception_style profile mismatch、finally、typed varargs、bytearray、callable optional、isinstance、union の fail を解消し、Zig fixture parity 161/161 PASS を確認する
+1. [x] [ID: P0-FIX161-ZIG-S1] 未実行 3 件を `runtime_parity_check_fast.py --targets zig --case-root fixture` で確定し、fail なら分類へ追加する
+2. [x] [ID: P0-FIX161-ZIG-S2] exception_style profile mismatch、finally、typed varargs、bytearray、callable optional、isinstance、union の fail を解消し、Zig fixture parity 161/161 PASS を確認する
 
 ### P1-EMITTER-SELFHOST-ZIG: emit/zig/cli.py を単独で selfhost C++ build に通す
 
