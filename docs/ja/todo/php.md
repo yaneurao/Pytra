@@ -44,9 +44,10 @@
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を php に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
 1. [ ] [ID: P1-HOST-CPP-EMITTER-PHP-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target php -o work/selfhost/host-cpp/php/` で変換 + build を通す
-   - 進捗: 2026-04-29 に実行し、変換前に FAIL。現在の `pytra-cli.py -build` の `--target` 一覧に `php` がなく、`unsupported target: php (available: cpp, go, rs, cs, java, scala, kotlin, ts, js, nim, swift, julia, powershell, zig)` で停止する。旧 toolchain1 PHP emitter は変更禁止のため、target wiring / toolchain2 側の整備が先。
+   - 進捗: 2026-04-30 に `pytra-cli.py -build` の target wiring を修正し、`--target php` が `toolchain.emit.php.cli` へ到達するようにした。`rm -rf work/selfhost/host-cpp/php && timeout 3600s python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target php -o work/selfhost/host-cpp/php/` は変換 PASS（20 files）。
+   - 進捗: 2026-04-30 の `php -l work/selfhost/host-cpp/php/toolchain_emit_cpp_cli.php` は構文 OK。実行は `built_in/py_runtime.php` の runtime copy 欠落で停止する。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-PHP-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_php.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
-   - 進捗: 2026-04-29 に実行し、`.parity-results/selfhost_php.json` に `emit_targets.cpp.status = build_failed` を記録。runner の build 段階も `--target php` unsupported で停止する。
+   - 進捗: 2026-04-30 時点では S1 が PHP 実行未 PASS のため未実行。emitter host 結果は `.parity-results/emitter_host_php.json` に build_failed として記録済み。
 
 ### P1-EMITTER-SELFHOST-PHP: emit/php/cli.py を単独で selfhost C++ build に通す
 
