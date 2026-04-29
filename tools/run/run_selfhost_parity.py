@@ -797,14 +797,14 @@ def main() -> int:
     if selfhost_bin is None:
         if args.no_build:
             print(f"[WARN] selfhost binary not found for {selfhost_lang}; recording not_available")
-            _write_not_available(selfhost_lang)
+            _write_not_available(selfhost_lang, emit_targets)
             return 0
 
         print(f"[INFO] selfhost binary not found; attempting to build {selfhost_lang}...")
         selfhost_bin, build_err = _build_selfhost_binary(selfhost_lang)
         if selfhost_bin is None:
             print(f"[FAIL] build failed: {build_err}")
-            _write_build_fail(selfhost_lang, build_err)
+            _write_build_fail(selfhost_lang, build_err, emit_targets)
             return 1
 
     print(f"[INFO] selfhost binary: {selfhost_bin}")
@@ -832,7 +832,17 @@ def main() -> int:
     )
 
 
-def _write_not_available(selfhost_lang: str) -> None:
+def _emit_target_stage_doc(emit_targets: list[str], status: str, now: str, detail: str = "") -> dict[str, object]:
+    out: dict[str, object] = {}
+    for target in emit_targets:
+        entry: dict[str, object] = {"status": status, "timestamp": now}
+        if detail != "":
+            entry["detail"] = detail
+        out[target] = entry
+    return out
+
+
+def _write_not_available(selfhost_lang: str, emit_targets: list[str]) -> None:
     now = _now()
     doc: dict[str, object] = {
         "selfhost_lang": selfhost_lang,
@@ -841,12 +851,12 @@ def _write_not_available(selfhost_lang: str) -> None:
             "build":  {"status": "not_available", "timestamp": now},
             "parity": {"status": "not_tested", "timestamp": now},
         },
-        "emit_targets": {},
+        "emit_targets": _emit_target_stage_doc(emit_targets, "not_available", now),
     }
     _write_selfhost_json(selfhost_lang, doc)
 
 
-def _write_build_fail(selfhost_lang: str, detail: str) -> None:
+def _write_build_fail(selfhost_lang: str, detail: str, emit_targets: list[str]) -> None:
     now = _now()
     doc: dict[str, object] = {
         "selfhost_lang": selfhost_lang,
@@ -855,7 +865,7 @@ def _write_build_fail(selfhost_lang: str, detail: str) -> None:
             "build":  {"status": "fail",  "timestamp": now, "detail": detail},
             "parity": {"status": "not_tested", "timestamp": now},
         },
-        "emit_targets": {},
+        "emit_targets": _emit_target_stage_doc(emit_targets, "build_failed", now, detail),
     }
     _write_selfhost_json(selfhost_lang, doc)
 
