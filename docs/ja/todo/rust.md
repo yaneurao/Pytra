@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-27
+最終更新: 2026-04-29
 
 ## 運用ルール
 
@@ -43,6 +43,7 @@
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を rs に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
 1. [ ] [ID: P1-HOST-CPP-EMITTER-RS-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target rs -o work/selfhost/host-cpp/rs/` で変換 + build を通す
+   - 進捗: 2026-04-29 に変換は PASS。`rustc --edition=2021 -Awarnings work/selfhost/host-cpp/rs/toolchain_emit_cpp_cli.rs -o work/selfhost/host-cpp/rs/emitter_cpp_rs` は未 PASS。主因は P9-RS-SELFHOST-S1 の既知ブロッカー（flat `include!` の transitive module 欠落、CommonRenderer 継承クラスの `self.state`、`JsonValue(...)` constructor lowering、`Path` native 型）で、旧 `src/toolchain/emit/rs/` 直修正ではなく P9 の mod 構造出力で解く。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-RS-S2] `run_selfhost_parity.py --selfhost-lang rs --emit-target cpp --case-root fixture` で fixture parity PASS を確認する（結果は `.parity-results/selfhost_rs.json` に書き込まれ、`gen_backend_progress.py` で selfhost マトリクスに反映される）
 
 ### P1-EMITTER-SELFHOST-RS: emit/rs/cli.py を単独で selfhost C++ build に通す
