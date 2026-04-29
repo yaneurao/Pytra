@@ -53,8 +53,10 @@ C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を powershell に
 
 各 backend emitter は subprocess で独立起動する自己完結プログラム。pytra-cli.py 全体の selfhost とは切り離し、`toolchain.emit.powershell.cli` をエントリに単独で C++ build を通す。
 
-1. [ ] [ID: P1-EMITTER-SELFHOST-PS1-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/powershell/cli.py --target cpp -o work/selfhost/emit/powershell/` を実行し、変換が通るようにする
+1. [x] [ID: P1-EMITTER-SELFHOST-PS1-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/powershell/cli.py --target cpp -o work/selfhost/emit/powershell/` を実行し、変換が通るようにする
+   - 完了: 2026-04-29 `rm -rf work/selfhost/emit/powershell && timeout 180s python3 src/pytra-cli.py -build src/toolchain/emit/powershell/cli.py --target cpp -o work/selfhost/emit/powershell/` で変換 PASS。26 files を出力。
 2. [ ] [ID: P1-EMITTER-SELFHOST-PS1-S2] 生成された C++ を `g++ -std=c++20 -O0` でコンパイルを通す（source 側の型注釈不整合を修正）
+   - 進捗: 2026-04-29 `g++ -std=c++20 -O0` は未 PASS。先頭ブロッカーは `frozenset[str]` の C++ 型未生成、`run_emit_cli` への `list<str>` vs `Object<list<str>>` 不一致、`JsonVal` の型絞り不足（`JsonVal > double` / `JsonVal` を `str` 引数へ渡す等）、`str.rsplit` 未対応。
 3. [ ] [ID: P1-EMITTER-SELFHOST-PS1-S3] コンパイル済み emitter で既存 fixture の manifest を処理し、Python 版 emitter と parity 一致を確認する
 
 
