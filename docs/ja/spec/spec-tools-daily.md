@@ -20,8 +20,8 @@
   - 目的: `test/fixtures/` と `sample/py` を `pytra-cli.py --target <lang>` で一括変換し、失敗ケースを検出する。全言語統一の transpile チェッカー。
   - 主要オプション: `--target <lang>`（`cpp`, `rs`, `js`, `cs`, `go`, `java`, `ts`, `swift`, `kotlin`, `scala` 等）
   - 補足: 旧言語別スクリプト（`check_py2cpp_transpile.py` 等 10 件）は廃止・削除済み。
-- `tools/check/check_east3_golden.py`
-  - 目的: EAST3 スナップショットテスト（`test/east3_fixtures/` の golden file と EAST3 出力の差分チェック）。`--check-runtime-east` で `src/runtime/east/` の `.east` ファイル鮮度チェック。`--update` で再生成。
+- `tools/gen/regenerate_runtime_east.py`
+  - 目的: `src/pytra/{built_in,std,utils}/` の Python 正本から `src/runtime/east/` の `.east` キャッシュを再生成し、fresh checkout でも linker の runtime discovery が動く状態にする。
 - `tools/check/verify_image_runtime_parity.py`
   - 目的: 画像ランタイム（PNG/GIF）の Python 正本と C++ 側の一致を確認する。
 - `tools/check/check_runtime_std_sot_guard.py`
@@ -63,7 +63,7 @@
 
 ## 4. golden file 生成
 
-- `tools/gen/generate_golden.py`
+- `tools/gen/regenerate_golden.py`
   - 目的: 現行 `toolchain/` を使って各段（east1 / east2 / east3 / east3-opt）の golden file を `test/` に一括生成する。`toolchain/` の自前実装が golden file と一致するかを検証するための正解データ。
   - 主要オプション: `--stage={east1,east2,east3,east3-opt}`, `-o OUTPUT_DIR`, `--from=python`, `--sample-dir`
   - 設計文書: `docs/ja/plans/plan-pipeline-redesign.md` §6.1

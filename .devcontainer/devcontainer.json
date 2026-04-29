@@ -1,0 +1,37 @@
+{
+  "name": "Pytra backend sandbox",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspaces/Pytra",
+  "remoteUser": "vscode",
+  "updateRemoteUserUID": true,
+  "runArgs": [
+    "--init"
+  ],
+  "containerEnv": {
+    "PYTHONPATH": "/workspaces/Pytra/src:/workspaces/Pytra/tools/check",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
+    "PYTRA_DEVCONTAINER": "1",
+    "PYTRA_WORK_DIR": "/workspaces/Pytra/work"
+  },
+  "postCreateCommand": "bash .devcontainer/scripts/verify-toolchain.sh",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python3",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-vscode.cpptools",
+        "vscjava.vscode-java-pack",
+        "ms-dotnettools.csharp",
+        "ms-vscode.powershell",
+        "golang.go",
+        "rust-lang.rust-analyzer"
+      ]
+    }
+  }
+}

@@ -211,6 +211,11 @@ C++ ランタイムソースと依存関係を `manifest.json` と `cpp_runtime_
 各段の出力で既存の golden file を上書きする。
 fixture / sample / pytra ごとに異なるソース・出力ディレクトリ構成を持つ。
 
+### `regenerate_runtime_east.py`
+`src/pytra/{built_in,std,utils}/` の Python 正本から `src/runtime/east/` キャッシュを再生成する。
+parse / resolve / compile / optimize を `src/pytra-cli.py` 経由で実行し、fresh checkout でも linker の runtime discovery が動く状態にする。
+生成物は `.gitignore` 対象であり、コミットしない。
+
 ### `regenerate_selfhost_golden.py`
 `test/selfhost/east3-opt/` に格納済みの east3-opt golden ファイルを各ターゲット言語に emit し、
 `test/selfhost/<lang>/` に配置する。既存ファイルとの差分（追加・削除・変更）を報告した上でファイルを書き換える。
