@@ -1033,8 +1033,8 @@ def cmd_build(args: list[str]) -> int:
         print("error: at least one input .py file is required")
         return 1
 
-    if target not in ["cpp", "go", "rs", "cs", "java", "scala", "kotlin", "ts", "js", "nim", "swift", "julia", "powershell", "ps1"]:
-        print("error: unsupported target: " + target + " (available: cpp, go, rs, cs, java, scala, kotlin, ts, js, nim, swift, julia, powershell, zig)")
+    if target not in ["cpp", "rs", "ts", "js", "ps1"] and target not in _SUBPROCESS_EMIT_TARGETS:
+        print("error: unsupported target: " + target + " (available: cpp, go, rs, cs, java, scala, kotlin, ts, js, nim, swift, julia, powershell, zig, dart, lua, php, ruby)")
         return 1
 
     try:
@@ -1174,6 +1174,8 @@ def _build_pipeline(
     if target == "powershell" or target == "ps1":
         return _emit_target_subprocess("powershell", linked_dir.joinpath("manifest.json"), output_dir)
     if target == "swift" or target == "julia":
+        return _emit_target_subprocess(target, linked_dir.joinpath("manifest.json"), output_dir)
+    if target in _SUBPROCESS_EMIT_TARGETS:
         return _emit_target_subprocess(target, linked_dir.joinpath("manifest.json"), output_dir)
     return _emit_cpp(linked_dir.joinpath("manifest.json"), output_dir)
 

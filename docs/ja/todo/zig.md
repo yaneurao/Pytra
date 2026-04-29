@@ -43,9 +43,10 @@
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を zig に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
 1. [ ] [ID: P1-HOST-CPP-EMITTER-ZIG-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target zig -o work/selfhost/host-cpp/zig/` で変換 + build を通す
-   - 進捗: 2026-04-29 に実行し、変換前に FAIL。`--target` の available 一覧には `zig` が出るが、実際には `error: unsupported target: zig (available: cpp, go, rs, cs, java, scala, kotlin, ts, js, nim, swift, julia, powershell, zig)` で停止する。target wiring が一覧と実行 dispatch で不整合。
+   - 進捗: 2026-04-30 に `pytra-cli.py -build` の target wiring を修正し、`--target zig` が `toolchain.emit.zig.cli` へ到達するようにした。`rm -rf work/selfhost/host-cpp/zig && timeout 3600s python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target zig -o work/selfhost/host-cpp/zig/` は変換 PASS（33 files）。
+   - 進捗: 2026-04-30 の `timeout 300s zig build-exe work/selfhost/host-cpp/zig/toolchain_emit_cpp_cli.zig -O Debug -femit-bin=work/selfhost/host-cpp/zig/emitter_cpp_zig` は未 PASS。先頭ブロッカーは `std/json.zig` / `std/sys.zig` の import 先欠落と、`write_runtime_module_artifacts` / `run_emit_cli` の cross-module symbol 未修飾。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-ZIG-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_zig.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
-   - 進捗: 2026-04-29 時点では S1 が変換前に失敗するため未実行。参考として `python3 tools/run/run_selfhost_parity.py --selfhost-lang zig --emit-target cpp --case-root fixture` も実行し、同じ `--target zig` unsupported を `.parity-results/selfhost_zig.json` に build_failed として記録済み。
+   - 進捗: 2026-04-30 時点では S1 が Zig build 未 PASS のため未実行。参考として `python3 tools/run/run_selfhost_parity.py --selfhost-lang zig --emit-target cpp --case-root fixture` は full selfhost 用 runner なので、emitter host の正規判定には使わない。
 
 ### P1-EMITTER-SELFHOST-ZIG: emit/zig/cli.py を単独で selfhost C++ build に通す
 
