@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-27
+最終更新: 2026-04-29
 
 ## 運用ルール
 
@@ -44,6 +44,7 @@
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を powershell に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
 1. [ ] [ID: P1-HOST-CPP-EMITTER-PS1-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target powershell -o work/selfhost/host-cpp/powershell/` で変換 + build を通す
+   - 進捗: 2026-04-29 に `--target powershell` は `src/toolchain/emit/profiles/powershell.json` 不在で失敗。`--target ps1` では変換 PASS（20 files）。現コンテナでは `pwsh` / `powershell` が PATH に存在せず、生成済み `work/selfhost/host-cpp/powershell/toolchain_emit_cpp_cli.ps1` の実行検証は未実施。Dockerfile 仕様上は PowerShell を apt で入れる想定なので、環境差分を解消してから S1 build/run を再開する。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-PS1-S2] `run_selfhost_parity.py --selfhost-lang powershell --emit-target cpp --case-root fixture` で fixture parity PASS を確認する（結果は `.parity-results/selfhost_powershell.json` に書き込まれ、`gen_backend_progress.py` で selfhost マトリクスに反映される）
 
 ### P1-EMITTER-SELFHOST-PS1: emit/powershell/cli.py を単独で selfhost C++ build に通す
