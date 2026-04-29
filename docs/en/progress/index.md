@@ -29,6 +29,7 @@ Details:
 - [fixture](./backend-progress-fixture.md) — language feature unit tests
 - [sample](./backend-progress-sample.md) — real applications ([samples list](../tutorial/samples.md))
 - [stdlib](./backend-progress-stdlib.md) — Python standard library compatible modules
+- [emitter host](./backend-progress-emitter-host.md) — can each language host the C++ emitter? (intermediate milestone)
 - [selfhost](./backend-progress-selfhost.md) — transpile the compiler itself. Requires fixture + sample + stdlib all PASS
 - [emitter lint](./emitter-hardcode-lint.md) — emitter hardcode violation detection
 — Counts grep-detected violations where emitters hardcode module names, runtime symbols, or class names instead of using EAST3 data.
