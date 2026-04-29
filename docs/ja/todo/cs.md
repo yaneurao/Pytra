@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-27
+最終更新: 2026-04-29
 
 ## 運用ルール
 
@@ -44,6 +44,7 @@
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を cs に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
 1. [ ] [ID: P1-HOST-CPP-EMITTER-CS-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target cs -o work/selfhost/host-cpp/cs/` で変換 + build を通す
+   - 進捗: 2026-04-29 に変換は PASS。`dotnet build work/selfhost/host-cpp/cs/PytraHostCppEmitter.csproj -v:minimal` は未 PASS（43 errors）。先頭ブロッカーは `Pytra.CsModule.Jv` / `Types` の namespace 衝突、`LinkedModule` / callable 型未生成、`py_runtime.field` 欠落。旧 `src/toolchain/emit/cs/` は変更不可のため、P3-CS-SELFHOST 側の新 emitter/runtime 整備で解く。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-CS-S2] `run_selfhost_parity.py --selfhost-lang cs --emit-target cpp --case-root fixture` で fixture parity PASS を確認する（結果は `.parity-results/selfhost_cs.json` に書き込まれ、`gen_backend_progress.py` で selfhost マトリクスに反映される）
 
 ### P1-EMITTER-SELFHOST-CS: emit/cs/cli.py を単独で selfhost C++ build に通す
