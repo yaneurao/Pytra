@@ -31,7 +31,7 @@
 | `gen_backend_progress.py` | バックエンド進捗ページ生成 |
 | `check_jsonvalue_decode_boundaries.py` | JSON artifact 境界の正本検証 |
 | `check_py2x_transpile.py` | 全言語統一 transpile チェック |
-| `check_east3_golden.py` | EAST3 golden スナップショット + `--check-runtime-east` で runtime east 鮮度検証 |
+| `regenerate_runtime_east.py` | `src/pytra/` 正本から runtime east キャッシュを再生成 |
 | `verify_image_runtime_parity.py` | 画像 runtime 一致確認 |
 | `check_runtime_std_sot_guard.py` | stdlib 正本ガード |
 | `check_runtime_core_gen_markers.py` | generated marker 検証 |
@@ -42,7 +42,7 @@
 | `regenerate_samples.py` | sample 再生成 |
 | `run_regen_on_version_bump.py` | バージョン bump 時の再生成 |
 | `sync_todo_history_translation.py` | TODO アーカイブ翻訳同期 |
-| `generate_golden.py` | golden file 一括生成 |
+| `regenerate_golden.py` | golden file 一括生成 |
 
 ### 言語間 parity（[詳細](./spec-tools-parity.md)）
 

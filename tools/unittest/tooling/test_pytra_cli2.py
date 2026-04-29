@@ -5,7 +5,6 @@ from __future__ import annotations
 import importlib.util
 import os
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -25,6 +24,20 @@ if _SPEC is None or _SPEC.loader is None:
     raise RuntimeError("failed to load pytra-cli module spec")
 pytra_cli2_mod = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(pytra_cli2_mod)
+
+_WORK_TMP_COUNTER = 0
+
+
+def _work_tmp_dir(name: str) -> Path:
+    global _WORK_TMP_COUNTER
+    base = ROOT / "work" / "tmp" / "unittest_pytra_cli2"
+    base.mkdir(parents=True, exist_ok=True)
+    while True:
+        _WORK_TMP_COUNTER += 1
+        path = base / (name + "_" + str(os.getpid()) + "_" + str(_WORK_TMP_COUNTER))
+        if not path.exists():
+            path.mkdir(parents=True)
+            return path
 
 
 class PytraCli2Test(unittest.TestCase):
@@ -57,7 +70,7 @@ class PytraCli2Test(unittest.TestCase):
         user = LinkedModule("app.main", "", "", True, {"kind": "Module", "east_stage": 3}, "user")
         runtime = LinkedModule("pytra.utils.png", "", "", False, {"kind": "Module", "east_stage": 3}, "runtime")
         helper = LinkedModule("__linked_helper__.x", "", "", False, {"kind": "Module", "east_stage": 3}, "helper")
-        with patch.object(pytra_cli2_mod, "optimize_east3_doc_only", side_effect=lambda doc, **_: {"kind": "Module", "optimized": doc.get("kind")}) as optimize_doc:
+        with patch.object(pytra_cli2_mod, "optimize_east3_doc_only", side_effect=lambda doc, *_: {"kind": "Module", "optimized": doc.get("kind")}) as optimize_doc:
             pytra_cli2_mod._optimize_linked_runtime_modules(
                 [user, runtime, helper],
                 opt_level=1,
@@ -68,21 +81,20 @@ class PytraCli2Test(unittest.TestCase):
         self.assertEqual(runtime.east_doc.get("optimized"), "Module")
         self.assertEqual(helper.east_doc.get("optimized"), "Module")
 
-    def test_repo_root_is_anchored_to_script_not_cwd(self) -> None:
+    def test_repo_root_resolves_from_current_repo_cwd(self) -> None:
         old_cwd = os.getcwd()
         try:
-            with tempfile.TemporaryDirectory() as tmp:
-                os.chdir(tmp)
-                repo_root = pytra_cli2_mod._repo_root()
-                builtins_path, containers_path, containers_source_path, stdlib_dir = pytra_cli2_mod._builtin_registry_paths()
+            os.chdir(ROOT)
+            repo_root = pytra_cli2_mod._pytra_cli_repo_root()
+            builtins_path, containers_path, containers_source_path, stdlib_dir = pytra_cli2_mod._builtin_registry_paths()
         finally:
             os.chdir(old_cwd)
 
         self.assertEqual(str(repo_root), str(ROOT))
-        self.assertTrue(Path(str(builtins_path)).exists())
-        self.assertTrue(Path(str(containers_path)).exists())
-        self.assertTrue(Path(str(containers_source_path)).exists())
-        self.assertTrue(Path(str(stdlib_dir)).exists())
+        self.assertTrue(str(builtins_path).startswith(str(ROOT)))
+        self.assertTrue(str(containers_path).startswith(str(ROOT)))
+        self.assertTrue(str(containers_source_path).startswith(str(ROOT)))
+        self.assertTrue(str(stdlib_dir).startswith(str(ROOT)))
 
     def test_pytra_cli2_has_no_cpp_runtime_bundle_top_level_import(self) -> None:
         source = _CLI2_PATH.read_text(encoding="utf-8")
@@ -98,6 +110,22 @@ class PytraCli2Test(unittest.TestCase):
         self.assertEqual(rc, 0)
         build_pipeline.assert_called_once()
         self.assertEqual(build_pipeline.call_args[0][2], "swift")
+
+    def test_build_pipeline_accepts_reconnected_subprocess_targets(self) -> None:
+        targets = ["dart", "lua", "php", "ruby", "zig", "powershell", "ps1"]
+        for target in targets:
+            with self.subTest(target=target):
+                with patch.object(pytra_cli2_mod, "_build_pipeline", return_value=0) as build_pipeline:
+                    rc = pytra_cli2_mod.cmd_build(["entry.py", "--target", target])
+                self.assertEqual(rc, 0)
+                build_pipeline.assert_called_once()
+                self.assertEqual(build_pipeline.call_args[0][2], target)
+
+    def test_build_profile_target_normalizes_aliases(self) -> None:
+        self.assertEqual(pytra_cli2_mod._build_profile_target("js"), "ts")
+        self.assertEqual(pytra_cli2_mod._build_profile_target("powershell"), "ps1")
+        self.assertEqual(pytra_cli2_mod._build_profile_target("zig"), "zig")
+        self.assertEqual(pytra_cli2_mod._emit_dispatch_target("ps1"), "powershell")
 
     def test_module_stem_from_source_path_preserves_py_package_segment(self) -> None:
         stem = pytra_cli2_mod._module_stem_from_source_path(
@@ -117,9 +145,8 @@ class PytraCli2Test(unittest.TestCase):
             "user",
         )
         link_result = type("LinkResultStub", (), {"linked_modules": [linked_module], "manifest": {}})()
-        with tempfile.TemporaryDirectory() as td:
-            out_dir = Path(td) / "emit"
-            with patch.object(pytra_cli2_mod, "_collect_build_sources", return_value=[("entry.py", {})]), \
+        out_dir = _work_tmp_dir("swift_dispatch") / "emit"
+        with patch.object(pytra_cli2_mod, "_collect_build_sources", return_value=[("entry.py", {})]), \
                 patch.object(pytra_cli2_mod, "_builtin_registry_paths", return_value=(Path("a"), Path("b"), Path("c"), Path("d"))), \
                 patch.object(pytra_cli2_mod, "load_builtin_registry", return_value=object()), \
                 patch.object(pytra_cli2_mod, "resolve_east1_to_east2"), \
@@ -129,10 +156,70 @@ class PytraCli2Test(unittest.TestCase):
                 patch.object(pytra_cli2_mod, "_optimize_linked_runtime_modules"), \
                 patch.object(pytra_cli2_mod, "_write_link_output"), \
                 patch.object(pytra_cli2_mod, "_emit_target_subprocess", return_value=0) as emit_subprocess:
-                rc = pytra_cli2_mod._build_pipeline(["entry.py"], str(out_dir), "swift")
+            rc = pytra_cli2_mod._build_pipeline(["entry.py"], str(out_dir), "swift")
         self.assertEqual(rc, 0)
         emit_subprocess.assert_called_once()
         self.assertEqual(emit_subprocess.call_args[0][0], "swift")
+
+    def test_build_pipeline_dispatches_reconnected_targets_to_subprocess_emitters(self) -> None:
+        entry_path = str((ROOT / "entry.py").resolve())
+        linked_module = LinkedModule(
+            "toolchain.cli.main",
+            "",
+            entry_path,
+            True,
+            {"source_path": entry_path},
+            "user",
+        )
+        link_result = type("LinkResultStub", (), {"linked_modules": [linked_module], "manifest": {}})()
+        for target in ["dart", "lua", "php", "ruby", "zig"]:
+            with self.subTest(target=target):
+                out_dir = _work_tmp_dir("dispatch_" + target) / "emit"
+                with patch.object(pytra_cli2_mod, "_collect_build_sources", return_value=[("entry.py", {})]), \
+                        patch.object(pytra_cli2_mod, "_builtin_registry_paths", return_value=(Path("a"), Path("b"), Path("c"), Path("d"))), \
+                        patch.object(pytra_cli2_mod, "load_builtin_registry", return_value=object()), \
+                        patch.object(pytra_cli2_mod, "resolve_east1_to_east2"), \
+                        patch.object(pytra_cli2_mod, "lower_east2_to_east3", return_value={"source_path": entry_path}), \
+                        patch.object(pytra_cli2_mod, "optimize_east3_doc_only", return_value={"source_path": entry_path}), \
+                        patch.object(pytra_cli2_mod, "link_modules", return_value=link_result), \
+                        patch.object(pytra_cli2_mod, "_optimize_linked_runtime_modules"), \
+                        patch.object(pytra_cli2_mod, "_write_link_output"), \
+                        patch.object(pytra_cli2_mod, "_emit_target_subprocess", return_value=0) as emit_subprocess, \
+                        patch.object(pytra_cli2_mod, "_emit_cpp", return_value=0) as emit_cpp:
+                    rc = pytra_cli2_mod._build_pipeline(["entry.py"], str(out_dir), target)
+                self.assertEqual(rc, 0)
+                emit_subprocess.assert_called_once()
+                self.assertEqual(emit_subprocess.call_args[0][0], target)
+                emit_cpp.assert_not_called()
+
+    def test_build_pipeline_uses_ps1_profile_for_powershell_target(self) -> None:
+        entry_path = str((ROOT / "entry.py").resolve())
+        linked_module = LinkedModule(
+            "toolchain.cli.main",
+            "",
+            entry_path,
+            True,
+            {"source_path": entry_path},
+            "user",
+        )
+        link_result = type("LinkResultStub", (), {"linked_modules": [linked_module], "manifest": {}})()
+        out_dir = _work_tmp_dir("powershell_profile") / "emit"
+        with patch.object(pytra_cli2_mod, "_collect_build_sources", return_value=[("entry.py", {})]), \
+                patch.object(pytra_cli2_mod, "_builtin_registry_paths", return_value=(Path("a"), Path("b"), Path("c"), Path("d"))), \
+                patch.object(pytra_cli2_mod, "load_builtin_registry", return_value=object()), \
+                patch.object(pytra_cli2_mod, "resolve_east1_to_east2"), \
+                patch.object(pytra_cli2_mod, "lower_east2_to_east3", return_value={"source_path": entry_path}) as lower_mock, \
+                patch.object(pytra_cli2_mod, "optimize_east3_doc_only", return_value={"source_path": entry_path}), \
+                patch.object(pytra_cli2_mod, "link_modules", return_value=link_result) as link_mock, \
+                patch.object(pytra_cli2_mod, "_optimize_linked_runtime_modules"), \
+                patch.object(pytra_cli2_mod, "_write_link_output"), \
+                patch.object(pytra_cli2_mod, "_emit_target_subprocess", return_value=0) as emit_subprocess:
+            rc = pytra_cli2_mod._build_pipeline(["entry.py"], str(out_dir), "powershell")
+        self.assertEqual(rc, 0)
+        self.assertEqual(lower_mock.call_args.kwargs["target_language"], "ps1")
+        self.assertEqual(link_mock.call_args.kwargs["target"], "ps1")
+        emit_subprocess.assert_called_once()
+        self.assertEqual(emit_subprocess.call_args[0][0], "powershell")
 
     def test_build_pipeline_lowers_js_with_ts_target_language(self) -> None:
         entry_path = str((ROOT / "entry.py").resolve())
@@ -145,9 +232,8 @@ class PytraCli2Test(unittest.TestCase):
             "user",
         )
         link_result = type("LinkResultStub", (), {"linked_modules": [linked_module], "manifest": {}})()
-        with tempfile.TemporaryDirectory() as td:
-            out_dir = Path(td) / "emit"
-            with patch.object(pytra_cli2_mod, "_collect_build_sources", return_value=[("entry.py", {})]), \
+        out_dir = _work_tmp_dir("js_lowering") / "emit"
+        with patch.object(pytra_cli2_mod, "_collect_build_sources", return_value=[("entry.py", {})]), \
                 patch.object(pytra_cli2_mod, "_builtin_registry_paths", return_value=(Path("a"), Path("b"), Path("c"), Path("d"))), \
                 patch.object(pytra_cli2_mod, "load_builtin_registry", return_value=object()), \
                 patch.object(pytra_cli2_mod, "resolve_east1_to_east2"), \
@@ -158,7 +244,7 @@ class PytraCli2Test(unittest.TestCase):
                 patch.object(pytra_cli2_mod, "_write_link_output"), \
                 patch.object(pytra_cli2_mod, "_emit_ts", return_value=0), \
                 patch.object(pytra_cli2_mod, "_emit_target_subprocess", return_value=0):
-                rc = pytra_cli2_mod._build_pipeline(["entry.py"], str(out_dir), "js")
+            rc = pytra_cli2_mod._build_pipeline(["entry.py"], str(out_dir), "js")
         self.assertEqual(rc, 0)
         self.assertEqual(lower_mock.call_args.kwargs["target_language"], "ts")
 

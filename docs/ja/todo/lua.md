@@ -42,10 +42,12 @@
 
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を lua に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
-1. [ ] [ID: P1-HOST-CPP-EMITTER-LUA-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target lua -o work/selfhost/host-cpp/lua/` で変換 + build を通す
+1. [x] [ID: P1-HOST-CPP-EMITTER-LUA-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target lua -o work/selfhost/host-cpp/lua/` で変換 + build を通す
    - 進捗: 2026-04-29 に実行し、変換前に FAIL。現在の `pytra-cli.py -build` の `--target` 一覧に `lua` がなく、`unsupported target: lua (available: cpp, go, rs, cs, java, scala, kotlin, ts, js, nim, swift, julia, powershell, zig)` で停止する。Lua host P1 は target wiring が先。
+   - 完了: 2026-04-29 `--target lua` の build dispatch を subprocess emitter へ再接続し、runtime east キャッシュ生成後に上記 exact command が PASS。30 modules を link し、Lua 20 files を出力。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-LUA-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_lua.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
    - 進捗: 2026-04-29 に実行し、`.parity-results/selfhost_lua.json` に `emit_targets.cpp.status = build_failed` を記録。runner の build 段階も `--target lua` unsupported で停止する。
+   - 進捗: 2026-04-29 現在、この macOS 環境には `lua` / `luac` がないため、生成済み Lua host の構文確認と実行 parity は devcontainer または Lua 導入済み環境で再開する。
 
 ### P1-EMITTER-SELFHOST-LUA: emit/lua/cli.py を単独で selfhost C++ build に通す
 
