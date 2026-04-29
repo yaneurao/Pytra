@@ -196,6 +196,11 @@ fixture / sample の parity マトリックスと selfhost マトリックスを
 計測されていない言語/ケースは既存値を維持（上書きしない）。PyPy は parity check 対象外のため常に手動値を保持する。
 `runtime_parity_check_fast.py --benchmark` 実行後に手動または自動で呼び出す（10 分以内の再実行はスキップ）。
 
+### `gen_top100_language_coverage.py`
+TIOBE April 2026 snapshot をもとに、Top100 言語 coverage の Markdown / JSON artifact を生成する。
+`backend` / `host` / `interop` / `syntax` / `defer` 分類、Top50 未対応候補の backend plan、defer 条件、Docker/devcontainer 標準ゲートを `docs/ja/progress/top100-language-coverage.md` と machine-readable JSON に出力する。
+`--check` で生成物の stale 状態を検出でき、Top100 coverage 更新時の標準ゲートとして使う。
+
 ### `gen_makefile_from_manifest.py`
 `manifest.json` を受け取り、`all` / `run` / `clean` ターゲットを含む `Makefile` を生成する。
 C++ ランタイムソースと依存関係を `manifest.json` と `cpp_runtime_deps` から収集する。

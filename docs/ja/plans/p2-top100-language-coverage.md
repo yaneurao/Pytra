@@ -152,9 +152,12 @@ SQL, Scratch, Assembly language, GML, LabVIEW, Ladder Logic, (Visual) FoxPro, Al
 3. `backend` 状態の言語には最低 1 件の build/parity 実測がある。
 4. `defer` 状態の言語には保留理由と、解除条件がある。
 5. 新規 backend を増やす場合は、profile / emitter / runtime mapping / smoke fixture / progress entry を同一タスクで追加する。
+6. coverage 更新は `tools/gen/gen_top100_language_coverage.py --check` を Docker/devcontainer 内で通し、machine-readable JSON と Markdown が同期していることを確認する。
 
 ## 決定ログ
 
 - 2026-04-29: TIOBE April 2026 top 100 を初期スナップショットとして採用。全 100 言語を一律 backend 化するのではなく、backend / host / interop / syntax / defer に分類して coverage を管理する。
 - 2026-04-29: `.devcontainer/` と Dockerfile が未統合だった run では、Docker Desktop CLI (`/Applications/Docker.app/Contents/Resources/bin/docker`) と `python:3.12-slim` を使い、`tools.unittest.tooling.test_pytra_cli2`、`core/add.py --target dart/lua/php/zig/powershell`、Ruby focused fixture/stdlib/sample smoke を隔離実行した。devcontainer 追加後は `.devcontainer/scripts/verify-toolchain.sh` を優先する。
 - 2026-04-30: 公式 TIOBE April 2026 を再確認し、`docs/ja/progress/top100-language-coverage.md` に 100 言語分の coverage matrix を追加した。Docker Desktop CLI で `.devcontainer/Dockerfile` を直接 build し、`verify-toolchain.sh`、runtime east 生成、Dart/Zig host emitter 生成、progress-preview 生成を実測した。Dart/Zig native CLI は devcontainer 未導入のため compile/parity の blocker として残す。
+- 2026-04-30: [ID: P2-TOP100-LANG-S3/S4/S5/S6] `tools/gen/gen_top100_language_coverage.py` を追加し、Top100 coverage を Markdown と machine-readable JSON へ生成する導線にした。Top50 の未対応 syntax 候補には T1/T2/T3 の backend plan を付け、defer 言語には解除条件を付けた。Docker Desktop CLI は Engine / `hello-world` / `.devcontainer/Dockerfile` build / `verify-toolchain.sh` まで PASS。常設 `devcontainer` CLI は PATH に無かったため、Dockerfile 直接 run を標準 fallback とし、`--check` を coverage 更新ゲートに固定した。
+- 2026-04-30: 同じ Dockerfile 直接 run で runtime east 32/32、Top100 generator + tuple host unit 10 tests、tools ledger、Dart/Zig C++ emitter host build smoke を確認した。代表 fixture/sample/stdlib は C++ runtime symbol drift で fail: `fixture add` は `::print` と `str(optional<variant...>)`、`sample 17_monte_carlo_pi` は `::print`、`stdlib math_extended` は `::int_` / `::print` / `str(optional<variant...>)`。`run_selfhost_parity.py --selfhost-lang python --emit-target cpp --dry-run` は cpp row `fixture_fail=1 sample_fail=18` を示したため、Top100 そのものは生成ゲート完了、次段 blocker は C++ runtime symbol drift として残す。
