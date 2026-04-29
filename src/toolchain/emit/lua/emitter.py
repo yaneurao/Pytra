@@ -3065,7 +3065,7 @@ def emit_lua_module(east3_doc: dict[str, JsonVal]) -> str:
     # Emit runtime dofile for entry modules
     if ctx.is_entry:
         _emit(ctx, '-- Load runtime')
-        _emit(ctx, 'local __script_dir = debug.getinfo(1, "S").source:match("^@(.*[\\\\/])") or ""')
+        _emit(ctx, '__script_dir = debug.getinfo(1, "S").source:match("^@(.*[\\\\/])") or ""')
         _emit(ctx, 'dofile(__script_dir .. "built_in/py_runtime.lua")')
         _emit(ctx, 'local __error_mod = __script_dir .. "pytra_built_in_error.lua"')
         _emit(ctx, 'local __error_fp = io.open(__error_mod, "r")')
