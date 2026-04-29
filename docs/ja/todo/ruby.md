@@ -45,7 +45,7 @@ C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を ruby に変換
 
 1. [ ] [ID: P1-HOST-CPP-EMITTER-RUBY-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target ruby -o work/selfhost/host-cpp/ruby/` で変換 + build を通す
    - 進捗: 2026-04-30 に `pytra-cli.py -build` の target wiring を修正し、`--target ruby` が `toolchain.emit.ruby.cli` へ到達するようにした。`rm -rf work/selfhost/host-cpp/ruby && timeout 3600s python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target ruby -o work/selfhost/host-cpp/ruby/` は変換 PASS（22 files）。
-   - 進捗: 2026-04-30 に `src/toolchain/emit/ruby/cli.py` へ runtime copy を追加し、`src/toolchain/emit/ruby/emitter.py` で `field(default_factory=...)` lowering と type-object subscript alias skip を実装した。`ruby -c work/selfhost/host-cpp/ruby/toolchain_emit_cpp_cli.rb` は `Syntax OK`。実行は `toolchain_link_runtime_discovery.rb` の `Path.cwd()` が `cwd()` として落ち、`undefined method cwd` で停止する。
+   - 進捗: 2026-04-30 に `src/toolchain/emit/ruby/cli.py` へ runtime copy を追加し、`src/toolchain/emit/ruby/emitter.py` で `field(default_factory=...)` lowering、type-object subscript alias skip、`Path.cwd()` 呼び出し保持を実装した。`src/runtime/ruby/built_in/py_runtime.rb` は Python 互換 `sys.argv` と `Path.cwd` を追加済み。`ruby -c work/selfhost/host-cpp/ruby/toolchain_emit_cpp_cli.rb` は `Syntax OK`。実行は `toolchain_emit_common_cli_runner.rb` の `JsonValue(manifest_doc).as_obj()` が `undefined method JsonValue` で停止する。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-RUBY-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_ruby.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
    - 進捗: 2026-04-30 時点では S1 が Ruby 実行未 PASS のため未実行。emitter host 結果は `.parity-results/emitter_host_ruby.json` に build_failed として記録済み。
 

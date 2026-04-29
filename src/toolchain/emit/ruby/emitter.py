@@ -953,6 +953,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
     if isinstance(func, dict) and _str(func, "kind") == "Attribute":
         owner_val = func.get("value")
+        if isinstance(owner_val, dict) and _str(owner_val, "kind") == "Name" and _str(owner_val, "id") == "Path" and builtin_name == "cwd":
+            return "Path.cwd()"
         if _is_super_receiver(owner_val) and builtin_name == "__init__":
             arg_strs_super: list[str] = []
             for a in args:

@@ -1346,9 +1346,24 @@ json = {
     end,
 }
 
-function Path(path)
-    return __pytra_path_new(path)
-end
+Path = setmetatable({
+    cwd = function()
+        local cwd = io.popen("pwd", "r")
+        if cwd == nil then
+            return __pytra_path_new(".")
+        end
+        local base = cwd:read("*l") or "."
+        cwd:close()
+        if base == "" then
+            base = "."
+        end
+        return __pytra_path_new(base)
+    end,
+}, {
+    __call = function(_, path)
+        return __pytra_path_new(path)
+    end,
+})
 
 function __pytra_set_argv(items)
     __pytra_sys_argv = items or {}
@@ -2015,7 +2030,15 @@ function __pytra_open(path, mode)
 end
 
 -- sys stubs
-__pytra_sys_argv = arg or {}
+__pytra_sys_argv = {}
+if type(arg) == "table" then
+    __pytra_sys_argv[1] = arg[0] or ""
+    local i = 1
+    while arg[i] ~= nil do
+        __pytra_sys_argv[#__pytra_sys_argv + 1] = arg[i]
+        i = i + 1
+    end
+end
 __pytra_sys_path = {}
 sys = {
     argv = __pytra_sys_argv,

@@ -458,12 +458,12 @@ end
 class PytraSys
   attr_accessor :argv, :path
   def initialize
-    @argv = ARGV
+    @argv = [$PROGRAM_NAME] + ARGV
     @path = []
   end
   def set_argv(values)
     @argv = values
-    ARGV.replace(values)
+    ARGV.replace(values[1..] || [])
   end
   def set_path(values)
     @path = values
@@ -513,6 +513,9 @@ def __pytra_path
 end
 
 class Path
+  def self.cwd
+    Path.new(Dir.pwd)
+  end
   def initialize(path)
     @path = __pytra_str(path)
   end
