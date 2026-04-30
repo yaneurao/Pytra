@@ -50,6 +50,7 @@
 |---|---|
 | `runtime_parity_check.py` | 多言語 runtime parity チェックの正規エントリ（内部では in-memory parity エンジンを使用、`--category` でカテゴリ絞り込み可） |
 | `runtime_parity_check_fast.py` | `runtime_parity_check.py` の互換エイリアス（同じ fast 実装を呼ぶ） |
+| `run_emitter_host_parity.py` | hosted emitter を各 host 言語に変換・実行し、Python 版 emitter との出力一致を確認して `.parity-results/emitter_host_<host>.json` を更新 |
 | `gen_sample_benchmark.py` | `.parity-results/` の実行時間データから sample/README の benchmark テーブルを自動更新 |
 | `check_all_target_sample_parity.py` | 全 target sample parity 確定 |
 | `check_noncpp_backend_health.py` | non-C++ backend health gate |

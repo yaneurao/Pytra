@@ -22,6 +22,8 @@
 
 ### P1-EMITTER-HOST-RUNNER: emitter host parity の自動化スクリプトを作る
 
+文脈: [docs/ja/plans/p1-emitter-host-runner.md](../plans/p1-emitter-host-runner.md)
+
 現在 emitter host の検証は手動（`pytra-cli.py -build` + target 言語でビルド + diff）で行い、`.parity-results/emitter_host_<lang>.json` も手書きしている。これを自動化する `run_emitter_host_parity.py` を作る。
 
 処理フロー:
@@ -31,9 +33,12 @@
 4. Python 版 emitter の出力と diff
 5. 結果を `.parity-results/emitter_host_<host_lang>.json` に自動書き込み
 
-1. [ ] [ID: P1-EHOST-RUNNER-S1] `tools/run/run_emitter_host_parity.py` を実装する（`--host-lang <lang> --hosted-emitter cpp --case-root fixture`）
-2. [ ] [ID: P1-EHOST-RUNNER-S2] 結果を `.parity-results/emitter_host_<host_lang>.json` の `emitters` map に自動書き込みする
-3. [ ] [ID: P1-EHOST-RUNNER-S3] 各 backend の P1-HOST-CPP-EMITTER タスクの S2 を `run_emitter_host_parity.py` の実行に更新する
+1. [x] [ID: P1-EHOST-RUNNER-S1] `tools/run/run_emitter_host_parity.py` を実装する（`--host-lang <lang> --hosted-emitter cpp --case-root fixture`）
+   - 完了: 2026-04-30。host emitter build、Python emitter baseline 生成、hosted emitter 出力比較を自動化した。
+2. [x] [ID: P1-EHOST-RUNNER-S2] 結果を `.parity-results/emitter_host_<host_lang>.json` の `emitters` map に自動書き込みする
+   - 完了: 2026-04-30。既存 top-level 形式も読み込み、`emitters` map に merge して書き戻すようにした。
+3. [x] [ID: P1-EHOST-RUNNER-S3] 各 backend の P1-HOST-CPP-EMITTER タスクの S2 を `run_emitter_host_parity.py` の実行に更新する
+   - 完了: 2026-04-30。各 backend TODO の S2 を runner 実行へ更新した。
 
 ### 保留中タスク
 
