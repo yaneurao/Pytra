@@ -215,6 +215,7 @@ class CommonRenderer:
                 return 100
             op_obj = ops[0]
             op_name_raw = json.JsonValue(op_obj).as_str()
+            op_name = ""
             if op_name_raw is None:
                 op_name = self._str(op_obj, "kind")
             else:
@@ -361,8 +362,10 @@ class CommonRenderer:
     def _emit_stmt_line(self, text: str) -> None:
         term = self._stmt_terminator()
         if term != "" and not text.endswith(term):
-            text = text + term
-        self._emit(text)
+            text_out = text + term
+        else:
+            text_out = text
+        self._emit(text_out)
 
     def emit_backend_line(self, text: str) -> None:
         self._emit(text)
@@ -438,8 +441,8 @@ class CommonRenderer:
             line = self._syntax_text("return", "return") + " " + self.render_expr(value_expr)
             self._emit_stmt_line(line)
         else:
-            line = self._syntax_text("return", "return")
-            self._emit_stmt_line(line)
+            empty_return_line = self._syntax_text("return", "return")
+            self._emit_stmt_line(empty_return_line)
 
     def emit_expr_stmt(self, node: dict[str, JsonVal]) -> None:
         value_expr: JsonVal = node.get("value")
@@ -1095,20 +1098,20 @@ class CommonRenderer:
             raw_stmt_dict = raw_stmt_obj.raw
             kind = self._str(raw_stmt_dict, "kind")
             if kind == "AnnAssign":
-                target = raw_stmt_dict.get("target")
-                target_obj = json.JsonValue(target).as_obj()
-                if target_obj is not None and self._str(target_obj.raw, "kind") == "Name":
-                    self._collect_with_add_name(out, seen, self._str(target_obj.raw, "id"), self._str(raw_stmt_dict, "decl_type"))
+                ann_target = raw_stmt_dict.get("target")
+                ann_target_obj = json.JsonValue(ann_target).as_obj()
+                if ann_target_obj is not None and self._str(ann_target_obj.raw, "kind") == "Name":
+                    self._collect_with_add_name(out, seen, self._str(ann_target_obj.raw, "id"), self._str(raw_stmt_dict, "decl_type"))
             elif kind == "Assign":
-                target = raw_stmt_dict.get("target")
-                target_obj = json.JsonValue(target).as_obj()
-                if target_obj is None:
+                assign_target = raw_stmt_dict.get("target")
+                assign_target_obj = json.JsonValue(assign_target).as_obj()
+                if assign_target_obj is None:
                     targets = self._list(raw_stmt_dict, "targets")
                     if len(targets) > 0:
-                        target = targets[0]
-                        target_obj = json.JsonValue(target).as_obj()
-                if target_obj is not None and self._str(target_obj.raw, "kind") == "Name":
-                    self._collect_with_add_name(out, seen, self._str(target_obj.raw, "id"), self._str(raw_stmt_dict, "decl_type"))
+                        assign_target = targets[0]
+                        assign_target_obj = json.JsonValue(assign_target).as_obj()
+                if assign_target_obj is not None and self._str(assign_target_obj.raw, "kind") == "Name":
+                    self._collect_with_add_name(out, seen, self._str(assign_target_obj.raw, "id"), self._str(raw_stmt_dict, "decl_type"))
             elif kind in ("If", "While", "Try", "With", "ForCore"):
                 self._collect_with_walk(out, seen, self._list(raw_stmt_dict, "body"))
                 self._collect_with_walk(out, seen, self._list(raw_stmt_dict, "orelse"))
@@ -1711,7 +1714,7 @@ class CommonRenderer:
         if len(comparators) == 0 or len(ops) == 0:
             return left
         if len(self._op_prec_table) == 0:
-            parts: list[str] = []
+            simple_parts: list[str] = []
             current_left = left
             idx = 0
             for comparator in comparators:
@@ -1725,21 +1728,21 @@ class CommonRenderer:
                         op_name = self._str(op_obj, "kind")
                 op_text = self._operator_text("cmp", op_name, op_name)
                 right = self.render_expr(comparator)
-                parts.append("(" + current_left + " " + op_text + " " + right + ")")
+                simple_parts.append("(" + current_left + " " + op_text + " " + right + ")")
                 current_left = right
                 idx += 1
-            if len(parts) == 1:
-                return parts[0]
+            if len(simple_parts) == 1:
+                return simple_parts[0]
             joiner = " " + self._operator_text("bool", "And", "&&") + " "
-            return "(" + joiner.join(parts) + ")"
+            return "(" + joiner.join(simple_parts) + ")"
         parts: list[str] = []
         current_left = left
         current_left_node = left_node
-        idx = 0
+        prec_idx = 0
         for comparator in comparators:
             op_name = ""
-            if idx < len(ops):
-                op_obj = ops[idx]
+            if prec_idx < len(ops):
+                op_obj = ops[prec_idx]
                 op_name_raw = json.JsonValue(op_obj).as_str()
                 if op_name_raw is not None:
                     op_name = op_name_raw
@@ -1752,7 +1755,7 @@ class CommonRenderer:
             parts.append(left_part + " " + op_text + " " + right_part)
             current_left = right
             current_left_node = comparator
-            idx += 1
+            prec_idx += 1
         if len(parts) == 1:
             return parts[0]
         joiner = " " + self._operator_text("bool", "And", "&&") + " "
@@ -1776,25 +1779,25 @@ class CommonRenderer:
         node_obj = json.JsonValue(node).as_obj()
         if node_obj is None:
             raise RuntimeError("common renderer expected dict expr node")
-        node = self._normalize_boundary_expr(node_obj.raw)
-        kind = self._str(node, "kind")
+        normalized_node = self._normalize_boundary_expr(node_obj.raw)
+        kind = self._str(normalized_node, "kind")
         if kind == "Constant":
-            return self.render_constant(node)
+            return self.render_constant(normalized_node)
         if kind == "Name":
-            return self.render_name(node)
+            return self.render_name(normalized_node)
         if kind == "BinOp":
-            return self.render_binop(node)
+            return self.render_binop(normalized_node)
         if kind == "UnaryOp":
-            return self.render_unaryop(node)
+            return self.render_unaryop(normalized_node)
         if kind == "Compare":
-            return self.render_compare(node)
+            return self.render_compare(normalized_node)
         if kind == "BoolOp":
-            return self.render_boolop(node)
+            return self.render_boolop(normalized_node)
         if kind == "Attribute":
-            return self.render_attribute(node)
+            return self.render_attribute(normalized_node)
         if kind == "Call":
-            return self.render_call(node)
-        return self.render_expr_extension(node)
+            return self.render_call(normalized_node)
+        return self.render_expr_extension(normalized_node)
 
     # ------------------------------------------------------------------
     # statement emission
@@ -1829,44 +1832,44 @@ class CommonRenderer:
         node_obj = json.JsonValue(node).as_obj()
         if node_obj is None:
             return
-        node = node_obj.raw
-        kind = self._str(node, "kind")
+        stmt_node = node_obj.raw
+        kind = self._str(stmt_node, "kind")
         if kind == "Expr":
-            self.emit_expr_stmt(node)
+            self.emit_expr_stmt(stmt_node)
             return
         if kind == "Return":
-            self.emit_return_stmt(node)
+            self.emit_return_stmt(stmt_node)
             return
         if kind == "Assign" or kind == "AnnAssign":
-            self.emit_assign_stmt(node)
+            self.emit_assign_stmt(stmt_node)
             return
         if kind == "Pass":
-            self.emit_pass_stmt(node)
+            self.emit_pass_stmt(stmt_node)
             return
         if kind == "Raise":
-            self.emit_raise_stmt(node)
+            self.emit_raise_stmt(stmt_node)
             return
         if kind == "Try":
-            self.emit_try_stmt(node)
+            self.emit_try_stmt(stmt_node)
             return
         if kind == "comment":
-            self.emit_comment_stmt(node)
+            self.emit_comment_stmt(stmt_node)
             return
         if kind == "blank":
-            self.emit_blank_stmt(node)
+            self.emit_blank_stmt(stmt_node)
             return
         if kind == "If":
-            self._emit_if_chain(node)
+            self._emit_if_chain(stmt_node)
             return
         if kind == "While":
-            test = self.render_condition_expr(node.get("test"))
+            test = self.render_condition_expr(stmt_node.get("test"))
             self._emit(self._syntax_text("while", "while ({cond}) {").replace("{cond}", test))
             self.state.indent_level += 1
-            self.emit_body(self._list(node, "body"))
+            self.emit_body(self._list(stmt_node, "body"))
             self.state.indent_level -= 1
             self._emit(self._syntax_text("block_close", "}"))
             return
         if kind == "With":
-            self.emit_with_stmt(node)
+            self.emit_with_stmt(stmt_node)
             return
-        self.emit_stmt_extension(node)
+        self.emit_stmt_extension(stmt_node)

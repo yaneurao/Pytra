@@ -4885,15 +4885,15 @@ def _render_raise_value(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     return _emit_expr(ctx, exc)
 
 
-def _emit_try(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
+def _emit_try(ctx: CppEmitContext, _: dict[str, JsonVal]) -> None:
     renderer = _CppStmtCommonRenderer(ctx)
-    renderer.emit_try_stmt(node)
+    renderer.emit_try_stmt(_)
     ctx.indent_level = renderer.state.indent_level + 0
 
 
-def _emit_raise(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
+def _emit_raise(ctx: CppEmitContext, _: dict[str, JsonVal]) -> None:
     renderer = _CppStmtCommonRenderer(ctx)
-    renderer.emit_raise_stmt(node)
+    renderer.emit_raise_stmt(_)
     ctx.indent_level = renderer.state.indent_level + 0
 
 

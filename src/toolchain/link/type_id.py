@@ -414,15 +414,15 @@ def build_type_id_table(
 
     visit_state: dict[str, int] = {}
 
-    def _visit(fqcn: str, stack: list[str]) -> None:
-        state = visit_state.get(fqcn, 0)
+    def _visit(visit_fqcn: str, stack: list[str]) -> None:
+        state = visit_state.get(visit_fqcn, 0)
         if state == 2:
             return
         if state == 1:
             cycle_start = 0
             i = 0
             while i < len(stack):
-                if stack[i] == fqcn:
+                if stack[i] == visit_fqcn:
                     cycle_start = i
                     break
                 i += 1
@@ -431,35 +431,35 @@ def build_type_id_table(
             while cycle_idx < len(stack):
                 cycle.append(stack[cycle_idx])
                 cycle_idx += 1
-            cycle.append(fqcn)
-            visit_state[fqcn] = 2
+            cycle.append(visit_fqcn)
+            visit_state[visit_fqcn] = 2
             return
 
-        visit_state[fqcn] = 1
-        base_fqcn = class_bases.get(fqcn, "")
+        visit_state[visit_fqcn] = 1
+        base_fqcn = class_bases.get(visit_fqcn, "")
         if base_fqcn in class_bases:
             next_stack: list[str] = []
             for stack_item in stack:
                 next_stack.append(stack_item)
-            next_stack.append(fqcn)
+            next_stack.append(visit_fqcn)
             _visit(base_fqcn, next_stack)
-        visit_state[fqcn] = 2
+        visit_state[visit_fqcn] = 2
 
     class_base_names: list[str] = []
-    for fqcn in class_bases:
-        class_base_names.append(fqcn)
-    for fqcn in _type_id_sorted_strings(class_base_names):
+    for class_base_fqcn in class_bases:
+        class_base_names.append(class_base_fqcn)
+    for root_fqcn in _type_id_sorted_strings(class_base_names):
         empty_stack: list[str] = []
-        _visit(fqcn, empty_stack)
+        _visit(root_fqcn, empty_stack)
 
     # Build children map
     sorted_class_names = _type_id_sorted_strings(class_base_names)
-    for fqcn in sorted_class_names:
-        base_fqcn = class_bases[fqcn]
+    for sorted_fqcn in sorted_class_names:
+        base_fqcn = class_bases[sorted_fqcn]
         if base_fqcn not in children:
             empty_base_children: list[str] = []
             children[base_fqcn] = empty_base_children
-        children[base_fqcn].append(fqcn)
+        children[base_fqcn].append(sorted_fqcn)
 
     # Sort children for determinism
     child_parents: list[str] = []
@@ -503,10 +503,10 @@ def build_type_id_table(
             if child_fqcn not in type_info_table:
                 _assign_type_rows(child_fqcn, children, next_id_holder, type_id_table, type_info_table)
 
-    for fqcn in sorted_class_names:
-        base_fqcn = class_bases[fqcn]
-        if base_fqcn == "object" and fqcn not in type_info_table:
-            _assign_type_rows(fqcn, children, next_id_holder, type_id_table, type_info_table)
+    for sorted_fqcn in sorted_class_names:
+        base_fqcn = class_bases[sorted_fqcn]
+        if base_fqcn == "object" and sorted_fqcn not in type_info_table:
+            _assign_type_rows(sorted_fqcn, children, next_id_holder, type_id_table, type_info_table)
 
     if "object" in type_info_table:
         type_info_table["object"]["exit"] = next_id_holder[0]
@@ -532,39 +532,39 @@ def build_type_id_table(
         else:
             type_id_base_map[builtin_name] = builtin_id
 
-    for fqcn in class_bases:
-        base_fqcn = class_bases[fqcn]
+    for base_map_fqcn in class_bases:
+        base_fqcn = class_bases[base_map_fqcn]
         if base_fqcn in type_id_table:
-            type_id_base_map[fqcn] = type_id_table[base_fqcn]
+            type_id_base_map[base_map_fqcn] = type_id_table[base_fqcn]
         else:
             base_short = _tail_name(base_fqcn)
-            type_id_base_map[fqcn] = _BUILTIN_TYPE_IDS.get(base_short, _BUILTIN_TYPE_IDS["object"])
+            type_id_base_map[base_map_fqcn] = _BUILTIN_TYPE_IDS.get(base_short, _BUILTIN_TYPE_IDS["object"])
 
     # Convert to JsonVal-compatible dicts
     tid_table: dict[str, JsonVal] = {}
     type_id_names: list[str] = []
-    for fqcn in type_id_table:
-        type_id_names.append(fqcn)
-    for fqcn in _type_id_sorted_strings(type_id_names):
-        tid_table[fqcn] = type_id_table[fqcn]
+    for type_id_fqcn in type_id_table:
+        type_id_names.append(type_id_fqcn)
+    for type_id_fqcn in _type_id_sorted_strings(type_id_names):
+        tid_table[type_id_fqcn] = type_id_table[type_id_fqcn]
 
     tid_base: dict[str, JsonVal] = {}
     type_id_base_names: list[str] = []
-    for fqcn in type_id_base_map:
-        type_id_base_names.append(fqcn)
-    for fqcn in _type_id_sorted_strings(type_id_base_names):
-        tid_base[fqcn] = type_id_base_map[fqcn]
+    for type_id_base_fqcn in type_id_base_map:
+        type_id_base_names.append(type_id_base_fqcn)
+    for type_id_base_fqcn in _type_id_sorted_strings(type_id_base_names):
+        tid_base[type_id_base_fqcn] = type_id_base_map[type_id_base_fqcn]
 
     tid_info: dict[str, JsonVal] = {}
     type_info_names: list[str] = []
-    for fqcn in type_info_table:
-        type_info_names.append(fqcn)
-    for fqcn in _type_id_sorted_strings(type_info_names):
-        info_row = type_info_table[fqcn]
+    for type_info_fqcn in type_info_table:
+        type_info_names.append(type_info_fqcn)
+    for type_info_fqcn in _type_id_sorted_strings(type_info_names):
+        info_row = type_info_table[type_info_fqcn]
         info: dict[str, JsonVal] = {}
         info["id"] = info_row["id"]
         info["entry"] = info_row["entry"]
         info["exit"] = info_row["exit"]
-        tid_info[fqcn] = info
+        tid_info[type_info_fqcn] = info
 
     return tid_table, tid_base, tid_info

@@ -821,7 +821,10 @@ pub fn contains(haystack: anytype, needle: anytype) bool {
     if (@typeInfo(HT) == .@"struct") {
         inline for (@typeInfo(HT).@"struct".fields) |field| {
             if (std.mem.startsWith(u8, field.name, "_")) {
-                if (std.meta.eql(@field(haystack, field.name), needle)) return true;
+                const item = @field(haystack, field.name);
+                if (@TypeOf(needle) == []const u8) {
+                    if (std.mem.eql(u8, item, needle)) return true;
+                } else if (std.meta.eql(item, needle)) return true;
             }
         }
     }

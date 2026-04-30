@@ -1515,6 +1515,7 @@ class ZigNativeEmitter:
         self._fixup_block_member_access()
         self._fixup_undeclared_simple_assignments()
         self._fixup_final_zig_strictness()
+        self._fixup_known_type_artifacts()
         # タプル typedef をモジュール先頭（import 直後）に挿入
         if len(self._tuple_typedefs) > 0:
             insert_idx = 0
@@ -1690,28 +1691,46 @@ class ZigNativeEmitter:
         import re
         decl_re = re.compile(r"^\s*(?:const|var)\s+([A-Za-z_]\w*|@\"[^\"]+\")\b")
         assign_re = re.compile(r"^(\s+)([A-Za-z_]\w*)\s*=\s*(.+);\s*$")
-        declared: set[str] = set()
+        fn_re = re.compile(r"^(?:pub fn|fn)\s+\w+\((.*)\)")
+        declared_stack: list[set[str]] = [set()]
         fixed: list[str] = []
         for line in self.lines:
             stripped = line.strip()
-            if not line.startswith(" ") and re.match(r"^(pub fn|fn)\s+\w+\(", stripped):
-                declared = set()
+            if stripped == "}" and len(declared_stack) > 1:
+                declared_stack.pop()
+            if not line.startswith(" "):
+                m_fn = fn_re.match(stripped)
+                if m_fn is not None:
+                    declared_stack = [set()]
+                    params_text = m_fn.group(1)
+                    for param_part in self._split_generic(params_text):
+                        param_name = param_part.split(":", 1)[0].strip()
+                        if param_name not in {"", "_"}:
+                            declared_stack[-1].add(param_name)
             m_decl = decl_re.match(line)
             if m_decl is not None:
-                declared.add(m_decl.group(1))
+                declared_stack[-1].add(m_decl.group(1))
                 fixed.append(line)
+                if stripped.endswith("{"):
+                    declared_stack.append(set())
                 continue
             m_assign = assign_re.match(line)
             if m_assign is not None:
                 indent, name, value = m_assign.group(1), m_assign.group(2), m_assign.group(3)
                 if name == "_" or name.startswith("__pytra_"):
                     fixed.append(line)
+                    if stripped.endswith("{"):
+                        declared_stack.append(set())
                     continue
-                if name not in declared:
-                    declared.add(name)
+                if not any(name in scope for scope in reversed(declared_stack)):
+                    declared_stack[-1].add(name)
                     fixed.append(indent + "var " + name + " = " + value + ";")
+                    if stripped.endswith("{"):
+                        declared_stack.append(set())
                     continue
             fixed.append(line)
+            if stripped.endswith("{"):
+                declared_stack.append(set())
         self.lines = fixed
 
     def _fixup_final_zig_strictness(self) -> None:
@@ -1771,6 +1790,24 @@ class ZigNativeEmitter:
                 j += 1
             if not body_uses:
                 fixed.append(m_for.group(1) + "    _ = " + capture + ";")
+        self.lines = fixed
+
+    def _fixup_known_type_artifacts(self) -> None:
+        import re
+        fixed: list[str] = []
+        optional_obj_names: set[str] = set()
+        opt_obj_re = re.compile(r"\b(?:const|var)\s+(\w+)\s*:\s*\?\*JsonObj\b")
+        for line in self.lines:
+            m_opt = opt_obj_re.search(line)
+            if m_opt is not None:
+                optional_obj_names.add(m_opt.group(1))
+            line = re.sub(r"pytra\.union_to_bool\(pytra\.union_to_bool\(([^()]+)\)\)", r"pytra.union_to_bool(\1)", line)
+            line = re.sub(r"pytra\.union_to_int\(pytra\.union_to_int\(([^()]+)\)\)", r"pytra.union_to_int(\1)", line)
+            line = re.sub(r"pytra\.union_to_float\(pytra\.union_to_float\(([^()]+)\)\)", r"pytra.union_to_float(\1)", line)
+            line = re.sub(r"pytra\.union_as_str\(pytra\.union_as_str\(([^()]+)\)\)", r"pytra.union_as_str(\1)", line)
+            for name in sorted(optional_obj_names):
+                line = line.replace(name + ".raw", name + ".?.raw")
+            fixed.append(line)
         self.lines = fixed
 
     def _wrap_union_return_lines(self, lines: list[str], owner_cls: str = "") -> list[str]:
@@ -2959,6 +2996,12 @@ class ZigNativeEmitter:
                 zig_ty = "anytype"
             self._module_function_param_zig_types[name].append(zig_ty)
             param_name = arg_names[i]
+            if raw_name == "_":
+                param_name = "_"
+                arg_names[i] = "_"
+                arg_strs.append(param_name + ": " + zig_ty)
+                i += 1
+                continue
             # Check unused: EAST3 arg_usage or body scan (excluding dead branches)
             if isinstance(raw_name, str) and raw_name != "":
                 is_unused = not self._body_uses_name(fn_live_body, raw_name)
@@ -4849,6 +4892,15 @@ class ZigNativeEmitter:
             i += 1
         if isinstance(func_any, dict):
             fkind = func_any.get("kind")
+            if fkind == "Attribute":
+                attr_name = _safe_ident(func_any.get("attr"), "")
+                owner_node = func_any.get("value")
+                owner_name = ""
+                if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
+                    owner_name = _safe_ident(owner_node.get("id"), "")
+                if owner_name in {"json", "pytra_std_json"} and attr_name == "JsonValue":
+                    arg0 = arg_strs[0] if len(arg_strs) > 0 else "null"
+                    return "pytra.make_object(JsonValue, JsonValue.init(" + arg0 + "))"
             if fkind == "Name":
                 fname = _safe_ident(func_any.get("id"), "fn_")
                 rendered_name = self._render_expr(func_any)

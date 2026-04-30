@@ -74,25 +74,25 @@ def _json_indent_value(indent: int64 | None) -> int64:
 def _jv_as_str(raw: JsonVal) -> str | None:
     if not isinstance(raw, str):
         return None
-    return cast(str, raw)
+    return raw
 
 
 def _jv_as_int(raw: JsonVal) -> int | None:
     if not isinstance(raw, int):
         return None
-    return cast(int, raw)
+    return raw
 
 
 def _jv_as_float(raw: JsonVal) -> float | None:
     if not isinstance(raw, float):
         return None
-    return cast(float, raw)
+    return raw
 
 
 def _jv_as_bool(raw: JsonVal) -> bool | None:
     if not isinstance(raw, bool):
         return None
-    return cast(bool, raw)
+    return raw
 
 
 def _jv_as_obj(raw: JsonVal) -> dict[str, JsonVal] | None:
