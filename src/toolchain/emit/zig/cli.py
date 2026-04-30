@@ -9,10 +9,10 @@ from toolchain.emit.zig.emitter import emit_zig_module
 
 def _copy_zig_runtime(output_dir: Path) -> None:
     """Copy Zig runtime files into the emit directory."""
-    runtime_root = Path(__file__).resolve().parents[3] / "runtime" / "zig"
+    runtime_root = Path("src").joinpath("runtime").joinpath("zig")
     if not runtime_root.exists():
         return
-    for bucket in ("built_in", "std"):
+    for bucket in ["built_in", "std"]:
         bucket_dir = runtime_root / bucket
         if not bucket_dir.exists():
             continue
@@ -29,7 +29,12 @@ def _copy_zig_runtime(output_dir: Path) -> None:
 
 def main() -> int:
     import sys
-    return run_emit_cli(emit_zig_module, sys.argv[1:], default_ext=".zig", post_emit=_copy_zig_runtime)
+    args: list[str] = []
+    index = 1
+    while index < len(sys.argv):
+        args.append(sys.argv[index])
+        index += 1
+    return run_emit_cli(emit_zig_module, args, default_ext=".zig", post_emit=_copy_zig_runtime)
 
 
 if __name__ == "__main__":

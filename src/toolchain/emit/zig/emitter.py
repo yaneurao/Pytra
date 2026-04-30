@@ -732,7 +732,7 @@ class ZigNativeEmitter:
         self._function_depth: int = 0
         self._try_depth: int = 0
         self._try_label_stack: list[str] = []
-        mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "zig" / "mapping.json"
+        mapping_path = Path("src").joinpath("runtime").joinpath("zig").joinpath("mapping.json")
         self._runtime_mapping = load_runtime_mapping(mapping_path)
         self._catch_all_exception_types: set[str] = {
             name for name, mapped in self._runtime_mapping.types.items() if mapped == "pytra.PyObject"
@@ -754,8 +754,12 @@ class ZigNativeEmitter:
 
     def _run_stmt_renderer(self, method_name: str, *args: Any) -> _ZigStmtCommonRenderer:
         renderer = self._make_stmt_renderer()
-        method = getattr(renderer, method_name)
-        method(*args)
+        if method_name == "emit_raise_stmt":
+            renderer.emit_raise_stmt(args[0])
+        elif method_name == "emit_try_stmt":
+            renderer.emit_try_stmt(args[0])
+        else:
+            raise RuntimeError("unsupported Zig statement renderer: " + method_name)
         self._sync_from_stmt_renderer(renderer)
         return renderer
 
@@ -766,8 +770,27 @@ class ZigNativeEmitter:
         *args: Any,
     ) -> Any:
         renderer.state.indent_level = self.indent
-        method = getattr(renderer, method_name)
-        out = method(*args)
+        out: Any = None
+        if method_name == "emit_try_body_post_stmt":
+            renderer.emit_try_body_post_stmt(args[0], args[1])
+        elif method_name == "emit_bare_raise_restore":
+            renderer.emit_bare_raise_restore()
+        elif method_name == "emit_raise_propagation":
+            renderer.emit_raise_propagation(args[0], args[1])
+        elif method_name == "emit_raise_exception_state":
+            renderer.emit_raise_exception_state(args[0], args[1], args[2])
+        elif method_name == "emit_with_context_bind":
+            renderer.emit_with_context_bind(args[0], args[1], args[2], args[3])
+        elif method_name == "emit_with_enter_binding":
+            renderer.emit_with_enter_binding(args[0], args[1], args[2], args[3], bind_ref=bool(args[4]) if len(args) > 4 else False)
+        elif method_name == "emit_with_fallback_enter":
+            renderer.emit_with_fallback_enter(args[0], args[1])
+        elif method_name == "emit_with_close_fallback":
+            renderer.emit_with_close_fallback(args[0], args[1])
+        elif method_name == "emit_with_fallback_exit":
+            renderer.emit_with_fallback_exit(args[0], args[1])
+        else:
+            raise RuntimeError("unsupported Zig statement renderer: " + method_name)
         self._sync_from_stmt_renderer(renderer)
         return out
 
@@ -2801,7 +2824,7 @@ class ZigNativeEmitter:
                                 var_name,
                                 enter_type,
                                 {"kind": "Name", "id": ctx_name, "resolved_type": ctx_type},
-                                bind_ref=True,
+                                True,
                             )
                     else:
                         self._call_stmt_renderer(
@@ -3167,7 +3190,16 @@ class ZigNativeEmitter:
         self._function_depth -= 1
         self.indent -= 1
         if self._is_union_storage_zig(ret_type):
-            self.lines[body_start:] = self._wrap_union_return_lines(self.lines[body_start:])
+            prefix_lines: list[str] = []
+            line_index = 0
+            while line_index < body_start:
+                prefix_lines.append(self.lines[line_index])
+                line_index += 1
+            body_lines: list[str] = []
+            while line_index < len(self.lines):
+                body_lines.append(self.lines[line_index])
+                line_index += 1
+            self.lines = prefix_lines + self._wrap_union_return_lines(body_lines)
         self._emit_line("}")
         self._emit_line("")
 
