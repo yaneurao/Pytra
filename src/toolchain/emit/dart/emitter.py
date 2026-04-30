@@ -379,7 +379,7 @@ def _dart_string(text: str) -> str:
 
 def _module_id_to_import_path(module_id: str, ext: str, root_rel_prefix: str) -> str:
     """module_id から機械的にインポートパスを生成する (§3)."""
-    if module_id.startswith("pytra.") and not _has_handwritten_runtime(module_id):
+    if not _has_handwritten_runtime(module_id):
         return root_rel_prefix + module_id.replace(".", "_") + ext
     parts = module_id.split(".")
     rel_parts = parts[1:] if len(parts) >= 2 and parts[0] == "pytra" else parts
@@ -1289,7 +1289,7 @@ class DartNativeEmitter:
         # Pre-scan for @extern to know if __native import is needed
         self._scan_extern_usage(body)
         # Emit imports header
-        self._emit_imports(body)
+        self._emit_imports(body + main_guard)
         # Runtime helpers are provided by py_runtime.dart (no inline emit needed)
         # Emit body
         for stmt in body:
@@ -1588,7 +1588,18 @@ class DartNativeEmitter:
                         continue
                     resolved = resolve_import_binding_doc(mod, sym, "symbol")
                     if len(resolved) == 0:
-                        # Unresolved import (e.g., Python stdlib) — skip
+                        if mod.startswith("toolchain."):
+                            mod_canon = mod
+                            if mod_canon not in imported_module_paths:
+                                mod_alias_seq += 1
+                                mod_alias = "__mod_" + str(mod_alias_seq)
+                                imp_path = _module_id_to_import_path(mod_canon, ".dart", rt_prefix)
+                                dart_import_lines.append("import '" + imp_path + "' as " + mod_alias + ";")
+                                imported_module_paths[mod_canon] = mod_alias
+                            mod_alias = imported_module_paths[mod_canon]
+                            sym_safe = _safe_ident(sym, sym)
+                            alias_lines.append("var " + alias_txt + " = " + mod_alias + "." + sym_safe + ";")
+                        # Unresolved Python stdlib imports are skipped.
                         continue
                     resolved_kind = resolved.get("resolved_binding_kind", "")
                     runtime_mod = resolved.get("runtime_module_id", "")
@@ -1625,6 +1636,28 @@ class DartNativeEmitter:
                         else:
                             alias_lines.append("var " + alias_txt + " = " + mod_alias + "." + sym_safe + ";")
         for node in self._walk_nodes(body):
+            uses_sys = False
+            public_alias = "sys"
+            if node.get("kind") == "Import":
+                names_any = node.get("names")
+                names = names_any if isinstance(names_any, list) else []
+                for ent in names:
+                    if not isinstance(ent, dict) or ent.get("name") != "sys":
+                        continue
+                    uses_sys = True
+                    public_alias = _safe_ident(ent.get("asname"), "sys") if isinstance(ent.get("asname"), str) and ent.get("asname") != "" else "sys"
+            elif node.get("kind") == "Name" and node.get("id") == "sys":
+                uses_sys = True
+            if not uses_sys:
+                continue
+            mod_canon = "pytra.std.sys"
+            if mod_canon not in imported_module_paths:
+                imp_path = _module_id_to_import_path(mod_canon, ".dart", rt_prefix)
+                dart_import_lines.append("import '" + imp_path + "' as " + public_alias + ";")
+                imported_module_paths[mod_canon] = public_alias
+            self._module_aliases[mod_canon] = imported_module_paths[mod_canon]
+            self.relative_import_name_aliases[public_alias] = imported_module_paths[mod_canon]
+        for node in self._walk_nodes(body):
             runtime_module_id = node.get("runtime_module_id") if isinstance(node, dict) and isinstance(node.get("runtime_module_id"), str) else ""
             if runtime_module_id != "":
                 runtime_mod_canon = canonical_runtime_module_id(runtime_module_id)
@@ -1639,6 +1672,8 @@ class DartNativeEmitter:
                     dart_import_lines.append("import '" + runtime_path + "' as " + runtime_alias + ";")
                     imported_module_paths[runtime_mod_canon] = runtime_alias
                     self._module_aliases[runtime_mod_canon] = runtime_alias
+                    if runtime_mod_canon == "pytra.std.sys":
+                        self.relative_import_name_aliases["sys"] = runtime_alias
                     self.imported_modules.add(runtime_alias)
             nested_module_id = self._resolve_module_attr_module_id(node)
             if nested_module_id == "" or nested_module_id in imported_module_paths:

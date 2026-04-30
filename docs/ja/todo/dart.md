@@ -48,6 +48,7 @@ C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を dart に変換
    - 進捗: 2026-04-30 に `src/toolchain/emit/dart/cli.py` へ runtime copy を追加し、`built_in/py_runtime.dart` と `std/*.dart` の配置は進んだ。次の blocker は `std/json.dart` / `std/glob.dart` / `std/os.dart` wrapper 欠落と、`field(...)` / `cast(...)` / `dict[str,JsonVal]` など selfhost 向け Dart lowering の未対応。
    - 進捗: 2026-04-30 に Dart emitter が `_cli_module_id` を見るようにし、handwritten runtime 判定の repo root を修正。`pytra.std.pathlib` は生成せず `std/pathlib.dart` を使い、生成 runtime module は `pytra_std_*.dart` へ import する形に揃えた。`std/sys.dart` wrapper も追加済み。
    - 進捗: 2026-04-30 に `Node = dict[str, JsonVal]` 形式の type alias assign を skip、`cast(T, value)` を Dart `as` cast へ変換、dataclass の `field(default_factory=...)` を constructor body 初期化へ展開する対応を追加。`dart analyze` の blocker は import 解決（例: `toolchain_emit_cpp_cli.dart` の `run_emit_cli` / `sys`、`toolchain_emit_cpp_emitter.dart` の helper 群）と nullable 変換に移った。
+   - 進捗: 2026-04-30 に selfhost 生成物の import path を flat 出力名（例: `toolchain_emit_common_cli_runner.dart`）へ揃え、`main_guard_body` も import scan 対象に含めた。`toolchain_emit_cpp_cli.dart` の `run_emit_cli` / runtime bundle / `sys.argv` 未解決は解消。次の blocker は nullable 戻り値・`__file__`/`Path.parents`・common renderer 継承/field 解決。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-DART-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_dart.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
 
 ### P1-EMITTER-SELFHOST-DART: emit/dart/cli.py を単独で selfhost C++ build に通す
