@@ -89,8 +89,6 @@ def _rp_binding_cpp_dependency_module_id(binding: JsonVal) -> str:
         return ""
     binding_dict = binding_obj.raw
     module_id = _rp_str(binding_dict, "module_id")
-    export_name = _rp_str(binding_dict, "export_name")
-    _ = export_name
     runtime_module_id = _rp_str(binding_dict, "runtime_module_id")
     runtime_group = _rp_str(binding_dict, "runtime_group")
     host_only = _rp_bool(binding_dict, "host_only")

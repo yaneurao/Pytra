@@ -1038,7 +1038,7 @@ class ZigNativeEmitter:
         body = self._dict_list(body_any)
         for stmt in body:
             kind = stmt.get("kind")
-            if kind == "Assign":
+            if kind in {"Assign", "AnnAssign"}:
                 target = stmt.get("target")
                 if isinstance(target, dict) and target.get("kind") == "Name":
                     n = _safe_ident(target.get("id"), "")
@@ -1433,8 +1433,11 @@ class ZigNativeEmitter:
         if not isinstance(target_node, dict) or target_node.get("kind") != "Name":
             return
         target_name = _safe_ident(target_node.get("id"), "value")
-        # extern() 変数 → __native 委譲（spec-emitter-guide §4）
         value_node = stmt.get("value")
+        if target_name != "" and target_name[0].isupper():
+            if isinstance(value_node, dict) and value_node.get("kind") in {"Name", "Subscript"}:
+                return
+        # extern() 変数 → __native 委譲（spec-emitter-guide §4）
         inner_val = value_node
         if isinstance(inner_val, dict) and inner_val.get("kind") == "Unbox":
             inner_val = inner_val.get("value")
@@ -1509,6 +1512,7 @@ class ZigNativeEmitter:
             self.lines.append("}")
             self._pop_function_context()
         self._fixup_unused_obj_vars()
+        self._fixup_block_member_access()
         # タプル typedef をモジュール先頭（import 直後）に挿入
         if len(self._tuple_typedefs) > 0:
             insert_idx = 0
@@ -1662,24 +1666,22 @@ class ZigNativeEmitter:
             if m_obj_make2 is not None and not _is_mutated_after(m_obj_make2.group(1), len(final_lines) + 1, len(m_obj_make2.group(0)) - len(m_obj_make2.group(0).lstrip())):
                 line = line.replace("var ", "const ", 1)
             final_lines.append(line)
-        collapsed_lines: list[str] = []
-        i = 0
-        while i < len(final_lines):
-            line = final_lines[i]
-            stripped = line.strip()
-            if stripped == "" or stripped == "_ = _unused;":
-                i += 1
-                continue
-            if i + 1 < len(final_lines):
-                m_for = re.match(r"^(\s*)for \((.+)\) \|(\w+)\| \{$", line)
-                m_unused = re.match(r"^\s*const _unused\s*:\s*.+\s*=\s*(\w+);\s*$", final_lines[i + 1])
-                if m_for is not None and m_unused is not None and m_for.group(3) == m_unused.group(1):
-                    collapsed_lines.append(m_for.group(1) + "for (" + m_for.group(2) + ") |_| {")
-                    i += 2
-                    continue
-            collapsed_lines.append(line)
-            i += 1
-        self.lines = [line for line in collapsed_lines if line != "" and line.strip() != "_ = _unused;"]
+        self.lines = [line for line in final_lines if line != "" and line.strip() != "_ = _unused;"]
+
+    def _fixup_block_member_access(self) -> None:
+        """後処理: Zig の labeled block expression への member access を括弧で保護する。"""
+        import re
+        fixed: list[str] = []
+        for line in self.lines:
+            if "__idx_blk_" in line and ": {" in line and ("}._" in line or "}.__" in line):
+                line = re.sub(r"return (__idx_blk_\d+: \{)", r"return (\1", line)
+                line = re.sub(r"(=\s*)(__idx_blk_\d+: \{)", r"\1(\2", line)
+                line = line.replace("; }._", "; })._")
+                line = line.replace("; }.__", "; }).__")
+            if re.match(r"^\s*var base_type\s*:", line):
+                line = line.replace("var base_type", "const base_type", 1)
+            fixed.append(line)
+        self.lines = fixed
 
     def _wrap_union_return_lines(self, lines: list[str], owner_cls: str = "") -> list[str]:
         import re
@@ -3084,6 +3086,8 @@ class ZigNativeEmitter:
                         if owner_is_union:
                             val_zig = self._union_storage_zig()
                             owner_expr = "pytra.union_as_dict(" + owner_expr + ")"
+                        if ": {" in owner_expr:
+                            owner_expr = "(" + owner_expr + ")"
                         self._emit_line("var " + iter_name + " = " + owner_expr + ".iterator();")
                         self._emit_line("while (" + iter_name + ".next()) |" + entry_name + "| {")
                         self.indent += 1
@@ -3132,7 +3136,7 @@ class ZigNativeEmitter:
                 reassign_after_capture = False
                 # If loop variable is unused in body, use _ to avoid Zig error
                 target_unused = isinstance(target_plan, dict) and bool(target_plan.get("unused"))
-                if target_name != "_unused" and (target_unused or not self._body_uses_name(self._strip_dead_branches(body_nodes), target_name)):
+                if len(tuple_unpack_names) == 0 and target_name != "_unused" and (target_unused or not self._body_uses_name(self._strip_dead_branches(body_nodes), target_name)):
                     capture_name = "_"
                 elif target_name in self._hoisted_var_names:
                     capture_name = "_cap_" + target_name
@@ -4193,6 +4197,8 @@ class ZigNativeEmitter:
                 if isinstance(idx_node, dict) and idx_node.get("kind") == "Constant":
                     idx_val = idx_node.get("value")
                 if isinstance(idx_val, int) and not isinstance(idx_val, bool):
+                    if ": {" in obj:
+                        obj = "(" + obj + ")"
                     return obj + "._" + str(idx_val)
             if isinstance(value_node, dict) and value_node.get("kind") == "Attribute":
                 owner_node = value_node.get("value")

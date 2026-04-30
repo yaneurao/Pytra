@@ -857,11 +857,9 @@ def _hg_infer_callable_param_type(node: dict[str, JsonVal], param_name: str) -> 
     declared = _hg_json_str_value(arg_types.get(param_name))
     if not _hg_type_uses_callable(declared):
         return ""
-    inferred_arg = ""
-    inferred_ret = ""
-
-    def visit(cur: JsonVal, parent: JsonVal, grandparent: JsonVal) -> None:
-        nonlocal inferred_arg, inferred_ret
+    def visit(cur: JsonVal, parent: JsonVal, grandparent: JsonVal) -> tuple[str, str]:
+        inferred_arg = ""
+        inferred_ret = ""
         cur_obj = json.JsonValue(cur).as_obj()
         if cur_obj is not None:
             cur_dict = cur_obj.raw
@@ -878,16 +876,31 @@ def _hg_infer_callable_param_type(node: dict[str, JsonVal], param_name: str) -> 
                     if ret_type not in ("", "unknown", "object", "Any", "Callable", "callable"):
                         inferred_ret = ret_type
             for child in cur_dict.values():
-                visit(child, cur_dict, parent)
-            return
+                child_arg, child_ret = visit(child, cur_dict, parent)
+                if inferred_arg == "":
+                    inferred_arg = child_arg
+                if inferred_ret == "":
+                    inferred_ret = child_ret
+            return inferred_arg, inferred_ret
         cur_arr = json.JsonValue(cur).as_arr()
         if cur_arr is not None:
             for child in cur_arr.raw:
-                visit(child, parent, grandparent)
+                child_arg, child_ret = visit(child, parent, grandparent)
+                if inferred_arg == "":
+                    inferred_arg = child_arg
+                if inferred_ret == "":
+                    inferred_ret = child_ret
+        return inferred_arg, inferred_ret
 
+    inferred_arg = ""
+    inferred_ret = ""
     body = _hg_list(node, "body")
     for stmt in body:
-        visit(stmt, node, None)
+        child_arg, child_ret = visit(stmt, node, None)
+        if inferred_arg == "":
+            inferred_arg = child_arg
+        if inferred_ret == "":
+            inferred_ret = child_ret
     if inferred_arg != "" and inferred_ret != "":
         return "callable[[" + inferred_arg + "]," + inferred_ret + "]"
     return ""
