@@ -67,6 +67,7 @@ class CppEmitContext:
     class_type_info: dict[str, dict[str, int]] = field(default_factory=dict)
     class_symbol_fqcns: dict[str, str] = field(default_factory=dict)
     function_mutable_param_indexes: dict[str, set[int]] = field(default_factory=dict)
+    function_param_meta_cache: dict[str, list[tuple[str, str, bool]]] = field(default_factory=dict)
     function_defs: dict[str, dict[str, JsonVal]] = field(default_factory=dict)
     current_class: str = ""
     current_return_type: str = ""
@@ -2447,6 +2448,7 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                         + _emit_expr_as_type(ctx, a, direct_source_type)
                         + ")"
                     )
+                    index += 1
                     continue
         if a_obj is not None and _str(a_dict, "kind") == "Box" and expected_type not in ("", "Obj", "Any", "object"):
             boxed_value: JsonVal = a_dict.get("value")
@@ -5128,11 +5130,12 @@ def _function_signature(
     if owner_name != "" and not declaration_only:
         qual_name = owner_name + "::" + name
     suffix = ""
-    self_mutates = (
-        _function_self_mutates(node)
-        or _node_mutates_self_fields(_list(node, "body"))
-        or _node_mutates_class_storage(ctx, _list(node, "body"), owner_name)
-    )
+    self_mutates = False
+    if owner_name != "":
+        self_mutates = (
+            _function_self_mutates(node)
+            or _node_mutates_class_storage(ctx, _list(node, "body"), owner_name)
+        )
     if declaration_only and owner_name != "" and not is_static and not self_mutates:
         suffix = " const"
     if (not declaration_only) and owner_name != "" and not is_static and not self_mutates:
@@ -5289,12 +5292,11 @@ def _function_param_is_mutated_via_call(
                 if len(callee_mutable) > 0:
                     args = _list(value_dict, "args")
                     for idx in range(len(args)):
-                        arg = args[idx]
-                        if idx not in callee_mutable:
-                            continue
-                        arg_obj = json.JsonValue(arg).as_obj()
-                        if arg_obj is not None and _str(arg_obj.raw, "kind") == "Name" and _str(arg_obj.raw, "id") == arg_name:
-                            return True
+                        if idx in callee_mutable:
+                            arg = args[idx]
+                            arg_obj = json.JsonValue(arg).as_obj()
+                            if arg_obj is not None and _str(arg_obj.raw, "kind") == "Name" and _str(arg_obj.raw, "id") == arg_name:
+                                return True
             for child in value_dict.values():
                 if _walk(child):
                     return True
@@ -5310,6 +5312,12 @@ def _function_param_is_mutated_via_call(
 
 
 def _function_param_meta(node: dict[str, JsonVal], ctx: CppEmitContext | None = None) -> list[tuple[str, str, bool]]:
+    cache_key = ""
+    if ctx is not None:
+        cache_key = _function_param_meta_cache_key(node)
+        cached = ctx.function_param_meta_cache.get(cache_key, []) if cache_key != "" else []
+        if len(cached) > 0:
+            return cached
     arg_types = _dict(node, "arg_types")
     arg_order = _list(node, "arg_order")
     arg_usage = _dict(node, "arg_usage")
@@ -5350,7 +5358,19 @@ def _function_param_meta(node: dict[str, JsonVal], ctx: CppEmitContext | None = 
             vararg_type_str = "object"
         vararg_type_str = normalize_cpp_nominal_adt_type(vararg_type_str) + ""
         out.append((vararg_name_text, "list[" + vararg_type_str + "]", False))
+    if ctx is not None and cache_key != "":
+        ctx.function_param_meta_cache[cache_key] = out
     return out
+
+
+def _function_param_meta_cache_key(node: dict[str, JsonVal]) -> str:
+    name = _str(node, "name")
+    span = _dict(node, "source_span")
+    line = _json_int_value(span.get("lineno"))
+    col = _json_int_value(span.get("col_offset"))
+    if name == "" or line is None or col is None:
+        return ""
+    return name + "@" + str(line) + ":" + str(col)
 
 
 def _function_vararg_call_info(node: dict[str, JsonVal]) -> tuple[int, str]:
@@ -5955,6 +5975,7 @@ def emit_cpp_module(
     ctx.class_type_info = {}
     ctx.class_symbol_fqcns = {}
     ctx.function_mutable_param_indexes = {}
+    ctx.function_param_meta_cache = {}
     ctx.function_defs = {}
     ctx.current_value_container_locals = set()
     ctx.runtime_imports = {}
@@ -6097,23 +6118,30 @@ def emit_cpp_module(
         if "::std::function<" in line:
             ctx.includes_needed.add("functional")
             break
+    string_ops_needles = [
+        "py_upper(",
+        "py_lower(",
+        "py_strip(",
+        "py_lstrip(",
+        "py_rstrip(",
+        "py_split(",
+        "py_join(",
+        "py_startswith(",
+        "py_endswith(",
+        "py_replace(",
+        "py_find(",
+        "py_count(",
+    ]
+    needs_string_ops = False
     for line in ctx.lines:
-        if (
-            "py_upper(" in line
-            or "py_lower(" in line
-            or "py_strip(" in line
-            or "py_lstrip(" in line
-            or "py_rstrip(" in line
-            or "py_split(" in line
-            or "py_join(" in line
-            or "py_startswith(" in line
-            or "py_endswith(" in line
-            or "py_replace(" in line
-            or "py_find(" in line
-            or "py_count(" in line
-        ):
-            ctx.includes_needed.add("built_in/string_ops.h")
+        for needle in string_ops_needles:
+            if needle in line:
+                needs_string_ops = True
+                break
+        if needs_string_ops:
             break
+    if needs_string_ops:
+        ctx.includes_needed.add("built_in/string_ops.h")
 
     header: list[str] = [
         "#include <cstdint>",

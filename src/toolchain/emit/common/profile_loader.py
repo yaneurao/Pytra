@@ -231,4 +231,6 @@ def load_profile_doc(language: str) -> dict[str, JsonVal]:
     if language in _PROFILE_DOC_CACHE:
         return _PROFILE_DOC_CACHE[language]
     profile_path = _profile_root().joinpath(language + ".json")
-    return load_profile_with_includes(profile_path)
+    doc = load_profile_with_includes(profile_path)
+    _PROFILE_DOC_CACHE[language] = doc
+    return doc
