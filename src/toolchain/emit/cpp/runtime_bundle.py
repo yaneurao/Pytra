@@ -315,8 +315,8 @@ def emit_runtime_module_artifacts(
     if (not has_native_companion) and _rb_has_cpp_emit_definitions(emit_doc):
         cpp_text = emit_cpp_module(
             emit_doc,
-            allow_runtime_module=True,
-            self_header=rel + ".h",
+            True,
+            rel + ".h",
         ) + ""
         if cpp_text.strip() != "" and not header_only_templates:
             source_path_out = output_dir.joinpath(rel + ".cpp")

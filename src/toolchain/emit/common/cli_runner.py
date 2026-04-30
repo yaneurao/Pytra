@@ -62,11 +62,11 @@ class ManifestModuleEntryDraft:
         if source_path_raw is not None:
             source_path = source_path_raw
         return ManifestModuleEntryDraft(
-            module_id=module_id,
-            output=output,
-            module_kind=module_kind,
-            is_entry=is_entry,
-            source_path=source_path,
+            module_id,
+            output,
+            module_kind,
+            is_entry,
+            source_path,
         )
 
     def inject_cli_meta(self, east_doc: dict[str, JsonVal]) -> None:

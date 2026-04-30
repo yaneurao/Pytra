@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import re
 
 import pytra.std.json as json
 from pytra.std.json import JsonVal
@@ -798,7 +797,13 @@ _hg_CPP_RESERVED_WORDS: set[str] = {
 def _hg_safe_cpp_ident(name: str) -> str:
     if name == "":
         return ""
-    safe = re.sub(r"[^0-9A-Za-z_]", "_", name, 0)
+    parts: list[str] = []
+    for ch in name:
+        if (ch >= "0" and ch <= "9") or (ch >= "A" and ch <= "Z") or (ch >= "a" and ch <= "z") or ch == "_":
+            parts.append(ch)
+        else:
+            parts.append("_")
+    safe = "".join(parts)
     if safe != "" and safe[0].isdigit():
         safe = "_" + safe
     if safe in _hg_CPP_RESERVED_WORDS:

@@ -1346,6 +1346,291 @@ json = {
     end,
 }
 
+local __pytra_json_value_mt = {}
+__pytra_json_value_mt.__index = __pytra_json_value_mt
+__pytra_json_value_mt.__tostring = function(self)
+    if self.__is_nil then
+        return "nil"
+    end
+    return tostring(self.value)
+end
+
+local __pytra_json_obj_mt = {}
+__pytra_json_obj_mt.__index = __pytra_json_obj_mt
+
+local __pytra_json_arr_mt = {}
+__pytra_json_arr_mt.__index = __pytra_json_arr_mt
+
+function __pytra_json_value_mt:as_obj()
+    if self.__is_nil then
+        return nil
+    end
+    if type(self.value) ~= "table" then
+        return nil
+    end
+    local n = #self.value
+    local key_count = 0
+    for k, _ in pairs(self.value) do
+        key_count = key_count + 1
+        if type(k) ~= "number" or k < 1 or math.floor(k) ~= k or k > n then
+            return setmetatable({ raw = self.value }, __pytra_json_obj_mt)
+        end
+    end
+    if key_count == 0 then
+        return setmetatable({ raw = self.value }, __pytra_json_obj_mt)
+    end
+    return nil
+end
+
+function __pytra_json_value_mt:as_arr()
+    if self.__is_nil then
+        return nil
+    end
+    if type(self.value) ~= "table" then
+        return nil
+    end
+    local n = #self.value
+    for k, _ in pairs(self.value) do
+        if type(k) ~= "number" or k < 1 or math.floor(k) ~= k or k > n then
+            return nil
+        end
+    end
+    return setmetatable({ raw = self.value }, __pytra_json_arr_mt)
+end
+
+function __pytra_json_value_mt:as_str()
+    if self.__is_nil then
+        return nil
+    end
+    if type(self.value) == "string" then
+        return self.value
+    end
+    return nil
+end
+
+function __pytra_json_value_mt:as_int()
+    if self.__is_nil then
+        return nil
+    end
+    if type(self.value) == "number" then
+        return math.floor(self.value)
+    end
+    return nil
+end
+
+function __pytra_json_value_mt:as_float()
+    if self.__is_nil then
+        return nil
+    end
+    if type(self.value) == "number" then
+        return self.value
+    end
+    return nil
+end
+
+function __pytra_json_value_mt:as_bool()
+    if self.__is_nil then
+        return nil
+    end
+    if type(self.value) == "boolean" then
+        return self.value
+    end
+    return nil
+end
+
+function __pytra_json_value_mt:get(key)
+    if self.__is_nil or type(self.value) ~= "table" then
+        return nil
+    end
+    local value = nil
+    if type(key) == "number" then
+        value = self.value[key + 1]
+    else
+        value = self.value[key]
+    end
+    if value == nil then
+        return nil
+    end
+    return json.JsonValue(value)
+end
+
+function __pytra_json_value_mt:get_obj(key)
+    local value = self:get(key)
+    if value == nil then
+        return nil
+    end
+    return value:as_obj()
+end
+
+function __pytra_json_value_mt:get_arr(key)
+    local value = self:get(key)
+    if value == nil then
+        return nil
+    end
+    return value:as_arr()
+end
+
+function __pytra_json_value_mt:get_str(key)
+    local value = self:get(key)
+    if value == nil then
+        return nil
+    end
+    return value:as_str()
+end
+
+function __pytra_json_value_mt:get_int(key)
+    local value = self:get(key)
+    if value == nil then
+        return nil
+    end
+    return value:as_int()
+end
+
+function __pytra_json_value_mt:get_bool(key)
+    local value = self:get(key)
+    if value == nil then
+        return nil
+    end
+    return value:as_bool()
+end
+
+function __pytra_json_obj_mt:get(key)
+    local value = self.raw[key]
+    if value == nil then
+        return nil
+    end
+    return json.JsonValue(value)
+end
+
+function __pytra_json_obj_mt:get_obj(key)
+    local value = self:get(key)
+    if value == nil then
+        return nil
+    end
+    return value:as_obj()
+end
+
+function __pytra_json_obj_mt:get_arr(key)
+    local value = self:get(key)
+    if value == nil then
+        return nil
+    end
+    return value:as_arr()
+end
+
+function __pytra_json_obj_mt:get_str(key)
+    local value = self:get(key)
+    if value == nil then
+        return nil
+    end
+    return value:as_str()
+end
+
+function __pytra_json_obj_mt:get_int(key)
+    local value = self:get(key)
+    if value == nil then
+        return nil
+    end
+    return value:as_int()
+end
+
+function __pytra_json_obj_mt:get_bool(key)
+    local value = self:get(key)
+    if value == nil then
+        return nil
+    end
+    return value:as_bool()
+end
+
+function __pytra_json_arr_mt:get(index)
+    local value = self.raw[(tonumber(index) or 0) + 1]
+    if value == nil then
+        return nil
+    end
+    return json.JsonValue(value)
+end
+
+function __pytra_json_arr_mt:get_obj(index)
+    local value = self:get(index)
+    if value == nil then
+        return nil
+    end
+    return value:as_obj()
+end
+
+function __pytra_json_arr_mt:get_arr(index)
+    local value = self:get(index)
+    if value == nil then
+        return nil
+    end
+    return value:as_arr()
+end
+
+function __pytra_json_arr_mt:get_str(index)
+    local value = self:get(index)
+    if value == nil then
+        return nil
+    end
+    return value:as_str()
+end
+
+function __pytra_json_arr_mt:get_int(index)
+    local value = self:get(index)
+    if value == nil then
+        return nil
+    end
+    return value:as_int()
+end
+
+function __pytra_json_arr_mt:get_bool(index)
+    local value = self:get(index)
+    if value == nil then
+        return nil
+    end
+    return value:as_bool()
+end
+
+json.JsonValue = function(raw)
+    local table_raw = {}
+    if type(raw) == "table" then
+        table_raw = raw
+    end
+    return setmetatable({ raw = table_raw, value = raw, __is_nil = raw == nil }, __pytra_json_value_mt)
+end
+json.JsonObj = function(raw)
+    return setmetatable({ raw = raw }, __pytra_json_obj_mt)
+end
+json.JsonArr = function(raw)
+    return setmetatable({ raw = raw }, __pytra_json_arr_mt)
+end
+
+json.loads = function(v, maybe_v)
+    if maybe_v ~= nil then
+        v = maybe_v
+    end
+    return json.JsonValue(pyJsonLoads(v))
+end
+
+json.loads_arr = function(v, maybe_v)
+    if maybe_v ~= nil then
+        v = maybe_v
+    end
+    local raw = pyJsonLoads(v)
+    return json.JsonValue(raw):as_arr()
+end
+
+json.loads_obj = function(v, maybe_v)
+    if maybe_v ~= nil then
+        v = maybe_v
+    end
+    local raw = pyJsonLoads(v)
+    return json.JsonValue(raw):as_obj()
+end
+
+loads = json.loads
+loads_arr = json.loads_arr
+loads_obj = json.loads_obj
+
 Path = setmetatable({
     cwd = function()
         local cwd = io.popen("pwd", "r")
@@ -1696,6 +1981,23 @@ function __pytra_math_isinf(x) return x == math.huge or x == -math.huge end
 function __pytra_math_isnan(x) return x ~= x end
 
 -- Dict helpers
+function __pytra_dict_ctor(iter)
+    local out = {}
+    if type(iter) == "table" then
+        if #iter > 0 then
+            for i = 1, #iter do
+                local item = iter[i]
+                if type(item) == "table" then
+                    out[item[1]] = item[2]
+                end
+            end
+        else
+            for k, v in pairs(iter) do out[k] = v end
+        end
+    end
+    return out
+end
+
 function __pytra_dict_get(d, key, default)
     local v = d[key]
     if v == nil then return default end

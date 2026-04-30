@@ -84,6 +84,12 @@ end
 class PytraTuple < Array
 end
 
+class Hash
+  def get(key, default_value = nil)
+    key?(key) ? self[key] : default_value
+  end
+end
+
 def __pytra_tuple(items)
   tuple = PytraTuple.new
   items.each { |item| tuple << item }
@@ -563,6 +569,18 @@ end
 
 def __pytra_Path(path)
   Path.new(path)
+end
+
+Object.define_method(:JsonValue) do |raw|
+  JsonValue.new(raw)
+end
+
+Object.define_method(:JsonObj) do |raw|
+  JsonObj.new(raw)
+end
+
+Object.define_method(:JsonArr) do |raw|
+  JsonArr.new(raw)
 end
 
 def __pytra_set_argv(values)

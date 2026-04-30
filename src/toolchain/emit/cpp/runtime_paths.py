@@ -12,21 +12,17 @@ from toolchain.link.runtime_discovery import is_runtime_namespace_module
 from toolchain.link.runtime_discovery import resolve_runtime_module_rel_tail
 
 
-_rp_RUNTIME_CPP_ROOT = Path("src").joinpath("runtime").joinpath("cpp")
-_rp_CPP_TYPE_ONLY_SYMBOL_KEYS: set[str] = set()
-_rp_CPP_SKIP_MODULE_IDS: set[str] = {
-    "abc",
-    "readonly",
-    "str",
-}
-
-
 def runtime_rel_tail_for_module(module_id: str) -> str:
     return resolve_runtime_module_rel_tail(module_id) + ""
 
 
 def cpp_include_for_module(module_id: str) -> str:
-    if module_id in _rp_CPP_SKIP_MODULE_IDS:
+    cpp_skip_module_ids: set[str] = {
+        "abc",
+        "readonly",
+        "str",
+    }
+    if module_id in cpp_skip_module_ids:
         return ""
     if is_runtime_namespace_module(module_id) or is_type_only_dependency_module_id(module_id):
         return ""
@@ -94,8 +90,7 @@ def _rp_binding_cpp_dependency_module_id(binding: JsonVal) -> str:
     binding_dict = binding_obj.raw
     module_id = _rp_str(binding_dict, "module_id")
     export_name = _rp_str(binding_dict, "export_name")
-    if module_id != "" and export_name != "" and module_id + "|" + export_name in _rp_CPP_TYPE_ONLY_SYMBOL_KEYS:
-        return ""
+    _ = export_name
     runtime_module_id = _rp_str(binding_dict, "runtime_module_id")
     runtime_group = _rp_str(binding_dict, "runtime_group")
     host_only = _rp_bool(binding_dict, "host_only")
@@ -119,7 +114,7 @@ def native_companion_header_path(module_id: str) -> Path:
     rel = runtime_rel_tail_for_module(module_id)
     if rel == "":
         return Path("")
-    p = _rp_RUNTIME_CPP_ROOT.joinpath(rel + ".h")
+    p = Path("src").joinpath("runtime").joinpath("cpp").joinpath(rel + ".h")
     return p if p.exists() else Path("")
 
 
@@ -127,7 +122,7 @@ def native_companion_source_path(module_id: str) -> Path:
     rel = runtime_rel_tail_for_module(module_id)
     if rel == "":
         return Path("")
-    p = _rp_RUNTIME_CPP_ROOT.joinpath(rel + ".cpp")
+    p = Path("src").joinpath("runtime").joinpath("cpp").joinpath(rel + ".cpp")
     return p if p.exists() else Path("")
 
 

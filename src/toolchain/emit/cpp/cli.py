@@ -38,21 +38,21 @@ def _emit_cpp_direct(east_doc: dict[str, JsonVal], output_dir: Path) -> int:
         return write_runtime_module_artifacts(
             module_id,
             east_doc,
-            output_dir=output_dir,
-            source_path=source_path,
+            output_dir,
+            source_path,
         )
     if module_kind == "helper":
         rel_header_path: str = _helper_cpp_rel_path(module_id) + ".h"
         return write_helper_module_artifacts(
             module_id,
             east_doc,
-            output_dir=output_dir,
-            rel_header_path=rel_header_path,
+            output_dir,
+            rel_header_path,
         )
     return write_user_module_artifacts(
         module_id,
         east_doc,
-        output_dir=output_dir,
+        output_dir,
     )
 
 
