@@ -163,6 +163,17 @@ def _php_string(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$") + '"'
 
 
+def _closure_use_vars(ctx: EmitContext, excluded: set[str]) -> list[str]:
+    out: list[str] = []
+    for name in sorted(ctx.var_types.keys()):
+        if name == "" or name in excluded:
+            continue
+        if name in ctx.module_globals or _is_module_constant_name(name):
+            continue
+        out.append(_php_var(name))
+    return out
+
+
 def _is_exception_type_name(ctx: EmitContext, type_name: str) -> bool:
     """Check if a type name is an exception class."""
     if php_type(type_name).startswith("\\"):
@@ -310,7 +321,7 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         and (name in ctx.var_types or safe_name in ctx.var_types)
     ):
         return '$GLOBALS["' + safe_name + '"]'
-    if _is_module_constant_name(safe_name) and (name in ctx.var_types or safe_name in ctx.var_types):
+    if _is_module_constant_name(safe_name):
         return '$GLOBALS["' + safe_name + '"]'
     if name in ctx.var_types or safe_name in ctx.var_types:
         return _php_var(safe_name)
@@ -425,11 +436,15 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             lower_code = _emit_expr(ctx, lower) if isinstance(lower, dict) else "0"
             if isinstance(upper, dict):
                 upper_code = _emit_expr(ctx, upper)
+                if _get_negative_int_literal(upper) is not None:
+                    upper_code = "(__pytra_len(" + owner + ") + (" + upper_code + "))"
                 return "substr(" + owner + ", " + lower_code + ", " + upper_code + " - " + lower_code + ")"
             return "substr(" + owner + ", " + lower_code + ")"
         lower_code = _emit_expr(ctx, lower) if isinstance(lower, dict) else "0"
         if isinstance(upper, dict):
             upper_code = _emit_expr(ctx, upper)
+            if _get_negative_int_literal(upper) is not None:
+                upper_code = "(__pytra_len(" + owner + ") + (" + upper_code + "))"
             return "array_slice(" + owner + ", " + lower_code + ", " + upper_code + " - " + lower_code + ")"
         return "array_slice(" + owner + ", " + lower_code + ")"
     # For strings: use indexing
@@ -754,7 +769,7 @@ def _emit_list_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if target_name not in ("", "_item"):
             ctx.var_types[_safe_php_ident(target_name)] = ""
     elt_code = _emit_expr(ctx, elt)
-    use_vars = [_php_var(name) for name in sorted(ctx.var_types.keys()) if name not in ("", target_name)]
+    use_vars = _closure_use_vars(ctx, {target_name})
     use_clause = " use (" + ", ".join(use_vars) + ")" if len(use_vars) > 0 else ""
     tmp = _next_temp(ctx, "lc")
     body_stmt = _php_var(tmp) + "[] = " + elt_code + ";"
@@ -775,7 +790,7 @@ def _emit_generator_exp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     iter_code = _comp_iter_code(ctx, gen)
     ifs = _list(gen, "ifs")
     tmp = _next_temp(ctx, "ge")
-    use_vars = [_php_var(name) for name in sorted(ctx.var_types.keys()) if name != ""]
+    use_vars = _closure_use_vars(ctx, set())
     use_clause = " use (" + ", ".join(use_vars) + ")" if len(use_vars) > 0 else ""
     setup = ""
     if isinstance(target, dict) and _str(target, "kind") == "Tuple":
@@ -818,7 +833,7 @@ def _emit_set_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     ifs = _list(gen, "ifs")
     tv = _php_var(_safe_php_ident(target_name))
     elt_code = _emit_expr(ctx, elt)
-    use_vars = [_php_var(name) for name in sorted(ctx.var_types.keys()) if name not in ("", target_name)]
+    use_vars = _closure_use_vars(ctx, {target_name})
     use_clause = " use (" + ", ".join(use_vars) + ")" if len(use_vars) > 0 else ""
     tmp = _next_temp(ctx, "sc")
     body_stmt = _php_var(tmp) + "[" + elt_code + "] = true;"
@@ -844,7 +859,7 @@ def _emit_dict_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     key_code = _emit_expr(ctx, key_node)
     val_code = _emit_expr(ctx, value_node)
     tmp = _next_temp(ctx, "dc")
-    use_vars = [_php_var(name) for name in sorted(ctx.var_types.keys()) if name not in ("", target_name)]
+    use_vars = _closure_use_vars(ctx, {target_name})
     use_clause = " use (" + ", ".join(use_vars) + ")" if len(use_vars) > 0 else ""
     body_stmt = _php_var(tmp) + "[" + key_code + "] = " + val_code + ";"
     if len(ifs) > 0:
