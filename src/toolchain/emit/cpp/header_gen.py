@@ -876,27 +876,33 @@ def _hg_infer_callable_param_type(node: dict[str, JsonVal], param_name: str) -> 
                     if ret_type not in ("", "unknown", "object", "Any", "Callable", "callable"):
                         inferred_ret = ret_type
             for child in cur_dict.values():
-                child_arg, child_ret = visit(child, cur_dict, parent)
+                child_pair_obj = visit(child, cur_dict, parent)
+                child_arg_obj = child_pair_obj[0]
+                child_ret_obj = child_pair_obj[1]
                 if inferred_arg == "":
-                    inferred_arg = child_arg
+                    inferred_arg = child_arg_obj
                 if inferred_ret == "":
-                    inferred_ret = child_ret
+                    inferred_ret = child_ret_obj
             return inferred_arg, inferred_ret
         cur_arr = json.JsonValue(cur).as_arr()
         if cur_arr is not None:
             for child in cur_arr.raw:
-                child_arg, child_ret = visit(child, parent, grandparent)
+                child_pair_arr = visit(child, parent, grandparent)
+                child_arg_arr = child_pair_arr[0]
+                child_ret_arr = child_pair_arr[1]
                 if inferred_arg == "":
-                    inferred_arg = child_arg
+                    inferred_arg = child_arg_arr
                 if inferred_ret == "":
-                    inferred_ret = child_ret
+                    inferred_ret = child_ret_arr
         return inferred_arg, inferred_ret
 
     inferred_arg = ""
     inferred_ret = ""
     body = _hg_list(node, "body")
     for stmt in body:
-        child_arg, child_ret = visit(stmt, node, None)
+        child_pair_body = visit(stmt, node, None)
+        child_arg = child_pair_body[0]
+        child_ret = child_pair_body[1]
         if inferred_arg == "":
             inferred_arg = child_arg
         if inferred_ret == "":

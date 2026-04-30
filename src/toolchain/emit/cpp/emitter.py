@@ -5074,7 +5074,7 @@ def _emit_function_def_impl(ctx: CppEmitContext, node: dict[str, JsonVal], owner
     ctx.indent_level += 1
     if ctx.module_id == "toolchain.parse.py.nodes" and func_name in ("expr_to_jv", "stmt_to_jv"):
         params = _function_param_meta(node, ctx)
-        arg_name = params[0][0] if len(params) > 0 else "e"
+        arg_name: str = params[0][0] if len(params) > 0 else "e"
         _emit_line(ctx, "return ::std::get<Object<dict<str, JsonVal>>>(*" + arg_name + ");")
     else:
         _emit_body(ctx, _function_body_for_emit(ctx, node, owner_name, init_list))
@@ -5407,11 +5407,9 @@ def _infer_callable_param_type(node: dict[str, JsonVal], param_name: str) -> str
     declared = _json_str_value(declared_obj)
     if not _type_uses_callable(declared):
         return ""
-    inferred_arg = ""
-    inferred_ret = ""
-
-    def _visit(cur: JsonVal, parent: JsonVal = None, grandparent: JsonVal = None) -> None:
-        nonlocal inferred_arg, inferred_ret
+    def _visit(cur: JsonVal, parent: JsonVal = None, grandparent: JsonVal = None) -> tuple[str, str]:
+        inferred_arg = ""
+        inferred_ret = ""
         cur_obj = json.JsonValue(cur).as_obj()
         if cur_obj is not None:
             cur_dict = cur_obj.raw
@@ -5429,14 +5427,31 @@ def _infer_callable_param_type(node: dict[str, JsonVal], param_name: str) -> str
                     if ret_type not in ("", "unknown", "object", "Any", "Callable", "callable"):
                         inferred_ret = ret_type
             for child in cur_dict.values():
-                _visit(child, cur_dict, parent)
-            return
+                child_pair_obj = _visit(child, cur_dict, parent)
+                child_arg_obj = child_pair_obj[0]
+                child_ret_obj = child_pair_obj[1]
+                if inferred_arg == "":
+                    inferred_arg = child_arg_obj
+                if inferred_ret == "":
+                    inferred_ret = child_ret_obj
+            return inferred_arg, inferred_ret
         cur_arr = json.JsonValue(cur).as_arr()
         if cur_arr is not None:
             for child in cur_arr.raw:
-                _visit(child, parent, grandparent)
+                child_pair_arr = _visit(child, parent, grandparent)
+                child_arg_arr = child_pair_arr[0]
+                child_ret_arr = child_pair_arr[1]
+                if inferred_arg == "":
+                    inferred_arg = child_arg_arr
+                if inferred_ret == "":
+                    inferred_ret = child_ret_arr
+        return inferred_arg, inferred_ret
 
-    _visit(_list(node, "body"))
+    inferred_arg = ""
+    inferred_ret = ""
+    body_pair = _visit(_list(node, "body"))
+    inferred_arg = body_pair[0]
+    inferred_ret = body_pair[1]
     if inferred_arg != "" and inferred_ret != "":
         return "callable[[" + inferred_arg + "]," + inferred_ret + "]"
     return ""
@@ -6056,26 +6071,26 @@ def emit_cpp_module(
                         var_name = _str(target_obj.raw, "id") if target_obj is not None else ""
                         if var_name == "":
                             continue
-                        value = class_stmt_dict.get("value")
-                        value_obj = json.JsonValue(value).as_obj()
+                        ann_value: JsonVal = class_stmt_dict.get("value")
+                        value_obj = json.JsonValue(ann_value).as_obj()
                         if value_obj is None:
                             continue
                         var_type = _str(class_stmt_dict, "decl_type")
                         if var_type == "":
                             var_type = _str(class_stmt_dict, "annotation")
-                        class_vars[var_name] = CppClassVarSpecDraft(type_name=var_type, value=value).to_jv()
+                        class_vars[var_name] = CppClassVarSpecDraft(type_name=var_type, value=ann_value).to_jv()
                     elif class_stmt_kind == "Assign" and not is_dataclass:
                         target = class_stmt_dict.get("target")
                         target_obj = json.JsonValue(target).as_obj()
                         var_name = _str(target_obj.raw, "id") if target_obj is not None else ""
                         if var_name == "":
                             continue
-                        value = class_stmt_dict.get("value")
-                        value_obj = json.JsonValue(value).as_obj()
+                        assign_value: JsonVal = class_stmt_dict.get("value")
+                        value_obj = json.JsonValue(assign_value).as_obj()
                         var_type = _str(class_stmt_dict, "decl_type")
                         if var_type == "" and value_obj is not None:
                             var_type = _str(value_obj.raw, "resolved_type")
-                        class_vars[var_name] = CppClassVarSpecDraft(type_name=var_type, value=value).to_jv()
+                        class_vars[var_name] = CppClassVarSpecDraft(type_name=var_type, value=assign_value).to_jv()
     ctx.class_symbol_fqcns = _build_class_symbol_fqcn_map(meta, module_id, ctx.class_names, ctx.class_type_ids)
     dep_ids = collect_cpp_dependency_module_ids(module_id, meta)
 

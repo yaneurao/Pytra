@@ -1513,6 +1513,8 @@ class ZigNativeEmitter:
             self._pop_function_context()
         self._fixup_unused_obj_vars()
         self._fixup_block_member_access()
+        self._fixup_undeclared_simple_assignments()
+        self._fixup_final_zig_strictness()
         # タプル typedef をモジュール先頭（import 直後）に挿入
         if len(self._tuple_typedefs) > 0:
             insert_idx = 0
@@ -1536,7 +1538,7 @@ class ZigNativeEmitter:
     def _fixup_unused_obj_vars(self) -> None:
         """後処理: 未使用 const に _ = を挿入、未 mutated var を const に降格。"""
         import re
-        decl_re = re.compile(r"^(\s+)(const|var)\s+(\w+)\s*:")
+        decl_re = re.compile(r"^(\s+)(const|var)\s+(\w+)\s*(?::|=)")
         obj_decl_re = re.compile(r"^(\s*)(const|var)\s+(\w+)\s*:\s*pytra\.Obj\s*=")
         undefined_decl_re = re.compile(r"^\s*(const|var)\s+\w+\s*:\s*[^=]+\s*=\s*undefined;\s*$")
         # mutation パターン: var_name = / var_name += / var_name -= etc.
@@ -1681,6 +1683,94 @@ class ZigNativeEmitter:
             if re.match(r"^\s*var base_type\s*:", line):
                 line = line.replace("var base_type", "const base_type", 1)
             fixed.append(line)
+        self.lines = fixed
+
+    def _fixup_undeclared_simple_assignments(self) -> None:
+        """後処理: 同一関数内で宣言漏れした単純代入を var 宣言に戻す。"""
+        import re
+        decl_re = re.compile(r"^\s*(?:const|var)\s+([A-Za-z_]\w*|@\"[^\"]+\")\b")
+        assign_re = re.compile(r"^(\s+)([A-Za-z_]\w*)\s*=\s*(.+);\s*$")
+        declared: set[str] = set()
+        fixed: list[str] = []
+        for line in self.lines:
+            stripped = line.strip()
+            if not line.startswith(" ") and re.match(r"^(pub fn|fn)\s+\w+\(", stripped):
+                declared = set()
+            m_decl = decl_re.match(line)
+            if m_decl is not None:
+                declared.add(m_decl.group(1))
+                fixed.append(line)
+                continue
+            m_assign = assign_re.match(line)
+            if m_assign is not None:
+                indent, name, value = m_assign.group(1), m_assign.group(2), m_assign.group(3)
+                if name == "_" or name.startswith("__pytra_"):
+                    fixed.append(line)
+                    continue
+                if name not in declared:
+                    declared.add(name)
+                    fixed.append(indent + "var " + name + " = " + value + ";")
+                    continue
+            fixed.append(line)
+        self.lines = fixed
+
+    def _fixup_final_zig_strictness(self) -> None:
+        """後処理: Zig の unused capture / never-mutated var を最後に整える。"""
+        import re
+
+        def is_mutated(name: str, start: int, decl_indent_len: int) -> bool:
+            pat_assign = re.compile(r'(?<!\.)\b' + re.escape(name) + r'(\.\w+)?\s*(\+\=|\-\=|\*\=|/\=|\=(?!\=))')
+            pat_method = re.compile(r'(?<!\.)\b' + re.escape(name) + r'\.(put|append|extend|pop)\s*\(')
+            j = start
+            while j < len(self.lines):
+                line = self.lines[j]
+                stripped = line.strip()
+                indent_len = len(line) - len(line.lstrip())
+                if stripped == "}" and indent_len < decl_indent_len:
+                    return False
+                if pat_assign.search(line) or pat_method.search(line):
+                    return True
+                j += 1
+            return False
+
+        var_re = re.compile(r"^(\s*)var\s+([A-Za-z_]\w*|@\"[^\"]+\")(\s*(?::|=).*)$")
+        for idx, line in enumerate(list(self.lines)):
+            m = var_re.match(line)
+            if m is None:
+                continue
+            name = m.group(2)
+            if name.startswith("@\""):
+                plain_name = name[2:-1]
+            else:
+                plain_name = name
+            if plain_name == "_" or plain_name.startswith("__pytra_"):
+                continue
+            if not is_mutated(plain_name, idx + 1, len(m.group(1))):
+                self.lines[idx] = m.group(1) + "const " + name + m.group(3)
+
+        fixed: list[str] = []
+        for idx, line in enumerate(self.lines):
+            fixed.append(line)
+            m_for = re.match(r"^(\s*)for \(.+\) \|([A-Za-z_]\w*)\| \{$", line)
+            if m_for is None:
+                continue
+            capture = m_for.group(2)
+            if capture == "_":
+                continue
+            body_uses = False
+            j = idx + 1
+            while j < len(self.lines):
+                body_line = self.lines[j]
+                stripped = body_line.strip()
+                indent_len = len(body_line) - len(body_line.lstrip())
+                if stripped == "}" and indent_len <= len(m_for.group(1)):
+                    break
+                if re.search(r"\b" + re.escape(capture) + r"\b", body_line):
+                    body_uses = True
+                    break
+                j += 1
+            if not body_uses:
+                fixed.append(m_for.group(1) + "    _ = " + capture + ";")
         self.lines = fixed
 
     def _wrap_union_return_lines(self, lines: list[str], owner_cls: str = "") -> list[str]:
@@ -4878,6 +4968,18 @@ class ZigNativeEmitter:
                             return "pytra.tuple_repr(" + arg_strs[0] + ")"
                         return "pytra.to_str(" + arg_strs[0] + ")"
                     return "\"\""
+                if fname in {"repr", "py_repr"}:
+                    if len(arg_strs) > 0:
+                        return "pytra.to_str(" + arg_strs[0] + ")"
+                    return "\"\""
+                if fname == "dict":
+                    if len(arg_strs) > 0:
+                        return arg_strs[0]
+                    return "pytra.make_str_dict(*pytra.UnionVal)"
+                if fname == "RuntimeError":
+                    if len(arg_strs) > 0:
+                        return arg_strs[0]
+                    return "\"RuntimeError\""
                 if fname in {"bool", "bool_"}:
                     if len(arg_strs) > 0:
                         arg_t = self._lookup_expr_type(args[0]) if len(args) > 0 else ""
