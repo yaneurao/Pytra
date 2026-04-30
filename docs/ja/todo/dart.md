@@ -45,6 +45,7 @@ C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を dart に変換
 1. [ ] [ID: P1-HOST-CPP-EMITTER-DART-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target dart -o work/selfhost/host-cpp/dart/` で変換 + build を通す
    - 進捗: 2026-04-30 に `pytra-cli.py -build` の target wiring を修正し、`--target dart` が `toolchain.emit.dart.cli` へ到達するようにした。`rm -rf work/selfhost/host-cpp/dart && timeout 3600s python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target dart -o work/selfhost/host-cpp/dart/` は変換 PASS（25 files）。
    - 進捗: 2026-04-30 の `dart analyze work/selfhost/host-cpp/dart` は未 PASS。生成ファイルは flat 配置（例: `pytra_std_json.dart`）だが import は `./built_in/py_runtime.dart` / `./std/json.dart` / `./std/pathlib.dart` を参照しており、Dart runtime copy と module output path の整合が先。
+   - 進捗: 2026-04-30 に `src/toolchain/emit/dart/cli.py` へ runtime copy を追加し、`built_in/py_runtime.dart` と `std/*.dart` の配置は進んだ。次の blocker は `std/json.dart` / `std/glob.dart` / `std/os.dart` wrapper 欠落と、`field(...)` / `cast(...)` / `dict[str,JsonVal]` など selfhost 向け Dart lowering の未対応。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-DART-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_dart.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
 
 ### P1-EMITTER-SELFHOST-DART: emit/dart/cli.py を単独で selfhost C++ build に通す
