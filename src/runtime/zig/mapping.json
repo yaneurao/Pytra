@@ -118,6 +118,7 @@
     "pytra.std.os": "std/os_native.zig",
     "pytra.std.os_path": "std/os_path_native.zig",
     "pytra.std.pathlib": "std/pathlib_native.zig",
+    "pytra.std.sys": "std/sys_native.zig",
     "pytra.std.glob": "std/glob_native.zig"
   },
   "exception_types": [

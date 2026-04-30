@@ -63,6 +63,8 @@ __all__ = [
     "_file_size_normalized",
     "_crc32_hex",
     "_run_cpp_emit_dir",
+    "run_emitted_target",
+    "build_emitted_target_artifact",
     "_purge_case_artifacts",
     "find_case_path",
     "collect_sample_case_stems",
@@ -74,6 +76,13 @@ __all__ = [
     "_maybe_refresh_selfhost_python",
     "_maybe_regenerate_progress",
 ]
+
+
+try:
+    from toolchain.emit.java.types import java_module_class_name  # type: ignore
+except Exception:
+    def java_module_class_name(module_id: str) -> str:
+        return "".join(ch if ch.isalnum() else "_" for ch in module_id)
 
 
 @dataclass
@@ -342,6 +351,455 @@ def _run_cpp_emit_dir(
         env=env,
         timeout_sec=timeout_sec,
     )
+
+
+def _resolve_julia_runtime_bin() -> str:
+    env_bin = os.environ.get("PYTRA_JULIA_BIN", "").strip()
+    if env_bin != "":
+        return env_bin
+    direct_candidates = [
+        Path("/home/node/.julia/juliaup/julia-1.12.5+0.x64.linux.gnu/bin/julia"),
+        Path.home() / ".julia" / "juliaup" / "julia-1.12.5+0.x64.linux.gnu" / "bin" / "julia",
+        Path("/usr/local/bin/julia"),
+    ]
+    for candidate in direct_candidates:
+        if candidate.exists() and candidate.is_file():
+            return str(candidate)
+    found = shutil.which("julia")
+    return found or "julia"
+
+
+def _run_cs_via_dotnet(
+    emit_dir: Path,
+    *,
+    work_dir: Path,
+    env: dict[str, str] | None,
+    timeout_sec: int,
+) -> subprocess.CompletedProcess[str]:
+    project_path = emit_dir / "PytraParity.csproj"
+    if not project_path.exists():
+        project_path.write_text(
+            "\n".join([
+                "<Project Sdk=\"Microsoft.NET.Sdk\">",
+                "  <PropertyGroup>",
+                "    <OutputType>Exe</OutputType>",
+                "    <TargetFramework>net8.0</TargetFramework>",
+                "    <ImplicitUsings>disable</ImplicitUsings>",
+                "    <Nullable>disable</Nullable>",
+                "    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>",
+                "    <LangVersion>latest</LangVersion>",
+                "  </PropertyGroup>",
+                "</Project>",
+                "",
+            ]),
+            encoding="utf-8",
+        )
+    build = run_shell(
+        "dotnet build " + shlex.quote(str(project_path)) + " -nologo -v:q",
+        cwd=work_dir,
+        env=env,
+        timeout_sec=timeout_sec,
+    )
+    if build.returncode != 0:
+        return build
+    dll_path = emit_dir / "bin" / "Debug" / "net8.0" / "PytraParity.dll"
+    if not dll_path.exists():
+        return subprocess.CompletedProcess("", 1, "", f"dotnet output not found: {dll_path}")
+    return run_shell(
+        "dotnet " + shlex.quote(str(dll_path)),
+        cwd=work_dir,
+        env=env,
+        timeout_sec=timeout_sec,
+    )
+
+
+def run_emitted_target(
+    target: str,
+    emit_dir: Path,
+    case_path: Path,
+    *,
+    work_dir: Path,
+    env: dict[str, str] | None = None,
+    timeout_sec: int = 120,
+) -> subprocess.CompletedProcess[str]:
+    """Compile and run already-emitted target files."""
+    if target == "powershell":
+        target = "ps1"
+
+    if target == "cpp":
+        return _run_cpp_emit_dir(emit_dir, cwd=work_dir, env=env, timeout_sec=timeout_sec)
+
+    if target == "go":
+        go_files = sorted(str(p) for p in emit_dir.rglob("*.go"))
+        if len(go_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .go files found")
+        return run_shell("go run " + " ".join(shlex.quote(f) for f in go_files), cwd=work_dir, env=env, timeout_sec=timeout_sec)
+
+    if target == "rs":
+        entry_rs = emit_dir / (case_path.stem + ".rs")
+        if not entry_rs.exists():
+            return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_rs}")
+        exe_path = emit_dir / (case_path.stem + "_rs.out")
+        rs_env = dict(env or {})
+        rs_env["RUSTUP_HOME"] = "/usr/local/rustup"
+        rs_env["CARGO_HOME"] = "/usr/local/cargo"
+        current_path = rs_env.get("PATH") or os.environ.get("PATH", "")
+        rs_env["PATH"] = "/usr/local/cargo/bin" + (os.pathsep + current_path if current_path != "" else "")
+        build = run_shell(
+            f"/usr/local/cargo/bin/rustc -O {shlex.quote(str(entry_rs))} -o {shlex.quote(str(exe_path))}",
+            cwd=work_dir,
+            env=rs_env,
+            timeout_sec=timeout_sec,
+        )
+        if build.returncode != 0:
+            return build
+        return run_shell(shlex.quote(str(exe_path)), cwd=work_dir, env=rs_env, timeout_sec=timeout_sec)
+
+    if target == "java":
+        entry_class = java_module_class_name(case_path.stem)
+        entry_java = emit_dir / (entry_class + ".java")
+        if not entry_java.exists():
+            return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_java}")
+        java_files = sorted(str(p) for p in emit_dir.rglob("*.java"))
+        if len(java_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .java files found")
+        build = run_shell(
+            "javac -sourcepath " + shlex.quote(str(emit_dir)) + " " + " ".join(shlex.quote(f) for f in java_files),
+            cwd=work_dir,
+            env=env,
+            timeout_sec=timeout_sec,
+        )
+        if build.returncode != 0:
+            return build
+        return run_shell("java -cp " + shlex.quote(str(emit_dir)) + " " + shlex.quote(entry_class), cwd=work_dir, env=env, timeout_sec=timeout_sec)
+
+    if target == "scala":
+        scala_files = sorted(str(p) for p in emit_dir.rglob("*.scala"))
+        if len(scala_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .scala files found")
+        return run_shell("scala-cli run --jvm 17 " + " ".join(shlex.quote(f) for f in scala_files), cwd=work_dir, env=env, timeout_sec=timeout_sec)
+
+    if target == "kotlin":
+        kt_files = sorted(str(p) for p in emit_dir.rglob("*.kt"))
+        if len(kt_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .kt files found")
+        jar_path = work_dir / (case_path.stem + "_kotlin_run.jar")
+        _safe_unlink(jar_path)
+        build = run_shell(
+            "kotlinc " + " ".join(shlex.quote(f) for f in kt_files) + " -include-runtime -d " + shlex.quote(str(jar_path)),
+            cwd=work_dir,
+            env=env,
+            timeout_sec=timeout_sec,
+        )
+        if build.returncode != 0:
+            return build
+        main_class = case_path.stem
+        entry_file = emit_dir / (case_path.stem + ".kt")
+        if entry_file.exists():
+            for raw_line in entry_file.read_text(encoding="utf-8").splitlines():
+                line = raw_line.strip()
+                if line.startswith("object "):
+                    object_name = line[len("object "):].split("{", 1)[0].strip()
+                    if object_name != "":
+                        main_class = object_name
+                    break
+        return run_shell("java -cp " + shlex.quote(str(jar_path)) + " " + shlex.quote(main_class), cwd=work_dir, env=env, timeout_sec=timeout_sec)
+
+    if target == "cs":
+        cs_files = sorted(str(p) for p in emit_dir.rglob("*.cs"))
+        if len(cs_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .cs files found")
+        if shutil.which("mcs") is None or shutil.which("mono") is None:
+            return _run_cs_via_dotnet(emit_dir, work_dir=work_dir, env=env, timeout_sec=timeout_sec)
+        exe_path = emit_dir / (case_path.stem + "_cs.exe")
+        build = run_shell(
+            "mcs -warn:0 " + shlex.quote(f"-out:{exe_path}") + " " + " ".join(shlex.quote(f) for f in cs_files),
+            cwd=work_dir,
+            env=env,
+            timeout_sec=timeout_sec,
+        )
+        if build.returncode != 0:
+            return build
+        return run_shell("mono " + shlex.quote(str(exe_path)), cwd=work_dir, env=env, timeout_sec=timeout_sec)
+
+    if target == "swift":
+        swift_files = sorted(str(p) for p in emit_dir.rglob("*.swift"))
+        if len(swift_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .swift files found")
+        exe_path = emit_dir / (case_path.stem + "_swift.out")
+        build = run_shell(
+            "swiftc -O " + " ".join(shlex.quote(f) for f in swift_files) + " -o " + shlex.quote(str(exe_path)),
+            cwd=work_dir,
+            env=env,
+            timeout_sec=timeout_sec,
+        )
+        if build.returncode != 0:
+            return build
+        return run_shell(shlex.quote(str(exe_path)), cwd=work_dir, env=env, timeout_sec=timeout_sec)
+
+    if target == "ts":
+        entry_ts = emit_dir / (case_path.stem + ".ts")
+        if not entry_ts.exists():
+            return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_ts}")
+        ts_files = sorted(str(p) for p in emit_dir.rglob("*.ts"))
+        if len(ts_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .ts files found")
+        compile_result = run_shell(
+            "tsc --target es2022 --module nodenext --moduleResolution nodenext --esModuleInterop"
+            + " --outDir " + shlex.quote(str(emit_dir))
+            + " " + " ".join(shlex.quote(f) for f in ts_files),
+            cwd=work_dir,
+            env=env,
+            timeout_sec=timeout_sec,
+        )
+        if compile_result.returncode != 0:
+            return compile_result
+        entry_js = emit_dir / (case_path.stem + ".js")
+        if not entry_js.exists():
+            candidates = [p for p in emit_dir.glob("*.js") if not p.name.startswith("pytra_")]
+            if len(candidates) == 1:
+                entry_js = candidates[0]
+            elif len(candidates) == 0:
+                return subprocess.CompletedProcess("", 1, "", "no entry .js file found after tsc")
+            else:
+                for candidate in candidates:
+                    if "// main" in candidate.read_text(encoding="utf-8"):
+                        entry_js = candidate
+                        break
+                else:
+                    entry_js = candidates[0]
+        return run_shell(f"node {shlex.quote(str(entry_js))}", cwd=work_dir, env=env, timeout_sec=timeout_sec)
+
+    ext_by_target = {
+        "js": ".js",
+        "ruby": ".rb",
+        "lua": ".lua",
+        "php": ".php",
+        "julia": ".jl",
+        "dart": ".dart",
+        "ps1": ".ps1",
+        "zig": ".zig",
+    }
+    if target in ext_by_target:
+        entry = emit_dir / (case_path.stem + ext_by_target[target])
+        if not entry.exists():
+            return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry}")
+        if target == "js":
+            return run_shell(f"node {shlex.quote(str(entry))}", cwd=work_dir, env=env, timeout_sec=timeout_sec)
+        if target == "ruby":
+            return run_shell(f"ruby {shlex.quote(str(entry))}", cwd=work_dir, env=env, timeout_sec=timeout_sec)
+        if target == "lua":
+            return run_shell(f"lua {shlex.quote(str(entry))}", cwd=work_dir, env=env, timeout_sec=timeout_sec)
+        if target == "php":
+            return run_shell(f"php {shlex.quote(str(entry))}", cwd=work_dir, env=env, timeout_sec=timeout_sec)
+        if target == "julia":
+            return run_shell(f"{shlex.quote(_resolve_julia_runtime_bin())} {shlex.quote(str(entry))}", cwd=work_dir, env=env, timeout_sec=timeout_sec)
+        if target == "dart":
+            return run_shell(f"dart run {shlex.quote(str(entry))}", cwd=work_dir, env=env, timeout_sec=timeout_sec)
+        if target == "ps1":
+            return run_shell(f"pwsh -NonInteractive -File {shlex.quote(str(entry))}", cwd=work_dir, env=env, timeout_sec=timeout_sec)
+        if target == "zig":
+            exe_path = emit_dir / (case_path.stem + "_zig.out")
+            build = run_shell(
+                "zig build-exe " + shlex.quote(str(entry)) + " -O ReleaseFast -I " + shlex.quote(str(emit_dir)) + " -femit-bin=" + shlex.quote(str(exe_path)),
+                cwd=work_dir,
+                env=env,
+                timeout_sec=timeout_sec,
+            )
+            if build.returncode != 0:
+                return build
+            return run_shell(shlex.quote(str(exe_path)), cwd=work_dir, env=env, timeout_sec=timeout_sec)
+
+    if target == "nim":
+        entry_nim = emit_dir / (case_path.stem + ".nim")
+        if not entry_nim.exists():
+            return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_nim}")
+        stem = case_path.stem
+        if stem[:1].isdigit():
+            safe_stem = "m_" + stem
+            safe_entry = emit_dir / (safe_stem + ".nim")
+            if not safe_entry.exists():
+                shutil.copy2(entry_nim, safe_entry)
+            entry_nim = safe_entry
+            stem = safe_stem
+        exe_path = emit_dir / (stem + "_nim.out")
+        nimcache_path = emit_dir / ("nimcache_" + stem)
+        return run_shell(
+            "nim c --hints:off --verbosity:0 --warning[UnusedImport]:off --passC:-w "
+            + shlex.quote(f"--nimcache:{nimcache_path}") + " " + shlex.quote(f"-o:{exe_path}") + " -r " + shlex.quote(str(entry_nim)),
+            cwd=work_dir,
+            env=env,
+            timeout_sec=timeout_sec,
+        )
+
+    return subprocess.CompletedProcess("", 1, "", f"unsupported target: {target}")
+
+
+def _write_runner(path: Path, command: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("#!/usr/bin/env bash\nset -euo pipefail\n" + command + " \"$@\"\n", encoding="utf-8")
+    path.chmod(0o755)
+
+
+def _find_entry_file(emit_dir: Path, stems: list[str], suffix: str) -> Path | None:
+    for stem in stems:
+        candidate = emit_dir / (stem + suffix)
+        if candidate.exists():
+            return candidate
+    matches = sorted(emit_dir.rglob("*" + suffix))
+    if len(matches) == 1:
+        return matches[0]
+    for candidate in matches:
+        if "pytra" in candidate.stem and "cli" in candidate.stem:
+            return candidate
+    return None
+
+
+def build_emitted_target_artifact(
+    target: str,
+    emit_dir: Path,
+    bin_path: Path,
+    *,
+    entry_stem: str,
+    work_dir: Path,
+    env: dict[str, str] | None = None,
+    timeout_sec: int = 180,
+) -> subprocess.CompletedProcess[str]:
+    """Build emitted selfhost sources and leave an executable artifact at bin_path.
+
+    For interpreted targets, the artifact is an executable wrapper script.
+    """
+    if target == "powershell":
+        target = "ps1"
+    bin_path.parent.mkdir(parents=True, exist_ok=True)
+    _safe_unlink(bin_path)
+    stems = [entry_stem, entry_stem.replace("-", "_"), entry_stem.replace("_", "-"), "pytra_cli", "pytra-cli"]
+
+    if target == "go":
+        go_files = sorted(str(p) for p in emit_dir.rglob("*.go"))
+        if len(go_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .go files found")
+        return run_shell("go build -o " + shlex.quote(str(bin_path)) + " " + " ".join(shlex.quote(f) for f in go_files), cwd=emit_dir, env=env, timeout_sec=timeout_sec)
+
+    if target == "rs":
+        cargo_toml = emit_dir / "Cargo.toml"
+        if cargo_toml.exists():
+            build = run_shell("cargo build --release", cwd=emit_dir, env=env, timeout_sec=timeout_sec)
+            if build.returncode != 0:
+                return build
+            for candidate in (emit_dir / "target" / "release").glob("*"):
+                if candidate.is_file() and os.access(candidate, os.X_OK) and candidate.name not in {"build-script-build"}:
+                    shutil.copy2(candidate, bin_path)
+                    bin_path.chmod(0o755)
+                    return subprocess.CompletedProcess("cargo build --release", 0, "", "")
+            return subprocess.CompletedProcess("", 1, "", "cargo build succeeded but no executable was found")
+        entry = _find_entry_file(emit_dir, stems, ".rs")
+        if entry is None:
+            return subprocess.CompletedProcess("", 1, "", "entry .rs file not found")
+        return run_shell("rustc -O " + shlex.quote(str(entry)) + " -o " + shlex.quote(str(bin_path)), cwd=work_dir, env=env, timeout_sec=timeout_sec)
+
+    if target == "swift":
+        swift_files = sorted(str(p) for p in emit_dir.rglob("*.swift"))
+        if len(swift_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .swift files found")
+        return run_shell("swiftc -O " + " ".join(shlex.quote(f) for f in swift_files) + " -o " + shlex.quote(str(bin_path)), cwd=emit_dir, env=env, timeout_sec=timeout_sec)
+
+    if target == "cs":
+        cs_files = sorted(str(p) for p in emit_dir.rglob("*.cs"))
+        if len(cs_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .cs files found")
+        if shutil.which("mcs") is not None and shutil.which("mono") is not None:
+            exe_path = bin_path.with_suffix(".exe")
+            build = run_shell("mcs -warn:0 " + shlex.quote(f"-out:{exe_path}") + " " + " ".join(shlex.quote(f) for f in cs_files), cwd=work_dir, env=env, timeout_sec=timeout_sec)
+            if build.returncode != 0:
+                return build
+            _write_runner(bin_path, "mono " + shlex.quote(str(exe_path)))
+            return subprocess.CompletedProcess(str(bin_path), 0, "", "")
+        project_path = emit_dir / "PytraSelfhost.csproj"
+        project_path.write_text("\n".join(["<Project Sdk=\"Microsoft.NET.Sdk\">", "  <PropertyGroup>", "    <OutputType>Exe</OutputType>", "    <TargetFramework>net8.0</TargetFramework>", "    <ImplicitUsings>disable</ImplicitUsings>", "    <Nullable>disable</Nullable>", "    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>", "    <LangVersion>latest</LangVersion>", "  </PropertyGroup>", "</Project>", ""]), encoding="utf-8")
+        build = run_shell("dotnet build " + shlex.quote(str(project_path)) + " -nologo -v:q", cwd=work_dir, env=env, timeout_sec=timeout_sec)
+        if build.returncode != 0:
+            return build
+        dll_path = emit_dir / "bin" / "Debug" / "net8.0" / "PytraSelfhost.dll"
+        if not dll_path.exists():
+            return subprocess.CompletedProcess("", 1, "", f"dotnet output not found: {dll_path}")
+        _write_runner(bin_path, "dotnet " + shlex.quote(str(dll_path)))
+        return subprocess.CompletedProcess(str(bin_path), 0, "", "")
+
+    if target == "java":
+        java_files = sorted(str(p) for p in emit_dir.rglob("*.java"))
+        if len(java_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .java files found")
+        classes_dir = emit_dir / "classes"
+        classes_dir.mkdir(parents=True, exist_ok=True)
+        build = run_shell("javac -d " + shlex.quote(str(classes_dir)) + " " + " ".join(shlex.quote(f) for f in java_files), cwd=work_dir, env=env, timeout_sec=timeout_sec)
+        if build.returncode != 0:
+            return build
+        main_class = java_module_class_name(entry_stem)
+        _write_runner(bin_path, "java -cp " + shlex.quote(str(classes_dir)) + " " + shlex.quote(main_class))
+        return subprocess.CompletedProcess(str(bin_path), 0, "", "")
+
+    if target == "kotlin":
+        kt_files = sorted(str(p) for p in emit_dir.rglob("*.kt"))
+        if len(kt_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .kt files found")
+        jar_path = bin_path.with_suffix(".jar")
+        build = run_shell("kotlinc " + " ".join(shlex.quote(f) for f in kt_files) + " -include-runtime -d " + shlex.quote(str(jar_path)), cwd=work_dir, env=env, timeout_sec=timeout_sec)
+        if build.returncode != 0:
+            return build
+        _write_runner(bin_path, "java -jar " + shlex.quote(str(jar_path)))
+        return subprocess.CompletedProcess(str(bin_path), 0, "", "")
+
+    if target == "scala":
+        scala_files = sorted(str(p) for p in emit_dir.rglob("*.scala"))
+        if len(scala_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .scala files found")
+        _write_runner(bin_path, "scala-cli run --server=false --jvm 17 " + " ".join(shlex.quote(f) for f in scala_files) + " --")
+        return subprocess.CompletedProcess(str(bin_path), 0, "", "")
+
+    if target == "ts":
+        ts_files = sorted(str(p) for p in emit_dir.rglob("*.ts"))
+        if len(ts_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .ts files found")
+        build = run_shell("tsc --target es2022 --module nodenext --moduleResolution nodenext --esModuleInterop --outDir " + shlex.quote(str(emit_dir)) + " " + " ".join(shlex.quote(f) for f in ts_files), cwd=work_dir, env=env, timeout_sec=timeout_sec)
+        if build.returncode != 0:
+            return build
+        entry = _find_entry_file(emit_dir, stems, ".js")
+        if entry is None:
+            return subprocess.CompletedProcess("", 1, "", "entry .js file not found after tsc")
+        _write_runner(bin_path, "node " + shlex.quote(str(entry)))
+        return subprocess.CompletedProcess(str(bin_path), 0, "", "")
+
+    script_specs = {
+        "js": ("node", ".js"),
+        "ruby": ("ruby", ".rb"),
+        "lua": ("lua", ".lua"),
+        "php": ("php", ".php"),
+        "julia": (_resolve_julia_runtime_bin(), ".jl"),
+        "dart": ("dart run", ".dart"),
+        "ps1": ("pwsh -NonInteractive -File", ".ps1"),
+    }
+    if target in script_specs:
+        runner, suffix = script_specs[target]
+        entry = _find_entry_file(emit_dir, stems, suffix)
+        if entry is None:
+            return subprocess.CompletedProcess("", 1, "", f"entry {suffix} file not found")
+        _write_runner(bin_path, runner + " " + shlex.quote(str(entry)))
+        return subprocess.CompletedProcess(str(bin_path), 0, "", "")
+
+    if target == "nim":
+        entry = _find_entry_file(emit_dir, stems, ".nim")
+        if entry is None:
+            return subprocess.CompletedProcess("", 1, "", "entry .nim file not found")
+        return run_shell("nim c --hints:off --verbosity:0 --warning[UnusedImport]:off --passC:-w " + shlex.quote(f"--nimcache:{emit_dir / 'nimcache_selfhost'}") + " " + shlex.quote(f"-o:{bin_path}") + " " + shlex.quote(str(entry)), cwd=work_dir, env=env, timeout_sec=timeout_sec)
+
+    if target == "zig":
+        entry = _find_entry_file(emit_dir, stems, ".zig")
+        if entry is None:
+            return subprocess.CompletedProcess("", 1, "", "entry .zig file not found")
+        return run_shell("zig build-exe " + shlex.quote(str(entry)) + " -O ReleaseFast -I " + shlex.quote(str(emit_dir)) + " -femit-bin=" + shlex.quote(str(bin_path)), cwd=work_dir, env=env, timeout_sec=timeout_sec)
+
+    return subprocess.CompletedProcess("", 1, "", f"unsupported target: {target}")
 
 
 def _purge_case_artifacts(work: Path, case_stem: str) -> None:

@@ -97,10 +97,15 @@ try:
 except Exception:
     collect_runtime_cpp_sources = _fallback_collect_runtime_cpp_sources  # type: ignore
 
+from runtime_parity_shared import build_emitted_target_artifact, run_emitted_target  # type: ignore
+
 PARITY_DIR = ROOT / ".parity-results"
 
 # Emit targets supported by the selfhost binary
-SUPPORTED_EMIT_TARGETS = ["cpp", "go", "rs", "swift", "ts", "js"]
+SUPPORTED_EMIT_TARGETS = [
+    "cpp", "rs", "cs", "js", "ts", "dart", "go", "java", "scala",
+    "kotlin", "swift", "ruby", "lua", "php", "nim", "julia", "zig",
+]
 
 # Parity targets used to populate the Python row
 PARITY_LANGS = [
@@ -266,6 +271,7 @@ def _find_selfhost_binary(selfhost_lang: str, explicit_bin: str) -> Path | None:
 
 def _build_selfhost_binary(selfhost_lang: str) -> tuple[Path | None, str]:
     """Attempt to build selfhost binary. Returns (binary_path, error_msg)."""
+    build_target = "ps1" if selfhost_lang == "powershell" else selfhost_lang
     build_dir = ROOT / "work" / "selfhost" / "build" / selfhost_lang
     build_dir.mkdir(parents=True, exist_ok=True)
     bin_dir = ROOT / "work" / "selfhost" / "bin"
@@ -282,8 +288,8 @@ def _build_selfhost_binary(selfhost_lang: str) -> tuple[Path | None, str]:
     if emit_dir.exists():
         shutil.rmtree(emit_dir)
     result = subprocess.run(
-        [sys.executable, str(cli2), "-build", str(entry), "--target", selfhost_lang,
-         *([] if selfhost_lang != "rs" else ["--rs-package"]),
+        [sys.executable, str(cli2), "-build", str(entry), "--target", build_target,
+         *([] if build_target != "rs" else ["--rs-package"]),
          "-o", str(emit_dir)],
         cwd=str(ROOT), capture_output=True, text=True,
     )
@@ -294,6 +300,22 @@ def _build_selfhost_binary(selfhost_lang: str) -> tuple[Path | None, str]:
         return None, f"emit failed: {details}"
 
     # Step 2: compile to binary
+    if selfhost_lang != "cpp":
+        compile_result = build_emitted_target_artifact(
+            build_target,
+            emit_dir,
+            bin_path,
+            entry_stem="pytra-cli",
+            work_dir=build_dir,
+            timeout_sec=180,
+        )
+        if compile_result.returncode != 0:
+            detail = (compile_result.stderr or compile_result.stdout or "").strip()
+            return None, f"{build_target} build failed: {detail}"
+        if not bin_path.exists():
+            return None, f"{build_target} build completed but artifact was not produced: {bin_path}"
+        return bin_path, ""
+
     if selfhost_lang == "cpp":
         cpp_files = sorted(str(p) for p in emit_dir.rglob("*.cpp"))
         if not cpp_files:
@@ -328,58 +350,7 @@ def _build_selfhost_binary(selfhost_lang: str) -> tuple[Path | None, str]:
             return None, f"g++ failed: {compile_result.stderr.strip()}"
         return bin_path, ""
 
-    if selfhost_lang == "go":
-        go_files = sorted(str(p) for p in emit_dir.rglob("*.go"))
-        if not go_files:
-            return None, "no .go files emitted"
-        compile_result = subprocess.run(
-            ["go", "build", "-o", str(bin_path)] + go_files,
-            cwd=str(emit_dir), capture_output=True, text=True,
-        )
-        if compile_result.returncode != 0:
-            return None, f"go build failed: {compile_result.stderr.strip()}"
-        return bin_path, ""
-
-    if selfhost_lang == "rs":
-        cargo_toml = emit_dir / "Cargo.toml"
-        if not cargo_toml.exists():
-            return None, "missing Cargo.toml in Rust package output"
-        compile_result = subprocess.run(
-            ["cargo", "build", "--release"],
-            cwd=str(emit_dir), capture_output=True, text=True,
-        )
-        if compile_result.returncode != 0:
-            return None, f"cargo build failed: {compile_result.stderr.strip()}"
-        built_bin = emit_dir / "target" / "release" / "pytra_selfhost"
-        if not built_bin.exists():
-            return None, "cargo build succeeded but binary was not produced"
-        shutil.copy2(built_bin, bin_path)
-        return bin_path, ""
-
-    if selfhost_lang == "swift":
-        swift_runtime = ROOT / "src" / "runtime" / "swift"
-        built_in = swift_runtime / "built_in" / "py_runtime.swift"
-        if built_in.exists():
-            shutil.copy2(built_in, emit_dir / built_in.name)
-        image_runtime = swift_runtime / "image_runtime.swift"
-        if image_runtime.exists():
-            shutil.copy2(image_runtime, emit_dir / image_runtime.name)
-        std_dir = swift_runtime / "std"
-        if std_dir.exists():
-            for swift_file in sorted(std_dir.glob("*.swift")):
-                shutil.copy2(swift_file, emit_dir / swift_file.name)
-        swift_files = sorted(str(p) for p in emit_dir.rglob("*.swift"))
-        if not swift_files:
-            return None, "no .swift files emitted"
-        compile_result = subprocess.run(
-            ["swiftc", "-O"] + swift_files + ["-o", str(bin_path)],
-            cwd=str(emit_dir), capture_output=True, text=True,
-        )
-        if compile_result.returncode != 0:
-            return None, f"swiftc failed: {compile_result.stderr.strip()}"
-        return bin_path, ""
-
-    return None, f"unsupported selfhost_lang for build: {selfhost_lang}"
+    return None, f"internal build dispatch error for selfhost_lang: {selfhost_lang}"
 
 
 def _transpile_via_selfhost_binary(
@@ -478,6 +449,15 @@ def _run_target_emit(
     timeout_sec: int = 120,
 ) -> subprocess.CompletedProcess[str]:
     """Compile and run emitted code. Reuses logic from runtime_parity_check_fast."""
+    return run_emitted_target(
+        emit_target,
+        emit_dir,
+        case_path,
+        work_dir=work_dir,
+        env=env,
+        timeout_sec=timeout_sec,
+    )
+
     # Inline the minimal subset of _run_target logic
     if emit_target == "go":
         go_files = sorted(str(p) for p in emit_dir.rglob("*.go"))

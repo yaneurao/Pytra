@@ -78,6 +78,7 @@ from runtime_parity_shared import (  # type: ignore
     collect_stdlib_case_stems,
     find_case_path,
     normalize,
+    run_emitted_target,
     run_shell,
 )
 from toolchain.misc.target_profiles import get_target_profile, list_parity_targets
@@ -676,6 +677,14 @@ def _run_target(
     target executions so that relative output paths match the Python run.
     """
     emit_dir = output_dir / "emit"
+    return run_emitted_target(
+        target,
+        emit_dir,
+        case_path,
+        work_dir=work_dir,
+        env=env,
+        timeout_sec=timeout_sec,
+    )
 
     if target == "cpp":
         return _run_cpp_emit_dir(emit_dir, cwd=work_dir, env=env, timeout_sec=timeout_sec)

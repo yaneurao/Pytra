@@ -1644,7 +1644,7 @@ class ZigNativeEmitter:
         seen_undefined_decl: dict[str, int] = {}
         for line in self.lines:
             stripped = line.strip()
-            if re.match(r"^(pub fn|fn)\s+\w+\(", stripped):
+            if not line.startswith(" ") and re.match(r"^(pub fn|fn)\s+\w+\(", stripped):
                 seen_undefined_decl = {}
             if stripped == "_ = _unused;":
                 continue
@@ -2032,10 +2032,8 @@ class ZigNativeEmitter:
         native_file = self._runtime_mapping.module_native_files.get(module_id, "")
         if native_file != "":
             return self._root_rel_prefix() + native_file
-        rel = module_id
-        if rel.startswith("pytra."):
-            rel = rel[len("pytra."):]
-        return self._root_rel_prefix() + rel.replace(".", "/") + ".zig"
+        rel = module_id.lstrip(".")
+        return self._root_rel_prefix() + rel.replace(".", "_") + ".zig"
 
     def _emit_imports(self, body: list[dict[str, Any]]) -> None:
         """import_bindings から Zig の @import を生成（§3: linker 解決済み情報を使用）。"""
@@ -2068,8 +2066,10 @@ class ZigNativeEmitter:
             # Skip pytra.built_in (provided by py_runtime.zig)
             if module_id.startswith("pytra.built_in"):
                 continue
-            if module_id == "pytra.std.json":
-                if export_name == "JsonVal" and "JsonVal" not in emitted:
+            if module_id.startswith("pytra.core.") or runtime_module_id.startswith("pytra.core."):
+                continue
+            if module_id == "pytra.std.json" and export_name == "JsonVal":
+                if "JsonVal" not in emitted:
                     self._emit_line("const JsonVal = pytra.JsonVal;")
                     emitted.add("JsonVal")
                 continue
@@ -2099,15 +2099,15 @@ class ZigNativeEmitter:
                 import_path = self._root_rel_prefix() + "std/time_native.zig"
                 safe_mod = "time_native"
             else:
-                if not candidate_module.startswith("pytra.") and not candidate_module.startswith("."):
+                if not candidate_module.startswith("pytra.") and not candidate_module.startswith(".") and not candidate_module.startswith("toolchain."):
                     canonical = canonical_runtime_module_id(candidate_module)
                     if isinstance(canonical, str) and canonical != "" and canonical != candidate_module:
                         imported_module = canonical
                         candidate_module = canonical
-                if not candidate_module.startswith("pytra.") and not candidate_module.startswith("."):
+                if not candidate_module.startswith("pytra.") and not candidate_module.startswith(".") and not candidate_module.startswith("toolchain."):
                     continue
                 import_path = self._module_id_to_import_path(imported_module)
-                safe_mod = _safe_ident(imported_module.split(".")[-1], "mod")
+                safe_mod = _safe_ident(imported_module.replace(".", "_"), "mod")
             if safe_mod not in emitted:
                 self._emit_line("const " + safe_mod + " = @import(\"" + import_path + "\");")
                 emitted.add(safe_mod)
@@ -2319,6 +2319,12 @@ class ZigNativeEmitter:
             target_any = stmt.get("target")
             if isinstance(target_any, dict):
                 td2: dict[str, Any] = target_any
+                if td2.get("kind") == "Name":
+                    alias_name = _safe_ident(td2.get("id"), "")
+                    if alias_name != "" and alias_name[0].isupper():
+                        value_any = stmt.get("value")
+                        if isinstance(value_any, dict) and value_any.get("kind") in {"Name", "Subscript"}:
+                            return
                 if td2.get("kind") == "Tuple":
                     self._emit_tuple_assign(target_any, stmt.get("value"))
                     return
@@ -2613,11 +2619,6 @@ class ZigNativeEmitter:
             self._emit_swap(stmt)
             return
         if kind == "TypeAlias":
-            alias_name = _safe_ident(stmt.get("name"), "T")
-            alias_mirror = self._type_aliases.get(alias_name, "")
-            if alias_mirror == "":
-                alias_mirror = self._type_alias_value_mirror(stmt)
-            self._emit_line("const " + alias_name + " = " + self._zig_type(alias_mirror if alias_mirror != "" else "object") + ";  // type alias")
             return
         if kind == "Yield":
             val = self._render_expr(stmt.get("value"))
@@ -3131,7 +3132,7 @@ class ZigNativeEmitter:
                 reassign_after_capture = False
                 # If loop variable is unused in body, use _ to avoid Zig error
                 target_unused = isinstance(target_plan, dict) and bool(target_plan.get("unused"))
-                if target_unused or not self._body_uses_name(self._strip_dead_branches(body_nodes), target_name):
+                if target_name != "_unused" and (target_unused or not self._body_uses_name(self._strip_dead_branches(body_nodes), target_name)):
                     capture_name = "_"
                 elif target_name in self._hoisted_var_names:
                     capture_name = "_cap_" + target_name
@@ -3420,6 +3421,10 @@ class ZigNativeEmitter:
                     value_node = sub.get("value")
                     if isinstance(value_node, dict):
                         default_val = self._render_expr(value_node)
+                        if value_node.get("kind") == "Call":
+                            func_any = value_node.get("func")
+                            if isinstance(func_any, dict) and func_any.get("kind") == "Name" and _safe_ident(func_any.get("id"), "") == "field":
+                                default_val = self._zig_zero_value(zig_ty)
                         self._emit_line(field_name + ": " + zig_ty + " = " + default_val + ",")
                     else:
                         self._emit_line(field_name + ": " + zig_ty + ",")
@@ -4043,8 +4048,11 @@ class ZigNativeEmitter:
             inner = self._render_expr(ed.get("value"))
             return "pytra.to_str(" + inner + ")"
         if kind == "ObjLen":
-            inner = self._render_expr(ed.get("value"))
-            inner_type = self._lookup_expr_type(ed.get("value"))
+            value_node = ed.get("value")
+            inner = self._render_expr(value_node)
+            if isinstance(value_node, dict) and value_node.get("kind") in {"Call", "Compare", "BoolOp", "BinOp", "IfExp", "Subscript", "Attribute"}:
+                inner = "(" + inner + ")"
+            inner_type = self._lookup_expr_type(value_node)
             elem = "i64"
             if inner_type.startswith("list[") and inner_type.endswith("]"):
                 elem = self._zig_type(inner_type[5:-1].strip())
@@ -4080,6 +4088,8 @@ class ZigNativeEmitter:
                             return "Module_" + owner + "_" + attr
             obj = self._render_expr(val_node)
             if isinstance(val_node, dict) and val_node.get("kind") in {"Subscript", "Call", "Compare", "BoolOp", "BinOp", "IfExp", "IsInstance"}:
+                obj = "(" + obj + ")"
+            elif ": {" in obj:
                 obj = "(" + obj + ")"
             val_type = self._lookup_expr_type(val_node) if isinstance(val_node, dict) else ""
             norm_val_type = self._normalize_type(val_type)
@@ -4278,6 +4288,10 @@ class ZigNativeEmitter:
             orelse_node = ed.get("orelse")
             body_expr = self._render_expr(body_node)
             orelse_expr = self._render_expr(orelse_node)
+            if ": {" in body_expr:
+                body_expr = "(" + body_expr + ")"
+            if ": {" in orelse_expr:
+                orelse_expr = "(" + orelse_expr + ")"
             # comptime_int リテラルを @as(i64, ...) にキャスト
             if isinstance(body_node, dict) and body_node.get("kind") == "Constant" and isinstance(body_node.get("value"), int):
                 body_expr = "@as(i64, " + body_expr + ")"
@@ -4746,6 +4760,8 @@ class ZigNativeEmitter:
                 if fname == "main" and "__pytra_main" in self.function_names:
                     fname = "__pytra_main"
                     rendered_name = fname
+                if fname == "field":
+                    return "undefined"
                 if fname == "print":
                     if len(arg_strs) == 0:
                         return "pytra.print(\"\")"
@@ -4769,11 +4785,14 @@ class ZigNativeEmitter:
                     return "pytra.print(" + arg_strs[0] + ")"
                 if fname == "len":
                     if len(args) > 0:
+                        len_arg = arg_strs[0]
+                        if isinstance(args[0], dict) and args[0].get("kind") in {"Call", "Compare", "BoolOp", "BinOp", "IfExp", "Subscript", "Attribute"}:
+                            len_arg = "(" + len_arg + ")"
                         arg_t = self._get_expr_type(args[0])
                         if hasattr(self, "_import_alias_map") and arg_t in self._import_alias_map:
-                            return arg_strs[0] + ".__len__()"
+                            return len_arg + ".__len__()"
                         if arg_t.startswith("dict["):
-                            return "@as(i64, @intCast(" + arg_strs[0] + ".count()))"
+                            return "@as(i64, @intCast(" + len_arg + ".count()))"
                         if arg_t.startswith("list[") or arg_t.startswith("set[") or arg_t in {"bytearray", "bytes"}:
                             elem = "i64"
                             if (arg_t.startswith("list[") or arg_t.startswith("set[")) and arg_t.endswith("]"):
@@ -4781,9 +4800,12 @@ class ZigNativeEmitter:
                                 elem = self._zig_type(inner_t)
                             elif arg_t in {"bytearray", "bytes"}:
                                 elem = "u8"
-                            return "pytra.list_len(" + arg_strs[0] + ", " + elem + ")"
+                            return "pytra.list_len(" + len_arg + ", " + elem + ")"
                     if len(arg_strs) > 0:
-                        return "@as(i64, @intCast(" + arg_strs[0] + ".len))"
+                        len_arg = arg_strs[0]
+                        if len(args) > 0 and isinstance(args[0], dict) and args[0].get("kind") in {"Call", "Compare", "BoolOp", "BinOp", "IfExp", "Subscript", "Attribute"}:
+                            len_arg = "(" + len_arg + ")"
+                        return "@as(i64, @intCast(" + len_arg + ".len))"
                     return "0"
                 if fname == "int":
                     if len(arg_strs) > 0:
@@ -5167,6 +5189,8 @@ class ZigNativeEmitter:
                             return "self._base." + attr + "(" + ", ".join(arg_strs) + ")"
                 obj = self._render_expr(obj_node_for_attr)
                 if isinstance(obj_node_for_attr, dict) and obj_node_for_attr.get("kind") in {"Subscript", "Call", "Compare", "BoolOp", "BinOp", "IfExp", "IsInstance"}:
+                    obj = "(" + obj + ")"
+                elif ": {" in obj:
                     obj = "(" + obj + ")"
                 if runtime_symbol == "ArgumentParser.add_argument":
                     filled = ["\"\"", "\"\"", "\"\"", "\"\"", "\"\"", "\"\"", "pytra.empty_list()", "pytra.union_new_none()"]
@@ -6376,7 +6400,7 @@ class ZigNativeEmitter:
         if t == "None":
             return "void"
         if self._is_callable_type(t):
-            return "anytype"
+            return self._zig_callable_type(t)
         # --- Union / Optional ---
         union_parts = self._split_top_level_union(t)
         if len(union_parts) > 1:
