@@ -171,18 +171,18 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
                 predicate_types[key] = value_str
 
     return RuntimeMapping(
-        builtin_prefix=prefix_str,
-        calls=calls,
-        types=types,
-        skip_module_prefixes=skip,
-        skip_module_exact=skip_exact,
-        implicit_promotions=implicit_promotions,
-        module_native_files=module_native_files,
-        module_namespace_exprs=module_namespace_exprs,
-        call_adapters=call_adapters,
-        non_native_modules=non_native_modules,
-        exception_types=exception_types,
-        predicate_types=predicate_types,
+        prefix_str,
+        calls,
+        types,
+        skip,
+        skip_exact,
+        implicit_promotions,
+        module_native_files,
+        module_namespace_exprs,
+        call_adapters,
+        non_native_modules,
+        exception_types,
+        predicate_types,
     )
 
 

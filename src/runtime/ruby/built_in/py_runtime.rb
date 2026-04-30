@@ -254,10 +254,10 @@ def __pytra_str_rfind(value, sub)
   __pytra_str(value).rfind(sub)
 end
 
-def __pytra_pop(container, key = nil)
+def __pytra_pop(container, key = nil, default_value = nil)
   return nil if container.nil?
   if container.is_a?(Hash)
-    return container.delete(key)
+    return container.key?(key) ? container.delete(key) : default_value
   end
   if container.is_a?(Array)
     return key.nil? ? container.pop : container.delete_at(__pytra_int(key))

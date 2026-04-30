@@ -710,10 +710,12 @@ def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     # Map to Ruby type check
     type_map: dict[str, str] = {
         "int": "Integer", "int64": "Integer", "float": "Float", "float64": "Float",
-        "str": "String", "bool": "TrueClass", "list": "Array",
+        "str": "String", "bool": "__pytra_bool_class", "list": "Array",
         "dict": "Hash", "set": "Set", "tuple": "Array",
     }
     ruby_cls = type_map.get(type_name, type_name)
+    if ruby_cls == "__pytra_bool_class":
+        return "(" + value_code + ".is_a?(TrueClass) || " + value_code + ".is_a?(FalseClass))"
     return value_code + ".is_a?(" + ruby_cls + ")"
 
 

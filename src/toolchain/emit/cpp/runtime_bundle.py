@@ -231,7 +231,7 @@ def _rb_append_header_only_impls(header_text: str, cpp_text: str) -> str:
         i += 1
     if insert_at == len(lines):
         new_lines.extend(impl_lines)
-    return "\n".join(new_lines) + "\n"
+    return "\n".join(new_lines).rstrip() + "\n"
 
 
 def _rb_inject_runtime_native_companion_include(header_text: str, module_id: str) -> str:
@@ -348,7 +348,6 @@ def emit_runtime_module_artifacts(
 def write_runtime_module_artifacts(
     module_id: str,
     east_doc: dict[str, JsonVal],
-    *,
     output_dir: Path,
     source_path: str = "",
 ) -> int:
@@ -365,7 +364,6 @@ def write_runtime_module_artifacts(
 def write_helper_module_artifacts(
     module_id: str,
     east_doc: dict[str, JsonVal],
-    *,
     output_dir: Path,
     rel_header_path: str,
 ) -> int:
@@ -390,7 +388,6 @@ def write_helper_module_artifacts(
 def write_user_module_artifacts(
     module_id: str,
     east_doc: dict[str, JsonVal],
-    *,
     output_dir: Path,
 ) -> int:
     """Write user module source/header and return emitted file count."""

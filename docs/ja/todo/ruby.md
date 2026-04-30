@@ -43,13 +43,14 @@
 
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を ruby に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
-1. [ ] [ID: P1-HOST-CPP-EMITTER-RUBY-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target ruby -o work/selfhost/host-cpp/ruby/` で変換 + build を通す
+1. [x] [ID: P1-HOST-CPP-EMITTER-RUBY-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target ruby -o work/selfhost/host-cpp/ruby/` で変換 + build を通す
    - 進捗: 2026-04-30 に `pytra-cli.py -build` の target wiring を修正し、`--target ruby` が `toolchain.emit.ruby.cli` へ到達するようにした。`rm -rf work/selfhost/host-cpp/ruby && timeout 3600s python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target ruby -o work/selfhost/host-cpp/ruby/` は変換 PASS（22 files）。
    - 進捗: 2026-04-30 に C++ types の injected mapping を `G_TYPES` 定数化し、Ruby のトップレベルメソッド可視性問題を回避した。`ruby -c work/selfhost/host-cpp/ruby/toolchain_emit_cpp_cli.rb` は `Syntax OK`。実行は CommonRenderer 初期化まで進み、`toolchain_emit_common_profile_loader.rb` の `load_profile_doc` が `__comp_11` 未定義で停止する。原因は Ruby emitter が `ErrorCheck` lowering の `__comp_*` 代入を生成しないこと。
    - 進捗: 2026-04-30 に Ruby emitter の `ErrorReturn`/`ErrorCheck`/`ErrorCatch` lowering、C++ emitter の helper 名衝突回避（`_emit_line`/`_cpp_indent`/`_cpp_emit_blank`）、`header_gen` の Ruby 可視定数化、`class_type_ids.keys()` 反復化を追加した。`ruby -c` は `Syntax OK`、Ruby host 実行は 33 files（`toolchain_emit_cpp_cli.cpp` まで）を書いた後、`toolchain.emit.cpp.emitter` 生成中に 1 時間 timeout（exit 124）。
    - 進捗: 2026-04-30 に C++ emitter 側の `while` + `continue` 無限再処理（`_emit_call` / `_function_param_is_mutated_via_call`）、profile JSON cache 未格納、関数 param meta 再解析、top-level 関数の不要 self mutation 解析、string ops include 判定の巨大 BoolOp 化を修正した。Python 版の単一 `toolchain.emit.cpp.emitter` 出力は 1.17 秒まで短縮。Ruby host は同単一 module がまだ 300 秒 timeout のため、次は Ruby 生成物側の末尾処理を継続調査する。
-2. [ ] [ID: P1-HOST-CPP-EMITTER-RUBY-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_ruby.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
-   - 進捗: 2026-04-30 時点では S1 が Ruby 実行未 PASS のため未実行。emitter host 結果は `.parity-results/emitter_host_ruby.json` に `build_status=ok` / `parity_status=timeout` として記録済み。
+   - 完了: 2026-04-30 に `header_gen` の `while` + `continue` 無限再処理、Ruby runtime の `dict.pop(key, default)`、dataclass constructor keyword 落ち、Ruby `isinstance(bool)` の FalseClass 漏れ、header-only runtime 出力末尾を修正。`pytra-cli.py -build --target ruby`、`ruby -c`、Ruby host フル manifest 実行が PASS。
+2. [x] [ID: P1-HOST-CPP-EMITTER-RUBY-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_ruby.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
+   - 完了: 2026-04-30 に Ruby-hosted C++ emitter が `work/tmp/build_cli/linked/manifest.json` から 55 files を生成。Python direct C++ emitter を同じ manifest から `work/selfhost/host-cpp/python-full` に再生成し、`diff -ru work/selfhost/host-cpp/python-full work/selfhost/host-cpp/ruby-run` が一致。`.parity-results/emitter_host_ruby.json` に build/parity PASS を記録。
 
 ### P1-EMITTER-SELFHOST-RUBY: emit/ruby/cli.py を単独で selfhost C++ build に通す
 

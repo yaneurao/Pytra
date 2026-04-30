@@ -446,11 +446,10 @@ def _hg_function_param_is_mutated_via_call(
                 if len(callee_mutable) > 0:
                     args = _hg_list(value_dict, "args")
                     for idx in range(len(args)):
-                        if idx not in callee_mutable:
-                            continue
-                        arg_obj = json.JsonValue(args[idx]).as_obj()
-                        if arg_obj is not None and _hg_str(arg_obj.raw, "kind") == "Name" and _hg_str(arg_obj.raw, "id") == arg_name:
-                            return True
+                        if idx in callee_mutable:
+                            arg_obj = json.JsonValue(args[idx]).as_obj()
+                            if arg_obj is not None and _hg_str(arg_obj.raw, "kind") == "Name" and _hg_str(arg_obj.raw, "id") == arg_name:
+                                return True
             for child in value_dict.values():
                 if _walk(child):
                     return True
