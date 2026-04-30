@@ -4,7 +4,7 @@ from __future__ import annotations
 
 
 # EAST3 resolved_type → Ruby type (used for comments / type annotations where needed)
-_TYPE_MAP: dict[str, str] = {
+_RUBY_TYPE_MAP: dict[str, str] = {
     "int": "Integer",
     "byte": "Integer",
     "int8": "Integer",
@@ -101,8 +101,8 @@ def ruby_type(resolved_type: str) -> str:
     if resolved_type == "" or resolved_type == "unknown":
         return "Object"
 
-    if resolved_type in _TYPE_MAP:
-        return _TYPE_MAP[resolved_type]
+    if resolved_type in _RUBY_TYPE_MAP:
+        return _RUBY_TYPE_MAP[resolved_type]
 
     if resolved_type.startswith("list[") and resolved_type.endswith("]"):
         return "Array"
