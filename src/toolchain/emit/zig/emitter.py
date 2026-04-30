@@ -409,7 +409,7 @@ class ZigNativeEmitter:
     def __init__(self, east_doc: dict[str, JsonVal], is_submodule: bool = False) -> None:
         if not isinstance(east_doc, dict):
             raise RuntimeError("lang=zig invalid east document: root must be dict")
-        ed: dict[str, Any] = east_doc
+        ed: dict[str, JsonVal] = east_doc
         kind = ed.get("kind")
         if kind != "Module":
             raise RuntimeError("lang=zig invalid root kind: " + str(kind))
@@ -485,76 +485,20 @@ class ZigNativeEmitter:
         self._uses_pytra_std_sys: bool = False
 
     def _make_stmt_renderer(self) -> _ZigStmtCommonRenderer:
-        renderer = _ZigStmtCommonRenderer(self)
+        renderer_owner = self._renderer_owner_value()
+        renderer = _new_zig_stmt_common_renderer(renderer_owner)
         renderer.state.lines = self.lines
         renderer.state.indent_level = self.indent
         renderer.state.tmp_counter = self.tmp_seq
         renderer._tmp_counter = self.tmp_seq
         return renderer
 
+    def _renderer_owner_value(self) -> "ZigNativeEmitter":
+        return self
+
     def _sync_from_stmt_renderer(self, renderer: _ZigStmtCommonRenderer) -> None:
         self.indent = renderer.state.indent_level
         self.tmp_seq = renderer.state.tmp_counter
-
-    def _run_stmt_renderer(self, method_name: str, *args: Any) -> _ZigStmtCommonRenderer:
-        renderer = self._make_stmt_renderer()
-        if method_name == "emit_raise_stmt":
-            renderer.emit_raise_stmt(args[0])
-        elif method_name == "emit_try_stmt":
-            renderer.emit_try_stmt(args[0])
-        else:
-            raise RuntimeError("unsupported Zig statement renderer: " + method_name)
-        self._sync_from_stmt_renderer(renderer)
-        return renderer
-
-    def _call_stmt_renderer(
-        self,
-        renderer: _ZigStmtCommonRenderer,
-        method_name: str,
-        *args: Any,
-    ) -> Any:
-        renderer.state.indent_level = self.indent
-        out: Any = None
-        if method_name == "emit_try_body_post_stmt":
-            renderer.emit_try_body_post_stmt(args[0], args[1])
-        elif method_name == "emit_bare_raise_restore":
-            renderer.emit_bare_raise_restore()
-        elif method_name == "emit_raise_propagation":
-            renderer.emit_raise_propagation(args[0], args[1])
-        elif method_name == "emit_raise_exception_state":
-            renderer.emit_raise_exception_state(args[0], args[1], args[2])
-        elif method_name == "emit_with_context_bind":
-            renderer.emit_with_context_bind(args[0], args[1], args[2], args[3])
-        elif method_name == "emit_with_enter_binding":
-            renderer.emit_with_enter_binding(args[0], args[1], args[2], args[3], bind_ref=bool(args[4]) if len(args) > 4 else False)
-        elif method_name == "emit_with_fallback_enter":
-            renderer.emit_with_fallback_enter(args[0], args[1])
-        elif method_name == "emit_with_close_fallback":
-            renderer.emit_with_close_fallback(args[0], args[1])
-        elif method_name == "emit_with_fallback_exit":
-            renderer.emit_with_fallback_exit(args[0], args[1])
-        else:
-            raise RuntimeError("unsupported Zig statement renderer: " + method_name)
-        self._sync_from_stmt_renderer(renderer)
-        return out
-
-    def _emit_try_body_with_renderer(
-        self,
-        renderer: _ZigStmtCommonRenderer,
-        try_label: str,
-        body: list[dict[str, Any]],
-    ) -> None:
-        self._emit_line(renderer.render_try_body_open(try_label))
-        self.indent += 1
-        self._try_depth += 1
-        self._try_label_stack.append(try_label)
-        for sub in body:
-            self._emit_stmt(sub)
-            self._call_stmt_renderer(renderer, "emit_try_body_post_stmt", sub, try_label)
-        self._try_label_stack.pop()
-        self._try_depth -= 1
-        self.indent -= 1
-        self._emit_line(renderer.render_try_body_close(try_label))
 
     def _begin_exception_binding(self, safe_name: str, value_expr: str) -> None:
         self._emit_line("const " + safe_name + " = " + value_expr + ";")
@@ -562,7 +506,7 @@ class ZigNativeEmitter:
         self._pending_exception_var_push = True
 
     def _end_pending_exception_binding(self) -> None:
-        if getattr(self, "_pending_exception_var_push", False):
+        if self._pending_exception_var_push:
             self._exception_var_stack.pop()
             self._pending_exception_var_push = False
 
@@ -617,8 +561,15 @@ class ZigNativeEmitter:
         """登録されたタプル typedef をモジュール先頭に出力する。"""
         for norm_type, name in self._tuple_typedefs.items():
             parts = self._split_generic(norm_type[6:-1])
-            inner_types = [self._zig_type(p.strip()) for p in parts]
-            fields = ", ".join("_" + str(i) + ": " + zt for i, zt in enumerate(inner_types))
+            inner_types: list[str] = []
+            for p in parts:
+                inner_types.append(self._zig_type(p.strip()))
+            field_parts: list[str] = []
+            index = 0
+            while index < len(inner_types):
+                field_parts.append("_" + str(index) + ": " + inner_types[index])
+                index += 1
+            fields = ", ".join(field_parts)
             self._emit_line("const " + name + " = struct { " + fields + " };")
 
     def _current_type_map(self) -> dict[str, str]:
@@ -633,27 +584,32 @@ class ZigNativeEmitter:
 
     def _current_ref_vars(self) -> set[str]:
         if len(self._ref_var_stack) == 0:
-            return set()
+            empty: set[str] = set()
+            return empty
         return self._ref_var_stack[-1]
 
     def _current_local_vars(self) -> set[str]:
         if len(self._local_var_stack) == 0:
-            return set()
+            empty: set[str] = set()
+            return empty
         return self._local_var_stack[-1]
 
     def _current_mutated_vars(self) -> set[str]:
         if len(self._mutated_var_stack) == 0:
-            return set()
+            empty: set[str] = set()
+            return empty
         return self._mutated_var_stack[-1]
 
     def _current_lambda_locals(self) -> set[str]:
         if len(self._lambda_local_stack) == 0:
-            return set()
+            empty: set[str] = set()
+            return empty
         return self._lambda_local_stack[-1]
 
     def _current_exception_vars(self) -> set[str]:
         if len(self._exception_var_stack) == 0:
-            return set()
+            empty: set[str] = set()
+            return empty
         return self._exception_var_stack[-1]
 
     def _scan_mutated_vars(self, body_any: Any) -> set[str]:
@@ -719,25 +675,41 @@ class ZigNativeEmitter:
         for stmt in body:
             kind = stmt.get("kind")
             if kind in {"AnnAssign", "Assign"}:
-                target = stmt.get("target")
-                if not isinstance(target, dict):
+                target_any = stmt.get("target")
+                target_node: dict[str, Any] = {}
+                has_target = False
+                if isinstance(target_any, dict):
+                    target_node = target_any
+                    has_target = True
+                else:
                     targets = stmt.get("targets")
                     if isinstance(targets, list) and len(targets) > 0 and isinstance(targets[0], dict):
-                        target = targets[0]
-                if isinstance(target, dict) and target.get("kind") == "Name":
-                    declared.add(_safe_ident(target.get("id"), ""))
+                        first_target = targets[0]
+                        if isinstance(first_target, dict):
+                            target_node = first_target
+                            has_target = True
+                if has_target and target_node.get("kind") == "Name":
+                    declared.add(_safe_ident(target_node.get("id"), ""))
         # 同一スコープ内の Assign 重複（2回目は再代入）+ ネスト内の再代入を検出
         assign_seen: set[str] = set()
         for stmt in body:
             kind = stmt.get("kind")
             if kind in {"Assign", "AnnAssign"}:
-                target = stmt.get("target")
-                if not isinstance(target, dict):
+                target_any = stmt.get("target")
+                target_node: dict[str, Any] = {}
+                has_target = False
+                if isinstance(target_any, dict):
+                    target_node = target_any
+                    has_target = True
+                else:
                     targets = stmt.get("targets")
                     if isinstance(targets, list) and len(targets) > 0 and isinstance(targets[0], dict):
-                        target = targets[0]
-                if isinstance(target, dict) and target.get("kind") == "Name":
-                    n = _safe_ident(target.get("id"), "")
+                        first_target = targets[0]
+                        if isinstance(first_target, dict):
+                            target_node = first_target
+                            has_target = True
+                if has_target and target_node.get("kind") == "Name":
+                    n = _safe_ident(target_node.get("id"), "")
                     if n in assign_seen:
                         mutated.add(n)
                     assign_seen.add(n)
@@ -764,13 +736,13 @@ class ZigNativeEmitter:
                 mutated.add(name)
         return mutated
 
-    def _collect_assigned_name_counts(self, node: Any) -> dict[str, int]:
+    def _collect_assigned_name_counts(self, node: JsonVal) -> dict[str, int]:
         counts: dict[str, int] = {}
 
         def add(name: str) -> None:
             counts[name] = counts.get(name, 0) + 1
 
-        def walk(cur: Any) -> None:
+        def walk(cur: JsonVal) -> None:
             if isinstance(cur, list):
                 for item in cur:
                     walk(item)
@@ -790,15 +762,18 @@ class ZigNativeEmitter:
                 if isinstance(target, dict) and target.get("kind") == "Name":
                     add(_safe_ident(target.get("id"), ""))
             if kind == "With":
-                var_name = cur.get("var_name")
-                if isinstance(var_name, str) and var_name != "":
-                    add(_safe_ident(var_name, "ctx"))
+                var_name_any = cur.get("var_name")
+                if isinstance(var_name_any, str):
+                    var_name: str = var_name_any
+                    if var_name != "":
+                        add(_safe_ident(var_name, "ctx"))
             for key, value in cur.items():
                 if key in {"repr", "source_span", "resolved_type", "semantic_tag",
                            "runtime_call", "resolved_runtime_call", "runtime_module_id",
                            "runtime_symbol", "escape_summary", "type_expr_summary_v1"}:
                     continue
-                walk(value)
+                if isinstance(value, (dict, list)):
+                    walk(value)
 
         walk(node)
         return counts
@@ -925,7 +900,12 @@ class ZigNativeEmitter:
             if stmt.get("kind") == "If":
                 test = stmt.get("test")
                 if isinstance(test, dict):
-                    if test.get("kind") == "Constant" and test.get("value") is False:
+                    test_kind = test.get("kind")
+                    test_value = test.get("value")
+                    is_false_const = False
+                    if test_kind == "Constant" and isinstance(test_value, bool):
+                        is_false_const = not test_value
+                    if is_false_const:
                         # Dead branch: skip body, include only orelse
                         orelse = stmt.get("orelse")
                         if isinstance(orelse, list):
@@ -2123,8 +2103,11 @@ class ZigNativeEmitter:
         return_stmt = self._exception_return_stmt()
         exc_any = stmt.get("exc")
         if exc_any is None:
-            self._call_stmt_renderer(renderer, "emit_bare_raise_restore")
-            self._call_stmt_renderer(renderer, "emit_raise_propagation", try_label, return_stmt)
+            renderer.state.indent_level = self.indent
+            renderer.emit_bare_raise_restore()
+            renderer.state.indent_level = self.indent
+            renderer.emit_raise_propagation(try_label, return_stmt)
+            self._sync_from_stmt_renderer(renderer)
             return
         if isinstance(exc_any, dict) and exc_any.get("kind") == "Call":
             fn_any = exc_any.get("func")
@@ -2140,26 +2123,21 @@ class ZigNativeEmitter:
                         exc_msg_expr = "pytra.to_str(" + self._render_expr(args[1]) + ")"
                     else:
                         exc_msg_expr = "pytra.to_str(" + self._render_expr(args[0]) + ")"
-                self._call_stmt_renderer(
-                    renderer,
-                    "emit_raise_exception_state",
-                    _zig_string(fn_name),
-                    exc_msg_expr,
-                    exc_line_expr,
-                )
-                self._call_stmt_renderer(renderer, "emit_raise_propagation", try_label, return_stmt)
+                renderer.state.indent_level = self.indent
+                renderer.emit_raise_exception_state(_zig_string(fn_name), exc_msg_expr, exc_line_expr)
+                renderer.state.indent_level = self.indent
+                renderer.emit_raise_propagation(try_label, return_stmt)
+                self._sync_from_stmt_renderer(renderer)
                 return
         if isinstance(exc_any, dict):
-            self._call_stmt_renderer(
-                renderer,
-                "emit_raise_exception_state",
-                "\"Exception\"",
-                "pytra.to_str(" + self._render_expr(exc_any) + ")",
-                "0",
-            )
+            renderer.state.indent_level = self.indent
+            renderer.emit_raise_exception_state("\"Exception\"", "pytra.to_str(" + self._render_expr(exc_any) + ")", "0")
         else:
-            self._call_stmt_renderer(renderer, "emit_raise_exception_state", "\"Exception\"", "\"error\"", "0")
-        self._call_stmt_renderer(renderer, "emit_raise_propagation", try_label, return_stmt)
+            renderer.state.indent_level = self.indent
+            renderer.emit_raise_exception_state("\"Exception\"", "\"error\"", "0")
+        renderer.state.indent_level = self.indent
+        renderer.emit_raise_propagation(try_label, return_stmt)
+        self._sync_from_stmt_renderer(renderer)
 
     def _emit_stmt(self, stmt: dict[str, Any]) -> None:
         self._emit_leading_trivia(stmt, prefix="// ")
@@ -2537,10 +2515,12 @@ class ZigNativeEmitter:
                 self._emit_line("_ = " + expr_text + ";")
             return
         if kind == "Raise":
-            self._run_stmt_renderer("emit_raise_stmt", stmt)
+            self._emit_raise_stmt(stmt)
             return
         if kind == "Try":
-            self._run_stmt_renderer("emit_try_stmt", stmt)
+            renderer = self._make_stmt_renderer()
+            renderer.emit_try_stmt(stmt)
+            self._sync_from_stmt_renderer(renderer)
             return
         if kind == "With":
             renderer = self._make_stmt_renderer()
@@ -2561,21 +2541,20 @@ class ZigNativeEmitter:
                     already_declared = len(self._local_var_stack) > 0 and var_name in self._current_local_vars()
                     if enter_type == "TextIOWrapper":
                         if already_declared:
-                            self._call_stmt_renderer(renderer, "emit_with_context_bind", var_name, ctx_name, enter_type, False)
+                            renderer.state.indent_level = self.indent
+                            renderer.emit_with_context_bind(var_name, ctx_name, enter_type, False)
                         else:
-                            self._call_stmt_renderer(
-                                renderer,
-                                "emit_with_enter_binding",
+                            renderer.state.indent_level = self.indent
+                            renderer.emit_with_enter_binding(
                                 stmt,
                                 var_name,
                                 enter_type,
                                 {"kind": "Name", "id": ctx_name, "resolved_type": ctx_type},
-                                True,
+                                bind_ref=True,
                             )
                     else:
-                        self._call_stmt_renderer(
-                            renderer,
-                            "emit_with_enter_binding",
+                        renderer.state.indent_level = self.indent
+                        renderer.emit_with_enter_binding(
                             stmt,
                             var_name,
                             enter_type,
@@ -2595,12 +2574,27 @@ class ZigNativeEmitter:
                     if not already_declared and len(self._local_var_stack) > 0:
                         self._current_local_vars().add(var_name)
                 elif enter_type != "TextIOWrapper":
-                    self._call_stmt_renderer(renderer, "emit_with_fallback_enter", ctx_name, enter_type)
-                self._emit_try_body_with_renderer(renderer, with_blk, body)
+                    renderer.state.indent_level = self.indent
+                    renderer.emit_with_fallback_enter(ctx_name, enter_type)
+                self._emit_line(renderer.render_try_body_open(with_blk))
+                self.indent += 1
+                self._try_depth += 1
+                self._try_label_stack.append(with_blk)
+                for sub in body:
+                    self._emit_stmt(sub)
+                    post_stmt = renderer.render_try_body_post_stmt_stmt(sub, with_blk)
+                    if post_stmt != "":
+                        self._emit_line(post_stmt)
+                self._try_label_stack.pop()
+                self._try_depth -= 1
+                self.indent -= 1
+                self._emit_line(renderer.render_try_body_close(with_blk))
                 if enter_type == "TextIOWrapper":
-                    self._call_stmt_renderer(renderer, "emit_with_close_fallback", ctx_name, enter_type)
+                    renderer.state.indent_level = self.indent
+                    renderer.emit_with_close_fallback(ctx_name, enter_type)
                 else:
-                    self._call_stmt_renderer(renderer, "emit_with_fallback_exit", ctx_name, enter_type)
+                    renderer.state.indent_level = self.indent
+                    renderer.emit_with_fallback_exit(ctx_name, enter_type)
             else:
                 renderer.emit_with_stmt(stmt)
             self._sync_from_stmt_renderer(renderer)
@@ -6956,6 +6950,10 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.owner._current_local_vars().add(enter_name)
         self.owner._emit_line("var " + enter_name + ": " + self.owner._zig_type(enter_type) + " = undefined;")
         self.state.indent_level = self.owner.indent
+
+
+def _new_zig_stmt_common_renderer(owner: ZigNativeEmitter) -> _ZigStmtCommonRenderer:
+    return _ZigStmtCommonRenderer(owner)
 
 
 
