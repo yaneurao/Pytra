@@ -62,6 +62,7 @@ C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を ruby に変換
    - 進捗: 2026-04-29 に実行し、C++ 出力は途中まで進むが完走せず。`timeout 3600s python3 src/pytra-cli.py -build src/toolchain/emit/ruby/cli.py --target cpp -o work/selfhost/emit/ruby/` は終了コード 124。停止時点で `work/selfhost/emit/ruby/` は 36 ファイルの部分出力（うち C++ 14 件）に留まり、selfhost emitter のエントリ一式生成まで到達しない。
    - 完了: 2026-05-01 に CLI の runtime path / bucket list / argv slice と emitter の runtime mapping path を selfhost 安全な形に修正。`rm -rf work/selfhost/emit/ruby && timeout 3600s python3 src/pytra-cli.py -build src/toolchain/emit/ruby/cli.py --target cpp -o work/selfhost/emit/ruby/` が 40 files 出力で PASS。
 2. [ ] [ID: P1-EMITTER-SELFHOST-RUBY-S2] 生成された C++ を `g++ -std=c++20 -O0` でコンパイルを通す（source 側の型注釈不整合を修正）
+   - 進捗: 2026-05-01 に g++ compile へ到達。`str.lstrip(chars)` / `str.isupper()` / `rsplit` / `all(...)` を source 側 helper と明示ループへ置換し、先頭エラー群を削減。現在の先頭ブロッカーは `_safe_ruby_ident(...)` 戻り値まわりで C++ 生成が `str.unbox<str>()` を出す箇所と、`builtin_args_strs` などの `list[str]` 推論が `list[object]` へ崩れる箇所。
 3. [ ] [ID: P1-EMITTER-SELFHOST-RUBY-S3] コンパイル済み emitter で既存 fixture の manifest を処理し、Python 版 emitter と parity 一致を確認する
 
 
