@@ -192,7 +192,7 @@ def _selfhost_cpp_signature_type(resolved_type: str) -> str:
             return "Object<dict<" + _selfhost_cpp_signature_type(parts[0]) + ", " + _selfhost_cpp_signature_type(parts[1]) + ">>"
     if resolved_type.startswith("tuple[") and resolved_type.endswith("]"):
         inner = resolved_type[6:-1]
-        parts = split_generic_types(inner)
+        parts: list[str] = split_generic_types(inner)
         if len(parts) > 0:
             rendered: list[str] = []
             for part in parts:
@@ -584,6 +584,38 @@ class _CppExprCommonRenderer:
         node_arg = node
         return _emit_expr_extension(self.ctx, node_arg)
 
+    def _boundary_target_name(self, node: JsonVal) -> str:
+        node_obj = json.JsonValue(node).as_obj()
+        if node_obj is None:
+            return ""
+        node_raw = node_obj.raw
+        kind = _str(node_raw, "kind")
+        if kind == "Unbox":
+            target = _str(node_raw, "target")
+            if target != "":
+                return target
+        return _str(node_raw, "resolved_type")
+
+    def normalize_boundary_expr(self, node: JsonVal) -> JsonVal:
+        current = node
+        current_obj = json.JsonValue(current).as_obj()
+        while current_obj is not None:
+            current_raw = current_obj.raw
+            kind = _str(current_raw, "kind")
+            if kind not in ("Box", "Unbox"):
+                return current
+            inner = current_raw.get("value")
+            inner_obj = json.JsonValue(inner).as_obj()
+            if inner_obj is None or _str(inner_obj.raw, "kind") != kind:
+                return current
+            outer_target = self._boundary_target_name(current)
+            inner_target = self._boundary_target_name(inner)
+            if outer_target == "" or outer_target != inner_target:
+                return current
+            current = inner
+            current_obj = json.JsonValue(current).as_obj()
+        return current
+
 
 
 # ---------------------------------------------------------------------------
@@ -613,6 +645,11 @@ def _bool(node: dict[str, JsonVal], key: str) -> bool:
 
 def _get(node: dict[str, JsonVal], key: str) -> JsonVal:
     return node.get(key)
+
+
+def _json_obj_value(node: dict[str, JsonVal]) -> JsonVal:
+    return node
+
 
 def _json_str_value(value: JsonVal) -> str:
     raw = json.JsonValue(value).as_str()
@@ -686,6 +723,10 @@ def _safe_cpp_ident(name: str) -> str:
     if name in _CPP_RESERVED_KEYWORDS:
         return name + "_"
     return name
+
+
+def _str_eq(left: str, right: str) -> bool:
+    return left == right
 
 
 def _lookup_explicit_runtime_symbol_mapping(
@@ -919,7 +960,7 @@ def _prefer_value_container_local(ctx: CppEmitContext, name: str, resolved_type:
 
 
 def _register_local_storage(ctx: CppEmitContext, name: str, resolved_type: str) -> None:
-    normalized_type = normalize_cpp_nominal_adt_type(resolved_type)
+    normalized_type: str = normalize_cpp_nominal_adt_type(resolved_type)
     ctx.var_types[name] = normalized_type if normalized_type != "" else resolved_type
     if _prefer_value_container_local(ctx, name, resolved_type):
         ctx.value_container_vars.add(name)
@@ -966,6 +1007,12 @@ def _uses_ref_container_storage(ctx: CppEmitContext, node: JsonVal) -> bool:
     if kind == "Attribute":
         return True
     return True
+
+
+def _uses_ref_container_storage_opt(ctx: CppEmitContext, node: JsonVal | None) -> bool:
+    if node is None:
+        return False
+    return _uses_ref_container_storage(ctx, node)
 
 
 def _wrap_container_value_expr(resolved_type: str, value_expr: str) -> str:
@@ -1030,7 +1077,7 @@ def _wrap_jsonval_node_expr(ctx: CppEmitContext, target_type: str, value_expr: s
     value_obj = json.JsonValue(value_node).as_obj()
     if value_obj is not None:
         source_raw_type = _effective_resolved_type(value_obj.raw)
-        source_type = normalize_cpp_nominal_adt_type(source_raw_type)
+        source_type: str = normalize_cpp_nominal_adt_type(source_raw_type)
         if source_type in ctx.class_names:
             return "JsonVal((" + value_expr + ").to_jv())"
     for class_name in ctx.class_names:
@@ -1056,7 +1103,8 @@ def _wrap_expr_for_target_type(ctx: CppEmitContext, target_type: str, value_expr
         if optional_inner not in ("", "unknown") and value_expr.startswith("py_dict_get("):
             # Only for the 2-arg version (no default); 3-arg keeps py_dict_get.
             inner = value_expr[len("py_dict_get("):-1]
-            if len(cpp_split_generic_args(inner)) == 2:
+            parts: list[str] = cpp_split_generic_args(inner)
+            if len(parts) == 2:
                 return "py_dict_get_opt(" + inner + ")"
         return value_expr
     value_obj = json.JsonValue(value_node).as_obj()
@@ -1067,7 +1115,7 @@ def _wrap_expr_for_target_type(ctx: CppEmitContext, target_type: str, value_expr
             boxed_inner = value_node_dict.get("value")
             inner_obj = json.JsonValue(boxed_inner).as_obj()
             if inner_obj is not None:
-                inner_node: JsonVal = inner_obj.raw
+                inner_node: JsonVal = boxed_inner
                 target_type_arg = target_type + ""
                 return _emit_expr_as_type(ctx, inner_node, target_type_arg)
         if value_kind == "Dict":
@@ -1122,43 +1170,45 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
         return _emit_expr(ctx, node)
     node_dict = node_obj.raw
     if target_type == "JsonVal":
-        value_expr = _emit_expr(ctx, node_dict)
-        wrapped = _wrap_jsonval_node_expr(ctx, target_type, value_expr, node_dict)
+        node_json: JsonVal = node
+        value_expr = _emit_expr(ctx, node_json)
+        wrapped = _wrap_jsonval_node_expr(ctx, target_type, value_expr, node_json)
         if wrapped != value_expr:
             return wrapped
-    node = _normalize_cpp_boundary_expr(ctx, node_dict)
+    node = _normalize_cpp_boundary_expr(ctx, node)
     node_obj = json.JsonValue(node).as_obj()
     if node_obj is None:
         return _emit_expr(ctx, node)
-    node = node_obj.raw
-    node_kind = _str(node, "kind")
+    node_json: JsonVal = node
+    node_dict = node_obj.raw
+    node_kind = _str(node_dict, "kind")
     if node_kind == "Box" and target_type not in ("Any", "Obj", "object"):
-        inner = node.get("value")
+        inner = node_dict.get("value")
         inner_obj = json.JsonValue(inner).as_obj()
         if inner_obj is not None:
-            inner_node: JsonVal = inner_obj.raw
+            inner_node: JsonVal = inner
             target_type_arg = target_type + ""
             return _emit_expr_as_type(ctx, inner_node, target_type_arg)
     if node_kind == "Unbox" and target_type not in ("Any", "Obj", "object"):
-        inner = node.get("value")
+        inner = node_dict.get("value")
         inner_obj = json.JsonValue(inner).as_obj()
         if inner_obj is not None and _str(inner_obj.raw, "kind") == "Box":
             boxed_value = inner_obj.raw.get("value")
             boxed_value_obj = json.JsonValue(boxed_value).as_obj()
             if boxed_value_obj is not None:
-                boxed_node: JsonVal = boxed_value_obj.raw
+                boxed_node: JsonVal = boxed_value
                 target_type_arg = target_type + ""
                 return _emit_expr_as_type(ctx, boxed_node, target_type_arg)
-    storage_type = _expr_storage_type(ctx, node)
+    storage_type = _expr_storage_type(ctx, node_json)
     if storage_type == target_type:
-        kind = _str(node, "kind")
+        kind = _str(node_dict, "kind")
         if kind in ("Name", "NameTarget"):
-            name = _str(node, "id")
+            name = _str(node_dict, "id")
             if name in ("self", "this") and target_type == ctx.current_class and ctx.current_class != "":
                 return "(*this)"
-            return _emit_name_storage(node)
-        return _emit_expr(ctx, node)
-    node_type = _effective_resolved_type(node)
+            return _emit_name_storage(node_dict)
+        return _emit_expr(ctx, node_json)
+    node_type = _effective_resolved_type(node_json)
     union_storage_type = _expanded_union_type(storage_type)
     if _optional_inner_type(target_type) != "" and node_type == "None":
         return "::std::nullopt"
@@ -1168,7 +1218,7 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
         inner_cpp: str = cpp_signature_type(inner_type)
         target_cpp: str = cpp_signature_type(target_type)
         if node_kind == "Unbox":
-            boxed_value = node.get("value")
+            boxed_value = node_dict.get("value")
             boxed_storage = _expr_storage_type(ctx, boxed_value)
             boxed_inner = _optional_inner_type(boxed_storage)
             boxed_value_obj = json.JsonValue(boxed_value).as_obj()
@@ -1190,16 +1240,16 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
                     + inner_cpp
                     + "(*(__pytra_opt))); return ::std::nullopt; })()"
                 )
-        expr: str = _emit_expr(ctx, node)
+        expr: str = _emit_expr(ctx, node_json)
         storage_cpp: str = cpp_signature_type(storage_type) if storage_type not in ("", "unknown") else ""
         if storage_cpp.startswith("::std::optional<::std::variant<") and inner_type in ("str", "int64", "float64", "bool"):
             return target_cpp + "(::std::get<" + inner_cpp + ">(*(" + expr + ")))"
         if storage_cpp.startswith("::std::variant<") and inner_type in ("str", "int64", "float64", "bool"):
             return target_cpp + "(::std::get<" + inner_cpp + ">(" + expr + "))"
         if node_type == optional_inner or node_type == inner_type:
-            return target_cpp + "(" + _emit_expr_as_type(ctx, node, inner_type) + ")"
+            return target_cpp + "(" + _emit_expr_as_type(ctx, node_json, inner_type) + ")"
     if target_type not in ("", "unknown") and node_type == target_type:
-        expr = _emit_expr(ctx, node)
+        expr = _emit_expr(ctx, node_json)
         if _optional_inner_type(union_storage_type) == target_type:
             return "(*(" + expr + "))"
         if _has_variant_storage(storage_type):
@@ -1207,22 +1257,22 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
             if lane_expr != expr:
                 return lane_expr
     if _is_top_level_union_type(target_type):
-        if _str(node, "kind") == "Dict":
+        if _str(node_dict, "kind") == "Dict":
             dict_lane_target = "dict"
             lane = _select_union_lane(target_type, dict_lane_target)
             if lane != "":
-                return cpp_signature_type(target_type) + "(" + _emit_dict_literal_for_target_type(ctx, node, lane) + ")"
-        if _str(node, "kind") == "List":
+                return cpp_signature_type(target_type) + "(" + _emit_dict_literal_for_target_type(ctx, node_dict, lane) + ")"
+        if _str(node_dict, "kind") == "List":
             list_lane_target = "list"
             lane = _select_union_lane(target_type, list_lane_target)
             if lane != "":
-                return cpp_signature_type(target_type) + "(" + _emit_list_literal_for_target_type(ctx, node, lane) + ")"
-        if _str(node, "kind") == "Set":
+                return cpp_signature_type(target_type) + "(" + _emit_list_literal_for_target_type(ctx, node_dict, lane) + ")"
+        if _str(node_dict, "kind") == "Set":
             set_lane_target = "set"
             lane = _select_union_lane(target_type, set_lane_target)
             if lane != "":
-                return cpp_signature_type(target_type) + "(" + _emit_set_literal_for_target_type(ctx, node, lane) + ")"
-        expr = _emit_expr(ctx, node)
+                return cpp_signature_type(target_type) + "(" + _emit_set_literal_for_target_type(ctx, node_dict, lane) + ")"
+        expr = _emit_expr(ctx, node_json)
         direct_source_type = ""
         storage_optional_inner = _optional_inner_type(storage_type)
         if (
@@ -1233,7 +1283,7 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
         ):
             direct_source_type = _expanded_union_type(storage_type)
         elif storage_optional_inner == "":
-            static_value_type = _expr_static_type(ctx, node)
+            static_value_type = _expr_static_type(ctx, node_json)
             static_union_type = _expanded_union_type(static_value_type)
             if (
                 static_union_type not in ("", "unknown")
@@ -1250,8 +1300,8 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
                 norm_lane: str = normalize_cpp_container_alias(lane_copy) + ""
                 norm_direct_check = norm_direct + ""
                 if is_container_resolved_type(norm_direct_check) and norm_direct == norm_lane:
-                    return cpp_signature_type(target_type) + "(" + _emit_union_member_value_expr(ctx, node, lane) + ")"
-                return cpp_signature_type(target_type) + "(" + _emit_expr_as_type(ctx, node, direct_source_type) + ")"
+                    return cpp_signature_type(target_type) + "(" + _emit_union_member_value_expr(ctx, node_json, lane) + ")"
+                return cpp_signature_type(target_type) + "(" + _emit_expr_as_type(ctx, node_json, direct_source_type) + ")"
         if node_type == target_type:
             if _has_variant_storage(storage_type):
                 return expr
@@ -1273,7 +1323,7 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
             norm_lane_check = norm_lane + ""
             if is_container_resolved_type(norm_node_type_check) and is_container_resolved_type(norm_lane_check):
                 if norm_node_type == norm_lane:
-                    return cpp_signature_type(target_type) + "(" + _emit_union_member_value_expr(ctx, node, lane) + ")"
+                    return cpp_signature_type(target_type) + "(" + _emit_union_member_value_expr(ctx, node_json, lane) + ")"
                 return cpp_signature_type(target_type) + "(" + _emit_covariant_copy_expr(
                     ctx,
                     source_expr=expr,
@@ -1285,15 +1335,15 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
         return cpp_signature_type(target_type) + "(" + expr + ")"
     target_type_check = target_type + ""
     if is_container_resolved_type(target_type_check):
-        node_kind_for_container = _str(node, "kind")
+        node_kind_for_container = _str(node_dict, "kind")
         if node_kind_for_container == "List":
-            return _emit_list_literal_for_target_type(ctx, node, target_type)
+            return _emit_list_literal_for_target_type(ctx, node_dict, target_type)
         if node_kind_for_container == "Dict":
-            return _emit_dict_literal_for_target_type(ctx, node, target_type)
+            return _emit_dict_literal_for_target_type(ctx, node_dict, target_type)
         if node_kind_for_container == "Set":
-            return _emit_set_literal_for_target_type(ctx, node, target_type)
-        expr = _emit_expr(ctx, node)
-        source_type = _expr_storage_type(ctx, node)
+            return _emit_set_literal_for_target_type(ctx, node_dict, target_type)
+        expr = _emit_expr(ctx, node_json)
+        source_type = _expr_storage_type(ctx, node_json)
         if source_type in ("", "unknown"):
             source_type = node_type
         target_type_copy = target_type + ""
@@ -1319,32 +1369,31 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
                 target_type=norm_target_type,
             )
     if target_type in ("Any", "Obj", "object"):
-        widened_container_type = _object_box_container_target(_effective_resolved_type(node))
+        widened_container_type = _object_box_container_target(_effective_resolved_type(node_json))
         if widened_container_type != "":
-            kind = _str(node, "kind")
+            kind = _str(node_dict, "kind")
             if kind == "Dict":
-                return "object(" + _emit_dict_literal_for_target_type(ctx, node, widened_container_type) + ")"
+                return "object(" + _emit_dict_literal_for_target_type(ctx, node_dict, widened_container_type) + ")"
             if kind == "List":
-                return "object(" + _emit_list_literal_for_target_type(ctx, node, widened_container_type) + ")"
+                return "object(" + _emit_list_literal_for_target_type(ctx, node_dict, widened_container_type) + ")"
             if kind == "Set":
-                return "object(" + _emit_set_literal_for_target_type(ctx, node, widened_container_type) + ")"
+                return "object(" + _emit_set_literal_for_target_type(ctx, node_dict, widened_container_type) + ")"
         boxed: dict[str, JsonVal] = {}
         boxed["kind"] = "Box"
         boxed["resolved_type"] = target_type
-        boxed["value"] = node
-        boxed_node: JsonVal = boxed
-        return _emit_expr(ctx, boxed_node)
+        boxed["value"] = node_json
+        return _emit_box(ctx, boxed)
     if target_type in ("Callable", "callable"):
-        kind = _str(node, "kind")
+        kind = _str(node_dict, "kind")
         if kind == "Lambda":
-            return _emit_expr(ctx, node)
+            return _emit_expr(ctx, node_json)
         if kind in ("Name", "Attribute"):
-            callable_name = _emit_expr(ctx, node)
-            static_type = _expr_static_type(ctx, node)
+            callable_name = _emit_expr(ctx, node_json)
+            static_type = _expr_static_type(ctx, node_json)
             if static_type not in ("", "unknown", "Callable", "callable"):
                 return callable_name
             return "([&](object) -> object { " + callable_name + "(); return object(); })"
-    return _emit_expr(ctx, node)
+    return _emit_expr(ctx, node_json)
 
 
 def _emit_dict_literal_for_target_type(
@@ -1773,9 +1822,9 @@ def _resolve_runtime_attr_symbol(
         resolved: str = resolve_runtime_symbol_name(
             symbol_name,
             ctx.mapping,
-            module_id=runtime_module_id,
-            resolved_runtime_call=resolved_runtime_call,
-            runtime_call=runtime_call,
+            runtime_module_id,
+            resolved_runtime_call,
+            runtime_call,
         )
         return resolved + ""
     return symbol_name
@@ -1917,7 +1966,7 @@ def _normalize_cpp_boundary_expr(ctx: CppEmitContext, node: JsonVal) -> JsonVal:
         return node
     node_dict = node_obj.raw
     renderer = _CppExprCommonRenderer(ctx)
-    normalized = renderer.normalize_boundary_expr(node_dict)
+    normalized = renderer.normalize_boundary_expr(node)
     return normalized
 
 
@@ -1970,7 +2019,7 @@ def _emit_constant(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     val_int = json.JsonValue(val).as_int()
     if val_int is not None:
         rt = _str(node, "resolved_type")
-        if rt in ("float64", "float32", "float"): return str(float(val_int))
+        if rt in ("float64", "float32", "float"): return str(val_int) + ".0"
         if rt in ("int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"):
             if rt in ("int", "int64"):
                 return str(val_int)
@@ -2194,12 +2243,10 @@ def _emit_compare(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         op_str: str = ""
         if op_value is not None:
             op_str = op_value
-        comp: JsonVal = None
-        if i < len(comparators):
-            comp = comparators[i]
-        if comp is None:
+        if i >= len(comparators):
             _emit_fail(ctx, "invalid_compare", py_repr(node))
             return ""
+        comp: JsonVal = comparators[i]
         right = _emit_expr(ctx, comp)
         prev_type = _expr_static_type(ctx, prev_node)
         comp_type = _expr_static_type(ctx, comp)
@@ -2362,7 +2409,9 @@ def _emit_boolop(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     expr = _emit_expr(ctx, values[0])
     expr_type = _effective_resolved_type(values[0])
     result_type = _str(node, "resolved_type")
-    for value in values[1:]:
+    index = 1
+    while index < len(values):
+        value = values[index]
         right = _emit_expr(ctx, value)
         cond = _emit_condition_code(expr, expr_type)
         if op == "And":
@@ -2373,6 +2422,7 @@ def _emit_boolop(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             expr_type = result_type
         else:
             expr_type = _effective_resolved_type(value)
+        index += 1
     return expr
 
 
@@ -2437,14 +2487,15 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 if static_type not in ("", "unknown") and not _is_top_level_union_type(static_type) and not _needs_object_cast(static_type):
                     direct_source_type = static_type
             if direct_source_type in ("", "list[unknown]") and func_name == "py_assert_eq" and index == 1 and _str(a_dict, "kind") == "List" and len(_list(a_dict, "elements")) == 0:
-                actual_arg = args[0] if len(args) > 0 else None
-                actual_type = _expanded_union_type(_expr_storage_type(ctx, actual_arg))
-                if actual_type in ("", "unknown") or _is_top_level_union_type(actual_type):
-                    actual_type = _expanded_union_type(_expr_static_type(ctx, actual_arg))
-                if actual_type in ("", "unknown") or _is_top_level_union_type(actual_type):
-                    actual_type = _expanded_union_type(_effective_resolved_type(actual_arg))
-                if actual_type.startswith("list["):
-                    direct_source_type = actual_type
+                if len(args) > 0:
+                    actual_arg: JsonVal = args[0]
+                    actual_type = _expanded_union_type(_expr_storage_type(ctx, actual_arg))
+                    if actual_type in ("", "unknown") or _is_top_level_union_type(actual_type):
+                        actual_type = _expanded_union_type(_expr_static_type(ctx, actual_arg))
+                    if actual_type in ("", "unknown") or _is_top_level_union_type(actual_type):
+                        actual_type = _expanded_union_type(_effective_resolved_type(actual_arg))
+                    if actual_type.startswith("list["):
+                        direct_source_type = actual_type
             if direct_source_type != "":
                 lane = _select_union_lane(expected_type, direct_source_type)
                 if lane != "":
@@ -2597,8 +2648,9 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             member_sep = "->" if _uses_ref_container_storage(ctx, owner_node) else "."
             return owner + member_sep + _safe_cpp_ident(attr) + "(" + ", ".join(call_arg_strs) + ")"
         if fk == "Name":
-            fn = _str(func_dict, "id")
-            if fn == "": fn = _str(func_dict, "repr")
+            fn_id = _str(func_dict, "id")
+            fn_repr = _str(func_dict, "repr")
+            fn = fn_id if fn_id != "" else fn_repr
             runtime_call = _str(node, "runtime_call")
             resolved_runtime_call = _str(node, "resolved_runtime_call")
             func_runtime_module_id = _str(func_dict, "runtime_module_id")
@@ -2641,13 +2693,13 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                     return checks[0]
                 return "(" + " || ".join(checks) + ")"
             if fn in ("bytearray", "bytes"):
-                a0: JsonVal = None
-                a0_obj = json.JsonValue(a0).as_obj()
                 if len(args) >= 1:
-                    a0 = args[0]
+                    a0: JsonVal = args[0]
                     a0_obj = json.JsonValue(a0).as_obj()
-                if len(args) >= 1 and a0_obj is not None:
-                    a0_dict = a0_obj.raw
+                else:
+                    a0_obj = None
+                if a0_obj is not None:
+                    a0_dict: dict[str, JsonVal] = a0_obj.raw
                     a0_kind = _str(a0_dict, "kind")
                     a0_rt = _str(a0_dict, "resolved_type")
                     if a0_kind == "List":
@@ -2688,7 +2740,7 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             # Only skip :: for local variables (closures/lambdas) visible in scope.
             safe_fn = _safe_cpp_ident(fn)
             if _type_uses_callable(_optional_inner_type(_expanded_union_type(func_storage_type))):
-                return "(*(" + _emit_name_storage(func) + "))(" + ", ".join(call_arg_strs) + ")"
+                return "(*(" + _emit_name_storage(func_dict) + "))(" + ", ".join(call_arg_strs) + ")"
             if _is_local_visible(ctx, fn):
                 return safe_fn + "(" + ", ".join(call_arg_strs) + ")"
             return "::" + safe_fn + "(" + ", ".join(call_arg_strs) + ")"
@@ -2705,7 +2757,11 @@ def _emit_argparse_add_argument_args(
     args: list[JsonVal],
     keywords: list[JsonVal],
 ) -> list[str]:
-    positional = [_emit_expr_as_type(ctx, arg, "str") for arg in args[:4]]
+    positional: list[str] = []
+    arg_index = 0
+    while arg_index < len(args) and arg_index < 4:
+        positional.append(_emit_expr_as_type(ctx, args[arg_index], "str"))
+        arg_index += 1
     while len(positional) < 4:
         positional.append('str("")')
 
@@ -2771,11 +2827,9 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         elif semantic_tag == "core.set_ctor":
             rc = "set_ctor"
     args = _list(node, "args")
-    a0: JsonVal = None
-    a0_obj = json.JsonValue(a0).as_obj()
     a0_dict: dict[str, JsonVal] = {}
     if len(args) >= 1:
-        a0 = args[0]
+        a0: JsonVal = args[0]
         a0_obj = json.JsonValue(a0).as_obj()
         if a0_obj is not None:
             a0_dict = a0_obj.raw
@@ -3154,10 +3208,11 @@ def _class_var_spec(ctx: CppEmitContext, node: JsonVal) -> dict[str, JsonVal] | 
     if owner_id == "" or attr == "":
         return None
     for class_owner, class_var_map in ctx.class_vars.items():
-        if class_owner == owner_id:
-            for class_attr, spec in class_var_map.items():
-                if class_attr == attr:
-                    return spec
+        if class_owner == owner_id and attr in class_var_map:
+            spec_value: JsonVal = _get(class_var_map, attr)
+            spec_obj = json.JsonValue(spec_value).as_obj()
+            if spec_obj is not None:
+                return spec_obj.raw
     return None
 
 
@@ -3325,7 +3380,7 @@ def _emit_subscript_store_target(ctx: CppEmitContext, node: dict[str, JsonVal]) 
             return _emit_direct_container_subscript(ctx, value, value_node, direct_idx)
         return "py_list_at_ref(" + value + ", " + idx + ")"
     if value_type.startswith("dict["):
-        if _uses_ref_container_storage(ctx, value_node):
+        if _uses_ref_container_storage_opt(ctx, value_node):
             return "(*(" + value + "))[" + idx + "]"
         return "(" + value + ")[" + idx + "]"
     return value + "[" + idx + "]"
@@ -3586,7 +3641,7 @@ def _emit_covariant_copy(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             val_node["kind"] = "Name"
             val_node["id"] = val_name
             val_node["resolved_type"] = source_elem_type if source_elem_type != "" else target_elem_type
-            val_json: JsonVal = val_node
+            val_json: JsonVal = _json_obj_value(val_node)
             push_expr = _emit_expr_as_type(
                 ctx,
                 val_json,
@@ -3603,7 +3658,7 @@ def _emit_covariant_copy(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             key_node["kind"] = "Name"
             key_node["id"] = key_name
             key_node["resolved_type"] = source_key_type if source_key_type != "" else target_key_type
-            key_json: JsonVal = key_node
+            key_json: JsonVal = _json_obj_value(key_node)
             key_expr = _emit_expr_as_type(
                 ctx,
                 key_json,
@@ -3659,7 +3714,7 @@ def _emit_covariant_copy_expr(
             val_node["kind"] = "Name"
             val_node["id"] = val_name
             val_node["resolved_type"] = source_elem_type if source_elem_type != "" else target_elem_type
-            val_json: JsonVal = val_node
+            val_json: JsonVal = _json_obj_value(val_node)
             push_expr = _emit_expr_as_type(
                 ctx,
                 val_json,
@@ -3674,7 +3729,7 @@ def _emit_covariant_copy_expr(
             key_node["kind"] = "Name"
             key_node["id"] = key_name
             key_node["resolved_type"] = source_key_type if source_key_type != "" else target_key_type
-            key_json: JsonVal = key_node
+            key_json: JsonVal = _json_obj_value(key_node)
             key_expr = _emit_expr_as_type(
                 ctx,
                 key_json,
@@ -3723,7 +3778,7 @@ def _emit_unbox(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         boxed_value = value_dict.get("value")
         boxed_value_obj = json.JsonValue(boxed_value).as_obj()
         if boxed_value_obj is not None:
-            boxed_node: JsonVal = boxed_value_obj.raw
+            boxed_node: JsonVal = boxed_value
             return _emit_expr_as_type(ctx, boxed_node, target)
     if value_obj is not None and _str(value_dict, "kind") == "Name":
         value_expr = _emit_name_storage(value_dict)
@@ -3864,13 +3919,13 @@ def _emit_box(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     target_type = _str(node, "resolved_type")
     if target_type in ("Any", "Obj", "object") and value_obj is not None:
         value_kind = _str(value_dict, "kind")
-        value_type = _effective_resolved_type(value_dict)
+        value_type = _effective_resolved_type(value)
         if value_kind == "Dict" and value_type == "dict[unknown,unknown]" and len(_list(value_dict, "entries")) == 0:
-            return "object(" + _emit_expr(ctx, value_dict) + ")"
+            return "object(" + _emit_expr(ctx, value) + ")"
         if value_kind == "List" and value_type == "list[unknown]" and len(_list(value_dict, "elements")) == 0:
-            return "object(" + _emit_expr(ctx, value_dict) + ")"
+            return "object(" + _emit_expr(ctx, value) + ")"
         if value_kind == "Set" and value_type == "set[unknown]" and len(_list(value_dict, "elements")) == 0:
-            return "object(" + _emit_expr(ctx, value_dict) + ")"
+            return "object(" + _emit_expr(ctx, value) + ")"
     value_expr = _emit_expr(ctx, value)
     value_type = _expanded_union_type(_effective_resolved_type(value))
     if _is_top_level_union_type(value_type):
@@ -3909,7 +3964,7 @@ def _emit_box_known_typed_expr(
     value_expr: str,
     value_type: str,
     *,
-    value_node: JsonVal = None,
+    value_node: JsonVal | None = None,
 ) -> str:
     if value_type in ("", "unknown", "Any", "Obj", "object"):
         return value_expr
@@ -3922,7 +3977,7 @@ def _emit_box_known_typed_expr(
         or value_type.startswith("dict[")
         or value_type.startswith("set[")
     ):
-        if _uses_ref_container_storage(ctx, value_node):
+        if _uses_ref_container_storage_opt(ctx, value_node):
             return "object(" + value_expr + ")"
         value_type_arg = value_type + ""
         cpp_value_type = cpp_signature_type_pref(value_type_arg, True) + ""
@@ -4140,11 +4195,11 @@ def _emit_ifexp(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     if "|" in resolved_type:
         union_cpp: str = cpp_signature_type(resolved_type)
         body = union_cpp + "(" + _emit_expr(ctx, body_node) + ")"
-        orelse = union_cpp + "(" + _emit_expr(ctx, orelse_node) + ")"
-        return "(" + test + " ? " + body + " : " + orelse + ")"
+        else_expr = union_cpp + "(" + _emit_expr(ctx, orelse_node) + ")"
+        return "(" + test + " ? " + body + " : " + else_expr + ")"
     body = _emit_expr(ctx, body_node)
-    orelse = _emit_expr(ctx, orelse_node)
-    return "(" + test + " ? " + body + " : " + orelse + ")"
+    else_expr = _emit_expr(ctx, orelse_node)
+    return "(" + test + " ? " + body + " : " + else_expr + ")"
 
 
 def _emit_fstring(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
@@ -4313,7 +4368,7 @@ def _emit_assign(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     value = node.get("value")
     target_single_obj = json.JsonValue(target_single).as_obj()
     if len(targets) == 0 and target_single_obj is not None:
-        targets = [target_single_obj.raw]
+        targets = [target_single]
     if len(targets) == 0: return
     if _is_python_type_alias_expr(value):
         return
@@ -4366,7 +4421,7 @@ def _emit_assign(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
         if _bool(node, "unused") and _bool(node, "declare"):
             _emit_line(ctx, "(void)" + name + ";")
     elif tk == "Attribute":
-        _emit_line(ctx, _emit_expr(ctx, t) + " = " + _wrap_expr_for_target_type(ctx, _attribute_target_type(ctx, t), val_code, value) + ";")
+        _emit_line(ctx, _emit_expr(ctx, t_value) + " = " + _wrap_expr_for_target_type(ctx, _attribute_target_type(ctx, t_value), val_code, value) + ";")
     elif tk == "Subscript":
         _emit_line(ctx, _emit_subscript_store_target(ctx, t) + " = " + val_code + ";")
     elif tk == "Tuple":
@@ -4667,8 +4722,8 @@ def _emit_class_def(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
         class_vars = ctx.class_vars[name]
     ft = _dict(node, "field_types")
     if len(ft) > 0:
-        for fn, fv in ft.items():
-            fields.append((fn, _json_str_value(fv)))
+        for field_key, field_value in ft.items():
+            fields.append((field_key, _json_str_value(field_value)))
     else:
         for s in body:
             s_obj = json.JsonValue(s).as_obj()
@@ -4724,9 +4779,14 @@ def _emit_class_def(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
         ctx.indent_level += 1
         _emit_line(ctx, "public:")
         ctx.indent_level += 1
-        for fn, ftype in fields:
-            ftype_arg = ftype + ""
-            _emit_line(ctx, cpp_signature_type(ftype_arg) + " " + fn + ";")
+        field_idx = 0
+        while field_idx < len(fields):
+            field = fields[field_idx]
+            field_name: str = field[0]
+            field_type: str = field[1]
+            field_type_arg = field_type + ""
+            _emit_line(ctx, cpp_signature_type(field_type_arg) + " " + field_name + ";")
+            field_idx += 1
         for s in body:
             s_obj = json.JsonValue(s).as_obj()
             if s_obj is None or _str(s_obj.raw, "kind") not in ("FunctionDef", "ClosureDef"):
@@ -4948,15 +5008,16 @@ def _emit_with(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     _emit_line(ctx, "}")
 
 
+def _add_hoisted_name(out: list[tuple[str, str]], seen: set[str], name: str, resolved_type: str) -> None:
+    if name == "" or name in seen:
+        return
+    seen.add(name)
+    out.append((name, resolved_type))
+
+
 def _collect_with_hoisted_names(ctx: CppEmitContext, body: list[JsonVal]) -> list[tuple[str, str]]:
     out: list[tuple[str, str]] = []
     seen: set[str] = set()
-
-    def add_name(name: str, resolved_type: str) -> None:
-        if name == "" or name in seen:
-            return
-        seen.add(name)
-        out.append((name, resolved_type))
 
     def walk(stmts: list[JsonVal]) -> None:
         for raw_stmt in stmts:
@@ -4969,7 +5030,7 @@ def _collect_with_hoisted_names(ctx: CppEmitContext, body: list[JsonVal]) -> lis
                 target = raw_stmt_dict.get("target")
                 target_obj = json.JsonValue(target).as_obj()
                 if target_obj is not None and _str(target_obj.raw, "kind") in ("Name", "NameTarget"):
-                    add_name(_str(target_obj.raw, "id"), _str(raw_stmt_dict, "decl_type"))
+                    _add_hoisted_name(out, seen, _str(target_obj.raw, "id"), _str(raw_stmt_dict, "decl_type"))
             elif kind == "Assign":
                 target = raw_stmt_dict.get("target")
                 target_obj = json.JsonValue(target).as_obj()
@@ -4980,7 +5041,7 @@ def _collect_with_hoisted_names(ctx: CppEmitContext, body: list[JsonVal]) -> lis
                         target = targets[0]
                         target_obj = first_obj
                 if target_obj is not None and _str(target_obj.raw, "kind") in ("Name", "NameTarget"):
-                    add_name(_str(target_obj.raw, "id"), _str(raw_stmt_dict, "decl_type"))
+                    _add_hoisted_name(out, seen, _str(target_obj.raw, "id"), _str(raw_stmt_dict, "decl_type"))
             elif kind in ("If", "While", "With", "Try", "ForCore"):
                 walk(_list(raw_stmt_dict, "body"))
                 walk(_list(raw_stmt_dict, "orelse"))
@@ -4998,12 +5059,6 @@ def _collect_try_hoisted_ann_names(ctx: CppEmitContext, body: list[JsonVal]) -> 
     out: list[tuple[str, str]] = []
     seen: set[str] = set()
 
-    def add_name(name: str, resolved_type: str) -> None:
-        if name == "" or name in seen:
-            return
-        seen.add(name)
-        out.append((name, resolved_type))
-
     def walk(stmts: list[JsonVal]) -> None:
         for raw_stmt in stmts:
             raw_stmt_obj = json.JsonValue(raw_stmt).as_obj()
@@ -5015,7 +5070,7 @@ def _collect_try_hoisted_ann_names(ctx: CppEmitContext, body: list[JsonVal]) -> 
                 target = raw_stmt_dict.get("target")
                 target_obj = json.JsonValue(target).as_obj()
                 if target_obj is not None and _str(target_obj.raw, "kind") in ("Name", "NameTarget"):
-                    add_name(_str(target_obj.raw, "id"), _str(raw_stmt_dict, "decl_type"))
+                    _add_hoisted_name(out, seen, _str(target_obj.raw, "id"), _str(raw_stmt_dict, "decl_type"))
             elif kind in ("If", "While", "With", "Try", "ForCore"):
                 walk(_list(raw_stmt_dict, "body"))
                 walk(_list(raw_stmt_dict, "orelse"))
@@ -5140,7 +5195,7 @@ def _function_signature(
     if owner_name != "":
         self_mutates = (
             _function_self_mutates(node)
-            or _node_mutates_class_storage(ctx, _list(node, "body"), owner_name)
+            or _node_mutates_class_storage(ctx, node.get("body"), owner_name)
         )
     if declaration_only and owner_name != "" and not is_static and not self_mutates:
         suffix = " const"
@@ -5517,7 +5572,7 @@ def _function_self_mutates(node: dict[str, JsonVal]) -> bool:
     arg_usage = _dict(node, "arg_usage")
     if arg_usage.get("self") == "reassigned":
         return True
-    return _node_mutates_self_fields(_list(node, "body"))
+    return _node_mutates_self_fields(node.get("body"))
 
 
 def _collect_function_mutable_param_indexes(node: JsonVal) -> dict[str, set[int]]:
@@ -5906,7 +5961,7 @@ def _emit_cast_expr(ctx: CppEmitContext, target_node: JsonVal, value_node: JsonV
     if (
         value_kind == "Unbox"
         and value_type not in ("", "unknown")
-        and cpp_signature_type(value_type) == cpp_signature_type(target_name)
+        and _str_eq(cpp_signature_type(value_type), cpp_signature_type(target_name))
     ):
         return value_expr
     needs_runtime_cast = (

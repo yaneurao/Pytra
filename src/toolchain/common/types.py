@@ -104,7 +104,7 @@ def expand_known_union_alias(type_name: JsonVal) -> str:
     return _KNOWN_UNION_ALIASES.get(normalized, normalized)
 
 
-def select_union_member_type(union_type: JsonVal, member_type: JsonVal) -> str:
+def select_union_member_type(union_type: str, member_type: str) -> str:
     normalized_member = normalize_known_type_alias(member_type)
     if normalized_member in ("", "unknown"):
         return ""

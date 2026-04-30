@@ -29,6 +29,10 @@ type DirectEmitFn = Callable[[dict[str, JsonVal], Path], int]
 type PostEmitFn = Callable[[Path], None]
 
 
+def _jv_get(node: dict[str, JsonVal], key: str) -> JsonVal:
+    return node.get(key)
+
+
 @dataclass
 class ManifestModuleEntryDraft:
     module_id: str = ""
@@ -39,26 +43,26 @@ class ManifestModuleEntryDraft:
 
     @staticmethod
     def from_jv(entry: dict[str, JsonVal], index: int) -> ManifestModuleEntryDraft:
-        output_raw = json.JsonValue(entry.get("output")).as_str()
+        output_raw = json.JsonValue(_jv_get(entry, "output")).as_str()
         if output_raw is None:
             return ManifestModuleEntryDraft()
         output: str = output_raw
         if output == "":
             return ManifestModuleEntryDraft()
         module_id = ""
-        module_id_raw = json.JsonValue(entry.get("module_id")).as_str()
+        module_id_raw = json.JsonValue(_jv_get(entry, "module_id")).as_str()
         if module_id_raw is not None:
             module_id = module_id_raw
         module_kind = ""
-        module_kind_raw = json.JsonValue(entry.get("module_kind")).as_str()
+        module_kind_raw = json.JsonValue(_jv_get(entry, "module_kind")).as_str()
         if module_kind_raw is not None:
             module_kind = module_kind_raw
         is_entry = False
-        is_entry_raw = json.JsonValue(entry.get("is_entry")).as_bool()
+        is_entry_raw = json.JsonValue(_jv_get(entry, "is_entry")).as_bool()
         if is_entry_raw is not None:
             is_entry = is_entry_raw
         source_path = ""
-        source_path_raw = json.JsonValue(entry.get("source_path")).as_str()
+        source_path_raw = json.JsonValue(_jv_get(entry, "source_path")).as_str()
         if source_path_raw is not None:
             source_path = source_path_raw
         return ManifestModuleEntryDraft(
@@ -70,7 +74,7 @@ class ManifestModuleEntryDraft:
         )
 
     def build_cli_meta(self, east_doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
-        meta_val: JsonVal = east_doc.get("meta")
+        meta_val: JsonVal = _jv_get(east_doc, "meta")
         typed_meta: dict[str, JsonVal] = {}
         meta_obj = json.JsonValue(meta_val).as_obj()
         if meta_obj is not None:
@@ -146,7 +150,7 @@ def _load_linked_modules(manifest_path: Path) -> list[dict[str, JsonVal]]:
     if manifest_obj is None:
         return []
     typed_manifest: dict[str, JsonVal] = manifest_obj.raw
-    modules_raw: JsonVal = typed_manifest.get("modules")
+    modules_raw: JsonVal = _jv_get(typed_manifest, "modules")
     modules_arr = json.JsonValue(modules_raw).as_arr()
     if modules_arr is None:
         return []
@@ -249,11 +253,11 @@ def run_emit_cli(
             code: str = active_emit_fn(east_doc)
             if code.strip() == "":
                 continue
-            meta: JsonVal = east_doc.get("meta")
+            meta: JsonVal = _jv_get(east_doc, "meta")
             module_id: str = ""
             meta_obj = json.JsonValue(meta).as_obj()
             if meta_obj is not None:
-                mid = json.JsonValue(meta_obj.raw.get("_cli_module_id")).as_str()
+                mid = json.JsonValue(_jv_get(meta_obj.raw, "_cli_module_id")).as_str()
                 if mid is not None:
                     module_id = mid
             if module_id == "":

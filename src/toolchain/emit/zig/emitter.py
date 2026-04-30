@@ -738,6 +738,7 @@ class ZigNativeEmitter:
             name for name, mapped in self._runtime_mapping.types.items() if mapped == "pytra.PyObject"
         }
         self._top_level_runtime_inits: list[tuple[str, str]] = []
+        self._uses_pytra_std_sys: bool = False
 
     def _make_stmt_renderer(self) -> _ZigStmtCommonRenderer:
         renderer = _ZigStmtCommonRenderer(self)
@@ -1513,6 +1514,18 @@ class ZigNativeEmitter:
             self._return_type_stack.append("void")
             self.lines.append("pub fn main() void {")
             self.indent += 1
+            self._emit_line("__pytra_init_module();")
+            self._emit_line("if (__pytra_exc_type != null) return;")
+            if self._uses_pytra_std_sys:
+                self._emit_line("const __pytra_process_args = std.process.argsAlloc(std.heap.page_allocator) catch unreachable;")
+                self._emit_line("defer std.process.argsFree(std.heap.page_allocator, __pytra_process_args);")
+                self._emit_line("const __pytra_argv_obj = pytra.make_list([]const u8);")
+                self._emit_line("for (__pytra_process_args) |__pytra_arg| {")
+                self.indent += 1
+                self._emit_line("pytra.list_append(__pytra_argv_obj, []const u8, __pytra_arg);")
+                self.indent -= 1
+                self._emit_line("}")
+                self._emit_line("pytra_std_sys.set_argv(__pytra_argv_obj);")
             for stmt in top_stmts:
                 self._emit_stmt(stmt)
             self.indent -= 1
@@ -1553,13 +1566,11 @@ class ZigNativeEmitter:
         )
 
     def _emit_top_level_runtime_init_func(self) -> None:
-        if len(self._top_level_runtime_inits) == 0:
-            return
         self._emit_line("pub fn __pytra_init_module() void {")
         self.indent += 1
         for name, value in self._top_level_runtime_inits:
             if value == "":
-                self._emit_line("if (@hasDecl(@TypeOf(" + name.split(".", 1)[0] + "), \"__pytra_init_module\")) " + name + ";")
+                self._emit_line("if (@hasDecl(" + name.split(".", 1)[0] + ", \"__pytra_init_module\")) " + name + ";")
                 self._emit_line("if (__pytra_exc_type != null) return;")
                 continue
             self._emit_line(name + " = " + value + ";")
@@ -1851,8 +1862,36 @@ class ZigNativeEmitter:
             line = re.sub(r"pytra\.union_to_int\(pytra\.union_to_int\(([^()]+)\)\)", r"pytra.union_to_int(\1)", line)
             line = re.sub(r"pytra\.union_to_float\(pytra\.union_to_float\(([^()]+)\)\)", r"pytra.union_to_float(\1)", line)
             line = re.sub(r"pytra\.union_as_str\(pytra\.union_as_str\(([^()]+)\)\)", r"pytra.union_as_str(\1)", line)
+            line = re.sub(
+                r"pytra\.union_wrap\((pytra\.dict_get_default\(\*pytra\.UnionVal,\s*[^;]+?pytra\.union_new_none\(\))\)",
+                r"\1",
+                line,
+            )
             line = re.sub(r"(?<![A-Za-z_0-9.])self\(", "self.call(", line)
             line = line.replace("self.call(child, cur_dict, parent)", "self.call(child, pytra.union_wrap(cur_dict), parent)")
+            if "CommonRendererState" in line and "= __call_blk_" in line and "const __call_fn_" in line:
+                line = re.sub(
+                    r"= __call_blk_\d+: \{ const __call_fn_\d+ = CommonRendererState;.*;\s*\};",
+                    "= pytra.make_object(CommonRendererState, CommonRendererState{ .indent_level = 0, .lines = pytra.empty_list(), .tmp_counter = 0 });",
+                    line,
+                )
+            if line.startswith("    pub fn ") and "self: *const _CppStmtCommonRenderer" in line:
+                for method_name in (
+                    "emit_body",
+                    "emit_try_setup",
+                    "emit_try_teardown",
+                    "emit_try_stmt",
+                    "emit_try_handler_body",
+                    "emit_expr_stmt",
+                    "emit_raise_stmt",
+                    "emit_return_stmt",
+                    "emit_assign_stmt",
+                    "emit_stmt",
+                    "emit_stmt_extension",
+                ):
+                    if line.startswith("    pub fn " + method_name + "("):
+                        line = line.replace("self: *const _CppStmtCommonRenderer", "self: *_CppStmtCommonRenderer")
+                        break
             for name in sorted(optional_obj_names):
                 line = line.replace(name + ".raw", name + ".?.raw")
                 line = line.replace(name + ".get_", name + ".?.get_")
@@ -2291,6 +2330,8 @@ class ZigNativeEmitter:
                 self._emit_line("const " + safe_mod + " = @import(\"" + import_path + "\");")
                 emitted.add(safe_mod)
                 self._top_level_runtime_inits.append((safe_mod + ".__pytra_init_module()", ""))
+                if imported_module == "pytra.std.sys" and safe_mod == "pytra_std_sys":
+                    self._uses_pytra_std_sys = True
             if binding_kind == "module" and isinstance(local_name, str) and local_name != "":
                 safe_local = _safe_ident(local_name, "mod")
                 if safe_local != safe_mod and safe_local not in emitted:

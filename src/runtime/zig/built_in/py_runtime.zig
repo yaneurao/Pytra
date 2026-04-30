@@ -954,6 +954,8 @@ pub fn as_dict_typed(comptime V: type, value: anytype) std.StringHashMap(V) {
             out.put(entry.key_ptr.*, union_to_bool(entry.value_ptr.*)) catch {};
         } else if (V == []const u8) {
             out.put(entry.key_ptr.*, union_as_str(entry.value_ptr.*)) catch {};
+        } else if (V == *UnionVal) {
+            out.put(entry.key_ptr.*, entry.value_ptr.*) catch {};
         }
     }
     return out;
@@ -1360,7 +1362,8 @@ pub fn set_discard(obj: Obj, comptime T: type, value: T) void {
     const p: *std.ArrayList(T) = @ptrCast(@alignCast(obj.data));
     var i: usize = 0;
     while (i < p.items.len) : (i += 1) {
-        if (p.items[i] == value) {
+        const matches = if (T == []const u8) std.mem.eql(u8, p.items[i], value) else p.items[i] == value;
+        if (matches) {
             _ = p.orderedRemove(i);
             return;
         }

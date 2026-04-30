@@ -17,6 +17,11 @@ pub const Path = struct {
         return Path{ ._value = pytra.union_as_str(value) };
     }
 
+    pub fn cwd() *Path {
+        const cwd_path = std.fs.cwd().realpathAlloc(std.heap.page_allocator, ".") catch ".";
+        return pytra.make_object(Path, Path.init(cwd_path));
+    }
+
     pub fn __str__(self: *const Path) []const u8 {
         return self._value;
     }
