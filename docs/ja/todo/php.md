@@ -43,11 +43,11 @@
 
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を php に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
-1. [ ] [ID: P1-HOST-CPP-EMITTER-PHP-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target php -o work/selfhost/host-cpp/php/` で変換 + build を通す
+1. [x] [ID: P1-HOST-CPP-EMITTER-PHP-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target php -o work/selfhost/host-cpp/php/` で変換 + build を通す
    - 進捗: 2026-04-30 に `pytra-cli.py -build` の target wiring を修正し、`--target php` が `toolchain.emit.php.cli` へ到達するようにした。`rm -rf work/selfhost/host-cpp/php && timeout 3600s python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target php -o work/selfhost/host-cpp/php/` は変換 PASS（20 files）。
-   - 進捗: 2026-04-30 に `src/toolchain/emit/php/cli.py` へ runtime copy を追加し、`php -l work/selfhost/host-cpp/php/toolchain_emit_cpp_cli.php` は構文 OK。実行は `toolchain_emit_cpp_cli.php` の `run_emit_cli()` 未定義で停止する。通常 module import の `require_once` 生成が先。
+   - 完了: 2026-04-30 に通常 module `require_once`、PHP runtime の Path/JsonValue/set/argv、型 alias skip、default_factory lowering、closure self-capture、module global 参照を補い、`php work/selfhost/host-cpp/php/toolchain_emit_cpp_cli.php work/tmp/build_cli/linked/manifest.json --output-dir work/selfhost/host-cpp/php-run` が exit 0 で 55 C++ files を出力するところまで到達。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-PHP-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_php.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
-   - 進捗: 2026-04-30 時点では S1 が PHP 実行未 PASS のため未実行。emitter host 結果は `.parity-results/emitter_host_php.json` に build_failed として記録済み。
+   - 進捗: 2026-04-30 に PHP hosted C++ emitter は 55 files 出力まで完走。ただし Python C++ emitter baseline との `diff -ru work/selfhost/host-cpp/python-full work/selfhost/host-cpp/php-run` は FAIL。主因は生成 C++ の型文字列劣化（例: `JsonVal`/`list`/`dict`/`Callable` 系の signature が `Js`/`object`/断片的な `Callable[...]` に崩れる）で、`.parity-results/emitter_host_php.json` は blocked として更新済み。
 
 ### P1-EMITTER-SELFHOST-PHP: emit/php/cli.py を単独で selfhost C++ build に通す
 

@@ -29,7 +29,7 @@ _TYPE_MAP: dict[str, str] = {
     "bytearray": "array",
     "list": "array",
     "dict": "array",
-    "set": "array",
+    "set": "__PytraSet",
     "tuple": "array",
     "object": "mixed",
     "Obj": "mixed",
@@ -45,7 +45,7 @@ _TYPE_MAP: dict[str, str] = {
     "TypeError": "\\TypeError",
     "IndexError": "\\OutOfRangeException",
     "KeyError": "\\OutOfRangeException",
-    "Path": "string",
+    "Path": "__PytraPath",
 }
 
 _PHP_KEYWORDS: set[str] = {
@@ -132,9 +132,9 @@ def php_type(resolved_type: str, *, for_return: bool = False) -> str:
     if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
         return "array"
 
-    # set[T] → array
+    # set[T] → __PytraSet
     if resolved_type.startswith("set[") and resolved_type.endswith("]"):
-        return "array"
+        return "__PytraSet"
 
     # tuple[A, B, ...] → array
     if resolved_type.startswith("tuple[") and resolved_type.endswith("]"):

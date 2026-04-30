@@ -26,8 +26,8 @@ _TYPE_ONLY_MODULE_IDS: set[str] = {
     "pytra.std.template",
 }
 
-_TYPE_ONLY_SYMBOL_BINDINGS: set[tuple[str, str]] = {
-    ("pytra.std.json", "JsonVal"),
+_TYPE_ONLY_SYMBOL_BINDINGS: set[str] = {
+    "pytra.std.json::JsonVal",
 }
 
 _DEPENDENCIES_TYPE_ID_RUNTIME_NODE_KINDS: set[str] = {
@@ -63,13 +63,13 @@ def is_type_only_dependency_module_id(module_id: str) -> bool:
     return module_id in _TYPE_ONLY_MODULE_IDS
 
 
-def _is_type_only_symbol_binding(binding: JsonVal) -> bool:
+def _dependencies_is_type_only_symbol_binding(binding: JsonVal) -> bool:
     if not jv_is_dict(binding):
         return False
     binding_node: dict[str, JsonVal] = jv_dict(binding)
     module_id: str = nd_get_str(binding_node, "module_id")
     export_name: str = nd_get_str(binding_node, "export_name")
-    return module_id != "" and export_name != "" and (module_id, export_name) in _TYPE_ONLY_SYMBOL_BINDINGS
+    return module_id != "" and export_name != "" and (module_id + "::" + export_name) in _TYPE_ONLY_SYMBOL_BINDINGS
 
 
 def _dependencies_scan_runtime_refs(node: JsonVal, out: set[str], *, include_type_id_runtime: bool = True) -> None:
@@ -81,7 +81,7 @@ def _dependencies_scan_runtime_refs(node: JsonVal, out: set[str], *, include_typ
         return
 
     node_map: dict[str, JsonVal] = jv_dict(node)
-    runtime_module_id = _normalized_runtime_module_id(node_map)
+    runtime_module_id = _dependencies_normalized_runtime_module_id(node_map)
     if runtime_module_id != "":
         out.add(runtime_module_id)
     kind: str = nd_get_str(node_map, "kind")
@@ -93,7 +93,7 @@ def _dependencies_scan_runtime_refs(node: JsonVal, out: set[str], *, include_typ
             _dependencies_scan_runtime_refs(value, out, include_type_id_runtime=include_type_id_runtime)
 
 
-def _normalized_runtime_module_id(node: JsonVal) -> str:
+def _dependencies_normalized_runtime_module_id(node: JsonVal) -> str:
     if not jv_is_dict(node):
         return ""
     node_map: dict[str, JsonVal] = jv_dict(node)
@@ -111,7 +111,7 @@ def _normalized_runtime_module_id(node: JsonVal) -> str:
 def _binding_dependency_module_id(binding: JsonVal) -> str:
     if not jv_is_dict(binding):
         return ""
-    if _is_type_only_symbol_binding(binding):
+    if _dependencies_is_type_only_symbol_binding(binding):
         return ""
 
     binding_node: dict[str, JsonVal] = jv_dict(binding)

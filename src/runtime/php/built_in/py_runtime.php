@@ -159,6 +159,21 @@ function __pytra_clear(&$v): void {
     }
 }
 
+function __pytra_pop(&$container, $key = null, $default = null) {
+    if (is_array($container)) {
+        if ($key === null) {
+            return array_pop($container);
+        }
+        if (array_key_exists($key, $container)) {
+            $value = $container[$key];
+            unset($container[$key]);
+            return $value;
+        }
+        return $default;
+    }
+    return $default;
+}
+
 function __pytra_setdefault(&$v, $key, $default) {
     if (!is_array($v)) {
         return $default;
@@ -222,7 +237,7 @@ function py_to_string($v, string $type_hint = ""): string {
     return (string)$v;
 }
 
-$GLOBALS['__pytra_argv'] = [];
+$GLOBALS['__pytra_argv'] = isset($argv) && is_array($argv) ? array_values($argv) : [];
 $GLOBALS['__pytra_path'] = [];
 
 function __pytra_set_argv($items): void {
@@ -265,6 +280,10 @@ const __pytra_e = M_E;
 
 class __PytraPath {
     public string $path;
+
+    public static function cwd(): __PytraPath {
+        return new __PytraPath(getcwd() ?: '.');
+    }
 
     public function __construct($raw) {
         $this->path = (string)$raw;
@@ -375,9 +394,72 @@ class __PytraJsonValue {
         $this->raw = $raw;
     }
 
-    public function as_str(): string {
-        return is_string($this->raw) ? $this->raw : py_to_string($this->raw);
+    public function as_str(): ?string {
+        return is_string($this->raw) ? $this->raw : null;
     }
+
+    public function as_int(): ?int {
+        return is_int($this->raw) ? $this->raw : null;
+    }
+
+    public function as_float(): ?float {
+        if (is_float($this->raw) || is_int($this->raw)) {
+            return (float)$this->raw;
+        }
+        return null;
+    }
+
+    public function as_bool(): ?bool {
+        return is_bool($this->raw) ? $this->raw : null;
+    }
+
+    public function as_obj(): ?__PytraJsonValue {
+        if (!is_array($this->raw) || __pytra_array_is_list_like($this->raw)) {
+            return null;
+        }
+        return $this;
+    }
+
+    public function as_arr(): ?__PytraJsonValue {
+        if (!is_array($this->raw) || !__pytra_array_is_list_like($this->raw)) {
+            return null;
+        }
+        return $this;
+    }
+
+    public function get_str($key): ?string {
+        if (!is_array($this->raw) || !array_key_exists($key, $this->raw)) {
+            return null;
+        }
+        $value = $this->raw[$key];
+        return is_string($value) ? $value : null;
+    }
+
+    public function get_int($key): ?int {
+        if (!is_array($this->raw) || !array_key_exists($key, $this->raw)) {
+            return null;
+        }
+        $value = $this->raw[$key];
+        return is_int($value) ? $value : null;
+    }
+
+    public function get_obj($key): ?__PytraJsonValue {
+        if (!is_array($this->raw) || !array_key_exists($key, $this->raw)) {
+            return null;
+        }
+        return (new __PytraJsonValue($this->raw[$key]))->as_obj();
+    }
+
+    public function get_arr($key): ?__PytraJsonValue {
+        if (!is_array($this->raw) || !array_key_exists($key, $this->raw)) {
+            return null;
+        }
+        return (new __PytraJsonValue($this->raw[$key]))->as_arr();
+    }
+}
+
+function __pytra_JsonValue($raw): __PytraJsonValue {
+    return new __PytraJsonValue($raw);
 }
 
 function __pytra_dumps($value, $ensure_ascii = true, $indent = null, $separators = null): string {
@@ -1029,7 +1111,7 @@ function deque($items = null): __PytraDeque {
     return $out;
 }
 
-class __PytraSet implements \Countable, \IteratorAggregate {
+class __PytraSet implements \Countable, \IteratorAggregate, \ArrayAccess {
     private array $items = [];
 
     public function add($value): void {
@@ -1054,12 +1136,37 @@ class __PytraSet implements \Countable, \IteratorAggregate {
         $this->items = [];
     }
 
+    public function remove($value): void {
+        foreach ($this->items as $idx => $item) {
+            if ($item === $value) {
+                array_splice($this->items, $idx, 1);
+                return;
+            }
+        }
+    }
+
     public function count(): int {
         return count($this->items);
     }
 
     public function getIterator(): \Traversable {
         return new \ArrayIterator($this->items);
+    }
+
+    public function offsetExists($offset): bool {
+        return $this->contains($offset);
+    }
+
+    public function offsetGet($offset): bool {
+        return $this->contains($offset);
+    }
+
+    public function offsetSet($offset, $value): void {
+        $this->add($offset);
+    }
+
+    public function offsetUnset($offset): void {
+        $this->remove($offset);
     }
 }
 

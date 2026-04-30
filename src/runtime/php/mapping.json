@@ -96,9 +96,9 @@
     "None": "void",
     "list": "array",
     "dict": "array",
-    "set": "array",
+    "set": "__PytraSet",
     "Exception": "Exception",
-    "Path": "string"
+    "Path": "__PytraPath"
   },
   "implicit_promotions": [
     [
