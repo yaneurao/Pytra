@@ -2962,7 +2962,11 @@ class ZigNativeEmitter:
                     owner_type = self._lookup_expr_type(owner_node)
                     if (owner_type.startswith("dict[") or "dict[" in owner_type) and len(tuple_unpack_names) == 2:
                         owner_expr = self._render_expr(owner_node)
-                        owner_source = owner_node.get("value") if isinstance(owner_node, dict) and owner_node.get("kind") == "Unbox" else owner_node
+                        owner_source = owner_node
+                        if isinstance(owner_node, dict):
+                            owner_node_dict = self._json_dict_to_any(owner_node)
+                            if owner_node_dict.get("kind") == "Unbox":
+                                owner_source = owner_node_dict.get("value")
                         owner_source_type = self._lookup_expr_type(owner_source) if isinstance(owner_source, dict) else ""
                         owner_is_union = self._is_union_storage_zig(self._zig_type(owner_source_type)) or self._is_union_storage_zig(self._zig_type(owner_type))
                         iter_name, entry_name = self._make_stmt_renderer().next_dict_items_iter_names()
@@ -3312,7 +3316,7 @@ class ZigNativeEmitter:
                 if isinstance(target_any, dict) and target_any.get("kind") == "Name":
                     field_name = _safe_ident(target_any.get("id"), "field")
                     decl_type_any = sub.get("decl_type")
-                    decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
+                    decl_type = self._any_str(decl_type_any, "").strip()
                     if decl_type == "":
                         anno_any = sub.get("annotation")
                         if isinstance(anno_any, str):
@@ -3336,7 +3340,10 @@ class ZigNativeEmitter:
             if sub.get("kind") in {"FunctionDef", "ClosureDef"} and sub.get("name") == "__init__":
                 init_body = self._dict_list(sub.get("body"))
                 init_arg_types = sub.get("arg_types")
-                init_arg_types = init_arg_types if isinstance(init_arg_types, dict) else {}
+                if isinstance(init_arg_types, dict):
+                    init_arg_types = self._json_dict_to_any(init_arg_types)
+                else:
+                    init_arg_types = {}
                 init_fields = self._scan_init_fields(init_body, init_arg_types)
                 for field_name, field_type in init_fields:
                     if field_name not in emitted_fields:
@@ -3362,7 +3369,7 @@ class ZigNativeEmitter:
                     if field_name in static_field_names:
                         continue
                     decl_type_any = sub.get("decl_type")
-                    decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
+                    decl_type = self._any_str(decl_type_any, "").strip()
                     if decl_type == "":
                         anno_any = sub.get("annotation")
                         if isinstance(anno_any, str):
@@ -3380,7 +3387,8 @@ class ZigNativeEmitter:
                         emitted_fields.add(field_name)
         # 基底クラスの未 override メソッドの委譲関数を生成
         if has_local_base:
-            own_methods = self._class_methods.get(cls_name, set())
+            empty_own_methods: set[str] = set()
+            own_methods = self._class_methods.get(cls_name, empty_own_methods)
             base_method_pairs = self._get_base_methods(cls_name)
             for method_name, origin_cls in base_method_pairs:
                 if method_name not in own_methods:
