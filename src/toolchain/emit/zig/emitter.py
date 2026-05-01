@@ -1483,6 +1483,23 @@ class ZigNativeEmitter:
             out[key] = self._json_to_any(item)
         return out
 
+    def _node_to_any(self, value: Any) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float):
+            return value
+        if isinstance(value, str):
+            return value
+        if isinstance(value, list):
+            return self._any_list_to_any(value)
+        if isinstance(value, dict):
+            return self._any_dict_to_any(value)
+        return None
+
     def _any_to_json(self, value: Any) -> JsonVal:
         if value is None:
             return None
@@ -1520,7 +1537,7 @@ class ZigNativeEmitter:
         if isinstance(value, dict):
             value_dict: dict[str, Any] = value
             for key, item in value_dict.items():
-                out[str(key)] = item
+                out[str(key)] = self._node_to_any(item)
         return out
 
     def _any_list_to_any(self, value: Any) -> list[Any]:
@@ -1528,7 +1545,7 @@ class ZigNativeEmitter:
         if isinstance(value, list):
             value_list: list[Any] = value
             for item in value_list:
-                out.append(item)
+                out.append(self._node_to_any(item))
         return out
 
     def _dict_list(self, value: Any) -> list[dict[str, Any]]:
@@ -2119,26 +2136,32 @@ class ZigNativeEmitter:
                 self._emit_line("return " + val + ";")
             return
         if kind == "AnnAssign":
-            target_node = stmt.get("target")
+            target_node_raw = stmt.get("target")
+            target_node = self._any_dict_to_any(target_node_raw)
             target = self._render_target(target_node)
-            value_node = stmt.get("value")
+            value_node_raw = stmt.get("value")
+            value_node_dict = self._any_dict_to_any(value_node_raw)
+            value_node: Any = value_node_raw
+            if len(value_node_dict) > 0:
+                value_node = value_node_dict
             annotation_type_expr = stmt.get("annotation_type_expr")
             # extern() 変数 → __native 委譲（spec-emitter-guide §4）
             # Unbox ラッパーを透過
-            if isinstance(value_node, dict):
-                if value_node.get("kind") == "Call":
-                    vfunc = value_node.get("func")
-                    if isinstance(vfunc, dict) and (vfunc.get("id") == "extern" or vfunc.get("id") == "@\"extern\""):
+            if len(value_node_dict) > 0:
+                value_kind = self._dict_get_str(value_node_dict, "kind", "")
+                if value_kind == "Call":
+                    vfunc = self._any_dict_to_any(value_node_dict.get("func"))
+                    if len(vfunc) > 0 and (vfunc.get("id") == "extern" or vfunc.get("id") == "@\"extern\""):
                         self._ensure_native_import()
                         decl_type = self._infer_decl_type(stmt)
                         zig_ty = self._zig_type(decl_type)
                         self._emit_line("pub const " + target + ": " + zig_ty + " = __native." + target + ";")
                         return
-                elif value_node.get("kind") == "Unbox":
-                    unboxed = value_node.get("value")
-                    if isinstance(unboxed, dict) and unboxed.get("kind") == "Call":
-                        vfunc = unboxed.get("func")
-                        if isinstance(vfunc, dict) and (vfunc.get("id") == "extern" or vfunc.get("id") == "@\"extern\""):
+                elif value_kind == "Unbox":
+                    unboxed = self._any_dict_to_any(value_node_dict.get("value"))
+                    if self._dict_get_str(unboxed, "kind", "") == "Call":
+                        vfunc = self._any_dict_to_any(unboxed.get("func"))
+                        if len(vfunc) > 0 and (vfunc.get("id") == "extern" or vfunc.get("id") == "@\"extern\""):
                             self._ensure_native_import()
                             decl_type = self._infer_decl_type(stmt)
                             zig_ty = self._zig_type(decl_type)
@@ -2148,7 +2171,7 @@ class ZigNativeEmitter:
             raw_core_value_node = self._unwrap_box_unbox(value_node)
             core_value_node: Any = raw_core_value_node
             if isinstance(raw_core_value_node, dict):
-                core_value_node = self._json_dict_to_any(raw_core_value_node)
+                core_value_node = self._any_dict_to_any(raw_core_value_node)
             if isinstance(target_node, dict) and target_node.get("kind") == "Name":
                 target_name = _safe_ident(target_node.get("id"), "value")
                 decl_type = self._infer_decl_type(stmt)
@@ -3017,11 +3040,11 @@ class ZigNativeEmitter:
         target_plan_raw = stmt.get("target_plan")
         target_plan: dict[str, Any] = {}
         if isinstance(target_plan_raw, dict):
-            target_plan = self._json_dict_to_any(target_plan_raw)
+            target_plan = self._any_dict_to_any(target_plan_raw)
         iter_plan_raw = stmt.get("iter_plan")
         iter_plan: dict[str, Any] = {}
         if isinstance(iter_plan_raw, dict):
-            iter_plan = self._json_dict_to_any(iter_plan_raw)
+            iter_plan = self._any_dict_to_any(iter_plan_raw)
         target_name = "_"
         tuple_unpack_names: list[str] = []
         if target_plan.get("kind") == "TupleTarget":
@@ -3042,7 +3065,7 @@ class ZigNativeEmitter:
         else:
             target_legacy = stmt.get("target")
             if isinstance(target_legacy, dict):
-                target_legacy_dict = self._json_dict_to_any(target_legacy)
+                target_legacy_dict = self._any_dict_to_any(target_legacy)
                 if target_legacy_dict.get("kind") == "Name":
                     target_name = _safe_ident(target_legacy_dict.get("id"), "i")
         body_nodes = self._strip_for_synthetic_unpack(stmt.get("body"), target_name, tuple_unpack_names)
@@ -3053,12 +3076,12 @@ class ZigNativeEmitter:
             iter_expr_node_raw = iter_plan.get("iter_expr")
             iter_expr_node: dict[str, Any] = {}
             if isinstance(iter_expr_node_raw, dict):
-                iter_expr_node = self._json_dict_to_any(iter_expr_node_raw)
+                iter_expr_node = self._any_dict_to_any(iter_expr_node_raw)
             if len(iter_expr_node) > 0:
                 func_node_raw = iter_expr_node.get("func")
                 func_node: dict[str, Any] = {}
                 if isinstance(func_node_raw, dict):
-                    func_node = self._json_dict_to_any(func_node_raw)
+                    func_node = self._any_dict_to_any(func_node_raw)
                 if (
                     iter_expr_node.get("kind") == "Call"
                     and func_node.get("kind") == "Attribute"
@@ -3070,7 +3093,7 @@ class ZigNativeEmitter:
                         owner_expr = self._render_expr(owner_node)
                         owner_source = owner_node
                         if isinstance(owner_node, dict):
-                            owner_node_dict = self._json_dict_to_any(owner_node)
+                            owner_node_dict = self._any_dict_to_any(owner_node)
                             if owner_node_dict.get("kind") == "Unbox":
                                 owner_source = owner_node_dict.get("value")
                         owner_source_type = self._lookup_expr_type(owner_source) if isinstance(owner_source, dict) else ""
@@ -3155,12 +3178,12 @@ class ZigNativeEmitter:
         iter_any_raw = stmt.get("iter")
         iter_any: Any = iter_any_raw
         if isinstance(iter_any_raw, dict):
-            iter_any = self._json_dict_to_any(iter_any_raw)
+            iter_any = self._any_dict_to_any(iter_any_raw)
         if isinstance(iter_any, dict) and iter_any.get("kind") == "Call":
             func_any_raw = iter_any.get("func")
             func_any: dict[str, Any] = {}
             if isinstance(func_any_raw, dict):
-                func_any = self._json_dict_to_any(func_any_raw)
+                func_any = self._any_dict_to_any(func_any_raw)
             if func_any.get("kind") == "Name":
                 fname = str(func_any.get("id"))
                 if fname == "range":
@@ -3847,6 +3870,8 @@ class ZigNativeEmitter:
                     if len(args) > 0:
                         return "pytra.truthy(" + self._render_expr(args[0]) + ")"
         rendered = self._render_expr(expr_any)
+        if kind == "Compare":
+            return rendered
         # i64 の条件式は != 0 で bool に変換
         expr_type = self._lookup_expr_type(expr_any) if isinstance(expr_any, dict) else ""
         if expr_type in {"int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64"}:
@@ -4665,12 +4690,12 @@ class ZigNativeEmitter:
                 # 文字列比較は std.mem.eql を使う
                 effective_prev_node = prev_node
                 if isinstance(effective_prev_node, dict):
-                    effective_prev_dict = self._json_dict_to_any(effective_prev_node)
+                    effective_prev_dict = self._any_dict_to_any(effective_prev_node)
                     if self._dict_get_str(effective_prev_dict, "kind", "") == "Unbox" and isinstance(effective_prev_dict.get("value"), dict):
                         effective_prev_node = effective_prev_dict.get("value")
                 effective_cmp_node = comparators[i]
                 if isinstance(effective_cmp_node, dict):
-                    effective_cmp_dict = self._json_dict_to_any(effective_cmp_node)
+                    effective_cmp_dict = self._any_dict_to_any(effective_cmp_node)
                     if self._dict_get_str(effective_cmp_dict, "kind", "") == "Unbox" and isinstance(effective_cmp_dict.get("value"), dict):
                         effective_cmp_node = effective_cmp_dict.get("value")
                 left_type = self._lookup_expr_type(effective_prev_node) if isinstance(effective_prev_node, dict) else ""
@@ -6729,7 +6754,7 @@ class ZigNativeEmitter:
             elts_any = ed.get("elts")
             if not isinstance(elts_any, list):
                 elts_any = ed.get("elements")
-            elts = elts_any if isinstance(elts_any, list) else []
+            elts = self._any_list_to_any(elts_any)
             if len(elts) > 0:
                 parts: list[str] = []
                 for elt in elts:
@@ -6738,16 +6763,18 @@ class ZigNativeEmitter:
                 return "tuple[" + ", ".join(parts) + "]"
         # math.* 呼び出しは float64 を返す
         if kind == "Call":
-            func = ed.get("func")
-            if isinstance(func, dict) and func.get("kind") == "Name":
+            func_any = ed.get("func")
+            func = self._any_dict_to_any(func_any)
+            if self._dict_get_str(func, "kind", "") == "Name":
                 fname = _safe_ident(func.get("id"), "")
                 current = self._current_type_map().get(fname, "")
                 sig = self._callable_signature_parts(current)
                 if sig is not None:
                     return self._normalize_type(sig[1])
-            if isinstance(func, dict) and func.get("kind") == "Attribute":
-                obj_node = func.get("value")
-                if isinstance(obj_node, dict) and obj_node.get("kind") == "Name" and str(obj_node.get("id")) == 'json':
+            if self._dict_get_str(func, "kind", "") == "Attribute":
+                obj_any = func.get("value")
+                obj_node = self._any_dict_to_any(obj_any)
+                if self._dict_get_str(obj_node, "kind", "") == "Name" and str(obj_node.get("id")) == 'json':
                     attr = str(func.get("attr"))
                     if attr == "loads":
                         return "JsonValue"
@@ -6757,24 +6784,28 @@ class ZigNativeEmitter:
                         return "JsonObj|None"
                     if attr in {"dumps", "dumps_jv"}:
                         return "str"
-                obj_type = self._lookup_expr_type(obj_node) if isinstance(obj_node, dict) else ""
+                obj_type = self._lookup_expr_type(obj_node) if len(obj_node) > 0 else ""
                 attr = str(func.get("attr"))
                 if obj_type in self._class_return_types:
                     class_returns = self._class_return_types.get(obj_type)
                     method_ret = class_returns.get(attr, "") if class_returns is not None else ""
                     if method_ret != "":
                         return self._normalize_type(method_ret)
-                if isinstance(obj_node, dict) and obj_node.get("kind") == "Name" and str(obj_node.get("id")) == 'math':
+                if self._dict_get_str(obj_node, "kind", "") == "Name" and str(obj_node.get("id")) == 'math':
                     attr = str(func.get("attr"))
                     if attr in {"sin", "cos", "tan", "asin", "acos", "atan", "exp", "log", "log2", "log10", "sqrt", "fabs", "floor", "ceil", "round", "fmod", "hypot", "atan2", "pow"}:
                         return "float64"
         if kind == "Subscript":
-            owner_type = self._lookup_expr_type(ed.get("value"))
+            value_node = self._any_dict_to_any(ed.get("value"))
+            owner_type = self._lookup_expr_type(value_node) if len(value_node) > 0 else ""
             if owner_type.startswith("tuple[") and owner_type.endswith("]"):
                 parts = self._split_generic(owner_type[6:-1])
-                idx_node = ed.get("slice")
-                if isinstance(idx_node, dict) and idx_node.get("kind") == "Constant" and isinstance(idx_node.get("value"), int):
-                    idx = int(idx_node.get("value"))
+                idx_node = self._any_dict_to_any(ed.get("slice"))
+                idx_value: Any = None
+                if self._dict_get_str(idx_node, "kind", "") == "Constant":
+                    idx_value = idx_node.get("value")
+                if isinstance(idx_value, int) and not isinstance(idx_value, bool):
+                    idx = idx_value
                     if 0 <= idx < len(parts):
                         return self._normalize_type(parts[idx].strip())
             if owner_type.startswith("list[") and owner_type.endswith("]"):
@@ -6785,8 +6816,10 @@ class ZigNativeEmitter:
                     return self._normalize_type(parts[1].strip())
         # BinOp の型推論: float が含まれれば float64
         if kind == "BinOp":
-            lt = self._lookup_expr_type(ed.get("left"))
-            rt = self._lookup_expr_type(ed.get("right"))
+            left_node = self._any_dict_to_any(ed.get("left"))
+            right_node = self._any_dict_to_any(ed.get("right"))
+            lt = self._lookup_expr_type(left_node) if len(left_node) > 0 else ""
+            rt = self._lookup_expr_type(right_node) if len(right_node) > 0 else ""
             _FT = {"float64", "float32", "float"}
             _IT = {"int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64"}
             if lt in _FT or rt in _FT:
