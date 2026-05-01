@@ -1262,8 +1262,8 @@ class ZigNativeEmitter:
         self.lines.append("const pytra = @import(\"" + rt_path + "\");")
         self.lines.extend(renderer.exception_support_decl_lines())
         self.lines.extend(renderer.exception_slot_decl_lines())
-        body = self._dict_list(self._json_to_any(self.east_doc.get("body")))
-        main_guard = self._dict_list(self._json_to_any(self.east_doc.get("main_guard_body")))
+        body = self._json_dict_list(self.east_doc.get("body"))
+        main_guard = self._json_dict_list(self.east_doc.get("main_guard_body"))
         self._scan_module_symbols(body)
         # import 文から @import を生成
         self._emit_imports(body)
@@ -1465,6 +1465,15 @@ class ZigNativeEmitter:
             out[key] = self._json_to_any(item)
         return out
 
+    def _json_to_shallow_any(self, value: JsonVal) -> Any:
+        return value
+
+    def _json_dict_to_shallow_any(self, value: dict[str, JsonVal]) -> dict[str, Any]:
+        out: dict[str, Any] = {}
+        for key, item in value.items():
+            out[key] = self._json_to_shallow_any(item)
+        return out
+
     def _any_to_json(self, value: Any) -> JsonVal:
         if value is None:
             return None
@@ -1520,6 +1529,17 @@ class ZigNativeEmitter:
                 out.append(self._any_dict_to_any(item))
         return out
 
+    def _json_dict_list(self, value: JsonVal) -> list[dict[str, Any]]:
+        out: list[dict[str, Any]] = []
+        arr = pytra_json.JsonValue(value).as_arr()
+        if arr is None:
+            return out
+        for item in arr.raw:
+            obj = pytra_json.JsonValue(item).as_obj()
+            if obj is not None:
+                out.append(self._json_dict_to_shallow_any(obj.raw))
+        return out
+
     def _block_has_return_stmt(self, body_any: Any) -> bool:
         body = self._dict_list(body_any)
         i = 0
@@ -1530,7 +1550,7 @@ class ZigNativeEmitter:
         return False
 
     def _module_leading_comment_lines(self, prefix: str) -> list[str]:
-        trivia = self._dict_list(self._json_to_any(self.east_doc.get("module_leading_trivia")))
+        trivia = self._json_dict_list(self.east_doc.get("module_leading_trivia"))
         out: list[str] = []
         for item in trivia:
             kind = item.get("kind")
@@ -1553,6 +1573,7 @@ class ZigNativeEmitter:
         return out
 
     def _emit_leading_trivia(self, stmt: dict[str, Any], prefix: str) -> None:
+        return
         trivia = self._dict_list(stmt.get("leading_trivia"))
         for item in trivia:
             kind = item.get("kind")
@@ -2570,8 +2591,8 @@ class ZigNativeEmitter:
 
     def _infer_hoisted_var_type_from_body(self, name: str) -> str:
         """VarDecl の型が object/unknown の場合、EAST 全体の Assign から具体型を推論。"""
-        body = self._dict_list(self._json_to_any(self.east_doc.get("body")))
-        main_guard = self._dict_list(self._json_to_any(self.east_doc.get("main_guard_body")))
+        body = self._json_dict_list(self.east_doc.get("body"))
+        main_guard = self._json_dict_list(self.east_doc.get("main_guard_body"))
         result = self._find_first_assign_type(body, name)
         if result == "":
             result = self._find_first_assign_type(main_guard, name)
