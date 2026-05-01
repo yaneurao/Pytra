@@ -5674,15 +5674,15 @@ class ZigNativeEmitter:
             if elem_zig.startswith("[]const "):
                 elem_zig = elem_zig[len("[]const "):]
             prefix_args: list[str] = []
-            p = 0
-            while p < vararg_index:
-                prefix_args.append(out[p])
-                p += 1
+            prefix_index = 0
+            while prefix_index < vararg_index:
+                prefix_args.append(out[prefix_index])
+                prefix_index += 1
             vararg_items: list[str] = []
-            p = vararg_index
-            while p < len(out):
-                vararg_items.append(out[p])
-                p += 1
+            item_index = vararg_index
+            while item_index < len(out):
+                vararg_items.append(out[item_index])
+                item_index += 1
             packed_arg = "&[_]" + elem_zig + "{ " + ", ".join(vararg_items) + " }"
             out = prefix_args + [packed_arg]
         i = 0
@@ -5846,21 +5846,22 @@ class ZigNativeEmitter:
 
     def _render_set_comp(self, node: dict[str, Any]) -> str:
         gens_any = node.get("generators")
-        gens = gens_any if isinstance(gens_any, list) else []
-        if len(gens) != 1 or not isinstance(gens[0], dict):
+        gens = self._any_list_to_any(gens_any)
+        if len(gens) != 1:
             return "pytra.empty_list()"
-        gen = gens[0]
+        gen = self._any_dict_to_any(gens[0])
         target = gen.get("target")
         iter_node = gen.get("iter")
         ifs_any = gen.get("ifs")
-        ifs = ifs_any if isinstance(ifs_any, list) else []
+        ifs = self._any_list_to_any(ifs_any)
         if not isinstance(target, dict) or target.get("kind") not in {"Name", "Tuple"} or not isinstance(iter_node, dict):
             return "pytra.empty_list()"
         target_name = _safe_ident(target.get("id"), "item") if target.get("kind") == "Name" else self._make_stmt_renderer().next_tuple_target_name("__set_tuple")
-        iter_expr, elem_type, unpack_lines, name_types = self._comp_iter_parts(iter_node, target_name, target)
+        iter_expr, iter_elem_type, unpack_lines, name_types = self._comp_iter_parts(iter_node, target_name, target)
+        set_elem_type = iter_elem_type
         result_type = self._get_expr_type(node)
         if result_type.startswith("set[") and result_type.endswith("]"):
-            elem_type = self._zig_type(result_type[4:-1].strip())
+            set_elem_type = self._zig_type(result_type[4:-1].strip())
         loop_cond = "true"
         type_map = dict(self._current_type_map())
         if target.get("kind") == "Name":
@@ -5874,13 +5875,13 @@ class ZigNativeEmitter:
         self._local_type_stack.pop()
         blk, out_name = self._make_stmt_renderer().next_set_comp_names()
         parts: list[str] = []
-        parts.append("const " + out_name + " = pytra.make_list(" + elem_type + ");")
+        parts.append("const " + out_name + " = pytra.make_list(" + set_elem_type + ");")
         parts.append(" for (" + iter_expr + ") |" + target_name + "| {")
         for line in unpack_lines:
             parts.append("  " + line)
         if loop_cond != "true":
             parts.append("  if (" + loop_cond + ") {")
-        parts.append("   if (!pytra.contains(" + out_name + ", " + elt_expr + ")) { pytra.list_append(" + out_name + ", " + elem_type + ", " + elt_expr + "); }")
+        parts.append("   if (!pytra.contains(" + out_name + ", " + elt_expr + ")) { pytra.list_append(" + out_name + ", " + set_elem_type + ", " + elt_expr + "); }")
         if loop_cond != "true":
             parts.append("  }")
         parts.append(" }")
@@ -5888,14 +5889,14 @@ class ZigNativeEmitter:
 
     def _render_list_comp(self, node: dict[str, Any]) -> str:
         gens_any = node.get("generators")
-        gens = gens_any if isinstance(gens_any, list) else []
-        if len(gens) != 1 or not isinstance(gens[0], dict):
+        gens = self._any_list_to_any(gens_any)
+        if len(gens) != 1:
             return "pytra.empty_list()"
-        gen = gens[0]
+        gen = self._any_dict_to_any(gens[0])
         target = gen.get("target")
         iter_node = gen.get("iter")
         ifs_any = gen.get("ifs")
-        ifs = ifs_any if isinstance(ifs_any, list) else []
+        ifs = self._any_list_to_any(ifs_any)
         if not isinstance(target, dict) or target.get("kind") not in {"Name", "Tuple"} or not isinstance(iter_node, dict):
             return "pytra.empty_list()"
         target_name = _safe_ident(target.get("id"), "item") if target.get("kind") == "Name" else self._make_stmt_renderer().next_tuple_target_name("__list_tuple")
@@ -5968,14 +5969,14 @@ class ZigNativeEmitter:
 
     def _render_dict_comp(self, node: dict[str, Any]) -> str:
         gens_any = node.get("generators")
-        gens = gens_any if isinstance(gens_any, list) else []
-        if len(gens) != 1 or not isinstance(gens[0], dict):
+        gens = self._any_list_to_any(gens_any)
+        if len(gens) != 1:
             return "pytra.make_str_dict(i64)"
-        gen = gens[0]
+        gen = self._any_dict_to_any(gens[0])
         target = gen.get("target")
         iter_node = gen.get("iter")
         ifs_any = gen.get("ifs")
-        ifs = ifs_any if isinstance(ifs_any, list) else []
+        ifs = self._any_list_to_any(ifs_any)
         if not isinstance(target, dict) or target.get("kind") != "Name" or not isinstance(iter_node, dict):
             return "pytra.make_str_dict(i64)"
         target_name = _safe_ident(target.get("id"), "item")
@@ -6098,7 +6099,9 @@ class ZigNativeEmitter:
         ret_blob = inner[split_idx + 1 :].strip()
         if ret_blob.startswith(","):
             ret_blob = ret_blob[1:].strip()
-        args = self._split_generic(args_blob) if args_blob != "" else []
+        args: list[str] = []
+        if args_blob != "":
+            args = self._split_generic(args_blob)
         return (args, ret_blob if ret_blob != "" else "None")
 
     def _zig_callable_type(self, t: str, *, optional: bool = False) -> str:
@@ -6135,8 +6138,10 @@ class ZigNativeEmitter:
 
     def _render_optional_dict_get(self, call_node: Any, decl_type: str) -> str:
         node = call_node
-        while isinstance(node, dict) and node.get("kind") in {"Unbox", "Box"}:
-            node = node.get("value")
+        node_dict = self._any_dict_to_any(node)
+        while self._dict_get_str(node_dict, "kind", "") in {"Unbox", "Box"}:
+            node = node_dict.get("value")
+            node_dict = self._any_dict_to_any(node)
         if not isinstance(node, dict) or node.get("kind") != "Call":
             return ""
         if self._strip_optional_type(decl_type) == "":
@@ -6169,8 +6174,10 @@ class ZigNativeEmitter:
 
     def _infer_value_zig_type(self, value_node: Any) -> str:
         node = value_node
-        while isinstance(node, dict) and node.get("kind") in {"Unbox", "Box"}:
-            node = node.get("value")
+        node_dict = self._any_dict_to_any(node)
+        while self._dict_get_str(node_dict, "kind", "") in {"Unbox", "Box"}:
+            node = node_dict.get("value")
+            node_dict = self._any_dict_to_any(node)
         if not isinstance(node, dict):
             return "pytra.PyObject"
         resolved = self._lookup_expr_type(node)
