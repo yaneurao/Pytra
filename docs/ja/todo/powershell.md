@@ -46,6 +46,7 @@ C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を powershell に
 1. [x] [ID: P1-HOST-CPP-EMITTER-PS1-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target powershell -o work/selfhost/host-cpp/powershell/` で変換 + build を通す
    - 進捗: 2026-04-29 に `--target powershell` は `src/toolchain/emit/profiles/powershell.json` 不在で失敗。`--target ps1` では変換 PASS（20 files）。現コンテナでは `pwsh` / `powershell` が PATH に存在せず、生成済み `work/selfhost/host-cpp/powershell/toolchain_emit_cpp_cli.ps1` の実行検証は未実施。Dockerfile 仕様上は PowerShell を apt で入れる想定なので、環境差分を解消してから S1 build/run を再開する。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-PS1-S2] `python3 tools/run/run_emitter_host_parity.py --host-lang powershell --hosted-emitter cpp --case-root fixture` で C++ emitter host parity PASS を確認する（結果は `.parity-results/emitter_host_powershell.json` に自動書き込み）
+   - 進捗: 2026-05-03 に Dockerfile 直接 run で再実行。PowerShell CLI の runtime copy hook 不足を修正し、C++ emitter 側の `None` / `none` duplicate hash literal は if 連鎖へ縮退した。`build_status=ok` まで前進したが、hosted emitter 実行は `toolchain_emit_common_code_emitter.ps1` の dataclass `field(default_factory=...)` が `$dict` 未設定として出力されるため `parity_status=fail`。再開条件は PowerShell emitter の dataclass field default_factory / class field emission を executable な初期化へ lowering すること。
 
 ### P1-EMITTER-SELFHOST-PS1: emit/powershell/cli.py を単独で selfhost C++ build に通す
 

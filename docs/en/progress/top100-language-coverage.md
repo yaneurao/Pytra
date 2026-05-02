@@ -4,7 +4,7 @@
 
 # Top100 Language Coverage Matrix
 
-Last updated: 2026-04-30
+Last updated: 2026-05-03
 
 ## Source Snapshot
 
@@ -20,7 +20,7 @@ Last updated: 2026-04-30
 - Docker: `docker version` and `docker run --rm hello-world` must pass before coverage updates are accepted.
 - Toolchain: `.devcontainer/scripts/verify-toolchain.sh` checks Python 3.12, pytest, C/C++, Java, .NET, PowerShell, Ruby, Lua, PHP, Go, and Rust. Swift is optional; Dart/Zig CLIs remain blockers until added.
 - Coverage update gate: `python3 tools/gen/gen_top100_language_coverage.py --check` runs inside the container after generation.
-- Representative parity: C++ fixture/sample/stdlib currently fail on runtime symbol drift (`::print`, `::int_`, and `str(optional<variant...>)`). This is tracked as the next blocker rather than hidden by the Top100 generator.
+- Representative parity: C++ fixture `core/add`, sample `17_monte_carlo_pi`, and stdlib `math_extended` pass after routing plain builtin calls back through runtime helpers. The refreshed full sample sweep is 7/18 PASS; remaining blockers are artifact CRC drift, object type leakage, and plain `min` / `max` / `enumerate` fallback.
 
 ## Category Counts
 
@@ -36,7 +36,7 @@ Last updated: 2026-04-30
 |---:|---|---|---|---|---|
 | 1 | Python | host | reference parser/resolver/toolchain source | selfhost matrix は full pass ではない | selfhost rows を段階的に埋める |
 | 2 | C | interop | C ABI / C-family runtime adjacency | native C backend は未定義 | C++ runtime との境界を棚卸しする |
-| 3 | C++ | backend | primary backend; fixture 161/161 | sample live check で runtime symbol drift | `::int_` / `::print` / `::len` lowering を修正する |
+| 3 | C++ | backend | primary backend; representative fixture/sample/stdlib PASS; sample 7/18 | full sample sweep 11 fail（artifact CRC / object 型漏れ / min・max・enumerate） | C++ sample blockers を型推定と builtin fallback で縮退する |
 | 4 | Java | backend | target registered | host/parity は未完 | Java host parity を進める |
 | 5 | C# | backend | target registered | host/parity は未完 | C# host parity を進める |
 | 6 | JavaScript | backend | target registered | host/parity は未完 | JavaScript host parity を進める |

@@ -246,6 +246,11 @@ EAST1 golden file から型解決情報（`resolved_type` / `runtime_module_id` 
 60 以上のステップを固定順序で実行し、全体品質を一コマンドで検証できる。
 `tools/check/` / `tools/unittest/` 各種を統合してオーケストレーションする。
 
+### `run_emitter_host_parity.py`
+C++ などの hosted emitter を指定 host 言語で build し、Python 版 emitter の出力と比較する。
+結果は `.parity-results/emitter_host_<host>.json` に記録し、emitter host matrix の正本入力にする。
+主要オプション: `--host-lang`（go/ruby/php/lua/zig/powershell 等） / `--hosted-emitter`（cpp 等） / `--case-root` / `--case`
+
 ### `run_selfhost_parity.py`
 selfhost parity チェックを実行し、結果を `.parity-results/selfhost_<lang>.json` に記録する。
 `--selfhost-lang python` では既存の `.parity-results/*.json` を集計して `selfhost_python.json` を生成する。

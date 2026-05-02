@@ -40,9 +40,9 @@
       "rank": 3,
       "language": "C++",
       "category": "backend",
-      "current_status": "primary backend; fixture 161/161",
-      "last_blocker": "sample live check で runtime symbol drift",
-      "next_action": "`::int_` / `::print` / `::len` lowering を修正する",
+      "current_status": "primary backend; representative fixture/sample/stdlib PASS; sample 7/18",
+      "last_blocker": "full sample sweep 11 fail（artifact CRC / object 型漏れ / min・max・enumerate）",
+      "next_action": "C++ sample blockers を型推定と builtin fallback で縮退する",
       "backend_plan_tier": "",
       "backend_plan": "",
       "defer_condition": ""

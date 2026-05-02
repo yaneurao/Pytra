@@ -1208,6 +1208,57 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertNotIn("py_int_from_str(", cpp_code)
         self.assertNotIn("py_float_from_str(", cpp_code)
 
+    def test_cpp_emitter_routes_plain_builtin_calls_through_runtime_helpers(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+                    "declare": True,
+                    "decl_type": "int64",
+                    "declare_init": True,
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "int64",
+                        "func": {"kind": "Name", "id": "int", "resolved_type": "unknown"},
+                        "args": [{"kind": "Constant", "value": 1.5, "resolved_type": "float64"}],
+                    },
+                },
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "s", "resolved_type": "str"},
+                    "declare": True,
+                    "decl_type": "str",
+                    "declare_init": True,
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "str",
+                        "func": {"kind": "Name", "id": "str", "resolved_type": "unknown"},
+                        "args": [{"kind": "Name", "id": "n", "resolved_type": "int64"}],
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "None",
+                        "func": {"kind": "Name", "id": "print", "resolved_type": "unknown"},
+                        "args": [{"kind": "Name", "id": "s", "resolved_type": "str"}],
+                    },
+                },
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("int64 n = static_cast<int64>(1.5);", cpp_code)
+        self.assertIn("str s = str(py_to_string(n));", cpp_code)
+        self.assertIn("py_print(s);", cpp_code)
+        self.assertNotIn("::int_(", cpp_code)
+        self.assertNotIn("::str(", cpp_code)
+        self.assertNotIn("::print(", cpp_code)
+
     def test_cpp_emitter_emits_main_only_for_entry_modules(self) -> None:
         doc = _module_doc(
             "lib.worker",
@@ -1515,6 +1566,11 @@ def has_key(env: dict[str, int], name: str) -> bool:
                 "const ::std::function<void()>& fn);",
                 header_text,
             )
+            source_text = Path(source_path).read_text(encoding="utf-8")
+            self.assertIn("py_print(", source_text)
+            self.assertIn("str(py_to_string(actual))", source_text)
+            self.assertNotIn("::print(", source_text)
+            self.assertNotIn("::str(", source_text)
 
     def test_cpp_runtime_paths_delegate_rel_tail_to_shared_runtime_loader(self) -> None:
         self.assertEqual(runtime_rel_tail_for_module("pytra.std.json"), "std/json")

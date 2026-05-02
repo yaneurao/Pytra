@@ -130,6 +130,23 @@ def _is_local_visible(ctx: CppEmitContext, name: str) -> bool:
         i -= 1
     return False
 
+
+def _plain_builtin_result_type(name: str) -> str:
+    if name == "print":
+        return "None"
+    if name == "str":
+        return "str"
+    if name == "int":
+        return "int64"
+    if name == "float":
+        return "float64"
+    if name == "bool":
+        return "bool"
+    if name == "len":
+        return "int64"
+    return ""
+
+
 def _cpp_emit_blank(ctx: CppEmitContext) -> None:
     ctx.lines.append("")
 
@@ -801,6 +818,12 @@ def _expr_static_type(ctx: CppEmitContext, node: JsonVal) -> str:
             attr_type = _attribute_static_type(ctx, node_dict)
             if attr_type not in ("", "unknown"):
                 return attr_type
+        if kind == "Call":
+            func_obj = json.JsonValue(node_dict.get("func")).as_obj()
+            if func_obj is not None and _str(func_obj.raw, "kind") == "Name":
+                builtin_result = _plain_builtin_result_type(_str(func_obj.raw, "id"))
+                if builtin_result != "":
+                    return builtin_result
     inferred = _effective_resolved_type(node)
     if inferred not in ("", "unknown"):
         return inferred
@@ -1599,19 +1622,23 @@ def _canonical_expected_type_name(expected_name: str) -> str:
 
 def _builtin_type_id_value(type_name: str) -> int | None:
     normalized = _canonical_expected_type_name(type_name)
-    return {
-        "None": 0,
-        "none": 0,
-        "bool": 1,
-        "int": 2,
-        "int64": 2,
-        "float": 3,
-        "float64": 3,
-        "str": 4,
-        "list": 5,
-        "dict": 6,
-        "set": 7,
-    }.get(normalized)
+    if normalized in ("None", "none"):
+        return 0
+    if normalized == "bool":
+        return 1
+    if normalized in ("int", "int64"):
+        return 2
+    if normalized in ("float", "float64"):
+        return 3
+    if normalized == "str":
+        return 4
+    if normalized == "list":
+        return 5
+    if normalized == "dict":
+        return 6
+    if normalized == "set":
+        return 7
+    return None
 
 
 def _emit_builtin_isinstance(value_expr: str, expected_name: str) -> str:
@@ -2716,6 +2743,26 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             if func_runtime_module_id == "pytra.built_in.error":
                 return fn + "(" + ", ".join(call_arg_strs) + ")"
             if fn == "main": return "__pytra_main(" + ", ".join(call_arg_strs) + ")"
+            if fn in ("print", "str", "int", "float", "bool", "len"):
+                if fn not in ctx.function_defs and not _is_local_visible(ctx, fn):
+                    runtime_call = fn
+                    if fn == "print":
+                        runtime_call = "py_print"
+                    elif fn == "str":
+                        runtime_call = "py_to_string"
+                    elif fn == "len":
+                        runtime_call = "len"
+                    elif fn in ("int", "float") and len(args) >= 1:
+                        first_arg_obj = json.JsonValue(args[0]).as_obj()
+                        if first_arg_obj is not None and _str(first_arg_obj.raw, "resolved_type") == "str":
+                            runtime_call = "py_int_from_str" if fn == "int" else "py_float_from_str"
+                    builtin_node = dict(node)
+                    builtin_node["lowered_kind"] = "BuiltinCall"
+                    builtin_node["runtime_call"] = runtime_call
+                    builtin_node["builtin_name"] = fn
+                    if _str(builtin_node, "resolved_type") in ("", "unknown", "object", "Obj", "Any"):
+                        builtin_node["resolved_type"] = _plain_builtin_result_type(fn)
+                    return _emit_builtin_call(ctx, builtin_node)
             # Transpiled (non-native) pytra.* modules: use bare function name without builtin prefix.
             call_runtime_module_id = _str(node, "runtime_module_id")
             if call_runtime_module_id == "":

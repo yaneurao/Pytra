@@ -159,3 +159,4 @@ SQL, Scratch, Assembly language, GML, LabVIEW, Ladder Logic, (Visual) FoxPro, Al
 ## Decision Log
 
 - 2026-04-29: Adopted the TIOBE April 2026 top 100 as the initial snapshot. Coverage is managed by classifying all 100 languages into backend / host / interop / syntax / defer instead of making every language a native backend at once.
+- 2026-05-03: Routed C++ plain builtin fallbacks back through runtime helpers and verified C++ parity for fixture `core/add`, sample `17_monte_carlo_pi`, and stdlib `math_extended` in the direct Dockerfile-run environment. A refreshed full sample sweep is now 7/18 PASS and 11 FAIL. Remaining blockers are artifact CRC drift, object type leakage, and plain `min` / `max` / `enumerate` fallback. The selfhost dry-run cpp row is `fixture_pass=1 fixture_fail=0 sample_pass=7 sample_fail=11`.
