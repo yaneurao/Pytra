@@ -2260,7 +2260,7 @@ class ZigNativeEmitter:
                     return
                 if len(self._local_var_stack) > 0:
                     self._add_current_local_var(target_name)
-                decl_kw = "var" if (self._is_var_mutated(target_name) or self._is_name_reassigned(target_name) or self._needs_var_for_type(decl_type) or zig_ty == "pytra.Obj") else "const"
+                decl_kw = "var" if (self._is_var_mutated(target_name) or self._is_name_reassigned(target_name) or self._needs_var_for_type(decl_type)) else "const"
                 if value_node is None and bool(stmt.get("declare")):
                     self._emit_line("var " + target + ": " + zig_ty + " = undefined;")
                 else:
@@ -2389,7 +2389,7 @@ class ZigNativeEmitter:
                                     decl_type,
                                     self._dict_get_any(stmt, "decl_type_expr"),
                                 )
-                        decl_kw = "var" if (self._is_var_mutated(target_name) or self._is_name_reassigned(target_name) or self._needs_var_for_type(decl_type) or zig_ty == "pytra.Obj") else "const"
+                        decl_kw = "var" if (self._is_var_mutated(target_name) or self._is_name_reassigned(target_name) or self._needs_var_for_type(decl_type)) else "const"
                         if is_lambda_value or is_callable_decl:
                             self._emit_line(decl_kw + " " + target + " = " + value + ";")
                             self._record_decl_line(target_name)
@@ -2488,7 +2488,7 @@ class ZigNativeEmitter:
                                     decl_type,
                                     stmt.get("decl_type_expr"),
                                 )
-                        decl_kw = "var" if (self._is_var_mutated(target_name) or self._is_name_reassigned(target_name) or self._needs_var_for_type(decl_type) or zig_ty == "pytra.Obj") else "const"
+                        decl_kw = "var" if (self._is_var_mutated(target_name) or self._is_name_reassigned(target_name) or self._needs_var_for_type(decl_type)) else "const"
                         if is_lambda_value or is_callable_decl:
                             self._emit_line(decl_kw + " " + target + " = " + value + ";")
                             self._record_decl_line(target_name)
@@ -2788,15 +2788,11 @@ class ZigNativeEmitter:
         """@extern 関数の native 委譲コードを生成（spec-emitter-guide §4/§5.1）。"""
         self._ensure_native_import()
         # 引数リスト
-        arg_order_any = stmt.get("arg_order")
+        arg_order_any = self._dict_get_any(stmt, "arg_order")
         args: list[Any] = []
-        if isinstance(arg_order_any, list):
-            for item in arg_order_any:
-                args.append(item)
-        arg_types_any = stmt.get("arg_types")
-        arg_types: dict[str, Any] = {}
-        if isinstance(arg_types_any, dict):
-            arg_types = self._json_dict_to_any(arg_types_any)
+        for item in self._any_list_to_any(arg_order_any):
+            args.append(item)
+        arg_types = self._any_dict_to_any(self._dict_get_any(stmt, "arg_types"))
         arg_strs: list[str] = []
         call_args: list[str] = []
         for a in args:
@@ -4153,9 +4149,8 @@ class ZigNativeEmitter:
         if kind == "Compare":
             return self._render_compare(ed)
         if kind == "BoolOp":
-            op = str(ed.get("op"))
-            values_any = ed.get("values")
-            values = values_any if isinstance(values_any, list) else []
+            op = self._dict_get_str(ed, "op", "")
+            values = self._any_list_to_any(self._dict_get_any(ed, "values"))
             if len(values) == 2:
                 left_node = values[0]
                 right_node = values[1]
@@ -5474,13 +5469,14 @@ class ZigNativeEmitter:
                     return self._render_callable_invoke(rendered_name, call_arg_strs, func_type)
                 return rendered_name + "(" + ", ".join(call_arg_strs) + ")"
             if fkind == "Attribute":
-                obj_node_for_attr = func_any.get("value")
-                attr = _safe_ident(func_any.get("attr"), "method")
-                runtime_symbol = node.get("runtime_symbol")
+                obj_node_for_attr = self._any_dict_to_any(self._dict_get_any(func_any, "value"))
+                attr = _safe_ident(self._dict_get_str(func_any, "attr", ""), "method")
+                runtime_symbol = self._dict_get_str(node, "runtime_symbol", "")
                 # super().method() → BaseClass.method(undefined)
-                if isinstance(obj_node_for_attr, dict) and obj_node_for_attr.get("kind") == "Call":
-                    super_func = obj_node_for_attr.get("func")
-                    if isinstance(super_func, dict) and super_func.get("kind") == "Name" and super_func.get("id") == "super":
+                obj_node_for_attr_kind = self._dict_get_str(obj_node_for_attr, "kind", "")
+                if obj_node_for_attr_kind == "Call":
+                    super_func = self._any_dict_to_any(self._dict_get_any(obj_node_for_attr, "func"))
+                    if self._dict_get_str(super_func, "kind", "") == "Name" and self._dict_get_str(super_func, "id", "") == "super":
                         base = self._class_base.get(self.current_class_name, "")
                         if base != "":
                             if attr == "__init__" and base not in self.class_names:
@@ -5490,8 +5486,7 @@ class ZigNativeEmitter:
                             return "self._base." + attr + "(" + ", ".join(arg_strs) + ")"
                 obj = self._render_expr(obj_node_for_attr)
                 attr_renderer: _ZigStmtCommonRenderer = self._make_stmt_renderer()
-                obj_node_for_attr_dict = self._any_dict_to_any(obj_node_for_attr)
-                if self._dict_get_str(obj_node_for_attr_dict, "kind", "") in {"Subscript", "Call", "Compare", "BoolOp", "BinOp", "IfExp", "IsInstance"}:
+                if obj_node_for_attr_kind in {"Subscript", "Call", "Compare", "BoolOp", "BinOp", "IfExp", "IsInstance"}:
                     obj = "(" + obj + ")"
                 elif ": {" in obj:
                     obj = "(" + obj + ")"
@@ -6642,10 +6637,10 @@ class ZigNativeEmitter:
     def _render_list_with_decl_type(self, node: dict[str, Any], decl_type: str) -> str:
         inner = decl_type[5:-1].strip() if decl_type.startswith("list[") and decl_type.endswith("]") else ""
         zig_elem = self._zig_type(inner) if inner != "" else "i64"
-        elts_any = node.get("elts")
-        if not isinstance(elts_any, list):
-            elts_any = node.get("elements")
-        elts = elts_any if isinstance(elts_any, list) else []
+        elts_any = self._dict_get_any(node, "elts")
+        elts = self._any_list_to_any(elts_any)
+        if len(elts) == 0:
+            elts = self._any_list_to_any(self._dict_get_any(node, "elements"))
         items = [self._render_expr(e) for e in elts]
         if self._is_union_storage_zig(zig_elem):
             items = ["pytra.union_wrap(" + item + ")" for item in items]
