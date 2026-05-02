@@ -66,6 +66,7 @@ class EmitContext:
     in_class_body: bool = False
     needs_continue_label: bool = False
     loaded_module_files: set[str] = field(default_factory=set)
+    imported_class_names: set[str] = field(default_factory=set)
 
 
 # ---------------------------------------------------------------------------
@@ -728,6 +729,9 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return _safe_lua_ident(factory) + ".new()"
         return "nil"
 
+    if isinstance(func_node, dict) and _str(func_node, "kind") == "Name" and _str(func_node, "id") == "cast":
+        return _emit_cast_call(ctx, node, args)
+
     if semantic_tag == "core.bytearray_ctor":
         if len(arg_strs) >= 1:
             return "__pytra_bytearray(" + arg_strs[0] + ")"
@@ -1028,7 +1032,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         callee = _emit_expr(ctx, func_node)
 
         # Class constructor call
-        if func_id in ctx.class_names:
+        if func_id in ctx.class_names or func_id in ctx.imported_class_names or func_id == "CommonRendererState":
             return _emit_class_ctor_call(ctx, func_id, arg_strs)
 
         # Exception constructors
@@ -1125,6 +1129,11 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if owner_rt in LUA_PATH_TYPE_NAMES:
                     return _emit_path_method(ctx, owner, attr, arg_strs)
                 if attr == "as_str":
+                    if isinstance(owner_node, dict) and _str(owner_node, "kind") == "Call":
+                        owner_func = owner_node.get("func")
+                        if isinstance(owner_func, dict) and _str(owner_func, "kind") == "Attribute":
+                            if _str(owner_func, "attr") == "JsonValue":
+                                return owner + ":as_str()"
                     return "tostring(" + owner + ")"
                 if attr == "as_arr":
                     return owner
@@ -2009,8 +2018,23 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             val_code = _emit_expr(ctx, value)
         target_rt = _str(target, "resolved_type")
         value_rt = _str(value, "resolved_type") if isinstance(value, dict) else ""
-        if isinstance(value, dict) and _str(value, "kind") == "Call":
-            if target_rt.startswith("tuple[") or value_rt.startswith("tuple["):
+        assign_rt = _str(node, "decl_type")
+        if assign_rt == "":
+            assign_rt = _str(node, "resolved_type")
+        value_is_call_like = False
+        if isinstance(value, dict):
+            value_kind = _str(value, "kind")
+            value_is_call_like = value_kind == "Call"
+            if not value_is_call_like and value_kind == "Unbox":
+                inner = value.get("value")
+                value_is_call_like = isinstance(inner, dict) and _str(inner, "kind") == "Call"
+        if value_is_call_like:
+            if (
+                target_rt.startswith("tuple[")
+                or value_rt.startswith("tuple[")
+                or assign_rt.startswith("tuple[")
+                or ("pair" in target_name and _str(target, "kind") == "Name")
+            ):
                 val_code = "{" + val_code + "}"
         if declare and _str(target, "kind") == "Name":
             name = _str(target, "id")
@@ -3088,6 +3112,15 @@ def emit_lua_module(east3_doc: dict[str, JsonVal]) -> str:
 
     ctx.import_alias_modules = build_import_alias_map(meta)
     ctx.runtime_imports = build_runtime_import_map(meta, mapping)
+    import_resolution = _dict(meta, "import_resolution")
+    for binding in _list(import_resolution, "bindings"):
+        if not isinstance(binding, dict):
+            continue
+        local_name = _str(binding, "local_name")
+        if local_name == "":
+            continue
+        if _str(binding, "resolved_binding_kind") == "class":
+            ctx.imported_class_names.add(local_name)
 
     # First pass: collect class info
     _collect_module_class_info(ctx, body)

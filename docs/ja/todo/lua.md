@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-29
+最終更新: 2026-05-03
 
 ## 運用ルール
 
@@ -42,11 +42,13 @@
 
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を lua に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
-1. [ ] [ID: P1-HOST-CPP-EMITTER-LUA-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target lua -o work/selfhost/host-cpp/lua/` で変換 + build を通す
+1. [x] [ID: P1-HOST-CPP-EMITTER-LUA-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target lua -o work/selfhost/host-cpp/lua/` で変換 + build を通す
    - 進捗: 2026-04-30 に `pytra-cli.py -build` の target wiring を修正し、`--target lua` が `toolchain.emit.lua.cli` へ到達するようにした。`rm -rf work/selfhost/host-cpp/lua && timeout 3600s python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target lua -o work/selfhost/host-cpp/lua/` は変換 PASS（20 files）。
    - 進捗: 2026-04-30 に Lua runtime の `json.JsonValue` で JSON null を `None` 相当として扱うよう修正し、Python 文字列メソッド互換（`startswith` など）と `py_repr` を追加した。C++ emitter 側は script host で eager 評価される条件式を避ける修正、`ErrorReturn`/`ErrorCheck`/`ErrorCatch`/`MultiAssign` の native throw/tuple unpack 対応を追加した。`timeout 3600s lua work/selfhost/host-cpp/lua/toolchain_emit_cpp_cli.lua ...` は 33 files（`toolchain_emit_cpp_cli.cpp` まで）を書いた後、`toolchain.emit.cpp.emitter` 生成中に 1 時間 timeout（exit 124）。
-2. [ ] [ID: P1-HOST-CPP-EMITTER-LUA-S2] `python3 tools/run/run_emitter_host_parity.py --host-lang lua --hosted-emitter cpp --case-root fixture` で C++ emitter host parity PASS を確認する（結果は `.parity-results/emitter_host_lua.json` に自動書き込み）
+   - 2026-05-03: 完了。`run_emitter_host_parity.py --host-lang lua --hosted-emitter cpp` の build phase が `build_status: ok` まで到達することを確認。
+2. [x] [ID: P1-HOST-CPP-EMITTER-LUA-S2] `python3 tools/run/run_emitter_host_parity.py --host-lang lua --hosted-emitter cpp --case-root fixture` で C++ emitter host parity PASS を確認する（結果は `.parity-results/emitter_host_lua.json` に自動書き込み）
    - 進捗: 2026-04-30 時点では S1 が Lua 実行未 PASS のため未実行。emitter host 結果は `.parity-results/emitter_host_lua.json` に build_failed として記録済み。
+   - 2026-05-03: 完了。`PYTHONPYCACHEPREFIX=work/tmp/pycache timeout 3600s python3 tools/run/run_emitter_host_parity.py --host-lang lua --hosted-emitter cpp --case-root fixture --timeout-sec 3600` で `[OK] lua hosted cpp emitter parity` を確認。`.parity-results/emitter_host_lua.json` は `parity_status: ok`, `parity_fixture_pass: 1`, `parity_fixture_fail: 0`。
 
 ### P1-EMITTER-SELFHOST-LUA: emit/lua/cli.py を単独で selfhost C++ build に通す
 
