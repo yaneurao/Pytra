@@ -1760,6 +1760,8 @@ class ZigNativeEmitter:
                                 if decl_type == "":
                                     decl_type = self._get_expr_type(value_node)
                                 default_val = self._render_expr(value_node)
+                                if self._dict_get_str(value_node, "kind", "") == "Tuple" and decl_type.startswith("tuple["):
+                                    default_val = "@as(" + self._zig_type(decl_type) + ", " + default_val + ")"
                                 static_fields.append([field_name, decl_type, default_val])
                 if len(static_fields) > 0:
                     self._static_fields[name] = static_fields
@@ -4231,39 +4233,37 @@ class ZigNativeEmitter:
         if kind == "Call":
             return self._render_call(ed)
         if kind == "Attribute":
-            val_node = ed.get("value")
-            attr = _safe_ident(ed.get("attr"), "attr")
-            if attr == "__name__" and isinstance(val_node, dict) and val_node.get("kind") == "Call":
-                type_func = val_node.get("func")
-                type_args_any = val_node.get("args")
-                type_args = type_args_any if isinstance(type_args_any, list) else []
+            val_node_any = self._dict_get_any(ed, "value")
+            val_node = self._any_dict_to_any(val_node_any)
+            attr = _safe_ident(self._dict_get_str(ed, "attr", ""), "attr")
+            val_node_kind = self._dict_get_str(val_node, "kind", "")
+            if attr == "__name__" and val_node_kind == "Call":
+                type_func = self._any_dict_to_any(self._dict_get_any(val_node, "func"))
+                type_args = self._any_list_to_any(self._dict_get_any(val_node, "args"))
                 if (
-                    isinstance(type_func, dict)
-                    and type_func.get("kind") == "Name"
-                    and _safe_ident(type_func.get("id"), "") == "type"
+                    self._dict_get_str(type_func, "kind", "") == "Name"
+                    and _safe_ident(self._dict_get_str(type_func, "id", ""), "") == "type"
                     and len(type_args) == 1
                 ):
                     arg_type = self._lookup_expr_type(type_args[0]) or self._get_expr_type(type_args[0])
                     return _zig_string(self._normalize_type(arg_type) or "unknown")
-            if isinstance(val_node, dict) and val_node.get("kind") == "Name":
-                owner = _safe_ident(val_node.get("id"), "")
+            if val_node_kind == "Name":
+                owner = _safe_ident(self._dict_get_str(val_node, "id", ""), "")
                 if owner in self._static_fields:
                     for sf in self._static_fields[owner]:
                         sf_name = sf[0] if len(sf) > 0 else ""
                         if sf_name == attr:
                             return "Module_" + owner + "_" + attr
             obj = self._render_expr(val_node)
-            val_node_dict = self._any_dict_to_any(val_node)
-            if self._dict_get_str(val_node_dict, "kind", "") in {"Subscript", "Call", "Compare", "BoolOp", "BinOp", "IfExp", "IsInstance"}:
+            if val_node_kind in {"Subscript", "Call", "Compare", "BoolOp", "BinOp", "IfExp", "IsInstance"}:
                 obj = "(" + obj + ")"
             elif ": {" in obj:
                 obj = "(" + obj + ")"
-            val_type = self._lookup_expr_type(val_node) if isinstance(val_node, dict) else ""
+            val_type = self._lookup_expr_type(val_node) if len(val_node) > 0 else ""
             norm_val_type = self._normalize_type(val_type)
             is_self_receiver = (
-                isinstance(val_node, dict)
-                and val_node.get("kind") == "Name"
-                and _safe_ident(val_node.get("id"), "") == "self"
+                val_node_kind == "Name"
+                and _safe_ident(self._dict_get_str(val_node, "id", ""), "") == "self"
                 and self.current_class_name == norm_val_type
             )
             if norm_val_type in self.class_names and self._zig_type(norm_val_type) == "pytra.Obj" and not is_self_receiver:
@@ -4278,9 +4278,8 @@ class ZigNativeEmitter:
             if (norm_val_type in self.class_names or norm_val_type in self._known_imported_nominals) and has_val_property:
                 return obj + "." + attr + "()"
             if (
-                isinstance(val_node, dict)
-                and val_node.get("kind") == "Name"
-                and _safe_ident(val_node.get("id"), "") == "self"
+                val_node_kind == "Name"
+                and _safe_ident(self._dict_get_str(val_node, "id", ""), "") == "self"
                 and self.current_class_name != ""
             ):
                 base_name = self._class_base.get(self.current_class_name, "")
