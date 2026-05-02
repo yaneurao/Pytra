@@ -873,7 +873,7 @@ class ZigNativeEmitter:
         """AST ノードツリー内で Name.id == name の参照を検索する。"""
         if isinstance(node, dict):
             nd: dict[str, Any] = node
-            if nd.get("kind") == "Name" and nd.get("id") == name:
+            if self._dict_get_str(nd, "kind", "") == "Name" and self._dict_get_str(nd, "id", "") == name:
                 return True
             for key, val in nd.items():
                 key_str = str(key)
@@ -895,7 +895,7 @@ class ZigNativeEmitter:
     def _node_uses_name_runtime(self, node: Any, name: str) -> bool:
         if isinstance(node, dict):
             nd: dict[str, Any] = node
-            if nd.get("kind") == "Name" and nd.get("id") == name:
+            if self._dict_get_str(nd, "kind", "") == "Name" and self._dict_get_str(nd, "id", "") == name:
                 return True
             for key, val in nd.items():
                 key_str = str(key)
@@ -3915,16 +3915,16 @@ class ZigNativeEmitter:
                 return "null"
             i_lc = len(self._lambda_capture_stack) - 1
             while i_lc >= 0:
-                rewritten: str | None = self._lambda_capture_stack[i_lc].get(name)
-                if rewritten is not None:
-                    return rewritten
+                name_capture_rewrites: dict[str, str] = self._lambda_capture_stack[i_lc]
+                if name in name_capture_rewrites:
+                    return self._str_dict_get(name_capture_rewrites, name, name)
                 i_lc -= 1
             # Apply param rename mapping (for Zig shadowing avoidance)
             i_pr = len(self._param_rename_stack) - 1
             while i_pr >= 0:
-                renamed: str | None = self._param_rename_stack[i_pr].get(name)
-                if renamed is not None:
-                    return renamed
+                name_param_renames: dict[str, str] = self._param_rename_stack[i_pr]
+                if name in name_param_renames:
+                    return self._str_dict_get(name_param_renames, name, name)
                 i_pr -= 1
             node_resolved_type = self._normalize_type(self._get_expr_type(ed))
             resolved_type = self._lookup_expr_type(ed)
@@ -7109,6 +7109,42 @@ class _ZigStmtCommonRenderer(CommonRenderer):
 
     def render_break_to_label_value(self, block_label: str, value_expr: str) -> str:
         return "break :" + block_label + " " + value_expr + ";"
+
+    def render_simple_block_expr(self, block_label: str, prelude_expr: str, value_expr: str) -> str:
+        return (
+            self.render_block_expr_open(block_label)
+            + " "
+            + prelude_expr
+            + " "
+            + self.render_break_to_label_value(block_label, value_expr)
+            + " }"
+        )
+
+    def render_guarded_block_expr(
+        self,
+        block_label: str,
+        prelude_expr: str,
+        guard_expr: str,
+        exc_type_expr: str,
+        exc_msg_expr: str,
+        exc_line_expr: str,
+        fallback_value: str,
+        value_expr: str,
+    ) -> str:
+        return (
+            self.render_block_expr_open(block_label)
+            + " "
+            + prelude_expr
+            + " if ("
+            + guard_expr
+            + ") { "
+            + self.render_inline_exception_state(exc_type_expr, exc_msg_expr, exc_line_expr)
+            + " "
+            + self.render_break_to_label_value(block_label, fallback_value)
+            + " } "
+            + self.render_break_to_label_value(block_label, value_expr)
+            + " }"
+        )
 
     def render_raise_propagation_stmt(self, try_label: str, return_stmt: str) -> str:
         if try_label != "":
