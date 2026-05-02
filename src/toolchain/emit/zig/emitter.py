@@ -682,7 +682,7 @@ class ZigNativeEmitter:
                         owner = self._any_dict_to_any(func.get("value"))
                         if self._dict_get_str(owner, "kind", "") == "Name":
                             attr = _safe_ident(func.get("attr"), "")
-                            if attr in {'clear', 'pop', 'setdefault', 'append', 'extend'}:
+                            if attr in {'clear', 'pop', 'setdefault'}:
                                 mutated.add(_safe_ident(owner.get("id"), ""))
             elif kind == "If":
                 mutated.update(self._scan_mutated_vars(stmt.get("body")))
@@ -2750,6 +2750,8 @@ class ZigNativeEmitter:
         if py_type == "":
             py_type = self._dict_get_str(arg_types, arg_name, "")
         py_type = py_type.strip()
+        if self._is_callable_type(py_type):
+            return "anytype"
         if py_type.find("|") != -1:
             parts = [self._normalize_type(p.strip()) for p in py_type.split("|")]
             non_none = [part for part in parts if part != "None"]
@@ -4528,12 +4530,15 @@ class ZigNativeEmitter:
                 return "pytra.format_float_precision(" + value_expr + ", " + spec[1:-1] + ")"
             return value_expr
         if kind == "Lambda":
-            arg_order_any = ed.get("arg_order")
-            args = arg_order_any if isinstance(arg_order_any, list) else []
+            args = self._any_list_to_any(self._dict_get_any(ed, "arg_order"))
             arg_names = [_safe_ident(a, "arg") for a in args]
-            arg_types_any = ed.get("arg_types")
-            arg_types = self._any_dict_to_any(arg_types_any)
-            capture_names = self._collect_lambda_captures(ed.get("body"), arg_names)
+            arg_types = self._any_dict_to_any(self._dict_get_any(ed, "arg_types"))
+            body_node = self._dict_get_any(ed, "body")
+            body_dict = self._any_dict_to_any(body_node)
+            body_expr_node: Any = body_node
+            if len(body_dict) > 0:
+                body_expr_node = body_dict
+            capture_names = self._collect_lambda_captures(body_expr_node, arg_names)
             capture_fields: list[str] = []
             capture_inits: list[str] = []
             lambda_type_map: dict[str, str] = {}
@@ -4543,7 +4548,7 @@ class ZigNativeEmitter:
                     lambda_type_map[arg_name] = arg_type
             capture_rewrites: dict[str, str] = {}
             for capture_name in capture_names:
-                capture_type = self._current_type_map().get(capture_name, "")
+                capture_type = self._dict_get_str(self._current_type_map(), capture_name, "")
                 if capture_type != "":
                     lambda_type_map[capture_name] = capture_type
                 capture_fields.append(capture_name + ": " + self._zig_type(capture_type))
@@ -4557,10 +4562,10 @@ class ZigNativeEmitter:
                     raw_type = self._dict_get_str(arg_types, arg_name, "")
                 arg_type = raw_type.strip()
                 arg_parts.append(arg_name + ": " + self._zig_type(arg_type))
-            ret_type = self._zig_type(str(ed.get("return_type", "")))
+            ret_type = self._zig_type(self._dict_get_str(ed, "return_type", ""))
             self._local_type_stack.append(lambda_type_map)
             self._lambda_capture_stack.append(capture_rewrites)
-            body_expr = self._render_expr(ed.get("body"))
+            body_expr = self._render_expr(body_expr_node)
             self._lambda_capture_stack.pop()
             self._local_type_stack.pop()
             self_param = "self: @This()"
@@ -4673,11 +4678,12 @@ class ZigNativeEmitter:
         return False
 
     def _render_constant(self, node: dict[str, Any]) -> str:
-        v = node.get("value")
+        v = self._dict_get_any(node, "value")
         if v is None:
             return "null"
         if isinstance(v, bool):
-            return "true" if v else "false"
+            bool_value: bool = cast(bool, v)
+            return "true" if bool_value else "false"
         if isinstance(v, int):
             return str(v)
         if isinstance(v, float):
