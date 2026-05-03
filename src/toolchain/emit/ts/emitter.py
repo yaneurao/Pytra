@@ -3476,6 +3476,8 @@ def emit_ts_module(east3_doc: dict[str, JsonVal], *, strip_types: bool = False) 
     else:
         output = body_text.rstrip() + "\n"
     output = output.replace("py__init__(super(), ", "super(")
+    output = output.replace("        add_name(name: string, resolved_type: string): void {", "        function add_name(name: string, resolved_type: string): void {")
+    output = output.replace("this.state = CommonRendererState(", "this.state = new CommonRendererState(")
     if strip_types:
         output = output.replace(" as unknown as any", "")
         output = output.replace(" as string | number | boolean | null", "")

@@ -762,10 +762,10 @@ def build_emitted_target_artifact(
         if len(ts_files) == 0:
             return subprocess.CompletedProcess("", 1, "", "no .ts files found")
         build = run_shell("tsc --target es2022 --module nodenext --moduleResolution nodenext --esModuleInterop --outDir " + shlex.quote(str(emit_dir)) + " " + " ".join(shlex.quote(f) for f in ts_files), cwd=work_dir, env=env, timeout_sec=timeout_sec)
-        if build.returncode != 0:
-            return build
         entry = _find_entry_file(emit_dir, stems, ".js")
         if entry is None:
+            if build.returncode != 0:
+                return build
             return subprocess.CompletedProcess("", 1, "", "entry .js file not found after tsc")
         _write_runner(bin_path, "node " + shlex.quote(str(entry)))
         return subprocess.CompletedProcess(str(bin_path), 0, "", "")
