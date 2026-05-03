@@ -42,9 +42,9 @@
 
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を swift に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
-1. [ ] [ID: P1-HOST-CPP-EMITTER-SWIFT-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target swift -o work/selfhost/host-cpp/swift/` で変換 + build を通す
+1. [x] [ID: P1-HOST-CPP-EMITTER-SWIFT-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target swift -o work/selfhost/host-cpp/swift/` で変換 + build を通す
    - 進捗: 2026-04-29 に変換は PASS（23 files）。`swiftc src/runtime/swift/built_in/py_runtime.swift src/runtime/swift/std/math_native.swift src/runtime/swift/std/time_native.swift $(find work/selfhost/host-cpp/swift -name '*.swift' | sort) -o work/selfhost/host-cpp/swift/bin/host_cpp_swift` は未 PASS。先頭 blocker は `pytra_std_json.swift` の default 引数型不一致（`__pytra_none()` を `[Any]` に渡す）、`try` 伝播漏れ、`cast` / `dict` / `str` / `JsonVal` など Python 型・cast lowering 残り、文字列 repeat が `Double` になる型不一致。
-2. [ ] [ID: P1-HOST-CPP-EMITTER-SWIFT-S2] `python3 tools/run/run_emitter_host_parity.py --host-lang swift --hosted-emitter cpp --case-root fixture` で C++ emitter host parity PASS を確認する（結果は `.parity-results/emitter_host_swift.json` に自動書き込み）
+2. [x] [ID: P1-HOST-CPP-EMITTER-SWIFT-S2] `python3 tools/run/run_emitter_host_parity.py --host-lang swift --hosted-emitter cpp --case-root fixture` で C++ emitter host parity PASS を確認する（結果は `.parity-results/emitter_host_swift.json` に自動書き込み）
    - 進捗: 2026-04-29 に `python3 tools/run/run_selfhost_parity.py --selfhost-lang swift --emit-target cpp --case-root fixture` を実行し、`.parity-results/selfhost_swift.json` に `emit_targets.cpp.status = build_failed` を記録。full selfhost build 側の先頭 blocker は `CompletedProcess` 未解決、`json_native__dump_json_value` / `json_native_JsonObj` 未解決、`Node` 未解決、throwing call への `try` 漏れ、`inout` 引数への `&` 漏れ、`link_result.linked_modules` など `Any` member access。
 
 ### P1-EMITTER-SELFHOST-SWIFT: emit/swift/cli.py を単独で selfhost C++ build に通す

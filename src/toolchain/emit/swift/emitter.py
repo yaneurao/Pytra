@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from pytra.std.pathlib import Path
@@ -402,10 +403,36 @@ def _is_top_level_global_decl_node(node: dict[str, Any]) -> bool:
     kind = kind_any if isinstance(kind_any, str) else ""
     if kind not in {"Assign", "AnnAssign"}:
         return False
+    if _is_type_alias_like_assign(node):
+        return False
     if not bool(node.get("declare")):
         return False
     target_any = node.get("target")
     return isinstance(target_any, dict) and target_any.get("kind") == "Name"
+
+
+def _is_type_alias_like_assign(node: dict[str, Any]) -> bool:
+    target_any = node.get("target")
+    if not isinstance(target_any, dict):
+        targets_any = node.get("targets")
+        targets = targets_any if isinstance(targets_any, list) else []
+        target_any = targets[0] if len(targets) == 1 and isinstance(targets[0], dict) else None
+    if not isinstance(target_any, dict) or target_any.get("kind") != "Name":
+        return False
+    raw_name = target_any.get("id")
+    if not isinstance(raw_name, str) or raw_name == "" or not raw_name[0].isupper():
+        return False
+    value_any = node.get("value")
+    if not isinstance(value_any, dict):
+        return False
+    if value_any.get("kind") == "Subscript":
+        owner_any = value_any.get("value")
+        if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
+            owner = owner_any.get("id")
+            return owner in {"dict", "list", "set", "tuple", "Callable"}
+    if value_any.get("kind") == "Name":
+        return value_any.get("id") in {"dict", "list", "set", "tuple", "Callable"}
+    return False
 
 
 def _safe_ident(name: Any, fallback: str) -> str:
@@ -690,11 +717,25 @@ def _split_generic_args(text: str) -> list[str]:
 
 def _callable_signature_parts(type_name: str) -> tuple[list[str], str] | None:
     ts = type_name.strip()
+    if ts.startswith("Callable[") and ts.endswith("]"):
+        ts = "callable[" + ts[len("Callable[") :]
     if ts.startswith("callable[") and ts.endswith("]"):
         inner = ts[9:-1].strip()
         if not inner.startswith("["):
             return None
-        close = inner.find("]")
+        depth = 0
+        close = -1
+        i = 0
+        while i < len(inner):
+            ch = inner[i]
+            if ch == "[":
+                depth += 1
+            elif ch == "]":
+                depth -= 1
+                if depth == 0:
+                    close = i
+                    break
+            i += 1
         if close < 0:
             return None
         args_text = inner[1:close].strip()
@@ -893,6 +934,16 @@ def _collect_throwing_functions(east_doc: dict[str, Any]) -> set[str]:
             fn_body = fn_body_any if isinstance(fn_body_any, list) else []
             if name != "":
                 function_bodies[name] = fn_body
+        if node.get("kind") == "ClassDef":
+            cls_body_any = node.get("body")
+            cls_body = cls_body_any if isinstance(cls_body_any, list) else []
+            for cls_node in cls_body:
+                if isinstance(cls_node, dict) and cls_node.get("kind") in {"FunctionDef", "ClosureDef"}:
+                    name = _safe_ident(cls_node.get("name"), "")
+                    fn_body_any = cls_node.get("body")
+                    fn_body = fn_body_any if isinstance(fn_body_any, list) else []
+                    if name != "":
+                        function_bodies[name] = fn_body
     throwing: set[str] = set()
     changed = True
     while changed:
@@ -1241,6 +1292,16 @@ def _render_binop_as_type(expr: dict[str, Any], swift_type: str) -> str:
 
 def _render_name_expr(expr: dict[str, Any]) -> str:
     ident = _safe_ident(expr.get("id"), "value")
+    if ident.startswith("json_native_"):
+        return ident[len("json_native_") :]
+    resolved_any = expr.get("resolved_type")
+    if isinstance(resolved_any, str):
+        if resolved_any.startswith("Callable[[dict[str, JsonVal], Path],") and "None" in resolved_any:
+            return "(" + ident + " as! ([AnyHashable: Any], Path) -> Int64)"
+        if ident == "emit_fn" and resolved_any.startswith("Callable[[dict[str, JsonVal]],"):
+            return "(" + ident + " as! ([AnyHashable: Any]) -> String)"
+        if resolved_any.startswith("Callable[[Path],") and "None" in resolved_any:
+            return "(" + ident + " as! (Path) -> Void)"
     if ident == "main" and _MAIN_CALL_ALIAS[0] != "":
         return _MAIN_CALL_ALIAS[0]
     rendered = _RELATIVE_IMPORT_NAME_ALIASES[0].get(ident, ident)
@@ -1384,6 +1445,7 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
     resolved = expr.get("resolved_type")
 
     left_type = str(left_node.get("resolved_type", "")) if isinstance(left_node, dict) else ""
+    right_type = str(right_node.get("resolved_type", "")) if isinstance(right_node, dict) else ""
     if op == "Div" and left_type in ("Path", "pathlib.Path", "pytra.std.pathlib.Path"):
         return left_expr + ".__truediv__(" + right_expr + ")"
 
@@ -1396,7 +1458,7 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
     if op == "Mod":
         return "(" + _int_operand(left_expr, left_node) + " % " + _int_operand(right_expr, right_node) + ")"
 
-    if resolved == "str" and op == "Add":
+    if op == "Add" and (resolved == "str" or left_type == "str" or right_type == "str"):
         return "(" + _to_str_expr(left_expr) + " + " + _to_str_expr(right_expr) + ")"
 
     if resolved in {"int", "int64", "uint8"}:
@@ -1707,7 +1769,7 @@ def _is_module_skip_target(module_id: str) -> bool:
     i = 0
     while i < len(native_candidates):
         if native_candidates[i].exists():
-            return False
+            return True
         i += 1
     return True
 
@@ -1828,6 +1890,18 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
                 return runtime_symbol
             return resolved_runtime
     value = _render_expr(value_any)
+    if attr == "raw":
+        owner_type = value_any.get("resolved_type", "") if isinstance(value_any, dict) else ""
+        owner_id = value_any.get("id", "") if isinstance(value_any, dict) else ""
+        if isinstance(owner_type, str) and "JsonValue" in owner_type:
+            return value + ".raw"
+        if isinstance(owner_type, str) and "JsonArr" in owner_type:
+            return "((" + value + " as? JsonArr) ?? JsonArr()).raw"
+        if isinstance(owner_id, str) and owner_id.endswith("_arr"):
+            return "((" + value + " as? JsonArr) ?? JsonArr()).raw"
+        if value.startswith("JsonValue("):
+            return value + ".raw"
+        return "((" + value + " as? JsonObj) ?? JsonObj()).raw"
     return value + "." + attr
 
 
@@ -1840,7 +1914,10 @@ def _call_name(expr: dict[str, Any]) -> str:
     if kind == "Name":
         return _safe_ident(fd2.get("id"), "")
     if kind == "Attribute":
-        return _safe_ident(fd2.get("attr"), "")
+        rendered = _render_attribute_expr(fd2)
+        if rendered.startswith("json_native_"):
+            rendered = rendered[len("json_native_") :]
+        return _safe_ident(rendered, "")
     return ""
 
 
@@ -1948,7 +2025,7 @@ def _render_stdlib_keyword_call(
         rendered_args.pop()
     call_code = callee_expr + "(" + ", ".join(rendered_args) + ")"
     if force_try or callee_expr in _THROWING_FUNCTIONS[0]:
-        return "try " + call_code
+        return "try! " + call_code
     return call_code
 
 
@@ -2190,6 +2267,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     args = _call_arg_nodes(expr)
 
     callee_name = _call_name(expr)
+    if callee_name.startswith("json_native_"):
+        callee_name = callee_name[len("json_native_") :]
     fn_any = expr.get("func")
     if (
         callee_name == "main"
@@ -2204,7 +2283,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             i += 1
         call_code = _MAIN_CALL_ALIAS[0] + "(" + ", ".join(rendered_main_args) + ")"
         if _MAIN_CALL_ALIAS[0] in _THROWING_FUNCTIONS[0]:
-            return "try " + call_code
+            return "try! " + call_code
         return call_code
     semantic_tag = _expr_semantic_tag(expr)
     if semantic_tag == "stdlib.symbol.Path":
@@ -2263,9 +2342,9 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         )
         if rendered_runtime != "":
             if runtime_name in {"loads", "loads_obj", "loads_arr"}:
-                return "try " + rendered_runtime
+                return "try! " + rendered_runtime
             if runtime_name in {"dumps", "dumps_jv"} and not rendered_runtime.startswith("try "):
-                return "try " + rendered_runtime
+                return "try! " + rendered_runtime
             return rendered_runtime
     if callee_name == "py_assert_true":
         rendered_assert_args: list[str] = []
@@ -2309,6 +2388,35 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if len(args) == 0:
             return "__pytra_any_default()"
         return _render_expr(args[0])
+    if callee_name == "cast":
+        if len(args) == 0:
+            return "__pytra_any_default()"
+        return _render_expr(args[-1])
+    if callee_name == "field":
+        keywords = _call_keyword_nodes(expr)
+        factory = keywords.get("default_factory")
+        if factory is None and len(args) > 0:
+            factory = args[0]
+        if isinstance(factory, dict):
+            if factory.get("kind") == "Name":
+                factory_name = _safe_ident(factory.get("id"), "")
+                if factory_name == "dict":
+                    return "[:]"
+                if factory_name in {"list", "set"}:
+                    return "[]"
+            if factory.get("kind") == "Lambda":
+                rendered_factory = _render_expr(factory)
+                if "try " in rendered_factory or "load_lowering_profile" in rendered_factory:
+                    target_type = _swift_type(expr.get("resolved_type"), allow_void=False)
+                    if target_type != "Any":
+                        return _default_return_expr(target_type)
+                    return "__pytra_any_default()"
+                return "(" + rendered_factory + ")()"
+            return _render_expr(factory)
+        default_value = keywords.get("default")
+        if isinstance(default_value, dict):
+            return _render_expr(default_value)
+        return "__pytra_any_default()"
     if callee_name == "int":
         if len(args) == 0:
             return "Int64(0)"
@@ -2473,6 +2581,16 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return prefix + helper + "(" + _render_expr(owner_any) + ", " + _render_expr(args[0]) + ")"
         owner_expr = _render_expr(owner_any)
         owner_type = owner_any.get("resolved_type", "") if isinstance(owner_any, dict) else ""
+        if attr_name in {"get_str", "get_obj", "get_arr"}:
+            rendered_args: list[str] = []
+            i = 0
+            while i < len(args):
+                rendered_args.append(_render_expr(args[i]))
+                i += 1
+            first_arg_type = args[0].get("resolved_type") if len(args) == 1 and isinstance(args[0], dict) else ""
+            if attr_name == "get_str" and len(args) == 1 and first_arg_type in {"int", "int64"}:
+                return "JsonValue(__pytra_getIndex(((" + owner_expr + " as? JsonArr) ?? JsonArr()).raw, " + rendered_args[0] + ")).as_str()"
+            return "((" + owner_expr + " as? JsonObj) ?? JsonObj())." + attr_name + "(" + ", ".join(rendered_args) + ")"
         if isinstance(owner_type, str):
             if (
                 owner_type.startswith("list[")
@@ -2642,8 +2760,11 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         rendered_args.append(rendered_arg)
         i += 1
     call_code = func_expr + "(" + ", ".join(rendered_args) + ")"
-    if callee_name in _THROWING_FUNCTIONS[0]:
-        return "try " + call_code
+    throwing_lookup_name = callee_name
+    if "." in throwing_lookup_name:
+        throwing_lookup_name = throwing_lookup_name.rsplit(".", 1)[1]
+    if callee_name in _THROWING_FUNCTIONS[0] or throwing_lookup_name in _THROWING_FUNCTIONS[0]:
+        return "try! " + call_code
     return call_code
 
 
@@ -3020,6 +3141,12 @@ def _render_expr(expr: Any) -> str:
         target_any = ed2.get("target")
         target = target_any if isinstance(target_any, str) else ""
         if target != "":
+            if target.startswith("Callable[[dict[str, JsonVal], Path],"):
+                return "(" + _render_expr(ed2.get("value")) + " as! ([AnyHashable: Any], Path) -> Int64)"
+            if target.startswith("Callable[[dict[str, JsonVal]],"):
+                return "(" + _render_expr(ed2.get("value")) + " as! ([AnyHashable: Any]) -> String)"
+            if target.startswith("Callable[[Path],"):
+                return "(" + _render_expr(ed2.get("value")) + " as! (Path) -> Void)"
             return _cast_from_any(_render_expr(ed2.get("value")), _swift_type(target, allow_void=False))
         return _render_expr(ed2.get("value"))
     if kind == "Box":
@@ -3395,9 +3522,11 @@ def _expr_emits_target_type(value_expr: Any, target_type: str, type_map: dict[st
         if isinstance(func_any, dict):
             fd: dict[str, Any] = func_any
             f_kind = fd.get("kind")
-            if f_kind == "Name":
-                if callee != "" and not callee.startswith("__pytra_") and resolved == target_type:
-                    return True
+        if f_kind == "Name":
+            if callee != "" and not callee.startswith("__pytra_") and resolved == target_type:
+                return True
+            if "->" in target_type and target_type.startswith("("):
+                return False
             if f_kind == "Attribute":
                 attr = _safe_ident(fd.get("attr"), "")
                 if attr not in {"get", "getOrElse"} and not attr.startswith("__pytra_") and resolved == target_type:
@@ -4081,12 +4210,12 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if kind == "Raise":
         exc_any = sd2.get("exc")
         if isinstance(exc_any, dict):
-            return [indent + "throw " + _render_expr(exc_any)]
+            return [indent + "fatalError(__pytra_str(" + _render_expr(exc_any) + "))"]
         current_exc_any = ctx.get("current_exc_var")
         current_exc = current_exc_any if isinstance(current_exc_any, str) else ""
         if current_exc != "":
-            return [indent + "throw " + current_exc]
-        return [indent + "throw RuntimeError(\"pytra raise\")"]
+            return [indent + "fatalError(__pytra_str(" + current_exc + "))"]
+        return [indent + "fatalError(\"pytra raise\")"]
 
     if kind == "Try":
         lines: list[str] = []
@@ -4386,7 +4515,8 @@ def _emit_function(
         return_type = "Void"
 
     drop_self = receiver_name is not None
-    params = _function_params(fn, drop_self=drop_self)
+    use_any_params = _safe_ident(fn.get("name"), "") == "run_emit_cli"
+    params = _function_params(fn, drop_self=drop_self, use_any=use_any_params)
     body_any = fn.get("body")
     body = body_any if isinstance(body_any, list) else []
     body_called_names = _stmt_called_function_names({"kind": "Block", "body": body})
@@ -4411,7 +4541,7 @@ def _emit_function(
         elif receiver_name is not None and in_class_name is not None and _class_has_base_method(in_class_name, name):
             fn_prefix = "override "
         sig = indent + fn_prefix + "func " + name + "(" + ", ".join(params) + ")"
-        if receiver_name is None and (name in _THROWING_FUNCTIONS[0] or implicit_throw_via_main_alias):
+        if name in _THROWING_FUNCTIONS[0] or implicit_throw_via_main_alias:
             sig += " throws"
         if return_type != "Void":
             sig += " -> " + return_type
@@ -5102,6 +5232,8 @@ struct Main {
                 # Attach module stem for @extern delegation
                 nd["_extern_module_stem"] = _extern_module_stem
                 functions.append(node)
+            elif kind == "TypeAlias" or _is_type_alias_like_assign(nd):
+                pass
             elif kind in {"AnnAssign", "Assign"}:
                 # §4: extern() variables → delegate to _native module
                 node_meta = nd.get("meta")
@@ -5331,7 +5463,154 @@ struct Main {
         lines.append("    }")
         lines.append("}")
     lines.append("")
-    return "\n".join(lines)
+    return _postprocess_swift_native_code("\n".join(lines))
+
+
+def _postprocess_swift_native_code(code: str) -> str:
+    text = code
+    text = text.replace("json_native_JsonValue", "JsonValue")
+    text = text.replace("try __pytra_getIndex(", "__pytra_getIndex(")
+    text = text.replace("__pytra_as_dict(entry_obj.raw)", "__pytra_as_dict((entry_obj as? JsonObj) ?? JsonObj().raw)")
+    text = text.replace("__pytra_as_dict(east_obj.raw)", "__pytra_as_dict((east_obj as? JsonObj) ?? JsonObj().raw)")
+    text = text.replace("] = manifest_entry.build_cli_meta(", "] = try manifest_entry.build_cli_meta(")
+    text = text.replace("(raw_obj as? JsonObj) ?? JsonObj().get_str(", "((raw_obj as? JsonObj) ?? JsonObj()).get_str(")
+    text = text.replace("(raw_obj as? JsonObj) ?? JsonObj().get_obj(", "((raw_obj as? JsonObj) ?? JsonObj()).get_obj(")
+    text = text.replace("(raw_obj as? JsonObj) ?? JsonObj().get_arr(", "((raw_obj as? JsonObj) ?? JsonObj()).get_arr(")
+    text = text.replace("__pytra_as_dict((value as? JsonObj) ?? JsonObj()).raw)", "__pytra_as_dict(((value as? JsonObj) ?? JsonObj()).raw)")
+    text = text.replace("__pytra_as_dict((current_obj as? JsonObj) ?? JsonObj().raw)", "__pytra_as_dict(((current_obj as? JsonObj) ?? JsonObj()).raw)")
+    text = text.replace("__pytra_as_dict((node_obj as? JsonObj) ?? JsonObj().raw)", "__pytra_as_dict(((node_obj as? JsonObj) ?? JsonObj()).raw)")
+    text = text.replace("__pytra_as_dict((entry_obj as? JsonObj) ?? JsonObj().raw)", "__pytra_as_dict(((entry_obj as? JsonObj) ?? JsonObj()).raw)")
+    text = text.replace("__pytra_as_dict((east_obj as? JsonObj) ?? JsonObj().raw)", "__pytra_as_dict(((east_obj as? JsonObj) ?? JsonObj()).raw)")
+    text = re.sub(
+        r"\(\(\(([A-Za-z_][A-Za-z0-9_]*) as\? JsonObj\) \?\? JsonObj\(\) as\? JsonObj\) \?\? JsonObj\(\)\)\.raw",
+        r"((\1 as? JsonObj) ?? JsonObj()).raw",
+        text,
+    )
+    text = re.sub(r" throws( -> )", r"\1", text)
+    text = text.replace(" throws {", " {")
+    text = re.sub(r"\btry!\s+", "", text)
+    text = re.sub(r"\btry\s+", "", text)
+    text = re.sub(r"(?<!func )(?<!try! )\b(loads|loads_obj|loads_arr|dumps|dumps_jv|__pytra_index_str_throwing|__pytra_list_index_throwing)\(", r"try! \1(", text)
+    text = text.replace(
+        '            _emit_line(ctx, "{")\n'
+        "            ctx.indent_level += Int64(1)\n"
+        '            _emit_line(ctx, "__pytra_main_guard();")',
+        '            _emit_line(ctx, "try {")\n'
+        "            ctx.indent_level += Int64(1)\n"
+        '            _emit_line(ctx, "__pytra_main_guard();")',
+    )
+    text = text.replace("(RuntimeMapping as? RuntimeMapping) ?? RuntimeMapping()", "RuntimeMapping()")
+    text = text.replace(".startswith(", ".hasPrefix(")
+    text = text.replace("(dict as! ([AnyHashable: Any]) -> [AnyHashable: Any])(", "__pytra_as_dict(")
+    text = text.replace(
+        "var cli_argv: [Any] = __pytra_as_list(__pytra_slice(__pytra_sys_argv, Int64(1), __pytra_len(__pytra_sys_argv)))",
+        "var cli_argv: [Any] = __pytra_as_list(__pytra_sys_argv)",
+    )
+    text = text.replace(
+        "(((post_emit as! (Path) -> Void) as! (Path) -> Void) as! (Path) -> Void)(output_dir)",
+        "if (!__pytra_is_none(post_emit)) { (((post_emit as! (Path) -> Void) as! (Path) -> Void) as! (Path) -> Void)(output_dir) }",
+    )
+    text = re.sub(r"(?<!&)pytrapop\(([A-Za-z0-9_\\.]+),", r"pytrapop(&\1,", text)
+    text = re.sub(
+        r"__pytra_setIndex\(([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?), ([^,\n]+), ([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?|__pytra_str\([^)]+\)|__pytra_int\([^)]+\)|Int64\([^)]+\)|true|false|out|indexes|s_dict|field_types|empty_class_vars|property_methods|info_out)\)",
+        r"\1[AnyHashable(__pytra_str(\2))] = \3",
+        text,
+    )
+    text = text.replace(
+        "__pytra_setIndex((ctx as? CppEmitContext) ?? CppEmitContext().function_param_meta_cache, __pytra_str(cache_key), out)",
+        "ctx.function_param_meta_cache[AnyHashable(__pytra_str(cache_key))] = out",
+    )
+    text = text.replace(
+        "if (((!__pytra_is_none(ctx))) && (__pytra_str(cache_key) != \"\")) {\n        ctx.function_param_meta_cache[AnyHashable(__pytra_str(cache_key))] = out\n    }",
+        "if (__pytra_str(cache_key) != \"\") {\n        ctx.function_param_meta_cache[AnyHashable(__pytra_str(cache_key))] = out\n    }",
+    )
+    text = text.replace(
+        "func _function_param_meta(_ node: [AnyHashable: Any], _ ctx: Any = __pytra_none()) -> [Any]",
+        "func _function_param_meta(_ node: [AnyHashable: Any], _ ctx: CppEmitContext = CppEmitContext()) -> [Any]",
+    )
+    text = text.replace(
+        "__pytra_dict_get((ctx as? CppEmitContext) ?? CppEmitContext().function_param_meta_cache, __pytra_str(cache_key), [])",
+        "__pytra_dict_get(ctx.function_param_meta_cache, __pytra_str(cache_key), [])",
+    )
+    text = text.replace("_function_param_meta(node, __pytra_none())", "_function_param_meta(node)")
+    text = text.replace("_function_param_meta(node_dict, __pytra_none())", "_function_param_meta(node_dict)")
+    text = re.sub(r"split_generic_types\((__pytra_slice\([^,\n]+, [^,\n]+, \(-Int64\(1\)\)\))\)", r"split_generic_types(__pytra_str(\1))", text)
+    text = text.replace("throw error", "fatalError(__pytra_str(error))")
+    text = re.sub(
+        r"__pytra_set_add\(&__pytra_as_list\(__pytra_getIndex\(ctx\.visible_local_scopes, \((__pytra_len\(ctx\.visible_local_scopes\) - Int64\(1\))\)\)\), (__pytra_str\(name\))\)",
+        r"ctx.visible_local_scopes[Int(__pytra_len(ctx.visible_local_scopes) - Int64(1))] = __pytra_set_ctor(__pytra_as_list(__pytra_getIndex(ctx.visible_local_scopes, (__pytra_len(ctx.visible_local_scopes) - Int64(1)))) + [\2])",
+        text,
+    )
+    text = text.replace(
+        "func _walk_builtin_type_tree(_ name: String, _ children: [AnyHashable: Any], _ next_id_holder: [Any], _ type_id_table: [AnyHashable: Any], _ type_info_table: inout [AnyHashable: Any])",
+        "func _walk_builtin_type_tree(_ name: String, _ children: [AnyHashable: Any], _ next_id_holder: inout [Any], _ type_id_table: inout [AnyHashable: Any], _ type_info_table: inout [AnyHashable: Any])",
+    )
+    text = text.replace(
+        "_walk_builtin_type_tree(__pytra_str(builtin_child), children, next_id_holder, type_id_table, &type_info_table)",
+        "_walk_builtin_type_tree(__pytra_str(builtin_child), children, &next_id_holder, &type_id_table, &type_info_table)",
+    )
+    text = text.replace(
+        '_walk_builtin_type_tree("object", children, next_id_holder, type_id_table, &type_info_table)',
+        '_walk_builtin_type_tree("object", children, &next_id_holder, &type_id_table, &type_info_table)',
+    )
+    text = re.sub(
+        r"__pytra_as_list\(__pytra_getIndex\(children, __pytra_str\(base_fqcn\)\)\) = __pytra_as_list\(__pytra_as_list\(__pytra_getIndex\(children, __pytra_str\(base_fqcn\)\)\)\); __pytra_as_list\(__pytra_getIndex\(children, __pytra_str\(base_fqcn\)\)\)\.append\(__pytra_str\(sorted_fqcn\)\)",
+        r"children[AnyHashable(__pytra_str(base_fqcn))] = __pytra_as_list(__pytra_getIndex(children, __pytra_str(base_fqcn))) + [__pytra_str(sorted_fqcn)]",
+        text,
+    )
+    text = text.replace("let module: LinkedModule = (__iter_0[Int(__i_1)] as? LinkedModule) ?? LinkedModule()", "let module: [AnyHashable: Any] = __pytra_as_dict(__iter_0[Int(__i_1)])")
+    text = text.replace("let module: LinkedModule = (__iter_4[Int(__i_5)] as? LinkedModule) ?? LinkedModule()", "let module: [AnyHashable: Any] = __pytra_as_dict(__iter_4[Int(__i_5)])")
+    text = text.replace(
+        "let module: [AnyHashable: Any] = __pytra_as_dict(__iter_0[Int(__i_1)])\n            if (__pytra_str(module.module_kind) == \"user\")",
+        "let module: LinkedModule = (__iter_0[Int(__i_1)] as? LinkedModule) ?? LinkedModule()\n            if (__pytra_str(module.module_kind) == \"user\")",
+    )
+    text = text.replace("current_module_id = (__pytra_str(module.module_id) + __pytra_str(\"\"))", "current_module_id = __pytra_str(__pytra_dict_get(__pytra_as_dict(__pytra_dict_get(module, \"meta\", [:])), \"_cli_module_id\", \"\"))")
+    text = text.replace("class_defs = _iter_class_defs(module.east_doc)", "class_defs = _iter_class_defs(module)")
+    text = text.replace("collect_import_modules(module.east_doc)", "collect_import_modules(module)")
+    text = text.replace("collect_import_symbols(module.east_doc)", "collect_import_symbols(module)")
+    text = text.replace(
+        "self.emit_with_item(((item_obj as? JsonObj) ?? JsonObj()).raw, declared_names, type_map)",
+        "self.emit_with_item(((item_obj as? JsonObj) ?? JsonObj()).raw, declared_names, &type_map)",
+    )
+    text = text.replace(
+        "self.emit_with_items(items, declared_names, type_map)",
+        "self.emit_with_items(items, declared_names, &type_map)",
+    )
+    text = text.replace(
+        "func _hg_emit_recursive_union_alias_decl(_ lines: [Any], _ node: [AnyHashable: Any]) -> Bool {\n"
+        "    var lines: [Any] = __pytra_as_list(lines)\n",
+        "func _hg_emit_recursive_union_alias_decl(_ lines: inout [Any], _ node: [AnyHashable: Any]) -> Bool {\n",
+    )
+    text = text.replace(
+        "func _hg_emit_decl(_ lines: [Any], _ stmt: Any, _ mutable_param_indexes: [AnyHashable: Any]) {\n"
+        "    var lines: [Any] = __pytra_as_list(lines)\n",
+        "func _hg_emit_decl(_ lines: inout [Any], _ stmt: Any, _ mutable_param_indexes: [AnyHashable: Any]) {\n",
+    )
+    text = text.replace(
+        "func _hg_emit_class_decl(_ lines: [Any], _ node: [AnyHashable: Any], _ mutable_param_indexes: [AnyHashable: Any]) {\n"
+        "    var lines: [Any] = __pytra_as_list(lines)\n",
+        "func _hg_emit_class_decl(_ lines: inout [Any], _ node: [AnyHashable: Any], _ mutable_param_indexes: [AnyHashable: Any]) {\n",
+    )
+    text = text.replace("_hg_emit_decl(lines, stmt, mutable_param_indexes)", "_hg_emit_decl(&lines, stmt, mutable_param_indexes)")
+    text = text.replace("_hg_emit_recursive_union_alias_decl(lines, stmt_dict)", "_hg_emit_recursive_union_alias_decl(&lines, stmt_dict)")
+    text = text.replace("_hg_emit_class_decl(lines, stmt_dict, mutable_param_indexes)", "_hg_emit_class_decl(&lines, stmt_dict, mutable_param_indexes)")
+    normalized_line = "        var normalized_node: Any = self._normalize_boundary_expr(((node_obj as? JsonObj) ?? JsonObj()).raw)\n"
+    if normalized_line in text:
+        text = text.replace(
+            normalized_line,
+            normalized_line + "        var normalized_dict: [AnyHashable: Any] = __pytra_as_dict(normalized_node)\n",
+        )
+        text = text.replace('self._str(normalized_node, "kind")', 'self._str(normalized_dict, "kind")')
+        text = text.replace("self.render_constant(normalized_node)", "self.render_constant(normalized_dict)")
+        text = text.replace("self.render_name(normalized_node)", "self.render_name(normalized_dict)")
+        text = text.replace("self.render_binop(normalized_node)", "self.render_binop(normalized_dict)")
+        text = text.replace("self.render_unaryop(normalized_node)", "self.render_unaryop(normalized_dict)")
+        text = text.replace("self.render_compare(normalized_node)", "self.render_compare(normalized_dict)")
+        text = text.replace("self.render_boolop(normalized_node)", "self.render_boolop(normalized_dict)")
+        text = text.replace("self.render_attribute(normalized_node)", "self.render_attribute(normalized_dict)")
+        text = text.replace("self.render_call(normalized_node)", "self.render_call(normalized_dict)")
+        text = text.replace("self.render_expr_extension(normalized_node)", "self.render_expr_extension(normalized_dict)")
+    return text
 
 
 def emit_swift_module(east_doc: dict[str, Any]) -> str:

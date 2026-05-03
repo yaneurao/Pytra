@@ -18,6 +18,18 @@ class JsonObj {
         }
         return JsonValue(value)
     }
+
+    func get_str(_ key: String) -> Any {
+        return JsonValue(raw[AnyHashable(key)] ?? __pytra_none()).as_str()
+    }
+
+    func get_obj(_ key: String) -> Any {
+        return JsonValue(raw[AnyHashable(key)] ?? __pytra_none()).as_obj()
+    }
+
+    func get_arr(_ key: String) -> Any {
+        return JsonValue(raw[AnyHashable(key)] ?? __pytra_none()).as_arr()
+    }
 }
 
 class JsonArr {
@@ -37,6 +49,14 @@ class JsonArr {
             return __pytra_none()
         }
         return JsonValue(raw[i])
+    }
+
+    func get_int(_ index: Int64) -> Any {
+        let value = get(index)
+        if let jv = value as? JsonValue {
+            return jv.as_int()
+        }
+        return JsonValue(value).as_int()
     }
 }
 

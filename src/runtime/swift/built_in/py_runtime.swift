@@ -8,6 +8,34 @@ import Glibc
 import Darwin
 #endif
 
+func * (lhs: String, rhs: Int64) -> String {
+    if rhs <= 0 {
+        return ""
+    }
+    return String(repeating: lhs, count: Int(rhs))
+}
+
+func * (lhs: String, rhs: Int) -> String {
+    if rhs <= 0 {
+        return ""
+    }
+    return String(repeating: lhs, count: rhs)
+}
+
+func + (lhs: String, rhs: Any) -> String {
+    return lhs + __pytra_str(rhs)
+}
+
+func + (lhs: Any, rhs: String) -> String {
+    return __pytra_str(lhs) + rhs
+}
+
+func + (lhs: [Any], rhs: [Any]) -> [Any] {
+    var out = lhs
+    out.append(contentsOf: rhs)
+    return out
+}
+
 /// Base64 で埋め込まれた JavaScript ソースコードを一時ファイルへ展開し、node で実行する。
 /// - Parameters:
 ///   - sourceBase64: JavaScript ソースコードの Base64 文字列。
@@ -302,6 +330,34 @@ func __pytra_repr_item(_ v: Any?) -> String {
     return __pytra_str(value)
 }
 
+func __pytra_repr(_ v: Any?) -> String {
+    return __pytra_repr_item(v)
+}
+
+func py_repr(_ v: Any?) -> String {
+    return __pytra_repr_item(v)
+}
+
+func pytraord(_ v: Any?) -> Int64 {
+    let scalars = Array(__pytra_str(v).unicodeScalars)
+    return scalars.isEmpty ? Int64(0) : Int64(scalars[0].value)
+}
+
+func pytramin(_ a: Any?, _ b: Any?) -> Int64 {
+    return Swift.min(__pytra_int(a), __pytra_int(b))
+}
+
+func pytrapop(_ dict: inout [AnyHashable: Any], _ key: Any?, _ defaultValue: Any? = nil) -> Any {
+    if dict[AnyHashable(__pytra_str(key))] == nil {
+        return defaultValue ?? __pytra_none()
+    }
+    return __pytra_dict_pop(&dict, key)
+}
+
+func dict(_ value: [AnyHashable: Any]) -> [AnyHashable: Any] {
+    return value
+}
+
 func __pytra_tuple_str(_ v: Any?) -> String {
     let arr = __pytra_as_list(v)
     if arr.count == 1 {
@@ -370,17 +426,17 @@ func __pytra_index(_ text: String, _ needle: Any?) -> Int64 {
     return __pytra_index_str(text, needle)
 }
 
-func __pytra_getIndex(_ container: Any?, _ index: Any?) throws -> Any {
+func __pytra_getIndex(_ container: Any?, _ index: Any?) -> Any {
     if let list = container as? [Any] {
-        if list.isEmpty { throw IndexError("list index out of range") }
+        if list.isEmpty { return __pytra_any_default() }
         let i = __pytra_index(__pytra_int(index), Int64(list.count))
-        if i < 0 || i >= Int64(list.count) { throw IndexError("list index out of range") }
+        if i < 0 || i >= Int64(list.count) { return __pytra_any_default() }
         return list[Int(i)]
     }
     if let list = container as? [UInt8] {
-        if list.isEmpty { throw IndexError("list index out of range") }
+        if list.isEmpty { return __pytra_any_default() }
         let i = __pytra_index(__pytra_int(index), Int64(list.count))
-        if i < 0 || i >= Int64(list.count) { throw IndexError("list index out of range") }
+        if i < 0 || i >= Int64(list.count) { return __pytra_any_default() }
         return Int64(list[Int(i)])
     }
     if let dict = container as? [AnyHashable: Any] {
@@ -389,9 +445,9 @@ func __pytra_getIndex(_ container: Any?, _ index: Any?) throws -> Any {
     }
     if let s = container as? String {
         let chars = Array(s)
-        if chars.isEmpty { throw IndexError("string index out of range") }
+        if chars.isEmpty { return __pytra_any_default() }
         let i = __pytra_index(__pytra_int(index), Int64(chars.count))
-        if i < 0 || i >= Int64(chars.count) { throw IndexError("string index out of range") }
+        if i < 0 || i >= Int64(chars.count) { return __pytra_any_default() }
         return String(chars[Int(i)])
     }
     return __pytra_any_default()
@@ -1049,6 +1105,14 @@ func __pytra_zip(_ left: Any?, _ right: Any?) -> [Any] {
 
 func __pytra_set_ctor() -> [Any] {
     return []
+}
+
+func __pytra_set_ctor(_ values: Any?) -> [Any] {
+    var out: [Any] = []
+    for value in __pytra_as_list(values) {
+        __pytra_set_add(&out, value)
+    }
+    return out
 }
 
 func __pytra_discard(_ items: inout [Any], _ value: Any?) {
