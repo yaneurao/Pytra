@@ -3146,7 +3146,9 @@ def emit_lua_module(east3_doc: dict[str, JsonVal]) -> str:
         expand_cross_module_defaults(module_docs)
 
     # Load runtime mapping
-    mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "lua" / "mapping.json"
+    mapping_path = Path("src").joinpath("runtime").joinpath("lua").joinpath("mapping.json")
+    if not mapping_path.exists():
+        mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "lua" / "mapping.json"
     mapping = load_runtime_mapping(mapping_path)
 
     # Skip runtime/native modules
@@ -3166,6 +3168,27 @@ def emit_lua_module(east3_doc: dict[str, JsonVal]) -> str:
     ctx.is_entry = _bool(emit_ctx_meta, "is_entry") if len(emit_ctx_meta) > 0 else False
     ctx.mapping = mapping
     ctx.renamed_symbols = renamed_symbols
+    ctx.lines = []
+    ctx.var_types = {}
+    ctx.import_alias_modules = {}
+    ctx.runtime_imports = {}
+    ctx.class_names = set()
+    ctx.class_bases = {}
+    ctx.class_static_methods = {}
+    ctx.class_property_methods = {}
+    ctx.class_instance_methods = {}
+    ctx.class_fields = {}
+    ctx.enum_bases = {}
+    ctx.enum_members = {}
+    ctx.exception_type_ids = {}
+    ctx.class_type_ids = {}
+    ctx.tid_const_types = {}
+    ctx.catch_stack = []
+    ctx.vararg_functions = set()
+    ctx.declared_locals = set()
+    ctx.hoisted_locals = set()
+    ctx.loaded_module_files = set()
+    ctx.imported_class_names = set()
 
     body = _list(east3_doc, "body")
     main_guard = _list(east3_doc, "main_guard_body")
