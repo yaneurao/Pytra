@@ -5,6 +5,26 @@ import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 
+typealias type = Any?
+typealias Any_ = Any?
+val dict: type = "dict"
+val list: type = "list"
+val set: type = "set"
+val str: type = "str"
+val int: type = "int"
+val float: type = "float"
+val bool: type = "bool"
+val __pytra_JsonVal: type = "JsonVal"
+
+fun field(default_factory: Any? = null): Any? = when (default_factory) {
+    "dict" -> linkedMapOf<Any?, Any?>()
+    "list" -> mutableListOf<Any?>()
+    "set" -> linkedSetOf<Any?>()
+    is Function0<*> -> default_factory()
+    null -> null
+    else -> default_factory
+}
+
 class PyTuple(items: Collection<Any?> = emptyList()) : ArrayList<Any?>(items)
 
 typealias ArgValue = Any?
@@ -113,6 +133,8 @@ class PyStdWriter(private val useErr: Boolean) {
 }
 
 var sys_argv: MutableList<String> = mutableListOf()
+val __pytra_argv: MutableList<String>
+    get() = sys_argv
 var sys_path: MutableList<String> = mutableListOf()
 val sys_stderr = PyStdWriter(true)
 val sys_stdout = PyStdWriter(false)
@@ -589,7 +611,7 @@ fun __pytra_float(v: Any?): Double {
 
 private fun __pytra_float_str(v: Double): String = java.lang.Double.toString(v).replace("E", "e")
 
-private fun __pytra_repr(v: Any?): String {
+fun __pytra_repr(v: Any?): String {
     if (v == null) return "None"
     if (v is Boolean) return if (v) "True" else "False"
     if (v is Double) return __pytra_float_str(v)
@@ -615,6 +637,17 @@ fun __pytra_str(v: Any?): String {
     if (v is String) return v
     return __pytra_repr(v)
 }
+
+fun __pytra_str(node: MutableMap<String, Any?>, key: String): String {
+    return __pytra_str(node[key])
+}
+
+fun py_repr(v: Any?): String = __pytra_repr(v)
+fun __pytra_ord(ch: Any?): Long {
+    val s = __pytra_str(ch)
+    return if (s.isEmpty()) 0L else s[0].toInt().toLong()
+}
+fun __pytra_chr(n: Any?): String = __pytra_int(n).toInt().toChar().toString()
 
 fun __pytra_tuple(vararg items: Any?): PyTuple {
     return PyTuple(items.toList())
@@ -742,6 +775,8 @@ fun __pytra_get_index(container: Any?, index: Any?): Any? {
     }
     return __pytra_any_default()
 }
+
+fun __pytra_get(container: Any?, index: Any?): Any? = __pytra_get_index(container, index)
 
 fun __pytra_set_index(container: Any?, index: Any?, value: Any?) {
     if (container is MutableList<*>) {
@@ -1213,6 +1248,8 @@ class JsonValue(var raw: Any?) {
     }
 }
 
+fun __pytra_JsonValue(raw: Any?): JsonValue = JsonValue(raw)
+
 class JsonArr(var raw: MutableList<Any?>) {
     fun get(index: Long): JsonValue? {
         val i = index.toInt()
@@ -1584,6 +1621,10 @@ class Path(raw: Any?) {
         return File(value).readText(Charsets.UTF_8)
     }
 
+    fun read_text(encoding: Any?): String {
+        return read_text()
+    }
+
     fun write_text(content: Any?): Any? {
         val outFile = File(value)
         val parentDir = outFile.parentFile
@@ -1592,6 +1633,10 @@ class Path(raw: Any?) {
         }
         outFile.writeText(__pytra_str(content), Charsets.UTF_8)
         return null
+    }
+
+    fun write_text(content: Any?, encoding: Any?): Any? {
+        return write_text(content)
     }
 
     fun mkdir(parents: Any? = false, exist_ok: Any? = false): Any? {
@@ -1624,3 +1669,5 @@ class Path(raw: Any?) {
         return value
     }
 }
+
+fun __pytra_cwd(): Path = Path(os.getcwd())

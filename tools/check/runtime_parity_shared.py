@@ -750,7 +750,7 @@ def build_emitted_target_artifact(
         build = run_shell("kotlinc " + " ".join(shlex.quote(f) for f in kt_files) + " -include-runtime -d " + shlex.quote(str(jar_path)), cwd=work_dir, env=env, timeout_sec=timeout_sec)
         if build.returncode != 0:
             return build
-        _write_runner(bin_path, "java -jar " + shlex.quote(str(jar_path)))
+        _write_runner(bin_path, "java -cp " + shlex.quote(str(jar_path)) + " " + shlex.quote(entry_stem))
         return subprocess.CompletedProcess(str(bin_path), 0, "", "")
 
     if target == "scala":

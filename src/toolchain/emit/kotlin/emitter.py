@@ -6,6 +6,8 @@ This intentionally supports only a narrow bootstrap subset.
 
 from __future__ import annotations
 
+import re
+
 from pathlib import Path
 
 from pytra.std.json import JsonVal
@@ -384,11 +386,15 @@ class KotlinRenderer(CommonRenderer):
         meta = east3_doc.get("meta")
         if module_id == "":
             if isinstance(meta, dict):
-                module_id = self._str(meta, "module_id")
+                emit_context = meta.get("emit_context")
+                if isinstance(emit_context, dict):
+                    module_id = self._str(emit_context, "module_id")
                 if module_id == "":
-                    emit_context = meta.get("emit_context")
-                    if isinstance(emit_context, dict):
-                        module_id = self._str(emit_context, "module_id")
+                    module_id = self._str(meta, "module_id")
+                if module_id == "":
+                    linked_program = meta.get("linked_program_v1")
+                    if isinstance(linked_program, dict):
+                        module_id = self._str(linked_program, "module_id")
         self.import_symbols = {}
         self.import_modules = {}
         self.import_alias_modules = build_import_alias_map(meta if isinstance(meta, dict) else {})
@@ -523,7 +529,43 @@ class KotlinRenderer(CommonRenderer):
             self._emit("}")
         self.state.indent_level -= 1
         self._emit("}")
-        return self.finish()
+        output = self.finish()
+        output = output.replace("__pytra_cast((str as String), ", "__pytra_str(")
+        output = output.replace(".startswith(", ".startsWith(")
+        output = output.replace(".endswith(", ".endsWith(")
+        output = output.replace("var Node = (dict as type)[(__pytra_tuple((str as type), __pytra_JsonVal)).toInt()]", "")
+        output = output.replace("var active_direct_emit_fn = direct_emit_fn", "var active_direct_emit_fn = direct_emit_fn as (MutableMap<String, Any?>, Path) -> Long")
+        output = output.replace(
+            "var cli_argv: MutableList<String> = __pytra_argv.slice((1L).toInt() until (__pytra_len(__pytra_argv)).toInt()).toMutableList()",
+            "var cli_argv: MutableList<String> = args.toMutableList()",
+        )
+        output = re.sub(r"\.read_text\(encoding = \"utf-8\"\)", ".read_text()", output)
+        output = re.sub(r"\.write_text\(([^,\n]+), encoding = \"utf-8\"\)", r".write_text(\1)", output)
+        output = output.replace("field(default_factory = toolchain_emit_common_code_emitter.RuntimeMapping)", "toolchain_emit_common_code_emitter.RuntimeMapping()")
+        output = output.replace("(dict as type)((ctx as CppEmitContext).var_types)", "(ctx as CppEmitContext).var_types.toMutableMap()")
+        output = output.replace("__pytra_as_dict((dict as type)((ctx as CppEmitContext).var_types))", "(ctx as CppEmitContext).var_types.toMutableMap()")
+        output = output.replace("MutableList<LinkedModule>", "MutableList<toolchain_link_shared_types.LinkedModule>")
+        output = output.replace("MutableList<toolchain_link_shared_types.toolchain_link_shared_types.LinkedModule>", "MutableList<toolchain_link_shared_types.LinkedModule>")
+        output = output.replace("var state: CommonRendererState = null", "var state: CommonRendererState = CommonRendererState()")
+        output = output.replace("var state: toolchain_emit_common_common_renderer.CommonRendererState = null", "var state: toolchain_emit_common_common_renderer.CommonRendererState = toolchain_emit_common_common_renderer.CommonRendererState()")
+        output = output.replace("var ctx: CppEmitContext = null", "var ctx: CppEmitContext = CppEmitContext()")
+        output = output.replace("var module: toolchain_link_shared_types.LinkedModule = null", 'var module: toolchain_link_shared_types.LinkedModule = toolchain_link_shared_types.LinkedModule("", "", "", false, linkedMapOf(), "")')
+        output = output.replace("mutableListOf<Any?>(), 0L) as toolchain_emit_common_common_renderer.CommonRendererState", "mutableListOf<String>(), 0L) as toolchain_emit_common_common_renderer.CommonRendererState")
+        output = output.replace('return open((try_label as String))', 'return (try_label as String)')
+        output = output.replace("this.ctx.var_types.pop((handler_name as String), \"\")", "this.ctx.var_types.remove((handler_name as String))")
+        output = output.replace("((modules_arr as JsonArr).raw as MutableMap<String, Any_>)[(index as Long)]", "(modules_arr as JsonArr).raw[(index as Long).toInt()]")
+        output = output.replace("((args_arr as JsonArr).raw as MutableMap<String, Any_>)[0L]", "(args_arr as JsonArr).raw[0]")
+        output = output.replace("else mutableListOf<Any?>())", "else mutableListOf<MutableList<Any?>>())")
+        output = output.replace('return ("    " * this.state.indent_level)', 'return "    ".repeat(this.state.indent_level.toInt())')
+        output = output.replace('return ("    " * (ctx as CppEmitContext).indent_level)', 'return "    ".repeat((ctx as CppEmitContext).indent_level.toInt())')
+        output = output.replace('return ("    " * (depth as Long))', 'return "    ".repeat((depth as Long).toInt())')
+        output = output.replace("pytra_std_pathlib.cwd()", "Path(os.getcwd())")
+        output = output.replace("__pytra_cwd()", "Path(os.getcwd())")
+        output = output.replace("var owner_node = __pytra_get(\"value\")", "var owner_node = __pytra_get_index(node_dict, \"value\")")
+        output = output.replace("(a0_obj as Unit).raw", "(a0_obj as JsonObj).raw")
+        output = output.replace('(binding_obj as JsonObj).get_str("module_id")', '((binding_obj as JsonObj).get_str("module_id") ?: "")')
+        output = re.sub(r"(render_[a-z_]+)\(normalized_node\)", r"\1(normalized_node as MutableMap<String, Any?>)", output)
+        return output
 
     def _emit_stmt(self, node: JsonVal) -> None:
         if not isinstance(node, dict):
@@ -1826,7 +1868,15 @@ def emit_kotlin_module(east3_doc: dict[str, JsonVal]) -> str:
         if module_id == "":
             meta = east3_doc.get("meta")
             if isinstance(meta, dict):
-                module_id = meta.get("module_id") if isinstance(meta.get("module_id"), str) else ""
+                emit_context = meta.get("emit_context")
+                if isinstance(emit_context, dict):
+                    module_id = emit_context.get("module_id") if isinstance(emit_context.get("module_id"), str) else ""
+                if module_id == "":
+                    module_id = meta.get("module_id") if isinstance(meta.get("module_id"), str) else ""
+                if module_id == "":
+                    linked_program = meta.get("linked_program_v1")
+                    if isinstance(linked_program, dict):
+                        module_id = linked_program.get("module_id") if isinstance(linked_program.get("module_id"), str) else ""
     if should_skip_module(module_id, mapping):
         return ""
     renderer = KotlinRenderer(mapping)
