@@ -6,7 +6,7 @@
 
 > Domain-specific TODO. See [index.md](./index.md) for the full index.
 
-Last updated: 2026-03-31 (P3-GO-LINT-FIX complete)
+Last updated: 2026-05-03
 
 ## Operating Rules
 
@@ -102,5 +102,5 @@ go build passed in P6, but there are still gaps before the selfhost binary can a
 3. [x] [ID: P7-GO-SELFHOST-RT-S3] Add a CLI wrapper (`main.go`) — minimal entry point that reads EAST3 JSON and emits Go code
 4. [x] [ID: P7-GO-SELFHOST-RT-S4] Run `python3 tools/run/run_selfhost_parity.py --selfhost-lang go` and confirm fixture parity PASS
    - Completed 2026-05-03 in the Docker-isolated `pytra-devcontainer-check` environment. The rebuilt Go selfhost emitter passed fixture 161/161.
-5. [ ] [ID: P7-GO-SELFHOST-RT-S5] Bring Go selfhost sample artifact parity to 18/18
-   - Progress 2026-05-03: sample compile/run blockers were reduced, but strict artifact-size parity is still 2/18 PASS. Remaining work is PNG/GIF byte-size parity against the Python reference outputs.
+5. [x] [ID: P7-GO-SELFHOST-RT-S5] Bring Go selfhost sample artifact parity to 18/18
+   - Completed 2026-05-03 in the Docker-isolated `pytra-devcontainer-check` environment. After rebuilding the Go selfhost binary, `PYTHONPYCACHEPREFIX=work/tmp/pycache PYTHONPATH=src:tools/check python3 tools/run/run_selfhost_parity.py --selfhost-lang go --case-root sample --all-samples --cmd-timeout-sec 300` passed sample 18/18. The remaining PNG/GIF artifact-size mismatch was fixed by keeping Go runtime map clearing compatible with Go 1.19 and by making bytearray-mutating helpers such as `_png_append` / `_gif_append` return the updated Go slice.

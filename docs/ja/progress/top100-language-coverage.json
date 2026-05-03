@@ -172,9 +172,9 @@
       "rank": 15,
       "language": "Go",
       "category": "backend",
-      "current_status": "target registered; Go selfhost fixture 161/161 PASS",
-      "last_blocker": "sample artifact parity は 2/18 PASS",
-      "next_action": "Go runtime の PNG/GIF artifact 差分を縮退する",
+      "current_status": "target registered; Go selfhost fixture 161/161 and sample 18/18 PASS",
+      "last_blocker": "stdlib selfhost sweep は次段で拡張",
+      "next_action": "Go selfhost stdlib parity と broader regression を維持する",
       "backend_plan_tier": "",
       "backend_plan": "",
       "defer_condition": ""

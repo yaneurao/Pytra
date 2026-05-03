@@ -356,7 +356,9 @@ func (d *PyDict[K, V]) clear_items() {
 	if d == nil {
 		return
 	}
-	clear(d.items)
+	for key := range d.items {
+		delete(d.items, key)
+	}
 }
 
 // pyMapStringAny converts a PyDict with string-compatible keys to map[string]any.
@@ -426,7 +428,9 @@ func (s *PySet[T]) clear_items() {
 	if s == nil {
 		return
 	}
-	clear(s.items)
+	for key := range s.items {
+		delete(s.items, key)
+	}
 }
 
 func py_print(args ...any) {

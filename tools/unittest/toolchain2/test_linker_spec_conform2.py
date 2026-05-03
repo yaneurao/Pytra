@@ -4040,13 +4040,33 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertNotIn("nil /*", go_code)
 
     def test_go_emitter_returns_mutated_bytearray_helpers(self) -> None:
-        doc = _fixture_doc("test/pytra/east3-opt/utils/png.east3")
+        source = """\
+def _png_append(dst: bytearray, src: bytearray) -> None:
+    dst.extend(src)
+
+def build() -> bytearray:
+    out: bytearray = bytearray()
+    _png_append(out, bytearray([120, 1]))
+    return out
+"""
+        registry = load_builtin_registry(
+            ROOT / "test" / "include" / "east1" / "py" / "built_in" / "builtins.py.east1",
+            ROOT / "test" / "include" / "east1" / "py" / "built_in" / "containers.py.east1",
+            ROOT / "test" / "include" / "east1" / "py" / "std",
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "png_helper.py"
+            src.write_text(source, encoding="utf-8")
+            doc = parse_python_file(str(src))
+            resolve_east1_to_east2(doc, registry=registry)
+            doc = lower_east2_to_east3(doc, target_language="go")
+            doc, _ = optimize_east3_document(doc, opt_level=1)
 
         go_code = emit_go_module(doc)
 
         self.assertIn("func _png_append(dst []byte, src []byte) []byte {", go_code)
         self.assertIn("return dst", go_code)
-        self.assertIn("out = _png_append(out, []byte{byte(120), byte(1)})", go_code)
+        self.assertIn("out = _png_append(out, []byte{byte(int64(120)), byte(int64(1))})", go_code)
 
     def test_go_emitter_uses_marker_interfaces_for_user_class_isinstance(self) -> None:
         doc = _fixture_doc("test/fixture/east3-opt/oop/class_inherit_basic.east3")

@@ -9059,6 +9059,11 @@ def _function_mutates_name(node: JsonVal, target_name: str) -> bool:
                     method_key = _str(node, "runtime_call")
                 if method_key == "":
                     method_key = _str(node, "runtime_symbol")
+                if method_key == "":
+                    attr = _str(func, "attr")
+                    owner_type = _str(owner, "resolved_type")
+                    if attr in ("append", "extend", "pop", "clear") and owner_type in ("bytearray", "bytes", "list[uint8]"):
+                        method_key = "bytearray." + attr
                 if method_key in ("list.append", "list.extend", "list.pop", "list.clear", "bytearray.append", "bytearray.extend", "bytearray.pop", "bytearray.clear"):
                     return True
     if kind == "Assign":

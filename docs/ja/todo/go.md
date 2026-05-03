@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-27
+最終更新: 2026-05-03
 
 ## 運用ルール
 
@@ -66,5 +66,5 @@ P6 で go build は通ったが、selfhost バイナリが実際に fixture/samp
    - 2026-05-03: `src/toolchain/emit/go/cli.py` が `-emit MANIFEST_DIR -o OUT --target go` 互換、単体 EAST3 JSON 入力、runtime/go copy を処理するよう更新。`tools/unittest/toolchain2/test_go_emitter_cli_selfhost.py` で pytra-cli 互換引数、非 Go target reject、単体 EAST3 JSON から `app_main.go` を書く経路を固定。
 4. [x] [ID: P7-GO-SELFHOST-RT-S4] `python3 tools/run/run_selfhost_parity.py --selfhost-lang go` を実行し、fixture parity PASS を確認する
    - 完了: 2026-05-03 に Docker 隔離環境（`pytra-devcontainer-check`、Python 3.12 + Go toolchain）で Go emitter selfhost binary を再生成し、`PYTHONPYCACHEPREFIX=work/tmp/pycache PYTHONPATH=src python3 tools/run/run_selfhost_parity.py --selfhost-lang go` が fixture 161/161 PASS。主な修正は `isinstance` narrowing、None 判定、constructor / runtime call 戻り型推論、typed list/set/dict literal、tuple call result wrapping、Path / deque / zip / sum / min / max / true division / `perf_counter` / math 関数の Go lowering。
-5. [ ] [ID: P7-GO-SELFHOST-RT-S5] Go selfhost sample artifact parity を 18/18 に揃える
-   - 進捗: 2026-05-03 に `python3 tools/run/run_selfhost_parity.py --selfhost-lang go --case-root sample --all-samples --cmd-timeout-sec 300` を Docker 隔離環境で再計測。compile/run blocker は 16 件から解消し、sample 実行は進むが、厳密 artifact-size parity は `17_monte_carlo_pi` / `18_mini_language_interpreter` の 2/18 PASS。残件は PNG/GIF 生成物の byte/size mismatch（例: `02_raytrace_spheres`, `12_sort_visualizer`, `16_glass_sculpture_chaos`）で、次は Go runtime の image/gif/png 出力と Python 正本の丸め・圧縮差分を詰める。
+5. [x] [ID: P7-GO-SELFHOST-RT-S5] Go selfhost sample artifact parity を 18/18 に揃える
+   - 完了: 2026-05-03 に Docker 隔離環境（`pytra-devcontainer-check`）で Go selfhost binary を再生成し、`PYTHONPYCACHEPREFIX=work/tmp/pycache PYTHONPATH=src:tools/check python3 tools/run/run_selfhost_parity.py --selfhost-lang go --case-root sample --all-samples --cmd-timeout-sec 300` が sample 18/18 PASS。残っていた PNG/GIF artifact-size mismatch は、Go 1.19 互換の map clear 実装と、bytearray を第一引数で変更する helper（`_png_append` / `_gif_append` 形）を Go では戻り値で受ける emitter 修正により解消。
