@@ -20,7 +20,7 @@ Last updated: 2026-05-03
 - Docker: `docker version` and `docker run --rm hello-world` must pass before coverage updates are accepted.
 - Toolchain: `.devcontainer/scripts/verify-toolchain.sh` checks Python 3.12, pytest, C/C++, Java, .NET, PowerShell, Ruby, Lua, PHP, Go, and Rust. Swift is optional; Dart/Zig CLIs remain blockers until added.
 - Coverage update gate: `python3 tools/gen/gen_top100_language_coverage.py --check` runs inside the container after generation.
-- Representative parity: C++ fixture `core/add`, sample `17_monte_carlo_pi`, and stdlib `math_extended` pass after routing plain builtin calls back through runtime helpers. The refreshed full sample sweep is 7/18 PASS; remaining blockers are artifact CRC drift, object type leakage, and plain `min` / `max` / `enumerate` fallback.
+- Representative parity: C++ fixture `core/add`, sample `17_monte_carlo_pi`, and stdlib `math_extended` pass after routing plain builtin calls back through runtime helpers. The refreshed C++ full sample sweep is 7/18 PASS. Go selfhost now passes fixture 161/161; Go sample compile/run blockers were reduced, but strict artifact-size parity remains 2/18 PASS because PNG/GIF outputs still differ in byte size.
 
 ## Category Counts
 
@@ -48,7 +48,7 @@ Last updated: 2026-05-03
 | 12 | Perl | syntax | backend candidate | runtime / type / module semantics 未調査 | syntax smoke と最小 compile/run gate を調査する |
 | 13 | Fortran | syntax | backend candidate | runtime / type / module semantics 未調査 | syntax smoke と最小 compile/run gate を調査する |
 | 14 | PHP | backend | target registered | host/parity は未完 | PHP host parity を進める |
-| 15 | Go | backend | target registered; emitter-host PASS row あり | full selfhost 未完 | host parity JSON を増やす |
+| 15 | Go | backend | target registered; Go selfhost fixture 161/161 PASS | sample artifact parity は 2/18 PASS | Go runtime の PNG/GIF artifact 差分を縮退する |
 | 16 | Rust | backend | target registered | host/parity は未完 | Rust host parity を進める |
 | 17 | MATLAB | syntax | backend candidate | runtime / type / module semantics 未調査 | syntax smoke と最小 compile/run gate を調査する |
 | 18 | Assembly language | defer | non-standard backend lane | 通常 text backend ではない | defer 理由と解除条件を固定する |

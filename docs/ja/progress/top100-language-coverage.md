@@ -22,7 +22,7 @@
 - runtime east: `PYTHONPATH=src python3 tools/gen/regenerate_runtime_east.py` は `runtime-east total: 32 ok, 0 failed`。
 - unit/top100 generator: `python3 -m pytest -q tools/unittest/tooling/test_gen_top100_language_coverage.py tools/unittest/toolchain2/test_tuple_unpack_emitter_hosts.py` は 10 tests PASS。`python3 tools/gen/gen_top100_language_coverage.py --check` と `python3 tools/check/check_tools_ledger.py` も PASS。
 - emitter-host: `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target dart ...` は PASS（25 files）。`--target zig ...` も PASS（emitted 30 files、検証ディレクトリ内 file count 39）。native Dart/Zig CLI は devcontainer 未導入のため compile/parity は blocker として残す。
-- fixture/sample/stdlib/selfhost: C++ plain builtin fallback を runtime helper 経路へ戻し、Docker 直接 run で `fixture core/add`、`sample 17_monte_carlo_pi`、`stdlib math_extended` の C++ parity が PASS。sample full sweep は 18件中 7 PASS / 11 FAIL。残 blocker は artifact CRC mismatch、object 型漏れ、`min` / `max` / `enumerate` の plain builtin drift。`run_selfhost_parity.py --selfhost-lang python --emit-target cpp --dry-run` は cpp row `fixture_pass=1 fixture_fail=0 sample_pass=7 sample_fail=11`。
+- fixture/sample/stdlib/selfhost: C++ plain builtin fallback を runtime helper 経路へ戻し、Docker 直接 run で `fixture core/add`、`sample 17_monte_carlo_pi`、`stdlib math_extended` の C++ parity が PASS。sample full sweep は 18件中 7 PASS / 11 FAIL。Go selfhost は fixture 161/161 PASS、sample は compile/run blocker を縮退したが strict artifact-size parity は 2/18 PASS。残 blocker は C++ sample の artifact CRC / object 型漏れ / `min`・`max`・`enumerate` fallback と、Go sample の PNG/GIF artifact size mismatch。
 
 ## 分類ルール
 
@@ -58,7 +58,7 @@
 | 12 | Perl | syntax | backend candidate | runtime / type / module semantics 未調査 | syntax smoke と最小 compile/run gate を調査する |
 | 13 | Fortran | syntax | backend candidate | runtime / type / module semantics 未調査 | syntax smoke と最小 compile/run gate を調査する |
 | 14 | PHP | backend | target registered | host/parity は未完 | PHP host parity を進める |
-| 15 | Go | backend | target registered; emitter-host PASS row あり | full selfhost 未完 | host parity JSON を増やす |
+| 15 | Go | backend | target registered; Go selfhost fixture 161/161 PASS | sample artifact parity は 2/18 PASS | Go runtime の PNG/GIF artifact 差分を縮退する |
 | 16 | Rust | backend | target registered | host/parity は未完 | Rust host parity を進める |
 | 17 | MATLAB | syntax | backend candidate | runtime / type / module semantics 未調査 | syntax smoke と最小 compile/run gate を調査する |
 | 18 | Assembly language | defer | non-standard backend lane | 通常 text backend ではない | defer 理由と解除条件を固定する |
@@ -225,5 +225,6 @@ Top100 coverage を更新する run は、次の順で Docker/devcontainer gate 
 ## 次アクション
 
 1. Dart / Zig CLI を devcontainer に追加するか、別 image として分離し、今回 PASS した host 生成物を compile/parity まで進める。
-2. C++ sample の残 blocker（artifact CRC、object 型漏れ、`min` / `max` / `enumerate` fallback）を縮退し、selfhost cpp row を PASS 側へ寄せる。
-3. T1 backend plan（Visual Basic / R / Perl / OCaml）から syntax smoke を作り、top100 matrix の `syntax` を実測つきに更新する。
+2. Go sample の PNG/GIF artifact size mismatch を runtime 出力差分として縮退し、Go selfhost sample row を 18/18 に近づける。
+3. C++ sample の残 blocker（artifact CRC、object 型漏れ、`min` / `max` / `enumerate` fallback）を縮退し、selfhost cpp row を PASS 側へ寄せる。
+4. T1 backend plan（Visual Basic / R / Perl / OCaml）から syntax smoke を作り、top100 matrix の `syntax` を実測つきに更新する。
