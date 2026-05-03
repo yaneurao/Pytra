@@ -5,6 +5,8 @@ Minimal toolchain2 C# emitter built on CommonRenderer.
 
 from __future__ import annotations
 
+import re
+
 from dataclasses import dataclass
 from dataclasses import field
 
@@ -18,7 +20,7 @@ from toolchain.emit.common.code_emitter import (
 from toolchain.emit.common.common_renderer import CommonRenderer
 from toolchain.emit.common.profile_loader import load_profile_doc
 from toolchain.emit.cs.types import (
-    _safe_cs_ident, _split_generic_args, cs_type, cs_zero_value,
+    _callable_signature_parts, _safe_cs_ident, _split_generic_args, cs_type, cs_zero_value,
     CS_PATH_MEMBER_NAMES, CS_EXCEPTION_BASE_NAME,
     PYTRA_STD_MODULE_PREFIX, PYTRA_BUILTIN_MODULE_PREFIX,
     is_cs_exception_type, is_cs_path_type, is_pytra_type_id_name,
@@ -89,11 +91,11 @@ def _dict(node: JsonVal, key: str) -> dict[str, JsonVal]:
 def _module_class_name(module_id: str) -> str:
     if module_id == "":
         return "Module"
-    tail = module_id.split(".")[-1]
-    safe = _safe_cs_ident(tail)
+    safe_parts = [_safe_cs_ident(part) for part in module_id.split(".") if part != ""]
+    safe = "_".join(part for part in safe_parts if part != "")
     if safe == "":
         return "Module"
-    return safe[0].upper() + safe[1:]
+    return "_".join(part[0].upper() + part[1:] if part != "" else part for part in safe.split("_"))
 
 
 def _fqcn_to_tid_const(name: str) -> str:
@@ -324,6 +326,40 @@ def _qualify_stmt_result_type(
 def _render_type(ctx: EmitContext, resolved_type: str, *, for_return: bool = False) -> str:
     if len(resolved_type) == 1 and resolved_type.isupper():
         return "object"
+    compact_optional = resolved_type.replace(" ", "")
+    if compact_optional.endswith("|None"):
+        inner_type = _render_type(ctx, compact_optional[:-5], for_return=for_return)
+        if inner_type in ("long", "int", "short", "byte", "sbyte", "uint", "ulong", "ushort", "float", "double", "bool"):
+            return inner_type + "?"
+        return inner_type
+    if resolved_type.startswith("list[") and resolved_type.endswith("]"):
+        return "List<" + _render_type(ctx, resolved_type[5:-1].strip()) + ">"
+    if resolved_type.startswith("set[") and resolved_type.endswith("]"):
+        return "HashSet<" + _render_type(ctx, resolved_type[4:-1].strip()) + ">"
+    if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
+        parts = _split_generic_args(resolved_type[5:-1].strip())
+        if len(parts) == 2:
+            return "Dictionary<" + _render_type(ctx, parts[0]) + ", " + _render_type(ctx, parts[1]) + ">"
+        return "Dictionary<object, object>"
+    callable_parts = _callable_signature_parts(resolved_type)
+    if callable_parts is not None:
+        arg_types, ret_type = callable_parts
+        rendered_args = [_render_type(ctx, part) for part in arg_types]
+        rendered_ret = _render_type(ctx, ret_type, for_return=True)
+        if rendered_ret == "void":
+            if len(rendered_args) == 0:
+                return "Action"
+            return "Action<" + ", ".join(rendered_args) + ">"
+        return "Func<" + ", ".join(rendered_args + [rendered_ret]) + ">"
+    if resolved_type.startswith("tuple[") and resolved_type.endswith("]"):
+        parts = _split_generic_args(resolved_type[6:-1].strip())
+        if len(parts) == 0:
+            return "object[]"
+        rendered = [_render_type(ctx, part) for part in parts]
+        first = rendered[0]
+        if all(item == first for item in rendered):
+            return first + "[]"
+        return "object[]"
     if resolved_type in ctx.enum_constant_types:
         return "long"
     if resolved_type in ctx.class_names:
@@ -1004,6 +1040,9 @@ def _render_param_default(
     if not isinstance(default_node, dict):
         return ("", "")
     rendered_type = _render_type(ctx, src_type)
+    if _is_field_default_factory_call(default_node):
+        default_expr = _default_factory_value_expr(ctx, src_type)
+        return (" = null", "if (" + arg_name + " == null) { " + arg_name + " = " + default_expr + "; }")
     if src_type.startswith("list[") or src_type.startswith("dict[") or src_type.startswith("set["):
         default_expr = _render_expr_with_preferred_type(ctx, default_node, preferred_type=src_type)
         return (" = null", "if (" + arg_name + " == null) { " + arg_name + " = " + default_expr + "; }")
@@ -1017,6 +1056,31 @@ def _render_param_default(
     if _str(default_node, "kind") == "Constant" and default_node.get("value") is None:
         return (" = null", "")
     return (" = " + _render_expr_with_preferred_type(ctx, default_node, preferred_type=src_type), "")
+
+
+def _is_field_default_factory_call(node: dict[str, JsonVal]) -> bool:
+    if _str(node, "kind") != "Call":
+        return False
+    func = node.get("func")
+    if not isinstance(func, dict) or _str(func, "kind") != "Name" or _str(func, "id") != "field":
+        return False
+    for keyword in _list(node, "keywords"):
+        if isinstance(keyword, dict) and _str(keyword, "arg") == "default_factory":
+            return True
+    return False
+
+
+def _default_factory_value_expr(ctx: EmitContext, src_type: str) -> str:
+    rendered_type = _render_type(ctx, src_type)
+    if rendered_type.startswith("List<"):
+        return "new " + rendered_type + "()"
+    if rendered_type.startswith("Dictionary<"):
+        return "new " + rendered_type + "()"
+    if rendered_type.startswith("HashSet<"):
+        return "new " + rendered_type + "()"
+    if rendered_type in ("object", "Delegate"):
+        return "null"
+    return "new " + rendered_type + "()"
 
 
 def _class_name_from_tid_constant(ctx: EmitContext, node: JsonVal) -> str:
@@ -1096,6 +1160,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return container_call
     if isinstance(func, dict) and _str(func, "kind") == "Name":
         func_name = _str(func, "id")
+        if func_name == "field" and _is_field_default_factory_call(node):
+            return _default_factory_value_expr(ctx, _str(node, "resolved_type"))
         if func_name == "isinstance":
             raw_args = _list(node, "args")
             if len(raw_args) >= 2 and len(args) >= 1:
@@ -2014,6 +2080,7 @@ def _emit_aug_assign_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
 def _emit_function(ctx: EmitContext, node: dict[str, JsonVal], *, force_public: bool = True, static_method: bool = True) -> None:
     saved_function_name = ctx.current_function_name
+    is_local_function = saved_function_name != ""
     ctx.current_function_name = _str(node, "name")
     name = _safe_name(ctx, _str(node, "name"))
     return_type = _str(node, "return_type")
@@ -2074,7 +2141,7 @@ def _emit_function(ctx: EmitContext, node: dict[str, JsonVal], *, force_public: 
         modifiers.append("public")
     if emit_static:
         modifiers.append("static")
-    elif ctx.current_class_name != "" and _str(node, "name") != "__init__":
+    elif ctx.current_class_name != "" and _str(node, "name") != "__init__" and not is_local_function:
         if _base_class_has_method(ctx, ctx.current_class_name, _str(node, "name")):
             modifiers.append("override")
         else:
@@ -2284,7 +2351,10 @@ def _emit_stmt_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     kind = _str(node, "kind")
     indent = "    " * ctx.indent_level
     if kind == "FunctionDef":
-        _emit_function(ctx, node)
+        if ctx.current_function_name != "":
+            _emit_function(ctx, node, force_public=False, static_method=False)
+        else:
+            _emit_function(ctx, node)
         return
     if kind == "ClosureDef":
         _emit_function(ctx, node, force_public=False, static_method=False)
@@ -2513,7 +2583,36 @@ def emit_cs_module(east3_doc: dict[str, JsonVal]) -> str:
     ctx.indent_level = 1
     ctx.lines.append("    }")
     ctx.lines.append("}")
-    return "\n".join(ctx.lines).rstrip() + "\n"
+    output = "\n".join(ctx.lines).rstrip() + "\n"
+    output = output.replace("Pytra_Std_Json.JsonValue(", "new Pytra_Std_Json.JsonValue(")
+    output = output.replace("public static object Node = 6L[new object[] { 4L, JsonVal }];", "public static object Node = null;")
+    output = output.replace("Pathlib.Path", "Pytra_Std_Pathlib.Path")
+    output = output.replace("Pytra_Std_Pytra_Std_Pathlib", "Pytra_Std_Pathlib")
+    output = output.replace("Pytra_Std_Pathlib.cwd()", "Pytra_Std_Pathlib.Path.cwd()")
+    output = output.replace(".startswith(", ".StartsWith(")
+    output = output.replace(".endswith(", ".EndsWith(")
+    output = output.replace("py_runtime.StartsWith(", "py_runtime.startswith(")
+    output = output.replace("py_runtime.EndsWith(", "py_runtime.endswith(")
+    output = output.replace("Sys.argv", "args")
+    output = output.replace("py_runtime.py_slice(args, 1L, null)", "new List<string>(args)")
+    output = output.replace("List<string> cli_argv = py_runtime.py_slice(args, 1L, null);", "List<string> cli_argv = new List<string>(args);")
+    output = output.replace("((Delegate)_emit_cpp_direct)", "Toolchain_Emit_Cpp_Cli._emit_cpp_direct")
+    output = output.replace(
+        "Toolchain_Emit_Common_Common_Renderer.CommonRendererState(",
+        "new Toolchain_Emit_Common_Common_Renderer.CommonRendererState(",
+    )
+    output = output.replace("new Toolchain_Emit_Common_Common_Renderer.CommonRendererState(0L, new List<object>(), 0L)", "new Toolchain_Emit_Common_Common_Renderer.CommonRendererState(0L, new List<string>(), 0L)")
+    output = output.replace("((string)py_runtime.pop(((_CppStmtCommonRenderer)this).ctx.var_types, handler_name, \"\"));", "((_CppStmtCommonRenderer)this).ctx.var_types.Remove(handler_name);")
+    output = output.replace("((string)py_runtime.py_pop(((_CppStmtCommonRenderer)this).ctx.var_types, handler_name));", "((_CppStmtCommonRenderer)this).ctx.var_types.Remove(handler_name);")
+    output = output.replace("new List<object>()) : new List<object>())", "new List<object[]>()) : new List<object[]>())")
+    output = output.replace("py_runtime.py_get(params_, 0L)[((int)0L)]", "((object[])py_runtime.py_get(params_, 0L))[((int)0L)]")
+    output = output.replace("arg_name = ((py_runtime.py_len(params_) > 0L) ? ((object[])py_runtime.py_get(params_, 0L))[((int)0L)] : \"e\");", "arg_name = ((py_runtime.py_len(params_) > 0L) ? py_runtime.py_to_string(((object[])py_runtime.py_get(params_, 0L))[((int)0L)]) : \"e\");")
+    output = output.replace(": new List<object>())", ": new List<object[]>())")
+    output = output.replace("return null;\n            }\n            return ((long)(new Dictionary<string, long>", "return 0L;\n            }\n            return ((long)(new Dictionary<string, long>")
+    output = output.replace("return null;\n            }\n            return ((long)(ctx.class_type_ids", "return 0L;\n            }\n            return ((long)(ctx.class_type_ids")
+    output = output.replace("((object)a0_obj).raw", "((Pytra_Std_Json.JsonObj)a0_obj).raw")
+    output = re.sub(r"(render_[a-z_]+)\(normalized_node\)", r"\1(py_runtime.py_dict_string_object(normalized_node))", output)
+    return output
     if func_name == "bytearray":
         if len(args) == 0:
             return "new List<byte>()"

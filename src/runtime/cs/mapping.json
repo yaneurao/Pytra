@@ -108,7 +108,7 @@
     "KeyError": "Exception",
     "NameError": "Exception",
     "SystemExit": "Exception",
-    "Path": "Pathlib.Path",
+    "Path": "Pytra_Std_Pathlib.Path",
     "IOBase": "PyFile",
     "TextIOWrapper": "PyFile",
     "BufferedReader": "PyFile",

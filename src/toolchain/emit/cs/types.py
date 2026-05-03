@@ -142,12 +142,21 @@ def _safe_cs_ident(name: str) -> str:
 
 
 def _callable_signature_parts(resolved_type: str) -> tuple[list[str], str] | None:
-    if not resolved_type.startswith("callable[") or not resolved_type.endswith("]"):
+    if not (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) or not resolved_type.endswith("]"):
         return None
-    inner = resolved_type[len("callable["):-1].strip()
+    inner = resolved_type[resolved_type.find("[") + 1:-1].strip()
     if not inner.startswith("["):
         return None
-    close = inner.find("]")
+    close = -1
+    depth = 0
+    for index, ch in enumerate(inner):
+        if ch == "[":
+            depth += 1
+        elif ch == "]":
+            depth -= 1
+            if depth == 0:
+                close = index
+                break
     if close < 0:
         return None
     args_text = inner[1:close].strip()

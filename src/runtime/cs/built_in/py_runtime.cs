@@ -1409,7 +1409,7 @@ namespace Pytra.CsModule
             return "{" + string.Join(", ", parts) + "}";
         }
 
-        private static string py_repr(object value)
+        public static string py_repr(object value)
         {
             if (value == null)
             {
@@ -1470,6 +1470,11 @@ namespace Pytra.CsModule
                 return py_format_list(enumerable);
             }
             return Convert.ToString(value, CultureInfo.InvariantCulture);
+        }
+
+        public static string repr(object value)
+        {
+            return py_repr(value);
         }
 
         private static string py_display(object value)

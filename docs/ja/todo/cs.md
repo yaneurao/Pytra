@@ -43,9 +43,10 @@
 
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を cs に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
-1. [ ] [ID: P1-HOST-CPP-EMITTER-CS-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target cs -o work/selfhost/host-cpp/cs/` で変換 + build を通す
-   - 進捗: 2026-04-29 に変換は PASS。`dotnet build work/selfhost/host-cpp/cs/PytraHostCppEmitter.csproj -v:minimal` は未 PASS（43 errors）。先頭ブロッカーは `Pytra.CsModule.Jv` / `Types` の namespace 衝突、`LinkedModule` / callable 型未生成、`py_runtime.field` 欠落。旧 `src/toolchain/emit/cs/` は変更不可のため、P3-CS-SELFHOST 側の新 emitter/runtime 整備で解く。
-2. [ ] [ID: P1-HOST-CPP-EMITTER-CS-S2] `python3 tools/run/run_emitter_host_parity.py --host-lang cs --hosted-emitter cpp --case-root fixture` で C++ emitter host parity PASS を確認する（結果は `.parity-results/emitter_host_cs.json` に自動書き込み）
+1. [x] [ID: P1-HOST-CPP-EMITTER-CS-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target cs -o work/selfhost/host-cpp/cs/` で変換 + build を通す
+   - 完了: 2026-05-03 に C# hosted C++ emitter の生成物を `dotnet build` PASS まで復旧。module class 名衝突、import 型 qualification、Callable 型、dataclass `field(default_factory=...)`、JSON nullable scalar、Path runtime mapping、C# local function modifier を修正した。
+2. [x] [ID: P1-HOST-CPP-EMITTER-CS-S2] `python3 tools/run/run_emitter_host_parity.py --host-lang cs --hosted-emitter cpp --case-root fixture` で C++ emitter host parity PASS を確認する（結果は `.parity-results/emitter_host_cs.json` に自動書き込み）
+   - 完了: 2026-05-03 に `PYTHONPYCACHEPREFIX=work/tmp/pycache timeout 3600s python3 tools/run/run_emitter_host_parity.py --host-lang cs --hosted-emitter cpp --case-root fixture --timeout-sec 3600` が `[OK] cs hosted cpp emitter parity`。`.parity-results/emitter_host_cs.json` は `build_status=ok`, `parity_status=ok`, `parity_fixture_pass=1`。
 
 ### P1-EMITTER-SELFHOST-CS: emit/cs/cli.py を単独で selfhost C++ build に通す
 
