@@ -151,7 +151,12 @@ def main(argv: list[str]) -> int:
     return run_emit_cli(_emit_rs, cleaned_argv, default_ext=".rs", post_emit=_post_emit)
 
 
-if __name__ == "__main__":
+def _main_from_sys_argv() -> int:
     import sys
 
-    raise SystemExit(main(sys.argv[1:]))
+    cli_argv: list[str] = sys.argv[1:]
+    return main(cli_argv)
+
+
+if __name__ == "__main__":
+    raise SystemExit(_main_from_sys_argv())
