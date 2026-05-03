@@ -4,6 +4,24 @@
 import scala.collection.mutable
 import java.nio.file.{Files, Paths}
 
+type type_py = Any
+val dict: type_py = "dict"
+val list: type_py = "list"
+val set: type_py = "set"
+val str: type_py = "str"
+val int: type_py = "int"
+val float: type_py = "float"
+val bool: type_py = "bool"
+
+def field(default_factory: Any = null): Any = default_factory match {
+    case "dict" => mutable.LinkedHashMap[Any, Any]()
+    case "list" => mutable.ArrayBuffer[Any]()
+    case "set" => mutable.LinkedHashSet[Any]()
+    case fn: Function0[?] => fn()
+    case null => null
+    case other => other
+}
+
 // Trait for Python enum-like classes so __pytra_int() can extract their integer value.
 trait PytraEnumLike {
     def value: Long
@@ -178,6 +196,7 @@ class PyStdWriter(useErr: Boolean) {
 }
 
 var sys_argv: mutable.ArrayBuffer[String] = mutable.ArrayBuffer[String]()
+def __pytra_argv: mutable.ArrayBuffer[String] = sys_argv
 var sys_path: mutable.ArrayBuffer[String] = mutable.ArrayBuffer[String]()
 val sys_stderr = new PyStdWriter(true)
 val sys_stdout = new PyStdWriter(false)
@@ -688,6 +707,10 @@ def __pytra_str(v: Any): String = {
     }
 }
 
+def py_repr(v: Any): String = __pytra_repr(v)
+def __pytra_ord(ch: Any): Long = ord(ch)
+def __pytra_chr(n: Any): String = chr(n)
+
 def __pytra_tuple(items: Any*): PyTuple = new PyTuple(items)
 
 def __pytra_format(value: Any, spec: String): String = {
@@ -750,6 +773,8 @@ def __pytra_get_index(container: Any, index: Any): Any = {
             throw err
     }
 }
+
+def __pytra_get(container: Any, index: Any): Any = __pytra_get_index(container, index)
 
 def __pytra_set_index(container: Any, index: Any, value: Any): Unit = {
     container match {
@@ -1590,6 +1615,9 @@ class JsonValue(var raw: Any) {
         case _ => null
     }
 }
+type __pytra_JsonVal = Any
+val __pytra_JsonVal: type_py = "JsonVal"
+def __pytra_JsonValue(raw: Any): JsonValue = new JsonValue(raw)
 
 def __pytra_loads(v: Any): JsonValue = new JsonValue(pyJsonLoads(v))
 def __pytra_loads_arr(v: Any): JsonArr = new JsonArr(__pytra_as_list(pyJsonLoads(v)).asInstanceOf[mutable.ArrayBuffer[Any]])
@@ -1675,3 +1703,5 @@ def chr(n: Any): String = {
     val code = __pytra_int(n).toInt
     String.valueOf(code.toChar)
 }
+
+def __pytra_cwd(): Path = Path(os.getcwd())
