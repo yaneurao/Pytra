@@ -10,7 +10,7 @@ from toolchain.emit.powershell.emitter import emit_ps1_module
 def _copy_powershell_runtime(output_dir: Path) -> None:
     """Copy PowerShell runtime files needed by emitted modules."""
     runtime_root = Path("src").joinpath("runtime").joinpath("powershell")
-    for bucket in ("built_in", "std", "utils"):
+    for bucket in ["built_in", "std", "utils"]:
         source_dir = runtime_root.joinpath(bucket)
         if not source_dir.exists():
             continue
@@ -22,7 +22,8 @@ def _copy_powershell_runtime(output_dir: Path) -> None:
 
 def main() -> int:
     import sys
-    return run_emit_cli(emit_ps1_module, sys.argv[1:], default_ext=".ps1", post_emit=_copy_powershell_runtime)
+    cli_argv: list[str] = sys.argv[1:]
+    return run_emit_cli(emit_ps1_module, cli_argv, default_ext=".ps1", post_emit=_copy_powershell_runtime)
 
 
 if __name__ == "__main__":

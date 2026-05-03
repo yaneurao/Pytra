@@ -56,8 +56,9 @@ C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を powershell に
 
 1. [x] [ID: P1-EMITTER-SELFHOST-PS1-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/powershell/cli.py --target cpp -o work/selfhost/emit/powershell/` を実行し、変換が通るようにする
    - 完了: 2026-04-29 `rm -rf work/selfhost/emit/powershell && timeout 180s python3 src/pytra-cli.py -build src/toolchain/emit/powershell/cli.py --target cpp -o work/selfhost/emit/powershell/` で変換 PASS。26 files を出力。
-2. [ ] [ID: P1-EMITTER-SELFHOST-PS1-S2] 生成された C++ を `g++ -std=c++20 -O0` でコンパイルを通す（source 側の型注釈不整合を修正）
+2. [x] [ID: P1-EMITTER-SELFHOST-PS1-S2] 生成された C++ を `g++ -std=c++20 -O0` でコンパイルを通す（source 側の型注釈不整合を修正）
    - 進捗: 2026-04-29 `g++ -std=c++20 -O0` は未 PASS。先頭ブロッカーは `frozenset[str]` の C++ 型未生成、`run_emit_cli` への `list<str>` vs `Object<list<str>>` 不一致、`JsonVal` の型絞り不足（`JsonVal > double` / `JsonVal` を `str` 引数へ渡す等）、`str.rsplit` 未対応。
+   - 完了: 2026-05-04 `PYTHONPYCACHEPREFIX=work/tmp/pycache timeout 3600s python3 src/pytra-cli.py -build src/toolchain/emit/powershell/cli.py --target cpp -o work/selfhost/emit/powershell` 後、`timeout 3600s g++ -std=c++20 -O0 -w $(find work/selfhost/emit/powershell -name '*.cpp' | sort) src/runtime/cpp/core/io.cpp src/runtime/cpp/std/pathlib.cpp src/runtime/cpp/std/sys.cpp src/runtime/cpp/std/os.cpp src/runtime/cpp/std/os_path.cpp src/runtime/cpp/std/glob.cpp -I work/selfhost/emit/powershell -I src -I src/runtime/cpp -o work/selfhost/emit/powershell/emitter_powershell_cpp` で PASS。
 3. [ ] [ID: P1-EMITTER-SELFHOST-PS1-S3] コンパイル済み emitter で既存 fixture の manifest を処理し、Python 版 emitter と parity 一致を確認する
 
 

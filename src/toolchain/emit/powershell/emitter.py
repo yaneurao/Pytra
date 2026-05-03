@@ -15,6 +15,7 @@ from dataclasses import field
 
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
+from pytra.typing import cast
 
 from toolchain.emit.common.code_emitter import (
     RuntimeMapping,
@@ -55,10 +56,42 @@ class EmitContext:
 # Helpers
 # ---------------------------------------------------------------------------
 
-_NO_EMIT_IMPORT_MODULES: frozenset[str] = frozenset({
+_NO_EMIT_IMPORT_MODULES: set[str] = {
     "typing", "pytra.typing", "dataclasses", "__future__",
     "pytra.std.extern", "pytra.std.abi",
-})
+}
+
+
+def _starts_upper(text: str) -> bool:
+    if text == "":
+        return False
+    return text[0].upper() == text[0] and text[0].lower() != text[0]
+
+
+def _starts_with_any(text: str, prefixes: list[str]) -> bool:
+    for prefix in prefixes:
+        if text.startswith(prefix):
+            return True
+    return False
+
+
+def _last_dot_segment(text: str) -> str:
+    parts = text.split(".")
+    if len(parts) == 0:
+        return text
+    return parts[len(parts) - 1]
+
+
+def _mapping_call(ctx: EmitContext, key: str, fallback: str) -> str:
+    if key in ctx.mapping.calls:
+        return ctx.mapping.calls[key]
+    return fallback
+
+
+def _module_native_file(ctx: EmitContext, module: str) -> str:
+    if module in ctx.mapping.module_native_files:
+        return ctx.mapping.module_native_files[module]
+    return ""
 
 
 def _gs(node: JsonVal, key: str) -> str:
@@ -86,6 +119,12 @@ def _gd(node: JsonVal, key: str) -> dict[str, JsonVal]:
         if isinstance(v, dict):
             return v
     return {}
+
+
+def _gv(node: JsonVal, key: str) -> JsonVal:
+    if isinstance(node, dict):
+        return node.get(key)
+    return None
 
 
 def _call_keyword_map(expr: dict[str, JsonVal]) -> dict[str, JsonVal]:
@@ -126,8 +165,8 @@ def _has_format_spec(doc: JsonVal) -> bool:
     """Check if doc contains FormattedValue with format_spec."""
     if isinstance(doc, dict):
         if _gs(doc, "kind") == "FormattedValue":
-            fs = doc.get("format_spec")
-            if isinstance(fs, str) and fs != "":
+            fs = _gs(doc, "format_spec")
+            if fs != "":
                 return True
         for v in doc.values():
             if _has_format_spec(v):
@@ -148,7 +187,7 @@ def _is_type_alias_like_assign(stmt: dict[str, JsonVal]) -> bool:
     if not isinstance(target, dict) or _gs(target, "kind") != "Name":
         return False
     name = _gs(target, "id")
-    if name == "" or not name[0].isupper():
+    if not _starts_upper(name):
         return False
     value = stmt.get("value")
     if not isinstance(value, dict):
@@ -166,19 +205,43 @@ def _is_type_alias_like_assign(stmt: dict[str, JsonVal]) -> bool:
 def _postprocess_ps1_native_code(text: str) -> str:
     text = text.replace("$cli_argv = (__pytra_str_slice $argv 1 $argv.Length)", "$cli_argv = @($args)")
     text = text.replace("$cli_argv = (__pytra_str_slice $args 1 $args.Length)", "$cli_argv = @($args)")
-    helper_prefixes = (
+    helper_prefixes: list[str] = [
         "run_", "write_", "emit_", "build_", "load_", "init_", "should_", "normalize_", "cpp_", "runtime_", "resolve_", "native_",
         "collect_", "is_", "jv_", "nd_", "_rb_", "split_", "extract_", "parse_", "map_", "render_",
         "loads", "dumps",
-    )
+    ]
 
-    def _rewrite_helper_call(match: re.Match[str]) -> str:
-        name = match.group(1)
-        if name.startswith(helper_prefixes):
-            return "(& " + name + " "
-        return match.group(0)
-
-    text = re.sub(r"\(& \$([A-Za-z_][A-Za-z0-9_]*)\s+", _rewrite_helper_call, text)
+    pos = 0
+    rewritten_parts: list[str] = []
+    while True:
+        search = text[pos:]
+        local_idx = search.find("(& $")
+        idx = -1
+        if local_idx >= 0:
+            idx = pos + local_idx
+        if idx < 0:
+            rewritten_parts.append(text[pos:])
+            break
+        name_start = idx + 4
+        name_end = name_start
+        while name_end < len(text):
+            ch = text[name_end]
+            if ch.isalnum() or ch == "_":
+                name_end += 1
+            else:
+                break
+        if name_end == name_start or name_end >= len(text) or not text[name_end].isspace():
+            rewritten_parts.append(text[pos:name_end])
+            pos = name_end
+            continue
+        name = text[name_start:name_end]
+        rewritten_parts.append(text[pos:idx])
+        if _starts_with_any(name, helper_prefixes):
+            rewritten_parts.append("(& " + name + text[name_end])
+        else:
+            rewritten_parts.append(text[idx:name_end + 1])
+        pos = name_end + 1
+    text = "".join(rewritten_parts)
     text = text.replace("(active_direct_emit_fn $east_doc $output_dir)", "(& $active_direct_emit_fn $east_doc $output_dir)")
     text = text.replace("(active_emit_fn $east_doc)", "(& $active_emit_fn $east_doc)")
     text = text.replace('.Contains($cache_key)', '.ContainsKey($cache_key)')
@@ -190,13 +253,30 @@ def _postprocess_ps1_native_code(text: str) -> str:
     text = text.replace(
         '    if (($module_id -eq "")) {\n        $module_id = (& _str $meta "module_id")\n    }\n',
         '    if (($module_id -eq "")) {\n        $module_id = (& _str $meta "module_id")\n    }\n'
-        '    if (($module_id -eq "")) {\n        $module_id = (& _str $meta "_cli_module_id")\n    }\n',
+        + '    if (($module_id -eq "")) {\n        $module_id = (& _str $meta "_cli_module_id")\n    }\n',
     )
     text = text.replace(
         '$ctx["is_entry"] = $(if (((__pytra_len $emit_ctx_meta) -gt 0)) { (& _bool $emit_ctx_meta "is_entry") } else { $false })',
         '$ctx["is_entry"] = $(if (((__pytra_len $emit_ctx_meta) -gt 0)) { (& _bool $emit_ctx_meta "is_entry") } else { (& _bool $meta "_cli_is_entry") })',
     )
     return text
+
+
+def _set_contains_text(values: set[str], key: str) -> bool:
+    return key in values
+
+
+def _list_contains_text(values: list[str], key: str) -> bool:
+    return key in values
+
+
+def _json_list_contains_text(values: list[JsonVal], key: str) -> bool:
+    for value in values:
+        if isinstance(value, str):
+            value_text = cast(str, value)
+            if value_text == key:
+                return True
+    return False
 
 
 def _module_id_to_import_path(module_id: str, root_rel_prefix: str) -> str:
@@ -279,14 +359,17 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
     if isinstance(expr, bool):
         return "$true" if expr else "$false"
     if isinstance(expr, int):
-        return str(expr)
+        expr_int = cast(int, expr)
+        return str(expr_int)
     if isinstance(expr, float):
-        s = repr(expr)
+        expr_float = cast(float, expr)
+        s = repr(expr_float)
         if "inf" in s.lower():
-            return "[double]::PositiveInfinity" if expr > 0.0 else "[double]::NegativeInfinity"
+            return "[double]::NegativeInfinity" if s.startswith("-") else "[double]::PositiveInfinity"
         return s
     if isinstance(expr, str):
-        return ps1_string_literal(expr)
+        expr_str = cast(str, expr)
+        return ps1_string_literal(expr_str)
     if not isinstance(expr, dict):
         return "$null"
 
@@ -314,22 +397,25 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
         if isinstance(value, bool):
             return "$true" if value else "$false"
         if isinstance(value, int):
+            value_int = cast(int, value)
             # PS1 stores integer literals ≤ Int32.MaxValue as Int32.
             # Int32 * Int32 overflow promotes to Double (not Int64), breaking integer arithmetic.
             # Use [long] cast only for large values where overflow is a real risk.
             # Small constants (|N| ≤ 32767) fit in 16 bits; 32767*32767 < Int32.MaxValue so
             # they cannot cause Int32 overflow even when multiplied together.
             # Large constants need [long] to prevent overflow in multiplications.
-            if abs(value) > 32767:
-                return "([long]" + str(value) + ")"
-            return str(value)
+            if value_int > 32767 or value_int < -32767:
+                return "([long]" + str(value_int) + ")"
+            return str(value_int)
         if isinstance(value, float):
-            s = repr(value)
+            value_float = cast(float, value)
+            s = repr(value_float)
             if "inf" in s.lower():
-                return "[double]::PositiveInfinity" if value > 0.0 else "[double]::NegativeInfinity"
+                return "[double]::NegativeInfinity" if s.startswith("-") else "[double]::PositiveInfinity"
             return s
         if isinstance(value, str):
-            return ps1_string_literal(value)
+            value_str = cast(str, value)
+            return ps1_string_literal(value_str)
         return "$null"
 
     if kind == "UnaryOp":
@@ -443,8 +529,10 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
             i = len(rendered) - 2
             while i >= 0:
                 v = rendered[i]
-                vnode = values[i] if i < len(values) else None
-                if _is_bool_typed(vnode):
+                bool_typed = False
+                if i < len(values):
+                    bool_typed = _is_bool_typed(values[i])
+                if bool_typed:
                     # v is always bool: no __pytra_bool needed, return $true/$false directly
                     result = "$(if (" + v + ") { $true } else { " + result + " })"
                 elif _is_trivial(v):
@@ -461,8 +549,10 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
             i = len(rendered) - 2
             while i >= 0:
                 v = rendered[i]
-                vnode = values[i] if i < len(values) else None
-                if _is_bool_typed(vnode):
+                bool_typed = False
+                if i < len(values):
+                    bool_typed = _is_bool_typed(values[i])
+                if bool_typed:
                     # v is always bool: no __pytra_bool needed, return $false directly on falsy
                     result = "$(if (-not " + v + ") { $false } else { " + result + " })"
                 elif _is_trivial(v):
@@ -488,12 +578,15 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
             vname = _gs(value_node, "id") if _gs(value_node, "kind") == "Name" else ""
             if vname == "self":
                 cur_cls = ctx.current_class
-                if cur_cls != "" and attr in ctx.class_properties.get(cur_cls, set()):
+                props_self: set[str] = set()
+                if cur_cls in ctx.class_properties:
+                    props_self = ctx.class_properties[cur_cls]
+                if cur_cls != "" and attr in props_self:
                     return "(" + cur_cls + "_" + _safe(attr, "_p") + " $self)"
                 return '$self["' + attr + '"]'
             if vname in ctx.import_alias_map:
                 mod_full_ia = ctx.import_alias_map.get(vname, vname)
-                mod_short_ia = mod_full_ia.rsplit(".", 1)[-1] if "." in mod_full_ia else mod_full_ia
+                mod_short_ia = _last_dot_segment(mod_full_ia) if "." in mod_full_ia else mod_full_ia
                 qualified_key_ia = mod_short_ia + "." + attr
                 if qualified_key_ia in ctx.mapping.calls:
                     return ctx.mapping.calls[qualified_key_ia]
@@ -502,23 +595,25 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
                 return "$script:" + _safe(attr, "_cv")
             vtype = _gs(value_node, "resolved_type")
             if vtype in ctx.class_names:
-                props = ctx.class_properties.get(vtype, set())
+                props: set[str] = set()
+                if vtype in ctx.class_properties:
+                    props = ctx.class_properties[vtype]
                 if attr in props:
                     return "(& (Get-Command (\"{0}_{1}\" -f " + value + '["__type__"], "' + attr + '")) ' + value + ")"
                 return value + '["' + attr + '"]'
             if vtype == "module":
                 # Generic module attribute access: look up from mapping.calls
                 mod_full = ctx.import_alias_map.get(vname, vname)
-                mod_short = mod_full.rsplit(".", 1)[-1] if "." in mod_full else mod_full
+                mod_short = _last_dot_segment(mod_full) if "." in mod_full else mod_full
                 qualified_key = mod_short + "." + attr
                 if qualified_key in ctx.mapping.calls:
                     return ctx.mapping.calls[qualified_key]
-        _DOTNET_PROPS: frozenset[str] = frozenset({
+        _DOTNET_PROPS: set[str] = {
             "Length", "Count", "Keys", "Values",
             "Name", "FullName", "Extension", "Directory",
-        })
+        }
         safe_attr = _safe(attr, "prop")
-        if safe_attr in _DOTNET_PROPS or (safe_attr != "" and safe_attr[0].isupper()):
+        if safe_attr in _DOTNET_PROPS or _starts_upper(safe_attr):
             return value + "." + safe_attr
         if isinstance(value_node, dict):
             vtype2 = _gs(value_node, "resolved_type")
@@ -704,9 +799,8 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
             # Use direct $list[$i] when optimizer guarantees non-negative index.
             # This avoids __pytra_list_idx function-call overhead in tight loops and
             # also correctly preserves tuple elements (no pipeline enumeration).
-            meta = expr.get("meta") if isinstance(expr, dict) else None
-            access_v1 = meta.get("subscript_access_v1") if isinstance(meta, dict) else None
-            if isinstance(access_v1, dict) and access_v1.get("negative_index") == "skip":
+            access_v1 = _gd(_gd(expr, "meta"), "subscript_access_v1")
+            if _gs(access_v1, "negative_index") == "skip":
                 return value + "[" + index + "]"
             return "(__pytra_list_idx " + value + " " + index + ")"
         return value + "[" + index + "]"
@@ -753,7 +847,7 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
             static_check = _static_pod_isinstance(value_type, type_name)
             if static_check != "":
                 return static_check
-            isinstance_fn = ctx.mapping.calls.get("py_isinstance", "__pytra_type_check")
+            isinstance_fn = _mapping_call(ctx, "py_isinstance", "__pytra_type_check")
             return "(" + isinstance_fn + " " + _render_expr(ctx, value_node2) + ' "' + type_name + '")'
         return "$true"
 
@@ -788,7 +882,7 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
         params = _gl(expr, "args")
         if len(params) == 0:
             params = _gl(expr, "params")
-        body = expr.get("body")
+        body_node = expr.get("body")
         lambda_params: list[str] = []
         for p in params:
             if isinstance(p, dict):
@@ -801,7 +895,7 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
             elif isinstance(p, str):
                 lambda_params.append("$" + _safe(p, "_p"))
         ps_params = ", ".join(lambda_params)
-        return "{ param(" + ps_params + ") " + _render_expr(ctx, body) + " }"
+        return "{ param(" + ps_params + ") " + _render_expr(ctx, body_node) + " }"
 
     if kind == "TupleUnpack":
         # lowered by EAST3 — render as parenthesized tuple for assignments
@@ -890,8 +984,9 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
                 return "__pytra_print " + " ".join(rendered_args) if len(rendered_args) > 0 else "__pytra_print"
             if fn_name == "len":
                 if len(rendered_args) > 0:
-                    _len_arg = args[0] if len(args) > 0 else None
-                    _len_rt = _gs(_len_arg, "resolved_type") if isinstance(_len_arg, dict) else ""
+                    _len_rt = ""
+                    if len(args) > 0 and isinstance(args[0], dict):
+                        _len_rt = _gs(args[0], "resolved_type")
                     if _len_rt.lower().startswith("list[") or _len_rt == "list":
                         return rendered_args[0] + ".Count"
                     if _len_rt == "str":
@@ -941,7 +1036,7 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
                                 if static_check != "":
                                     checks.append("(" + static_check + ")")
                                 else:
-                                    isinstance_fn = ctx.mapping.calls.get("py_isinstance", "__pytra_type_check")
+                                    isinstance_fn = _mapping_call(ctx, "py_isinstance", "__pytra_type_check")
                                     checks.append("(" + isinstance_fn + " " + rendered_args[0] + " " + ps1_string_literal(elem_type) + ")")
                         return "(" + " -or ".join(checks) + ")" if len(checks) > 0 else "$false"
                     type_name = _gs(type_arg, "id") if isinstance(type_arg, dict) else ""
@@ -953,7 +1048,7 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
                         static_check = _static_pod_isinstance(value_type, type_name)
                         if static_check != "":
                             return static_check
-                        isinstance_fn = ctx.mapping.calls.get("py_isinstance", "__pytra_type_check")
+                        isinstance_fn = _mapping_call(ctx, "py_isinstance", "__pytra_type_check")
                         return "(" + isinstance_fn + " " + rendered_args[0] + " " + ps1_string_literal(type_name) + ")"
                 return "$false"
             if fn_name in ("cast", "typing.cast"):
@@ -998,7 +1093,7 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
                 last_arg = args[-1]
                 if isinstance(last_arg, dict) and _gs(last_arg, "kind") == "Name":
                     fn_ref = _safe(_gs(last_arg, "id"), "_fn")
-                    other = rendered_args[:-1]
+                    other: list[str] = rendered_args[:-1]
                     return "(py_assert_stdout " + " ".join(other) + ' "' + fn_ref + '")'
 
             # Check resolved runtime mapping
@@ -1172,7 +1267,11 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
                     # Try "sub.func" key (e.g. "path.join") then "mod.sub.func" (e.g. "os.path.join")
                     nested_key = sub_attr + "." + raw_attr
                     full_nested_key = sub_owner_name + "." + sub_attr + "." + raw_attr
-                    mapped_fn = ctx.mapping.calls.get(nested_key, ctx.mapping.calls.get(full_nested_key, ""))
+                    mapped_fn = ""
+                    if nested_key in ctx.mapping.calls:
+                        mapped_fn = ctx.mapping.calls[nested_key]
+                    elif full_nested_key in ctx.mapping.calls:
+                        mapped_fn = ctx.mapping.calls[full_nested_key]
                     fn_name2 = mapped_fn if mapped_fn != "" else _safe(raw_attr, "_f")
                     if len(rendered_args) == 0:
                         return "(" + fn_name2 + ")"
@@ -1183,9 +1282,13 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
                 # Look up mapped name from runtime calls (e.g. math.sqrt → __native_sqrt)
                 # Try "mod.func" first, then bare "func"
                 mod_full_name = ctx.import_alias_map.get(owner_name, owner_name)
-                mod_short_name = mod_full_name.rsplit(".", 1)[-1] if "." in mod_full_name else mod_full_name
+                mod_short_name = _last_dot_segment(mod_full_name) if "." in mod_full_name else mod_full_name
                 qualified_fn_key = mod_short_name + "." + raw_attr
-                mapped_fn = ctx.mapping.calls.get(qualified_fn_key, ctx.mapping.calls.get(raw_attr, ""))
+                mapped_fn = ""
+                if qualified_fn_key in ctx.mapping.calls:
+                    mapped_fn = ctx.mapping.calls[qualified_fn_key]
+                elif raw_attr in ctx.mapping.calls:
+                    mapped_fn = ctx.mapping.calls[raw_attr]
                 fn_name2 = mapped_fn if mapped_fn != "" else _safe(raw_attr, "_f")
                 if mapped_fn != "" and mapped_fn.startswith("[Math]::"):
                     if mapped_fn.endswith("::PI") or mapped_fn.endswith("::E"):
@@ -1344,9 +1447,9 @@ def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[
     if kind == "Assign":
         targets = _gl(stmt, "targets")
         if len(targets) == 0:
-            t = stmt.get("target")
-            if isinstance(t, dict):
-                targets = [t]
+            single_target = stmt.get("target")
+            if isinstance(single_target, dict):
+                targets = [single_target]
         val_node = stmt.get("value")
         if _is_extern_value(val_node):
             tname = ""
@@ -1379,36 +1482,36 @@ def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[
         value = _render_expr(ctx, stmt.get("value"))
         if len(targets) == 0:
             return [indent + value]
-        target = targets[0]
-        if isinstance(target, dict):
-            if _gs(target, "kind") == "Attribute":
-                return [indent + _render_lvalue(ctx, target) + " = " + value]
-            if _gs(target, "kind") == "Subscript":
-                owner = _render_expr(ctx, target.get("value"))
-                index = _render_expr(ctx, target.get("slice"))
+        assign_target: JsonVal = targets[0]
+        if isinstance(assign_target, dict):
+            if _gs(assign_target, "kind") == "Attribute":
+                return [indent + _render_lvalue(ctx, assign_target) + " = " + value]
+            if _gs(assign_target, "kind") == "Subscript":
+                owner = _render_expr(ctx, assign_target.get("value"))
+                index = _render_expr(ctx, assign_target.get("slice"))
                 return [indent + owner + "[" + index + "] = " + value]
-        lhs = _render_lvalue(ctx, target)
+        lhs = _render_lvalue(ctx, assign_target)
         return [indent + lhs + " = " + value]
 
     if kind == "AnnAssign":
-        target = stmt.get("target")
+        ann_target = stmt.get("target")
         value = stmt.get("value")
         if value is None:
-            lhs = _render_expr(ctx, target)
+            lhs = _render_expr(ctx, ann_target)
             return [indent + lhs + " = $null"]
         if _is_extern_value(value):
-            tname = _gs(target, "id") if isinstance(target, dict) else ""
+            tname = _gs(ann_target, "id") if isinstance(ann_target, dict) else ""
             if tname != "":
                 return [indent + "$" + _safe(tname, "_v") + " = $__native_" + _safe(tname, "_v")]
             return [indent + "# extern var (no target)"]
         if isinstance(value, dict) and _gs(value, "kind") == "Lambda":
-            if isinstance(target, dict) and _gs(target, "kind") == "Name":
-                ctx.lambda_vars.add(_gs(target, "id"))
-        if isinstance(target, dict) and _gs(target, "kind") == "Name":
-            tgt_rt_ann = _gs(target, "resolved_type")
+            if isinstance(ann_target, dict) and _gs(ann_target, "kind") == "Name":
+                ctx.lambda_vars.add(_gs(ann_target, "id"))
+        if isinstance(ann_target, dict) and _gs(ann_target, "kind") == "Name":
+            tgt_rt_ann = _gs(ann_target, "resolved_type")
             if "callable" in tgt_rt_ann.lower():
-                ctx.lambda_vars.add(_gs(target, "id"))
-        lhs = _render_expr(ctx, target)
+                ctx.lambda_vars.add(_gs(ann_target, "id"))
+        lhs = _render_expr(ctx, ann_target)
         return [indent + lhs + " = " + _render_expr(ctx, value)]
 
     if kind == "TupleUnpack":
@@ -1426,21 +1529,21 @@ def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[
         return lines_b
 
     if kind == "AugAssign":
-        target = _render_lvalue(ctx, stmt.get("target"))
+        aug_target = _render_lvalue(ctx, stmt.get("target"))
         op = _gs(stmt, "op")
         value = _render_expr(ctx, stmt.get("value"))
         op_map: dict[str, str] = {
             "Add": "+=", "Sub": "-=", "Mult": "*=", "Div": "/=", "Mod": "%=",
         }
         if op in op_map:
-            return [indent + target + " " + op_map[op] + " " + value]
+            return [indent + aug_target + " " + op_map[op] + " " + value]
         if op in _BINOP_MAP:
-            return [indent + target + " = (" + target + " " + _BINOP_MAP[op] + " " + value + ")"]
+            return [indent + aug_target + " = (" + aug_target + " " + _BINOP_MAP[op] + " " + value + ")"]
         if op == "Pow":
-            return [indent + target + " = [Math]::Pow(" + target + ", " + value + ")"]
+            return [indent + aug_target + " = [Math]::Pow(" + aug_target + ", " + value + ")"]
         if op == "FloorDiv":
-            return [indent + target + " = ([long][Math]::Floor([double](" + target + ") / [double](" + value + ")))"]
-        return [indent + target + " = " + value]
+            return [indent + aug_target + " = ([long][Math]::Floor([double](" + aug_target + ") / [double](" + value + ")))"]
+        return [indent + aug_target + " = " + value]
 
     if kind == "Swap":
         # Use _render_lvalue so subscript targets are valid PS1 assignment targets.
@@ -1462,13 +1565,13 @@ def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[
         lines_c.extend(_emit_body(ctx, body, indent + "    "))
         if len(orelse) > 0:
             if len(orelse) == 1 and isinstance(orelse[0], dict) and _gs(orelse[0], "kind") == "If":
-                inner = orelse[0]
-                lines_c.append(indent + "} elseif (" + _render_expr(ctx, inner.get("test")) + ") {")
+                inner: JsonVal = orelse[0]
+                lines_c.append(indent + "} elseif (" + _render_expr(ctx, _gv(inner, "test")) + ") {")
                 lines_c.extend(_emit_body(ctx, _gl(inner, "body"), indent + "    "))
                 inner_else = _gl(inner, "orelse")
                 while len(inner_else) == 1 and isinstance(inner_else[0], dict) and _gs(inner_else[0], "kind") == "If":
                     inner = inner_else[0]
-                    lines_c.append(indent + "} elseif (" + _render_expr(ctx, inner.get("test")) + ") {")
+                    lines_c.append(indent + "} elseif (" + _render_expr(ctx, _gv(inner, "test")) + ") {")
                     lines_c.extend(_emit_body(ctx, _gl(inner, "body"), indent + "    "))
                     inner_else = _gl(inner, "orelse")
                 if len(inner_else) > 0:
@@ -1564,7 +1667,10 @@ def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[
         lines_j: list[str] = [indent + "try {"]
         lines_j.extend(_emit_body(ctx, body, indent + "    "))
         # Collect real handlers (with optional type)
-        real_handlers = [h for h in handlers if isinstance(h, dict)]
+        real_handlers: list[JsonVal] = []
+        for handler_item in handlers:
+            if isinstance(handler_item, dict):
+                real_handlers.append(handler_item)
         if len(real_handlers) > 1:
             # Multiple handlers: combine into a single catch with if/elseif
             lines_j.append(indent + "} catch {")
@@ -1572,7 +1678,7 @@ def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[
             lines_j.append(indent + "    $__exc_type = if (Test-Path variable:script:__pytra_exc_type) { $script:__pytra_exc_type } else { \"\" }")
             first = True
             for handler in real_handlers:
-                htype_node = handler.get("type")
+                htype_node = _gv(handler, "type")
                 htype = _gs(htype_node, "id") if isinstance(htype_node, dict) else ""
                 handler_name = _gs(handler, "name")
                 handler_body = _gl(handler, "body")
@@ -1650,7 +1756,7 @@ def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[
         if module in _NO_EMIT_IMPORT_MODULES:
             return [indent + "# import: " + module]
         if should_skip_module(module, ctx.mapping):
-            native = ctx.mapping.module_native_files.get(module, "")
+            native = _module_native_file(ctx, module)
             if native != "":
                 return [indent + '. (Join-Path $PSScriptRoot "' + ctx.root_rel_prefix + native + '")']
             return [indent + "# skip: " + module]
@@ -1665,7 +1771,7 @@ def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[
                 if sub_mod in _NO_EMIT_IMPORT_MODULES:
                     continue
                 if should_skip_module(sub_mod, ctx.mapping):
-                    native = ctx.mapping.module_native_files.get(sub_mod, "")
+                    native = _module_native_file(ctx, sub_mod)
                     if native != "" and native not in seen_natives:
                         seen_natives.add(native)
                         sub_lines2.append(indent + '. (Join-Path $PSScriptRoot "' + ctx.root_rel_prefix + native + '")')
@@ -1687,7 +1793,7 @@ def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[
             if mod_name in _NO_EMIT_IMPORT_MODULES:
                 continue
             if should_skip_module(mod_name, ctx.mapping):
-                native = ctx.mapping.module_native_files.get(mod_name, "")
+                native = _module_native_file(ctx, mod_name)
                 if native != "" and native not in seen_natives_k:
                     seen_natives_k.add(native)
                     lines_k.append(indent + '. (Join-Path $PSScriptRoot "' + ctx.root_rel_prefix + native + '")')
@@ -1705,9 +1811,12 @@ def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[
 def _emit_function_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[str]:
     name = _safe(_gs(stmt, "name"), "_fn")
     decs = _gl(stmt, "decorators")
-    if "extern" in decs and ctx.current_class == "":
-        arg_order = _gl(stmt, "arg_order")
-        ps_params = ["$" + _safe(a, "_p") for a in arg_order if isinstance(a, str)]
+    if _json_list_contains_text(decs, "extern") and ctx.current_class == "":
+        arg_order_values = _gl(stmt, "arg_order")
+        ps_params: list[str] = []
+        for arg_value in arg_order_values:
+            if isinstance(arg_value, str):
+                ps_params.append("$" + _safe(arg_value, "_p"))
         lines_l: list[str] = [indent + "function " + name + " {"]
         if len(ps_params) > 0:
             lines_l.append(indent + "    param(" + ", ".join(ps_params) + ")")
@@ -1719,7 +1828,11 @@ def _emit_function_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) 
         return lines_l
 
     body = _gl(stmt, "body")
-    arg_order = _gl(stmt, "arg_order")
+    arg_order_values = _gl(stmt, "arg_order")
+    arg_order: list[str] = []
+    for arg_value in arg_order_values:
+        if isinstance(arg_value, str):
+            arg_order.append(arg_value)
     arg_defaults = _gd(stmt, "arg_defaults")
     arg_types_raw = _gd(stmt, "arg_types")
     vararg_name = _gs(stmt, "vararg_name")
@@ -1737,14 +1850,14 @@ def _emit_function_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) 
             if vararg_name != "" and arg_name == vararg_name:
                 continue
             safe_a = "$" + _safe(arg_name, "_p")
-            default = arg_defaults.get(arg_name)
-            if default is not None:
-                ps_params.append(safe_a + " = " + _render_expr(ctx, default))
+            default_node = arg_defaults.get(arg_name)
+            if default_node is not None:
+                ps_params.append(safe_a + " = " + _render_expr(ctx, default_node))
             else:
                 ps_params.append(safe_a)
         # Emit vararg params (in arg_types but not arg_order, not "self")
         for extra_name, extra_type in arg_types_raw.items():
-            if isinstance(extra_name, str) and extra_name != "self" and extra_name not in arg_order:
+            if isinstance(extra_name, str) and extra_name != "self" and not _list_contains_text(arg_order, extra_name):
                 safe_ea = "$" + _safe(extra_name, "_p")
                 ps_params.append(safe_ea + " = $null")
         if vararg_name != "":
@@ -1758,9 +1871,9 @@ def _emit_function_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) 
                 arg_name_s = _gs(p, "arg")
                 if arg_name_s == "":
                     arg_name_s = _gs(p, "name")
-                default = p.get("default")
-                if default is not None:
-                    ps_params.append("$" + _safe(arg_name_s, "_p") + " = " + _render_expr(ctx, default))
+                default_node2 = p.get("default")
+                if default_node2 is not None:
+                    ps_params.append("$" + _safe(arg_name_s, "_p") + " = " + _render_expr(ctx, default_node2))
                 else:
                     ps_params.append("$" + _safe(arg_name_s, "_p"))
             elif isinstance(p, str):
@@ -1802,7 +1915,7 @@ def _emit_class_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> 
                 has_init = True
                 fn_lines = _emit_function_def(ctx, member, indent)
                 if len(fn_lines) > 0:
-                    fn_lines[0] = fn_lines[0].replace("function __init__", "function " + name, 1)
+                    fn_lines[0] = fn_lines[0].replace("function __init__", "function " + name)
                 type_assign = indent + '    $self["__type__"] = "' + name + '"'
                 for i_fn in range(len(fn_lines)):
                     if "param(" in fn_lines[i_fn]:
@@ -1818,7 +1931,7 @@ def _emit_class_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> 
                 if len(fn_lines) > 0:
                     orig = "function " + _safe(method_name, "_m")
                     new_fn = "function " + name + "_" + _safe(method_name, "_m")
-                    fn_lines[0] = fn_lines[0].replace(orig, new_fn, 1)
+                    fn_lines[0] = fn_lines[0].replace(orig, new_fn)
                 lines_n.extend(fn_lines)
         elif mk in ("AnnAssign", "Assign"):
             lines_n.extend(_emit_stmt(ctx, member, indent))
@@ -1849,6 +1962,7 @@ def _emit_class_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> 
             if default_val is not None:
                 field_params.append(safe_fn + " = " + _render_expr(ctx, default_val))
             else:
+                matched_field_default = False
                 for member in body:
                     if isinstance(member, dict) and _gs(member, "kind") in ("AnnAssign", "Assign"):
                         tgt2 = member.get("target")
@@ -1858,8 +1972,9 @@ def _emit_class_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> 
                                 field_params.append(safe_fn + " = " + _render_expr(ctx, val))
                             else:
                                 field_params.append(safe_fn)
+                            matched_field_default = True
                             break
-                else:
+                if not matched_field_default:
                     field_params.append(safe_fn)
             field_assigns.append(indent + '    $self["' + fn_id + '"] = ' + safe_fn)
         lines_n.append(indent + "function " + name + " {")
@@ -1939,7 +2054,7 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
     for binding in _gl(meta, "import_bindings"):
         if isinstance(binding, dict):
             local = _gs(binding, "local_name")
-            if local != "" and local[0].isupper() and local not in {
+            if _starts_upper(local) and local not in {
                 "Any", "Optional", "Union", "List", "Dict", "Tuple", "Set",
                 "Callable", "Iterator", "Iterable", "Enum", "IntEnum", "IntFlag",
             }:
@@ -1952,14 +2067,18 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
             cn = _gs(node, "name")
             base = _gs(node, "base")
             if cn != "" and base != "":
-                class_bases_multi.setdefault(cn, []).append(base)
+                if cn not in class_bases_multi:
+                    class_bases_multi[cn] = []
+                class_bases_multi[cn].append(base)
             for dec in _gl(node, "decorators"):
                 if isinstance(dec, str) and dec.startswith("implements(") and dec.endswith(")"):
                     inner = dec[len("implements("):-1]
-                    for trait_name in inner.split(","):
-                        trait_name = trait_name.strip()
+                    for raw_trait_name in inner.split(","):
+                        trait_name = raw_trait_name.strip()
                         if cn != "" and trait_name != "":
-                            class_bases_multi.setdefault(cn, []).append(trait_name)
+                            if cn not in class_bases_multi:
+                                class_bases_multi[cn] = []
+                            class_bases_multi[cn].append(trait_name)
     class_bases: dict[str, str] = {
         child: bases[0]
         for child, bases in class_bases_multi.items()
@@ -1985,7 +2104,13 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
             props: set[str] = set()
             for member in _gl(node, "body"):
                 if isinstance(member, dict) and _gs(member, "kind") in ("FunctionDef", "ClosureDef"):
-                    if "property" in _gl(member, "decorators"):
+                    has_property = False
+                    for dec in _gl(member, "decorators"):
+                        if isinstance(dec, str):
+                            dec_name = dec
+                            if dec_name == "property":
+                                has_property = True
+                    if has_property:
                         mn = _gs(member, "name")
                         if mn != "":
                             props.add(mn)
@@ -2014,9 +2139,13 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
             alias = _gs(entry, "asname")
             local_name = alias if alias != "" else imported_name
             # Try "mod_short.func" first (e.g. "json.dumps"), then bare "func" (e.g. "dumps")
-            mod_short_ia = module.rsplit(".", 1)[-1] if "." in module else module
+            mod_short_ia = _last_dot_segment(module)
             qualified_ia_key = mod_short_ia + "." + imported_name
-            mapped_func = mapping.calls.get(qualified_ia_key, mapping.calls.get(imported_name, ""))
+            mapped_func = ""
+            if qualified_ia_key in mapping.calls:
+                mapped_func = mapping.calls[qualified_ia_key]
+            elif imported_name in mapping.calls:
+                mapped_func = mapping.calls[imported_name]
             if mapped_func != "":
                 import_func_aliases[local_name] = mapped_func
 
@@ -2027,25 +2156,37 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
     for node in body:
         if isinstance(node, dict) and _gs(node, "kind") == "ClassDef":
             cn = _gs(node, "name")
-            if cn != "" and "trait" in _gl(node, "decorators"):
-                trait_class_names.add(cn)
-    base_class_set: set[str] = {base for bases in class_bases_multi.values() for base in bases}
-    leaf_classes: set[str] = class_names - base_class_set - trait_class_names
+            if cn != "":
+                has_trait = False
+                for dec in _gl(node, "decorators"):
+                    if isinstance(dec, str):
+                        dec_name = dec
+                        if dec_name == "trait":
+                            has_trait = True
+                if has_trait:
+                    trait_class_names.add(cn)
+    base_class_set: set[str] = set()
+    for bases in class_bases_multi.values():
+        for base in bases:
+            base_class_set.add(base)
+    leaf_classes: set[str] = set()
+    for class_name in class_names:
+        if not _set_contains_text(base_class_set, class_name) and not _set_contains_text(trait_class_names, class_name):
+            leaf_classes.add(class_name)
 
-    ctx = EmitContext(
-        module_id=module_id,
-        root_rel_prefix=root_rel_prefix,
-        renamed_symbols=renamed,
-        class_names=class_names,
-        class_bases=class_bases,
-        class_method_names=class_method_names,
-        class_properties=class_properties,
-        function_names=function_names,
-        import_alias_map=import_alias_map,
-        import_func_aliases=import_func_aliases,
-        mapping=mapping,
-        leaf_classes=leaf_classes,
-    )
+    ctx = EmitContext()
+    ctx.module_id = module_id
+    ctx.root_rel_prefix = root_rel_prefix
+    ctx.renamed_symbols = renamed
+    ctx.class_names = class_names
+    ctx.class_bases = class_bases
+    ctx.class_method_names = class_method_names
+    ctx.class_properties = class_properties
+    ctx.function_names = function_names
+    ctx.import_alias_map = import_alias_map
+    ctx.import_func_aliases = import_func_aliases
+    ctx.mapping = mapping
+    ctx.leaf_classes = leaf_classes
 
     lines: list[str] = [
         "#Requires -Version 5.1",
@@ -2098,4 +2239,5 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
         ctx.in_main_guard = False
         lines.append("")
 
-    return _postprocess_ps1_native_code("\n".join(lines).rstrip() + "\n")
+    ps1_text = "\n".join(lines).rstrip() + "\n"
+    return _postprocess_ps1_native_code(ps1_text)
