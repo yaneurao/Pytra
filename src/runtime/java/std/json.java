@@ -18,7 +18,13 @@ public final class json {
         }
 
         public Long as_int() {
-            return raw instanceof Long ? (Long) raw : null;
+            if (raw instanceof Long) {
+                return (Long) raw;
+            }
+            if (raw instanceof Integer) {
+                return Long.valueOf(((Integer) raw).longValue());
+            }
+            return null;
         }
 
         public Double as_float() {

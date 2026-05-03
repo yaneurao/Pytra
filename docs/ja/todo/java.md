@@ -55,9 +55,10 @@
 
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を各 JVM 言語に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
-1. [ ] [ID: P1-HOST-CPP-EMITTER-JAVA-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target java -o work/selfhost/host-cpp/java/` で変換 + javac build を通す
-   - 進捗: 2026-04-29 に変換は PASS（20 files）。`javac -d work/selfhost/host-cpp/java/classes $(find src/runtime/java -name '*.java' | sort) $(find work/selfhost/host-cpp/java -name '*.java' | sort)` は未 PASS。先頭 blocker は callable 型 interface 未生成（`Callable__dict_str__JsonVal___str_` など）、`LinkedModule` 未解決、`field(...)` / `dict` / `str` / `PyRuntime.__pytra_JsonVal` などの Python 型・dataclass default lowering 残り、`pytra_std_json` 参照と Java runtime `json` の naming mismatch。
-2. [ ] [ID: P1-HOST-CPP-EMITTER-JAVA-S2] `python3 tools/run/run_emitter_host_parity.py --host-lang java --hosted-emitter cpp --case-root fixture` で C++ emitter host parity PASS を確認する（結果は `.parity-results/emitter_host_java.json` に自動書き込み）
+1. [x] [ID: P1-HOST-CPP-EMITTER-JAVA-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target java -o work/selfhost/host-cpp/java/` で変換 + javac build を通す
+   - 完了: 2026-05-03 に `tools/run/run_emitter_host_parity.py --host-lang java --hosted-emitter cpp --case-root fixture --timeout-sec 3600` 内の Java host build が PASS。
+2. [x] [ID: P1-HOST-CPP-EMITTER-JAVA-S2] `python3 tools/run/run_emitter_host_parity.py --host-lang java --hosted-emitter cpp --case-root fixture` で C++ emitter host parity PASS を確認する（結果は `.parity-results/emitter_host_java.json` に自動書き込み）
+   - 完了: 2026-05-03 に `.parity-results/emitter_host_java.json` が `build_status=ok`, `parity_status=ok`, `parity_fixture_pass=1` を記録。
 3. [ ] [ID: P1-HOST-CPP-EMITTER-SCALA-S1] `--target scala` で変換 + scalac build を通す
    - 進捗: 2026-04-29 に `Compare` の連鎖比較 emit と共通 string escape（CR/TAB）を補い、`python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target scala -o work/selfhost/host-cpp/scala/` は PASS（33 files）。`timeout 120s scala-cli compile --server=false work/selfhost/host-cpp/scala` は未 PASS。先頭 blocker は全生成モジュールが `object Main` になり namespace 衝突すること（`Main is already defined`）と、各 `Main` 内の `__pytra_continue_signal` 重複。
 4. [ ] [ID: P1-HOST-CPP-EMITTER-SCALA-S2] `python3 tools/run/run_emitter_host_parity.py --host-lang scala --hosted-emitter cpp --case-root fixture` で C++ emitter host parity PASS を確認する（結果は `.parity-results/emitter_host_scala.json` に自動書き込み）

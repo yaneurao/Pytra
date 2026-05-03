@@ -102,6 +102,17 @@ final class PyRuntime {
         return pyToString(v);
     }
 
+    static String __pytra_repr(Object v) {
+        return pyRepr(v);
+    }
+
+    static long __pytra_ord(String value) {
+        if (value == null || value.isEmpty()) {
+            throw new IllegalArgumentException("ord() expected a character");
+        }
+        return value.codePointAt(0);
+    }
+
     static String pyToString(Object v) {
         if (v == null) {
             return "None";

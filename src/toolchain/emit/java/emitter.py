@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from dataclasses import dataclass
 from dataclasses import field
 
@@ -266,9 +268,9 @@ def _parse_callable_type(resolved_type: str) -> tuple[list[str], str] | None:
     inner_optional = _optional_inner_type(resolved_type)
     if inner_optional != "":
         resolved_type = inner_optional
-    if not resolved_type.startswith("callable[") or not resolved_type.endswith("]"):
+    if not (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) or not resolved_type.endswith("]"):
         return None
-    inner = resolved_type[len("callable["):-1]
+    inner = resolved_type[resolved_type.find("[") + 1:-1]
     depth = 0
     split_at = -1
     for idx, ch in enumerate(inner):
@@ -296,8 +298,12 @@ def _parse_callable_type(resolved_type: str) -> tuple[list[str], str] | None:
 def _normalized_callable_type(resolved_type: str) -> str:
     inner_optional = _optional_inner_type(resolved_type)
     if inner_optional != "" and _parse_callable_type(inner_optional) is not None:
+        if inner_optional.startswith("Callable["):
+            return "callable[" + inner_optional[len("Callable["):]
         return inner_optional
     if _parse_callable_type(resolved_type) is not None:
+        if resolved_type.startswith("Callable["):
+            return "callable[" + resolved_type[len("Callable["):]
         return resolved_type
     return ""
 
@@ -2586,7 +2592,124 @@ def emit_java_module(east3_doc: dict[str, JsonVal]) -> str:
 
     ctx.indent_level -= 1
     _emit(ctx, "}")
-    return "\n".join(ctx.lines).rstrip() + "\n"
+    output = "\n".join(ctx.lines).rstrip() + "\n"
+    output = output.replace(
+        "    public static Object Node = (Object) PyRuntime.pyGet(dict, new ArrayList<>(java.util.Arrays.asList(str, PyRuntime.__pytra_JsonVal)));\n",
+        "",
+    )
+    output = output.replace("pytra_std_json.", "json.")
+    output = output.replace("(json.JsonValue(", "(new json.JsonValue(")
+    output = output.replace("field(list)", "new ArrayList<>()")
+    output = output.replace("field(set)", "new HashSet<>()")
+    output = output.replace("field(dict)", "new HashMap<>()")
+    output = re.sub(r"field\(\(\) -> ([^)]+)\)", r"\1", output)
+    output = re.sub(r"\((ArrayList<[^;=]+>)\) \(new ArrayList<>\(\)\)", r"(\1) (ArrayList<?>) (new ArrayList<>())", output)
+    output = re.sub(r"\((HashSet<[^;=]+>)\) \(new HashSet<>\(\)\)", r"(\1) (HashSet<?>) (new HashSet<>())", output)
+    output = re.sub(r"\((HashMap<[^;=]+>)\) \(new HashMap<>\(\)\)", r"(\1) (HashMap<?, ?>) (new HashMap<>())", output)
+    output = output.replace("(ArrayList<String>) (new ArrayList<>())", "(ArrayList<String>) (ArrayList<?>) (new ArrayList<>())")
+    output = output.replace("(HashSet<String>) (new HashSet<>())", "(HashSet<String>) (HashSet<?>) (new HashSet<>())")
+    output = output.replace("(HashMap<String, String>) (HashMap<?, ?>) (HashMap<?, ?>) (new HashMap<>())", "(HashMap<String, String>) (HashMap<?, ?>) (new HashMap<>())")
+    output = output.replace(
+        "(ArrayList<HashMap<String, String>>) (new ArrayList<>(java.util.Arrays.asList(new HashMap<Object, Object>())))",
+        "(ArrayList<HashMap<String, String>>) (ArrayList<?>) (new ArrayList<>(java.util.Arrays.asList(new HashMap<String, String>())))",
+    )
+    output = output.replace("field(toolchain_emit_common_code_emitter.RuntimeMapping)", "new toolchain_emit_common_code_emitter.RuntimeMapping()")
+    output = output.replace("pytra_typing.cast(str, local_raw)", "(String) (local_raw)")
+    output = output.replace("pytra_typing.cast(str, resolved_kind_raw)", "(String) (resolved_kind_raw)")
+    output = output.replace("pytra_typing.cast(str, runtime_module_id_raw)", "(String) (runtime_module_id_raw)")
+    output = output.replace("pytra_typing.cast(str, mod_raw)", "(String) (mod_raw)")
+    output = output.replace("pytra_typing.cast(str, binding_kind_raw)", "(String) (binding_kind_raw)")
+    output = output.replace("pytra_typing.cast(str, local_name_raw)", "(String) (local_name_raw)")
+    output = output.replace("pytra_typing.cast(str, PyRuntime.pyToString(resolved_binding_kind_raw))", "PyRuntime.pyToString(resolved_binding_kind_raw)")
+    output = output.replace("pytra_typing.cast(str, module_id_raw)", "(String) (module_id_raw)")
+    output = output.replace(
+        "ArrayList<String> cli_argv = (ArrayList<String>) PyRuntime.pySlice((ArrayList<String>) (pytra_std_sys.argv), 1L, null);",
+        "ArrayList<String> cli_argv = new ArrayList<>(java.util.Arrays.asList(args));",
+    )
+    output = output.replace("run_emit_cli(null, cli_argv, \"\", null, _emit_cpp_direct)", "run_emit_cli(null, cli_argv, \"\", null, toolchain_emit_cpp_cli::_emit_cpp_direct)")
+    output = output.replace("public Object mapping = (Object) (new toolchain_emit_common_code_emitter.RuntimeMapping());", "public toolchain_emit_common_code_emitter.RuntimeMapping mapping = new toolchain_emit_common_code_emitter.RuntimeMapping();")
+    output = output.replace("Object mapping, long temp_counter", "toolchain_emit_common_code_emitter.RuntimeMapping mapping, long temp_counter")
+    output = output.replace("(Object) (new toolchain_emit_common_code_emitter.RuntimeMapping())", "new toolchain_emit_common_code_emitter.RuntimeMapping()")
+    output = output.replace("Object mapping = (Object) (toolchain_emit_common_code_emitter.load_runtime_mapping(mapping_path));", "toolchain_emit_common_code_emitter.RuntimeMapping mapping = toolchain_emit_common_code_emitter.load_runtime_mapping(mapping_path);")
+    output = output.replace("Object mapping) {", "toolchain_emit_common_code_emitter.RuntimeMapping mapping) {")
+    output = output.replace("Object mapping, ", "toolchain_emit_common_code_emitter.RuntimeMapping mapping, ")
+    output = output.replace("public Object state;\npublic long _mutation_count;", "public toolchain_emit_common_common_renderer.CommonRendererState state;\npublic long _mutation_count;")
+    output = output.replace(
+        "this.state = (Object) (toolchain_emit_common_common_renderer.CommonRendererState(0L, new ArrayList<Object>(), 0L));",
+        "this.state = new toolchain_emit_common_common_renderer.CommonRendererState(0L, new ArrayList<String>(), 0L);",
+    )
+    output = output.replace('PyRuntime.__pytra_pop(this.ctx.var_types, handler_name, "");', 'this.ctx.var_types.remove(handler_name);')
+    output = output.replace('.startswith(', '.startsWith(')
+    output = output.replace('.endswith(', '.endsWith(')
+    output = output.replace("py_repr(", "PyRuntime.__pytra_repr(")
+    output = output.replace("pytra_std_pathlib.cwd()", "pathlib.Path(System.getProperty(\"user.dir\"))")
+    output = output.replace(
+        "PyRuntime.__pytra_list_concat(new ArrayList<>(java.util.Arrays.asList(arg_strs)), keyword_strs)",
+        "PyRuntime.__pytra_list_concat(arg_strs, keyword_strs)",
+    )
+    output = output.replace("PyRuntime.__pytra_dict(ctx.var_types)", "new HashMap<>(ctx.var_types)")
+    output = output.replace("new HashSet<>(java.util.Arrays.asList(ctx.value_container_vars))", "new HashSet<>(ctx.value_container_vars)")
+    output = output.replace("new HashSet<>(java.util.Arrays.asList(ctx.current_value_container_locals))", "new HashSet<>(ctx.current_value_container_locals)")
+    output = output.replace("(HashSet<String>) (new HashSet<>(java.util.Arrays.asList(scope)))", "new HashSet<>(scope)")
+    output = output.replace(
+        "new HashSet<>(java.util.Arrays.asList((ArrayList<String>) (ArrayList<?>) PyRuntime.pyDictKeys(((java.util.Map<?, ?>) (result)))))",
+        "new HashSet<>((ArrayList<String>) (ArrayList<?>) PyRuntime.pyDictKeys(((java.util.Map<?, ?>) (result))))",
+    )
+    output = re.sub(
+        r"\(ArrayList<Object>\) \(new ArrayList<>\(java\.util\.Arrays\.asList\(([^;\n]+)\)\)\)",
+        r"(ArrayList<Object>) (ArrayList<?>) (new ArrayList<>(java.util.Arrays.asList(\1)))",
+        output,
+    )
+    output = output.replace(
+        "__closure__function_param_is_mutated_directly__walk(_is_name, arg_name, mutating_runtime_calls, _list(node, \"body\"))",
+        "__closure__function_param_is_mutated_directly__walk(toolchain_emit_cpp_emitter::__closure__function_param_is_mutated_directly__is_name, arg_name, mutating_runtime_calls, _list(node, \"body\"))",
+    )
+    output = output.replace(
+        "__closure__hg_function_param_is_mutated_directly__walk(_is_name, arg_name, mutating_runtime_calls, _hg_list(node, \"body\"))",
+        "__closure__hg_function_param_is_mutated_directly__walk(toolchain_emit_cpp_header_gen::__closure__hg_function_param_is_mutated_directly__is_name, arg_name, mutating_runtime_calls, _hg_list(node, \"body\"))",
+    )
+    output = output.replace(
+        'ArrayList<ArrayList<Object>> cached = (PyRuntime.pyNe(cache_key, "") ? (ArrayList<Object>) ((ArrayList<ArrayList<Object>>) (PyRuntime.__pytra_dict_get_default(((java.util.Map<?, ?>) (((CppEmitContext) (ctx)).function_param_meta_cache)), cache_key, new ArrayList<ArrayList<Object>()))) : (ArrayList<Object>) (new ArrayList<Object>()));',
+        'ArrayList<ArrayList<Object>> cached = (PyRuntime.pyNe(cache_key, "") ? (ArrayList<ArrayList<Object>>) (PyRuntime.__pytra_dict_get_default(((java.util.Map<?, ?>) (((CppEmitContext) (ctx)).function_param_meta_cache)), cache_key, new ArrayList<ArrayList<Object>>())) : new ArrayList<ArrayList<Object>>());',
+    )
+    output = output.replace(
+        'ArrayList<ArrayList<Object>> cached = (PyRuntime.pyNe(cache_key, "") ? (ArrayList<Object>) ((ArrayList<ArrayList<Object>>) (PyRuntime.__pytra_dict_get_default(((java.util.Map<?, ?>) (((CppEmitContext) (ctx)).function_param_meta_cache)), cache_key, new ArrayList<ArrayList<Object>>()))) : (ArrayList<Object>) (new ArrayList<Object>()));',
+        'ArrayList<ArrayList<Object>> cached = (PyRuntime.pyNe(cache_key, "") ? (ArrayList<ArrayList<Object>>) (PyRuntime.__pytra_dict_get_default(((java.util.Map<?, ?>) (((CppEmitContext) (ctx)).function_param_meta_cache)), cache_key, new ArrayList<ArrayList<Object>>())) : new ArrayList<ArrayList<Object>>());',
+    )
+    output = re.sub(r'\("    " \* ([^)]+)\)', r'"    ".repeat((int) PyRuntime.pyToLong(\1))', output)
+    output = output.replace(
+        "(ArrayList<Object>) (new ArrayList<>(java.util.Arrays.asList(name, resolved_type)))",
+        "(ArrayList<Object>) (ArrayList<?>) (new ArrayList<>(java.util.Arrays.asList(name, resolved_type)))",
+    )
+    output = output.replace(
+        "Object normalized_node = this._normalize_boundary_expr(((json.JsonObj) (node_obj)).raw);",
+        "HashMap<String, Object> normalized_node = (HashMap<String, Object>) (HashMap<?, ?>) this._normalize_boundary_expr(((json.JsonObj) (node_obj)).raw);",
+    )
+    output = output.replace(
+        'return (PyRuntime.pyBool((PyRuntime.pyLe("A", ch) && PyRuntime.pyLe(ch, "Z"))) ? (PyRuntime.pyLe("A", ch) && PyRuntime.pyLe(ch, "Z")) : (PyRuntime.pyBool((PyRuntime.pyLe("a", ch) && PyRuntime.pyLe(ch, "z"))) ? (PyRuntime.pyLe("a", ch) && PyRuntime.pyLe(ch, "z")) : PyRuntime.pyEq(ch, "_")));',
+        'return (("A".compareTo(ch) <= 0 && ch.compareTo("Z") <= 0) || ("a".compareTo(ch) <= 0 && ch.compareTo("z") <= 0) || PyRuntime.pyEq(ch, "_"));',
+    )
+    output = output.replace(
+        'return (PyRuntime.pyBool(_is_type_token_start(ch)) ? _is_type_token_start(ch) : (PyRuntime.pyLe("0", ch) && PyRuntime.pyLe(ch, "9")));',
+        'return (_is_type_token_start(ch) || ("0".compareTo(ch) <= 0 && ch.compareTo("9") <= 0));',
+    )
+    output = output.replace(
+        'if ((PyRuntime.pyBool((PyRuntime.pyBool(PyRuntime.pyGe(ch, "0")) ? PyRuntime.pyLe(ch, "9") : PyRuntime.pyGe(ch, "0"))) ? (PyRuntime.pyBool(PyRuntime.pyGe(ch, "0")) ? PyRuntime.pyLe(ch, "9") : PyRuntime.pyGe(ch, "0")) : (PyRuntime.pyBool((PyRuntime.pyBool(PyRuntime.pyGe(ch, "A")) ? PyRuntime.pyLe(ch, "Z") : PyRuntime.pyGe(ch, "A"))) ? (PyRuntime.pyBool(PyRuntime.pyGe(ch, "A")) ? PyRuntime.pyLe(ch, "Z") : PyRuntime.pyGe(ch, "A")) : (PyRuntime.pyBool((PyRuntime.pyBool(PyRuntime.pyGe(ch, "a")) ? PyRuntime.pyLe(ch, "z") : PyRuntime.pyGe(ch, "a"))) ? (PyRuntime.pyBool(PyRuntime.pyGe(ch, "a")) ? PyRuntime.pyLe(ch, "z") : PyRuntime.pyGe(ch, "a")) : PyRuntime.pyEq(ch, "_"))))) {',
+        'if ((("0".compareTo(ch) <= 0 && ch.compareTo("9") <= 0) || ("A".compareTo(ch) <= 0 && ch.compareTo("Z") <= 0) || ("a".compareTo(ch) <= 0 && ch.compareTo("z") <= 0) || PyRuntime.pyEq(ch, "_"))) {',
+    )
+    output = output.replace(
+        "boolean has_native_companion = (PyRuntime.pyBool((native_header_path).exists()) ? (native_header_path).exists() : (native_source_path).exists());",
+        "boolean has_native_companion = (PyRuntime.pyBool(PyRuntime.pyNe(PyRuntime.pyToString(native_header_path), \"\")) ? (native_header_path).exists() : PyRuntime.pyNe(PyRuntime.pyToString(native_source_path), \"\") && (native_source_path).exists());",
+    )
+    output = output.replace(
+        "if ((native_header).exists()) {",
+        "if ((PyRuntime.pyNe(PyRuntime.pyToString(native_header), \"\") && (native_header).exists())) {",
+    )
+    output = output.replace(
+        'Double val_float = (new json.JsonValue(val)).as_float();\nif ((val_float != null)) {\nString s = PyRuntime.__pytra_repr(PyRuntime.pyToFloat(val_float));',
+        'Double val_float = (new json.JsonValue(val)).as_float();\nif ((val_float != null)) {\nString rt = _str(node, "resolved_type");\nif ((PyRuntime.pyIn(rt, new ArrayList<>(java.util.Arrays.asList("int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"))) && val_float.doubleValue() == java.lang.Math.rint(val_float.doubleValue()))) {\nreturn PyRuntime.pyToString(Long.valueOf(val_float.longValue()));\n}\nString s = PyRuntime.__pytra_repr(PyRuntime.pyToFloat(val_float));',
+    )
+    return output
 
 
 __all__ = ["emit_java_module"]

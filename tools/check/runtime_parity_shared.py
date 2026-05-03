@@ -730,6 +730,9 @@ def build_emitted_target_artifact(
         java_files = sorted(str(p) for p in emit_dir.rglob("*.java"))
         if len(java_files) == 0:
             return subprocess.CompletedProcess("", 1, "", "no .java files found")
+        runtime_java_dir = ROOT / "src" / "runtime" / "java"
+        if runtime_java_dir.exists():
+            java_files = sorted(str(p) for p in runtime_java_dir.rglob("*.java")) + java_files
         classes_dir = emit_dir / "classes"
         classes_dir.mkdir(parents=True, exist_ok=True)
         build = run_shell("javac -d " + shlex.quote(str(classes_dir)) + " " + " ".join(shlex.quote(f) for f in java_files), cwd=work_dir, env=env, timeout_sec=timeout_sec)

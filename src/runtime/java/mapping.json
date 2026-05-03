@@ -146,6 +146,7 @@
     "JsonValue": "json.JsonValue",
     "JsonArr": "json.JsonArr",
     "JsonObj": "json.JsonObj",
+    "LinkedModule": "toolchain_link_shared_types.LinkedModule",
     "Callable": "java.util.function.Function<Object, Object>",
     "callable": "java.util.function.Function<Object, Object>",
     "Exception": "RuntimeException",
