@@ -3,6 +3,7 @@
   "calls": {
     "env.target": "\"ruby\"",
     "py_print": "__pytra_print",
+    "print": "__pytra_print",
     "len": "__pytra_len",
     "str": "__pytra_str",
     "py_to_string": "__pytra_str",

@@ -26,6 +26,27 @@ func (p *PyList[T]) __len__() int64 {
 	return int64(len(p.items))
 }
 
+func (p *PyList[T]) pop(indices ...int64) T {
+	var zero T
+	if p == nil || len(p.items) == 0 {
+		return zero
+	}
+	idx := int64(len(p.items) - 1)
+	if len(indices) > 0 {
+		idx = indices[0]
+		if idx < 0 {
+			idx += int64(len(p.items))
+		}
+	}
+	if idx < 0 || idx >= int64(len(p.items)) {
+		return zero
+	}
+	i := int(idx)
+	value := p.items[i]
+	p.items = append(p.items[:i], p.items[i+1:]...)
+	return value
+}
+
 type pyListView interface {
 	pyListLen() int
 	pyListItemAny(i int) any
@@ -109,6 +130,28 @@ func py_to_list_typed[T any](items any) *PyList[T] {
 	if direct, ok := items.(*PyList[T]); ok {
 		return direct
 	}
+	var zero T
+	targetType := goreflect.TypeOf(zero)
+	convert := func(item any) T {
+		if targetType == nil {
+			return item.(T)
+		}
+		rv := goreflect.ValueOf(item)
+		if rv.IsValid() && rv.Type().AssignableTo(targetType) {
+			return rv.Interface().(T)
+		}
+		if rv.IsValid() && rv.Type().ConvertibleTo(targetType) {
+			return rv.Convert(targetType).Interface().(T)
+		}
+		return item.(T)
+	}
+	if view, ok := items.(pyListView); ok {
+		out := make([]T, view.pyListLen())
+		for i := 0; i < view.pyListLen(); i++ {
+			out[i] = convert(view.pyListItemAny(i))
+		}
+		return &PyList[T]{items: out}
+	}
 	rv := goreflect.ValueOf(items)
 	for rv.IsValid() && rv.Kind() == goreflect.Interface {
 		rv = rv.Elem()
@@ -129,8 +172,6 @@ func py_to_list_typed[T any](items any) *PyList[T] {
 		return NewPyList[T]()
 	}
 	out := make([]T, rv.Len())
-	var zero T
-	targetType := goreflect.TypeOf(zero)
 	if targetType == nil {
 		for i := 0; i < rv.Len(); i++ {
 			out[i] = rv.Index(i).Interface().(T)
@@ -160,6 +201,16 @@ func py_dict_string_any(items any) *PyDict[string, any] {
 		return direct
 	}
 	out := NewPyDict[string, any]()
+	if mapper, ok := items.(interface{ pyMapStringAny() map[string]any }); ok {
+		mapped := mapper.pyMapStringAny()
+		for key, value := range mapped {
+			out.items[key] = value
+		}
+		return out
+	}
+	if accessor, ok := items.(pyDictAccessor); ok {
+		items = accessor.pyDictItemsAny()
+	}
 	rv := goreflect.ValueOf(items)
 	for rv.IsValid() && rv.Kind() == goreflect.Interface {
 		rv = rv.Elem()
@@ -261,14 +312,18 @@ func (d *PyDict[K, V]) __len__() int64 {
 	return int64(len(d.items))
 }
 func (d *PyDict[K, V]) pyDictItemsAny() any { return d.items }
-func (d *PyDict[K, V]) get(key K, fallback V) V {
+func (d *PyDict[K, V]) get(key K, fallback ...V) V {
+	var defaultValue V
+	if len(fallback) > 0 {
+		defaultValue = fallback[0]
+	}
 	if d == nil {
-		return fallback
+		return defaultValue
 	}
 	if value, ok := d.items[key]; ok {
 		return value
 	}
-	return fallback
+	return defaultValue
 }
 func (d *PyDict[K, V]) __str__() string {
 	if d == nil {
@@ -301,7 +356,9 @@ func (d *PyDict[K, V]) clear_items() {
 	if d == nil {
 		return
 	}
-	clear(d.items)
+	for key := range d.items {
+		delete(d.items, key)
+	}
 }
 
 // pyMapStringAny converts a PyDict with string-compatible keys to map[string]any.
@@ -343,6 +400,13 @@ func (s *PySet[T]) __str__() string {
 	return py_format_set_repr(s.items)
 }
 
+func (s *PySet[T]) add(value T) {
+	if s == nil {
+		return
+	}
+	s.items[value] = struct{}{}
+}
+
 func NewPySet[T comparable]() *PySet[T] {
 	return &PySet[T]{items: map[T]struct{}{}}
 }
@@ -364,7 +428,9 @@ func (s *PySet[T]) clear_items() {
 	if s == nil {
 		return
 	}
-	clear(s.items)
+	for key := range s.items {
+		delete(s.items, key)
+	}
 }
 
 func py_print(args ...any) {
@@ -1451,7 +1517,12 @@ func py_str_join(sep string, items any) string {
 	}
 }
 func py_str_replace(s, old, new_ string) string     { return strings.ReplaceAll(s, old, new_) }
-func py_str_split(s, sep string) []string           { return strings.Split(s, sep) }
+func py_str_split(s, sep string, maxsplit ...int64) []string {
+	if len(maxsplit) > 0 && maxsplit[0] >= 0 {
+		return strings.SplitN(s, sep, int(maxsplit[0])+1)
+	}
+	return strings.Split(s, sep)
+}
 func py_str_startswith(s, prefix string) bool       { return strings.HasPrefix(s, prefix) }
 func py_str_endswith(s, suffix string) bool         { return strings.HasSuffix(s, suffix) }
 func py_str_upper(s string) string                  { return strings.ToUpper(s) }

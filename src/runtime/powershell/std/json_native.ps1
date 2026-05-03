@@ -45,12 +45,51 @@ function __pytra_json_dumps {
 function __pytra_json_loads {
     param($text)
     try {
+        $parsed = ConvertFrom-Json $text -AsHashtable -ErrorAction Stop
+        return (JsonValue $parsed)
+    } catch { }
+    try {
         $parsed = ConvertFrom-Json $text -ErrorAction Stop
-        $result = @{}
-        $result["__type__"] = "JsonValue"
-        $result["raw"] = $parsed
-        return $result
+        return (JsonValue $parsed)
     } catch { return $null }
+}
+
+function __pytra_json_loads_obj {
+    param($text)
+    $value = (__pytra_json_loads $text)
+    if ($null -eq $value) { return $null }
+    return (JsonValue_as_obj $value)
+}
+
+function JsonValue {
+    param($raw)
+    $result = @{}
+    $result["__type__"] = "JsonValue"
+    $result["raw"] = $raw
+    return $result
+}
+
+function __pytra_json_raw {
+    param($self)
+    if ($self -is [hashtable] -and $self.ContainsKey("__type__") -and $self.ContainsKey("raw")) {
+        return $self["raw"]
+    }
+    return $self
+}
+
+function __pytra_json_get_raw {
+    param($self, $key)
+    $raw = __pytra_json_raw $self
+    if ($raw -is [hashtable] -or $raw -is [System.Collections.IDictionary]) {
+        if ($raw.Contains($key)) { return $raw[$key] }
+        return $null
+    }
+    if ($raw -is [array] -or $raw -is [System.Collections.IList]) {
+        $idx = [int]$key
+        if ($idx -ge 0 -and $idx -lt $raw.Count) { return $raw[$idx] }
+        return $null
+    }
+    return $null
 }
 
 function JsonValue_as_str {
@@ -102,6 +141,43 @@ function JsonValue_as_arr {
     }
     return $null
 }
+
+function JsonObj_get_obj {
+    param($self, $key)
+    return (JsonValue_as_obj (JsonValue (__pytra_json_get_raw $self $key)))
+}
+
+function JsonObj_get_arr {
+    param($self, $key)
+    return (JsonValue_as_arr (JsonValue (__pytra_json_get_raw $self $key)))
+}
+
+function JsonObj_get_str {
+    param($self, $key)
+    return (JsonValue_as_str (JsonValue (__pytra_json_get_raw $self $key)))
+}
+
+function JsonObj_get_int {
+    param($self, $key)
+    return (JsonValue_as_int (JsonValue (__pytra_json_get_raw $self $key)))
+}
+
+function JsonObj_get_float {
+    param($self, $key)
+    return (JsonValue_as_float (JsonValue (__pytra_json_get_raw $self $key)))
+}
+
+function JsonObj_get_bool {
+    param($self, $key)
+    return (JsonValue_as_bool (JsonValue (__pytra_json_get_raw $self $key)))
+}
+
+function JsonArr_get_obj { param($self, $index) return (JsonObj_get_obj $self $index) }
+function JsonArr_get_arr { param($self, $index) return (JsonObj_get_arr $self $index) }
+function JsonArr_get_str { param($self, $index) return (JsonObj_get_str $self $index) }
+function JsonArr_get_int { param($self, $index) return (JsonObj_get_int $self $index) }
+function JsonArr_get_float { param($self, $index) return (JsonObj_get_float $self $index) }
+function JsonArr_get_bool { param($self, $index) return (JsonObj_get_bool $self $index) }
 
 function __pytra_json_loads_arr {
     param($text)

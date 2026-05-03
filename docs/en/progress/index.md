@@ -33,6 +33,7 @@ Details:
 - [selfhost](./backend-progress-selfhost.md) — transpile the compiler itself. Requires fixture + sample + stdlib all PASS
 - [emitter lint](./emitter-hardcode-lint.md) — emitter hardcode violation detection
 — Counts grep-detected violations where emitters hardcode module names, runtime symbols, or class names instead of using EAST3 data.
+- [Top100 language coverage](./top100-language-coverage.md) — backend / host / interop / syntax / defer classification for the top 100 languages
 
 ## Task list
 

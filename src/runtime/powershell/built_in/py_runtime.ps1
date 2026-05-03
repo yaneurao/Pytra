@@ -879,11 +879,11 @@ function __pytra_str_format {
 }
 
 function __pytra_str_upper {
-    param([object]$s) return [string]$s.ToUpper()
+    param([object]$s) return ([string]$s).ToUpper()
 }
 
 function __pytra_str_lower {
-    param([object]$s) return [string]$s.ToLower()
+    param([object]$s) return ([string]$s).ToLower()
 }
 
 function __pytra_str_isdigit {

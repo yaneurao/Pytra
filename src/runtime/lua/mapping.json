@@ -3,6 +3,7 @@
   "calls": {
     "env.target": "\"lua\"",
     "py_print": "__pytra_print",
+    "print": "__pytra_print",
     "len": "__pytra_len",
     "str": "tostring",
     "py_to_string": "__pytra_to_string",
@@ -14,6 +15,7 @@
     "py_int_from_str": "tonumber",
     "py_float_from_str": "tonumber",
     "std::runtime_error": "__PANIC__",
+    "cast": "__CAST__",
     "list_ctor": "__LIST_CTOR__",
     "tuple_ctor": "__TUPLE_CTOR__",
     "set_ctor": "__SET_CTOR__",

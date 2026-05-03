@@ -4,7 +4,8 @@ import unittest
 from pathlib import Path
 
 from toolchain.compile.lower import lower_east2_to_east3
-from toolchain.emit.go.emitter import emit_go_module
+from toolchain.emit.go.emitter import _is_top_level_type_assertion_expr, emit_go_module
+from toolchain.emit.go.types import go_type
 from toolchain.parse.py.parse_python import parse_python_file
 from toolchain.resolve.py.builtin_registry import load_builtin_registry
 from toolchain.resolve.py.resolver import resolve_east1_to_east2
@@ -36,13 +37,26 @@ class GoSelfhostIfExpTypingTests(unittest.TestCase):
 
         go_code = emit_go_module(east3)
 
-        self.assertIn('py_ternary_str(py_is_str(a), a.(string), "")', go_code)
-        self.assertTrue(
-            'py_ternary_int(py_is_int(v), py_to_int64(v), 0)' in go_code
-            or 'py_ternary_int(py_is_exact_int64(v), py_to_int64(v), int64(0))' in go_code
-        )
+        self.assertIn("if py_truthy(py_is_str(v))", go_code)
+        self.assertIn("return v.(string)", go_code)
+        self.assertIn("return py_to_int64(v)", go_code)
         self.assertNotIn('func() *JsonVal { if py_is_str(a) { return a }; return "" }()', go_code)
         self.assertNotIn('func() *JsonVal { if py_is_int(v) { return v }; return 0 }()', go_code)
+        self.assertNotIn('py_ternary_str(py_is_str(v), v.(string), "")', go_code)
+
+    def test_expr_stmt_discard_only_wraps_top_level_type_assertions(self) -> None:
+        self.assertTrue(_is_top_level_type_assertion_expr("value.(string)"))
+        self.assertTrue(_is_top_level_type_assertion_expr("any(value).(interface{ marker() })"))
+        self.assertFalse(
+            _is_top_level_type_assertion_expr(
+                "py_print(func() bool { _, ok := any(c).(interface{ marker() }); return ok }())"
+            )
+        )
+
+    def test_typevar_names_emit_as_dynamic_values(self) -> None:
+        self.assertEqual(go_type("T"), "any")
+        self.assertEqual(go_type("K"), "any")
+        self.assertEqual(go_type("V"), "any")
 
 
 if __name__ == "__main__":

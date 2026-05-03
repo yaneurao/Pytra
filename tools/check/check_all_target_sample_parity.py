@@ -55,13 +55,9 @@ def build_group_command(
         ",".join(group_targets(group_name)),
         "--case-root",
         "sample",
-        "--all-samples",
-        "--ignore-unstable-stdout",
         "--opt-level",
         opt_level,
     ]
-    if group_name == "cpp":
-        cmd.extend(["--cpp-codegen-opt", cpp_codegen_opt])
     if summary_json is not None:
         cmd.extend(["--summary-json", str(summary_json)])
     return cmd

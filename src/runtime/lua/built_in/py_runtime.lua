@@ -8,6 +8,31 @@ if type(__pytra_runtime_source) == "string" and string.sub(__pytra_runtime_sourc
 end
 -- image_runtime is now provided via linker (png/gif modules)
 
+local function __pytra_table_move(src, first, last, offset, dst)
+    local target = dst or src
+    if first > last then
+        return target
+    end
+    if target == src and offset > first and offset <= last then
+        local i = last
+        local j = offset + (last - first)
+        while i >= first do
+            target[j] = src[i]
+            i = i - 1
+            j = j - 1
+        end
+        return target
+    end
+    local i = first
+    local j = offset
+    while i <= last do
+        target[j] = src[i]
+        i = i + 1
+        j = j + 1
+    end
+    return target
+end
+
 function __pytra_print(...)
     local argc = select("#", ...)
     if argc == 0 then
@@ -382,7 +407,7 @@ function __pytra_bytearray(v)
     end
     if type(v) == "table" then
         local out = {}
-        table.move(v, 1, #v, 1, out)
+        __pytra_table_move(v, 1, #v, 1, out)
         return setmetatable(out, __pytra_bytearray_mt)
     end
     return setmetatable({}, __pytra_bytearray_mt)
@@ -418,7 +443,7 @@ function __pytra_bytearray_extend(self, other)
         return
     end
     if #other > 0 then
-        table.move(other, 1, #other, #self + 1, self)
+        __pytra_table_move(other, 1, #other, #self + 1, self)
     end
 end
 
@@ -443,7 +468,7 @@ function __pytra_bytearray_extend_slice(self, other, start_idx, stop_idx)
     local from = math.floor(i) + 1
     local to = math.floor(j)
     if from <= to then
-        table.move(other, from, to, #self + 1, self)
+        __pytra_table_move(other, from, to, #self + 1, self)
     end
 end
 
@@ -472,7 +497,7 @@ function __pytra_list_extend(items, other)
         return
     end
     if #other > 0 then
-        table.move(other, 1, #other, #items + 1, items)
+        __pytra_table_move(other, 1, #other, #items + 1, items)
     end
 end
 
@@ -541,7 +566,7 @@ function __pytra_bytes(v)
     end
     if type(v) == "table" then
         local out = {}
-        table.move(v, 1, #v, 1, out)
+        __pytra_table_move(v, 1, #v, 1, out)
         return out
     end
     if type(v) == "string" then
@@ -686,7 +711,7 @@ function __pytra_slice(seq, start_idx, stop_idx)
     local to = math.floor(j)
     local out = {}
     if from <= to then
-        table.move(seq, from, to, 1, out)
+        __pytra_table_move(seq, from, to, 1, out)
     end
     return out
 end
@@ -1963,6 +1988,42 @@ function __pytra_set_update(dst, values)
     return nil
 end
 
+function __pytra_update(dst, values)
+    if dst == nil or values == nil then return nil end
+    if values.__set_values ~= nil then
+        return __pytra_set_update(dst, values)
+    end
+    if type(values) ~= "table" then
+        return nil
+    end
+    local dst_is_nonempty_set = false
+    local dst_has_values = false
+    for _, value in pairs(dst) do
+        dst_has_values = true
+        if value ~= true then
+            dst_is_nonempty_set = false
+            break
+        end
+        dst_is_nonempty_set = true
+    end
+    if dst_is_nonempty_set then
+        return __pytra_set_update(dst, values)
+    end
+    if not dst_has_values then
+        local values_are_set = true
+        for _, value in pairs(values) do
+            if value ~= true then
+                values_are_set = false
+                break
+            end
+        end
+        if values_are_set then
+            return __pytra_set_update(dst, values)
+        end
+    end
+    return __pytra_dict_update(dst, values)
+end
+
 function __pytra_ord(ch)
     return string.byte(ch, 1) or 0
 end
@@ -2035,6 +2096,15 @@ end
 
 function __pytra_dict_pop(d, key)
     local v = d[key]
+    d[key] = nil
+    return v
+end
+
+function __pytra_dict_pop_default(d, key, default)
+    local v = d[key]
+    if v == nil then
+        return default
+    end
     d[key] = nil
     return v
 end

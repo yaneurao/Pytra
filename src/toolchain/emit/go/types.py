@@ -33,6 +33,7 @@ _GO_TYPE_MAP: dict[str, str] = {
     "object": "any",
     "Obj": "any",
     "Any": "any",
+    "any": "any",
     "JsonVal": "any",
     "Node": "map[string]any",
     "TypeExpr": "any",
@@ -41,6 +42,9 @@ _GO_TYPE_MAP: dict[str, str] = {
     "Stmt": "any",
     "Callable": "any",
     "callable": "any",
+    "T": "any",
+    "K": "any",
+    "V": "any",
     "Exception": "*PytraErrorCarrier",
     "BaseException": "*PytraErrorCarrier",
     "RuntimeError": "*PytraErrorCarrier",
@@ -52,13 +56,20 @@ _GO_TYPE_MAP: dict[str, str] = {
 
 
 def _parse_callable_signature(resolved_type: str) -> tuple[list[str], str]:
-    if not (
-        (resolved_type.startswith("callable[") or resolved_type.startswith("Callable["))
-        and resolved_type.endswith("]")
-    ):
+    has_callable_prefix = False
+    if resolved_type.startswith("callable["):
+        has_callable_prefix = True
+    if resolved_type.startswith("Callable["):
+        has_callable_prefix = True
+    if not has_callable_prefix:
         empty_params: list[str] = []
         return (empty_params, "unknown")
-    prefix_len = len("Callable[") if resolved_type.startswith("Callable[") else len("callable[")
+    if not resolved_type.endswith("]"):
+        empty_params: list[str] = []
+        return (empty_params, "unknown")
+    prefix_len: int = len("callable[")
+    if resolved_type.startswith("Callable["):
+        prefix_len = len("Callable[")
     inner = resolved_type[prefix_len:-1].strip()
     if inner == "":
         empty_params2: list[str] = []
@@ -106,7 +117,11 @@ def go_type(resolved_type: str) -> str:
 
     if (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) and resolved_type.endswith("]"):
         params, ret = _parse_callable_signature(resolved_type)
-        param_gts = [go_type(param) for param in params]
+        param_gts: list[str] = []
+        param_idx = 0
+        while param_idx < len(params):
+            param_gts.append(go_type(params[param_idx]))
+            param_idx += 1
         ret_gt = go_type(ret)
         if ret_gt == "":
             return "func(" + ", ".join(param_gts) + ")"
@@ -115,7 +130,12 @@ def go_type(resolved_type: str) -> str:
     if resolved_type.startswith("multi_return[") and resolved_type.endswith("]"):
         inner = resolved_type[len("multi_return["):-1]
         parts = _split_generic_args(inner)
-        return "(" + ", ".join(go_type(part) for part in parts) + ")"
+        mapped_parts: list[str] = []
+        part_idx = 0
+        while part_idx < len(parts):
+            mapped_parts.append(go_type(parts[part_idx]))
+            part_idx += 1
+        return "(" + ", ".join(mapped_parts) + ")"
 
     # Direct mapping
     mapped = _GO_TYPE_MAP.get(resolved_type, "")
@@ -155,7 +175,11 @@ def go_type(resolved_type: str) -> str:
 
     # Union type (A | B, A|B) → any
     if "|" in resolved_type:
-        parts = [part.strip() for part in resolved_type.split("|") if part.strip() != ""]
+        parts: list[str] = []
+        for part in resolved_type.split("|"):
+            stripped_part = part.strip()
+            if stripped_part != "":
+                parts.append(stripped_part)
         if len(parts) > 1:
             return "any"
 

@@ -196,6 +196,11 @@ fixture / sample の parity マトリックスと selfhost マトリックスを
 計測されていない言語/ケースは既存値を維持（上書きしない）。PyPy は parity check 対象外のため常に手動値を保持する。
 `runtime_parity_check_fast.py --benchmark` 実行後に手動または自動で呼び出す（10 分以内の再実行はスキップ）。
 
+### `gen_top100_language_coverage.py`
+TIOBE April 2026 snapshot をもとに、Top100 言語 coverage の Markdown / JSON artifact を生成する。
+`backend` / `host` / `interop` / `syntax` / `defer` 分類、Top50 未対応候補の backend plan、defer 条件、Docker/devcontainer 標準ゲートを `docs/ja/progress/top100-language-coverage.md` と machine-readable JSON に出力する。
+`--check` で生成物の stale 状態を検出でき、Top100 coverage 更新時の標準ゲートとして使う。
+
 ### `gen_makefile_from_manifest.py`
 `manifest.json` を受け取り、`all` / `run` / `clean` ターゲットを含む `Makefile` を生成する。
 C++ ランタイムソースと依存関係を `manifest.json` と `cpp_runtime_deps` から収集する。
@@ -210,6 +215,11 @@ C++ ランタイムソースと依存関係を `manifest.json` と `cpp_runtime_
 `toolchain2` パイプラインで golden file を全段（parse→resolve→compile→optimize）再生成する。
 各段の出力で既存の golden file を上書きする。
 fixture / sample / pytra ごとに異なるソース・出力ディレクトリ構成を持つ。
+
+### `regenerate_runtime_east.py`
+`src/pytra/{built_in,std,utils}/` の Python 正本から `src/runtime/east/` キャッシュを再生成する。
+parse / resolve / compile / optimize を `src/pytra-cli.py` 経由で実行し、fresh checkout でも linker の runtime discovery が動く状態にする。
+生成物は `.gitignore` 対象であり、コミットしない。
 
 ### `regenerate_selfhost_golden.py`
 `test/selfhost/east3-opt/` に格納済みの east3-opt golden ファイルを各ターゲット言語に emit し、
@@ -235,6 +245,11 @@ EAST1 golden file から型解決情報（`resolved_type` / `runtime_module_id` 
 ローカル最小 CI（version gate / TODO 優先度ガード / runtime 層分離ガード / non-C++ emitter ガード / backend health gate / transpile 回帰 / unit test / selfhost build / diff）を一括実行する。
 60 以上のステップを固定順序で実行し、全体品質を一コマンドで検証できる。
 `tools/check/` / `tools/unittest/` 各種を統合してオーケストレーションする。
+
+### `run_emitter_host_parity.py`
+C++ などの hosted emitter を指定 host 言語で build し、Python 版 emitter の出力と比較する。
+結果は `.parity-results/emitter_host_<host>.json` に記録し、emitter host matrix の正本入力にする。
+主要オプション: `--host-lang`（go/ruby/php/lua/zig/powershell 等） / `--hosted-emitter`（cpp 等） / `--case-root` / `--case`
 
 ### `run_selfhost_parity.py`
 selfhost parity チェックを実行し、結果を `.parity-results/selfhost_<lang>.json` に記録する。

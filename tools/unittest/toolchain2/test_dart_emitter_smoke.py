@@ -65,6 +65,10 @@ def _assert_dart_runs(source: str) -> str:
 
 
 class DartEmitterSmokeTest(unittest.TestCase):
+    def test_dart_emitter_does_not_import_swift_emitter(self) -> None:
+        emitter_source = (ROOT / "src" / "toolchain" / "emit" / "dart" / "emitter.py").read_text(encoding="utf-8")
+        self.assertNotIn("toolchain.emit.swift.emitter", emitter_source)
+
     def test_emit_add_function(self) -> None:
         source = """
 def add(a: int, b: int) -> int:
@@ -73,7 +77,7 @@ def add(a: int, b: int) -> int:
         east3 = _build_east3(source)
         code = emit_dart_module(east3)
         self.assertIn("int add(", code)
-        self.assertIn("return (a + b);", code)
+        self.assertIn("return pytraInt((a + b));", code)
 
     def test_emit_if_else(self) -> None:
         source = """
@@ -84,7 +88,7 @@ def f(x: int) -> int:
 """
         east3 = _build_east3(source)
         code = emit_dart_module(east3)
-        self.assertIn("if ((x < 1))", code)
+        self.assertIn("if (((x < 1)))", code)
         self.assertIn("return 10;", code)
 
     def test_emit_and_run_print(self) -> None:

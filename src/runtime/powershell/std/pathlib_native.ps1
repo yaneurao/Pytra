@@ -48,6 +48,12 @@ function Path_exists {
     return (Test-Path $self["_p"])
 }
 
+function Path_cwd {
+    $result = @{}
+    Path $result ([System.Environment]::CurrentDirectory)
+    return $result
+}
+
 function Path_mkdir {
     param($self, $parents = $false, $exist_ok = $false)
     if (Test-Path $self["_p"]) {
@@ -63,7 +69,8 @@ function Path_mkdir {
 
 function Path_write_text {
     param($self, $text, $encoding = "utf-8")
-    [System.IO.File]::WriteAllText($self["_p"], $text, [System.Text.Encoding]::UTF8)
+    $utf8_no_bom = [System.Text.UTF8Encoding]::new($false)
+    [System.IO.File]::WriteAllText($self["_p"], $text, $utf8_no_bom)
 }
 
 function Path_read_text {

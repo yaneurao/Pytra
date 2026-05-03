@@ -216,11 +216,17 @@ def make_type_expr(type_str: str) -> dict[str, JsonVal]:
     """Build a TypeExpr JSON from a normalized type string."""
     t: str = type_str.strip()
     if t == "":
-        return {"kind": "NamedType", "name": "unknown"}
+        unknown_expr: dict[str, JsonVal] = {}
+        unknown_expr["kind"] = "NamedType"
+        unknown_expr["name"] = "unknown"
+        return unknown_expr
 
     # Any/object → DynamicType (spec-east2.md §6.3)
     if t == "Any" or t == "object":
-        return {"kind": "DynamicType", "name": t}
+        dynamic_expr: dict[str, JsonVal] = {}
+        dynamic_expr["kind"] = "DynamicType"
+        dynamic_expr["name"] = t
+        return dynamic_expr
 
     # Generic types
     bracket: int = t.find("[")
@@ -228,32 +234,42 @@ def make_type_expr(type_str: str) -> dict[str, JsonVal]:
         base: str = t[:bracket]
         inner: str = t[bracket + 1:-1]
         args: list[str] = _split_generic_type_args(inner)
-        arg_exprs: list[JsonVal] = [make_type_expr(a) for a in args]
-        return {
-            "kind": "GenericType",
-            "base": base,
-            "args": arg_exprs,
-        }
+        arg_exprs: list[JsonVal] = []
+        for a in args:
+            arg_exprs.append(make_type_expr(a))
+        generic_expr: dict[str, JsonVal] = {}
+        generic_expr["kind"] = "GenericType"
+        generic_expr["base"] = base
+        generic_expr["args"] = arg_exprs
+        return generic_expr
 
     # Union type: X | Y
     if " | " in t:
         parts: list[str] = t.split(" | ")
         # Special case: X | None → OptionalType
-        non_none: list[str] = [p for p in parts if p != "None"]
+        non_none: list[str] = []
+        for p in parts:
+            if p != "None":
+                non_none.append(p)
         has_none: bool = len(non_none) < len(parts)
         if has_none and len(non_none) == 1:
-            return {
-                "kind": "OptionalType",
-                "inner": make_type_expr(non_none[0]),
-            }
-        type_exprs: list[JsonVal] = [make_type_expr(p) for p in parts]
-        return {
-            "kind": "UnionType",
-            "types": type_exprs,
-        }
+            optional_expr: dict[str, JsonVal] = {}
+            optional_expr["kind"] = "OptionalType"
+            optional_expr["inner"] = make_type_expr(non_none[0])
+            return optional_expr
+        type_exprs: list[JsonVal] = []
+        for p2 in parts:
+            type_exprs.append(make_type_expr(p2))
+        union_expr: dict[str, JsonVal] = {}
+        union_expr["kind"] = "UnionType"
+        union_expr["types"] = type_exprs
+        return union_expr
 
     # Simple named type
-    return {"kind": "NamedType", "name": t}
+    named_expr: dict[str, JsonVal] = {}
+    named_expr["kind"] = "NamedType"
+    named_expr["name"] = t
+    return named_expr
 
 
 def is_numeric(t: str) -> bool:

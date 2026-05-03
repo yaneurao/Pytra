@@ -58,6 +58,60 @@ _NO_EMIT_IMPORT_MODULES: frozenset[str] = frozenset({
     "pytra.std.extern", "pytra.std.abi",
 })
 
+_PATH_METHOD_NAMES: frozenset[str] = frozenset({
+    "joinpath", "exists", "mkdir", "read_text", "write_text", "is_file", "is_dir",
+})
+
+_JSON_VALUE_METHOD_NAMES: frozenset[str] = frozenset({
+    "as_str", "as_int", "as_float", "as_bool", "as_obj", "as_arr",
+})
+
+_JSON_CONTAINER_METHOD_NAMES: frozenset[str] = frozenset({
+    "get_obj", "get_arr", "get_str", "get_int", "get_float", "get_bool",
+})
+
+_UNKNOWN_STRING_METHOD_NAMES: frozenset[str] = frozenset({
+    "strip", "lstrip", "rstrip", "isdigit", "isalpha", "isalnum", "isspace",
+})
+
+
+def _is_callable_type(type_text: str) -> bool:
+    lowered = type_text.lower()
+    return lowered.startswith("callable") or "callable[" in lowered
+
+
+def _is_list_type(type_text: str) -> bool:
+    lowered = type_text.lower()
+    return lowered == "list" or lowered.startswith("list[")
+
+
+def _is_collection_type(type_text: str) -> bool:
+    lowered = type_text.lower()
+    return (
+        _is_list_type(lowered)
+        or lowered == "dict" or lowered.startswith("dict[")
+        or lowered == "set" or lowered.startswith("set[")
+        or lowered == "tuple" or lowered.startswith("tuple[")
+    )
+
+
+def _needs_list_assignment_guard(stmt: dict[str, JsonVal], target: JsonVal, value_node: JsonVal) -> bool:
+    if not isinstance(target, dict) or _gs(target, "kind") != "Name":
+        return False
+    if not isinstance(value_node, dict) or _gs(value_node, "kind") not in ("Call", "IfExp"):
+        return False
+    if _is_list_type(_gs(stmt, "decl_type")) or _is_list_type(_gs(target, "resolved_type")):
+        return True
+    return _is_list_type(_gs(value_node, "resolved_type"))
+
+
+def _list_assignment_lines(indent: str, lhs: str, value: str) -> list[str]:
+    tmp_list = "$__pytra_list_value"
+    return [
+        indent + tmp_list + " = " + value,
+        indent + "if ($null -eq " + tmp_list + ") { " + lhs + " = ([System.Collections.Generic.List[object]]::new()) } elseif (" + tmp_list + " -is [System.Collections.IList] -or " + tmp_list + " -is [array]) { " + lhs + " = " + tmp_list + " } else { " + lhs + " = @(" + tmp_list + ") }",
+    ]
+
 
 def _gs(node: JsonVal, key: str) -> str:
     """Get string value from JsonVal dict."""
@@ -124,6 +178,18 @@ def _has_format_spec(doc: JsonVal) -> bool:
             if _has_format_spec(item):
                 return True
     return False
+
+
+def _is_sys_argv_expr(expr: JsonVal) -> bool:
+    if not isinstance(expr, dict) or _gs(expr, "kind") != "Attribute":
+        return False
+    if _gs(expr, "attr") != "argv":
+        return False
+    runtime_module_id = _gs(expr, "runtime_module_id")
+    if runtime_module_id == "pytra.std.sys" or runtime_module_id == "sys":
+        return True
+    value_node = expr.get("value")
+    return isinstance(value_node, dict) and _gs(value_node, "kind") == "Name" and _gs(value_node, "id") == "sys"
 
 
 def _module_id_to_import_path(module_id: str, root_rel_prefix: str) -> str:
@@ -402,6 +468,11 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
         value_node = expr.get("value")
         value = _render_expr(ctx, value_node)
         attr = _gs(expr, "attr")
+        runtime_module_id = _gs(expr, "runtime_module_id")
+        if runtime_module_id != "":
+            mapped_runtime_attr_expr = ctx.mapping.calls.get(runtime_module_id + "." + attr, "")
+            if mapped_runtime_attr_expr != "":
+                return mapped_runtime_attr_expr
         # type(v).__name__ → $v["__type__"]
         if attr == "__name__" and isinstance(value_node, dict) and _gs(value_node, "kind") == "Call":
             type_func_n = value_node.get("func")
@@ -420,8 +491,13 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
                 mod_full_ia = ctx.import_alias_map.get(vname, vname)
                 mod_short_ia = mod_full_ia.rsplit(".", 1)[-1] if "." in mod_full_ia else mod_full_ia
                 qualified_key_ia = mod_short_ia + "." + attr
-                if qualified_key_ia in ctx.mapping.calls:
-                    return ctx.mapping.calls[qualified_key_ia]
+                full_qualified_key_ia = mod_full_ia + "." + attr
+                mapped_import_attr = ctx.mapping.calls.get(
+                    full_qualified_key_ia,
+                    ctx.mapping.calls.get(qualified_key_ia, ""),
+                )
+                if mapped_import_attr != "":
+                    return mapped_import_attr
                 return "$" + _safe(attr, "_f")
             if vname in ctx.class_names:
                 return "$script:" + _safe(attr, "_cv")
@@ -601,8 +677,13 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
         value = _render_expr(ctx, value_node)
         slice_any = expr.get("slice")
         if isinstance(slice_any, dict) and _gs(slice_any, "kind") == "Slice":
-            lower = _render_expr(ctx, slice_any.get("lower")) if slice_any.get("lower") is not None else "0"
+            lower_node = slice_any.get("lower")
             upper_node = slice_any.get("upper")
+            step_node = slice_any.get("step")
+            if _is_sys_argv_expr(value_node) and upper_node is None and step_node is None:
+                if isinstance(lower_node, dict) and _gs(lower_node, "kind") == "Constant" and lower_node.get("value") == 1:
+                    return "(__pytra_list $args)"
+            lower = _render_expr(ctx, slice_any.get("lower")) if slice_any.get("lower") is not None else "0"
             if upper_node is not None:
                 upper = _render_expr(ctx, upper_node)
             else:
@@ -628,6 +709,9 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
         test = _render_expr(ctx, expr.get("test"))
         body = _render_expr(ctx, expr.get("body"))
         orelse = _render_expr(ctx, expr.get("orelse"))
+        if _is_collection_type(_gs(expr, "resolved_type")):
+            body = ",(" + body + ")"
+            orelse = ",(" + orelse + ")"
         return "$(if (" + test + ") { " + body + " } else { " + orelse + " })"
 
     if kind in ("JoinedStr", "FString"):
@@ -991,13 +1075,41 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
                     runtime_keys_attr.append("list." + raw_attr)
                 if "set[" in owner_type:
                     runtime_keys_attr.append("set." + raw_attr)
+            if owner_name != "":
+                runtime_keys_attr.append(owner_name + "." + raw_attr)
+            if raw_attr in _PATH_METHOD_NAMES:
+                runtime_keys_attr.append("Path." + raw_attr)
+            if raw_attr in _JSON_VALUE_METHOD_NAMES:
+                runtime_keys_attr.append("JsonValue." + raw_attr)
+            if raw_attr in _JSON_CONTAINER_METHOD_NAMES:
+                runtime_keys_attr.append("JsonObj." + raw_attr)
+            if raw_attr in _UNKNOWN_STRING_METHOD_NAMES:
+                runtime_keys_attr.append("str." + raw_attr)
             mapped_runtime_attr = ""
+            mapped_runtime_attr_key = ""
             for key in runtime_keys_attr:
                 maybe = ctx.mapping.calls.get(key, "")
                 if maybe != "":
                     mapped_runtime_attr = maybe
+                    mapped_runtime_attr_key = key
                     break
             if mapped_runtime_attr != "":
+                if owner_name != "" and mapped_runtime_attr_key == owner_name + "." + raw_attr:
+                    if mapped_runtime_attr.startswith("[Math]::"):
+                        if mapped_runtime_attr.endswith("::PI") or mapped_runtime_attr.endswith("::E"):
+                            return "(" + mapped_runtime_attr + ")"
+                        return "(" + mapped_runtime_attr + "(" + ", ".join(rendered_args) + "))"
+                    if len(rendered_args) == 0:
+                        return "(" + mapped_runtime_attr + ")"
+                    return "(" + mapped_runtime_attr + " " + " ".join(rendered_args) + ")"
+                if owner_type == "module":
+                    if mapped_runtime_attr.startswith("[Math]::"):
+                        if mapped_runtime_attr.endswith("::PI") or mapped_runtime_attr.endswith("::E"):
+                            return "(" + mapped_runtime_attr + ")"
+                        return "(" + mapped_runtime_attr + "(" + ", ".join(rendered_args) + "))"
+                    if len(rendered_args) == 0:
+                        return "(" + mapped_runtime_attr + ")"
+                    return "(" + mapped_runtime_attr + " " + " ".join(rendered_args) + ")"
                 if owner_name in ctx.import_alias_map:
                     if mapped_runtime_attr.startswith("[Math]::"):
                         if mapped_runtime_attr.endswith("::PI") or mapped_runtime_attr.endswith("::E"):
@@ -1022,9 +1134,9 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
                     return "(__pytra_list_clear " + owner + ")"
                 if mapped_runtime_attr == "__DICT_GET__":
                     if len(rendered_args) >= 2:
-                        return "$(if (" + owner + ".Contains(" + rendered_args[0] + ")) { " + owner + "[" + rendered_args[0] + "] } else { " + rendered_args[1] + " })"
+                        return "$(if (" + owner + ".Contains(" + rendered_args[0] + ")) { ,(" + owner + "[" + rendered_args[0] + "]) } else { ,(" + rendered_args[1] + ") })"
                     if len(rendered_args) == 1:
-                        return owner + "[" + rendered_args[0] + "]"
+                        return "$(if (" + owner + ".Contains(" + rendered_args[0] + ")) { ,(" + owner + "[" + rendered_args[0] + "]) } else { $null })"
                     return "$null"
                 if mapped_runtime_attr == "__DICT_KEYS__":
                     return owner + ".Keys"
@@ -1136,6 +1248,18 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
                 return owner + ".Close()"
             if raw_attr == "flush":
                 return owner + ".Flush()"
+            if raw_attr == "get":
+                if len(rendered_args) >= 2:
+                    return "$(if (" + owner + ".ContainsKey(" + rendered_args[0] + ")) { ,(" + owner + "[" + rendered_args[0] + "]) } else { ,(" + rendered_args[1] + ") })"
+                if len(rendered_args) == 1:
+                    return "$(if (" + owner + ".ContainsKey(" + rendered_args[0] + ")) { ,(" + owner + "[" + rendered_args[0] + "]) } else { $null })"
+                return "$null"
+            if raw_attr == "items":
+                return "(@(" + owner + ".GetEnumerator() | ForEach-Object { ,@($_.Key, $_.Value) }))"
+            if raw_attr == "keys":
+                return owner + ".Keys"
+            if raw_attr == "values":
+                return owner + ".Values"
 
             # Dynamic class method dispatch applies only to user-defined classes.
             if (
@@ -1180,6 +1304,66 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
     if len(rendered_args) == 0:
         return fn_rendered
     return fn_rendered + " " + " ".join(rendered_args)
+
+
+def _render_factory_default(ctx: EmitContext, factory: JsonVal) -> str:
+    if isinstance(factory, dict):
+        kind = _gs(factory, "kind")
+        if kind == "Name":
+            raw = _gs(factory, "id")
+            if raw == "dict":
+                return "@{}"
+            if raw == "list":
+                return "([System.Collections.Generic.List[object]]::new())"
+            if raw == "set":
+                return "(__pytra_set)"
+            if raw in ctx.class_names:
+                safe_cls = _safe(raw, "_Cls")
+                return "$($__obj = @{}; " + safe_cls + " $__obj; $__obj)"
+            safe_fn = _safe(ctx.renamed_symbols.get(raw, raw), "_fn")
+            return "(" + safe_fn + ")"
+        if kind == "Lambda":
+            return _render_expr(ctx, factory.get("body"))
+        rendered = _render_expr(ctx, factory)
+        return "(& " + rendered + ")"
+    return "$null"
+
+
+def _render_dataclass_field_default(ctx: EmitContext, value: JsonVal) -> str:
+    if isinstance(value, dict) and _gs(value, "kind") in ("Cast", "Unbox", "Box"):
+        return _render_dataclass_field_default(ctx, value.get("value"))
+    if not isinstance(value, dict) or _gs(value, "kind") != "Call":
+        return _render_expr(ctx, value)
+    func = value.get("func")
+    if not isinstance(func, dict) or _gs(func, "kind") != "Name" or _gs(func, "id") != "field":
+        return _render_expr(ctx, value)
+    keywords = _gl(value, "keywords")
+    default_node: JsonVal = None
+    factory_node: JsonVal = None
+    for kw in keywords:
+        if not isinstance(kw, dict):
+            continue
+        arg = _gs(kw, "arg")
+        if arg == "default":
+            default_node = kw.get("value")
+        elif arg == "default_factory":
+            factory_node = kw.get("value")
+    if factory_node is not None:
+        return _render_factory_default(ctx, factory_node)
+    if default_node is not None:
+        return _render_expr(ctx, default_node)
+    return "$null"
+
+
+def _is_type_alias_expr(expr: JsonVal) -> bool:
+    if not isinstance(expr, dict):
+        return False
+    kind = _gs(expr, "kind")
+    if kind == "Name":
+        return _gs(expr, "resolved_type") == "type" or _gs(expr, "type_object_of") != ""
+    if kind == "Subscript":
+        return _is_type_alias_expr(expr.get("value"))
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -1228,6 +1412,13 @@ def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[
         value = stmt.get("value")
         if value is not None:
             rendered = _render_expr(ctx, value)
+            if isinstance(value, dict) and _gs(value, "kind") == "Call" and _is_list_type(_gs(value, "resolved_type")):
+                tmp_ret = "$__pytra_return_value"
+                return [
+                    indent + tmp_ret + " = " + rendered,
+                    indent + "if ($null -eq " + tmp_ret + ") { " + tmp_ret + " = ([System.Collections.Generic.List[object]]::new()) }",
+                    indent + "return ,(" + tmp_ret + ")",
+                ]
             return [indent + "return ,(" + rendered + ")"]
         return [indent + "return"]
 
@@ -1238,6 +1429,8 @@ def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[
             if isinstance(t, dict):
                 targets = [t]
         val_node = stmt.get("value")
+        if len(targets) == 1 and isinstance(targets[0], dict) and _gs(targets[0], "kind") == "Name" and _is_type_alias_expr(val_node):
+            return [indent + "# type alias: " + _gs(targets[0], "id")]
         if _is_extern_value(val_node):
             tname = ""
             if len(targets) == 1 and isinstance(targets[0], dict):
@@ -1251,7 +1444,8 @@ def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[
                 ctx.lambda_vars.add(_gs(targets[0], "id"))
         if len(targets) == 1 and isinstance(targets[0], dict) and _gs(targets[0], "kind") == "Name":
             tgt_rt = _gs(targets[0], "resolved_type")
-            if "callable" in tgt_rt.lower():
+            stmt_decl_type = _gs(stmt, "decl_type")
+            if _is_callable_type(tgt_rt) or _is_callable_type(stmt_decl_type):
                 ctx.lambda_vars.add(_gs(targets[0], "id"))
         # Tuple unpacking: (a, b) = expr
         if len(targets) == 1 and isinstance(targets[0], dict):
@@ -1278,6 +1472,8 @@ def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[
                 index = _render_expr(ctx, target.get("slice"))
                 return [indent + owner + "[" + index + "] = " + value]
         lhs = _render_lvalue(ctx, target)
+        if _needs_list_assignment_guard(stmt, target, val_node):
+            return _list_assignment_lines(indent, lhs, value)
         return [indent + lhs + " = " + value]
 
     if kind == "AnnAssign":
@@ -1296,10 +1492,14 @@ def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[
                 ctx.lambda_vars.add(_gs(target, "id"))
         if isinstance(target, dict) and _gs(target, "kind") == "Name":
             tgt_rt_ann = _gs(target, "resolved_type")
-            if "callable" in tgt_rt_ann.lower():
+            stmt_decl_type_ann = _gs(stmt, "decl_type")
+            if _is_callable_type(tgt_rt_ann) or _is_callable_type(stmt_decl_type_ann):
                 ctx.lambda_vars.add(_gs(target, "id"))
         lhs = _render_expr(ctx, target)
-        return [indent + lhs + " = " + _render_expr(ctx, value)]
+        rendered_value = _render_expr(ctx, value)
+        if _needs_list_assignment_guard(stmt, target, value):
+            return _list_assignment_lines(indent, lhs, rendered_value)
+        return [indent + lhs + " = " + rendered_value]
 
     if kind == "TupleUnpack":
         # EAST3 lowered tuple unpack: individual_temps style
@@ -1616,7 +1816,7 @@ def _emit_function_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) 
 
     # Register callable-typed params as lambda vars
     for aname, atype in arg_types_raw.items():
-        if isinstance(aname, str) and isinstance(atype, str) and "callable" in atype.lower():
+        if isinstance(aname, str) and isinstance(atype, str) and _is_callable_type(atype):
             ctx.lambda_vars.add(aname)
 
     ps_params: list[str] = []
@@ -1680,6 +1880,7 @@ def _emit_class_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> 
     ctx.current_class = name
     body = _gl(stmt, "body")
     lines_n: list[str] = [indent + "# class " + name]
+    is_dataclass = bool(stmt.get("dataclass"))
 
     has_init = False
     for member in body:
@@ -1710,7 +1911,7 @@ def _emit_class_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> 
                     new_fn = "function " + name + "_" + _safe(method_name, "_m")
                     fn_lines[0] = fn_lines[0].replace(orig, new_fn, 1)
                 lines_n.extend(fn_lines)
-        elif mk in ("AnnAssign", "Assign"):
+        elif mk in ("AnnAssign", "Assign") and not is_dataclass:
             lines_n.extend(_emit_stmt(ctx, member, indent))
         elif mk == "Pass":
             pass
@@ -1737,7 +1938,7 @@ def _emit_class_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> 
             safe_fn = "$" + _safe(fn_id, "_f")
             default_val = field_defaults.get(fn_id)
             if default_val is not None:
-                field_params.append(safe_fn + " = " + _render_expr(ctx, default_val))
+                field_params.append(safe_fn + " = " + _render_dataclass_field_default(ctx, default_val))
             else:
                 for member in body:
                     if isinstance(member, dict) and _gs(member, "kind") in ("AnnAssign", "Assign"):
@@ -1745,7 +1946,7 @@ def _emit_class_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> 
                         if isinstance(tgt2, dict) and _gs(tgt2, "id") == fn_id:
                             val = member.get("value")
                             if val is not None:
-                                field_params.append(safe_fn + " = " + _render_expr(ctx, val))
+                                field_params.append(safe_fn + " = " + _render_dataclass_field_default(ctx, val))
                             else:
                                 field_params.append(safe_fn)
                             break
@@ -1888,6 +2089,16 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
             fn = _gs(node, "name")
             if fn != "":
                 function_names.add(fn)
+    for binding in _gl(meta, "import_bindings"):
+        if not isinstance(binding, dict):
+            continue
+        local = _gs(binding, "local_name")
+        binding_kind = _gs(binding, "resolved_binding_kind")
+        if binding_kind == "":
+            binding_kind = _gs(binding, "binding_kind")
+        runtime_symbol_kind = _gs(binding, "runtime_symbol_kind")
+        if local != "" and binding_kind == "symbol" and runtime_symbol_kind != "class":
+            function_names.add(local)
 
     # Collect math import aliases
     import_alias_map = build_import_alias_map(meta)

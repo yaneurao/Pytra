@@ -114,6 +114,14 @@ PARITY_LANGS = [
 ]
 
 
+def _default_emit_targets_for_selfhost(selfhost_lang: str) -> list[str]:
+    if selfhost_lang == "python":
+        return list(PARITY_LANGS)
+    if selfhost_lang == "go":
+        return ["go"]
+    return list(SUPPORTED_EMIT_TARGETS)
+
+
 # ---------------------------------------------------------------------------
 # Timestamp helpers
 # ---------------------------------------------------------------------------
@@ -280,7 +288,10 @@ def _build_selfhost_binary(selfhost_lang: str) -> tuple[Path | None, str]:
 
     # Step 1: emit the toolchain CLI to selfhost_lang via pytra-cli
     cli2 = ROOT / "src" / "pytra-cli.py"
-    entry = ROOT / "src" / "pytra-cli.py"
+    if selfhost_lang == "go":
+        entry = ROOT / "src" / "toolchain" / "emit" / "go" / "cli.py"
+    else:
+        entry = ROOT / "src" / "pytra-cli.py"
     if not entry.exists():
         return None, f"no entry file for selfhost_lang={selfhost_lang}: {entry}"
 
@@ -761,10 +772,8 @@ def main() -> int:
     # Resolve emit targets
     if args.emit_target.strip():
         emit_targets = [t.strip() for t in args.emit_target.split(",") if t.strip()]
-    elif selfhost_lang == "python":
-        emit_targets = list(PARITY_LANGS)
     else:
-        emit_targets = list(SUPPORTED_EMIT_TARGETS)
+        emit_targets = _default_emit_targets_for_selfhost(selfhost_lang)
 
     # --- Python selfhost ---
     if selfhost_lang == "python":

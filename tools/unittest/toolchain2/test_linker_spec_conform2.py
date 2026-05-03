@@ -227,6 +227,39 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
 
             self.assertEqual(result.manifest["entry_modules"], ["app.main"])
 
+    def test_type_id_external_imported_base_falls_back_to_object(self) -> None:
+        modules = [
+            LinkedModule(
+                module_id="toolchain.emit.go.emitter",
+                input_path="toolchain/emit/go/emitter.east3.json",
+                source_path="src/toolchain/emit/go/emitter.py",
+                is_entry=True,
+                module_kind="user",
+                east_doc=_module_doc(
+                    "toolchain.emit.go.emitter",
+                    source_path="src/toolchain/emit/go/emitter.py",
+                    meta_extra={
+                        "import_symbols": {
+                            "CommonRenderer": {
+                                "module": "toolchain.emit.common.common_renderer",
+                                "name": "CommonRenderer",
+                            },
+                        },
+                    },
+                    body=[
+                        _class_def("_GoStmtCommonRenderer", bases=["CommonRenderer"]),
+                    ],
+                ),
+            ),
+        ]
+
+        type_id_table, type_id_base_map, type_info_table = build_type_id_table(modules)
+
+        fqcn = "toolchain.emit.go.emitter._GoStmtCommonRenderer"
+        self.assertIn(fqcn, type_id_table)
+        self.assertIn(fqcn, type_info_table)
+        self.assertEqual(type_id_base_map[fqcn], type_id_table["object"])
+
     def test_link_modules_keeps_isinstance_node_for_java_native_dispatch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             entry_path = Path(tmp) / "app.main.east3.json"
@@ -1208,6 +1241,57 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertNotIn("py_int_from_str(", cpp_code)
         self.assertNotIn("py_float_from_str(", cpp_code)
 
+    def test_cpp_emitter_routes_plain_builtin_calls_through_runtime_helpers(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+                    "declare": True,
+                    "decl_type": "int64",
+                    "declare_init": True,
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "int64",
+                        "func": {"kind": "Name", "id": "int", "resolved_type": "unknown"},
+                        "args": [{"kind": "Constant", "value": 1.5, "resolved_type": "float64"}],
+                    },
+                },
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "s", "resolved_type": "str"},
+                    "declare": True,
+                    "decl_type": "str",
+                    "declare_init": True,
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "str",
+                        "func": {"kind": "Name", "id": "str", "resolved_type": "unknown"},
+                        "args": [{"kind": "Name", "id": "n", "resolved_type": "int64"}],
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "None",
+                        "func": {"kind": "Name", "id": "print", "resolved_type": "unknown"},
+                        "args": [{"kind": "Name", "id": "s", "resolved_type": "str"}],
+                    },
+                },
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("int64 n = static_cast<int64>(1.5);", cpp_code)
+        self.assertIn("str s = str(py_to_string(n));", cpp_code)
+        self.assertIn("py_print(s);", cpp_code)
+        self.assertNotIn("::int_(", cpp_code)
+        self.assertNotIn("::str(", cpp_code)
+        self.assertNotIn("::print(", cpp_code)
+
     def test_cpp_emitter_emits_main_only_for_entry_modules(self) -> None:
         doc = _module_doc(
             "lib.worker",
@@ -1515,6 +1599,11 @@ def has_key(env: dict[str, int], name: str) -> bool:
                 "const ::std::function<void()>& fn);",
                 header_text,
             )
+            source_text = Path(source_path).read_text(encoding="utf-8")
+            self.assertIn("py_print(", source_text)
+            self.assertIn("str(py_to_string(actual))", source_text)
+            self.assertNotIn("::print(", source_text)
+            self.assertNotIn("::str(", source_text)
 
     def test_cpp_runtime_paths_delegate_rel_tail_to_shared_runtime_loader(self) -> None:
         self.assertEqual(runtime_rel_tail_for_module("pytra.std.json"), "std/json")
@@ -3951,13 +4040,33 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertNotIn("nil /*", go_code)
 
     def test_go_emitter_returns_mutated_bytearray_helpers(self) -> None:
-        doc = _fixture_doc("test/pytra/east3-opt/utils/png.east3")
+        source = """\
+def _png_append(dst: bytearray, src: bytearray) -> None:
+    dst.extend(src)
+
+def build() -> bytearray:
+    out: bytearray = bytearray()
+    _png_append(out, bytearray([120, 1]))
+    return out
+"""
+        registry = load_builtin_registry(
+            ROOT / "test" / "include" / "east1" / "py" / "built_in" / "builtins.py.east1",
+            ROOT / "test" / "include" / "east1" / "py" / "built_in" / "containers.py.east1",
+            ROOT / "test" / "include" / "east1" / "py" / "std",
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "png_helper.py"
+            src.write_text(source, encoding="utf-8")
+            doc = parse_python_file(str(src))
+            resolve_east1_to_east2(doc, registry=registry)
+            doc = lower_east2_to_east3(doc, target_language="go")
+            doc, _ = optimize_east3_document(doc, opt_level=1)
 
         go_code = emit_go_module(doc)
 
         self.assertIn("func _png_append(dst []byte, src []byte) []byte {", go_code)
         self.assertIn("return dst", go_code)
-        self.assertIn("out = _png_append(out, []byte{byte(120), byte(1)})", go_code)
+        self.assertIn("out = _png_append(out, []byte{byte(int64(120)), byte(int64(1))})", go_code)
 
     def test_go_emitter_uses_marker_interfaces_for_user_class_isinstance(self) -> None:
         doc = _fixture_doc("test/fixture/east3-opt/oop/class_inherit_basic.east3")

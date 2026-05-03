@@ -19,8 +19,7 @@ def collect_import_modules(east_doc: dict[str, JsonVal]) -> dict[str, str]:
     im_map: dict[str, JsonVal] = nd_get_dict(meta, "import_modules")
     if len(im_map) == 0:
         return import_modules
-    for alias in im_map.keys():
-        mod_val: JsonVal = im_map[alias]
+    for alias, mod_val in im_map.items():
         mod_id: str = jv_str(mod_val)
         if alias != "" and mod_id != "":
             import_modules[alias] = "" + mod_id
@@ -36,8 +35,7 @@ def collect_import_symbols(east_doc: dict[str, JsonVal]) -> dict[str, str]:
     is_map: dict[str, JsonVal] = nd_get_dict(meta, "import_symbols")
     if len(is_map) == 0:
         return import_symbols
-    for alias in is_map.keys():
-        info_val: JsonVal = is_map[alias]
+    for alias, info_val in is_map.items():
         if not jv_is_dict(info_val):
             continue
         info: dict[str, JsonVal] = jv_dict(info_val)

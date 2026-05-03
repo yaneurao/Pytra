@@ -2946,3 +2946,8 @@ def transpile_to_ruby(east3_doc: dict[str, JsonVal]) -> str:
     if not result.endswith("\n"):
         result = result + "\n"
     return result
+
+
+def emit_ruby_module(east3_doc: dict[str, JsonVal]) -> str:
+    """Common emitter entry point used by parity/tooling dispatch."""
+    return transpile_to_ruby(east3_doc)

@@ -13,9 +13,6 @@ from toolchain.emit.common.code_emitter import (
     RuntimeMapping,
     should_skip_module,
 )
-from toolchain.emit.swift.emitter import (
-    reject_backend_homogeneous_tuple_ellipsis_type_exprs,
-)
 
 
 _RUNTIME_SYMBOL_INDEX_PATH = Path(__file__).resolve().parents[4] / "tools" / "runtime_symbol_index.json"
@@ -245,6 +242,113 @@ _NIL_FREE_DECL_TYPES = {"int", "int64", "float", "float64", "bool"}
 _COMPILETIME_STD_IMPORT_SYMBOLS = {"abi", "template", "extern"}
 
 
+def _type_expr_to_string(expr: dict[str, Any]) -> str:
+    kind_any = expr.get("kind")
+    kind = kind_any if isinstance(kind_any, str) else ""
+    if kind == "NameType":
+        name_any = expr.get("name")
+        return name_any if isinstance(name_any, str) and name_any != "" else "unknown"
+    if kind == "GenericType":
+        base_any = expr.get("base")
+        base = base_any if isinstance(base_any, str) and base_any != "" else "unknown"
+        args_any = expr.get("args")
+        args = args_any if isinstance(args_any, list) else []
+        rendered: list[str] = []
+        for arg in args:
+            if isinstance(arg, dict):
+                rendered.append(_type_expr_to_string(arg))
+        if str(expr.get("tuple_shape", "")).strip() == "homogeneous_ellipsis" and len(rendered) == 1:
+            return base + "[" + rendered[0] + ", ...]"
+        if len(rendered) > 0:
+            return base + "[" + ", ".join(rendered) + "]"
+        return base
+    if kind == "OptionalType":
+        inner = expr.get("inner")
+        if isinstance(inner, dict):
+            return "Optional[" + _type_expr_to_string(inner) + "]"
+        return "Optional[unknown]"
+    if kind == "UnionType":
+        options_any = expr.get("options")
+        options = options_any if isinstance(options_any, list) else []
+        rendered_options: list[str] = []
+        for option in options:
+            if isinstance(option, dict):
+                rendered_options.append(_type_expr_to_string(option))
+        if len(rendered_options) > 0:
+            return " | ".join(rendered_options)
+        return "unknown"
+    return kind if kind != "" else "unknown"
+
+
+def _is_type_expr_payload(value: object) -> bool:
+    return isinstance(value, dict) and isinstance(value.get("kind"), str)
+
+
+def _find_homogeneous_tuple_ellipsis_lane(type_expr: object) -> dict[str, Any] | None:
+    if not _is_type_expr_payload(type_expr) or not isinstance(type_expr, dict):
+        return None
+    kind = str(type_expr.get("kind", ""))
+    if kind == "GenericType":
+        tuple_shape = str(type_expr.get("tuple_shape", "")).strip()
+        base = str(type_expr.get("base", "")).strip()
+        if tuple_shape == "homogeneous_ellipsis" and base == "tuple":
+            return type_expr
+        args_obj = type_expr.get("args")
+        if isinstance(args_obj, list):
+            for arg in args_obj:
+                found = _find_homogeneous_tuple_ellipsis_lane(arg)
+                if found is not None:
+                    return found
+        return None
+    if kind == "OptionalType":
+        return _find_homogeneous_tuple_ellipsis_lane(type_expr.get("inner"))
+    if kind == "UnionType":
+        options_obj = type_expr.get("options")
+        if isinstance(options_obj, list):
+            for option in options_obj:
+                found = _find_homogeneous_tuple_ellipsis_lane(option)
+                if found is not None:
+                    return found
+    return None
+
+
+def _collect_homogeneous_tuple_ellipsis_issues(doc: object, path: str, out: list[dict[str, str]]) -> None:
+    if _is_type_expr_payload(doc):
+        lane = _find_homogeneous_tuple_ellipsis_lane(doc)
+        if lane is not None and isinstance(doc, dict):
+            out.append({"path": path, "carrier": _type_expr_to_string(doc), "lane": _type_expr_to_string(lane)})
+        return
+    if isinstance(doc, dict):
+        for key, value in doc.items():
+            if isinstance(key, str):
+                _collect_homogeneous_tuple_ellipsis_issues(value, path + "." + key, out)
+        return
+    if isinstance(doc, list):
+        idx = 0
+        while idx < len(doc):
+            _collect_homogeneous_tuple_ellipsis_issues(doc[idx], path + "[" + str(idx) + "]", out)
+            idx += 1
+
+
+def reject_backend_homogeneous_tuple_ellipsis_type_exprs(doc: object, backend_name: str) -> None:
+    issues: list[dict[str, str]] = []
+    _collect_homogeneous_tuple_ellipsis_issues(doc, "$", issues)
+    if len(issues) == 0:
+        return
+    first = issues[0]
+    details: list[str] = [
+        first.get("path", "$") + ": " + first.get("carrier", "unknown"),
+        "unsupported homogeneous tuple lane: " + first.get("lane", "unknown"),
+    ]
+    if len(issues) > 1:
+        details.append("additional homogeneous tuple carriers: " + str(len(issues) - 1))
+    details.append("Representative tuple[T, ...] rollout is implemented only in the C++ backend right now.")
+    lines = [backend_name + " does not support homogeneous tuple ellipsis TypeExpr yet"]
+    for item in details:
+        lines.append("- " + item)
+    raise RuntimeError("\n".join(lines))
+
+
 def _safe_ident(name: Any, fallback: str = "value") -> str:
     if not isinstance(name, str) or name == "":
         return fallback
@@ -379,8 +483,6 @@ def _dart_string(text: str) -> str:
 
 def _module_id_to_import_path(module_id: str, ext: str, root_rel_prefix: str) -> str:
     """module_id から機械的にインポートパスを生成する (§3)."""
-    if not _has_handwritten_runtime(module_id):
-        return root_rel_prefix + module_id.replace(".", "_") + ext
     parts = module_id.split(".")
     rel_parts = parts[1:] if len(parts) >= 2 and parts[0] == "pytra" else parts
     rel = ".".join(rel_parts)
@@ -1900,6 +2002,9 @@ class DartNativeEmitter:
                 self._emit_line(target + " = " + value + ";")
                 return
             raise RuntimeError("lang=dart unsupported assign shape")
+        if kind == "TupleUnpack" or kind == "MultiAssign":
+            self._emit_multi_assign(stmt)
+            return
         if kind == "AugAssign":
             target = self._render_target(stmt.get("target"))
             op = str(stmt.get("op"))
@@ -2827,6 +2932,22 @@ class DartNativeEmitter:
                         continue
                 self._emit_line(target_txt + " = " + tmp_name + "[" + str(i) + "];")
             i += 1
+
+    def _emit_multi_assign(self, stmt: dict[str, Any]) -> None:
+        targets_any = stmt.get("targets")
+        targets = targets_any if isinstance(targets_any, list) else []
+        if len(targets) == 0:
+            raise RuntimeError("lang=dart unsupported multi assign target: empty")
+        target_types_any = stmt.get("target_types")
+        target_types = target_types_any if isinstance(target_types_any, list) else []
+        i = 0
+        while i < len(targets):
+            target_any = targets[i]
+            if isinstance(target_any, dict) and target_any.get("kind") == "Name":
+                if i < len(target_types) and isinstance(target_types[i], str) and target_types[i].strip() != "":
+                    self._current_type_map()[_safe_ident(target_any.get("id"), "value")] = target_types[i].strip()
+            i += 1
+        self._emit_tuple_assign({"kind": "Tuple", "elements": targets}, stmt.get("value"))
 
     def _emit_swap(self, stmt: dict[str, Any]) -> None:
         left = self._render_target(stmt.get("left"))

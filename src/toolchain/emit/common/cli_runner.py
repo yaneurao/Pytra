@@ -29,10 +29,6 @@ type DirectEmitFn = Callable[[dict[str, JsonVal], Path], int]
 type PostEmitFn = Callable[[Path], None]
 
 
-def _jv_get(node: dict[str, JsonVal], key: str) -> JsonVal:
-    return node.get(key)
-
-
 @dataclass
 class ManifestModuleEntryDraft:
     module_id: str = ""
@@ -43,38 +39,38 @@ class ManifestModuleEntryDraft:
 
     @staticmethod
     def from_jv(entry: dict[str, JsonVal], index: int) -> ManifestModuleEntryDraft:
-        output_raw = json.JsonValue(_jv_get(entry, "output")).as_str()
+        output_raw = json.JsonValue(entry.get("output")).as_str()
         if output_raw is None:
             return ManifestModuleEntryDraft()
         output: str = output_raw
         if output == "":
             return ManifestModuleEntryDraft()
         module_id = ""
-        module_id_raw = json.JsonValue(_jv_get(entry, "module_id")).as_str()
+        module_id_raw = json.JsonValue(entry.get("module_id")).as_str()
         if module_id_raw is not None:
             module_id = module_id_raw
         module_kind = ""
-        module_kind_raw = json.JsonValue(_jv_get(entry, "module_kind")).as_str()
+        module_kind_raw = json.JsonValue(entry.get("module_kind")).as_str()
         if module_kind_raw is not None:
             module_kind = module_kind_raw
         is_entry = False
-        is_entry_raw = json.JsonValue(_jv_get(entry, "is_entry")).as_bool()
+        is_entry_raw = json.JsonValue(entry.get("is_entry")).as_bool()
         if is_entry_raw is not None:
             is_entry = is_entry_raw
         source_path = ""
-        source_path_raw = json.JsonValue(_jv_get(entry, "source_path")).as_str()
+        source_path_raw = json.JsonValue(entry.get("source_path")).as_str()
         if source_path_raw is not None:
             source_path = source_path_raw
         return ManifestModuleEntryDraft(
-            module_id,
-            output,
-            module_kind,
-            is_entry,
-            source_path,
+            module_id=module_id,
+            output=output,
+            module_kind=module_kind,
+            is_entry=is_entry,
+            source_path=source_path,
         )
 
-    def build_cli_meta(self, east_doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
-        meta_val: JsonVal = _jv_get(east_doc, "meta")
+    def inject_cli_meta(self, east_doc: dict[str, JsonVal]) -> None:
+        meta_val: JsonVal = east_doc.get("meta")
         typed_meta: dict[str, JsonVal] = {}
         meta_obj = json.JsonValue(meta_val).as_obj()
         if meta_obj is not None:
@@ -86,7 +82,7 @@ class ManifestModuleEntryDraft:
         typed_meta["_cli_is_entry"] = self.is_entry
         if self.source_path != "":
             typed_meta["_cli_source_path"] = self.source_path
-        return typed_meta
+        east_doc["meta"] = typed_meta
 
 
 def _parse_args(argv: list[str]) -> tuple[str, str, str]:
@@ -142,6 +138,42 @@ def _path_parent(path: Path) -> Path:
     return Path(text[:last])
 
 
+def _module_output_path(output_dir: Path, module_id: str, file_ext: str, module_path_style: bool) -> Path:
+    if not module_path_style:
+        return output_dir.joinpath(module_id.replace(".", "_") + file_ext)
+    rel: str = module_id
+    if rel.startswith("pytra."):
+        rel = rel[len("pytra.") :]
+    while rel.startswith("."):
+        rel = rel[1:]
+    if rel == "":
+        rel = "module"
+    return output_dir.joinpath(rel.replace(".", "/") + file_ext)
+
+
+def _module_root_rel_prefix(module_id: str, file_ext: str, module_path_style: bool) -> str:
+    if not module_path_style:
+        return "./"
+    out_path: Path = _module_output_path(Path("."), module_id, file_ext, module_path_style)
+    parent_txt: str = str(_path_parent(out_path))
+    if parent_txt.startswith("./"):
+        parent_txt = parent_txt[2:]
+    if parent_txt == "." or parent_txt == "":
+        return "./"
+    depth: int = 1
+    i: int = 0
+    while i < len(parent_txt):
+        if parent_txt[i] == "/":
+            depth += 1
+        i += 1
+    prefix: str = ""
+    i = 0
+    while i < depth:
+        prefix += "../"
+        i += 1
+    return prefix
+
+
 def _load_linked_modules(manifest_path: Path) -> list[dict[str, JsonVal]]:
     """Load linked modules from a manifest.json file."""
     manifest_text: str = manifest_path.read_text(encoding="utf-8")
@@ -150,7 +182,7 @@ def _load_linked_modules(manifest_path: Path) -> list[dict[str, JsonVal]]:
     if manifest_obj is None:
         return []
     typed_manifest: dict[str, JsonVal] = manifest_obj.raw
-    modules_raw: JsonVal = _jv_get(typed_manifest, "modules")
+    modules_raw: JsonVal = typed_manifest.get("modules")
     modules_arr = json.JsonValue(modules_raw).as_arr()
     if modules_arr is None:
         return []
@@ -173,7 +205,7 @@ def _load_linked_modules(manifest_path: Path) -> list[dict[str, JsonVal]]:
             index += 1
             continue
         typed_east: dict[str, JsonVal] = east_obj.raw
-        typed_east["meta"] = manifest_entry.build_cli_meta(typed_east)
+        manifest_entry.inject_cli_meta(typed_east)
         result.append(typed_east)
         index += 1
     return result
@@ -185,6 +217,7 @@ def run_emit_cli(
     default_ext: str = "",
     post_emit: PostEmitFn | None = None,
     direct_emit_fn: DirectEmitFn | None = None,
+    module_path_style: bool = False,
 ) -> int:
     """Run the emit CLI with the given language-specific emit function.
 
@@ -199,6 +232,10 @@ def run_emit_cli(
                         When set, emit_fn and default_ext are ignored.
         default_ext: Default file extension (e.g. ".rs", ".go"). If empty,
                      must be provided via --ext.
+        module_path_style: If true, write modules as module-id paths
+                           (pytra.std.json -> std/json.ext) instead of flat
+                           names (pytra_std_json.ext). Used by import-path
+                           based backends.
     Returns:
         Exit code (0 on success).
     """
@@ -241,6 +278,36 @@ def run_emit_cli(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     modules: list[dict[str, JsonVal]] = _load_linked_modules(manifest_path)
+    all_module_ids: list[str] = []
+    for east_doc in modules:
+        meta_any: JsonVal = east_doc.get("meta")
+        meta_obj = json.JsonValue(meta_any).as_obj()
+        if meta_obj is None:
+            continue
+        mid = json.JsonValue(meta_obj.raw.get("_cli_module_id")).as_str()
+        if mid is not None and mid != "":
+            all_module_ids.append(mid)
+    for east_doc in modules:
+        meta_any = east_doc.get("meta")
+        typed_meta: dict[str, JsonVal] = {}
+        meta_obj = json.JsonValue(meta_any).as_obj()
+        if meta_obj is not None:
+            typed_meta = meta_obj.raw
+        typed_meta["_cli_all_module_ids"] = all_module_ids
+        mid = json.JsonValue(typed_meta.get("_cli_module_id")).as_str()
+        if mid is not None and mid != "" and file_ext != "":
+            emit_context: dict[str, JsonVal] = {}
+            emit_context_any = typed_meta.get("emit_context")
+            emit_context_obj = json.JsonValue(emit_context_any).as_obj()
+            if emit_context_obj is not None:
+                emit_context = emit_context_obj.raw
+            emit_context["module_id"] = mid
+            emit_context["root_rel_prefix"] = _module_root_rel_prefix(mid, file_ext, module_path_style)
+            is_entry = json.JsonValue(typed_meta.get("_cli_is_entry")).as_bool()
+            emit_context["is_entry"] = bool(is_entry)
+            emit_context["module_path_style"] = module_path_style
+            typed_meta["emit_context"] = emit_context
+        east_doc["meta"] = typed_meta
     written: int = 0
 
     if use_direct and direct_emit_fn is not None:
@@ -253,17 +320,18 @@ def run_emit_cli(
             code: str = active_emit_fn(east_doc)
             if code.strip() == "":
                 continue
-            meta: JsonVal = _jv_get(east_doc, "meta")
+            meta: JsonVal = east_doc.get("meta")
             module_id: str = ""
             meta_obj = json.JsonValue(meta).as_obj()
             if meta_obj is not None:
-                mid = json.JsonValue(_jv_get(meta_obj.raw, "_cli_module_id")).as_str()
+                mid = json.JsonValue(meta_obj.raw.get("_cli_module_id")).as_str()
                 if mid is not None:
                     module_id = mid
             if module_id == "":
                 module_id = "module_" + str(written)
-            out_name: str = module_id.replace(".", "_") + file_ext
-            output_dir.joinpath(out_name).write_text(code, encoding="utf-8")
+            out_path: Path = _module_output_path(output_dir, module_id, file_ext, module_path_style)
+            _path_parent(out_path).mkdir(parents=True, exist_ok=True)
+            out_path.write_text(code, encoding="utf-8")
             written += 1
 
     if post_emit is not None:

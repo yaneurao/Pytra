@@ -6,7 +6,7 @@
 
 > Domain-specific TODO. See [index.md](./index.md) for the full index.
 
-Last updated: 2026-03-31 (P3-GO-LINT-FIX complete)
+Last updated: 2026-05-03
 
 ## Operating Rules
 
@@ -97,7 +97,10 @@ Context: [docs/ja/plans/p7-go-selfhost-runtime.md](../plans/p7-go-selfhost-runti
 
 go build passed in P6, but there are still gaps before the selfhost binary can actually convert fixture/sample/stdlib and achieve parity PASS.
 
-1. [ ] [ID: P7-GO-SELFHOST-RT-S1] Fix linker type_id assignment to resolve hierarchy for external base classes (CommonRenderer(ABC) etc.) — fall back to object
-2. [ ] [ID: P7-GO-SELFHOST-RT-S2] Include the Go translation of the Go emitter itself in the selfhost golden — revisit circular dependency exclusions to enable `emit/go/` in golden
-3. [ ] [ID: P7-GO-SELFHOST-RT-S3] Add a CLI wrapper (`main.go`) — minimal entry point that reads EAST3 JSON and emits Go code
-4. [ ] [ID: P7-GO-SELFHOST-RT-S4] Run `python3 tools/run/run_selfhost_parity.py --selfhost-lang go` and confirm parity PASS for fixture + sample + stdlib
+1. [x] [ID: P7-GO-SELFHOST-RT-S1] Fix linker type_id assignment to resolve hierarchy for external base classes (CommonRenderer(ABC) etc.) — fall back to object
+2. [x] [ID: P7-GO-SELFHOST-RT-S2] Include the Go translation of the Go emitter itself in the selfhost golden — revisit circular dependency exclusions to enable `emit/go/` in golden
+3. [x] [ID: P7-GO-SELFHOST-RT-S3] Add a CLI wrapper (`main.go`) — minimal entry point that reads EAST3 JSON and emits Go code
+4. [x] [ID: P7-GO-SELFHOST-RT-S4] Run `python3 tools/run/run_selfhost_parity.py --selfhost-lang go` and confirm fixture parity PASS
+   - Completed 2026-05-03 in the Docker-isolated `pytra-devcontainer-check` environment. The rebuilt Go selfhost emitter passed fixture 161/161.
+5. [x] [ID: P7-GO-SELFHOST-RT-S5] Bring Go selfhost sample artifact parity to 18/18
+   - Completed 2026-05-03 in the Docker-isolated `pytra-devcontainer-check` environment. After rebuilding the Go selfhost binary, `PYTHONPYCACHEPREFIX=work/tmp/pycache PYTHONPATH=src:tools/check python3 tools/run/run_selfhost_parity.py --selfhost-lang go --case-root sample --all-samples --cmd-timeout-sec 300` passed sample 18/18. The remaining PNG/GIF artifact-size mismatch was fixed by keeping Go runtime map clearing compatible with Go 1.19 and by making bytearray-mutating helpers such as `_png_append` / `_gif_append` return the updated Go slice.

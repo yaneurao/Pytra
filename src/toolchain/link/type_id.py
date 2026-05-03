@@ -313,7 +313,10 @@ def _resolve_declared_class_base_fqcn(
         dep_module_id = imported_symbol[:sep].strip()
         export_name = imported_symbol[sep + 2:].strip()
         if dep_module_id != "" and export_name != "":
-            return dep_module_id + "." + export_name
+            imported_fqcn = dep_module_id + "." + export_name
+            if imported_fqcn in all_classes:
+                return imported_fqcn
+            return "object"
     # Check dotted name (e.g. module.ClassName)
     if "." in name:
         first_dot = name.find(".")
@@ -328,7 +331,10 @@ def _resolve_declared_class_base_fqcn(
         attr_name = name[last_dot + 1:]
         imported_module = import_modules.get(owner_name, "").strip()
         if imported_module != "" and attr_name.strip() != "":
-            return imported_module + "." + attr_name.strip()
+            imported_fqcn = imported_module + "." + attr_name.strip()
+            if imported_fqcn in all_classes:
+                return imported_fqcn
+            return "object"
     # Fallback: assume local
     fqcn_candidate = module_id + "." + name
     if fqcn_candidate in all_classes:
