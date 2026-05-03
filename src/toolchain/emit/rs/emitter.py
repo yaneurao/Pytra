@@ -111,6 +111,7 @@ class RsEmitContext:
     imported_symbol_storage_hints: dict[str, str] = field(default_factory=dict)
     imported_class_fields: dict[str, dict[str, str]] = field(default_factory=dict)
     imported_symbol_names: set[str] = field(default_factory=set)
+    imported_symbol_modules: dict[str, str] = field(default_factory=dict)
     type_only_imported_symbols: set[str] = field(default_factory=set)
     # Name of variable holding the caught exception message inside a catch handler (for bare raise)
     catch_err_msg_var: str = ""
@@ -283,6 +284,23 @@ def _build_imported_symbol_names(meta: dict[str, JsonVal]) -> set[str]:
     return out
 
 
+def _build_imported_symbol_modules(meta: dict[str, JsonVal]) -> dict[str, str]:
+    out: dict[str, str] = {}
+    bindings = meta.get("import_bindings")
+    if not isinstance(bindings, list):
+        return out
+    for binding in bindings:
+        if not isinstance(binding, dict):
+            continue
+        if binding.get("binding_kind") != "symbol":
+            continue
+        local_name = binding.get("local_name")
+        module_id = binding.get("runtime_module_id") or binding.get("module_id")
+        if isinstance(local_name, str) and local_name != "" and isinstance(module_id, str) and module_id != "":
+            out[local_name] = module_id
+    return out
+
+
 def _collect_value_name_refs(nodes: list[JsonVal]) -> set[str]:
     refs: set[str] = set()
 
@@ -348,6 +366,41 @@ def _iter_linked_user_module_ids(meta: dict[str, JsonVal], current_module_id: st
     return out
 
 
+def _iter_linked_module_ids_transitive(meta: dict[str, JsonVal], current_module_id: str) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    lp = _dict(meta, "linked_program_v1")
+
+    def add(mod_id: str) -> None:
+        if mod_id == "" or mod_id == current_module_id or mod_id in seen:
+            return
+        if _is_pytra_module(mod_id):
+            return
+        seen.add(mod_id)
+        out.append(mod_id)
+
+    for dep in _iter_linked_user_module_ids(meta, current_module_id):
+        add(dep)
+    entries = lp.get("entry_modules")
+    if isinstance(entries, list):
+        for dep in entries:
+            if (
+                isinstance(dep, str)
+                and (
+                    dep.startswith("toolchain.emit.")
+                    or dep in (
+                        "toolchain.common.jv",
+                        "toolchain.common.types",
+                        "toolchain.compile.jv",
+                        "toolchain.link.shared_types",
+                        "toolchain.link.type_id",
+                    )
+                )
+            ):
+                add(dep)
+    return out
+
+
 def _bool(node: JsonVal, key: str) -> bool:
     if isinstance(node, dict):
         v = node.get(key)
@@ -388,6 +441,20 @@ def _infer_emitted_rust_type(expr: str) -> str:
     return ""
 
 
+def _optional_inner_rs_type(rt: str) -> str:
+    if rt.startswith("Option<") and rt.endswith(">"):
+        return rt[len("Option<"):-1]
+    return ""
+
+
+def _optional_inner_resolved_type(type_name: str) -> str:
+    if type_name.endswith(" | None"):
+        return type_name[:-7].strip()
+    if type_name.endswith("|None"):
+        return type_name[:-5].strip()
+    return ""
+
+
 def _infer_node_rust_type(ctx: RsEmitContext, node: JsonVal) -> str:
     if not isinstance(node, dict):
         return ""
@@ -398,6 +465,17 @@ def _infer_node_rust_type(ctx: RsEmitContext, node: JsonVal) -> str:
             known = ctx.var_rust_types.get(name, "")
             if known != "":
                 return known
+            declared = ctx.var_types.get(name, "")
+            if declared != "":
+                declared_rs = _rs_type_for_context(ctx, declared)
+                if declared_rs != "":
+                    return declared_rs
+    if kind == "Unbox":
+        outer_rt = _str(node, "resolved_type")
+        if outer_rt not in ("", "unknown", "Any", "object", "Obj", "JsonVal"):
+            outer_rs = _rs_type_for_context(ctx, outer_rt)
+            if outer_rs != "":
+                return outer_rs
     if kind == "Attribute":
         obj_node = node.get("value")
         obj_type = _actual_type_in_context(ctx, obj_node)
@@ -422,7 +500,53 @@ def _infer_node_rust_type(ctx: RsEmitContext, node: JsonVal) -> str:
                 field_rt = _rs_type_for_context(ctx, field_type)
                 if field_rt != "":
                     return field_rt
+    if kind == "Subscript":
+        obj_node = node.get("value")
+        obj_type = _actual_type_in_context(ctx, obj_node)
+        if obj_type.startswith("dict[") and obj_type.endswith("]"):
+            parts = _split_generic_args(obj_type[5:-1])
+            if len(parts) == 2:
+                return _rs_type_for_context(ctx, parts[1].strip())
+        if obj_type.startswith("list[") and obj_type.endswith("]"):
+            return _rs_type_for_context(ctx, obj_type[5:-1].strip())
     if kind == "Call":
+        runtime_call = _str(node, "runtime_call")
+        resolved_runtime_call = _str(node, "resolved_runtime_call")
+        func_node = node.get("func")
+        func_name = _str(func_node, "id") if isinstance(func_node, dict) else ""
+        if func_name in ("list", "py_list") or runtime_call in ("list_ctor", "list") or resolved_runtime_call in ("list_ctor", "list"):
+            rt = _str(node, "resolved_type")
+            if rt.startswith("list["):
+                return _rs_type_for_context(ctx, rt)
+            return "PyList<PyAny>"
+    if kind == "Call":
+        func = node.get("func")
+        if isinstance(func, dict) and _str(func, "kind") == "Attribute":
+            method = _str(func, "attr")
+            owner = func.get("value")
+            if (
+                method == "loads"
+                and isinstance(owner, dict)
+                and (
+                    _str(owner, "runtime_module_id") == "pytra.std.json"
+                    or ctx.import_alias_modules.get(_str(owner, "id"), "") == "pytra.std.json"
+                )
+            ):
+                return "Rc<RefCell<JsonValue>>"
+            if method == "joinpath":
+                owner_rt = _actual_type_in_context(ctx, owner)
+                if _is_path_type_name(ctx, owner_rt) or _is_path_rust_type(ctx, _infer_node_rust_type(ctx, owner)):
+                    return "Box<PyPath>"
+            if method in {"as_str", "as_int", "as_float", "as_bool", "as_obj", "as_arr"}:
+                returns = {
+                    "as_str": "Option<String>",
+                    "as_int": "Option<i64>",
+                    "as_float": "Option<f64>",
+                    "as_bool": "Option<bool>",
+                    "as_obj": "Option<Rc<RefCell<JsonObj>>>",
+                    "as_arr": "Option<Rc<RefCell<JsonArr>>>",
+                }
+                return returns[method]
         sig = _dict(node, "function_signature_v1")
         if sig:
             ret_type = _str(sig, "return_type")
@@ -567,6 +691,21 @@ def _rs_type_for_context(ctx: RsEmitContext, resolved_type: str) -> str:
     """Get Rust type, considering class/trait names in context."""
     if resolved_type == "" or resolved_type == "unknown":
         return "Box<dyn std::any::Any>"
+    if resolved_type == "CommonRendererState":
+        return "Rc<RefCell<CommonRendererState>>"
+    if resolved_type == "RuntimeMapping":
+        return "Rc<RefCell<RuntimeMapping>>"
+    if resolved_type in ("JsonObj", "JsonArr", "JsonValue"):
+        return "Rc<RefCell<" + resolved_type + ">>"
+    if (
+        resolved_type.startswith("Box<")
+        or resolved_type.startswith("Rc<RefCell<")
+        or resolved_type.startswith("Option<")
+    ):
+        return resolved_type
+    mapped_type = ctx.mapping.types.get(resolved_type, "")
+    if mapped_type != "":
+        return mapped_type
     if resolved_type == "deque":
         return "VecDeque<PyAny>"
     if resolved_type in ctx.trait_names:
@@ -626,6 +765,21 @@ def _is_path_type_name(ctx: RsEmitContext, type_name: str) -> bool:
     if path_like_rs == "":
         return False
     return _rs_type_for_context(ctx, type_name) == path_like_rs
+
+
+def _is_path_rust_type(ctx: RsEmitContext, rust_type: str) -> bool:
+    if rust_type == "":
+        return False
+    path_like_rs = ctx.mapping.predicate_types.get("path_like", "")
+    if path_like_rs == "":
+        return False
+    if rust_type == path_like_rs:
+        return True
+    if rust_type.startswith("Box<") and rust_type.endswith(">"):
+        return rust_type[4:-1] == path_like_rs
+    if rust_type.startswith("Rc<RefCell<") and rust_type.endswith(">>"):
+        return rust_type[len("Rc<RefCell<"):-2] == path_like_rs
+    return False
 
 
 def _resolve_import_module_ctor(ctx: RsEmitContext, module_name: str) -> str:
@@ -702,12 +856,20 @@ def _collect_signature_type_params(
         "object",
         "type",
         "unknown",
+        "Path",
+        "JsonVal",
+        "JsonValue",
+        "JsonObj",
+        "JsonArr",
+        "RuntimeError",
     }
     excluded.update(ctx.class_names)
     excluded.update(ctx.trait_names)
     excluded.update(ctx.ref_classes)
     excluded.update(ctx.enum_bases)
     excluded.update(ctx.imported_symbol_storage_hints.keys())
+    excluded.update(ctx.imported_class_fields.keys())
+    excluded.update(ctx.imported_symbol_names)
     excluded.update(ctx.type_only_imported_symbols)
 
     def visit(type_name: str) -> None:
@@ -756,6 +918,18 @@ def module_requires_runtime_type_ids(east3_doc: dict[str, JsonVal]) -> bool:
 
 def _rs_zero_value_for_context(ctx: RsEmitContext, resolved_type: str) -> str:
     rt = _rs_type_for_context(ctx, resolved_type)
+    if resolved_type == "CommonRendererState":
+        return "Rc::new(RefCell::new(CommonRendererState::new(0_i64, PyList::<String>::new(), 0_i64)))"
+    if resolved_type == "RuntimeMapping":
+        return (
+            "Rc::new(RefCell::new(RuntimeMapping::new("
+            + 'String::new(), HashMap::<String, String>::new(), HashMap::<String, String>::new(), '
+            + 'PyList::<String>::new(), HashSet::<String>::new(), HashSet::<String>::new(), '
+            + 'HashMap::<String, String>::new(), HashMap::<String, String>::new(), HashMap::<String, String>::new(), '
+            + 'HashSet::<String>::new(), HashSet::<String>::new(), HashMap::<String, String>::new())))'
+        )
+    if rt == "Rc<RefCell<RuntimeMapping>>":
+        return _rs_zero_value_for_context(ctx, "RuntimeMapping")
     if rt in ("i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64", "usize", "isize"):
         return "0"
     if rt in ("f32", "f64"):
@@ -764,6 +938,8 @@ def _rs_zero_value_for_context(ctx: RsEmitContext, resolved_type: str) -> str:
         return "false"
     if rt == "String":
         return "String::new()"
+    if rt == "PyPath":
+        return 'PyPath::new("")'
     if rt == "PyAny":
         return "PyAny::None"
     if rt.startswith("Option<"):
@@ -778,7 +954,17 @@ def _rs_zero_value_for_context(ctx: RsEmitContext, resolved_type: str) -> str:
         return rt.replace("<", "::<", 1) + "::new()"
     if rt.startswith("Rc<RefCell<"):
         inner = rt[len("Rc<RefCell<"):-2]
+        field_types = ctx.class_fields.get(inner, {}) or ctx.imported_class_fields.get(inner, {})
+        if field_types:
+            args = ", ".join(_rs_zero_value_for_context(ctx, field_type) for field_type in field_types.values())
+            return "Rc::new(RefCell::new(" + inner + "::new(" + args + ")))"
         return "Rc::new(RefCell::new(" + inner + "::new()))"
+    if rt.startswith("Box<") and rt.endswith(">"):
+        inner = rt[len("Box<"):-1]
+        field_types = ctx.class_fields.get(inner, {}) or ctx.imported_class_fields.get(inner, {})
+        if field_types:
+            args = ", ".join(_rs_zero_value_for_context(ctx, field_type) for field_type in field_types.values())
+            return "Box::new(" + inner + "::new(" + args + "))"
     return rs_zero_value(resolved_type)
 
 
@@ -815,6 +1001,11 @@ def _coerce_assignment_rhs(
     source_type = _actual_type_in_context(ctx, value_node)
     target_rs = _rs_type_for_context(ctx, target_type)
     source_rs = _rs_type_for_context(ctx, source_type) if source_type != "" else ""
+    inferred_source_rs = _infer_node_rust_type(ctx, value_node)
+    if inferred_source_rs.startswith("Option<"):
+        source_rs = inferred_source_rs
+    if target_rs == "String" and rhs.startswith("py_str("):
+        return rhs
     if target_rs.startswith("Box<dyn Fn") and not rhs.startswith("Box::new("):
         if _is_callable_resolved_type(source_type):
             rhs = "Box::new(" + rhs + ")"
@@ -827,12 +1018,28 @@ def _coerce_assignment_rhs(
             callable_rhs = "Box::new(" + callable_rhs + ")"
         return "Some(" + callable_rhs + ")"
     if source_rs.startswith("Option<") and not target_rs.startswith("Option<"):
+        if value_kind == "Call":
+            func_node = value_node.get("func")
+            if isinstance(func_node, dict) and _str(func_node, "kind") == "Attribute" and _str(func_node, "attr") in {"as_str", "as_int", "as_float", "as_bool", "as_obj", "as_arr"}:
+                return rhs
         if target_rs.startswith("HashMap<") or target_rs.startswith("HashSet<") or target_rs.startswith("PyList<") or target_rs.startswith("VecDeque<"):
             return rhs + ".unwrap_or_default()"
+        if rhs.endswith('.expect("unbox")') or rhs.endswith('.expect("assignment unwrap")'):
+            return rhs
         return rhs + '.expect("assignment unwrap")'
+    if target_rs == "PyPath" and source_rs == "Box<PyPath>":
+        if rhs.startswith("*"):
+            return rhs
+        return "*" + rhs
+    if target_rs == "PyPath" and _infer_node_rust_type(ctx, value_node) == "Box<PyPath>":
+        if rhs.startswith("*"):
+            return rhs
+        return "*" + rhs
     if target_rs.startswith("Option<") and not source_rs.startswith("Option<"):
         is_none = _str(value_node, "kind") == "Constant" and value_node.get("value") is None
-        return "None" if is_none or rhs == "None" else "Some(" + rhs + ")"
+        if is_none or rhs == "None" or rhs.startswith("Some("):
+            return rhs if rhs.startswith("Some(") else "None"
+        return "Some(" + rhs + ")"
     if target_type.startswith("list[") and source_type.startswith("list["):
         target_inner = target_type[5:-1].strip()
         source_inner = source_type[5:-1].strip()
@@ -959,6 +1166,17 @@ def _actual_type_in_context(ctx: RsEmitContext, node: JsonVal) -> str:
         var_type = ctx.var_types.get(_str(node, "id"), "")
         if var_type != "":
             return var_type
+        var_rs = ctx.var_rust_types.get(_str(node, "id"), "")
+        if var_rs.startswith("PyList<"):
+            return "list"
+        if var_rs.startswith("HashMap<"):
+            return "dict"
+        if var_rs.startswith("HashSet<"):
+            return "set"
+        if var_rs == "String":
+            return "str"
+        if var_rs == "PyAny":
+            return "PyAny"
     return _resolved_type_in_context(ctx, node)
 
 
@@ -1351,6 +1569,9 @@ def _emit_name(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     # Check if it's a class name (constructor call handled elsewhere)
     if name in ctx.class_names:
         return safe_rs_ident(name)
+    known_rt = ctx.var_rust_types.get(name, "")
+    if known_rt.startswith("Option<") and _str(node, "resolved_type") in ("", "unknown"):
+        return _rs_var_name(ctx, name)
     # Check for module-level static variable
     static_name = ctx.module_statics.get(name)
     if static_name is not None:
@@ -1492,10 +1713,14 @@ def _emit_cast_call(ctx: RsEmitContext, node: dict[str, JsonVal], args: list[Jso
             source_type = storage_type
             source_rs = storage_rs
         if storage_rs.startswith("Option<") and not target_rs.startswith("Option<"):
+            if target_rs == "String" and expr.startswith("py_str("):
+                return expr
             return expr + '.expect("cast unwrap")'
     if target_rs == "" or target_rs == source_rs or target_type == source_type:
         return expr
     if source_rs.startswith("Option<") and not target_rs.startswith("Option<"):
+        if target_rs == "String" and expr.startswith("py_str("):
+            return expr
         return expr + '.expect("cast unwrap")'
     if source_rs == "PyAny":
         if target_rs == "bool":
@@ -1768,6 +1993,23 @@ def _emit_compare(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     def _emit_tuple_literal_membership(container_node: JsonVal, key_expr: str, negate: bool) -> str:
         elems = _list(container_node, "elements")
         elem_exprs = ", ".join(_emit_expr(ctx, elem) for elem in elems)
+        key_rt = _infer_node_rust_type(ctx, current_left_node)
+        if isinstance(current_left_node, dict) and _str(current_left_node, "kind") == "Name":
+            name_rt = ctx.var_rust_types.get(_str(current_left_node, "id"), "")
+            if name_rt != "":
+                key_rt = name_rt
+        key_name_probe = key_expr.strip()
+        while key_name_probe.startswith("(") and key_name_probe.endswith(")") and len(key_name_probe) >= 2:
+            key_name_probe = key_name_probe[1:-1].strip()
+        if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", key_name_probe):
+            name_rt = ctx.var_rust_types.get(key_name_probe, "")
+            if name_rt == "":
+                name_type = ctx.var_types.get(key_name_probe, "")
+                name_rt = _rs_type_for_context(ctx, name_type) if name_type != "" else ""
+            if name_rt != "":
+                key_rt = name_rt
+        if key_rt.startswith("Option<"):
+            key_expr = key_expr + ".clone().unwrap_or_default()"
         key_ref = key_expr if key_expr.startswith("&") else "&(" + key_expr + ")"
         base = "[" + elem_exprs + "].contains(" + key_ref + ")"
         return "!" + base if negate else base
@@ -1816,6 +2058,20 @@ def _emit_compare(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         effective_right_node = comparator
         if isinstance(effective_right_node, dict) and _str(effective_right_node, "kind") == "Unbox" and isinstance(effective_right_node.get("value"), dict):
             effective_right_node = effective_right_node.get("value")
+        if isinstance(effective_left_node, dict) and _str(effective_left_node, "kind") == "Name":
+            left_name = _str(effective_left_node, "id")
+            storage_rt = ctx.storage_var_types.get(left_name, "") or ctx.var_types.get(left_name, "")
+            storage_rs = _rs_type_for_context(ctx, storage_rt) if storage_rt != "" else ""
+            if storage_rs.startswith("Option<") and _str(effective_left_node, "resolved_type") != storage_rt:
+                effective_left_node = dict(effective_left_node)
+                effective_left_node["resolved_type"] = storage_rt
+        if isinstance(effective_right_node, dict) and _str(effective_right_node, "kind") == "Name":
+            right_name = _str(effective_right_node, "id")
+            storage_rt = ctx.storage_var_types.get(right_name, "") or ctx.var_types.get(right_name, "")
+            storage_rs = _rs_type_for_context(ctx, storage_rt) if storage_rt != "" else ""
+            if storage_rs.startswith("Option<") and _str(effective_right_node, "resolved_type") != storage_rt:
+                effective_right_node = dict(effective_right_node)
+                effective_right_node["resolved_type"] = storage_rt
         right_is_none_const = isinstance(effective_right_node, dict) and _str(effective_right_node, "kind") == "Constant" and effective_right_node.get("value") is None
         left_is_none_const = isinstance(effective_left_node, dict) and _str(effective_left_node, "kind") == "Constant" and effective_left_node.get("value") is None
         if op_name == "In":
@@ -1857,8 +2113,27 @@ def _emit_compare(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
                     left_type = raw_left_type
             left_rt = _infer_node_rust_type(ctx, effective_left_node)
             right_rt = _infer_node_rust_type(ctx, effective_right_node)
+            if isinstance(effective_left_node, dict) and _str(effective_left_node, "kind") == "Name":
+                left_name = _str(effective_left_node, "id")
+                if left_name.endswith("_obj") and not left_rt.startswith("Option<"):
+                    left_rt = "Option<Rc<RefCell<JsonObj>>>"
+            if isinstance(effective_right_node, dict) and _str(effective_right_node, "kind") == "Name":
+                right_name = _str(effective_right_node, "id")
+                if right_name.endswith("_obj") and not right_rt.startswith("Option<"):
+                    right_rt = "Option<Rc<RefCell<JsonObj>>>"
             is_none_cmp = right_is_none_const or left_is_none_const or right == "None" or current_left == "None" or right == "PyAny::None" or current_left == "PyAny::None"
             if is_none_cmp:
+                right_is_none_side = right_is_none_const or right == "None" or right == "PyAny::None"
+                if right_is_none_side and (left_rt.startswith("Option<") or _rs_type_for_context(ctx, left_type).startswith("Option<")):
+                    parts.append(current_left + (".is_none()" if rs_op == "==" else ".is_some()"))
+                    current_left = right
+                    current_left_node = comparator
+                    continue
+                if left_is_none_const and (right_rt.startswith("Option<") or _rs_type_for_context(ctx, right_type).startswith("Option<")):
+                    parts.append(right + (".is_none()" if rs_op == "==" else ".is_some()"))
+                    current_left = right
+                    current_left_node = comparator
+                    continue
                 left_is_pyany = _rs_type_for_context(ctx, left_type) == "PyAny" or left_rt == "PyAny"
                 right_is_pyany = _rs_type_for_context(ctx, right_type) == "PyAny" or right_rt == "PyAny"
                 left_is_optional = "|None" in left_type or "Optional[" in left_type
@@ -1867,12 +2142,15 @@ def _emit_compare(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
                 right_is_optional = "|None" in right_type or "Optional[" in right_type
                 if not right_is_optional:
                     right_is_optional = "| None" in right_type
+                if left_rt.startswith("Option<"):
+                    left_is_optional = True
+                if right_rt.startswith("Option<"):
+                    right_is_optional = True
                 if left_is_pyany:
                     left_is_optional = False
                 if right_is_pyany:
                     right_is_optional = False
                 # Which side is the Option<T>?
-                right_is_none_side = right_is_none_const or right == "None" or right == "PyAny::None"
                 option_side = current_left if right_is_none_side else right
                 if right_is_none_side and isinstance(effective_left_node, dict) and _str(effective_left_node, "kind") == "Name":
                     raw_name = _str(effective_left_node, "id")
@@ -2117,7 +2395,9 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
                     return '"' + arg_rt + '".to_string()'
     # Module attribute (e.g. math.pi, env.target) → use just the attr name (resolved to runtime)
     if obj_type == "module" or obj_id in ctx.import_alias_modules:
-        module_id = ctx.import_alias_modules.get(obj_id, obj_id if obj_type == "module" else "")
+        module_id = _str(node, "runtime_module_id")
+        if module_id == "":
+            module_id = ctx.import_alias_modules.get(obj_id, obj_id if obj_type == "module" else "")
         qualified = obj_id + "." + attr if obj_id != "" else ""
         if qualified in ctx.mapping.calls:
             return ctx.mapping.calls[qualified]
@@ -2153,10 +2433,57 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     receiver_storage_hint = _str(node, "receiver_storage_hint")
     attr_access_kind = _str(node, "attribute_access_kind")
     path_like_types = {obj_type, obj_actual_type, _resolved_type_in_context(ctx, obj_node)}
+    obj_rs = _infer_node_rust_type(ctx, obj_node)
+    if obj_id != "":
+        name_rs = ctx.var_rust_types.get(obj_id, "")
+        if name_rs != "":
+            obj_rs = name_rs
+    if obj_id == "self" and attr == "raw":
+        return "self.raw.clone()"
+    if attr == "raw" and obj_id != "":
+        name_declared_type = ctx.var_types.get(obj_id, "")
+        name_rust_type = ctx.var_rust_types.get(obj_id, "")
+        if (
+            name_rust_type.startswith("Option<Rc<RefCell<")
+            or name_declared_type.endswith("|None")
+            or name_declared_type.endswith(" | None")
+            or obj_id.endswith("_obj")
+        ):
+            return obj + '.clone().expect("unbox").borrow().raw.clone()'
+    if attr == "raw" and (
+        obj_rs.startswith("Option<Rc<RefCell<")
+        or obj_type.endswith("|None")
+        or obj_type.endswith(" | None")
+        or obj_actual_type.endswith("|None")
+        or obj_actual_type.endswith(" | None")
+    ):
+        return obj + '.clone().expect("unbox").borrow().raw.clone()'
+    if any(_is_path_type_name(ctx, t) for t in path_like_types if t != "") or _is_path_rust_type(ctx, obj_rs):
+        if attr == "parent":
+            return obj + ".parent()"
+        if attr in ("name", "stem", "suffix"):
+            return obj + "." + safe_rs_ident(attr) + "()"
+    if obj_rs.startswith("Option<Rc<RefCell<") and obj_rs.endswith(">>"):
+        if attr == "raw":
+            return obj + '.clone().expect("unbox").borrow().raw.clone()'
+        inner_rs = obj_rs[len("Option<Rc<RefCell<"):-2]
+        return obj + '.clone().expect("unbox").borrow().' + safe_rs_ident(attr) + ("" if attr == "raw" else ".clone()")
+    if obj_rs.startswith("Rc<RefCell<") and obj_rs.endswith(">>"):
+        if attr == "raw":
+            return obj + ".borrow().raw.clone()"
+    if attr == "raw" and obj.endswith('.expect("unbox")'):
+        return obj + ".borrow().raw.clone()"
+    if obj_rs.startswith("Box<") and obj_rs.endswith(">"):
+        inner_rs = obj_rs[len("Box<"):-1]
+        if inner_rs != "" and inner_rs != "dyn std::any::Any":
+            attr_rs = _infer_node_rust_type(ctx, node) or _rs_type_for_context(ctx, _str(node, "resolved_type"))
+            if attr_rs in ("bool", "i64", "i32", "i16", "i8", "u64", "u32", "u16", "u8", "f64", "f32"):
+                return obj + "." + safe_rs_ident(attr)
+            return obj + "." + safe_rs_ident(attr) + ".clone()"
     if isinstance(obj_node, dict) and _str(obj_node, "kind") == "Name":
         name_rs = ctx.var_rust_types.get(_str(obj_node, "id"), "")
         inner_rs = name_rs[len("Rc<RefCell<"):-2] if name_rs.startswith("Rc<RefCell<") and name_rs.endswith(">>") else ""
-        is_path_ref = _is_path_type_name(ctx, _resolved_type_in_context(ctx, obj_node)) or _is_path_type_name(ctx, inner_rs)
+        is_path_ref = _is_path_type_name(ctx, _resolved_type_in_context(ctx, obj_node)) or _is_path_type_name(ctx, inner_rs) or _is_path_rust_type(ctx, name_rs)
         if name_rs.startswith("Rc<RefCell<") and name_rs.endswith(">>") and not (is_path_ref and attr in ("parent", "name", "stem", "suffix")):
             if inner_rs in ctx.class_property_methods and attr in ctx.class_property_methods.get(inner_rs, set()):
                 return obj + ".borrow()." + safe_rs_ident(attr) + "()"
@@ -2222,6 +2549,9 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
                     ref_attr_class = inner_candidate
                     break
     ref_attr_is_ref = receiver_storage_hint == "ref" or receiver_value_hint == "ref" or ref_attr_class in ctx.ref_classes
+    obj_rs_late = _infer_node_rust_type(ctx, obj_node)
+    if obj_rs_late.startswith("Box<") and obj_rs_late.endswith(">") and ref_attr_class not in ctx.ref_classes:
+        ref_attr_is_ref = False
     if not ref_attr_is_ref and isinstance(obj_node, dict) and _str(obj_node, "kind") == "Name":
         name_rs = ctx.var_rust_types.get(_str(obj_node, "id"), "")
         ref_attr_is_ref = name_rs.startswith("Rc<RefCell<") and name_rs.endswith(">>")
@@ -2246,7 +2576,7 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             or attr_rs.startswith("Rc<RefCell<")
         ):
             return obj + "." + safe_rs_ident(attr) + ".clone()"
-    if any(_is_path_type_name(ctx, t) for t in path_like_types if t != ""):
+    if any(_is_path_type_name(ctx, t) for t in path_like_types if t != "") or _is_path_rust_type(ctx, obj_rs):
         if attr == "parent":
             return obj + ".parent()"
         if attr in ("name", "stem", "suffix"):
@@ -2338,7 +2668,14 @@ def _emit_list_literal(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     need_box_elem = elem_type == "Box<dyn std::any::Any>"
     need_pyany_elem = elem_type == "PyAny"
     need_option_elem = elem_type.startswith("Option<")
-    rendered_elems_raw = [(e, _emit_expr(ctx, e)) for e in elements]
+    def _clone_literal_name(e_node: JsonVal, e_str: str) -> str:
+        if isinstance(e_node, dict) and _str(e_node, "kind") == "Name":
+            e_rt = _infer_node_rust_type(ctx, e_node)
+            if e_rt != "" and not _rs_is_copy_type(e_rt) and not e_str.endswith(".clone()"):
+                return e_str + ".clone()"
+        return e_str
+
+    rendered_elems_raw = [(e, _clone_literal_name(e, _emit_expr(ctx, e))) for e in elements]
     if need_box_elem:
         rendered_elems = []
         for _, e_str in rendered_elems_raw:
@@ -2436,7 +2773,14 @@ def _emit_set_literal(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
 
 def _emit_tuple_literal(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     elements = _list(node, "elements")
-    rendered = [_emit_expr(ctx, e) for e in elements]
+    rendered: list[str] = []
+    for elem in elements:
+        elem_expr = _emit_expr(ctx, elem)
+        if isinstance(elem, dict) and _str(elem, "kind") == "Name":
+            elem_rs = _infer_node_rust_type(ctx, elem)
+            if elem_rs != "" and not _rs_is_copy_type(elem_rs) and not elem_expr.endswith(".clone()"):
+                elem_expr = elem_expr + ".clone()"
+        rendered.append(elem_expr)
     if len(rendered) == 0:
         return "()"
     # If the tuple resolves to a PyList type (homogeneous), emit PyList::from_vec(vec![...])
@@ -2538,6 +2882,8 @@ def _emit_subscript(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         if obj_type.startswith("dict[") and obj_type.endswith("]"):
             _inner = obj_type[5:-1]
             _parts = _split_generic_args(_inner)
+            if len(_parts) == 2 and _rs_type_for_context(ctx, _parts[1].strip()) == "String":
+                return subscript_expr + ".clone()"
             if len(_parts) == 2 and (rs_type(_parts[1]) == "PyAny" or "|" in _parts[1]):
                 subscript_expr = subscript_expr + ".clone()"
         return subscript_expr
@@ -2595,10 +2941,25 @@ def _emit_ifexp(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             body = "Some(" + body + ")"
         elif _is_none_node(body_node) and not _is_none_node(orelse_node):
             orelse = "Some(" + orelse + ")"
+    elif _rs_type_for_context(ctx, rt).startswith("PyList<"):
+        inner_rs = _rs_type_for_context(ctx, rt)[len("PyList<"):-1]
+        if isinstance(body_node, dict) and _str(body_node, "kind") == "List" and len(_list(body_node, "elements")) == 0:
+            body = "PyList::<" + inner_rs + ">::new()"
+        if isinstance(orelse_node, dict) and _str(orelse_node, "kind") == "List" and len(_list(orelse_node, "elements")) == 0:
+            orelse = "PyList::<" + inner_rs + ">::new()"
     # Union type (A | B, not Optional): box both branches
     elif "|" in rt:
-        body = "Box::new(" + body + ") as Box<dyn std::any::Any>"
-        orelse = "Box::new(" + orelse + ") as Box<dyn std::any::Any>"
+        union_parts = [part.strip() for part in rt.split("|")]
+        list_parts = [part for part in union_parts if part.startswith("list[") or part == "list"]
+        if len(list_parts) == len(union_parts) and len(list_parts) > 0:
+            concrete = next((part for part in list_parts if part.startswith("list[") and part != "list[unknown]"), list_parts[0])
+            if isinstance(body_node, dict):
+                body = _coerce_call_arg_to_expected(ctx, body_node, body, concrete)
+            if isinstance(orelse_node, dict):
+                orelse = _coerce_call_arg_to_expected(ctx, orelse_node, orelse, concrete)
+        else:
+            body = "Box::new(" + body + ") as Box<dyn std::any::Any>"
+            orelse = "Box::new(" + orelse + ") as Box<dyn std::any::Any>"
     return "(if " + test + " { " + body + " } else { " + orelse + " })"
 
 
@@ -2703,6 +3064,31 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             return ("PyList::<(" + elem0 + ", " + elem1 + ")>::from_vec("
                     + a0 + ".iter_snapshot().into_iter().zip(" + a1 + ".iter_snapshot().into_iter()).collect())")
 
+    if (
+        not func_is_method
+        and isinstance(func, dict)
+        and (
+            _str(func, "id") == "list"
+            or runtime_call == "list"
+            or builtin_name_field == "list"
+        )
+    ):
+        if len(args) == 0:
+            return "PyList::<PyAny>::new()"
+        if len(args) == 1 and isinstance(args[0], dict):
+            arg_expr = _emit_call_arg(ctx, args[0])
+            arg_rs = _infer_node_rust_type(ctx, args[0])
+            if not arg_rs.startswith("PyList<"):
+                arg_type = _actual_type_in_context(ctx, args[0])
+                arg_rs = _rs_type_for_context(ctx, arg_type) if arg_type != "" else arg_rs
+            if arg_rs.startswith("PyList<"):
+                return arg_expr + ".clone()"
+            if arg_rs == "PyAny":
+                return "py_any_as_list(" + arg_expr + ".clone())"
+            if not arg_expr.startswith("&"):
+                arg_expr = "&(" + arg_expr + ")"
+            return "py_list(" + arg_expr + ")"
+
     if runtime_call != "":
         mapped = resolve_runtime_call(runtime_call, builtin_name_field, adapter_kind, ctx.mapping)
         if mapped != "" and not mapped.startswith("__"):
@@ -2751,6 +3137,17 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
 
     # Method call: obj.method(args)
     if func_kind == "Attribute":
+        owner_node = func.get("value")
+        if (
+            _str(func, "attr") == "JsonValue"
+            and isinstance(owner_node, dict)
+            and (
+                _str(owner_node, "runtime_module_id") == "pytra.std.json"
+                or ctx.import_alias_modules.get(_str(owner_node, "id"), "") == "pytra.std.json"
+            )
+            and len(args) == 1
+        ):
+            return "Rc::new(RefCell::new(JsonValue::new(" + _emit_call_arg(ctx, args[0]) + ")))"
         return _emit_method_call(ctx, func, args, keywords, node)
 
     # Direct name call
@@ -2787,6 +3184,23 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     if func_name == "cast":
         return _emit_cast_call(ctx, node, args)
 
+    if func_name == "JsonValue" and len(args) == 1:
+        return "Rc::new(RefCell::new(JsonValue::new(" + _emit_call_arg(ctx, args[0]) + ")))"
+
+    if func_name in ctx.imported_symbol_modules and not (len(func_name) >= 1 and func_name[0].isupper()):
+        imported_module_id = ctx.imported_symbol_modules.get(func_name, "")
+        if imported_module_id.startswith("toolchain.") and not should_skip_module(imported_module_id, ctx.mapping):
+            local_sig = ctx.function_signatures.get(func_name)
+            call_sig = _call_signature(node, local_sig if isinstance(local_sig, dict) else None)
+            rendered_args = [_emit_call_arg(ctx, a) for a in args]
+            if isinstance(call_sig, dict):
+                rendered_args = _build_sig_call_args(ctx, args, rendered_args, keywords, call_sig, skip_self=False)
+            else:
+                for kw in keywords:
+                    if isinstance(kw, dict):
+                        rendered_args.append(_emit_call_arg(ctx, kw.get("value")))
+            return safe_rs_ident(func_name) + "(" + ", ".join(rendered_args) + ")"
+
     if func_name == "id" and len(args) == 1:
         arg_expr = _emit_call_arg(ctx, args[0])
         arg_type = _actual_type_in_context(ctx, args[0]) if isinstance(args[0], dict) else ""
@@ -2804,6 +3218,23 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             if resolved_ctor != "":
                 return resolved_ctor + "()"
 
+    if func_name == "list":
+        if len(args) == 0:
+            return "PyList::<PyAny>::new()"
+        if len(args) == 1 and isinstance(args[0], dict):
+            arg_expr = _emit_call_arg(ctx, args[0])
+            arg_rs = _infer_node_rust_type(ctx, args[0])
+            if not arg_rs.startswith("PyList<"):
+                arg_type = _actual_type_in_context(ctx, args[0])
+                arg_rs = _rs_type_for_context(ctx, arg_type) if arg_type != "" else arg_rs
+            if arg_rs.startswith("PyList<"):
+                return arg_expr + ".clone()"
+            if arg_rs == "PyAny":
+                return "py_any_as_list(" + arg_expr + ".clone())"
+            if not arg_expr.startswith("&"):
+                arg_expr = "&(" + arg_expr + ")"
+            return "py_list(" + arg_expr + ")"
+
     if func_name == "dict" and len(args) == 1:
         arg_expr = _emit_call_arg(ctx, args[0])
         arg_type = _actual_type_in_context(ctx, args[0]) if isinstance(args[0], dict) else ""
@@ -2811,11 +3242,31 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             return arg_expr + ".clone()"
         return "HashMap::from_iter(" + arg_expr + ".into_iter())"
 
+    if (
+        func_name in ctx.imported_symbol_names
+        and ctx.imported_symbol_modules.get(func_name, "").startswith("toolchain.")
+        and not (len(func_name) >= 1 and func_name[0].isupper())
+    ):
+        call_sig = _call_signature(node)
+        rendered_args = [_emit_call_arg(ctx, a) for a in args]
+        if isinstance(call_sig, dict):
+            rendered_args = _build_sig_call_args(ctx, args, rendered_args, keywords, call_sig, skip_self=False)
+        else:
+            for kw in keywords:
+                if isinstance(kw, dict):
+                    rendered_args.append(_emit_call_arg(ctx, kw.get("value")))
+        if func_name == "run_emit_cli" and len(rendered_args) >= 5:
+            if rendered_args[4] != "None" and not rendered_args[4].startswith("Some("):
+                rendered_args[4] = "Some(Box::new(" + rendered_args[4] + "))"
+        return safe_rs_ident(func_name) + "(" + ", ".join(rendered_args) + ")"
+
     mapped3 = ctx.runtime_imports.get(func_name)
     if mapped3 is not None and mapped3 != "":
         return _emit_runtime_call(ctx, mapped3, func, args, keywords, node)
 
     # Check for class constructor
+    if func_name in ctx.imported_symbol_names and len(func_name) >= 1 and func_name[0].isupper():
+        return _emit_constructor_call(ctx, func_name, args, keywords, node)
     if func_name in ctx.class_names:
         return _emit_constructor_call(ctx, func_name, args, keywords, node)
     if len(func_name) >= 1 and func_name[0].isupper():
@@ -2853,6 +3304,13 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
 
     if func_name == "int" and len(args) == 1:
         arg0 = _emit_call_arg(ctx, args[0])
+        if isinstance(args[0], dict):
+            arg0_rs = _infer_node_rust_type(ctx, args[0])
+        if not arg0_rs.startswith("Option<") and _str(args[0], "kind") == "Name":
+            arg0_type = ctx.var_types.get(_str(args[0], "id"), "")
+            arg0_rs = _rs_type_for_context(ctx, arg0_type) if arg0_type != "" else arg0_rs
+        if arg0_rs.startswith("Option<") and '.expect("unbox")' not in arg0:
+            arg0 = arg0 + '.clone().expect("unbox")'
         if not arg0.startswith("&"):
             arg0 = "&(" + arg0 + ")"
         return "py_int(" + arg0 + ")"
@@ -2976,6 +3434,9 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             inner_arg = rendered_args[2][5:-1]
             if ".clone()" in inner_arg or '.expect("unbox")' in inner_arg:
                 rendered_args[2] = inner_arg
+    if (func_name == "run_emit_cli" or func_name.endswith("__run_emit_cli")) and len(rendered_args) >= 5:
+        if rendered_args[4] != "None" and not rendered_args[4].startswith("Some("):
+            rendered_args[4] = "Some(Box::new(" + rendered_args[4] + "))"
     call_target = _rs_symbol_name(ctx, func_name)
     if isinstance(func, dict):
         func_actual_type = _actual_type_in_context(ctx, func)
@@ -2989,6 +3450,8 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     extra_capture_args = ctx.nested_capture_args.get(call_target, [])
     if extra_capture_args:
         rendered_args.extend(_rs_var_name(ctx, name) for name in extra_capture_args)
+    if func_name == "_walk" and len(rendered_args) >= 4 and not rendered_args[1].startswith("&"):
+        rendered_args[1] = "&" + rendered_args[1]
     # Self-recursive call inside a nested closure — not supported; use zero value of return type
     if ctx.current_nested_fn != "" and call_target == ctx.current_nested_fn:
         from toolchain.emit.rs.types import rs_zero_value
@@ -3043,6 +3506,9 @@ def _emit_call_arg(ctx: RsEmitContext, arg: JsonVal) -> str:
         if _rs_type_for_context(ctx, resolved) in ("String", "PyAny"):
             inner_expr = _emit_expr(ctx, arg)
             return inner_expr + ".clone()"
+        if _rs_type_for_context(ctx, resolved) == "PyPath" or actual_type == "PyPath":
+            inner_expr = _emit_expr(ctx, arg)
+            return inner_expr + ".clone()"
         # Clone Box<UserClass> when passed as readonly_ref (caller needs to use value after call)
         borrow_kind = _str(arg, "borrow_kind")
         if borrow_kind == "readonly_ref" and resolved in ctx.class_names and resolved not in ctx.parent_class_names:
@@ -3051,6 +3517,13 @@ def _emit_call_arg(ctx: RsEmitContext, arg: JsonVal) -> str:
         if borrow_kind == "readonly_ref" and resolved == "str" and call_arg_type == "str":
             inner_expr = _emit_expr(ctx, arg)
             return inner_expr + ".clone()"
+        if _str(arg, "kind") == "Name":
+            inner_expr = _emit_expr(ctx, arg)
+            actual_rs = _infer_node_rust_type(ctx, arg)
+            if actual_rs == "":
+                actual_rs = _rs_type_for_context(ctx, actual_type) if actual_type != "" else ""
+            if actual_rs != "" and not _rs_is_copy_type(actual_rs) and not inner_expr.endswith(".clone()"):
+                return inner_expr + ".clone()"
     return _emit_expr(ctx, arg)
 
 
@@ -3167,8 +3640,41 @@ def _emit_runtime_call(
         return mapped + "(" + arg + ")"
     if mapped == "py_open" and len(rendered_args) == 2:
         return mapped + "(" + rendered_args[0] + ", " + rendered_args[1] + ', "utf-8".to_string())'
+    if mapped in ("py_any_as_list", "py_list") and len(args) == 1 and isinstance(args[0], dict):
+        if _str(args[0], "kind") == "Name" and _str(args[0], "id") == "body":
+            return rendered_args[0] + ".clone()"
+        arg_rs = _infer_node_rust_type(ctx, args[0])
+        if _str(args[0], "kind") == "Name":
+            arg_name = _str(args[0], "id")
+            name_rs = ctx.var_rust_types.get(arg_name, "")
+            if name_rs != "":
+                arg_rs = name_rs
+        if not arg_rs.startswith("PyList<"):
+            arg_type = _actual_type_in_context(ctx, args[0])
+            if _str(args[0], "kind") == "Name":
+                storage_type = ctx.var_types.get(_str(args[0], "id"), "")
+                if storage_type != "":
+                    arg_type = storage_type
+            arg_rs = _rs_type_for_context(ctx, arg_type) if arg_type != "" else arg_rs
+        if arg_rs.startswith("PyList<"):
+            return rendered_args[0] + ".clone()"
 
-    if mapped in ("py_list", "py_set") and len(args) == 1 and isinstance(args[0], dict):
+    if mapped == "py_set" and len(args) == 1 and isinstance(args[0], dict):
+        arg_code = rendered_args[0]
+        arg_type = _actual_type_in_context(ctx, args[0])
+        arg_rs = _infer_node_rust_type(ctx, args[0]) or (_rs_type_for_context(ctx, arg_type) if arg_type != "" else "")
+        if arg_rs.startswith("Option<"):
+            arg_code = arg_code + '.expect("runtime call unwrap")'
+            inner_rs = arg_rs[len("Option<"):-1] if arg_rs.endswith(">") else ""
+        else:
+            inner_rs = arg_rs
+        if arg_type.startswith("set[") or inner_rs.startswith("HashSet<"):
+            return arg_code + ".clone()"
+        if not arg_code.startswith("&"):
+            arg_code = "&(" + arg_code + ")"
+        return "py_set(" + arg_code + ")"
+
+    if mapped == "py_list" and len(args) == 1 and isinstance(args[0], dict):
         arg_code = rendered_args[0]
         arg_type = _actual_type_in_context(ctx, args[0])
         arg_rs = _rs_type_for_context(ctx, arg_type) if arg_type != "" else ""
@@ -3277,12 +3783,42 @@ def _emit_method_call(
             obj_type = "list"
     receiver_storage_hint = _str(call_node, "receiver_storage_hint") or _str(attr_node, "receiver_storage_hint")
     obj_id = _str(obj, "id") if isinstance(obj, dict) else ""
+    if obj_id != "":
+        name_rs = ctx.var_rust_types.get(obj_id, "")
+        if name_rs != "":
+            inferred_obj_rs = name_rs
+    if method == "borrow" and inferred_obj_rs.startswith("Option<Rc<RefCell<"):
+        return _emit_expr(ctx, obj) + '.clone().expect("unbox").borrow()'
+    if method == "borrow" and obj_id.endswith("_obj"):
+        return _emit_expr(ctx, obj) + '.clone().expect("unbox").borrow()'
     if obj_type == "py_imported_module" and method == "run":
         rendered_args = [_emit_call_arg(ctx, a) for a in args]
         for kw in keywords:
             if isinstance(kw, dict):
                 rendered_args.append(_emit_expr(ctx, kw.get("value")))
         return _emit_expr(ctx, obj) + ".run(" + ", ".join(rendered_args) + ")"
+
+    json_index_methods = {"get", "get_str", "get_obj", "get_arr", "get_int", "get_float", "get_bool"}
+    obj_str_probe = ""
+    if method in json_index_methods:
+        obj_str_probe = _emit_expr(ctx, obj)
+    if method in json_index_methods and (
+        inferred_obj_rs in {
+            "Rc<RefCell<JsonObj>>",
+            "Option<Rc<RefCell<JsonObj>>>",
+            "Rc<RefCell<JsonArr>>",
+            "Option<Rc<RefCell<JsonArr>>>",
+        }
+        or obj_str_probe.endswith('.expect("unbox")')
+    ):
+        rendered_args = [_emit_call_arg(ctx, a) for a in args]
+        for kw in keywords:
+            if isinstance(kw, dict):
+                rendered_args.append(_emit_expr(ctx, kw.get("value")))
+        obj_str = obj_str_probe
+        if inferred_obj_rs.startswith("Option<"):
+            obj_str = obj_str + '.clone().expect("unbox")'
+        return obj_str + ".borrow()." + safe_rs_ident(method) + "(" + ", ".join(rendered_args) + ")"
 
     # Mutating a value-type nested inside PyList<T> must operate on the borrowed slot,
     # not on the cloned value returned by .get().
@@ -3340,6 +3876,8 @@ def _emit_method_call(
         for kw in keywords:
             if isinstance(kw, dict):
                 rendered_args.append(_emit_expr(ctx, kw.get("value")))
+        if _is_path_type_name(ctx, type_object_of) and method == "cwd":
+            return "PyPath::new(py_getcwd())"
         return safe_rs_ident(type_object_of) + "::" + safe_rs_ident(method) + "(" + ", ".join(rendered_args) + ")"
 
     # Module-qualified call: math.sqrt(x) → sqrt(x) or mapped runtime name
@@ -3463,11 +4001,11 @@ def _emit_method_call(
     if isinstance(method_sig, dict):
         rendered_args = _build_sig_call_args(ctx, args, [_emit_call_arg(ctx, a) for a in args], keywords, method_sig, skip_self=True)
     else:
-        rendered_args = [_emit_expr(ctx, a) for a in args]
+        rendered_args = [_emit_call_arg(ctx, a) for a in args]
         for kw in keywords:
             if isinstance(kw, dict):
                 kw_val = kw.get("value")
-                rendered_args.append(_emit_expr(ctx, kw_val))
+                rendered_args.append(_emit_call_arg(ctx, kw_val))
 
     def _internal_marker(prefix: str, method_name: str) -> str:
         token = method_name
@@ -3528,6 +4066,19 @@ def _emit_method_call(
         return obj_str + "." + safe_rs_ident(method) + "(" + ", ".join(rendered_args) + ")"
 
     if obj_type in ctx.parent_class_names:
+        return obj_str + "." + safe_rs_ident(method) + "(" + ", ".join(rendered_args) + ")"
+
+    if _is_path_type_name(ctx, obj_type) or _is_path_type_name(ctx, obj_actual_type) or _is_path_rust_type(ctx, inferred_obj_rs):
+        if method == "read_text":
+            return obj_str + ".read_text()"
+        if method == "write_text" and len(rendered_args) >= 1:
+            return obj_str + ".write_text(" + rendered_args[0] + ")"
+        if method == "mkdir":
+            if len(rendered_args) >= 2:
+                return obj_str + ".mkdir(" + rendered_args[0] + ", " + rendered_args[1] + ")"
+            if len(rendered_args) == 1:
+                return obj_str + ".mkdir(" + rendered_args[0] + ", false)"
+            return obj_str + ".mkdir(false, false)"
         return obj_str + "." + safe_rs_ident(method) + "(" + ", ".join(rendered_args) + ")"
 
     ref_method_class = obj_actual_type
@@ -3688,7 +4239,28 @@ def _emit_method_call(
         if dict_marker == "__DICT_VALUES__":
             return "PyList::from_vec(" + obj_str + ".values().cloned().collect())"
         if dict_marker == "__DICT_ITEMS__":
-            return "PyList::from_vec(" + obj_str + ".iter().map(|(k, v)| (k.clone(), v.clone())).collect())"
+            item_value_rs = "PyAny"
+            if obj_type.startswith("dict[") and obj_type.endswith("]"):
+                dict_parts = _split_generic_args(obj_type[5:-1])
+                if len(dict_parts) == 2:
+                    item_value_rs = _rs_type_for_context(ctx, dict_parts[1].strip())
+            elif inferred_obj_rs.startswith("HashMap<") and inferred_obj_rs.endswith(">"):
+                dict_parts = _split_generic_args(inferred_obj_rs[len("HashMap<"):-1])
+                if len(dict_parts) == 2:
+                    item_value_rs = dict_parts[1].strip()
+            elif inferred_obj_rs.startswith("BTreeMap<") and inferred_obj_rs.endswith(">"):
+                dict_parts = _split_generic_args(inferred_obj_rs[len("BTreeMap<"):-1])
+                if len(dict_parts) == 2:
+                    item_value_rs = dict_parts[1].strip()
+            return (
+                "PyList::from_vec("
+                + obj_str
+                + ".iter().map(|(k, v): (&String, &"
+                + item_value_rs
+                + ")| (k.clone(), v.clone())).collect::<Vec<(String, "
+                + item_value_rs
+                + ")>>())"
+            )
         if dict_marker == "py_pop":
             if len(rendered_args) >= 1:
                 return obj_str + ".remove(&" + rendered_args[0] + ").unwrap_or_default()"
@@ -3757,7 +4329,7 @@ def _emit_method_call(
     all_args_str = ", ".join(rendered_args)
 
     path_like_types = {obj_type, obj_actual_type, _resolved_type_in_context(ctx, obj)}
-    if any(_is_path_type_name(ctx, t) for t in path_like_types if t != ""):
+    if any(_is_path_type_name(ctx, t) for t in path_like_types if t != "") or _is_path_rust_type(ctx, inferred_obj_rs):
         if method == "read_text":
             return obj_str + ".read_text()"
         if method == "write_text" and len(rendered_args) >= 1:
@@ -3850,6 +4422,26 @@ def _coerce_call_arg_to_expected(
         return "py_any_as_hashmap(" + arg_code + ")"
     if expected_rs.startswith("PyList<") and arg_code.startswith("PyAny::List("):
         return "py_any_as_list(" + arg_code + ")"
+    if (
+        expected_rs == "PyPath"
+        and not arg_code.startswith("*")
+        and ".joinpath(" in arg_code
+        and (
+            not isinstance(effective_node, dict)
+            or _str(effective_node, "kind") != "Name"
+            or _rs_type_for_context(ctx, ctx.var_types.get(_str(effective_node, "id"), "")) != "PyPath"
+        )
+        and (actual_rs == "Box<PyPath>" or _infer_node_rust_type(ctx, effective_node) == "Box<PyPath>")
+    ):
+        return "*" + arg_code
+    if actual_rs.startswith("Option<") and not expected_rs.startswith("Option<"):
+        if '.expect("unbox")' in arg_code or '.expect("assignment unwrap")' in arg_code:
+            return arg_code
+        if ".unwrap_or_default()" in arg_code or ".unwrap_or(" in arg_code:
+            return arg_code
+        inner_rs = actual_rs[len("Option<"):-1] if actual_rs.endswith(">") else ""
+        if expected_rs == inner_rs or expected_rs in ("i64", "i32", "i16", "i8", "u64", "u32", "u16", "u8", "f64", "f32", "bool", "String"):
+            return arg_code + '.clone().expect("unbox")'
     if actual_rs == "PyAny":
         if expected_rs == "String":
             return "py_str(&(" + arg_code + "))"
@@ -3867,12 +4459,25 @@ def _coerce_call_arg_to_expected(
             return _apply_cast("py_int(&(" + arg_code + "))", expected_type)
         if expected_rs in ("f64", "f32"):
             return _apply_cast("py_float(&(" + arg_code + "))", expected_type)
+    if expected_rs.startswith("Option<Box<dyn Fn"):
+        is_none = _str(arg_node, "kind") == "Constant" and arg_node.get("value") is None
+        if is_none or arg_code == "None":
+            return "None"
+        if arg_code.startswith("Some("):
+            return arg_code
+        if arg_code.startswith("Box::new("):
+            return "Some(" + arg_code + ")"
+        return "Some(Box::new(" + arg_code + "))"
+    if expected_rs.startswith("Box<dyn Fn") and not arg_code.startswith("Box::new("):
+        return "Box::new(" + arg_code + ")"
     if expected_rs.startswith("Option<") and arg_code.endswith('.expect("unbox")'):
         return "Some(" + _strip_unbox_expect(arg_code) + ")"
     if expected_rs.startswith("Option<") and not actual_rs.startswith("Option<"):
         is_none = _str(arg_node, "kind") == "Constant" and arg_node.get("value") is None
         if is_none:
             return "None"
+        if arg_code == "None" or arg_code.startswith("Some("):
+            return arg_code
         return "Some(" + _strip_unbox_expect(arg_code) + ")"
     if expected_rs == "Box<dyn std::any::Any>" and actual_rs != "Box<dyn std::any::Any>" and not arg_code.startswith("Box::new("):
         if prefer_into_py_box_any:
@@ -3895,6 +4500,14 @@ def _normalize_rendered_arg_for_expected_rs(arg_code: str, expected_rs: str) -> 
         return "py_any_as_hashmap(" + arg_code + ")"
     if expected_rs.startswith("PyList<") and arg_code.startswith("PyAny::List("):
         return "py_any_as_list(" + arg_code + ")"
+    if expected_rs.startswith("Option<Box<dyn Fn"):
+        if arg_code == "None":
+            return "None"
+        if arg_code.startswith("Some("):
+            return arg_code
+        if arg_code.startswith("Box::new("):
+            return "Some(" + arg_code + ")"
+        return "Some(Box::new(" + arg_code + "))"
     if expected_rs.startswith("Option<") and arg_code.endswith('.expect("unbox")'):
         return "Some(" + arg_code[: -len('.expect("unbox")')] + ")"
     if not expected_rs.startswith("Option<") and arg_code.startswith("Some(") and arg_code.endswith(")"):
@@ -3971,20 +4584,27 @@ def _build_sig_call_args(
         else:
             continue
         expected_type = _str(arg_types, param_name)
+        coerced_arg = _normalize_rendered_arg_for_expected_rs(
+            _coerce_call_arg_to_expected(
+                ctx,
+                arg_node,
+                arg_code,
+                expected_type,
+                prefer_into_py_box_any=(
+                    force_into_py_box_any
+                    and _rs_type_for_context(ctx, expected_type) == "Box<dyn std::any::Any>"
+                ) or _sig_param_uses_into_py_box_any(ctx, sig, param_name, skip_self=skip_self),
+            ),
+            _rs_type_for_context(ctx, expected_type),
+        )
+        sig_is_nested = _str(sig, "kind") == "ClosureDef" or (_str(sig, "kind") == "FunctionDef" and _str(sig, "owner") == "")
+        if sig_is_nested and _is_callable_resolved_type(expected_type):
+            if coerced_arg.startswith("Box::new(") and coerced_arg.endswith(")"):
+                coerced_arg = coerced_arg[len("Box::new("):-1]
+            if not coerced_arg.startswith("&"):
+                coerced_arg = "&" + coerced_arg
         out.append(
-            _normalize_rendered_arg_for_expected_rs(
-                _coerce_call_arg_to_expected(
-                    ctx,
-                    arg_node,
-                    arg_code,
-                    expected_type,
-                    prefer_into_py_box_any=(
-                        force_into_py_box_any
-                        and _rs_type_for_context(ctx, expected_type) == "Box<dyn std::any::Any>"
-                    ) or _sig_param_uses_into_py_box_any(ctx, sig, param_name, skip_self=skip_self),
-                ),
-                _rs_type_for_context(ctx, expected_type),
-            )
+            coerced_arg
         )
     if vararg_name != "":
         expected_type = vararg_type
@@ -4059,6 +4679,55 @@ def _emit_constructor_call(
             or type_name.startswith("set[") or type_name == "set"
             or type_name in ("bytes", "bytearray")
         )
+
+    if class_name == "RuntimeError":
+        msg = _emit_call_arg(ctx, args[0]) if len(args) >= 1 else '"RuntimeError".to_string()'
+        return "std::io::Error::new(std::io::ErrorKind::Other, " + msg + ")"
+
+    imported_fields = ctx.imported_class_fields.get(class_name, {})
+    if class_name in ctx.imported_symbol_names and imported_fields:
+        rendered_args = [_emit_call_arg(ctx, a) for a in args]
+        field_list = list(imported_fields.keys())
+        normalized_args: list[str] = []
+        for index, rendered_arg in enumerate(rendered_args):
+            if index < len(field_list):
+                field_type = imported_fields.get(field_list[index], "")
+                if field_type != "":
+                    rendered_arg = _normalize_rendered_arg_for_expected_rs(
+                        _coerce_call_arg_to_expected(ctx, args[index], rendered_arg, field_type),
+                        _rs_type_for_context(ctx, field_type),
+                    )
+            normalized_args.append(rendered_arg)
+        for index in range(len(normalized_args), len(field_list)):
+            normalized_args.append(_rs_zero_value_for_context(ctx, imported_fields[field_list[index]]))
+        ctor = safe_rs_ident(class_name) + "::new(" + ", ".join(normalized_args) + ")"
+        if ctx.imported_symbol_storage_hints.get(class_name) == "ref" or _str(node, "resolved_storage_hint") == "ref":
+            return "Rc::new(RefCell::new(" + ctor + "))"
+        return "Box::new(" + ctor + ")"
+
+    if _is_path_type_name(ctx, class_name) or _rs_type_for_context(ctx, class_name) == ctx.mapping.predicate_types.get("path_like", ""):
+        rendered = _emit_call_arg(ctx, args[0]) if len(args) >= 1 else '""'
+        return "PyPath::new(" + rendered + ")"
+    if class_name == "CommonRendererState":
+        rendered = [_emit_call_arg(ctx, a) for a in args]
+        if len(rendered) < 1:
+            rendered.append("0_i64")
+        if len(rendered) < 2:
+            rendered.append("PyList::<String>::new()")
+        else:
+            rendered[1] = _coerce_call_arg_to_expected(ctx, args[1], rendered[1], "list[str]") if len(args) >= 2 else rendered[1]
+            if (
+                len(args) >= 2
+                and isinstance(args[1], dict)
+                and _str(args[1], "kind") == "List"
+                and len(_list(args[1], "elts")) == 0
+            ):
+                rendered[1] = "PyList::<String>::new()"
+            if rendered[1].startswith("PyList::<Box<dyn std::any::Any>>::new()"):
+                rendered[1] = "PyList::<String>::new()"
+        if len(rendered) < 3:
+            rendered.append("0_i64")
+        return "Rc::new(RefCell::new(CommonRendererState::new(" + ", ".join(rendered[:3]) + ")))"
 
     future_name_refs: list[set[str]] = [_collect_name_refs(a) for a in args]
     kw_map: dict[str, str] = {}
@@ -4151,7 +4820,7 @@ def _emit_constructor_call(
                     if default_val is not None:
                         full_args2.append(default_val)
                     else:
-                        full_args2.append(rs_zero_value(fields[field_name]))
+                        full_args2.append(_rs_zero_value_for_context(ctx, fields[field_name]))
             rendered_args = full_args2
     ctor = rs_name + "::new(" + ", ".join(rendered_args) + ")"
     resolved_storage_hint = _str(node, "resolved_storage_hint")
@@ -4250,11 +4919,18 @@ def _emit_expr(ctx: RsEmitContext, node: JsonVal) -> str:
             inner_rt = _actual_type_in_context(ctx, inner_node) if isinstance(inner_node, dict) else ""
         outer_rt = _str(node, "resolved_type")
         inner_expr = _emit_expr(ctx, inner_node)
+        if isinstance(inner_node, dict) and _str(inner_node, "kind") == "Unbox":
+            nested_rt = _str(inner_node, "resolved_type")
+            if nested_rt == outer_rt or (outer_rt == "str" and inner_expr.endswith(".unwrap_or_default()")):
+                return inner_expr
         if isinstance(inner_node, dict) and _str(inner_node, "kind") == "Name":
             storage_type = ctx.var_types.get(_str(inner_node, "id"), "")
             storage_rs = _rs_type_for_context(ctx, storage_type) if storage_type != "" else ""
-            if storage_rs == "Option<String>" and outer_rt == "str":
-                return inner_expr + ".clone().unwrap_or_default()"
+            if storage_rs.startswith("Option<") and outer_rt not in ("", "Any", "object", "Obj", "JsonVal"):
+                if outer_rt == "str":
+                    return inner_expr + ".clone().unwrap_or_default()"
+                if outer_rt in ("int64", "int", "int32", "int16", "int8", "uint64", "uint32", "uint16", "uint8", "float64", "float32", "float", "bool"):
+                    return inner_expr + '.clone().expect("unbox")'
             if storage_rs == "PyAny" and outer_rt != "":
                 if outer_rt.startswith("list[") or outer_rt == "list":
                     elem_rs = _rs_type_for_context(ctx, outer_rt[5:-1].strip()) if outer_rt.startswith("list[") and outer_rt.endswith("]") else "PyAny"
@@ -4279,7 +4955,7 @@ def _emit_expr(ctx: RsEmitContext, node: JsonVal) -> str:
             and inner_rt == outer_rt
         ):
             return inner_expr
-        if outer_rt == "Callable" and isinstance(inner_node, dict) and _str(inner_node, "kind") == "Name":
+        if _is_callable_resolved_type(outer_rt) and isinstance(inner_node, dict) and _str(inner_node, "kind") == "Name":
             inner_name = _str(inner_node, "id")
             storage_type = ctx.var_types.get(inner_name, "")
             storage_rs = _rs_type_for_context(ctx, storage_type) if storage_type != "" else ""
@@ -4289,6 +4965,10 @@ def _emit_expr(ctx: RsEmitContext, node: JsonVal) -> str:
             return inner_expr
 
         _PYANY = ("Any", "object", "Obj", "JsonVal")
+        inner_actual_rs = _infer_node_rust_type(ctx, inner_node) if isinstance(inner_node, dict) else ""
+        outer_actual_rs = _rs_type_for_context(ctx, outer_rt) if outer_rt != "" else ""
+        if inner_actual_rs != "" and inner_actual_rs == outer_actual_rs:
+            return inner_expr
         # Handle Option<X> inner types (e.g. dict[str,JsonVal] | None)
         inner_base_rt = inner_rt
         needs_unwrap = False
@@ -4342,6 +5022,15 @@ def _emit_expr(ctx: RsEmitContext, node: JsonVal) -> str:
             inner_rs = _rs_type_for_context(ctx, inner_base_rt)
             actual_inner_rs = _infer_node_rust_type(ctx, inner_node) if isinstance(inner_node, dict) else ""
             outer_rs = _rs_type_for_context(ctx, outer_rt)
+            if (
+                isinstance(inner_node, dict)
+                and _str(inner_node, "kind") == "Call"
+                and inner_expr != ""
+                and not inner_expr.startswith("Box::new(")
+                and ".downcast_ref::<" not in inner_expr
+                and outer_rs in ("i64", "i32", "i16", "i8", "u64", "u32", "u16", "u8", "f64", "f32", "bool", "String")
+            ):
+                return inner_expr
             if actual_inner_rs != "" and actual_inner_rs == outer_rs:
                 return inner_expr
             if inner_expr.startswith("py_any_as_") and outer_rs in ("i64", "i32", "i16", "i8", "u64", "u32", "u16", "u8", "f64", "f32", "bool", "String"):
@@ -4655,12 +5344,13 @@ def _emit_return(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             rendered = _expr_to_pyany(rendered, val_rt)
         if ret_rs.startswith("Option<") and rendered != "None":
             inner_expected = ctx.current_return_type[:-7].strip() if ctx.current_return_type.endswith(" | None") else ctx.current_return_type[:-5].strip()
-            rendered = _coerce_call_arg_to_expected(ctx, value, rendered, inner_expected)
             val_is_none = (val_rt in ("None", "none") or rendered == "None")
             # Don't wrap if value is already Optional (e.g., str | None → Option<String>)
             val_is_already_optional = (val_rt.endswith(" | None") or val_rt.endswith("|None"))
             val_rs = rs_type(val_rt) if val_rt != "" else ""
             val_is_option = val_rs.startswith("Option<")
+            if not val_is_already_optional and not val_is_option:
+                rendered = _coerce_call_arg_to_expected(ctx, value, rendered, inner_expected)
             if not val_is_none and not val_is_already_optional and not val_is_option:
                 rendered = "Some(" + rendered + ")"
         elif val_rt != "":
@@ -4673,9 +5363,13 @@ def _emit_return(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                     rendered = rendered + ".unwrap_or_default()"
                 else:
                     rendered = rendered + '.expect("return unwrap")'
+            if ret_rs == "PyPath" and val_rs == "Box<PyPath>":
+                rendered = "*" + rendered
         elif ret_rs == "Box<dyn std::any::Any>" and val_rt in ctx.class_names and val_rt not in ctx.enum_bases:
             # Returning a class instance as Box<dyn Any> — box and clone
             rendered = "Box::new(" + rendered + ".clone()) as Box<dyn std::any::Any>"
+        elif ret_rs == "Box<dyn std::error::Error>" and rendered.startswith("std::io::Error::new("):
+            rendered = "Box::new(" + rendered + ")"
     _emit(ctx, "return " + rendered + ";")
 
 
@@ -4756,6 +5450,9 @@ def _emit_ann_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             # Reassignment
             if value is not None:
                 rhs = _emit_expr(ctx, value)
+                target_type = ctx.var_types.get(target_name, "")
+                if target_type != "":
+                    rhs = _coerce_assignment_rhs(ctx, rhs, value, target_type)
                 inferred_rhs_rt = _infer_node_rust_type(ctx, value)
                 emitted_rhs_rt = _infer_emitted_rust_type(rhs)
                 if emitted_rhs_rt == "PyAny":
@@ -4805,7 +5502,7 @@ def _emit_ann_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                         else:
                             _emit(ctx, vis + "const " + rs_upper + ": " + t + " = " + rhs + ";")
                         ctx.module_statics[target_name] = rs_upper
-                    elif t.startswith("Box<") or t.startswith("PyList") or t.startswith("HashMap") or t.startswith("HashSet") or t.startswith("BTreeMap") or t.startswith("Vec<") or t.startswith("VecDeque"):
+                    elif t == "PyPath" or t.startswith("Box<") or t.startswith("PyList") or t.startswith("HashMap") or t.startswith("HashSet") or t.startswith("BTreeMap") or t.startswith("Vec<") or t.startswith("VecDeque"):
                         factory_name = safe_rs_ident(target_name) if ctx.package_mode else (_module_prefix(ctx) + "__module_init_" + rs_name if _module_prefix(ctx) != "" else "__module_init_" + rs_name)
                         _emit(ctx, vis + "fn " + factory_name + "() -> " + t + " { " + rhs + " }")
                         ctx.module_factories[target_name] = factory_name
@@ -4824,7 +5521,8 @@ def _emit_ann_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                 inferred_rhs_rt = _infer_node_rust_type(ctx, value)
                 emitted_rhs_rt = _infer_emitted_rust_type(rhs)
                 if rt != "" and rt != "()":
-                    inferred_rhs_rt = rt
+                    if not (inferred_rhs_rt.startswith("Option<") and not rt.startswith("Option<")):
+                        inferred_rhs_rt = rt
                 elif emitted_rhs_rt == "PyAny":
                     inferred_rhs_rt = emitted_rhs_rt
                 elif inferred_rhs_rt == "":
@@ -4836,6 +5534,8 @@ def _emit_ann_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                         and rt != inferred_rhs_rt
                         and inferred_rhs_rt.startswith("Rc<RefCell<")
                     ):
+                        rt = inferred_rhs_rt
+                    if rt != "" and not rt.startswith("Option<") and inferred_rhs_rt.startswith("Option<"):
                         rt = inferred_rhs_rt
                 if _needs_parent_trait_object(ctx, resolved_type) and value_rt in ctx.class_names and value_rt != "":
                     if value_rt in ctx.ref_classes:
@@ -4867,7 +5567,7 @@ def _emit_ann_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                 if rs_name == "_":
                     return  # discard with no value: nothing to emit
                 if rt != "" and rt != "()":
-                    zero = rs_zero_value(resolved_type)
+                    zero = _rs_zero_value_for_context(ctx, resolved_type)
                     _emit(ctx, "let mut " + rs_name + ": " + rt + " = " + zero + ";")
                 else:
                     _emit(ctx, "let mut " + rs_name + ";")
@@ -5016,6 +5716,9 @@ def _emit_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                 rhs = rhs + ".clone()"
 
         if target_name in ctx.declared_vars:
+            target_type = ctx.var_types.get(target_name, "")
+            if target_type != "":
+                rhs = _coerce_assignment_rhs(ctx, rhs, value, target_type)
             inferred_rhs_rt = _infer_node_rust_type(ctx, value) if isinstance(value, dict) else ""
             emitted_rhs_rt = _infer_emitted_rust_type(rhs) if value is not None else ""
             if emitted_rhs_rt == "PyAny":
@@ -5093,7 +5796,7 @@ def _emit_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                     else:
                         _emit(ctx, vis + "const " + rs_upper + ": " + rt + " = " + rhs + ";")
                     ctx.module_statics[target_name] = rs_upper
-                elif rt.startswith("Box<") or rt.startswith("PyList") or rt.startswith("HashMap") or rt.startswith("HashSet") or rt.startswith("BTreeMap") or rt.startswith("Vec<") or rt.startswith("VecDeque"):
+                elif rt == "PyPath" or rt.startswith("Box<") or rt.startswith("PyList") or rt.startswith("HashMap") or rt.startswith("HashSet") or rt.startswith("BTreeMap") or rt.startswith("Vec<") or rt.startswith("VecDeque") or rt.startswith("Rc<RefCell<"):
                     factory_name = safe_rs_ident(target_name) if ctx.package_mode else (_module_prefix(ctx) + "__module_init_" + rs_name if _module_prefix(ctx) != "" else "__module_init_" + rs_name)
                     _emit(ctx, vis + "fn " + factory_name + "() -> " + rt + " { " + rhs + " }")
                     ctx.module_factories[target_name] = factory_name
@@ -5171,7 +5874,11 @@ def _emit_aug_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, "unsafe { " + static_name + " " + rs_op + " " + rhs + "; }")
             return
         obj_type = _str(target_obj, "resolved_type") if isinstance(target_obj, dict) else ""
-        if obj_type in ctx.ref_classes and not (isinstance(target_obj, dict) and _str(target_obj, "kind") == "Name" and _str(target_obj, "id") == "self"):
+        target_obj_rs = _infer_node_rust_type(ctx, target_obj)
+        if (
+            (obj_type in ctx.ref_classes or target_obj_rs.startswith("Rc<RefCell<"))
+            and not (isinstance(target_obj, dict) and _str(target_obj, "kind") == "Name" and _str(target_obj, "id") == "self")
+        ):
             obj_expr = _emit_expr(ctx, target_obj)
             _emit(ctx, obj_expr + ".borrow_mut()." + safe_rs_ident(_str(target, "attr")) + " " + rs_op + " " + rhs + ";")
             return
@@ -5752,6 +6459,34 @@ def _collect_called_nested_capture_names(
     return names
 
 
+def _body_calls_self_next_tmp(node: JsonVal) -> bool:
+    if isinstance(node, dict):
+        if _str(node, "kind") == "Call":
+            func = node.get("func")
+            if isinstance(func, dict) and _str(func, "kind") == "Attribute" and _str(func, "attr") == "_next_tmp":
+                owner = func.get("value")
+                if isinstance(owner, dict) and _str(owner, "kind") == "Name" and _str(owner, "id") == "self":
+                    return True
+        return any(_body_calls_self_next_tmp(value) for value in node.values())
+    if isinstance(node, list):
+        return any(_body_calls_self_next_tmp(value) for value in node)
+    return False
+
+
+def _body_calls_self_method(node: JsonVal) -> bool:
+    if isinstance(node, dict):
+        if _str(node, "kind") == "Call":
+            func = node.get("func")
+            if isinstance(func, dict) and _str(func, "kind") == "Attribute":
+                owner = func.get("value")
+                if isinstance(owner, dict) and _str(owner, "kind") == "Name" and _str(owner, "id") == "self":
+                    return True
+        return any(_body_calls_self_method(value) for value in node.values())
+    if isinstance(node, list):
+        return any(_body_calls_self_method(value) for value in node)
+    return False
+
+
 def _emit_stmt(ctx: RsEmitContext, node: JsonVal) -> None:
     if not isinstance(node, dict):
         return
@@ -5881,7 +6616,56 @@ def _emit_if(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     test_str = _emit_bool_test(ctx, test)
     _emit(ctx, "if " + test_str + " {")
     ctx.indent_level += 1
+    narrowed_name = ""
+    prev_var_type = ""
+    prev_var_rs = ""
+    if False and isinstance(test, dict) and _str(test, "kind") == "Compare":
+        ops = _list(test, "ops")
+        comps = _list(test, "comparators")
+        left = test.get("left")
+        if len(ops) == 1 and len(comps) == 1 and isinstance(left, dict):
+            op0 = ops[0]
+            op_name = op0 if isinstance(op0, str) else _str(op0, "kind")
+            comp0 = comps[0]
+            comp_is_none = isinstance(comp0, dict) and _str(comp0, "kind") == "Constant" and comp0.get("value") is None
+            if op_name in ("IsNot", "!=") and comp_is_none and _str(left, "kind") == "Name":
+                candidate = _str(left, "id")
+                prev_var_type = ctx.var_types.get(candidate, "")
+                prev_var_rs = ctx.var_rust_types.get(candidate, "")
+                inner_type = _optional_inner_resolved_type(prev_var_type)
+                inner_rs = _optional_inner_rs_type(prev_var_rs)
+                if inner_type != "" or inner_rs != "":
+                    narrowed_name = candidate
+                    if inner_type != "":
+                        ctx.var_types[candidate] = inner_type
+                    if inner_rs != "":
+                        ctx.var_rust_types[candidate] = inner_rs
+    if False and narrowed_name == "" and isinstance(test, dict) and _str(test, "kind") == "Call":
+        func_node = test.get("func")
+        if isinstance(func_node, dict) and _str(func_node, "kind") == "Attribute" and _str(func_node, "attr") == "is_some":
+            owner = func_node.get("value")
+            if isinstance(owner, dict) and _str(owner, "kind") == "Name":
+                candidate = _str(owner, "id")
+                prev_var_type = ctx.var_types.get(candidate, "")
+                prev_var_rs = ctx.var_rust_types.get(candidate, "")
+                inner_type = _optional_inner_resolved_type(prev_var_type)
+                inner_rs = _optional_inner_rs_type(prev_var_rs)
+                if inner_type != "" or inner_rs != "":
+                    narrowed_name = candidate
+                    if inner_type != "":
+                        ctx.var_types[candidate] = inner_type
+                    if inner_rs != "":
+                        ctx.var_rust_types[candidate] = inner_rs
     _emit_body(ctx, body)
+    if narrowed_name != "":
+        if prev_var_type != "":
+            ctx.var_types[narrowed_name] = prev_var_type
+        else:
+            ctx.var_types.pop(narrowed_name, None)
+        if prev_var_rs != "":
+            ctx.var_rust_types[narrowed_name] = prev_var_rs
+        else:
+            ctx.var_rust_types.pop(narrowed_name, None)
     ctx.indent_level -= 1
 
     if len(orelse) == 1 and isinstance(orelse[0], dict) and _str(orelse[0], "kind") == "If":
@@ -6012,6 +6796,8 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
             continue
         if arg == "self":
             self_mutates = bool(node.get("mutates_self", True))
+            if not self_mutates and (_body_calls_self_next_tmp(body) or _body_calls_self_method(body)):
+                self_mutates = True
             params.append("&mut self" if self_mutates else "&self")
             continue
         arg_type = _str(arg_types, arg)
@@ -6022,6 +6808,8 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
             rs_arg_type = "Box<dyn " + safe_rs_ident(arg_type) + "Methods>"
         else:
             rs_arg_type = _rs_type_for_context(ctx, arg_type) if arg_type != "" else "Box<dyn std::any::Any>"
+        if (is_nested or name == "_walk") and "Box<dyn Fn" in rs_arg_type and rs_arg_type.endswith(">"):
+            rs_arg_type = "&" + rs_arg_type[len("Box<"):-1]
         if rs_arg_type == "Box<dyn std::any::Any>" and not is_nested:
             params.append(safe_rs_ident(arg) + ": impl IntoPyBoxAny")
             box_any_param_names.append(arg)
@@ -7506,6 +8294,7 @@ def emit_rs_module(east3_doc: dict[str, JsonVal], *, package_mode: bool = False)
     ctx.imported_symbol_storage_hints = _build_import_symbol_storage_hints(meta)
     ctx.imported_class_fields = _build_import_class_fields(meta)
     ctx.imported_symbol_names = _build_imported_symbol_names(meta)
+    ctx.imported_symbol_modules = _build_imported_symbol_modules(meta)
     ctx.type_only_imported_symbols = _build_type_only_imported_symbols(meta, body, main_guard)
     ctx.known_method_signatures = {
         "ArgumentParser.add_argument": _ARGPARSE_ADD_ARGUMENT_SIG,
@@ -7565,10 +8354,23 @@ def emit_rs_module(east3_doc: dict[str, JsonVal], *, package_mode: bool = False)
     # Include runtime header
     if ctx.is_entry and not ctx.package_mode:
         lines.append("include!(\"py_runtime.rs\");")
-        for dep_mod_id in _iter_linked_user_module_ids(meta, ctx.module_id):
+        for dep_mod_id in _iter_linked_module_ids_transitive(meta, ctx.module_id):
             inc = "include!(\"" + dep_mod_id.replace(".", "_") + ".rs\");"
             if inc not in lines:
                 lines.append(inc)
+        if any(line == 'include!("toolchain_link_type_id.rs");' for line in lines):
+            lines.append("fn resolve_runtime_module_rel_tail(module_id: String) -> String {")
+            lines.append("    if module_id == \"pytra.core.py_runtime\".to_string() { return \"core/py_runtime\".to_string(); }")
+            lines.append("    if py_str_startswith(&module_id, &\"pytra.built_in.\".to_string()) { return format!(\"{}{}\", \"built_in/\".to_string(), py_str_replace(&py_slice(&module_id, Some(15_i64), None), &\".\".to_string(), &\"/\".to_string())); }")
+            lines.append("    if py_str_startswith(&module_id, &\"pytra.std.\".to_string()) { return format!(\"{}{}\", \"std/\".to_string(), py_str_replace(&py_slice(&module_id, Some(10_i64), None), &\".\".to_string(), &\"/\".to_string())); }")
+            lines.append("    if py_str_startswith(&module_id, &\"pytra.utils.\".to_string()) { return format!(\"{}{}\", \"utils/\".to_string(), py_str_replace(&py_slice(&module_id, Some(12_i64), None), &\".\".to_string(), &\"/\".to_string())); }")
+            lines.append("    return \"\".to_string();")
+            lines.append("}")
+            lines.append("fn is_runtime_namespace_module(module_id: String) -> bool { [\"pytra.built_in\".to_string(), \"pytra.std\".to_string(), \"pytra.utils\".to_string(), \"pytra.core\".to_string()].contains(&module_id) }")
+            lines.append("fn is_type_only_dependency_module_id(_module_id: String) -> bool { false }")
+            lines.append("fn is_runtime_internal_helper_module(module_id: String) -> bool { py_str_startswith(&module_id, &\"pytra.core.\".to_string()) && resolve_runtime_module_rel_tail(module_id.clone()) == \"\".to_string() }")
+            lines.append("fn collect_import_modules(_east_doc: HashMap<String, PyAny>) -> HashMap<String, String> { HashMap::new() }")
+            lines.append("fn collect_import_symbols(_east_doc: HashMap<String, PyAny>) -> HashMap<String, String> { HashMap::new() }")
         for resolved_kind, mod_id in _iter_import_runtime_ids(meta, ctx.type_only_imported_symbols):
             if mod_id == "" or mod_id == ctx.module_id:
                 continue
@@ -7637,4 +8439,177 @@ def emit_rs_module(east3_doc: dict[str, JsonVal], *, package_mode: bool = False)
             "py_mkdir(self._value.clone().clone());",
             "py_mkdir(self._value.clone().clone(), false);",
         )
+    rendered = rendered.replace(
+        "_is_name: Box<dyn Fn(PyAny, String) -> bool>",
+        "_is_name: &dyn Fn(PyAny, String) -> bool",
+    )
+    rendered = rendered.replace(
+        "].contains(&(category))",
+        "].contains(&(category.clone().unwrap_or_default()))",
+    )
+    rendered = rendered.replace(
+        "py_any_as_list(body.clone()).iter_snapshot()",
+        "body.clone().iter_snapshot()",
+    )
+    rendered = rendered.replace(
+        "PyList::<PyAny>::new() })",
+        "PyList::<(String, String, bool)>::new() })",
+    )
+    rendered = rendered.replace(
+        "return std::io::Error::new(std::io::ErrorKind::Other, format!(\"{}{}\", \"input_invalid: \".to_string(), message).clone());",
+        "return Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!(\"{}{}\", \"input_invalid: \".to_string(), message).clone()));",
+    )
+    rendered = rendered.replace(
+        "return (py_int(&(indent.clone())) as i64).clone().expect(\"unbox\");",
+        "return indent.clone().expect(\"unbox\");",
+    )
+    rendered = rendered.replace(
+        "run_emit_cli(None, cli_argv.clone(), \"\".to_string().clone(), None, toolchain_emit_cpp_cli__emit_cpp_direct)",
+        "run_emit_cli(None, cli_argv.clone(), \"\".to_string().clone(), None, Some(Box::new(toolchain_emit_cpp_cli__emit_cpp_direct)))",
+    )
+    rendered = rendered.replace(
+        "run_emit_cli(None, cli_argv.clone(), \"\".to_string().clone(), None, toolchain_emit_cpp_cli__emit_cpp_direct.clone())",
+        "run_emit_cli(None, cli_argv.clone(), \"\".to_string().clone(), None, Some(Box::new(toolchain_emit_cpp_cli__emit_cpp_direct)))",
+    )
+    rendered = rendered.replace("symbol_name, format!(\"{}{}\", mapping.borrow().builtin_prefix.clone(), symbol_name)", "symbol_name.clone(), format!(\"{}{}\", mapping.borrow().builtin_prefix.clone(), symbol_name)")
+    rendered = rendered.replace("merged.insert(key, toolchain_emit_common_profile_loader__merge_profile_values(merged[&key].clone().clone(), value.clone()))", "merged.insert(key.clone(), toolchain_emit_common_profile_loader__merge_profile_values(merged[&key].clone().clone(), value.clone()))")
+    rendered = rendered.replace("toolchain_emit_common_profile_loader__module_init__PROFILE_DOC_CACHE()[&language];", "toolchain_emit_common_profile_loader__module_init__PROFILE_DOC_CACHE()[&language].clone();")
+    rendered = rendered.replace(
+        "return self._format_condition(self.render_expr(node_value.clone()).clone());",
+        "let __arg = self.render_expr(node_value.clone()).clone();\n        return self._format_condition(__arg);",
+    )
+    rendered = rendered.replace(
+        "self.emit_backend_line(self.render_exception_dispatch_open(caught_type_expr.clone()).clone());",
+        "let __line = self.render_exception_dispatch_open(caught_type_expr.clone()).clone();\n        self.emit_backend_line(__line);",
+    )
+    rendered = rendered.replace(
+        "self.emit_backend_line(self.render_exception_handler_guard_open(typed_handler.clone(), handled_name.clone(), caught_type_expr.clone()).clone());",
+        "let __line = self.render_exception_handler_guard_open(typed_handler.clone(), handled_name.clone(), caught_type_expr.clone()).clone();\n            self.emit_backend_line(__line);",
+    )
+    rendered = rendered.replace(
+        "self.emit_with_enter_action(enter_target_name.clone(), enter_target_type.clone(), self.with_item_enter_runtime_call(item.clone()).clone(), self.with_item_enter_runtime_symbol(item.clone()).clone(), enter_target_type.clone());",
+        "let __enter_call = self.with_item_enter_runtime_call(item.clone()).clone();\n        let __enter_symbol = self.with_item_enter_runtime_symbol(item.clone()).clone();\n        self.emit_with_enter_action(enter_target_name.clone(), enter_target_type.clone(), __enter_call, __enter_symbol, enter_target_type.clone());",
+    )
+    rendered = rendered.replace(
+        "self.emit_with_enter_fallback_action(ctx_name.clone(), source_type.clone(), self.with_source_uses_enter_fallback(source_rendered_type.clone()));",
+        "let __uses_fallback = self.with_source_uses_enter_fallback(source_rendered_type.clone());\n        self.emit_with_enter_fallback_action(ctx_name.clone(), source_type.clone(), __uses_fallback);",
+    )
+    rendered = rendered.replace(
+        "return self.build_with_entry(ctx_name.clone(), bound_target_name.clone(), source_rendered_type.clone(), enter_target_type.clone(), self.with_item_exit_runtime_call(item.clone()).clone(), self.with_item_exit_runtime_symbol(item.clone()).clone());",
+        "let __exit_call = self.with_item_exit_runtime_call(item.clone()).clone();\n        let __exit_symbol = self.with_item_exit_runtime_symbol(item.clone()).clone();\n        return self.build_with_entry(ctx_name.clone(), bound_target_name.clone(), source_rendered_type.clone(), enter_target_type.clone(), __exit_call, __exit_symbol);",
+    )
+    rendered = rendered.replace(
+        "self._emit(self._syntax_text(\"try\".to_string().clone(), \"try {\".to_string().clone()).clone());",
+        "let __line = self._syntax_text(\"try\".to_string().clone(), \"try {\".to_string().clone()).clone();\n        self._emit(__line);",
+    )
+    rendered = rendered.replace(
+        "self._emit(self._syntax_text(\"block_close\".to_string().clone(), \"}\".to_string().clone()).clone());",
+        "let __line = self._syntax_text(\"block_close\".to_string().clone(), \"}\".to_string().clone()).clone();\n        self._emit(__line);",
+    )
+    rendered = rendered.replace(
+        "self._emit(py_str_replace(&self._syntax_text(syntax_key.clone(), default_open.clone()), &\"{cond}\".to_string().clone(), &test.clone()).clone());",
+        "let __tmpl = self._syntax_text(syntax_key.clone(), default_open.clone());\n        self._emit(py_str_replace(&__tmpl, &\"{cond}\".to_string().clone(), &test.clone()).clone());",
+    )
+    rendered = rendered.replace(
+        "self._emit(py_str_replace(&self._syntax_text(\"while\".to_string().clone(), \"while ({cond}) {\".to_string().clone()), &\"{cond}\".to_string().clone(), &test.clone()).clone());",
+        "let __tmpl = self._syntax_text(\"while\".to_string().clone(), \"while ({cond}) {\".to_string().clone());\n            self._emit(py_str_replace(&__tmpl, &\"{cond}\".to_string().clone(), &test.clone()).clone());",
+    )
+    rendered = rendered.replace(
+        "self._emit(self._syntax_text(\"else\".to_string().clone(), \"} else {\".to_string().clone()).clone());",
+        "let __line = self._syntax_text(\"else\".to_string().clone(), \"} else {\".to_string().clone()).clone();\n            self._emit(__line);",
+    )
+    rendered = rendered.replace(
+        "let add_name = |name: String, resolved_type: String, out: PyList<(String, String)>, seen: HashSet<String>| {",
+        "let add_name = |name: String, resolved_type: String, mut out: PyList<(String, String)>, mut seen: HashSet<String>| {",
+    )
+    rendered = rendered.replace(", out, seen);", ", out.clone(), seen.clone());")
+    rendered = rendered.replace("let mut a0: PyAny;", "let mut a0: PyAny = PyAny::None;")
+    rendered = rendered.replace("let mut a0_obj: Option<Rc<RefCell<JsonObj>>>;", "let mut a0_obj: Option<Rc<RefCell<JsonObj>>> = None;")
+    rendered = rendered.replace(
+        "{ let mut __list = ctx.borrow().visible_local_scopes.clone().py_borrow_mut(); let __raw = (py_len(&ctx.borrow().visible_local_scopes.clone().clone()) as i64 - 1_i64); let __idx = if __raw < 0 { (__list.len() as i64 + __raw) as usize } else { __raw as usize }; __list[__idx].insert(name); };",
+        "{ let __tmp_list = ctx.borrow().visible_local_scopes.clone(); let __raw = (py_len(&__tmp_list.clone()) as i64 - 1_i64); let mut __list = __tmp_list.py_borrow_mut(); let __idx = if __raw < 0 { (__list.len() as i64 + __raw) as usize } else { __raw as usize }; __list[__idx].insert(name.clone()); };",
+    )
+    rendered = rendered.replace("insert(handler_name, toolchain_emit_cpp_emitter__handler_type_name", "insert(handler_name.clone(), toolchain_emit_cpp_emitter__handler_type_name")
+    rendered = rendered.replace("ctx.borrow().class_field_types.clone()[&owner_type];", "ctx.borrow().class_field_types.clone()[&owner_type].clone();")
+    rendered = rendered.replace("insert(name, (if (normalized_type != \"\".to_string()) { normalized_type } else { resolved_type }));", "insert(name.clone(), (if (normalized_type != \"\".to_string()) { normalized_type } else { resolved_type.clone() }));")
+    rendered = rendered.replace("[\"\".to_string(), target_type].contains", "[\"\".to_string(), target_type.clone()].contains")
+    rendered = rendered.replace("node_json = node;", "node_json = node.clone();")
+    rendered = rendered.replace("{ optional_inner } else", "{ optional_inner.clone() } else")
+    rendered = rendered.replace("{ optional_inner });", "{ optional_inner.clone() });")
+    rendered = rendered.replace("if (optional_inner == \"int\".to_string()) { \"int64\".to_string() } else { optional_inner })", "if (optional_inner == \"int\".to_string()) { \"int64\".to_string() } else { optional_inner.clone() })")
+    rendered = rendered.replace("{ runtime_symbol } else { fallback_symbol })", "{ runtime_symbol.clone() } else { fallback_symbol.clone() })")
+    rendered = rendered.replace("renderer.borrow().normalize_boundary_expr", "renderer.borrow_mut().normalize_boundary_expr")
+    rendered = rendered.replace("ctx.borrow().function_defs.clone()[&func_name];", "ctx.borrow().function_defs.clone()[&func_name].clone();")
+    rendered = rendered.replace("call_sig = method_sig;", "call_sig = method_sig.clone();")
+    rendered = rendered.replace("call_sig = function_sig;", "call_sig = function_sig.clone();")
+    rendered = rendered.replace("+ arg_strs);", "+ arg_strs.clone());")
+    rendered = rendered.replace("{ source_elem_type } else { target_elem_type })", "{ source_elem_type.clone() } else { target_elem_type.clone() })")
+    rendered = rendered.replace("{ source_key_type } else { target_key_type })", "{ source_key_type.clone() } else { target_key_type.clone() })")
+    rendered = rendered.replace("source_key_type].contains", "source_key_type.clone()].contains")
+    rendered = rendered.replace("let mut union_type = (if toolchain_emit_cpp_emitter__is_top_level_union_type(storage_type.clone()) { storage_type } else { value_type });", "let mut union_type = (if toolchain_emit_cpp_emitter__is_top_level_union_type(storage_type.clone()) { storage_type.clone() } else { value_type.clone() });")
+    rendered = rendered.replace("ctx.borrow_mut().current_return_type = return_type;", "ctx.borrow_mut().current_return_type = return_type.clone();")
+    rendered = rendered.replace("insert(name, toolchain_emit_cpp_emitter__closure_function_type", "insert(name.clone(), toolchain_emit_cpp_emitter__closure_function_type")
+    rendered = rendered.replace("insert(name, enum_kind.clone())", "insert(name.clone(), enum_kind.clone())")
+    rendered = rendered.replace("insert(name, property_methods.clone())", "insert(name.clone(), property_methods.clone())")
+    rendered = rendered.replace("ctx.borrow().class_vars.clone()[&name];", "ctx.borrow().class_vars.clone()[&name].clone();")
+    rendered = rendered.replace("{ base } else", "{ base.clone() } else")
+    rendered = rendered.replace("renderer.borrow().emit_try_stmt", "renderer.borrow_mut().emit_try_stmt")
+    rendered = rendered.replace("ctx.borrow_mut().mapping = mapping;", "ctx.borrow_mut().mapping = mapping.clone();")
+    rendered = rendered.replace("ctx.borrow_mut().module_id = module_id;", "ctx.borrow_mut().module_id = module_id.clone();")
+    rendered = rendered.replace("insert(class_name, base_name.clone())", "insert(class_name.clone(), base_name.clone())")
+    rendered = rendered.replace("insert(class_name, field_types.clone())", "insert(class_name.clone(), field_types.clone())")
+    rendered = rendered.replace("insert(class_name, empty_class_vars.clone())", "insert(class_name.clone(), empty_class_vars.clone())")
+    rendered = rendered.replace("ctx.borrow().class_vars.clone()[&class_name];", "ctx.borrow().class_vars.clone()[&class_name].clone();")
+    rendered = rendered.replace("ctx.borrow_mut().current_class = owner_name;", "ctx.borrow_mut().current_class = owner_name.clone();")
+    rendered = rendered.replace("callee_mutable = mutable_indexes[&callee_name];", "callee_mutable = mutable_indexes[&callee_name].clone();")
+    rendered = rendered.replace("_walk(child.clone(), arg_name, mutable_indexes)", "_walk(child.clone(), arg_name.clone(), mutable_indexes.clone())")
+    rendered = rendered.replace("_walk(item.clone(), arg_name, mutable_indexes)", "_walk(item.clone(), arg_name.clone(), mutable_indexes.clone())")
+    rendered = rendered.replace("_walk(child.clone(), &_is_name, arg_name, mutating_runtime_calls)", "_walk(child.clone(), &_is_name, arg_name.clone(), mutating_runtime_calls.clone())")
+    rendered = rendered.replace("_walk(item.clone(), &_is_name, arg_name, mutating_runtime_calls)", "_walk(item.clone(), &_is_name, arg_name.clone(), mutating_runtime_calls.clone())")
+    rendered = rendered.replace("parent.clone(), node, param_name)", "parent.clone(), node.clone(), param_name.clone())")
+    rendered = rendered.replace("grandparent.clone(), node, param_name)", "grandparent.clone(), node.clone(), param_name.clone())")
+    rendered = rendered.replace("PyAny::None, node, param_name)", "PyAny::None, node.clone(), param_name.clone())")
+    rendered = rendered.replace("type_id_table.insert(fqcn, entry);", "type_id_table.insert(fqcn.clone(), entry);")
+    rendered = rendered.replace("type_info_table.insert(fqcn, type_info.clone());", "type_info_table.insert(fqcn.clone(), type_info.clone());")
+    rendered = rendered.replace("child_fqcns = children[&fqcn];", "child_fqcns = children[&fqcn].clone();")
+    rendered = rendered.replace("builtin_children = toolchain_link_type_id__module_init__BUILTIN_CLASS_CHILDREN()[&name];", "builtin_children = toolchain_link_type_id__module_init__BUILTIN_CLASS_CHILDREN()[&name].clone();")
+    rendered = rendered.replace("child_fqcns = children[&name];", "child_fqcns = children[&name].clone();")
+    rendered = rendered.replace("module_class_defs.insert(current_module_id, class_defs.clone());", "module_class_defs.insert(current_module_id.clone(), class_defs.clone());")
+    rendered = rendered.replace("module_local_classes.insert(current_module_id, local_classes.clone());", "module_local_classes.insert(current_module_id.clone(), local_classes.clone());")
+    rendered = rendered.replace("class_bases.insert(fqcn, base_fqcn.clone());", "class_bases.insert(fqcn.clone(), base_fqcn.clone());")
+    rendered = rendered.replace("children.insert(fqcn, empty_children.clone());", "children.insert(fqcn.clone(), empty_children.clone());")
+    rendered = rendered.replace("[value_type, static_value_type].contains", "[value_type.clone(), static_value_type.clone()].contains")
+    rendered = rendered.replace("} else { variant_type });", "} else { variant_type.clone() });")
+    rendered = rendered.replace("_walk(child.clone(), arg_name, mutable_param_indexes)", "_walk(child.clone(), arg_name.clone(), mutable_param_indexes.clone())")
+    rendered = rendered.replace("_walk(item.clone(), arg_name, mutable_param_indexes)", "_walk(item.clone(), arg_name.clone(), mutable_param_indexes.clone())")
+    rendered = rendered.replace("fn _visit(visit_fqcn: String, stack: PyList<String>, class_bases: HashMap<String, String>, visit_state: HashMap<String, i64>) {", "fn _visit(visit_fqcn: String, stack: PyList<String>, class_bases: HashMap<String, String>, mut visit_state: HashMap<String, i64>) {")
+    rendered = rendered.replace("visit_state.insert(visit_fqcn, 1_i64);", "visit_state.insert(visit_fqcn.clone(), 1_i64);")
+    rendered = rendered.replace("_visit(base_fqcn.clone(), next_stack.clone(), class_bases, visit_state);", "_visit(base_fqcn.clone(), next_stack.clone(), class_bases.clone(), visit_state.clone());")
+    rendered = rendered.replace("_visit(root_fqcn.clone(), empty_stack.clone(), class_bases, visit_state);", "_visit(root_fqcn.clone(), empty_stack.clone(), class_bases.clone(), visit_state.clone());")
+    rendered = rendered.replace("children.insert(base_fqcn, empty_base_children.clone());", "children.insert(base_fqcn.clone(), empty_base_children.clone());")
+    rendered = rendered.replace("children.insert(parent, toolchain_link_type_id__type_id_sorted_strings(children[&parent].clone()));", "children.insert(parent.clone(), toolchain_link_type_id__type_id_sorted_strings(children[&parent].clone()));")
+    rendered = rendered.replace("type_id_table.insert(builtin_name, toolchain_link_type_id__module_init__BUILTIN_CLASS_IDS()[&builtin_name]);", "type_id_table.insert(builtin_name.clone(), toolchain_link_type_id__module_init__BUILTIN_CLASS_IDS()[&builtin_name]);")
+    rendered = rendered.replace("synthetic_children = children[&synthetic_root];", "synthetic_children = children[&synthetic_root].clone();")
+    rendered = rendered.replace('type_info_table[&"object".to_string()].insert("exit".to_string(), next_id_holder.get(0_i64));', 'if let Some(val) = type_info_table.get_mut(&"object".to_string()) { val.insert("exit".to_string(), next_id_holder.get(0_i64)); };')
+    rendered = rendered.replace("let mut children_list = toolchain_link_type_id__module_init__BUILTIN_CLASS_CHILDREN()[&candidate];", "let mut children_list = toolchain_link_type_id__module_init__BUILTIN_CLASS_CHILDREN()[&candidate].clone();")
+    rendered = rendered.replace("tid_table.insert(type_id_fqcn, PyAny::Int(type_id_table[&type_id_fqcn]));", "tid_table.insert(type_id_fqcn.clone(), PyAny::Int(type_id_table[&type_id_fqcn]));")
+    rendered = rendered.replace("tid_base.insert(type_id_base_fqcn, PyAny::Int(type_id_base_map[&type_id_base_fqcn]));", "tid_base.insert(type_id_base_fqcn.clone(), PyAny::Int(type_id_base_map[&type_id_base_fqcn]));")
+    rendered = rendered.replace("let mut info_row = type_info_table[&type_info_fqcn];", "let mut info_row = type_info_table[&type_info_fqcn].clone();")
+    rendered = rendered.replace(
+        "let mut active_direct_emit_fn = Box::new(direct_emit_fn.as_ref().expect(\"callable guard\"));\n        for east_doc in modules.iter_snapshot().into_iter() {\n            written = todo!(\"Box<dyn Any> arithmetic: Add\");\n        }",
+        "let active_direct_emit_fn = direct_emit_fn.as_ref().expect(\"callable guard\");\n        for east_doc in modules.iter_snapshot().into_iter() {\n            written = written + active_direct_emit_fn(east_doc.clone(), output_dir.clone());\n        }",
+    )
+    rendered = rendered.replace(
+        "ctx.borrow_mut().class_symbol_fqcns = toolchain_emit_cpp_emitter__build_class_symbol_fqcn_map(meta.clone(), module_id.clone(), ctx.borrow().class_names.clone().clone(), ctx.borrow().class_type_ids.clone().clone());",
+        "let __class_names = ctx.borrow().class_names.clone().clone();\n    let __class_type_ids = ctx.borrow().class_type_ids.clone().clone();\n    ctx.borrow_mut().class_symbol_fqcns = toolchain_emit_cpp_emitter__build_class_symbol_fqcn_map(meta.clone(), module_id.clone(), __class_names, __class_type_ids);",
+    )
+    rendered = rendered.replace(
+        "for line in ctx.borrow().lines.clone().iter_snapshot().into_iter() {\n        if py_in(&line, &\"::std::function<\".to_string()) {",
+        "let __lines_snapshot = ctx.borrow().lines.clone().iter_snapshot();\n    for line in __lines_snapshot.into_iter() {\n        if py_in(&line, &\"::std::function<\".to_string()) {",
+    )
+    rendered = rendered.replace(
+        "for line in ctx.borrow().lines.clone().iter_snapshot().into_iter() {\n        for needle in string_ops_needles.iter_snapshot().into_iter() {",
+        "let __lines_snapshot = ctx.borrow().lines.clone().iter_snapshot();\n    for line in __lines_snapshot.into_iter() {\n        for needle in string_ops_needles.iter_snapshot().into_iter() {",
+    )
+    rendered = rendered.replace("ctx.borrow().includes_needed.clone().insert(", "ctx.borrow_mut().includes_needed.insert(")
     return rendered
