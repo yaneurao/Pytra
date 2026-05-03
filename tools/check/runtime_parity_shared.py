@@ -791,7 +791,7 @@ def build_emitted_target_artifact(
         entry = _find_entry_file(emit_dir, stems, ".nim")
         if entry is None:
             return subprocess.CompletedProcess("", 1, "", "entry .nim file not found")
-        return run_shell("nim c --hints:off --verbosity:0 --warning[UnusedImport]:off --passC:-w " + shlex.quote(f"--nimcache:{emit_dir / 'nimcache_selfhost'}") + " " + shlex.quote(f"-o:{bin_path}") + " " + shlex.quote(str(entry)), cwd=work_dir, env=env, timeout_sec=timeout_sec)
+        return run_shell("nim c --mm:arc --hints:off --verbosity:0 --warning[UnusedImport]:off --passC:-w " + shlex.quote(f"--nimcache:{emit_dir / 'nimcache_selfhost'}") + " " + shlex.quote(f"-o:{bin_path}") + " " + shlex.quote(str(entry)), cwd=work_dir, env=env, timeout_sec=timeout_sec)
 
     if target == "zig":
         entry = _find_entry_file(emit_dir, stems, ".zig")

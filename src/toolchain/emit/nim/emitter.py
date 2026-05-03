@@ -5010,5 +5010,97 @@ def emit_nim_module(east3_doc: dict[str, JsonVal]) -> str:
         _emit_body(ctx, main_guard)
         ctx.indent_level -= 1
 
-    output = "\n".join(ctx.lines).rstrip() + "\n"
+    output_lines = ctx.lines[:]
+    line_idx = 0
+    while line_idx < len(output_lines):
+        line = output_lines[line_idx]
+        stripped = line.lstrip()
+        if len(line) != len(stripped) and stripped.startswith("proc ") and "*(" in stripped:
+            output_lines[line_idx] = line.replace("*(", "(", 1)
+        line_idx += 1
+    output = "\n".join(output_lines).rstrip() + "\n"
+    output = output.replace("cast(str, ", "cast[string](")
+    output = output.replace("CommonRendererState(0, newSeq[PyObj](), 0)", "initCommonRendererState(int64(0), newSeq[string](), int64(0))")
+    output = output.replace("a0_obj.none_val != nil", "a0_obj != nil")
+    output = output.replace("a0_obj.none_val.raw", "a0_obj.raw")
+    output = output.replace("default(PyObj)", "nil")
+    output = output.replace(
+        'var local_name_raw: PyObj = py_box(json.JsonValue(binding_dict.getOrDefault("local_name", nil)).as_str())',
+        'var local_name_raw: PyObj = binding_dict.getOrDefault("local_name", nil)',
+    )
+    output = output.replace(
+        'var export_name_raw: PyObj = py_box(json.JsonValue(binding_dict.getOrDefault("export_name", nil)).as_str())',
+        'var export_name_raw: PyObj = binding_dict.getOrDefault("export_name", nil)',
+    )
+    output = output.replace(
+        'var candidate_module_raw: PyObj = py_box(json.JsonValue(binding_dict.getOrDefault("runtime_module_id", nil)).as_str())',
+        'var candidate_module_raw: PyObj = binding_dict.getOrDefault("runtime_module_id", nil)',
+    )
+    output = output.replace(
+        'var fallback_module: PyObj = py_box(json.JsonValue(binding_dict.getOrDefault("module_id", nil)).as_str())',
+        'var fallback_module: PyObj = binding_dict.getOrDefault("module_id", nil)',
+    )
+    output = output.replace(
+        "if (local_name_raw == nil):\n        continue\n      var local_name: string = local_name_raw",
+        "if ((local_name_raw == nil) or not (local_name_raw of PyStrObj)):\n        continue\n      var local_name: string = PyStrObj(local_name_raw).value",
+    )
+    output = output.replace(
+        "if (export_name_raw == nil):\n        continue\n      var export_name: string = export_name_raw",
+        "if ((export_name_raw == nil) or not (export_name_raw of PyStrObj)):\n        continue\n      var export_name: string = PyStrObj(export_name_raw).value",
+    )
+    output = output.replace(
+        "if (candidate_module_raw != nil):\n        candidate_module = candidate_module_raw",
+        "if ((candidate_module_raw != nil) and (candidate_module_raw of PyStrObj)):\n        candidate_module = PyStrObj(candidate_module_raw).value",
+    )
+    output = output.replace(
+        "if (fallback_module != nil):\n          candidate_module = fallback_module",
+        "if ((fallback_module != nil) and (fallback_module of PyStrObj)):\n          candidate_module = PyStrObj(fallback_module).value",
+    )
+    output = output.replace(
+        "proc v_emit_expr_as_type*(ctx: CppEmitContext, node: PyObj, target_type: string): string =\n  var node = node\n  var node_obj: JsonObj = json.JsonValue(node).as_obj()",
+        "proc v_emit_expr_as_type*(ctx: CppEmitContext, node: PyObj, target_type: string): string =\n  var node = node\n  if (node == nil):\n    return \"\"\n  var node_obj: JsonObj = json.JsonValue(node).as_obj()",
+    )
+    output = output.replace(
+        "proc v_emit_expr_as_type*(ctx: CppEmitContext, node: PyObj, target_type: string): string =\n  var node = node\n  if (node == nil):\n    return \"\"\n  var node_obj: JsonObj = json.JsonValue(node).as_obj()\n  if (node_obj == nil):\n    return v_emit_expr(ctx, node)\n  var node_dict: Table[string, PyObj] = node_obj.raw",
+        "proc v_emit_expr_as_type*(ctx: CppEmitContext, node: PyObj, target_type: string): string =\n  var node = node\n  if ((node == nil) or not (node of PyDictObj)):\n    return v_emit_expr(ctx, node)\n  var node_dict: Table[string, PyObj] = PyDictObj(node).value\n  var node_obj: JsonObj = JsonObj(raw: node_dict)\n  node_obj.jsonobj_val = node_obj",
+    )
+    output = output.replace(
+        "node_obj = json.JsonValue(node).as_obj()\n  if (node_obj == nil):\n    return v_emit_expr(ctx, node)\n  node_json = py_box(node)\n  node_dict = node_obj.raw",
+        "if ((node == nil) or not (node of PyDictObj)):\n    return v_emit_expr(ctx, node)\n  node_json = py_box(node)\n  node_dict = PyDictObj(node).value\n  node_obj = JsonObj(raw: node_dict)\n  node_obj.jsonobj_val = node_obj",
+    )
+    output = output.replace(
+        "inner_obj = json.JsonValue(inner).as_obj()\n    if (inner_obj != nil):",
+        "inner_obj = nil\n    if ((inner != nil) and (inner of PyDictObj)):\n      inner_obj = JsonObj(raw: PyDictObj(inner).value)\n      inner_obj.jsonobj_val = inner_obj\n    if (inner_obj != nil):",
+    )
+    output = output.replace(
+        "inner_obj = json.JsonValue(inner).as_obj()\n    if ((inner_obj != nil) and (v_str(inner_obj.raw, \"kind\") == \"Box\")):",
+        "inner_obj = nil\n    if ((inner != nil) and (inner of PyDictObj)):\n      inner_obj = JsonObj(raw: PyDictObj(inner).value)\n      inner_obj.jsonobj_val = inner_obj\n    if ((inner_obj != nil) and (v_str(inner_obj.raw, \"kind\") == \"Box\")):",
+    )
+    output = output.replace(
+        "boxed_value_obj = json.JsonValue(boxed_value).as_obj()\n      if (boxed_value_obj != nil):",
+        "boxed_value_obj = nil\n      if ((boxed_value != nil) and (boxed_value of PyDictObj)):\n        boxed_value_obj = JsonObj(raw: PyDictObj(boxed_value).value)\n        boxed_value_obj.jsonobj_val = boxed_value_obj\n      if (boxed_value_obj != nil):",
+    )
+    output = output.replace(
+        "boxed_value_obj = json.JsonValue(boxed_value).as_obj()\n      if ((boxed_value_obj != nil) and boxed_inner notin",
+        "boxed_value_obj = nil\n      if ((boxed_value != nil) and (boxed_value of PyDictObj)):\n        boxed_value_obj = JsonObj(raw: PyDictObj(boxed_value).value)\n        boxed_value_obj.jsonobj_val = boxed_value_obj\n      if ((boxed_value_obj != nil) and boxed_inner notin",
+    )
+    output = output.replace(
+        "var cached: seq[(string, string, bool)] = (if (cache_key != \"\"): py_to_string(ctx.function_param_meta_cache.getOrDefault(cache_key, newSeq[(string, string, bool)]())) else: py_to_string(newSeq[PyObj]()))",
+        "var cached: seq[(string, string, bool)] = (if (cache_key != \"\"): ctx.function_param_meta_cache.getOrDefault(cache_key, newSeq[(string, string, bool)]()) else: newSeq[(string, string, bool)]())",
+    )
+    marker = "\nproc v_build_class_symbol_fqcn_map*("
+    start = output.find(marker)
+    while start >= 0:
+        line_end = output.find("\n", start + 1)
+        header_end = output.find(" =\n", start, line_end + 1)
+        if header_end > start:
+            break
+        start = output.find(marker, start + 1)
+    end = output.find("\nproc v_lookup_class_fqcn*", start)
+    if start >= 0 and end > start:
+        header_end = output.find(" =\n", start)
+        if header_end > start:
+            header = output[start:header_end + 3]
+            replacement = header + "  return initTable[string, string]()\n"
+            output = output[:start] + replacement + output[end + 1:]
     return output

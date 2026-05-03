@@ -26,7 +26,7 @@ converter toJsonValue*(raw: seq[PyObj]): JsonValue =
   JsonValue(raw: py_box(raw))
 
 proc as_str*(value: JsonValue): PyObj =
-  if value.isNil:
+  if value.isNil or value.raw.isNil:
     return nil
   if value.raw != nil and value.raw of PyStrObj:
     return value.raw
@@ -54,7 +54,7 @@ proc as_bool*(value: JsonValue): PyObj =
   return nil
 
 proc as_arr*(value: JsonValue): JsonArr =
-  if value.isNil:
+  if value.isNil or value.raw.isNil:
     return nil
   if value.raw != nil and value.raw of PyListObj:
     result = JsonArr(raw: PyListObj(value.raw).value)
@@ -63,7 +63,7 @@ proc as_arr*(value: JsonValue): JsonArr =
   return nil
 
 proc as_obj*(value: JsonValue): JsonObj =
-  if value.isNil:
+  if value.isNil or value.raw.isNil:
     return nil
   if value.raw != nil and value.raw of PyDictObj:
     result = JsonObj(raw: PyDictObj(value.raw).value)
