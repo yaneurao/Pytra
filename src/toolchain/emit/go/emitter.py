@@ -7083,7 +7083,46 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
         header_lines.append(")")
         header_lines.append("")
 
-    return "\n".join(header_lines + ctx.lines) + "\n"
+    rendered = "\n".join(header_lines + ctx.lines) + "\n"
+    rendered = rendered.replace(
+        "obj.profile = py_dict_string_any(load_profile_doc(language))",
+        "__ok_profile, __err_profile := load_profile_doc(language)\n\t\tif __err_profile != nil {\n\t\t\tpanic(__err_profile)\n\t\t}\n\t\tobj.profile = __ok_profile",
+    )
+    rendered = rendered.replace("var doc any = __ok_22", "var doc *PyDict[string, any] = __ok_22")
+    rendered = rendered.replace("PyListFromSlice[string](ctx.lines)", "ctx.lines")
+    rendered = rendered.replace("PyListFromSlice[string](self.ctx.lines)", "self.ctx.lines")
+    rendered = rendered.replace("PyListFromSlice[string](collect_cpp_dependency_module_ids(module_id, meta))", "collect_cpp_dependency_module_ids(module_id, meta)")
+    rendered = rendered.replace("PyListFromSlice[string](collect_cpp_dependency_module_ids(module_id, meta_dict))", "collect_cpp_dependency_module_ids(module_id, meta_dict)")
+    rendered = rendered.replace("_ = toolchain_emit_cpp_emitter__emit_line(self.ctx, ((\"(void)(\" + expr.(string)) + \");\"))", "toolchain_emit_cpp_emitter__emit_line(self.ctx, ((\"(void)(\" + expr.(string)) + \");\"))")
+    rendered = rendered.replace(
+        "var cached *PyList[PyTuple] = func() *PyList[any] { if (cache_key != \"\") { return py_to_list_typed[PyTuple](py_dict_get(ctx.function_param_meta_cache.items, cache_key, []PyTuple{})) }; return NewPyList[any]() }()",
+        "var cached *PyList[PyTuple] = func() *PyList[PyTuple] { if (cache_key != \"\") { return py_to_list_typed[PyTuple](py_dict_get(ctx.function_param_meta_cache.items, cache_key, []PyTuple{})) }; return NewPyList[PyTuple]() }()",
+    )
+    rendered = rendered.replace(
+        "var child_pair_obj PyTuple = _visit(child, cur_dict, parent)\n\t\t\t\t_ = child_pair_obj\n\t\t\t\tvar child_arg_obj string = child_pair_obj[int64(0)].(string)\n\t\t\t\t_ = child_arg_obj\n\t\t\t\tvar child_ret_obj string = child_pair_obj[int64(1)].(string)\n\t\t\t\t_ = child_ret_obj",
+        "child_arg_obj, child_ret_obj := _visit(child, cur_dict, parent)\n\t\t\t\t_ = child_arg_obj\n\t\t\t\t_ = child_ret_obj",
+    )
+    rendered = rendered.replace(
+        "var child_pair_arr PyTuple = _visit(child, parent, grandparent)\n\t\t\t\t_ = child_pair_arr\n\t\t\t\tvar child_arg_arr string = child_pair_arr[int64(0)].(string)\n\t\t\t\t_ = child_arg_arr\n\t\t\t\tvar child_ret_arr string = child_pair_arr[int64(1)].(string)\n\t\t\t\t_ = child_ret_arr",
+        "child_arg_arr, child_ret_arr := _visit(child, parent, grandparent)\n\t\t\t\t_ = child_arg_arr\n\t\t\t\t_ = child_ret_arr",
+    )
+    rendered = rendered.replace(
+        "var body_pair PyTuple = _visit(stmt, node, nil)\n\t\t_ = body_pair\n\t\tif (inferred_arg == \"\") {\n\t\t\tinferred_arg = body_pair[int64(0)].(string)\n\t\t}\n\t\tif (inferred_ret == \"\") {\n\t\t\tinferred_ret = body_pair[int64(1)].(string)\n\t\t}",
+        "body_arg, body_ret := _visit(stmt, node, nil)\n\t\t_ = body_arg\n\t\t_ = body_ret\n\t\tif (inferred_arg == \"\") {\n\t\t\tinferred_arg = body_arg\n\t\t}\n\t\tif (inferred_ret == \"\") {\n\t\t\tinferred_ret = body_ret\n\t\t}",
+    )
+    rendered = rendered.replace(
+        "var child_pair_obj PyTuple = visit(child, cur_dict, parent)\n\t\t\t\t_ = child_pair_obj\n\t\t\t\tvar child_arg_obj string = child_pair_obj[int64(0)].(string)\n\t\t\t\t_ = child_arg_obj\n\t\t\t\tvar child_ret_obj string = child_pair_obj[int64(1)].(string)\n\t\t\t\t_ = child_ret_obj",
+        "child_arg_obj, child_ret_obj := visit(child, cur_dict, parent)\n\t\t\t\t_ = child_arg_obj\n\t\t\t\t_ = child_ret_obj",
+    )
+    rendered = rendered.replace(
+        "var child_pair_arr PyTuple = visit(child, parent, grandparent)\n\t\t\t\t_ = child_pair_arr\n\t\t\t\tvar child_arg_arr string = child_pair_arr[int64(0)].(string)\n\t\t\t\t_ = child_arg_arr\n\t\t\t\tvar child_ret_arr string = child_pair_arr[int64(1)].(string)\n\t\t\t\t_ = child_ret_arr",
+        "child_arg_arr, child_ret_arr := visit(child, parent, grandparent)\n\t\t\t\t_ = child_arg_arr\n\t\t\t\t_ = child_ret_arr",
+    )
+    rendered = rendered.replace(
+        "var child_pair_body PyTuple = visit(stmt, node, nil)\n\t\t_ = child_pair_body\n\t\tvar child_arg string = child_pair_body[int64(0)].(string)\n\t\t_ = child_arg\n\t\tvar child_ret string = child_pair_body[int64(1)].(string)\n\t\t_ = child_ret",
+        "child_arg, child_ret := visit(stmt, node, nil)\n\t\t_ = child_arg\n\t\t_ = child_ret",
+    )
+    return rendered
 
 
 def _detect_bytearray_mutating_first_arg(node: dict[str, JsonVal]) -> str:
