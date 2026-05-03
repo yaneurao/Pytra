@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from dataclasses import field
+from typing import cast
 
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
@@ -130,15 +131,80 @@ def _dict(node: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
     return {}
 
 
+def _last_dotted_part(value: str) -> str:
+    dot = value.rfind(".")
+    if dot < 0:
+        return value
+    return value[dot + 1:]
+
+
+def _mapping_call(ctx: EmitContext, key: str, fallback: str) -> str:
+    if key in ctx.mapping.calls:
+        return ctx.mapping.calls[key]
+    return fallback
+
+
+def _set_dict_contains(values: dict[str, set[str]], key: str, item: str) -> bool:
+    if key in values:
+        return item in values[key]
+    return False
+
+
+def _json_list_contains_text(values: list[JsonVal], key: str) -> bool:
+    for value in values:
+        if isinstance(value, str):
+            value_text = cast(str, value)
+            if value_text == key:
+                return True
+    return False
+
+
+def _nested_str_dict_value(values: dict[str, dict[str, str]], key: str, item: str, fallback: str) -> str:
+    if key in values:
+        bucket = values[key]
+        if item in bucket:
+            return bucket[item]
+    return fallback
+
+
+def _str_dict_value(values: dict[str, str], key: str, fallback: str) -> str:
+    if key in values:
+        return values[key]
+    return fallback
+
+
+def _has_type_lane_prefix(lanes: list[str], prefix: str) -> bool:
+    for part in lanes:
+        if part.startswith(prefix):
+            return True
+    return False
+
+
+def _json_str_value(value: JsonVal, fallback: str) -> str:
+    if isinstance(value, str):
+        return cast(str, value)
+    return fallback
+
+
 def _lua_symbol_name(ctx: EmitContext, name: str) -> str:
     """Return safe Lua identifier, applying renamed_symbols."""
     if name == "self":
         return "self"
-    name = name.strip("() \t")
-    renamed = ctx.renamed_symbols.get(name, "")
+    raw_name = _strip_lua_symbol_decorators(name)
+    renamed = ctx.renamed_symbols.get(raw_name, "")
     if renamed != "":
         return _safe_lua_ident(renamed)
-    return _safe_lua_ident(name)
+    return _safe_lua_ident(raw_name)
+
+
+def _strip_lua_symbol_decorators(name: str) -> str:
+    start = 0
+    end = len(name)
+    while start < end and name[start] in ("(", ")", " ", "\t"):
+        start += 1
+    while end > start and name[end - 1] in ("(", ")", " ", "\t"):
+        end -= 1
+    return name[start:end]
 
 
 def _quote_string(value: str) -> str:
@@ -304,11 +370,11 @@ def _is_numeric_type(type_name: str) -> bool:
 def _is_union_error_return_type(ctx: EmitContext, type_name: str) -> bool:
     if type_name.startswith("multi_return[") and type_name.endswith("]"):
         inner = type_name[len("multi_return["):-1]
-        parts = _split_generic_args(inner)
+        parts: list[str] = _split_generic_args(inner)
         return len(parts) == 2 and (parts[1] == "PytraError" or _is_exception_type_name(ctx, parts[1]))
     if type_name == "PytraError" or _is_exception_type_name(ctx, type_name):
         return True
-    parts = _split_union_types(type_name)
+    parts: list[str] = _split_union_types(type_name)
     if len(parts) < 2:
         return False
     has_error = False
@@ -321,13 +387,14 @@ def _is_union_error_return_type(ctx: EmitContext, type_name: str) -> bool:
 def _union_error_value_type(ctx: EmitContext, type_name: str) -> str:
     if type_name.startswith("multi_return[") and type_name.endswith("]"):
         inner = type_name[len("multi_return["):-1]
-        parts = _split_generic_args(inner)
+        parts: list[str] = _split_generic_args(inner)
         if len(parts) == 2 and (parts[1] == "PytraError" or _is_exception_type_name(ctx, parts[1])):
             return parts[0]
         return ""
     if type_name == "PytraError" or _is_exception_type_name(ctx, type_name):
         return "None"
-    for part in _split_union_types(type_name):
+    parts: list[str] = _split_union_types(type_name)
+    for part in parts:
         if part == "PytraError" or _is_exception_type_name(ctx, part):
             continue
         return part
@@ -350,12 +417,15 @@ def _is_guaranteed_lua_truthy_expr(node: JsonVal) -> bool:
     if kind != "Constant":
         return False
     value = node.get("value")
-    if value is True:
-        return True
+    if isinstance(value, bool):
+        value_bool = cast(bool, value)
+        return value_bool
     if isinstance(value, (int, float)):
-        return value != 0
+        value_number = cast(int, value)
+        return value_number != 0
     if isinstance(value, str):
-        return value != ""
+        value_text = cast(str, value)
+        return value_text != ""
     return False
 
 
@@ -457,21 +527,28 @@ def _emit_error_check(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     _emit_error_propagation(ctx, err_tmp, allow_current_catch=(on_error == "catch"))
     ctx.indent_level -= 1
     _emit(ctx, "end")
-    assign_node: dict[str, JsonVal] = {
-        "kind": "Assign",
-        "target": ok_target,
-        "value": {"kind": "Name", "id": ok_tmp, "resolved_type": ok_type},
-        "declare": isinstance(ok_target, dict) and _str(ok_target, "kind") == "Name" and _lua_symbol_name(ctx, _str(ok_target, "id")) not in ctx.declared_locals,
-        "decl_type": ok_type,
-        "resolved_type": ok_type,
-    }
-    _emit_assign(ctx, assign_node)
+    if isinstance(ok_target, dict):
+        target_code = _emit_assign_target(ctx, ok_target)
+        if _str(ok_target, "kind") == "Name":
+            target_name = _str(ok_target, "id")
+            safe_target = _lua_symbol_name(ctx, target_name)
+            if safe_target not in ctx.declared_locals:
+                ctx.declared_locals.add(safe_target)
+                if ok_type != "":
+                    ctx.var_types[safe_target] = ok_type
+                _emit(ctx, "local " + safe_target + " = " + ok_tmp)
+                return
+        _emit(ctx, target_code + " = " + ok_tmp)
 
 
 def _emit_error_catch(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     body = _list(node, "body")
     handlers = _list(node, "handlers")
     finalbody = _list(node, "finalbody")
+    _emit_error_catch_parts(ctx, body, handlers, finalbody)
+
+
+def _emit_error_catch_parts(ctx: EmitContext, body: list[JsonVal], handlers: list[JsonVal], finalbody: list[JsonVal]) -> None:
     catch_err_var = _next_temp(ctx, "caught_err")
     handler_label = _next_temp(ctx, "catch_handler")
     matched_var = _next_temp(ctx, "catch_matched")
@@ -603,11 +680,14 @@ def _emit_constant(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if value is None:
         return "nil"
     if isinstance(value, bool):
-        return "true" if value else "false"
+        value_bool = cast(bool, value)
+        return "true" if value_bool else "false"
     if isinstance(value, str):
-        return _quote_string(value)
+        value_str = cast(str, value)
+        return _quote_string(value_str)
     if isinstance(value, float):
-        s = str(value)
+        value_float = cast(float, value)
+        s = str(value_float)
         if s == "inf":
             return "math.huge"
         if s == "-inf":
@@ -663,15 +743,15 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 namespace_expr = ctx.mapping.module_namespace_exprs.get(mod_id, "")
                 if namespace_expr != "":
                     return namespace_expr + "." + _safe_lua_ident(attr)
-                mod_short = mod_id.rsplit(".", 1)[-1]
+                mod_short = _last_dotted_part(mod_id)
                 qualified_key = mod_short + "." + runtime_symbol
                 if qualified_key in ctx.mapping.calls:
                     return ctx.mapping.calls[qualified_key]
-                resolved = resolve_runtime_symbol_name(runtime_symbol, ctx.mapping, module_id=mod_id)
+                resolved: str = resolve_runtime_symbol_name(runtime_symbol, ctx.mapping, module_id=mod_id)
                 return resolved
         if _str(node, "attribute_access_kind") == "property_getter":
             return owner + ":" + _safe_lua_ident(attr) + "()"
-        if attr in ctx.class_property_methods.get(owner_rt, set()):
+        if _set_dict_contains(ctx.class_property_methods, owner_rt, attr):
             return owner + ":" + _safe_lua_ident(attr) + "()"
     owner = _emit_expr(ctx, owner_node)
     return owner + "." + _safe_lua_ident(attr)
@@ -691,12 +771,11 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     keywords = _list(node, "keywords")
     func_node = node.get("func")
 
-    meta = node.get("meta")
-    copy_elision_meta = meta.get("copy_elision_safe_v1") if isinstance(meta, dict) else None
+    meta = _dict(node, "meta")
+    copy_elision_meta = _dict(meta, "copy_elision_safe_v1")
     copy_elision_safe = (
-        isinstance(copy_elision_meta, dict)
-        and copy_elision_meta.get("schema_version") == 1
-        and copy_elision_meta.get("operation") == "bytes_from_bytearray"
+        _int(copy_elision_meta, "schema_version") == 1
+        and _str(copy_elision_meta, "operation") == "bytes_from_bytearray"
         and len(arg_strs) >= 1
     )
 
@@ -761,8 +840,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             for kw in keywords:
                 if not isinstance(kw, dict):
                     continue
-                key = kw.get("arg")
-                if not isinstance(key, str) or key == "":
+                key = _str(kw, "arg")
+                if key == "":
                     continue
                 parts.append(key + " = " + _emit_expr(ctx, kw.get("value")))
             if len(parts) > 0:
@@ -776,11 +855,11 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     # Resolve mapped call name
     call_name = ""
     if runtime_call != "":
-        mapped = ctx.mapping.calls.get(runtime_call, "")
+        mapped = _mapping_call(ctx, runtime_call, "")
         if mapped != "":
             call_name = mapped
     if call_name == "" and resolved_rt_call != "":
-        mapped = ctx.mapping.calls.get(resolved_rt_call, "")
+        mapped = _mapping_call(ctx, resolved_rt_call, "")
         if mapped != "":
             call_name = mapped
 
@@ -1020,7 +1099,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 linked = _emit_linked_type_id_isinstance(ctx, args)
                 if linked is not None:
                     return linked
-            mapped = ctx.mapping.calls.get(func_id, "")
+            mapped = _mapping_call(ctx, func_id, "")
             if mapped != "":
                 if mapped == "__CAST__":
                     return _emit_cast_call(ctx, node, args)
@@ -1058,13 +1137,13 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                             runtime_symbol = _str(func_node, "runtime_symbol")
                         if runtime_symbol == "":
                             runtime_symbol = attr
-                        mod_short = mod_id.rsplit(".", 1)[-1]
+                        mod_short = _last_dotted_part(mod_id)
                         qualified_key = mod_short + "." + runtime_symbol
-                        mapped = ctx.mapping.calls.get(qualified_key, "")
+                        mapped = _mapping_call(ctx, qualified_key, "")
                         if mapped != "":
                             return mapped + "(" + ", ".join(arg_strs) + ")"
                     return owner + "." + _safe_lua_ident(attr) + "(" + ", ".join(arg_strs) + ")"
-                if dispatch_kind == "static_method" or (owner_id in ctx.class_names and attr in ctx.class_static_methods.get(owner_id, set())):
+                if dispatch_kind == "static_method" or (owner_id in ctx.class_names and _set_dict_contains(ctx.class_static_methods, owner_id, attr)):
                     return owner + "." + _safe_lua_ident(attr) + "(" + ", ".join(arg_strs) + ")"
                 # String methods
                 if owner_rt == "str" or owner_rt == "string":
@@ -1079,7 +1158,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 elif owner_rt == "bytearray":
                     owner_method_key = "bytearray." + attr
                 if owner_method_key != "":
-                    mapped_owner_call = ctx.mapping.calls.get(owner_method_key, "")
+                    mapped_owner_call = _mapping_call(ctx, owner_method_key, "")
                     owner_args = [owner] + arg_strs
                     if mapped_owner_call == "__DICT_GET__":
                         if len(owner_args) >= 3:
@@ -1221,7 +1300,7 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         owner_base = owner_node.get("value")
         if isinstance(owner_base, dict) and _str(owner_base, "kind") == "Name":
             owner_base_id = _str(owner_base, "id")
-            owner_rt = ctx.class_fields.get(owner_base_id, {}).get(attr, owner_rt)
+            owner_rt = _nested_str_dict_value(ctx.class_fields, owner_base_id, attr, owner_rt)
     slice_node = node.get("slice")
     if isinstance(slice_node, dict) and _str(slice_node, "kind") == "Slice":
         lower = slice_node.get("lower")
@@ -1229,13 +1308,13 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         lower_code = _emit_expr(ctx, lower) if isinstance(lower, dict) else "nil"
         upper_code = _emit_expr(ctx, upper) if isinstance(upper, dict) else "nil"
         return "__pytra_slice(" + owner + ", " + lower_code + ", " + upper_code + ")"
-    union_lanes = [part.strip() for part in owner_rt.split("|")]
-    is_dict_type = owner_rt.startswith("dict[") or owner_rt == "dict" or any(part.startswith("dict[") for part in union_lanes)
+    union_lanes: list[str] = _split_union_types(owner_rt)
+    is_dict_type = owner_rt.startswith("dict[") or owner_rt == "dict" or _has_type_lane_prefix(union_lanes, "dict[")
     if is_dict_type and isinstance(slice_node, dict):
         slice_code = _emit_expr(ctx, slice_node)
         return owner + "[" + slice_code + "]"
     # For lists: adjust to 1-based index
-    is_list_type = owner_rt.startswith("list[") or owner_rt in ("list", "bytes", "bytearray") or any(part.startswith("list[") for part in union_lanes)
+    is_list_type = owner_rt.startswith("list[") or owner_rt in ("list", "bytes", "bytearray") or _has_type_lane_prefix(union_lanes, "list[")
     is_tuple_type = owner_rt.startswith("tuple[") or owner_rt == "tuple"
     is_str_type = owner_rt in ("str", "string")
     if (is_list_type or is_tuple_type) and isinstance(slice_node, dict):
@@ -1407,10 +1486,13 @@ def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     current_left = left
     current_left_node = node.get("left")
     for idx, comparator in enumerate(comparators):
-        op_obj = ops[idx] if idx < len(ops) else None
-        op_name = op_obj if isinstance(op_obj, str) else ""
-        if isinstance(op_obj, dict):
-            op_name = _str(op_obj, "kind")
+        op_name = ""
+        if idx < len(ops):
+            op_obj = ops[idx]
+            if isinstance(op_obj, str):
+                op_name = cast(str, op_obj)
+            elif isinstance(op_obj, dict):
+                op_name = _str(op_obj, "kind")
         right = _emit_expr(ctx, comparator)
         cmp_op = _cmp_op_text(op_name)
         if cmp_op == "__IN__":
@@ -1904,9 +1986,9 @@ def _emit_direct_expr_stmt_call(ctx: EmitContext, node: dict[str, JsonVal]) -> b
     resolved_rt_call = _str(node, "resolved_runtime_call")
     call_name = ""
     if runtime_call != "":
-        call_name = ctx.mapping.calls.get(runtime_call, "")
+        call_name = _mapping_call(ctx, runtime_call, "")
     if call_name == "" and resolved_rt_call != "":
-        call_name = ctx.mapping.calls.get(resolved_rt_call, "")
+        call_name = _mapping_call(ctx, resolved_rt_call, "")
     if call_name != "__LIST_APPEND__":
         return False
     if _str(func_node, "kind") != "Attribute":
@@ -1929,19 +2011,8 @@ def _emit_body_with_continue(ctx: EmitContext, body: list[JsonVal]) -> None:
     """Emit body and add ::__continue__:: label if needed."""
     saved = ctx.needs_continue_label
     ctx.needs_continue_label = False
-    start_index = len(ctx.lines)
     _emit_body(ctx, body)
     if ctx.needs_continue_label:
-        body_lines = ctx.lines[start_index:]
-        del ctx.lines[start_index:]
-        _emit(ctx, "do")
-        extra_indent = "    "
-        for line in body_lines:
-            if line == "":
-                ctx.lines.append("")
-            else:
-                ctx.lines.append(extra_indent + line)
-        _emit(ctx, "end")
         _emit(ctx, "::__continue__::")
     ctx.needs_continue_label = saved
 
@@ -2070,20 +2141,31 @@ def _emit_assign_target(ctx: EmitContext, target: dict[str, JsonVal]) -> str:
 
 def _emit_tuple_assign(ctx: EmitContext, target: dict[str, JsonVal], value: JsonVal, declare: bool) -> None:
     elements = _list(target, "elements")
-    targets: list[tuple[str, bool, str]] = []
+    target_codes: list[str] = []
+    is_name_targets: list[bool] = []
+    safe_names: list[str] = []
     for e in elements:
         if isinstance(e, dict):
             if _bool(e, "unused"):
-                targets.append(("_", False, ""))
+                target_codes.append("_")
+                is_name_targets.append(False)
+                safe_names.append("")
             else:
                 kind = _str(e, "kind")
                 if kind == "Name":
-                    safe = _lua_symbol_name(ctx, _str(e, "id"))
-                    targets.append((safe, True, safe))
+                    raw_name = _str(e, "id")
+                    safe = _lua_symbol_name(ctx, raw_name)
+                    target_codes.append(safe)
+                    is_name_targets.append(True)
+                    safe_names.append(safe)
                 else:
-                    targets.append((_emit_assign_target(ctx, e), False, ""))
+                    target_codes.append(_emit_assign_target(ctx, e))
+                    is_name_targets.append(False)
+                    safe_names.append("")
         else:
-            targets.append(("_", False, ""))
+            target_codes.append("_")
+            is_name_targets.append(False)
+            safe_names.append("")
 
     def _emit_tuple_target_assign(target_code: str, is_name_target: bool, safe_name: str, rhs_code: str) -> None:
         if target_code == "_":
@@ -2118,10 +2200,12 @@ def _emit_tuple_assign(ctx: EmitContext, target: dict[str, JsonVal], value: Json
             else:
                 _emit(ctx, "local " + tmp + " = nil")
             rhs_temps.append(tmp)
-        for i, (target_code, is_name_target, safe_name) in enumerate(targets):
+        i = 0
+        while i < len(target_codes):
             if i >= len(rhs_temps):
                 break
-            _emit_tuple_target_assign(target_code, is_name_target, safe_name, rhs_temps[i])
+            _emit_tuple_target_assign(target_codes[i], is_name_targets[i], safe_names[i], rhs_temps[i])
+            i += 1
         return
 
     val_code = _emit_expr(ctx, value)
@@ -2131,8 +2215,10 @@ def _emit_tuple_assign(ctx: EmitContext, target: dict[str, JsonVal], value: Json
         _emit(ctx, "local " + temp + " = {" + val_code + "}")
     else:
         _emit(ctx, "local " + temp + " = " + val_code)
-    for i, (target_code, is_name_target, safe_name) in enumerate(targets):
-        _emit_tuple_target_assign(target_code, is_name_target, safe_name, temp + "[" + str(i + 1) + "]")
+    i = 0
+    while i < len(target_codes):
+        _emit_tuple_target_assign(target_codes[i], is_name_targets[i], safe_names[i], temp + "[" + str(i + 1) + "]")
+        i += 1
 
 
 def _emit_aug_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
@@ -2316,7 +2402,8 @@ def _emit_runtime_iter_for(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             if len(elems) >= 2:
                 idx_name = _emit_expr(ctx, elems[0]) if isinstance(elems[0], dict) else "_"
                 val_name = _emit_expr(ctx, elems[1]) if isinstance(elems[1], dict) else "_"
-        inner_iter = _emit_expr(ctx, plan.get("iter")) if plan and isinstance(plan.get("iter"), dict) else iter_code
+        plan_iter = _dict(plan, "iter")
+        inner_iter = _emit_expr(ctx, plan_iter) if len(plan_iter) > 0 else iter_code
         _emit(ctx, "for __ei, " + val_name + " in ipairs(" + inner_iter + ") do")
         ctx.indent_level += 1
         _emit(ctx, "local " + idx_name + " = __ei - 1")
@@ -2326,7 +2413,8 @@ def _emit_runtime_iter_for(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         return
 
     if plan_kind == "reversed":
-        inner_iter = _emit_expr(ctx, plan.get("iter")) if plan and isinstance(plan.get("iter"), dict) else iter_code
+        plan_iter = _dict(plan, "iter")
+        inner_iter = _emit_expr(ctx, plan_iter) if len(plan_iter) > 0 else iter_code
         _emit(ctx, "for _, " + target_code + " in ipairs(__pytra_reversed(" + inner_iter + ")) do")
         ctx.indent_level += 1
         _emit_body_with_continue(ctx, body)
@@ -2342,7 +2430,8 @@ def _emit_runtime_iter_for(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             if len(elems) >= 2:
                 k_name = _emit_expr(ctx, elems[0]) if isinstance(elems[0], dict) else "_k"
                 v_name = _emit_expr(ctx, elems[1]) if isinstance(elems[1], dict) else "_v"
-        inner_iter = _emit_expr(ctx, plan.get("iter")) if plan and isinstance(plan.get("iter"), dict) else iter_code
+        plan_iter = _dict(plan, "iter")
+        inner_iter = _emit_expr(ctx, plan_iter) if len(plan_iter) > 0 else iter_code
         _emit(ctx, "for " + k_name + ", " + v_name + " in pairs(" + inner_iter + ") do")
         ctx.indent_level += 1
         _emit_body_with_continue(ctx, body)
@@ -2376,12 +2465,12 @@ def _emit_static_range_for(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     else:
         target_code = "_i"
 
-    start_node = plan.get("start") if plan else None
-    stop_node = plan.get("stop") if plan else None
-    step_node = plan.get("step") if plan else None
-    start_code = _emit_expr(ctx, start_node) if isinstance(start_node, dict) else "0"
-    stop_code = _emit_expr(ctx, stop_node) if isinstance(stop_node, dict) else "0"
-    step_code = _emit_expr(ctx, step_node) if isinstance(step_node, dict) else "1"
+    start_node = _dict(plan, "start")
+    stop_node = _dict(plan, "stop")
+    step_node = _dict(plan, "step")
+    start_code = _emit_expr(ctx, start_node) if len(start_node) > 0 else "0"
+    stop_code = _emit_expr(ctx, stop_node) if len(stop_node) > 0 else "0"
+    step_code = _emit_expr(ctx, step_node) if len(step_node) > 0 else "1"
 
     if _is_lua_one(step_code):
         _emit(ctx, "for " + target_code + " = " + start_code + ", " + stop_code + " - 1 do")
@@ -2403,24 +2492,25 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     decorators = _list(node, "decorators")
 
     # @extern: generate delegate
-    if "extern" in decorators:
+    if _json_list_contains_text(decorators, "extern"):
         _emit(ctx, "-- @extern: " + safe_name)
         return
 
     # Check for @property
-    is_property = "property" in decorators
-    is_static = "staticmethod" in decorators
+    is_property = _json_list_contains_text(decorators, "property")
+    is_static = _json_list_contains_text(decorators, "staticmethod")
 
     # Variadic
     is_vararg = False
     vararg_name = ""
     vararg_raw = node.get("vararg")
-    if isinstance(vararg_raw, dict) or (isinstance(vararg_raw, str) and vararg_raw != ""):
+    vararg_raw_text = _json_str_value(vararg_raw, "")
+    if isinstance(vararg_raw, dict) or vararg_raw_text != "":
         is_vararg = True
         if isinstance(vararg_raw, dict):
             vararg_name = _str(vararg_raw, "arg")
-        elif isinstance(vararg_raw, str):
-            vararg_name = vararg_raw
+        elif vararg_raw_text != "":
+            vararg_name = vararg_raw_text
     if vararg_name == "":
         direct_vararg = _str(node, "vararg_name")
         if direct_vararg != "":
@@ -2433,11 +2523,12 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     if len(arg_order) > 0:
         for a in arg_order:
             if isinstance(a, str):
-                if a == "self":
+                arg_name = cast(str, a)
+                if arg_name == "self":
                     continue
-                if is_vararg and a == vararg_name:
+                if is_vararg and arg_name == vararg_name:
                     continue
-                arg_names.append(_lua_symbol_name(ctx, a))
+                arg_names.append(_lua_symbol_name(ctx, arg_name))
     arg_types = _dict(node, "arg_types")
     if len(arg_types) > 0:
         for a in arg_types.keys():
@@ -2560,11 +2651,11 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
     saved_class = ctx.current_class
     saved_in_class = ctx.in_class_body
-    ctx.current_class = safe
+    ctx.current_class = str(safe)
     ctx.in_class_body = True
 
     has_init = False
-    is_dataclass = _bool(node, "dataclass") or ("dataclass" in _list(node, "decorators"))
+    is_dataclass = _bool(node, "dataclass") or _json_list_contains_text(_list(node, "decorators"), "dataclass")
     # Emit class body (methods and class-level assignments)
     for stmt in body:
         if not isinstance(stmt, dict):
@@ -2579,8 +2670,8 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             target = stmt.get("target")
             value = stmt.get("value")
             if isinstance(target, dict) and _str(target, "kind") == "Name":
-                field_name = _str(target, "id")
-                safe_field = _safe_lua_ident(field_name)
+                field_name: str = _str(target, "id")
+                safe_field: str = _safe_lua_ident(field_name)
                 if isinstance(value, dict):
                     val_code = _emit_expr(ctx, value)
                     _emit(ctx, safe + "." + safe_field + " = " + val_code)
@@ -2607,14 +2698,18 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 field_names.append(field_name)
                 if isinstance(member.get("value"), dict):
                     field_defaults[field_name] = _emit_expr(ctx, member.get("value"))
-            params = [_safe_lua_ident(name) for name in field_names]
+            params: list[str] = []
+            for field_name in field_names:
+                params.append(_safe_lua_ident(field_name))
             _emit(ctx, "function " + safe + ".new(" + ", ".join(params) + ")")
             ctx.indent_level += 1
             _emit(ctx, "local self = setmetatable({}, " + safe + ")")
             for field_name in field_names:
-                safe_field = _safe_lua_ident(field_name)
+                field_name_text: str = field_name
+                safe_field: str = _safe_lua_ident(field_name_text)
                 if field_name in field_defaults:
-                    _emit(ctx, "if " + safe_field + " == nil then " + safe_field + " = " + field_defaults[field_name] + " end")
+                    default_code = _str_dict_value(field_defaults, field_name_text, "nil")
+                    _emit(ctx, "if " + safe_field + " == nil then " + safe_field + " = " + default_code + " end")
                 _emit(ctx, "self." + safe_field + " = " + safe_field)
             _emit(ctx, "return self")
             ctx.indent_level -= 1
@@ -2643,7 +2738,7 @@ def _emit_import_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             mod_name = _str(item, "name")
             asname = _str(item, "asname")
             local_name = asname if asname != "" else mod_name
-            module_ctor = ctx.mapping.calls.get("module_ctor." + mod_name, "")
+            module_ctor = _mapping_call(ctx, "module_ctor." + mod_name, "")
             if module_ctor != "":
                 safe_local = _lua_symbol_name(ctx, local_name)
                 if safe_local not in ctx.declared_locals:
@@ -2716,8 +2811,8 @@ def _emit_var_decl(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         _emit(ctx, "local " + safe + " = " + zero)
 
 
-def _collect_try_hoist_locals(body: list[JsonVal]) -> list[tuple[str, str]]:
-    hoisted: list[tuple[str, str]] = []
+def _collect_try_hoist_locals(body: list[JsonVal]) -> dict[str, str]:
+    hoisted: dict[str, str] = {}
 
     def walk(stmts: list[JsonVal]) -> None:
         for stmt in stmts:
@@ -2730,7 +2825,8 @@ def _collect_try_hoist_locals(body: list[JsonVal]) -> list[tuple[str, str]]:
                     decl_type = _str(stmt, "type")
                     if decl_type == "":
                         decl_type = _str(stmt, "resolved_type")
-                    hoisted.append((name, decl_type))
+                    if name not in hoisted:
+                        hoisted[name] = decl_type
             elif kind == "Assign":
                 target = stmt.get("target")
                 if isinstance(target, dict) and _str(target, "kind") == "Name" and _bool(stmt, "declare"):
@@ -2739,21 +2835,15 @@ def _collect_try_hoist_locals(body: list[JsonVal]) -> list[tuple[str, str]]:
                         decl_type = _str(stmt, "decl_type")
                         if decl_type == "":
                             decl_type = _str(stmt, "resolved_type")
-                        hoisted.append((name, decl_type))
-            for key in ("body", "orelse", "finalbody"):
+                        if name not in hoisted:
+                            hoisted[name] = decl_type
+            for key in ["body", "orelse", "finalbody"]:
                 inner = _list(stmt, key)
                 if len(inner) > 0:
                     walk(inner)
 
     walk(body)
-    seen: set[str] = set()
-    unique: list[tuple[str, str]] = []
-    for name, decl_type in hoisted:
-        if name in seen:
-            continue
-        seen.add(name)
-        unique.append((name, decl_type))
-    return unique
+    return hoisted
 
 
 def _emit_swap(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
@@ -2842,13 +2932,7 @@ def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         return
 
     if len(handlers) > 0:
-        catch_node = {
-            "kind": "ErrorCatch",
-            "body": body,
-            "handlers": handlers,
-            "finalbody": finalbody,
-        }
-        _emit_error_catch(ctx, catch_node)
+        _emit_error_catch_parts(ctx, body, handlers, finalbody)
         return
 
     if len(finalbody) > 0 and len(ctx.catch_stack) > 0:
@@ -2872,9 +2956,12 @@ def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         _emit_body(ctx, finalbody)
         return
 
-    hoisted_locals = _collect_try_hoist_locals(body) if len(finalbody) > 0 else []
+    hoisted_locals: dict[str, str] = {}
+    if len(finalbody) > 0:
+        hoisted_locals = _collect_try_hoist_locals(body)
     saved_hoisted = set(ctx.hoisted_locals)
-    for name, decl_type in hoisted_locals:
+    for name in hoisted_locals.keys():
+        decl_type = hoisted_locals[name]
         safe = _lua_symbol_name(ctx, name)
         if safe not in ctx.declared_locals:
             ctx.declared_locals.add(safe)
@@ -2931,11 +3018,11 @@ def _emit_match(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     temp = _next_temp(ctx, "match")
     _emit(ctx, "local " + temp + " = " + subject_code)
     first = True
-    for case in cases:
-        if not isinstance(case, dict):
+    for match_case in cases:
+        if not isinstance(match_case, dict):
             continue
-        pattern = case.get("pattern")
-        body = _list(case, "body")
+        pattern = match_case.get("pattern")
+        body = _list(match_case, "body")
         if isinstance(pattern, dict):
             pk = _str(pattern, "kind")
             if pk == "PatternWildcard":
@@ -3016,9 +3103,9 @@ def _collect_module_class_info(ctx: EmitContext, body: list[JsonVal]) -> None:
             if mk == "FunctionDef":
                 mname = _str(member, "name")
                 decorators = _list(member, "decorators")
-                if "staticmethod" in decorators:
+                if _json_list_contains_text(decorators, "staticmethod"):
                     static_methods.add(mname)
-                if "property" in decorators:
+                if _json_list_contains_text(decorators, "property"):
                     property_methods.add(mname)
                 methods[mname] = member
             elif mk in ("Assign", "AnnAssign"):
@@ -3046,16 +3133,17 @@ def emit_lua_module(east3_doc: dict[str, JsonVal]) -> str:
     meta = _dict(east3_doc, "meta")
     emit_ctx_meta = _dict(meta, "emit_context")
     module_id = ""
-    if emit_ctx_meta:
+    if len(emit_ctx_meta) > 0:
         module_id = _str(emit_ctx_meta, "module_id")
     if module_id == "":
         module_id = _str(meta, "module_id")
     lp = _dict(meta, "linked_program_v1")
-    if module_id == "" and lp:
+    if module_id == "" and len(lp) > 0:
         module_id = _str(lp, "module_id")
 
     if module_id != "":
-        expand_cross_module_defaults([east3_doc])
+        module_docs: list[JsonVal] = [east3_doc]
+        expand_cross_module_defaults(module_docs)
 
     # Load runtime mapping
     mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "lua" / "mapping.json"
@@ -3072,13 +3160,12 @@ def emit_lua_module(east3_doc: dict[str, JsonVal]) -> str:
             if isinstance(orig, str) and isinstance(rn, str):
                 renamed_symbols[orig] = rn
 
-    ctx = EmitContext(
-        module_id=module_id,
-        source_path=_str(east3_doc, "source_path"),
-        is_entry=_bool(emit_ctx_meta, "is_entry") if emit_ctx_meta else False,
-        mapping=mapping,
-        renamed_symbols=renamed_symbols,
-    )
+    ctx = EmitContext()
+    ctx.module_id = module_id
+    ctx.source_path = _str(east3_doc, "source_path")
+    ctx.is_entry = _bool(emit_ctx_meta, "is_entry") if len(emit_ctx_meta) > 0 else False
+    ctx.mapping = mapping
+    ctx.renamed_symbols = renamed_symbols
 
     body = _list(east3_doc, "body")
     main_guard = _list(east3_doc, "main_guard_body")
@@ -3099,7 +3186,7 @@ def emit_lua_module(east3_doc: dict[str, JsonVal]) -> str:
             if isinstance(type_id_val, int):
                 ctx.exception_type_ids[fqcn] = type_id_val
                 ctx.class_type_ids[fqcn] = type_id_val
-                ctx.tid_const_types[_tid_const_name(fqcn)] = fqcn.rsplit(".", 1)[-1]
+                ctx.tid_const_types[_tid_const_name(fqcn)] = _last_dotted_part(fqcn)
         for fqcn, base_tid in type_id_base_map.items():
             if not isinstance(fqcn, str) or not isinstance(base_tid, int):
                 continue
@@ -3108,7 +3195,7 @@ def emit_lua_module(east3_doc: dict[str, JsonVal]) -> str:
             base_fqcn = id_to_fqcn.get(base_tid, "")
             if base_fqcn == "" or "." not in base_fqcn:
                 continue
-            ctx.class_bases[fqcn.rsplit(".", 1)[-1]] = base_fqcn.rsplit(".", 1)[-1]
+            ctx.class_bases[_last_dotted_part(fqcn)] = _last_dotted_part(base_fqcn)
 
     ctx.import_alias_modules = build_import_alias_map(meta)
     ctx.runtime_imports = build_runtime_import_map(meta, mapping)
@@ -3162,7 +3249,4 @@ def transpile_to_lua(east3_doc: dict[str, JsonVal]) -> str:
 
     This is the public API matching the `(dict) -> str` signature.
     """
-    meta = east3_doc.get("meta", {})
-    emit_ctx = meta.get("emit_context", {}) if isinstance(meta, dict) else {}
-    module_id = emit_ctx.get("module_id", "") if isinstance(emit_ctx, dict) else ""
     return emit_lua_module(east3_doc)

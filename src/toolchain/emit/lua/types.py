@@ -2,60 +2,19 @@
 
 from __future__ import annotations
 
-LUA_EXCEPTION_TYPE_NAMES: tuple[str, ...] = (
+LUA_EXCEPTION_TYPE_NAMES: set[str] = {
     "Exception", "BaseException", "RuntimeError", "ValueError",
     "TypeError", "IndexError", "KeyError", "StopIteration",
     "AttributeError", "NameError", "NotImplementedError",
     "OverflowError", "ZeroDivisionError", "AssertionError",
     "OSError", "IOError", "FileNotFoundError", "PermissionError",
-)
+}
 
-LUA_PATH_TYPE_NAMES: tuple[str, ...] = ("Path",)
-LUA_NON_INHERITABLE_BASES: tuple[str, ...] = ("object",)
+LUA_PATH_TYPE_NAMES: set[str] = {"Path"}
+LUA_NON_INHERITABLE_BASES: set[str] = {"object"}
 
 LUA_PYTRA_ISINSTANCE_NAME = "pytra_isinstance"
 
-
-_TYPE_MAP: dict[str, str] = {
-    "int": "number",
-    "byte": "number",
-    "int8": "number",
-    "int16": "number",
-    "int32": "number",
-    "int64": "number",
-    "uint8": "number",
-    "uint16": "number",
-    "uint32": "number",
-    "uint64": "number",
-    "float": "number",
-    "float32": "number",
-    "float64": "number",
-    "bool": "boolean",
-    "str": "string",
-    "None": "nil",
-    "none": "nil",
-    "bytes": "table",
-    "bytearray": "table",
-    "list": "table",
-    "dict": "table",
-    "set": "table",
-    "tuple": "table",
-    "object": "any",
-    "Obj": "any",
-    "Any": "any",
-    "JsonVal": "any",
-    "Node": "table",
-    "Callable": "function",
-    "callable": "function",
-    "Exception": "string",
-    "BaseException": "string",
-    "RuntimeError": "string",
-    "ValueError": "string",
-    "TypeError": "string",
-    "IndexError": "string",
-    "KeyError": "string",
-    "Path": "table",
-}
 
 _LUA_KEYWORDS: set[str] = {
     "and", "break", "do", "else", "elseif", "end",
@@ -106,12 +65,42 @@ def _split_generic_args(s: str) -> list[str]:
     return parts
 
 
+def _lua_type_map_value(resolved_type: str) -> str:
+    if resolved_type in (
+        "int", "byte", "int8", "int16", "int32", "int64",
+        "uint8", "uint16", "uint32", "uint64",
+        "float", "float32", "float64",
+    ):
+        return "number"
+    if resolved_type == "bool":
+        return "boolean"
+    if resolved_type == "str":
+        return "string"
+    if resolved_type == "None" or resolved_type == "none":
+        return "nil"
+    if resolved_type in (
+        "bytes", "bytearray", "list", "dict", "set", "tuple", "Node", "Path",
+    ):
+        return "table"
+    if resolved_type == "Callable" or resolved_type == "callable":
+        return "function"
+    if resolved_type in (
+        "Exception", "BaseException", "RuntimeError", "ValueError",
+        "TypeError", "IndexError", "KeyError",
+    ):
+        return "string"
+    if resolved_type == "object" or resolved_type == "Obj" or resolved_type == "Any" or resolved_type == "JsonVal":
+        return "any"
+    return ""
+
+
 def lua_type(resolved_type: str) -> str:
     """Convert an EAST3 resolved_type to a Lua type comment string."""
     if resolved_type == "" or resolved_type == "unknown":
         return "any"
-    if resolved_type in _TYPE_MAP:
-        return _TYPE_MAP[resolved_type]
+    mapped = _lua_type_map_value(resolved_type)
+    if mapped != "":
+        return mapped
     if resolved_type.startswith("list[") or resolved_type.startswith("dict["):
         return "table"
     if resolved_type.startswith("set[") or resolved_type.startswith("tuple["):
