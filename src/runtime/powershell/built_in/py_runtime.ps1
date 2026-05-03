@@ -67,10 +67,21 @@ function __pytra_repr {
     return (__pytra_str $value)
 }
 
+function py_repr {
+    param([object]$value)
+    return (__pytra_repr $value)
+}
+
 function __pytra_str {
     param([object]$value)
     if ($value -eq $null) { return "None" }
     if ($value -is [bool]) { return $(if ($value) { "True" } else { "False" }) }
+    if (($value -is [System.Collections.IList] -or $value -is [array]) -and $value.Count -eq 1) {
+        return (__pytra_str $value[0])
+    }
+    if ($value -is [hashtable] -and $value.ContainsKey("_p")) {
+        return [string]$value["_p"]
+    }
     # array (PS1 native array) → tuple repr
     if ($value -is [array]) {
         $parts2 = [System.Collections.Generic.List[string]]::new()
@@ -507,10 +518,15 @@ function __pytra_seq_len {
 function __pytra_str_slice {
     param($s, $start, $stop)
     if ($s -eq $null) { return "" }
+    $start = [int]$start
+    $stop = [int]$stop
     if ($s -is [System.Collections.IList]) {
         $len = $s.Count
         if ($start -lt 0) { $start = [Math]::Max(0, $len + $start) }
         if ($stop -lt 0) { $stop = [Math]::Max(0, $len + $stop) }
+        if ($start -lt 0) { $start = 0 }
+        if ($start -gt $len) { $start = $len }
+        if ($stop -lt 0) { $stop = 0 }
         if ($stop -gt $len) { $stop = $len }
         if ($start -ge $stop) { return [System.Collections.Generic.List[object]]::new() }
         $result = [System.Collections.Generic.List[object]]::new()
@@ -521,13 +537,20 @@ function __pytra_str_slice {
         $len = $s.Length
         if ($start -lt 0) { $start = [Math]::Max(0, $len + $start) }
         if ($stop -lt 0) { $stop = [Math]::Max(0, $len + $stop) }
+        if ($start -lt 0) { $start = 0 }
+        if ($start -gt $len) { $start = $len }
+        if ($stop -lt 0) { $stop = 0 }
         if ($stop -gt $len) { $stop = $len }
         if ($start -ge $stop) { return @() }
         return ,@($s[$start..($stop - 1)])
     }
+    $s = [string]$s
     $len = $s.Length
     if ($start -lt 0) { $start = [Math]::Max(0, $len + $start) }
     if ($stop -lt 0) { $stop = [Math]::Max(0, $len + $stop) }
+    if ($start -lt 0) { $start = 0 }
+    if ($start -gt $len) { $start = $len }
+    if ($stop -lt 0) { $stop = 0 }
     if ($stop -gt $len) { $stop = $len }
     if ($start -ge $stop) { return "" }
     return $s.Substring($start, $stop - $start)
@@ -879,11 +902,11 @@ function __pytra_str_format {
 }
 
 function __pytra_str_upper {
-    param([object]$s) return [string]$s.ToUpper()
+    param([object]$s) return ([string]$s).ToUpper()
 }
 
 function __pytra_str_lower {
-    param([object]$s) return [string]$s.ToLower()
+    param([object]$s) return ([string]$s).ToLower()
 }
 
 function __pytra_str_isdigit {

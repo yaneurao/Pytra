@@ -130,7 +130,13 @@ def _run_python_emitter(hosted_emitter: str, manifest_path: Path, out_dir: Path,
     return True, ""
 
 
-def _run_hosted_emitter(runner: Path, manifest_path: Path, out_dir: Path, timeout_sec: int) -> tuple[bool, str]:
+def _run_hosted_emitter(
+    runner: Path,
+    manifest_path: Path,
+    out_dir: Path,
+    timeout_sec: int,
+    env: dict[str, str] | None = None,
+) -> tuple[bool, str]:
     if out_dir.exists():
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -138,6 +144,7 @@ def _run_hosted_emitter(runner: Path, manifest_path: Path, out_dir: Path, timeou
         [str(runner), str(manifest_path), "--output-dir", str(out_dir)],
         cwd=ROOT,
         timeout_sec=timeout_sec,
+        env=env,
     )
     if result.returncode != 0:
         return False, (result.stderr or result.stdout or "").strip()
@@ -225,6 +232,8 @@ def main() -> int:
         host_env = _tool_env_for_target(Target(host_target, "", "", profile.runner_needs))
     except Exception:
         host_env = None
+    if host_target == "ps1" and host_env is None:
+        host_env = _tool_env_for_target(Target(host_target, "", "", ("pwsh",)))
 
     emitter_cli = _emitter_cli_path(hosted_emitter)
     if not emitter_cli.exists():
@@ -324,7 +333,7 @@ def main() -> int:
         })
         return 1
 
-    ok, err = _run_hosted_emitter(runner, manifest_path, hosted_out, args.timeout_sec)
+    ok, err = _run_hosted_emitter(runner, manifest_path, hosted_out, args.timeout_sec, host_env)
     if not ok:
         _write_result(host_lang, hosted_emitter, {
             "build_status": "ok",
