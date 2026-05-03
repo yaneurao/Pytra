@@ -171,44 +171,126 @@ def _dict(node: JsonVal, key: str) -> dict[str, JsonVal]:
     return {}
 
 
+def _json_get(node: JsonVal, key: str) -> JsonVal:
+    if isinstance(node, dict):
+        return node.get(key)
+    return None
+
+
+def _json_bool(node: JsonVal, key: str) -> bool:
+    if isinstance(node, dict):
+        v = node.get(key)
+        if isinstance(v, bool):
+            return v
+    return False
+
+
+def _as_str(value: JsonVal) -> str:
+    if isinstance(value, str):
+        return value
+    return ""
+
+
+def _decorator_id_matches(dec: JsonVal, name: str) -> bool:
+    dec_text = _as_str(dec)
+    if dec_text != "":
+        if dec_text == name:
+            return True
+        if dec_text == "@" + name:
+            return True
+        return False
+    if isinstance(dec, dict):
+        did = _str(dec, "id")
+        if did == name:
+            return True
+        if did == "@" + name:
+            return True
+        return False
+    return False
+
+
+def _decorators_have_id(decorators: list[JsonVal], name: str) -> bool:
+    for dec in decorators:
+        if _decorator_id_matches(dec, name):
+            return True
+    return False
+
+
+def _all_pass_stmts(body: list[JsonVal]) -> bool:
+    for stmt in body:
+        if not isinstance(stmt, dict) or _str(stmt, "kind") != "Pass":
+            return False
+    return True
+
+
+def _all_constant_nodes(nodes: list[JsonVal]) -> bool:
+    for item in nodes:
+        if not isinstance(item, dict) or _str(item, "kind") != "Constant":
+            return False
+    return True
+
+
+def _path_like_types_have(ctx: RsEmitContext, type_names: set[str]) -> bool:
+    for type_name in type_names:
+        if type_name != "" and _is_path_type_name(ctx, type_name):
+            return True
+    return False
+
+
+def _union_parts_lower_to_pyany(parts: list[str]) -> bool:
+    for part in parts:
+        if part in ("None", "bool", "int64", "float64", "str"):
+            continue
+        if part.startswith("list[") or part.startswith("dict["):
+            continue
+        return False
+    return True
+
+
+def _starts_uppercase(text: str) -> bool:
+    if text == "":
+        return False
+    first = text[0]
+    return first.upper() == first and first.lower() != first
+
+
 def _iter_import_runtime_ids(meta: dict[str, JsonVal], type_only_symbols: set[str] | None = None) -> list[tuple[str, str]]:
     """Collect (resolved_binding_kind, runtime_module_id) pairs from import bindings."""
     out: list[tuple[str, str]] = []
     bindings = meta.get("import_bindings")
     if not isinstance(bindings, list):
         return out
-    skip_symbols = type_only_symbols if isinstance(type_only_symbols, set) else set()
+    skip_symbols: set[str] = set()
+    if type_only_symbols is not None:
+        skip_symbols = type_only_symbols
     seen: set[str] = set()
     for binding in bindings:
         if not isinstance(binding, dict):
             continue
-        resolved_kind = binding.get("resolved_binding_kind")
-        if not isinstance(resolved_kind, str) or resolved_kind == "":
-            binding_kind = binding.get("binding_kind")
-            resolved_kind = binding_kind if isinstance(binding_kind, str) else ""
-        runtime_module_id = binding.get("runtime_module_id")
-        module_id = binding.get("module_id")
-        mod_id = runtime_module_id if isinstance(runtime_module_id, str) and runtime_module_id != "" else module_id
-        local_name = binding.get("local_name")
-        imported_name = binding.get("imported_name")
-        export_name = binding.get("export_name")
-        runtime_symbol = binding.get("runtime_symbol")
-        runtime_symbol_kind = binding.get("runtime_symbol_kind")
+        resolved_kind = _as_str(binding.get("resolved_binding_kind"))
+        if resolved_kind == "":
+            resolved_kind = _as_str(binding.get("binding_kind"))
+        runtime_module_id = _as_str(binding.get("runtime_module_id"))
+        module_id = _as_str(binding.get("module_id"))
+        mod_id = runtime_module_id if runtime_module_id != "" else module_id
+        local_name = _as_str(binding.get("local_name"))
+        imported_name = _as_str(binding.get("imported_name"))
+        export_name = _as_str(binding.get("export_name"))
+        runtime_symbol = _as_str(binding.get("runtime_symbol"))
+        runtime_symbol_kind = _as_str(binding.get("runtime_symbol_kind"))
         if (
             resolved_kind == "symbol"
             and (
-                (isinstance(local_name, str) and local_name in skip_symbols)
-                or (isinstance(imported_name, str) and imported_name in skip_symbols)
-                or (isinstance(export_name, str) and export_name in skip_symbols)
+                (local_name != "" and local_name in skip_symbols)
+                or (imported_name != "" and imported_name in skip_symbols)
+                or (export_name != "" and export_name in skip_symbols)
             )
         ):
             continue
         if (
-            isinstance(mod_id, str)
+            mod_id != ""
             and resolved_kind == "symbol"
-            and isinstance(runtime_symbol, str)
             and runtime_symbol == "JsonVal"
-            and isinstance(runtime_symbol_kind, str)
             and runtime_symbol_kind == "type"
             and (
                 local_name == "JsonVal"
@@ -217,8 +299,7 @@ def _iter_import_runtime_ids(meta: dict[str, JsonVal], type_only_symbols: set[st
         ):
             continue
         if (
-            not isinstance(resolved_kind, str)
-            or not isinstance(mod_id, str)
+            resolved_kind == ""
             or mod_id == ""
             or (resolved_kind + "::" + mod_id) in seen
         ):
@@ -236,11 +317,11 @@ def _build_import_symbol_storage_hints(meta: dict[str, JsonVal]) -> dict[str, st
     for binding in bindings:
         if not isinstance(binding, dict):
             continue
-        if binding.get("binding_kind") != "symbol":
+        if _as_str(binding.get("binding_kind")) != "symbol":
             continue
-        local_name = binding.get("local_name")
-        hint = binding.get("resolved_storage_hint")
-        if isinstance(local_name, str) and local_name != "" and isinstance(hint, str) and hint != "":
+        local_name = _as_str(binding.get("local_name"))
+        hint = _as_str(binding.get("resolved_storage_hint"))
+        if local_name != "" and hint != "":
             out[local_name] = hint
     return out
 
@@ -253,16 +334,18 @@ def _build_import_class_fields(meta: dict[str, JsonVal]) -> dict[str, dict[str, 
     for binding in bindings:
         if not isinstance(binding, dict):
             continue
-        if binding.get("binding_kind") != "symbol":
+        if _as_str(binding.get("binding_kind")) != "symbol":
             continue
-        local_name = binding.get("local_name")
+        local_name = _as_str(binding.get("local_name"))
         field_types = binding.get("resolved_field_types_v1")
-        if not isinstance(local_name, str) or local_name == "" or not isinstance(field_types, dict):
+        if local_name == "" or not isinstance(field_types, dict):
             continue
         typed_fields: dict[str, str] = {}
         for field_name, field_type in field_types.items():
-            if isinstance(field_name, str) and field_name != "" and isinstance(field_type, str) and field_type != "":
-                typed_fields[field_name] = field_type
+            typed_field_name = _as_str(field_name)
+            typed_field_type = _as_str(field_type)
+            if typed_field_name != "" and typed_field_type != "":
+                typed_fields[typed_field_name] = typed_field_type
         if len(typed_fields) > 0:
             out[local_name] = typed_fields
     return out
@@ -276,10 +359,10 @@ def _build_imported_symbol_names(meta: dict[str, JsonVal]) -> set[str]:
     for binding in bindings:
         if not isinstance(binding, dict):
             continue
-        if binding.get("binding_kind") != "symbol":
+        if _as_str(binding.get("binding_kind")) != "symbol":
             continue
-        local_name = binding.get("local_name")
-        if isinstance(local_name, str) and local_name != "":
+        local_name = _as_str(binding.get("local_name"))
+        if local_name != "":
             out.add(local_name)
     return out
 
@@ -292,11 +375,13 @@ def _build_imported_symbol_modules(meta: dict[str, JsonVal]) -> dict[str, str]:
     for binding in bindings:
         if not isinstance(binding, dict):
             continue
-        if binding.get("binding_kind") != "symbol":
+        if _as_str(binding.get("binding_kind")) != "symbol":
             continue
-        local_name = binding.get("local_name")
-        module_id = binding.get("runtime_module_id") or binding.get("module_id")
-        if isinstance(local_name, str) and local_name != "" and isinstance(module_id, str) and module_id != "":
+        local_name = _as_str(binding.get("local_name"))
+        module_id = _as_str(binding.get("runtime_module_id"))
+        if module_id == "":
+            module_id = _as_str(binding.get("module_id"))
+        if local_name != "" and module_id != "":
             out[local_name] = module_id
     return out
 
@@ -333,14 +418,19 @@ def _build_type_only_imported_symbols(
 ) -> set[str]:
     imported = _build_imported_symbol_names(meta)
     if len(imported) == 0:
-        return set()
+        empty: set[str] = set()
+        return empty
     value_refs = _collect_value_name_refs(body)
     value_refs.update(_collect_value_name_refs(main_guard))
-    return {name for name in imported if name not in value_refs}
+    out: set[str] = set()
+    for name in imported:
+        if name not in value_refs:
+            out.add(name)
+    return out
 
 
 def _call_signature(node: dict[str, JsonVal], fallback: dict[str, JsonVal] | None = None) -> dict[str, JsonVal] | None:
-    if isinstance(fallback, dict) and fallback:
+    if fallback is not None and len(fallback) > 0:
         return fallback
     sig = _dict(node, "function_signature_v1")
     if sig:
@@ -1130,7 +1220,10 @@ def _needs_parent_trait_object(ctx: RsEmitContext, class_name: str) -> bool:
     if class_name not in ctx.parent_class_names:
         return False
     methods = ctx.class_instance_methods.get(class_name, {})
-    return any(not name.startswith("__") for name in methods)
+    for name in methods:
+        if not name.startswith("__"):
+            return True
+    return False
 
 
 def _inherits_from_class(ctx: RsEmitContext, actual_type: str, expected_type: str) -> bool:
@@ -1623,7 +1716,7 @@ def _emit_name(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
 
 
 def _looks_like_type_alias_assignment(target_name: str, value: JsonVal) -> bool:
-    if target_name == "" or not target_name[:1].isupper() or not isinstance(value, dict):
+    if target_name == "" or not _starts_uppercase(target_name) or not isinstance(value, dict):
         return False
     kind = _str(value, "kind")
     return kind in {"Name", "Attribute", "Subscript", "BinOp", "Tuple", "List"}
@@ -1978,7 +2071,12 @@ def _emit_compare(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             key_ref = key_expr if key_expr.startswith("&") else "&" + key_expr
             return ("!" if negate else "") + "(" + base_expr + ").contains(" + key_ref + ")"
         first_part = tuple_parts[0]
-        if any(part != first_part for part in tuple_parts):
+        has_mixed_tuple_parts = False
+        for part in tuple_parts:
+            if part != first_part:
+                has_mixed_tuple_parts = True
+                break
+        if has_mixed_tuple_parts:
             return ("!" if negate else "") + "py_in(&" + tuple_expr + ", &" + key_expr + ")"
         tuple_tmp = _next_temp(ctx, "tuple")
         key_tmp = _next_temp(ctx, "key")
@@ -2458,7 +2556,7 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         or obj_actual_type.endswith(" | None")
     ):
         return obj + '.clone().expect("unbox").borrow().raw.clone()'
-    if any(_is_path_type_name(ctx, t) for t in path_like_types if t != "") or _is_path_rust_type(ctx, obj_rs):
+    if _path_like_types_have(ctx, path_like_types) or _is_path_rust_type(ctx, obj_rs):
         if attr == "parent":
             return obj + ".parent()"
         if attr in ("name", "stem", "suffix"):
@@ -2561,7 +2659,7 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         isinstance(obj_node, dict)
         and _str(obj_node, "kind") == "Unbox"
         and _str(obj_node, "resolved_type") != ""
-        and _str(obj_node, "resolved_type")[0].isupper()
+        and _starts_uppercase(_str(obj_node, "resolved_type"))
         and _str(obj_node, "resolved_type") not in ctx.class_names
     ):
         return obj + ".borrow()." + safe_rs_ident(attr) + ".clone()"
@@ -2576,7 +2674,7 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             or attr_rs.startswith("Rc<RefCell<")
         ):
             return obj + "." + safe_rs_ident(attr) + ".clone()"
-    if any(_is_path_type_name(ctx, t) for t in path_like_types if t != "") or _is_path_rust_type(ctx, obj_rs):
+    if _path_like_types_have(ctx, path_like_types) or _is_path_rust_type(ctx, obj_rs):
         if attr == "parent":
             return obj + ".parent()"
         if attr in ("name", "stem", "suffix"):
@@ -3187,7 +3285,7 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     if func_name == "JsonValue" and len(args) == 1:
         return "Rc::new(RefCell::new(JsonValue::new(" + _emit_call_arg(ctx, args[0]) + ")))"
 
-    if func_name in ctx.imported_symbol_modules and not (len(func_name) >= 1 and func_name[0].isupper()):
+    if func_name in ctx.imported_symbol_modules and not _starts_uppercase(func_name):
         imported_module_id = ctx.imported_symbol_modules.get(func_name, "")
         if imported_module_id.startswith("toolchain.") and not should_skip_module(imported_module_id, ctx.mapping):
             local_sig = ctx.function_signatures.get(func_name)
@@ -3245,7 +3343,7 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     if (
         func_name in ctx.imported_symbol_names
         and ctx.imported_symbol_modules.get(func_name, "").startswith("toolchain.")
-        and not (len(func_name) >= 1 and func_name[0].isupper())
+        and not _starts_uppercase(func_name)
     ):
         call_sig = _call_signature(node)
         rendered_args = [_emit_call_arg(ctx, a) for a in args]
@@ -3265,11 +3363,11 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         return _emit_runtime_call(ctx, mapped3, func, args, keywords, node)
 
     # Check for class constructor
-    if func_name in ctx.imported_symbol_names and len(func_name) >= 1 and func_name[0].isupper():
+    if func_name in ctx.imported_symbol_names and _starts_uppercase(func_name):
         return _emit_constructor_call(ctx, func_name, args, keywords, node)
     if func_name in ctx.class_names:
         return _emit_constructor_call(ctx, func_name, args, keywords, node)
-    if len(func_name) >= 1 and func_name[0].isupper():
+    if _starts_uppercase(func_name):
         return _emit_constructor_call(ctx, func_name, args, keywords, node)
 
     # deque() constructor → VecDeque::new()
@@ -3696,7 +3794,12 @@ def _emit_runtime_call(
 
     # multi_arg_print adapter: todo!() arg → emit directly; multiple args → join with space
     if ctx.mapping.call_adapters.get(mapped, "") == "multi_arg_print":
-        if len(rendered_args) >= 1 and all(a.startswith("todo!(") for a in rendered_args):
+        all_todo_args = True
+        for arg_text in rendered_args:
+            if not arg_text.startswith("todo!("):
+                all_todo_args = False
+                break
+        if len(rendered_args) >= 1 and all_todo_args:
             return rendered_args[0]
         if len(rendered_args) > 1:
             fmt_parts = " ".join(["{}" for _ in rendered_args])
@@ -3898,7 +4001,7 @@ def _emit_method_call(
                         kw_val = kw.get("value")
                         rendered_args.append(_emit_expr(ctx, kw_val))
             module_ref = safe_rs_ident(obj_id) if obj_id != "" else _module_id_to_rs_mod_name(module_id)
-            if method[:1].isupper():
+            if _starts_uppercase(method):
                 ctor = module_ref + "::" + safe_rs_ident(method) + "::new(" + ", ".join(rendered_args) + ")"
                 return "Rc::new(RefCell::new(" + ctor + "))"
             return module_ref + "::" + safe_rs_ident(method) + "(" + ", ".join(rendered_args) + ")"
@@ -4329,7 +4432,7 @@ def _emit_method_call(
     all_args_str = ", ".join(rendered_args)
 
     path_like_types = {obj_type, obj_actual_type, _resolved_type_in_context(ctx, obj)}
-    if any(_is_path_type_name(ctx, t) for t in path_like_types if t != "") or _is_path_rust_type(ctx, inferred_obj_rs):
+    if _path_like_types_have(ctx, path_like_types) or _is_path_rust_type(ctx, inferred_obj_rs):
         if method == "read_text":
             return obj_str + ".read_text()"
         if method == "write_text" and len(rendered_args) >= 1:
@@ -4376,23 +4479,34 @@ def _coerce_call_arg_to_expected(
     if actual_rs == "":
         actual_rs = _infer_node_rust_type(ctx, effective_node)
     if "None" in expected_type and ((_str(effective_node, "kind") == "Constant" and effective_node.get("value") is None) or arg_code == "PyAny::None" or arg_code == "None"):
-        union_parts0 = [part.strip() for part in expected_type.split("|")] if "|" in expected_type else []
-        non_none_parts0 = [part for part in union_parts0 if part != "None"]
+        union_parts0: list[str] = []
+        if "|" in expected_type:
+            for raw_part in expected_type.split("|"):
+                union_parts0.append(raw_part.strip())
+        non_none_parts0: list[str] = []
+        for part in union_parts0:
+            if part != "None":
+                non_none_parts0.append(part)
         lowers_to_pyany = (
             "|" in expected_type
             and "None" in union_parts0
             and len(non_none_parts0) >= 1
             and not (len(non_none_parts0) == 1)
-            and all(part in ("bool", "int64", "float64", "str") or part.startswith("list[") or part.startswith("dict[") for part in non_none_parts0)
+            and _union_parts_lower_to_pyany(non_none_parts0)
         )
         if expected_rs == "PyAny" or lowers_to_pyany:
             return "PyAny::None"
         return "None"
     if "|" in expected_type:
-        union_parts = [part.strip() for part in expected_type.split("|")]
-        non_none_parts = [part for part in union_parts if part != "None"]
+        union_parts: list[str] = []
+        for raw_part in expected_type.split("|"):
+            union_parts.append(raw_part.strip())
+        non_none_parts: list[str] = []
+        for part in union_parts:
+            if part != "None":
+                non_none_parts.append(part)
         is_simple_optional = ("None" in union_parts and len(non_none_parts) == 1)
-        if (not is_simple_optional) and all(part in ("None", "bool", "int64", "float64", "str") or part.startswith("list[") or part.startswith("dict[") for part in union_parts):
+        if (not is_simple_optional) and _union_parts_lower_to_pyany(union_parts):
             expected_rs = "PyAny"
     if expected_rs == "PyAny":
         is_none_literal = _str(effective_node, "kind") == "Constant" and effective_node.get("value") is None
@@ -4686,8 +4800,12 @@ def _emit_constructor_call(
 
     imported_fields = ctx.imported_class_fields.get(class_name, {})
     if class_name in ctx.imported_symbol_names and imported_fields:
-        rendered_args = [_emit_call_arg(ctx, a) for a in args]
-        field_list = list(imported_fields.keys())
+        rendered_args: list[str] = []
+        for arg in args:
+            rendered_args.append(_emit_call_arg(ctx, arg))
+        field_list: list[str] = []
+        for field_name in imported_fields:
+            field_list.append(field_name)
         normalized_args: list[str] = []
         for index, rendered_arg in enumerate(rendered_args):
             if index < len(field_list):
@@ -4793,7 +4911,9 @@ def _emit_constructor_call(
         # No __init__ (dataclass-style): use fields and defaults to fill positional args
         fields = ctx.class_fields.get(class_name, {})
         defaults = ctx.class_field_defaults.get(class_name, {})
-        field_list = list(fields.keys())
+        field_list: list[str] = []
+        for field_name in fields:
+            field_list.append(field_name)
         if len(field_list) > 0:
             full_args2: list[str] = []
             for i, rendered_arg in enumerate(rendered_args):
@@ -6467,9 +6587,15 @@ def _body_calls_self_next_tmp(node: JsonVal) -> bool:
                 owner = func.get("value")
                 if isinstance(owner, dict) and _str(owner, "kind") == "Name" and _str(owner, "id") == "self":
                     return True
-        return any(_body_calls_self_next_tmp(value) for value in node.values())
+        for value in node.values():
+            if _body_calls_self_next_tmp(value):
+                return True
+        return False
     if isinstance(node, list):
-        return any(_body_calls_self_next_tmp(value) for value in node)
+        for value in node:
+            if _body_calls_self_next_tmp(value):
+                return True
+        return False
     return False
 
 
@@ -6481,9 +6607,15 @@ def _body_calls_self_method(node: JsonVal) -> bool:
                 owner = func.get("value")
                 if isinstance(owner, dict) and _str(owner, "kind") == "Name" and _str(owner, "id") == "self":
                     return True
-        return any(_body_calls_self_method(value) for value in node.values())
+        for value in node.values():
+            if _body_calls_self_method(value):
+                return True
+        return False
     if isinstance(node, list):
-        return any(_body_calls_self_method(value) for value in node)
+        for value in node:
+            if _body_calls_self_method(value):
+                return True
+        return False
     return False
 
 
@@ -6669,11 +6801,14 @@ def _emit_if(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     ctx.indent_level -= 1
 
     if len(orelse) == 1 and isinstance(orelse[0], dict) and _str(orelse[0], "kind") == "If":
-        _emit(ctx, "} else if " + _emit_bool_test(ctx, orelse[0].get("test")) + " {")
+        next_if = orelse[0]
+        test_node = _json_get(next_if, "test")
+        _emit(ctx, "} else if " + _emit_bool_test(ctx, test_node) + " {")
         ctx.indent_level += 1
-        _emit_body(ctx, _list(orelse[0], "body"))
+        _emit_body(ctx, _list(next_if, "body"))
         ctx.indent_level -= 1
-        _emit_remaining_orelse(ctx, orelse[0])
+        if isinstance(next_if, dict):
+            _emit_remaining_orelse(ctx, next_if)
     elif len(orelse) > 0:
         _emit(ctx, "} else {")
         ctx.indent_level += 1
@@ -6687,11 +6822,14 @@ def _emit_if(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
 def _emit_remaining_orelse(ctx: RsEmitContext, if_node: dict[str, JsonVal]) -> None:
     orelse = _list(if_node, "orelse")
     if len(orelse) == 1 and isinstance(orelse[0], dict) and _str(orelse[0], "kind") == "If":
-        _emit(ctx, "} else if " + _emit_bool_test(ctx, orelse[0].get("test")) + " {")
+        next_if = orelse[0]
+        test_node = _json_get(next_if, "test")
+        _emit(ctx, "} else if " + _emit_bool_test(ctx, test_node) + " {")
         ctx.indent_level += 1
-        _emit_body(ctx, _list(orelse[0], "body"))
+        _emit_body(ctx, _list(next_if, "body"))
         ctx.indent_level -= 1
-        _emit_remaining_orelse(ctx, orelse[0])
+        if isinstance(next_if, dict):
+            _emit_remaining_orelse(ctx, next_if)
     elif len(orelse) > 0:
         _emit(ctx, "} else {")
         ctx.indent_level += 1
@@ -6760,18 +6898,9 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
     return_type = _str(node, "return_type")
     body = _list(node, "body")
     decorators = _list(node, "decorator_list")
-    is_static = any(
-        isinstance(d, dict) and _str(d, "id") == "staticmethod"
-        for d in decorators
-    )
-    is_property = any(
-        isinstance(d, dict) and _str(d, "id") == "property"
-        for d in decorators
-    )
-    is_classmethod = any(
-        isinstance(d, dict) and _str(d, "id") == "classmethod"
-        for d in decorators
-    )
+    is_static = _decorators_have_id(decorators, "staticmethod")
+    is_property = _decorators_have_id(decorators, "property")
+    is_classmethod = _decorators_have_id(decorators, "classmethod")
 
     leading_trivia = _list(node, "leading_trivia")
     for trivia in leading_trivia:
@@ -6871,7 +7000,10 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
                 ctx.function_signatures[child_name] = stmt
                 child_capture_types = _dict(stmt, "capture_types")
                 if child_capture_types:
-                    ctx.nested_capture_args[_rs_symbol_name(ctx, child_name)] = [str(k) for k in child_capture_types.keys()]
+                    child_capture_names: list[str] = []
+                    for capture_name in child_capture_types:
+                        child_capture_names.append(str(capture_name))
+                    ctx.nested_capture_args[_rs_symbol_name(ctx, child_name)] = child_capture_names
 
     # Add parameters to declared vars
     for arg in arg_order:
@@ -6892,7 +7024,9 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
     fn_prefix = "pub " if (ctx.package_mode and not is_nested) else ""
     if is_nested:
         capture_types = _dict(node, "capture_types")
-        capture_names = [str(k) for k in capture_types.keys()]
+        capture_names: list[str] = []
+        for capture_name in capture_types:
+            capture_names.append(str(capture_name))
         extra_params: list[str] = []
         if is_recursive_nested:
             known_nested: dict[str, dict[str, JsonVal]] = {}
@@ -6935,10 +7069,7 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
     ctx.at_module_level = False
     for arg in box_any_param_names:
         _emit(ctx, "let mut " + safe_rs_ident(arg) + " = " + safe_rs_ident(arg) + ".into_py_box_any();")
-    body_is_empty = len(body) == 0 or all(
-        isinstance(s, dict) and _str(s, "kind") == "Pass"
-        for s in body
-    )
+    body_is_empty = len(body) == 0 or _all_pass_stmts(body)
     if body_is_empty and return_type not in ("", "None", "NoneType"):
         # Abstract/stub method: emit todo!()
         _emit(ctx, 'todo!("abstract method ' + fn_name + '")')
@@ -6950,7 +7081,7 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
             and isinstance(body[-1], dict)
             and _str(body[-1], "kind") == "While"
         ):
-            last_test = body[-1].get("test")
+            last_test = _json_get(body[-1], "test")
             if isinstance(last_test, dict) and _str(last_test, "kind") == "Constant" and last_test.get("value") is True:
                 _emit(ctx, 'panic!("unreachable after loop");')
     ctx.at_module_level = prev_module_level
@@ -7027,7 +7158,7 @@ def _collect_class_info(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         if stmt_kind in ("FunctionDef", "ClosureDef"):
             fn_name = _str(stmt, "name")
             decorators = _list(stmt, "decorator_list")
-            is_static = any(isinstance(d, dict) and _str(d, "id") == "staticmethod" for d in decorators)
+            is_static = _decorators_have_id(decorators, "staticmethod")
             if is_static:
                 statics.add(fn_name)
             methods[fn_name] = stmt
@@ -7087,11 +7218,9 @@ def _collect_class_info(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     ctx.class_vars[name] = class_vars
     ctx.class_instance_methods[name] = methods
     ctx.class_static_methods[name] = statics
-    decorators_raw = node.get("decorators") or []
+    decorators_raw = _list(node, "decorators")
     for dec in decorators_raw:
-        if isinstance(dec, str) and dec in ("trait", "@trait"):
-            ctx.trait_names.add(name)
-        elif isinstance(dec, dict) and _str(dec, "id") in ("trait", "@trait"):
+        if _decorator_id_matches(dec, "trait"):
             ctx.trait_names.add(name)
     base_raw = _str(node, "base")
     base_id = ctx.class_bases.get(name, base_raw)
@@ -7113,11 +7242,7 @@ def _collect_class_info(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             fn_name = _str(stmt, "name")
             # EAST3 uses "decorators" list (strings or dicts); AST uses "decorator_list"
             decs = _list(stmt, "decorators") + _list(stmt, "decorator_list")
-            is_prop = any(
-                (isinstance(d, str) and d == "property") or
-                (isinstance(d, dict) and _str(d, "id") == "property")
-                for d in decs
-            )
+            is_prop = _decorators_have_id(decs, "property")
             if is_prop:
                 property_methods.add(fn_name)
     ctx.class_property_methods[name] = property_methods
@@ -7264,11 +7389,7 @@ def _emit_class_def(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         _emit_enum_class(ctx, node)
         return
 
-    is_trait = name in ctx.trait_names or any(
-        (isinstance(d, str) and d in ("trait", "@trait")) or
-        (isinstance(d, dict) and _str(d, "id") in ("trait", "@trait"))
-        for d in decorators
-    )
+    is_trait = name in ctx.trait_names or _decorators_have_id(decorators, "trait")
 
     # Detect @implements(...) decorator to get trait implementations for this class
     implements_traits: list[str] = []
@@ -7498,7 +7619,7 @@ def _emit_class_def(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         # For tuple/list of homogeneous constants → const &'static [T]
         if isinstance(ca_val, dict) and ca_val.get("kind") in ("Tuple", "List"):
             elems = _list(ca_val, "elements")
-            all_const = all(isinstance(e, dict) and e.get("kind") == "Constant" for e in elems)
+            all_const = _all_constant_nodes(elems)
             if all_const and len(elems) > 0:
                 elem_type = _str(elems[0], "resolved_type") if elems else "int64"
                 rs_elem = _rs_type_for_context(ctx, elem_type)
@@ -7971,7 +8092,7 @@ def _emit_trait_methods_impl(ctx: RsEmitContext, class_name: str, trait_name: st
     ctx.current_class = prev_class
 
 
-def _emit_trait_impl_method(ctx: RsEmitContext, node: dict, owner: str, self_ref: str) -> None:
+def _emit_trait_impl_method(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str, self_ref: str) -> None:
     """Emit a method for a trait impl block, using self_ref (&self or &mut self)."""
     name = _str(node, "name")
     arg_order = _list(node, "arg_order")
@@ -8114,7 +8235,8 @@ def _emit_module_body(ctx: RsEmitContext, body: list[JsonVal]) -> None:
 def _collect_uses(ctx: RsEmitContext, meta: dict[str, JsonVal]) -> list[str]:
     """Determine which `use` statements are needed."""
     if not ctx.package_mode:
-        return []
+        empty_lines: list[str] = []
+        return empty_lines
     lines: list[str] = _package_prelude_uses(ctx.needs_runtime_type_ids)
     if ctx.module_id == "pytra.built_in.error":
         lines = [line for line in lines if line != "use crate::pytra_built_in_error::RuntimeError;"]
@@ -8127,16 +8249,16 @@ def _collect_uses(ctx: RsEmitContext, meta: dict[str, JsonVal]) -> list[str]:
     for binding in bindings:
         if not isinstance(binding, dict):
             continue
-        module_id = binding.get("runtime_module_id")
-        if not isinstance(module_id, str) or module_id == "":
-            module_id = binding.get("module_id")
-        if not isinstance(module_id, str):
+        module_id = _as_str(binding.get("runtime_module_id"))
+        if module_id == "":
+            module_id = _as_str(binding.get("module_id"))
+        if module_id == "":
             continue
-        binding_kind = binding.get("binding_kind")
-        local_name = binding.get("local_name")
-        export_name = binding.get("export_name")
-        symbol_name = export_name if isinstance(export_name, str) and export_name != "" else local_name
-        symbol_name = _normalize_binding_name(symbol_name) if isinstance(symbol_name, str) else ""
+        binding_kind = _as_str(binding.get("binding_kind"))
+        local_name = _as_str(binding.get("local_name"))
+        export_name = _as_str(binding.get("export_name"))
+        symbol_name = export_name if export_name != "" else local_name
+        symbol_name = _normalize_binding_name(symbol_name) if symbol_name != "" else ""
         nested_module_id = module_id + "." + symbol_name if symbol_name not in ("", "_") else ""
         module_is_crate = _is_package_crate_module(ctx, module_id)
         nested_is_crate = nested_module_id != "" and _is_package_crate_module(ctx, nested_module_id)
@@ -8149,13 +8271,14 @@ def _collect_uses(ctx: RsEmitContext, meta: dict[str, JsonVal]) -> list[str]:
             if wildcard_line not in seen:
                 seen.add(wildcard_line)
                 lines.append(wildcard_line)
-        if binding_kind == "module" and isinstance(local_name, str) and local_name != "":
+        if binding_kind == "module" and local_name != "":
             line = "pub use crate::" + _module_id_to_rs_mod_name(module_id) + " as " + safe_rs_ident(local_name) + ";"
-        elif binding_kind == "symbol" and isinstance(local_name, str) and local_name != "":
+        elif binding_kind == "symbol" and local_name != "":
             local_name = _normalize_binding_name(local_name)
             if symbol_name in ("", "_") or local_name in ("", "_"):
                 continue
-            module_leaf = module_id.rsplit(".", 1)[-1] if "." in module_id else module_id
+            module_parts = module_id.split(".")
+            module_leaf = module_parts[-1] if len(module_parts) > 0 else module_id
             if module_is_crate and symbol_name == module_leaf:
                 source_rs = _module_id_to_rs_mod_name(module_id)
                 line = "pub use crate::" + source_rs
@@ -8358,7 +8481,12 @@ def emit_rs_module(east3_doc: dict[str, JsonVal], *, package_mode: bool = False)
             inc = "include!(\"" + dep_mod_id.replace(".", "_") + ".rs\");"
             if inc not in lines:
                 lines.append(inc)
-        if any(line == 'include!("toolchain_link_type_id.rs");' for line in lines):
+        has_type_id_include = False
+        for line in lines:
+            if line == 'include!("toolchain_link_type_id.rs");':
+                has_type_id_include = True
+                break
+        if has_type_id_include:
             lines.append("fn resolve_runtime_module_rel_tail(module_id: String) -> String {")
             lines.append("    if module_id == \"pytra.core.py_runtime\".to_string() { return \"core/py_runtime\".to_string(); }")
             lines.append("    if py_str_startswith(&module_id, &\"pytra.built_in.\".to_string()) { return format!(\"{}{}\", \"built_in/\".to_string(), py_str_replace(&py_slice(&module_id, Some(15_i64), None), &\".\".to_string(), &\"/\".to_string())); }")
@@ -8413,7 +8541,7 @@ def emit_rs_module(east3_doc: dict[str, JsonVal], *, package_mode: bool = False)
         ctx.indent_level += 1
         if len(main_guard) > 0:
             prev_declared = set(ctx.declared_vars)
-            ctx.declared_vars = set()
+            ctx.declared_vars = {"argv"}
             _emit_body(ctx, main_guard)
             ctx.declared_vars = prev_declared
         ctx.indent_level -= 1

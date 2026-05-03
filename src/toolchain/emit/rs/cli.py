@@ -69,9 +69,8 @@ def _write_rs_package_files(output_dir: Path, manifest_path: Path) -> None:
     src_dir = output_dir.joinpath("src")
     src_dir.mkdir(parents=True, exist_ok=True)
 
-    module_files = output_dir.glob("*.rs")
     module_names: list[str] = []
-    for mod_file in module_files:
+    for mod_file in output_dir.glob("*.rs"):
         dst = src_dir.joinpath(mod_file.name)
         dst.write_text(mod_file.read_text(encoding="utf-8"), encoding="utf-8")
         module_name = mod_file.stem
@@ -84,16 +83,18 @@ def _write_rs_package_files(output_dir: Path, manifest_path: Path) -> None:
             module_names.append(runtime_mod)
 
     entry_mod = ""
-    manifest_doc = json.loads(manifest_path.read_text(encoding="utf-8")).raw
+    manifest_doc: JsonVal = json.loads(manifest_path.read_text(encoding="utf-8")).raw
     if isinstance(manifest_doc, dict):
         modules = manifest_doc.get("modules")
         if isinstance(modules, list):
             for module in modules:
                 if not isinstance(module, dict):
                     continue
-                if module.get("is_entry") is True:
-                    module_id = module.get("module_id")
-                    if isinstance(module_id, str) and module_id != "":
+                is_entry = module.get("is_entry")
+                if isinstance(is_entry, bool) and is_entry:
+                    module_id_any = module.get("module_id")
+                    module_id = module_id_any if isinstance(module_id_any, str) else ""
+                    if module_id != "":
                         entry_mod = module_id.replace(".", "_")
                         break
     if entry_mod == "":
@@ -127,10 +128,10 @@ def emit_rs_from_manifest(manifest_path: Path, output_dir: Path, *, package_mode
     return main(argv)
 
 
-def main(argv: list[str] | None = None) -> int:
-    import sys
-
-    args = list(sys.argv[1:] if argv is None else argv)
+def main(argv: list[str]) -> int:
+    args: list[str] = []
+    for item in argv:
+        args.append(item)
     if "-h" in args or "--help" in args:
         print("usage: python3 -m toolchain.emit.rs.cli MANIFEST.json [-o OUTPUT_DIR] [--package]")
         return 0
@@ -151,4 +152,6 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    import sys
+
+    raise SystemExit(main(sys.argv[1:]))

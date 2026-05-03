@@ -87,15 +87,16 @@ def _split_generic_args(s: str) -> list[str]:
 
 
 def _parse_callable_signature(resolved_type: str) -> tuple[list[str], str]:
+    empty_params: list[str] = []
     is_callable = resolved_type.startswith("callable[")
     if not is_callable:
         is_callable = resolved_type.startswith("Callable[")
     if not is_callable or not resolved_type.endswith("]"):
-        return ([], "unknown")
+        return (empty_params, "unknown")
     prefix_len = len("Callable[") if resolved_type.startswith("Callable[") else len("callable[")
     inner = resolved_type[prefix_len:-1].strip()
     if inner == "":
-        return ([], "unknown")
+        return (empty_params, "unknown")
     if inner.startswith("["):
         depth = 0
         close_idx = -1
@@ -128,7 +129,7 @@ def _parse_callable_signature(resolved_type: str) -> tuple[list[str], str]:
                 if item != "":
                     params2.append(item)
         return (params2, ret_text2 if ret_text2 != "" else "unknown")
-    return ([], inner)
+    return (empty_params, inner)
 
 
 _RS_KEYWORDS: set[str] = set()
@@ -192,7 +193,12 @@ def union_prefers_pyany(resolved_type: str) -> bool:
     for part in parts:
         if part in _PYANY_UNION_MEMBERS:
             continue
-        if part.startswith(("list[", "dict[", "set[", "tuple[")):
+        if (
+            part.startswith("list[")
+            or part.startswith("dict[")
+            or part.startswith("set[")
+            or part.startswith("tuple[")
+        ):
             continue
         return False
     return True
