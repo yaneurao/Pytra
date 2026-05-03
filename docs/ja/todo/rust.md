@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-29
+最終更新: 2026-05-03
 
 ## 運用ルール
 
@@ -42,9 +42,10 @@
 
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を rs に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
-1. [ ] [ID: P1-HOST-CPP-EMITTER-RS-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target rs -o work/selfhost/host-cpp/rs/` で変換 + build を通す
-   - 進捗: 2026-04-29 に変換は PASS。`rustc --edition=2021 -Awarnings work/selfhost/host-cpp/rs/toolchain_emit_cpp_cli.rs -o work/selfhost/host-cpp/rs/emitter_cpp_rs` は未 PASS。主因は P9-RS-SELFHOST-S1 の既知ブロッカー（flat `include!` の transitive module 欠落、CommonRenderer 継承クラスの `self.state`、`JsonValue(...)` constructor lowering、`Path` native 型）で、旧 `src/toolchain/emit/rs/` 直修正ではなく P9 の mod 構造出力で解く。
-2. [ ] [ID: P1-HOST-CPP-EMITTER-RS-S2] `python3 tools/run/run_emitter_host_parity.py --host-lang rs --hosted-emitter cpp --case-root fixture` で C++ emitter host parity PASS を確認する（結果は `.parity-results/emitter_host_rs.json` に自動書き込み）
+1. [x] [ID: P1-HOST-CPP-EMITTER-RS-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target rs -o work/selfhost/host-cpp/rs/` で変換 + build を通す
+   - 完了: 2026-05-03 `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target rs -o work/selfhost/emitter-host/rs_cpp/host_emit` と `rustc --edition=2021 -Awarnings work/selfhost/emitter-host/rs_cpp/host_emit/toolchain_emit_cpp_cli.rs -o work/selfhost/emitter-host/rs_cpp/host_emit/emitter_cpp_rs` が PASS。
+2. [x] [ID: P1-HOST-CPP-EMITTER-RS-S2] `python3 tools/run/run_emitter_host_parity.py --host-lang rs --hosted-emitter cpp --case-root fixture` で C++ emitter host parity PASS を確認する（結果は `.parity-results/emitter_host_rs.json` に自動書き込み）
+   - 完了: 2026-05-03 `python3 tools/run/run_emitter_host_parity.py --host-lang rs --hosted-emitter cpp --case-root fixture --timeout-sec 3600` が PASS。`.parity-results/emitter_host_rs.json` は `parity_status: ok`、`detail: matched work/selfhost/emitter-host/rs_cpp/linked/manifest.json`。
 
 ### P1-EMITTER-SELFHOST-RS: emit/rs/cli.py を単独で selfhost C++ build に通す
 

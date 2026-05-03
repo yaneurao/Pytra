@@ -6,7 +6,7 @@
 
 > Domain-specific TODO. See [index.md](./index.md) for the full index.
 
-Last updated: 2026-04-03
+Last updated: 2026-05-03
 
 ## Operating Rules
 
@@ -27,6 +27,15 @@ Last updated: 2026-04-03
 - Remaining blockers: EAST3-side issue with inheritance + ref semantics (P0-EAST3-INHERIT)
 
 ## Incomplete Tasks
+
+### P1-HOST-CPP-EMITTER-RS: Host the C++ emitter with rs
+
+Convert the C++ emitter (`toolchain.emit.cpp.cli`, 16 modules) to rs and confirm that the converted emitter can generate C++ code correctly. The C++ emitter source is already selfhost-safe.
+
+1. [x] [ID: P1-HOST-CPP-EMITTER-RS-S1] Run `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target rs -o work/selfhost/host-cpp/rs/` and pass conversion + build.
+   - Completed: On 2026-05-03, `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target rs -o work/selfhost/emitter-host/rs_cpp/host_emit` and `rustc --edition=2021 -Awarnings work/selfhost/emitter-host/rs_cpp/host_emit/toolchain_emit_cpp_cli.rs -o work/selfhost/emitter-host/rs_cpp/host_emit/emitter_cpp_rs` passed.
+2. [x] [ID: P1-HOST-CPP-EMITTER-RS-S2] Run `python3 tools/run/run_emitter_host_parity.py --host-lang rs --hosted-emitter cpp --case-root fixture` and confirm C++ emitter host parity PASS. The result is written automatically to `.parity-results/emitter_host_rs.json`.
+   - Completed: On 2026-05-03, `python3 tools/run/run_emitter_host_parity.py --host-lang rs --hosted-emitter cpp --case-root fixture --timeout-sec 3600` passed. `.parity-results/emitter_host_rs.json` has `parity_status: ok` and `detail: matched work/selfhost/emitter-host/rs_cpp/linked/manifest.json`.
 
 ### P5-RS-CLI-COMMON: Migrate Rust cli.py to the common runner
 
