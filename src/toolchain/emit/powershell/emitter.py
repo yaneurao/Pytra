@@ -127,6 +127,12 @@ def _gv(node: JsonVal, key: str) -> JsonVal:
     return None
 
 
+def _dict_value_or_none(values: dict[str, JsonVal], key: str) -> JsonVal:
+    if key in values:
+        return values[key]
+    return None
+
+
 def _call_keyword_map(expr: dict[str, JsonVal]) -> dict[str, JsonVal]:
     out: dict[str, JsonVal] = {}
     keywords = _gl(expr, "keywords")
@@ -279,6 +285,61 @@ def _json_list_contains_text(values: list[JsonVal], key: str) -> bool:
     return False
 
 
+def _is_function_like_kind(kind: str) -> bool:
+    return kind == "FunctionDef" or kind == "ClosureDef"
+
+
+def _is_assign_like_kind(kind: str) -> bool:
+    return kind == "Assign" or kind == "AnnAssign"
+
+
+def _is_print_function_name(name: str) -> bool:
+    return name == "print" or name == "__pytra_print"
+
+
+def _is_passthrough_runtime_call(name: str) -> bool:
+    return name == "__CAST__" or name == "__THROW__"
+
+
+def _is_runtime_call_skip_mapping(name: str) -> bool:
+    return (
+        name == "__CAST__"
+        or name == "__THROW__"
+        or name == "__LIST_APPEND__"
+        or name == "__DICT_GET__"
+        or name == "__DICT_ITEMS__"
+        or name == "__DICT_KEYS__"
+        or name == "__DICT_VALUES__"
+        or name == "__SET_ADD__"
+    )
+
+
+def _is_callable_type_name(name: str) -> bool:
+    return (
+        name.startswith("callable[")
+        or name == "callable"
+        or name.startswith("Callable[")
+        or name == "Callable"
+    )
+
+
+def _renamed_symbol(ctx: EmitContext, raw: str) -> str:
+    if raw in ctx.renamed_symbols:
+        return ctx.renamed_symbols[raw]
+    return raw
+
+
+def _is_static_function_ref(ctx: EmitContext, raw: str, renamed: str) -> bool:
+    has_function = False
+    if raw in ctx.function_names:
+        has_function = True
+    if renamed in ctx.function_names:
+        has_function = True
+    if raw in ctx.lambda_vars:
+        return False
+    return has_function
+
+
 def _module_id_to_import_path(module_id: str, root_rel_prefix: str) -> str:
     """Convert module_id to relative .ps1 import path (flat filename)."""
     if module_id == "":
@@ -383,10 +444,10 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
             return "$false"
         if raw == "None" or raw == "null":
             return "$null"
-        renamed = ctx.renamed_symbols.get(raw, raw)
+        renamed = _renamed_symbol(ctx, raw)
         rt = _gs(expr, "resolved_type")
-        if rt.startswith("callable[") or rt == "callable" or rt.startswith("Callable[") or rt == "Callable":
-            if (raw in ctx.function_names or renamed in ctx.function_names) and raw not in ctx.lambda_vars:
+        if _is_callable_type_name(rt):
+            if _is_static_function_ref(ctx, raw, renamed):
                 return '"' + _safe(renamed, "_fn") + '"'
         return "$" + _safe(renamed, "_v")
 
@@ -921,9 +982,9 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
 
     # Check Call-level runtime_call first (covers Attribute method calls like list.clear)
     call_runtime_call = _gs(expr, "runtime_call")
-    if call_runtime_call != "" and call_runtime_call not in ("__CAST__", "__THROW__"):
-        call_mapped = ctx.mapping.calls.get(call_runtime_call, "")
-        if call_mapped != "" and call_mapped not in ("__CAST__", "__THROW__", "__LIST_APPEND__", "__DICT_GET__", "__DICT_ITEMS__", "__DICT_KEYS__", "__DICT_VALUES__", "__SET_ADD__"):
+    if call_runtime_call != "" and not _is_passthrough_runtime_call(call_runtime_call):
+        call_mapped = _mapping_call(ctx, call_runtime_call, "")
+        if call_mapped != "" and not _is_runtime_call_skip_mapping(call_mapped):
             # For Attribute calls (obj.method()), prepend the receiver as first arg
             _rcall_args = list(rendered_args)
             if isinstance(func, dict) and _gs(func, "kind") == "Attribute":
@@ -1409,7 +1470,7 @@ def _emit_body(ctx: EmitContext, body: list[JsonVal], indent: str) -> list[str]:
 
 def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[str]:
     kind = _gs(stmt, "kind")
-    if kind in ("Assign", "AnnAssign") and _is_type_alias_like_assign(stmt):
+    if _is_assign_like_kind(kind) and _is_type_alias_like_assign(stmt):
         return []
 
     if kind == "Expr":
@@ -1432,7 +1493,9 @@ def _emit_stmt(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> list[
         rendered = _render_expr(ctx, value)
         if isinstance(value, dict) and _gs(value, "kind") == "Call":
             fn_node = value.get("func")
-            is_print = isinstance(fn_node, dict) and _gs(fn_node, "id") in ("print", "__pytra_print")
+            is_print = False
+            if isinstance(fn_node, dict):
+                is_print = _is_print_function_name(_gs(fn_node, "id"))
             if not is_print:
                 return [indent + "[void](" + rendered + ")"]
         return [indent + rendered]
@@ -1850,8 +1913,9 @@ def _emit_function_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) 
             if vararg_name != "" and arg_name == vararg_name:
                 continue
             safe_a = "$" + _safe(arg_name, "_p")
-            default_node = arg_defaults.get(arg_name)
-            if default_node is not None:
+            has_default_node = arg_name in arg_defaults
+            if has_default_node:
+                default_node = _dict_value_or_none(arg_defaults, arg_name)
                 ps_params.append(safe_a + " = " + _render_expr(ctx, default_node))
             else:
                 ps_params.append(safe_a)
@@ -1871,8 +1935,10 @@ def _emit_function_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) 
                 arg_name_s = _gs(p, "arg")
                 if arg_name_s == "":
                     arg_name_s = _gs(p, "name")
-                default_node2 = p.get("default")
-                if default_node2 is not None:
+                has_default_node2 = "default" in p
+                default_node2 = p.get("default") if has_default_node2 else None
+                if has_default_node2:
+                    default_node2 = _gv(p, "default")
                     ps_params.append("$" + _safe(arg_name_s, "_p") + " = " + _render_expr(ctx, default_node2))
                 else:
                     ps_params.append("$" + _safe(arg_name_s, "_p"))
@@ -1909,7 +1975,7 @@ def _emit_class_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> 
         if not isinstance(member, dict):
             continue
         mk = _gs(member, "kind")
-        if mk in ("FunctionDef", "ClosureDef"):
+        if _is_function_like_kind(mk):
             method_name = _gs(member, "name")
             if method_name == "__init__":
                 has_init = True
@@ -1989,7 +2055,7 @@ def _emit_class_def(ctx: EmitContext, stmt: dict[str, JsonVal], indent: str) -> 
     if base != "":
         own_methods: set[str] = set()
         for member in body:
-            if isinstance(member, dict) and _gs(member, "kind") in ("FunctionDef", "ClosureDef"):
+            if isinstance(member, dict) and _is_function_like_kind(_gs(member, "kind")):
                 mn = _gs(member, "name")
                 if mn != "" and mn != "__init__":
                     own_methods.add(mn)
@@ -2017,7 +2083,9 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
         return ""
 
     # Load runtime mapping
-    mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "powershell" / "mapping.json"
+    mapping_path = Path("src").joinpath("runtime").joinpath("powershell").joinpath("mapping.json")
+    if not mapping_path.exists():
+        mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "powershell" / "mapping.json"
     mapping = load_runtime_mapping(mapping_path)
 
     # Extract module_id
@@ -2069,7 +2137,9 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
             if cn != "" and base != "":
                 if cn not in class_bases_multi:
                     class_bases_multi[cn] = []
-                class_bases_multi[cn].append(base)
+                bases_for_class = class_bases_multi[cn]
+                bases_for_class.append(base)
+                class_bases_multi[cn] = bases_for_class
             for dec in _gl(node, "decorators"):
                 if isinstance(dec, str) and dec.startswith("implements(") and dec.endswith(")"):
                     inner = dec[len("implements("):-1]
@@ -2078,12 +2148,13 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
                         if cn != "" and trait_name != "":
                             if cn not in class_bases_multi:
                                 class_bases_multi[cn] = []
-                            class_bases_multi[cn].append(trait_name)
-    class_bases: dict[str, str] = {
-        child: bases[0]
-        for child, bases in class_bases_multi.items()
-        if len(bases) > 0
-    }
+                            bases_for_trait = class_bases_multi[cn]
+                            bases_for_trait.append(trait_name)
+                            class_bases_multi[cn] = bases_for_trait
+    class_bases: dict[str, str] = {}
+    for child, bases in class_bases_multi.items():
+        if len(bases) > 0:
+            class_bases[child] = bases[0]
 
     class_method_names: dict[str, set[str]] = {}
     for node in body:
@@ -2091,7 +2162,7 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
             cn = _gs(node, "name")
             methods: set[str] = set()
             for member in _gl(node, "body"):
-                if isinstance(member, dict) and _gs(member, "kind") in ("FunctionDef", "ClosureDef"):
+                if isinstance(member, dict) and _is_function_like_kind(_gs(member, "kind")):
                     mn = _gs(member, "name")
                     if mn != "" and mn != "__init__":
                         methods.add(mn)
@@ -2103,7 +2174,7 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
             cn = _gs(node, "name")
             props: set[str] = set()
             for member in _gl(node, "body"):
-                if isinstance(member, dict) and _gs(member, "kind") in ("FunctionDef", "ClosureDef"):
+                if isinstance(member, dict) and _is_function_like_kind(_gs(member, "kind")):
                     has_property = False
                     for dec in _gl(member, "decorators"):
                         if isinstance(dec, str):
@@ -2126,7 +2197,7 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
                 function_names.add(fn)
 
     # Collect math import aliases
-    import_alias_map = build_import_alias_map(meta)
+    import_alias_map: dict[str, str] = build_import_alias_map(meta)
     import_func_aliases: dict[str, str] = {}
     for node in body:
         if not isinstance(node, dict) or _gs(node, "kind") != "ImportFrom":
@@ -2166,7 +2237,7 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
                 if has_trait:
                     trait_class_names.add(cn)
     base_class_set: set[str] = set()
-    for bases in class_bases_multi.values():
+    for child, bases in class_bases_multi.items():
         for base in bases:
             base_class_set.add(base)
     leaf_classes: set[str] = set()
@@ -2182,9 +2253,13 @@ def emit_ps1_module(east3_doc: dict[str, JsonVal]) -> str:
     ctx.class_bases = class_bases
     ctx.class_method_names = class_method_names
     ctx.class_properties = class_properties
+    ctx.current_class = ""
+    ctx.lambda_vars = set()
     ctx.function_names = function_names
     ctx.import_alias_map = import_alias_map
     ctx.import_func_aliases = import_func_aliases
+    ctx.arg_types = {}
+    ctx.in_main_guard = False
     ctx.mapping = mapping
     ctx.leaf_classes = leaf_classes
 

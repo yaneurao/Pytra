@@ -675,6 +675,34 @@ def build_emitted_target_artifact(
     _safe_unlink(bin_path)
     stems = [entry_stem, entry_stem.replace("-", "_"), entry_stem.replace("_", "-"), "pytra_cli", "pytra-cli"]
 
+    if target == "cpp":
+        cpp_files = sorted(str(p) for p in emit_dir.rglob("*.cpp"))
+        if len(cpp_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .cpp files found")
+        runtime_sources = [
+            ROOT / "src" / "runtime" / "cpp" / "core" / "io.cpp",
+            ROOT / "src" / "runtime" / "cpp" / "std" / "pathlib.cpp",
+            ROOT / "src" / "runtime" / "cpp" / "std" / "sys.cpp",
+            ROOT / "src" / "runtime" / "cpp" / "std" / "os.cpp",
+            ROOT / "src" / "runtime" / "cpp" / "std" / "os_path.cpp",
+            ROOT / "src" / "runtime" / "cpp" / "std" / "glob.cpp",
+        ]
+        compile_inputs = cpp_files + [str(p) for p in runtime_sources if p.exists()]
+        include_flags = [
+            "-I", str(emit_dir),
+            "-I", str(ROOT / "src"),
+            "-I", str(ROOT / "src" / "runtime" / "cpp"),
+        ]
+        cmd = (
+            "g++ -std=c++20 -O0 -w "
+            + " ".join(shlex.quote(p) for p in compile_inputs)
+            + " "
+            + " ".join(shlex.quote(flag) for flag in include_flags)
+            + " -o "
+            + shlex.quote(str(bin_path))
+        )
+        return run_shell(cmd, cwd=work_dir, env=env, timeout_sec=timeout_sec)
+
     if target == "go":
         go_files = sorted(str(p) for p in emit_dir.rglob("*.go"))
         if len(go_files) == 0:
